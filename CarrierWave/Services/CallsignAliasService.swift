@@ -109,12 +109,19 @@ final class CallsignAliasService {
 
     /// Find callsigns in the given set that are not configured as user callsigns
     /// Handles portable suffixes like /P, /M, /QRP by extracting the base callsign
+    /// Filters out invalid callsigns (must contain letters and numbers)
     func getUnconfiguredCallsigns(from allCallsigns: Set<String>) -> Set<String> {
         let userCallsigns = getAllUserCallsigns()
         let userBaseCallsigns = Set(userCallsigns.map { extractBaseCallsign($0) })
 
         return allCallsigns.filter { callsign in
             let upper = callsign.uppercased()
+
+            // Filter out strings that aren't valid callsigns
+            guard isValidCallsignFormat(upper) else {
+                return false
+            }
+
             // Check direct match
             if userCallsigns.contains(upper) {
                 return false
@@ -128,6 +135,30 @@ final class CallsignAliasService {
     // MARK: Private
 
     private let keychain = KeychainHelper.shared
+
+    /// Check if a string has valid callsign format (contains both letters and numbers)
+    /// This filters out placeholder strings like "EVENT" that aren't real callsigns
+    private func isValidCallsignFormat(_ callsign: String) -> Bool {
+        // Extract base callsign (without /P, /M suffixes) for validation
+        let base = extractBaseCallsign(callsign)
+
+        // Must be at least 3 characters (shortest valid: A1A)
+        guard base.count >= 3 else {
+            return false
+        }
+
+        // Must contain at least one letter
+        guard base.contains(where: \.isLetter) else {
+            return false
+        }
+
+        // Must contain at least one number
+        guard base.contains(where: \.isNumber) else {
+            return false
+        }
+
+        return true
+    }
 
     /// Extract the base callsign from a potentially prefixed/suffixed callsign
     /// e.g., "W6JSV/P" -> "W6JSV", "VE3/W6JSV" -> "W6JSV", "W6JSV/QRP" -> "W6JSV"
