@@ -156,19 +156,9 @@ struct LoggerView: View {
             .onChange(of: sessionManager?.activeSession?.frequency) { _, _ in
                 dismissedViolation = nil
             }
-            .onChange(of: sessionManager?.activeSession?.mode) { _, newMode in
+            .onChange(of: sessionManager?.activeSession?.mode) { _, _ in
                 dismissedViolation = nil
-                // Reset RST defaults when mode changes
-                if newMode != nil {
-                    let mode = newMode!.uppercased()
-                    let threeDigitModes = [
-                        "CW", "RTTY", "PSK", "PSK31", "FT8", "FT4", "JT65", "JT9", "DATA",
-                        "DIGITAL",
-                    ]
-                    let newDefault = threeDigitModes.contains(mode) ? "599" : "59"
-                    rstSent = newDefault
-                    rstReceived = newDefault
-                }
+                // RST fields stay empty - placeholder shows correct default based on mode
             }
             .onChange(of: sessionManager?.activeSession?.id) { _, _ in
                 refreshSessionQSOs()
@@ -282,8 +272,8 @@ struct LoggerView: View {
 
     // Input fields
     @State private var callsignInput = ""
-    @State private var rstSent = "599"
-    @State private var rstReceived = "599"
+    @State private var rstSent = ""
+    @State private var rstReceived = ""
     @State private var showMoreFields = false
     @FocusState private var callsignFieldFocused: Bool
 
@@ -1359,8 +1349,8 @@ struct LoggerView: View {
             theirPark = ""
             notes = ""
             operatorName = ""
-            rstSent = defaultRST
-            rstReceived = defaultRST
+            rstSent = ""
+            rstReceived = ""
         }
     }
 
