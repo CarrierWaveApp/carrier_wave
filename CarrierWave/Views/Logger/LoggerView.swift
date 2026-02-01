@@ -222,20 +222,6 @@ struct LoggerView: View {
                 }
             }
 
-            .onReceive(
-                NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)
-            ) { notification in
-                if let frame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey]
-                    as? CGRect
-                {
-                    keyboardHeight = frame.height
-                }
-            }
-            .onReceive(
-                NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)
-            ) { _ in
-                keyboardHeight = 0
-            }
             .miniTour(.logger, tourState: tourState)
         }
     }
@@ -306,9 +292,6 @@ struct LoggerView: View {
 
     /// License warning
     @State private var dismissedViolation: String?
-
-    /// Keyboard tracking
-    @State private var keyboardHeight: CGFloat = 0
 
     /// Tour state for mini-tour
     private let tourState: TourState
@@ -549,7 +532,7 @@ struct LoggerView: View {
             if showMapPanel {
                 SwipeToDismissPanel(isPresented: $showMapPanel) {
                     SessionMapPanelView(
-                        sessionId: sessionManager?.activeSession?.id,
+                        sessionQSOs: sessionQSOs,
                         myGrid: sessionManager?.activeSession?.myGrid
                             ?? UserDefaults.standard.string(forKey: "loggerDefaultGrid")
                     ) {
@@ -1949,17 +1932,6 @@ struct SessionTitleEditSheet: View {
 
 /// Sheet showing hidden (deleted) QSOs for the current session with option to restore
 struct HiddenQSOsSheet: View {
-    // MARK: Lifecycle
-
-    init(sessionId: UUID?) {
-        self.sessionId = sessionId
-        _allHiddenQSOs = Query(
-            filter: #Predicate<QSO> { $0.isHidden },
-            sort: \QSO.timestamp,
-            order: .reverse
-        )
-    }
-
     // MARK: Internal
 
     let sessionId: UUID?
@@ -1995,6 +1967,9 @@ struct HiddenQSOsSheet: View {
                     }
                 }
             }
+            .task {
+                fetchHiddenQSOs()
+            }
         }
     }
 
@@ -2003,19 +1978,36 @@ struct HiddenQSOsSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
 
-    @Query private var allHiddenQSOs: [QSO]
+    /// Hidden QSOs for the current session (manually fetched to avoid full table scan)
+    @State private var hiddenQSOs: [QSO] = []
 
-    private var hiddenQSOs: [QSO] {
+    private func fetchHiddenQSOs() {
         guard let sessionId else {
-            return []
+            hiddenQSOs = []
+            return
         }
-        return allHiddenQSOs.filter { $0.loggingSessionId == sessionId }
-            .sorted { $0.timestamp > $1.timestamp }
+
+        let predicate = #Predicate<QSO> { qso in
+            qso.isHidden && qso.loggingSessionId == sessionId
+        }
+
+        let descriptor = FetchDescriptor<QSO>(
+            predicate: predicate,
+            sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+        )
+
+        do {
+            hiddenQSOs = try modelContext.fetch(descriptor)
+        } catch {
+            hiddenQSOs = []
+        }
     }
 
     private func restoreQSO(_ qso: QSO) {
         qso.isHidden = false
         try? modelContext.save()
+        // Refresh the list after restoring
+        fetchHiddenQSOs()
     }
 }
 
