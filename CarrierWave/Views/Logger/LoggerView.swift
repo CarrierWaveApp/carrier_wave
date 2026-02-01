@@ -283,6 +283,7 @@ struct LoggerView: View {
     @State private var rbnTargetCallsign: String?
     @State private var showSolarPanel = false
     @State private var showWeatherPanel = false
+    @State private var showPOTAPanel = false
     @State private var showHelpAlert = false
     @State private var showHiddenQSOsSheet = false
 
@@ -552,11 +553,34 @@ struct LoggerView: View {
                 .padding()
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
+
+            if showPOTAPanel {
+                SwipeToDismissPanel(isPresented: $showPOTAPanel) {
+                    POTASpotsView(
+                        initialBand: sessionManager?.activeSession?.band,
+                        initialMode: sessionManager?.activeSession?.mode,
+                        onDismiss: { showPOTAPanel = false },
+                        onSelectSpot: { spot in
+                            // Auto-fill frequency from spot
+                            if let freqKHz = spot.frequencyKHz {
+                                let freqMHz = freqKHz / 1_000.0
+                                _ = sessionManager?.updateFrequency(freqMHz)
+                                ToastManager.shared.info(
+                                    "Tuned to \(FrequencyFormatter.formatWithUnit(freqMHz))"
+                                )
+                            }
+                        }
+                    )
+                }
+                .padding()
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
         }
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: showRBNPanel)
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: showSolarPanel)
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: showWeatherPanel)
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: showMapPanel)
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: showPOTAPanel)
     }
 
     /// Session header - shows active session info or "no session" prompt
@@ -1102,6 +1126,7 @@ struct LoggerView: View {
         case let .mode(newMode): executeModeCommand(newMode)
         case let .spot(comment): Task { await postSpot(comment: comment) }
         case let .rbn(callsign): executeRBNCommand(callsign)
+        case .pota: showPOTAPanel = true
         case .solar: showSolarPanel = true
         case .weather: showWeatherPanel = true
         case .map: executeMapCommand()
