@@ -151,7 +151,7 @@ class ImportService: ObservableObject {
         let qsoCallsign = qso.myCallsign.uppercased()
         let matchesPrimary =
             qsoCallsign.isEmpty || primaryCallsign == nil
-            || qsoCallsign == primaryCallsign
+                || qsoCallsign == primaryCallsign
 
         for service in ServiceType.allCases {
             if service == importedFrom {
@@ -210,7 +210,7 @@ class ImportService: ObservableObject {
             } else if let qsoTimestamp = lofiQso.timestamp {
                 qsoTimestamp
             } else {
-                Date()  // Fallback to now if no timestamp available
+                Date() // Fallback to now if no timestamp available
             }
 
         var calendar = Calendar.current
@@ -276,7 +276,7 @@ enum ImportError: Error, LocalizedError {
         switch self {
         case .invalidFile: "Could not read the ADIF file"
         case .missingTimestamp: "QSO record missing date/time"
-        case .parseError(let message): "Parse error: \(message)"
+        case let .parseError(message): "Parse error: \(message)"
         }
     }
 }

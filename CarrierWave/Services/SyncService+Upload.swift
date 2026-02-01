@@ -78,7 +78,7 @@ extension SyncService {
         let allQSOs = try modelContext.fetch(descriptor)
         return allQSOs.filter { qso in
             // Must have at least one service needing upload
-            guard qso.servicePresence.contains(where: { $0.needsUpload }) else {
+            guard qso.servicePresence.contains(where: \.needsUpload) else {
                 return false
             }
             // Must match primary callsign (or be empty, or no primary configured)
@@ -94,7 +94,7 @@ extension SyncService {
 
         for batch in stride(from: 0, to: qsos.count, by: batchSize) {
             let end = min(batch + batchSize, qsos.count)
-            let batchQSOs = Array(qsos[batch..<end])
+            let batchQSOs = Array(qsos[batch ..< end])
 
             let uploadResult = try await qrzClient.uploadQSOs(batchQSOs)
             totalUploaded += uploadResult.uploaded
