@@ -128,4 +128,37 @@ final class QuickEntryParserTests: XCTestCase {
         XCTAssertFalse(QuickEntryParser.isParkReference("W1AW")) // Callsign
         XCTAssertFalse(QuickEntryParser.isParkReference("579")) // RST
     }
+
+    // MARK: - Grid Square Detection
+
+    func testGridSquareDetection() {
+        let result = QuickEntryParser.parse("W1AW CN87")
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result?.theirGrid, "CN87")
+    }
+
+    func testSixCharGridSquare() {
+        let result = QuickEntryParser.parse("W1AW FN31pr")
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result?.theirGrid, "FN31PR")
+    }
+
+    func testValidGridPatterns() {
+        XCTAssertTrue(QuickEntryParser.isGridSquare("CN87"))
+        XCTAssertTrue(QuickEntryParser.isGridSquare("FN31"))
+        XCTAssertTrue(QuickEntryParser.isGridSquare("JO22"))
+        XCTAssertTrue(QuickEntryParser.isGridSquare("AA00"))
+        XCTAssertTrue(QuickEntryParser.isGridSquare("RR99"))
+        XCTAssertTrue(QuickEntryParser.isGridSquare("FN31pr"))
+        XCTAssertTrue(QuickEntryParser.isGridSquare("CN87wk"))
+    }
+
+    func testInvalidGridPatterns() {
+        XCTAssertFalse(QuickEntryParser.isGridSquare("CN8")) // Too short
+        XCTAssertFalse(QuickEntryParser.isGridSquare("CN877")) // 5 chars invalid
+        XCTAssertFalse(QuickEntryParser.isGridSquare("SN87")) // S > R
+        XCTAssertFalse(QuickEntryParser.isGridSquare("1N87")) // Starts with number
+        XCTAssertFalse(QuickEntryParser.isGridSquare("W1AW")) // Callsign
+        XCTAssertFalse(QuickEntryParser.isGridSquare("WA")) // State code
+    }
 }

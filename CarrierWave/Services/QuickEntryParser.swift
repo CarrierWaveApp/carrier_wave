@@ -66,6 +66,8 @@ enum QuickEntryParser {
                 }
             } else if isParkReference(token) {
                 result.theirPark = token
+            } else if isGridSquare(token) {
+                result.theirGrid = token.uppercased()
             } else {
                 unrecognized.append(token)
             }
@@ -138,6 +140,42 @@ enum QuickEntryParser {
 
         let range = NSRange(upper.startIndex..., in: upper)
         return regex.firstMatch(in: upper, options: [], range: range) != nil
+    }
+
+    /// Check if a string is a valid Maidenhead grid square
+    /// 4-char: [A-R][A-R][0-9][0-9], 6-char: adds [a-x][a-x]
+    static func isGridSquare(_ string: String) -> Bool {
+        let upper = string.uppercased()
+
+        // Must be 4 or 6 characters
+        guard upper.count == 4 || upper.count == 6 else {
+            return false
+        }
+
+        let chars = Array(upper)
+
+        // First two: A-R (field)
+        guard chars[0] >= "A", chars[0] <= "R",
+              chars[1] >= "A", chars[1] <= "R"
+        else {
+            return false
+        }
+
+        // Next two: 0-9 (square)
+        guard chars[2].isNumber, chars[3].isNumber else {
+            return false
+        }
+
+        // If 6 chars, last two: A-X (subsquare)
+        if upper.count == 6 {
+            guard chars[4] >= "A", chars[4] <= "X",
+                  chars[5] >= "A", chars[5] <= "X"
+            else {
+                return false
+            }
+        }
+
+        return true
     }
 
     // MARK: Private
