@@ -4,6 +4,19 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **Park Search and Nearby** - Enhanced park entry with name search and nearby parks
+  - Search parks by name with full-text search picker
+  - See nearby parks based on your grid square location
+  - Park number shorthand: type "1234" to auto-expand to "US-1234"
+- **State Entry Field** - Manual state entry/override in QSO logger
+  - Appears in More Fields section (can be set to always visible)
+  - Overrides QRZ lookup state when manually entered
+- **Logger Layout Improvements** - Reorganized QSO entry form
+  - Notes field is now always visible below callsign
+  - Compact RST fields positioned beside Notes
+  - Cleaner "More Fields" toggle for State/Grid/Park/Operator
+
 ### Fixed
 - **Sync Callsign Filtering** - QSOs from previous callsigns no longer appear in sync queues
   - Import now only creates upload markers for QSOs matching primary callsign
