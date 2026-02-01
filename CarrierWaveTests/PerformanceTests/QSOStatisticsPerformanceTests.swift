@@ -55,59 +55,74 @@ final class QSOStatisticsPerformanceTests: XCTestCase {
         // Generate test data (not measured)
         let qsos = QSOFactory.generate(count: Self.standardTestSize)
 
+        // Keep stats alive outside measure block to avoid deallocation crash
+        var stats: QSOStatistics?
+
         // Measure stats computation
         measure {
-            let stats = QSOStatistics(qsos: qsos)
+            stats = QSOStatistics(qsos: qsos)
 
             // Access all computed properties to trigger lazy evaluation
-            _ = stats.totalQSOs
-            _ = stats.confirmedQSLs
-            _ = stats.uniqueEntities
-            _ = stats.uniqueGrids
-            _ = stats.uniqueBands
-            _ = stats.uniqueParks
-            _ = stats.successfulActivations
-            _ = stats.activityByDate
-            _ = stats.dailyStreak
-            _ = stats.potaActivationStreak
+            _ = stats!.totalQSOs
+            _ = stats!.confirmedQSLs
+            _ = stats!.uniqueEntities
+            _ = stats!.uniqueGrids
+            _ = stats!.uniqueBands
+            _ = stats!.uniqueParks
+            _ = stats!.successfulActivations
+            _ = stats!.activityByDate
+            _ = stats!.dailyStreak
+            _ = stats!.potaActivationStreak
         }
+
+        // Ensure stats is used after measure to prevent optimization
+        _ = stats
     }
 
     /// Measures activity grid computation specifically (iterates all QSOs)
     @MainActor
     func testActivityByDatePerformance() {
         let qsos = QSOFactory.generate(count: Self.standardTestSize)
+        var stats: QSOStatistics?
 
         measure {
-            let stats = QSOStatistics(qsos: qsos)
-            _ = stats.activityByDate
+            stats = QSOStatistics(qsos: qsos)
+            _ = stats!.activityByDate
         }
+
+        _ = stats
     }
 
     /// Measures streak calculation specifically (builds date sets and scans)
     @MainActor
     func testStreakCalculationPerformance() {
         let qsos = QSOFactory.generate(count: Self.standardTestSize)
+        var stats: QSOStatistics?
 
         measure {
-            let stats = QSOStatistics(qsos: qsos)
-            _ = stats.dailyStreak
-            _ = stats.potaActivationStreak
+            stats = QSOStatistics(qsos: qsos)
+            _ = stats!.dailyStreak
+            _ = stats!.potaActivationStreak
         }
+
+        _ = stats
     }
 
     /// Measures category grouping (used for drill-down views)
     @MainActor
     func testCategoryGroupingPerformance() {
         let qsos = QSOFactory.generate(count: Self.standardTestSize)
+        var stats: QSOStatistics?
 
         measure {
-            let stats = QSOStatistics(qsos: qsos)
-            _ = stats.items(for: .bands)
-            _ = stats.items(for: .entities)
-            _ = stats.items(for: .grids)
-            _ = stats.items(for: .parks)
+            stats = QSOStatistics(qsos: qsos)
+            _ = stats!.items(for: .bands)
+            _ = stats!.items(for: .entities)
+            _ = stats!.items(for: .grids)
+            _ = stats!.items(for: .parks)
         }
+
+        _ = stats
     }
 
     // MARK: - Quick Tests (50k QSOs - for CI)

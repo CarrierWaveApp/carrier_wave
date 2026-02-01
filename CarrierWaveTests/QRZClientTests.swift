@@ -1,6 +1,7 @@
 import XCTest
 @testable import CarrierWave
 
+@MainActor
 final class QRZClientTests: XCTestCase {
     func testParseLoginResponse() {
         let response = "RESULT=OK&KEY=abc123&COUNT=1"

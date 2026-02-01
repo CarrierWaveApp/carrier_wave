@@ -2,6 +2,7 @@ import Foundation
 @testable import CarrierWave
 
 /// Factory for generating synthetic QSO data for performance testing
+@MainActor
 enum QSOFactory {
     // MARK: Internal
 

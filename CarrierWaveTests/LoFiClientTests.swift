@@ -3,6 +3,7 @@ import XCTest
 
 // MARK: - LoFiClientTests
 
+@MainActor
 final class LoFiClientTests: XCTestCase {
     func testParseRegistrationResponse() throws {
         let json = """

@@ -8,6 +8,7 @@
 import XCTest
 @testable import CarrierWave
 
+@MainActor
 final class ADIFParserTests: XCTestCase {
     func testParseSimpleRecord() throws {
         let adif = "<call:4>W1AW <band:3>20m <mode:2>CW <qso_date:8>20240115 <time_on:4>1430 <eor>"
@@ -64,7 +65,9 @@ final class ADIFParserTests: XCTestCase {
         formatter.dateFormat = "yyyy-MM-dd HH:mm"
         formatter.timeZone = TimeZone(identifier: "UTC")
 
-        XCTAssertEqual(try formatter.string(from: XCTUnwrap(records[0].timestamp)), "2024-01-15 14:30")
+        XCTAssertEqual(
+            try formatter.string(from: XCTUnwrap(records[0].timestamp)), "2024-01-15 14:30"
+        )
     }
 
     func testParsePOTAFields() throws {
