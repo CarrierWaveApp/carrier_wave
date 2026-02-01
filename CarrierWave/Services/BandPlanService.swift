@@ -48,7 +48,7 @@ enum BandPlanService {
             return BandPlanViolation(
                 type: .outOfBand,
                 message:
-                "Frequency \(String(format: "%.3f", frequencyMHz)) MHz is outside amateur bands",
+                "Frequency \(FrequencyFormatter.formatWithUnit(frequencyMHz)) is outside amateur bands",
                 suggestion: suggestNearestBand(frequencyMHz: frequencyMHz)
             )
         }
@@ -64,7 +64,7 @@ enum BandPlanService {
                 return BandPlanViolation(
                     type: .unusualFrequency,
                     message:
-                    "\(String(format: "%.3f", frequencyMHz)) MHz is not a typical CW frequency",
+                    "\(FrequencyFormatter.formatWithUnit(frequencyMHz)) is not a typical CW frequency",
                     suggestion: "Usually \(typicalModesStr) here"
                 )
             }
@@ -73,7 +73,8 @@ enum BandPlanService {
             let allowedModes = Set(matchingSegments.flatMap(\.modes))
             return BandPlanViolation(
                 type: .wrongMode,
-                message: "\(mode) is not allowed at \(String(format: "%.3f", frequencyMHz)) MHz",
+                message:
+                "\(mode) is not allowed at \(FrequencyFormatter.formatWithUnit(frequencyMHz))",
                 suggestion: "Try: \(allowedModes.joined(separator: ", "))"
             )
         }
@@ -98,10 +99,26 @@ enum BandPlanService {
                             < (privilegeOrder.firstIndex(of: b) ?? 0)
                     } ?? .extra
 
-            let freqStr = String(format: "%.3f", frequencyMHz)
+            // For Technicians, check if they have ANY privileges on this band
+            // If not, show a clearer message that the entire band is off-limits
+            if license == .technician, let band = matchingSegments.first?.band {
+                let techPrivilegesOnBand = BandPlan.segments.filter { segment in
+                    segment.band == band && segment.minimumLicense == .technician
+                }
+
+                if techPrivilegesOnBand.isEmpty {
+                    return BandPlanViolation(
+                        type: .noPrivileges,
+                        message: "Technicians cannot operate in any mode within the \(band) band",
+                        suggestion: "Requires General or higher"
+                    )
+                }
+            }
+
+            let freqStr = FrequencyFormatter.formatWithUnit(frequencyMHz)
             return BandPlanViolation(
                 type: .noPrivileges,
-                message: "\(license.displayName) license cannot operate \(mode) at \(freqStr) MHz",
+                message: "\(license.displayName) license cannot operate \(mode) at \(freqStr)",
                 suggestion: "Requires \(requiredLicense.displayName) or higher"
             )
         }

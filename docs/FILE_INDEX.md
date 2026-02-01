@@ -258,6 +258,7 @@ This index maps files to their purpose. Use it to locate files by feature instea
 ## Utilities (`CarrierWave/Utilities/`)
 | File | Purpose |
 |------|---------|
+| `FrequencyFormatter.swift` | Frequency formatting with sub-kHz precision support |
 | `KeychainHelper.swift` | Secure credential storage |
 | `MaidenheadConverter.swift` | Grid square to coordinate conversion |
 

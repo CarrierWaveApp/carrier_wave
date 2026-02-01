@@ -449,7 +449,7 @@ struct FrequencySuggestionsView: View {
     ]
 
     private func bandButton(band: String, freq: Double) -> some View {
-        let freqString = String(format: "%.3f", freq)
+        let freqString = FrequencyFormatter.format(freq)
         let isSelected = frequency == freqString
 
         return Button {

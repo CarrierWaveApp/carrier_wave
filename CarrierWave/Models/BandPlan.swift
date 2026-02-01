@@ -78,6 +78,10 @@ enum BandPlan {
             minimumLicense: .general, notes: "General CW/Data"
         ),
         BandSegment(
+            band: "80m", startMHz: 3.525, endMHz: 3.600, modes: ["CW"],
+            minimumLicense: .technician, notes: "Tech CW only"
+        ),
+        BandSegment(
             band: "80m", startMHz: 3.800, endMHz: 4.000, modes: ["SSB", "PHONE"],
             minimumLicense: .extra, notes: "Extra Phone"
         ),
@@ -116,6 +120,10 @@ enum BandPlan {
         BandSegment(
             band: "40m", startMHz: 7.025, endMHz: 7.125, modes: ["CW", "DATA"],
             minimumLicense: .general, notes: "General CW/Data"
+        ),
+        BandSegment(
+            band: "40m", startMHz: 7.025, endMHz: 7.125, modes: ["CW"],
+            minimumLicense: .technician, notes: "Tech CW only"
         ),
         BandSegment(
             band: "40m", startMHz: 7.125, endMHz: 7.175, modes: ["SSB", "PHONE"],
@@ -172,6 +180,10 @@ enum BandPlan {
         BandSegment(
             band: "15m", startMHz: 21.025, endMHz: 21.200, modes: ["CW", "DATA"],
             minimumLicense: .general, notes: "General CW/Data"
+        ),
+        BandSegment(
+            band: "15m", startMHz: 21.025, endMHz: 21.200, modes: ["CW"],
+            minimumLicense: .technician, notes: "Tech CW only"
         ),
         BandSegment(
             band: "15m", startMHz: 21.200, endMHz: 21.225, modes: ["SSB", "PHONE"],

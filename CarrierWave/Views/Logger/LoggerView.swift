@@ -218,7 +218,7 @@ struct LoggerView: View {
                 }
             } message: {
                 if let freq = qsyNewFrequency {
-                    Text("Post a QSY spot to POTA at \(String(format: "%.3f", freq)) MHz?")
+                    Text("Post a QSY spot to POTA at \(FrequencyFormatter.formatWithUnit(freq))?")
                 } else {
                     Text("Post a QSY spot to POTA?")
                 }
@@ -988,7 +988,7 @@ struct LoggerView: View {
                 }
 
                 if let freq = session.frequency {
-                    Text(String(format: "%.3f MHz", freq))
+                    Text(FrequencyFormatter.formatWithUnit(freq))
                         .font(.caption.monospaced())
                 }
 
@@ -1096,7 +1096,7 @@ struct LoggerView: View {
 
     private func executeFrequencyCommand(_ freq: Double) {
         let result = sessionManager?.updateFrequency(freq)
-        ToastManager.shared.commandExecuted("FREQ", result: String(format: "%.3f MHz", freq))
+        ToastManager.shared.commandExecuted("FREQ", result: FrequencyFormatter.formatWithUnit(freq))
 
         // Auto-switch mode based on frequency segment (if enabled)
         if autoModeSwitch, let suggestedMode = result?.suggestedMode {
@@ -1540,7 +1540,7 @@ struct LoggerQSORow: View {
             VStack(alignment: .trailing, spacing: 2) {
                 // Frequency or band
                 if let freq = qso.frequency {
-                    Text(String(format: "%.3f", freq))
+                    Text(FrequencyFormatter.format(freq))
                         .font(.caption.monospaced())
                         .foregroundStyle(.secondary)
                 } else {

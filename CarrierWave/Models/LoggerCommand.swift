@@ -62,7 +62,7 @@ enum LoggerCommand: Equatable {
     var description: String {
         switch self {
         case let .frequency(freq):
-            String(format: "Set frequency to %.3f MHz", freq)
+            "Set frequency to \(FrequencyFormatter.formatWithUnit(freq))"
         case let .mode(mode):
             "Set mode to \(mode)"
         case let .spot(comment):

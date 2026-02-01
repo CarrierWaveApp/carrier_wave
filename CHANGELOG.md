@@ -9,13 +9,19 @@ All notable changes to Carrier Wave will be documented in this file.
   - See all hidden QSOs across the app
   - Restore individual QSOs or all at once
   - Option to permanently delete hidden QSOs
+- **Sub-kHz Frequency Precision** - Logger now supports entering and displaying frequencies with sub-kHz precision (e.g., 14.03050 MHz)
 
 ### Changed
 - **Delete Session Confirmation** - Session deletion now requires typing "delete" to confirm, preventing accidental data loss
+- **Onboarding Skip Button** - Button now shows "Next" instead of "Skip" when services have been connected, clarifying that connections are saved
+- **iPad Sidebar Shows All Tabs** - iPad now shows all tabs in the sidebar by default (no 4-tab limit)
+- **Technician Band Warning** - Clearer warning message for bands where Technicians have no privileges at all (e.g., "Technicians cannot operate in any mode within the 20m band")
 
 ### Fixed
 - **Settings Crash on Launch** - Fixed crash when navigating to service settings (QRZ, POTA, LoFi, etc.) due to missing SyncService environment object
 - **Logger Submit Crash** - Fixed crash when pressing Return in logger callsign field while keyboard is dismissing
+- **Technician CW Privileges** - Fixed incorrect warnings for Technicians operating CW on 80m (3.525-3.600), 40m (7.025-7.125), and 15m (21.025-21.200) bands
+- **iPad Tab Settings** - Tab bar setting changes now take effect immediately on iPad without requiring app restart
 
 ## [1.15.3] - 2026-01-31
 

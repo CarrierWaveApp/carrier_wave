@@ -293,6 +293,7 @@ struct ContentView: View {
     @State private var showOnboarding = false
     @State private var moreTabNavigationPath = NavigationPath()
     @State private var visibleTabs: [AppTab] = TabConfiguration.visibleTabs()
+    @State private var iPadTabs: [AppTab] = TabConfiguration.tabOrder()
 
     private let lofiClient = LoFiClient()
     private let qrzClient = QRZClient()
@@ -312,12 +313,17 @@ struct ContentView: View {
 
     private var iPadNavigation: some View {
         NavigationSplitView {
-            List(visibleTabs, id: \.self, selection: $selectedTab) { tab in
+            // iPad shows all tabs in sidebar (plenty of room)
+            List(iPadTabs, id: \.self, selection: $selectedTab) { tab in
                 Label(tab.title, systemImage: tab.icon)
             }
             .navigationTitle("Carrier Wave")
         } detail: {
             selectedTabContent
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .tabConfigurationChanged)) { _ in
+            // Update tab order (iPad shows all tabs, just respects order)
+            iPadTabs = TabConfiguration.tabOrder()
         }
     }
 

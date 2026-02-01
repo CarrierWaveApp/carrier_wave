@@ -521,7 +521,7 @@ final class LoggingSessionManager {
             SyncDebugLog.shared.info("\(msg) for \(parkRef)", service: .pota)
             if showToast {
                 ToastManager.shared.spotPosted(
-                    park: parkRef, comment: "QSY to \(String(format: "%.3f", freq))"
+                    park: parkRef, comment: "QSY to \(FrequencyFormatter.format(freq))"
                 )
             }
         } catch {

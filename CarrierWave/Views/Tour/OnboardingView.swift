@@ -362,7 +362,7 @@ struct OnboardingView: View {
             .buttonStyle(.borderedProminent)
 
         case .connectServices:
-            Button("Next") {
+            Button(connectedServices.isEmpty ? "Skip" : "Next") {
                 withAnimation {
                     currentStep = .complete
                 }

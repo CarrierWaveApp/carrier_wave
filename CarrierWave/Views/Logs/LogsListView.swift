@@ -186,7 +186,7 @@ struct QSORow: View {
 
             HStack {
                 if let freq = qso.frequency {
-                    Label(String(format: "%.3f", freq), systemImage: "waveform")
+                    Label(FrequencyFormatter.format(freq), systemImage: "waveform")
                 }
                 Label(qso.band, systemImage: "antenna.radiowaves.left.and.right")
                 Label(qso.mode, systemImage: "dot.radiowaves.left.and.right")
