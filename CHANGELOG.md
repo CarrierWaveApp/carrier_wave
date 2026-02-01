@@ -4,18 +4,24 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.16.0] - 2026-01-31
+
 ### Added
 - **Hidden QSOs Management** - View and restore hidden (deleted) QSOs in Settings → Developer → Hidden QSOs
   - See all hidden QSOs across the app
   - Restore individual QSOs or all at once
   - Option to permanently delete hidden QSOs
 - **Sub-kHz Frequency Precision** - Logger now supports entering and displaying frequencies with sub-kHz precision (e.g., 14.03050 MHz)
+- **Auto-Focus Callsign Field** - Callsign field is automatically focused after logging a QSO for rapid contest-style entry
+- **Background QSO Enrichment** - Grid, name, and other callsign data are now saved to QSOs even when logged before lookup completes
 
 ### Changed
 - **Delete Session Confirmation** - Session deletion now requires typing "delete" to confirm, preventing accidental data loss
 - **Onboarding Skip Button** - Button now shows "Next" instead of "Skip" when services have been connected, clarifying that connections are saved
 - **iPad Sidebar Shows All Tabs** - iPad now shows all tabs in the sidebar by default (no 4-tab limit)
 - **Technician Band Warning** - Clearer warning message for bands where Technicians have no privileges at all (e.g., "Technicians cannot operate in any mode within the 20m band")
+- **RST Fields** - RST fields now start empty with placeholder hints (599/59) instead of pre-filled values
+- **Removed Quick Log Mode** - Fast logging is now the default and only mode; setting removed from preferences
 
 ### Fixed
 - **Settings Crash on Launch** - Fixed crash when navigating to service settings (QRZ, POTA, LoFi, etc.) due to missing SyncService environment object
