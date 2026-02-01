@@ -4,6 +4,16 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.16.1] - 2026-01-31
+
+### Added
+- **Persistent Callsign Notes Cache** - Polo notes now load instantly on app launch from disk cache, with background refresh
+
+### Fixed
+- **Session Delete Crash** - Fixed crash when deleting a logging session by properly ending the session before deletion
+- **QRZ Name Display** - Now shows QRZ nickname instead of full formal name when available
+- **False Callsign Detection** - Placeholder strings like "EVENT" are no longer incorrectly detected as unconfigured callsigns
+
 ## [1.16.0] - 2026-01-31
 
 ### Added
