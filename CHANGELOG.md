@@ -4,6 +4,9 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- Fix crash when deleting QSOs from Logs tab due to array index invalidation during SwiftUI list update
+
 ## [1.17.0] - 2026-02-01
 
 ### Added
