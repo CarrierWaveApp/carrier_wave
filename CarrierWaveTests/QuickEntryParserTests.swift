@@ -6,6 +6,7 @@
 import XCTest
 @testable import CarrierWave
 
+@MainActor
 final class QuickEntryParserTests: XCTestCase {
     // MARK: - Callsign Detection
 
@@ -209,5 +210,118 @@ final class QuickEntryParserTests: XCTestCase {
         XCTAssertFalse(QuickEntryParser.isStateOrRegion("W1")) // Callsign prefix
         XCTAssertFalse(QuickEntryParser.isStateOrRegion("599")) // RST
         XCTAssertFalse(QuickEntryParser.isStateOrRegion("USA")) // Too long
+    }
+
+    // MARK: - Integration Tests
+
+    func testFullEntryWithAllFields() {
+        // Full entry: "AJ7CM 579 WA US-0189" should parse all fields correctly
+        let result = QuickEntryParser.parse("AJ7CM 579 WA US-0189")
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result?.callsign, "AJ7CM")
+        XCTAssertEqual(result?.rstReceived, "579")
+        XCTAssertEqual(result?.state, "WA")
+        XCTAssertEqual(result?.theirPark, "US-0189")
+        XCTAssertNil(result?.rstSent)
+        XCTAssertNil(result?.theirGrid)
+        XCTAssertNil(result?.notes)
+    }
+
+    func testCallsignWithRSTGridAndNotes() {
+        // With grid: "W1AW 59 CN87 notes here" should capture callsign, RST, grid, and notes
+        let result = QuickEntryParser.parse("W1AW 59 CN87 notes here")
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result?.callsign, "W1AW")
+        XCTAssertEqual(result?.rstReceived, "59")
+        XCTAssertEqual(result?.theirGrid, "CN87")
+        XCTAssertEqual(result?.notes, "NOTES HERE")
+    }
+
+    func testOrderIndependenceRSTBeforePark() {
+        // Order independence: "W1AW 579 US-0189" should work
+        let result = QuickEntryParser.parse("W1AW 579 US-0189")
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result?.callsign, "W1AW")
+        XCTAssertEqual(result?.rstReceived, "579")
+        XCTAssertEqual(result?.theirPark, "US-0189")
+    }
+
+    func testOrderIndependenceParkBeforeRST() {
+        // Order independence: "W1AW US-0189 579" should work same as above
+        let result = QuickEntryParser.parse("W1AW US-0189 579")
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result?.callsign, "W1AW")
+        XCTAssertEqual(result?.rstReceived, "579")
+        XCTAssertEqual(result?.theirPark, "US-0189")
+    }
+
+    func testMultipleUnrecognizedTokensBecomeNotes() {
+        // Multiple unrecognized tokens become notes: "W1AW 59 hello world" → notes = "HELLO WORLD"
+        let result = QuickEntryParser.parse("W1AW 59 hello world")
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result?.callsign, "W1AW")
+        XCTAssertEqual(result?.rstReceived, "59")
+        XCTAssertEqual(result?.notes, "HELLO WORLD")
+    }
+
+    func testP2PScenarioWithSentReceivedParkStateAndNotes() {
+        // P2P scenario: "K3LR 599 599 US-1234 PA working from home"
+        // → sent, received, park, state, notes
+        let result = QuickEntryParser.parse("K3LR 599 599 US-1234 PA working from home")
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result?.callsign, "K3LR")
+        XCTAssertEqual(result?.rstSent, "599")
+        XCTAssertEqual(result?.rstReceived, "599")
+        XCTAssertEqual(result?.theirPark, "US-1234")
+        XCTAssertEqual(result?.state, "PA")
+        XCTAssertEqual(result?.notes, "WORKING FROM HOME")
+    }
+
+    func testGridWithStateAndNotes() {
+        // Grid with state and notes
+        let result = QuickEntryParser.parse("VE3ABC 59 FN03 ON great signal")
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result?.callsign, "VE3ABC")
+        XCTAssertEqual(result?.rstReceived, "59")
+        XCTAssertEqual(result?.theirGrid, "FN03")
+        XCTAssertEqual(result?.state, "ON")
+        XCTAssertEqual(result?.notes, "GREAT SIGNAL")
+    }
+
+    func testAllFieldsPopulated() {
+        // Maximum complexity: callsign, sent RST, received RST, park, state, grid, notes
+        let result = QuickEntryParser.parse("W1AW 559 579 US-0001 CT FN31 testing all fields")
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result?.callsign, "W1AW")
+        XCTAssertEqual(result?.rstSent, "559")
+        XCTAssertEqual(result?.rstReceived, "579")
+        XCTAssertEqual(result?.theirPark, "US-0001")
+        XCTAssertEqual(result?.state, "CT")
+        XCTAssertEqual(result?.theirGrid, "FN31")
+        XCTAssertEqual(result?.notes, "TESTING ALL FIELDS")
+    }
+
+    func testNotesWithMixedCase() {
+        // Notes should be uppercased
+        let result = QuickEntryParser.parse("W1AW 59 Hello World")
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result?.notes, "HELLO WORLD")
+    }
+
+    func testSingleUnrecognizedTokenBecomesNotes() {
+        let result = QuickEntryParser.parse("W1AW 59 portable")
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result?.callsign, "W1AW")
+        XCTAssertEqual(result?.rstReceived, "59")
+        XCTAssertEqual(result?.notes, "PORTABLE")
+    }
+
+    func testNoNotesWhenAllTokensRecognized() {
+        let result = QuickEntryParser.parse("W1AW 579 US-0189")
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result?.callsign, "W1AW")
+        XCTAssertEqual(result?.rstReceived, "579")
+        XCTAssertEqual(result?.theirPark, "US-0189")
+        XCTAssertNil(result?.notes)
     }
 }
