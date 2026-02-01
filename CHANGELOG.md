@@ -22,6 +22,11 @@ All notable changes to Carrier Wave will be documented in this file.
 - **Logger Submit Crash** - Fixed crash when pressing Return in logger callsign field while keyboard is dismissing
 - **Technician CW Privileges** - Fixed incorrect warnings for Technicians operating CW on 80m (3.525-3.600), 40m (7.025-7.125), and 15m (21.025-21.200) bands
 - **iPad Tab Settings** - Tab bar setting changes now take effect immediately on iPad without requiring app restart
+- **Logger Submit Lag** - QSO logging is now instant with no visible delay
+  - Replaced full-database @Query with session-scoped fetch
+  - Cached service configuration to avoid Keychain reads per-QSO
+  - Prevented redundant callsign lookups when QSO list re-renders
+  - Disabled animations during form reset for immediate feedback
 
 ## [1.15.3] - 2026-01-31
 

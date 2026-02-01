@@ -12,6 +12,21 @@ This document defines the requirements for the logger feature. **Every change to
 - Background operations (lookups, syncs) must not block the UI
 - Minimize re-renders and unnecessary state updates
 
+### 1a. Instant QSO Logging
+
+**QSO submission must be instant—users should never wait for metadata.**
+
+- When the user taps "Log QSO", the QSO is saved immediately to SwiftData
+- The form clears and is ready for the next contact within milliseconds
+- All metadata enrichment happens in the background after the QSO is saved:
+  - QRZ callsign lookups (name, grid, location, license class)
+  - Polo notes lookup
+  - Previous contact count calculation
+  - POTA park-to-park detection (checking active spots)
+- The QSO list should show progressive loading states for pending metadata
+- If the user has pre-fetched callsign info (displayed in the callsign card), use it immediately
+- Background enrichment only runs for fields not already populated at log time
+
 ## 2. Log Deletion Policy
 
 **Logs must never be deleted—only hidden.**
@@ -86,6 +101,7 @@ This document defines the requirements for the logger feature. **Every change to
 When modifying logger code, verify:
 
 - [ ] UI remains responsive and uncluttered (requirement 1)
+- [ ] QSO logging is instant with no blocking operations (requirement 1a)
 - [ ] No code path deletes QSO records (requirement 2)
 - [ ] Default queries exclude hidden logs (requirement 3)
 - [ ] All data sources are queried independently (requirement 4)

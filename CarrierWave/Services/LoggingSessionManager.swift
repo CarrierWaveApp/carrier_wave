@@ -69,6 +69,9 @@ final class LoggingSessionManager {
         activeSession = session
         saveActiveSessionId(session.id)
 
+        // Cache service configuration to avoid Keychain reads per-QSO
+        cacheServiceConfiguration()
+
         // Prevent screen timeout during active session
         if keepScreenOn {
             UIApplication.shared.isIdleTimerDisabled = true
@@ -433,6 +436,10 @@ final class LoggingSessionManager {
 
     private let modelContext: ModelContext
 
+    /// Cached service configuration (checked once at session start to avoid Keychain reads per-QSO)
+    private var qrzConfigured = false
+    private var lofiConfigured = false
+
     /// Key for storing active session ID in UserDefaults
     private let activeSessionIdKey = "activeLoggingSessionId"
 
@@ -547,6 +554,8 @@ final class LoggingSessionManager {
             let sessions = try modelContext.fetch(descriptor)
             if let session = sessions.first, session.isActive {
                 activeSession = session
+                // Cache service configuration for restored session
+                cacheServiceConfiguration()
                 // Prevent screen timeout for restored active session
                 if keepScreenOn {
                     UIApplication.shared.isIdleTimerDisabled = true
@@ -590,10 +599,15 @@ final class LoggingSessionManager {
     }
 
     /// Mark QSO for upload to configured services
+    /// Cache service configuration to avoid Keychain reads per-QSO
+    private func cacheServiceConfiguration() {
+        qrzConfigured = (try? KeychainHelper.shared.read(for: KeychainHelper.Keys.qrzApiKey)) != nil
+        lofiConfigured = UserDefaults.standard.bool(forKey: "lofi.deviceLinked")
+    }
+
     private func markForUpload(_ qso: QSO) {
-        // Check which services are configured and mark accordingly
-        // QRZ
-        if (try? KeychainHelper.shared.read(for: KeychainHelper.Keys.qrzApiKey)) != nil {
+        // Use cached service configuration (checked at session start)
+        if qrzConfigured {
             qso.markNeedsUpload(to: .qrz, context: modelContext)
         }
 
@@ -604,8 +618,8 @@ final class LoggingSessionManager {
             qso.markNeedsUpload(to: .pota, context: modelContext)
         }
 
-        // LoFi
-        if UserDefaults.standard.bool(forKey: "lofi.deviceLinked") {
+        // LoFi (use cached value)
+        if lofiConfigured {
             qso.markNeedsUpload(to: .lofi, context: modelContext)
         }
     }

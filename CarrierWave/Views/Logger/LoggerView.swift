@@ -140,6 +140,9 @@ struct LoggerView: View {
                         myGrid: defaultGrid.isEmpty ? nil : defaultGrid
                     )
                 }
+
+                // Load session QSOs after session manager is ready
+                refreshSessionQSOs()
             }
             .animation(quickLogMode ? nil : .easeInOut(duration: 0.2), value: lookupResult != nil)
             .animation(quickLogMode ? nil : .easeInOut(duration: 0.2), value: lookupError)
@@ -166,6 +169,9 @@ struct LoggerView: View {
                     rstSent = newDefault
                     rstReceived = newDefault
                 }
+            }
+            .onChange(of: sessionManager?.activeSession?.id) { _, _ in
+                refreshSessionQSOs()
             }
             .overlay(alignment: .bottom) {
                 panelOverlays
@@ -267,12 +273,8 @@ struct LoggerView: View {
     @AppStorage("loggerShowTheirPark") private var showTheirParkAlways = false
     @AppStorage("loggerShowOperator") private var showOperatorAlways = false
 
-    @Query(
-        filter: #Predicate<QSO> { !$0.isHidden },
-        sort: \QSO.timestamp,
-        order: .reverse
-    )
-    private var allQSOs: [QSO]
+    /// QSOs for the current session (manually fetched, not @Query to avoid full-database refresh)
+    @State private var sessionQSOs: [QSO] = []
 
     @State private var sessionManager: LoggingSessionManager?
 
@@ -338,11 +340,7 @@ struct LoggerView: View {
 
     /// QSOs for the current session only
     private var displayQSOs: [QSO] {
-        guard let session = sessionManager?.activeSession else {
-            return []
-        }
-        let sessionId = session.id
-        return allQSOs.filter { $0.loggingSessionId == sessionId }
+        sessionQSOs
     }
 
     /// Whether the log button should be enabled
@@ -1035,6 +1033,29 @@ struct LoggerView: View {
         .background(Color(.secondarySystemGroupedBackground))
     }
 
+    /// Refresh the session QSOs from SwiftData
+    private func refreshSessionQSOs() {
+        guard let session = sessionManager?.activeSession else {
+            sessionQSOs = []
+            return
+        }
+
+        let sessionId = session.id
+        let predicate = #Predicate<QSO> { qso in
+            qso.loggingSessionId == sessionId && !qso.isHidden
+        }
+        let descriptor = FetchDescriptor<QSO>(
+            predicate: predicate,
+            sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+        )
+
+        do {
+            sessionQSOs = try modelContext.fetch(descriptor)
+        } catch {
+            sessionQSOs = []
+        }
+    }
+
     /// Compute POTA duplicate status - called only when callsign changes
     private func computePotaDuplicateStatus() -> POTACallsignStatus? {
         guard let session = sessionManager?.activeSession,
@@ -1141,11 +1162,6 @@ struct LoggerView: View {
     }
 
     private func checkSessionGridWarnings() {
-        let sessionId = sessionManager?.activeSession?.id
-        let sessionQSOs =
-            sessionId.map { id in
-                allQSOs.filter { $0.loggingSessionId == id }
-            } ?? []
         let qsosWithGrid = sessionQSOs.filter {
             $0.theirGrid != nil && !$0.theirGrid!.isEmpty
         }
@@ -1328,19 +1344,24 @@ struct LoggerView: View {
             theirLicenseClass: lookupResult?.licenseClass
         )
 
-        // Reset form
-        callsignInput = ""
-        lookupResult = nil
-        lookupError = nil
-        cachedPotaDuplicateStatus = nil
-        theirGrid = ""
-        theirPark = ""
-        notes = ""
-        operatorName = ""
+        // Refresh the QSO list with the new entry
+        refreshSessionQSOs()
 
-        // Reset RST to defaults based on mode
-        rstSent = defaultRST
-        rstReceived = defaultRST
+        // Reset form without animations for instant feedback
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            callsignInput = ""
+            lookupResult = nil
+            lookupError = nil
+            cachedPotaDuplicateStatus = nil
+            theirGrid = ""
+            theirPark = ""
+            notes = ""
+            operatorName = ""
+            rstSent = defaultRST
+            rstReceived = defaultRST
+        }
     }
 
     private func lookupParkName(_ reference: String?) -> String? {
@@ -1414,7 +1435,22 @@ struct LoggerQSORow: View {
         .sheet(isPresented: $showEditSheet) {
             QSOEditSheet(qso: qso)
         }
-        .task {
+        .onAppear {
+            // Use QSO's stored data if available (from pre-fetch during logging)
+            if callsignInfo == nil, qso.name != nil || qso.theirGrid != nil {
+                callsignInfo = CallsignInfo(
+                    callsign: qso.callsign,
+                    name: qso.name,
+                    qth: qso.qth,
+                    state: qso.state,
+                    country: qso.country,
+                    grid: qso.theirGrid,
+                    licenseClass: qso.theirLicenseClass,
+                    source: .qrz
+                )
+            }
+        }
+        .task(id: qso.id) {
             await lookupCallsign()
         }
     }
@@ -1584,6 +1620,13 @@ struct LoggerQSORow: View {
     }
 
     private func lookupCallsign() async {
+        // Skip if we already have callsign info from logging or previous lookup
+        guard callsignInfo == nil,
+              qso.name == nil, qso.theirGrid == nil
+        else {
+            return
+        }
+
         let service = CallsignLookupService(modelContext: modelContext)
         callsignInfo = await service.lookup(qso.callsign)
     }
