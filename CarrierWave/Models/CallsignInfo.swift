@@ -21,6 +21,8 @@ struct CallsignInfo: Codable, Identifiable, Equatable, Sendable {
     nonisolated init(
         callsign: String,
         name: String? = nil,
+        firstName: String? = nil,
+        nickname: String? = nil,
         note: String? = nil,
         emoji: String? = nil,
         qth: String? = nil,
@@ -35,6 +37,8 @@ struct CallsignInfo: Codable, Identifiable, Equatable, Sendable {
     ) {
         self.callsign = callsign.uppercased()
         self.name = name
+        self.firstName = firstName
+        self.nickname = nickname
         self.note = note
         self.emoji = emoji
         self.qth = qth
@@ -53,8 +57,14 @@ struct CallsignInfo: Codable, Identifiable, Equatable, Sendable {
     /// The callsign (always uppercase)
     let callsign: String
 
-    /// Operator name
+    /// Operator full name (first + last) or just name from Polo notes
     let name: String?
+
+    /// First name only (from QRZ)
+    let firstName: String?
+
+    /// Nickname (from QRZ)
+    let nickname: String?
 
     /// Note from Polo notes list (e.g., "POTA activator")
     let note: String?
@@ -92,6 +102,20 @@ struct CallsignInfo: Codable, Identifiable, Equatable, Sendable {
     /// Unique identifier (the callsign)
     nonisolated var id: String {
         callsign
+    }
+
+    /// Display name for the operator, prioritizing nickname > firstName > name
+    nonisolated var displayName: String? {
+        if let nickname, !nickname.isEmpty {
+            return nickname
+        }
+        if let firstName, !firstName.isEmpty {
+            return firstName
+        }
+        if let name, !name.isEmpty {
+            return name
+        }
+        return nil
     }
 
     /// Full location string (city, state, country)

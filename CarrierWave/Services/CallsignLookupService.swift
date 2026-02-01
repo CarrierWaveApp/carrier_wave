@@ -174,6 +174,8 @@ final class CallsignLookupService {
                 let merged = CallsignInfo(
                     callsign: normalizedCallsign,
                     name: qrz.name,
+                    firstName: qrz.firstName,
+                    nickname: qrz.nickname,
                     note: polo.note,
                     emoji: polo.emoji,
                     qth: qrz.qth,
@@ -607,10 +609,10 @@ extension CallsignLookupService {
     }
 
     private func parseCallsignInfoFromXML(_ xmlString: String, callsign: String) -> CallsignInfo? {
-        let name = combineNames(
-            first: parseXMLValue(from: xmlString, tag: "fname"),
-            last: parseXMLValue(from: xmlString, tag: "name")
-        )
+        let firstName = parseXMLValue(from: xmlString, tag: "fname")
+        let lastName = parseXMLValue(from: xmlString, tag: "name")
+        let nickname = parseXMLValue(from: xmlString, tag: "nickname")
+        let name = combineNames(first: firstName, last: lastName)
         let grid = parseXMLValue(from: xmlString, tag: "grid")
         let qth = parseXMLValue(from: xmlString, tag: "addr2")
         let state = parseXMLValue(from: xmlString, tag: "state")
@@ -624,6 +626,8 @@ extension CallsignLookupService {
         return CallsignInfo(
             callsign: callsign,
             name: name,
+            firstName: firstName,
+            nickname: nickname,
             qth: qth,
             state: state,
             country: country,

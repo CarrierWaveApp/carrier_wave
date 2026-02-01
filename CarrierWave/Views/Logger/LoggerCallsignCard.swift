@@ -20,7 +20,7 @@ struct LoggerCallsignCard: View {
                         notesDisplay
                     }
 
-                    if let name = info.name {
+                    if let name = info.displayName {
                         Text(name)
                             .font(.subheadline)
                             .foregroundStyle(.primary)
@@ -210,7 +210,7 @@ struct CompactCallsignBar: View {
                     .font(.body)
             }
 
-            if let name = info.name {
+            if let name = info.displayName {
                 Text(name)
                     .font(.subheadline.weight(.medium))
                     .lineLimit(1)

@@ -38,7 +38,7 @@ struct CWCallsignInfoCard: View {
             }
 
             // Name
-            if let name = info.name {
+            if let name = info.displayName {
                 Text(name)
                     .font(.subheadline)
                     .foregroundStyle(.primary)
@@ -117,7 +117,7 @@ struct CWCallsignInfoChip: View {
                     .font(.caption)
             }
 
-            if let name = info.name {
+            if let name = info.displayName {
                 Text(name)
                     .font(.caption)
                     .foregroundStyle(.secondary)
