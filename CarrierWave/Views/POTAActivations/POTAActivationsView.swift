@@ -79,14 +79,15 @@ struct POTAActivationsContentView: View {
                 Text(rejectMessage(for: parkDisplay, pendingCount: activation.pendingCount))
             }
         }
-        .onAppear {
+        .task {
+            await loadParkQSOs()
             if isAuthenticated, potaClient != nil, jobs.isEmpty {
-                Task { await refreshJobs() }
+                await refreshJobs()
             }
+            await loadCachedParkNames()
+        }
+        .onAppear {
             startMaintenanceTimer()
-            Task {
-                await loadCachedParkNames()
-            }
         }
         .onDisappear {
             stopMaintenanceTimer()
@@ -95,14 +96,19 @@ struct POTAActivationsContentView: View {
 
     // MARK: Private
 
+    /// Batch size for loading QSOs
+    private static let batchSize = 500
+
     @Environment(\.modelContext) private var modelContext
     @AppStorage("debugMode") private var debugMode = false
     @AppStorage("bypassPOTAMaintenance") private var bypassMaintenance = false
-    @Query(filter: #Predicate<QSO> { $0.parkReference != nil && !$0.isHidden })
-    private var allParkQSOs: [QSO]
+
+    /// Park QSOs loaded on demand (not using @Query to avoid full table scan)
+    @State private var allParkQSOs: [QSO] = []
 
     @State private var jobs: [POTAJob] = []
     @State private var isLoading = false
+    @State private var isLoadingQSOs = false
     @State private var errorMessage: String?
     @State private var activationToUpload: POTAActivation?
     @State private var activationToReject: POTAActivation?
@@ -279,6 +285,45 @@ struct POTAActivationsContentView: View {
 // MARK: - Actions
 
 extension POTAActivationsContentView {
+    /// Load park QSOs in background with batch processing
+    func loadParkQSOs() async {
+        isLoadingQSOs = true
+        defer { isLoadingQSOs = false }
+
+        var loadedQSOs: [QSO] = []
+
+        // Get count of park QSOs
+        let countDescriptor = FetchDescriptor<QSO>(
+            predicate: #Predicate { $0.parkReference != nil && !$0.isHidden }
+        )
+        let totalCount = (try? modelContext.fetchCount(countDescriptor)) ?? 0
+
+        // Load in batches
+        var offset = 0
+        while offset < totalCount {
+            var descriptor = FetchDescriptor<QSO>(
+                predicate: #Predicate { $0.parkReference != nil && !$0.isHidden }
+            )
+            descriptor.sortBy = [SortDescriptor(\QSO.timestamp, order: .reverse)]
+            descriptor.fetchOffset = offset
+            descriptor.fetchLimit = Self.batchSize
+
+            guard let batch = try? modelContext.fetch(descriptor) else {
+                break
+            }
+
+            if batch.isEmpty {
+                break
+            }
+
+            loadedQSOs.append(contentsOf: batch)
+            offset += Self.batchSize
+            await Task.yield()
+        }
+
+        allParkQSOs = loadedQSOs
+    }
+
     func loadCachedParkNames() async {
         await POTAParksCache.shared.ensureLoaded()
         // Pre-load names for all parks in our activations

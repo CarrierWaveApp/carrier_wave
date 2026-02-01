@@ -236,10 +236,10 @@ extension DashboardView {
 
     /// Check for callsigns in QSOs that aren't configured as user callsigns
     func checkForUnconfiguredCallsigns() async {
-        // Get all unique MYCALLSIGN values from QSOs
-        let allMyCallsigns = Set(qsos.map { $0.myCallsign.uppercased() }.filter { !$0.isEmpty })
+        // Get all unique MYCALLSIGN values from async stats (computed in background)
+        let allMyCallsigns = asyncStats.uniqueMyCallsigns
 
-        // Skip check if no QSOs with callsigns
+        // Skip check if no QSOs with callsigns (stats may still be computing)
         guard !allMyCallsigns.isEmpty else {
             return
         }

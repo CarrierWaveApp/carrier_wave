@@ -9,8 +9,6 @@ struct DashboardView: View {
     @Environment(\.modelContext) var modelContext
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     @Environment(\.verticalSizeClass) var verticalSizeClass
-    @Query(filter: #Predicate<QSO> { !$0.isHidden }) var qsos: [QSO]
-    @Query var allPresence: [ServicePresence]
 
     @ObservedObject var iCloudMonitor: ICloudMonitor
     @ObservedObject var potaAuth: POTAAuthService
@@ -62,7 +60,9 @@ struct DashboardView: View {
 
     /// Progressive statistics - computes expensive stats in background for large datasets
     @State var asyncStats = AsyncQSOStatistics()
-    @State var lastQSOCount: Int = 0
+
+    /// Service presence counts - computed in background
+    @State var presenceCounts = AsyncServicePresenceCounts()
 
     let lofiClient = LoFiClient()
     let qrzClient = QRZClient()
@@ -108,22 +108,21 @@ struct DashboardView: View {
                 refreshServiceStatus()
             }
             .task {
+                // Compute stats and presence counts in background on first load
+                asyncStats.compute(from: modelContext)
+                presenceCounts.compute(from: modelContext)
+            }
+            .task {
+                // Check for callsign aliases after stats are computed
+                // Wait a bit for asyncStats to populate uniqueMyCallsigns
+                try? await Task.sleep(for: .milliseconds(500))
                 await checkForUnconfiguredCallsigns()
                 await checkForMismarkedPOTAPresence()
             }
-            .onChange(of: qsos.count) { _, newCount in
-                // Trigger progressive stats computation when QSO count changes
-                if newCount != lastQSOCount {
-                    lastQSOCount = newCount
-                    asyncStats.compute(from: qsos)
-                }
-            }
-            .task(id: qsos.count) {
-                // Initialize stats on first load or when count changes
-                if qsos.count != lastQSOCount {
-                    lastQSOCount = qsos.count
-                    asyncStats.compute(from: qsos)
-                }
+            .onChange(of: syncService.lastSyncTime) { _, _ in
+                // Recompute stats after sync completes
+                asyncStats.compute(from: modelContext)
+                presenceCounts.compute(from: modelContext)
             }
             // NOTE: No .onDisappear cancellation - computation continues in background
             // when user switches tabs. This is intentional because:
@@ -155,13 +154,13 @@ struct DashboardView: View {
         }
     }
 
-    /// Derived counts from ServicePresence
+    /// Derived counts from ServicePresence (computed in background)
     func uploadedCount(for service: ServiceType) -> Int {
-        allPresence.filter { $0.serviceType == service && $0.isPresent }.count
+        presenceCounts.uploadedCount(for: service)
     }
 
     func pendingCount(for service: ServiceType) -> Int {
-        allPresence.filter { $0.serviceType == service && $0.needsUpload }.count
+        presenceCounts.pendingCount(for: service)
     }
 
     // MARK: Private

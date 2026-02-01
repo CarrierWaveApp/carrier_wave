@@ -290,13 +290,10 @@ struct GoalListView: View {
 struct QualifyingQSOsView: View {
     let participation: ChallengeParticipation
 
-    @Query(filter: #Predicate<QSO> { !$0.isHidden }) var allQSOs: [QSO]
+    @Environment(\.modelContext) private var modelContext
 
-    var qualifyingQSOs: [QSO] {
-        let ids = Set(participation.progress.qualifyingQSOIds)
-        return allQSOs.filter { ids.contains($0.id) }
-            .sorted { $0.timestamp > $1.timestamp }
-    }
+    /// QSOs fetched by ID (not using @Query to avoid full table scan)
+    @State private var qualifyingQSOs: [QSO] = []
 
     var body: some View {
         List {
@@ -324,5 +321,39 @@ struct QualifyingQSOsView: View {
             }
         }
         .navigationTitle("Qualifying QSOs")
+        .task {
+            await loadQualifyingQSOs()
+        }
+    }
+
+    /// Load only the qualifying QSOs by their IDs
+    private func loadQualifyingQSOs() async {
+        let ids = participation.progress.qualifyingQSOIds
+
+        // Fetch QSOs with matching IDs
+        // SwiftData doesn't support IN queries well, so we fetch all non-hidden
+        // with a limit and filter in memory. The qualifying IDs list is typically small.
+        guard !ids.isEmpty else {
+            qualifyingQSOs = []
+            return
+        }
+
+        let idSet = Set(ids)
+
+        // For small ID sets, fetch a reasonable batch and filter
+        var descriptor = FetchDescriptor<QSO>(predicate: #Predicate { !$0.isHidden })
+        descriptor.sortBy = [SortDescriptor(\.timestamp, order: .reverse)]
+
+        // Limit fetch to avoid loading entire database
+        // Challenge qualifying QSOs are typically under 1000
+        descriptor.fetchLimit = max(idSet.count * 2, 1000)
+
+        guard let fetched = try? modelContext.fetch(descriptor) else {
+            qualifyingQSOs = []
+            return
+        }
+
+        qualifyingQSOs = fetched.filter { idSet.contains($0.id) }
+            .sorted { $0.timestamp > $1.timestamp }
     }
 }
