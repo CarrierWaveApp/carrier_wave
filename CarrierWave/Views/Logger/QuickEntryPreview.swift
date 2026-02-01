@@ -1,0 +1,123 @@
+//
+//  QuickEntryPreview.swift
+//  CarrierWave
+//
+
+import SwiftUI
+
+// MARK: - TokenType Extension
+
+extension TokenType {
+    /// Color for UI display of this token type
+    var color: Color {
+        switch self {
+        case .callsign:
+            .green
+        case .rstSent,
+             .rstReceived:
+            .blue
+        case .state:
+            .orange
+        case .park:
+            .green
+        case .grid:
+            .purple
+        case .notes:
+            .secondary
+        }
+    }
+
+    /// Short label for UI display below token badge
+    var label: String {
+        switch self {
+        case .callsign:
+            "call"
+        case .rstSent:
+            "sent"
+        case .rstReceived:
+            "rcvd"
+        case .state:
+            "state"
+        case .park:
+            "park"
+        case .grid:
+            "grid"
+        case .notes:
+            "note"
+        }
+    }
+}
+
+// MARK: - QuickEntryPreview
+
+/// Displays parsed quick entry tokens with color coding
+struct QuickEntryPreview: View {
+    let tokens: [ParsedToken]
+
+    var body: some View {
+        HStack(spacing: 8) {
+            ForEach(tokens) { token in
+                TokenBadge(token: token)
+            }
+        }
+    }
+}
+
+// MARK: - TokenBadge
+
+/// Individual token badge with text and label
+private struct TokenBadge: View {
+    let token: ParsedToken
+
+    var body: some View {
+        VStack(spacing: 2) {
+            Text(token.text)
+                .font(.system(.body, design: .monospaced))
+                .fontWeight(.medium)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(token.type.color.opacity(0.2))
+                .foregroundStyle(token.type.color)
+                .clipShape(RoundedRectangle(cornerRadius: 6))
+
+            Text(token.type.label)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+    }
+}
+
+// MARK: - Preview
+
+#Preview("Quick Entry Tokens") {
+    VStack(spacing: 20) {
+        // Full example with all token types
+        QuickEntryPreview(tokens: [
+            ParsedToken(text: "AJ7CM", type: .callsign),
+            ParsedToken(text: "579", type: .rstSent),
+            ParsedToken(text: "559", type: .rstReceived),
+            ParsedToken(text: "WA", type: .state),
+            ParsedToken(text: "US-0189", type: .park),
+            ParsedToken(text: "CN87", type: .grid),
+            ParsedToken(text: "SOTA", type: .notes),
+        ])
+
+        Divider()
+
+        // Simple example
+        QuickEntryPreview(tokens: [
+            ParsedToken(text: "W1AW", type: .callsign),
+            ParsedToken(text: "59", type: .rstReceived),
+        ])
+
+        Divider()
+
+        // POTA example
+        QuickEntryPreview(tokens: [
+            ParsedToken(text: "K3LR", type: .callsign),
+            ParsedToken(text: "US-1234", type: .park),
+            ParsedToken(text: "PA", type: .state),
+        ])
+    }
+    .padding()
+}

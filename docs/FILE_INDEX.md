@@ -160,6 +160,7 @@ This index maps files to their purpose. Use it to locate files by feature instea
 | `POTASpotsView.swift` | POTA activator spots panel with filtering |
 | `SessionMapPanelView.swift` | Map panel showing session QSOs for MAP command |
 | `SpotFilters.swift` | Band and mode filter enums for spots |
+| `QuickEntryPreview.swift` | Quick entry token display with color-coded badges |
 
 ## Views - CW Transcription (`CarrierWave/Views/CWTranscription/`)
 | File | Purpose |
