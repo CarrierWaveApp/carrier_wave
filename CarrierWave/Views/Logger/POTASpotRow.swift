@@ -64,10 +64,7 @@ struct POTASpotRow: View {
     private var frequencyDisplay: some View {
         Group {
             if let freqKHz = spot.frequencyKHz {
-                // Format as MHz with sub-kHz precision like "14.031.900"
-                let mhz = freqKHz / 1_000.0
-                let formatted = formatFrequencyWithSubKHz(mhz)
-                Text(formatted)
+                Text(formatFrequency(freqKHz / 1_000.0))
                     .font(.subheadline.monospaced())
             } else {
                 Text(spot.frequency)
@@ -90,27 +87,9 @@ struct POTASpotRow: View {
     }
 
     private var callsignRow: some View {
-        HStack(spacing: 4) {
-            Text(spot.activator)
-                .font(.subheadline.weight(.semibold).monospaced())
-                .foregroundStyle(.primary)
-
-            // Activity type icon based on reference prefix
-            if spot.reference.hasPrefix("K-") || spot.reference.hasPrefix("US-") {
-                Image(systemName: "tree.fill")
-                    .font(.caption2)
-                    .foregroundStyle(.green)
-            } else if spot.reference.contains("FF-") {
-                // Flora & Fauna
-                Image(systemName: "leaf.fill")
-                    .font(.caption2)
-                    .foregroundStyle(.green)
-            } else {
-                Image(systemName: "mappin.circle.fill")
-                    .font(.caption2)
-                    .foregroundStyle(.green)
-            }
-        }
+        Text(spot.activator)
+            .font(.subheadline.weight(.semibold).monospaced())
+            .foregroundStyle(.primary)
     }
 
     private var parkInfoRow: some View {
@@ -128,17 +107,23 @@ struct POTASpotRow: View {
 
     // MARK: - Helpers
 
-    private func formatFrequencyWithSubKHz(_ mhz: Double) -> String {
-        // Format like "14.031.900" for 14031.9 kHz
-        let wholeMHz = Int(mhz)
-        let remainder = mhz - Double(wholeMHz)
-        let kHz = Int(remainder * 1_000)
-        let subKHz = Int((remainder * 1_000 - Double(kHz)) * 1_000)
+    private func formatFrequency(_ mhz: Double) -> String {
+        // Round to nearest 100Hz and format with consistent width for alignment
+        // Pads with leading spaces so decimals align (e.g., " 7.034" vs "14.034")
+        let kHz = mhz * 1_000.0
+        let rounded100Hz = (kHz * 10).rounded() / 10 // Round to nearest 0.1 kHz (100Hz)
+        let wholekHz = Int(rounded100Hz)
+        let subkHz = Int((rounded100Hz - Double(wholekHz)) * 10 + 0.5) // 0-9 representing .0-.9
 
-        if subKHz > 0 {
-            return String(format: "%d.%03d.%03d", wholeMHz, kHz, subKHz)
+        let wholeMHz = wholekHz / 1_000
+        let remainderkHz = wholekHz % 1_000
+
+        if subkHz > 0 {
+            // With sub-kHz: "14.061.5" - pad MHz to 2 chars for alignment
+            return String(format: "%2d.%03d.%d", wholeMHz, remainderkHz, subkHz)
         } else {
-            return String(format: "%d.%03d", wholeMHz, kHz)
+            // Without sub-kHz: "14.061  " - pad with trailing spaces to match width
+            return String(format: "%2d.%03d  ", wholeMHz, remainderkHz)
         }
     }
 }

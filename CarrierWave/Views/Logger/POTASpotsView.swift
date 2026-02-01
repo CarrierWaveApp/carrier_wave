@@ -131,18 +131,18 @@ struct POTASpotsView: View {
     // MARK: - Filter Bar
 
     private var filterBar: some View {
-        VStack(spacing: 8) {
+        HStack {
             Button {
                 showFilterSheet = true
             } label: {
-                HStack(spacing: 6) {
+                HStack(spacing: 4) {
                     Image(systemName: "line.3.horizontal.decrease.circle")
                         .font(.caption)
                     Text(filterDisplayText)
-                        .font(.subheadline.weight(.medium))
+                        .font(.caption.weight(.medium))
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
                 .background(Color.blue.opacity(0.15))
                 .foregroundStyle(.blue)
                 .clipShape(Capsule())
@@ -152,12 +152,14 @@ struct POTASpotsView: View {
                 filterSheet
             }
 
-            Text("Showing \(filteredSpots.count) of \(allSpots.count) Spots")
+            Spacer()
+
+            Text("\(filteredSpots.count)/\(allSpots.count) spots")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
         .padding(.horizontal)
-        .padding(.bottom, 8)
+        .padding(.bottom, 6)
     }
 
     private var filterSheet: some View {

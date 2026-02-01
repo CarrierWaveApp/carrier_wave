@@ -299,6 +299,9 @@ struct LoggerView: View {
     @State private var showQSYSpotConfirmation = false
     @State private var qsyNewFrequency: Double?
 
+    /// POTA spot tracking - stores session frequency before tuning to a spot
+    @State private var preSpotFrequency: Double?
+
     /// License warning
     @State private var dismissedViolation: String?
 
@@ -561,14 +564,30 @@ struct LoggerView: View {
                         initialMode: sessionManager?.activeSession?.mode,
                         onDismiss: { showPOTAPanel = false },
                         onSelectSpot: { spot in
-                            // Auto-fill frequency from spot
+                            // Save session frequency before tuning to spot
+                            preSpotFrequency = sessionManager?.activeSession?.frequency
+
+                            // Auto-fill form fields from spot
+                            callsignInput = spot.activator
+
                             if let freqKHz = spot.frequencyKHz {
                                 let freqMHz = freqKHz / 1_000.0
                                 _ = sessionManager?.updateFrequency(freqMHz)
-                                ToastManager.shared.info(
-                                    "Tuned to \(FrequencyFormatter.formatWithUnit(freqMHz))"
-                                )
                             }
+
+                            // Build notes from park info
+                            var noteParts: [String] = [spot.reference]
+                            if let loc = spot.locationDesc {
+                                let state = loc.components(separatedBy: "-").last ?? loc
+                                noteParts.append(state)
+                            }
+                            if let parkName = spot.parkName {
+                                noteParts.append(parkName)
+                            }
+                            notes = noteParts.joined(separator: " - ")
+
+                            showPOTAPanel = false
+                            ToastManager.shared.info("Loaded \(spot.activator)")
                         }
                     )
                 }
@@ -682,6 +701,25 @@ struct LoggerView: View {
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
+                .padding(.horizontal, 12)
+                .padding(.top, 6)
+                .transition(.move(edge: .top).combined(with: .opacity))
+            }
+
+            // Cancel spot button - shown when tuned away from session frequency
+            if preSpotFrequency != nil {
+                Button {
+                    cancelSpot()
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.caption)
+                        Text("Cancel Spot")
+                            .font(.caption.weight(.medium))
+                    }
+                    .foregroundStyle(.orange)
+                }
+                .buttonStyle(.plain)
                 .padding(.horizontal, 12)
                 .padding(.top, 6)
                 .transition(.move(edge: .top).combined(with: .opacity))
@@ -1053,6 +1091,19 @@ struct LoggerView: View {
         .background(Color(.secondarySystemGroupedBackground))
     }
 
+    /// Cancel the current spot and restore session frequency
+    private func cancelSpot() {
+        if let freq = preSpotFrequency {
+            _ = sessionManager?.updateFrequency(freq)
+            preSpotFrequency = nil
+        }
+        callsignInput = ""
+        notes = ""
+        lookupResult = nil
+        lookupError = nil
+        ToastManager.shared.info("Spot cancelled")
+    }
+
     /// Refresh the session QSOs from SwiftData
     private func refreshSessionQSOs() {
         guard let session = sessionManager?.activeSession else {
@@ -1375,6 +1426,12 @@ struct LoggerView: View {
 
         // Refresh the QSO list with the new entry
         refreshSessionQSOs()
+
+        // Restore session frequency if we tuned away for a spot
+        if let freq = preSpotFrequency {
+            _ = sessionManager?.updateFrequency(freq)
+            preSpotFrequency = nil
+        }
 
         // Reset form without animations for instant feedback
         var transaction = Transaction()
