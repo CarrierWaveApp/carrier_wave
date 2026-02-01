@@ -155,7 +155,10 @@ This index maps files to their purpose. Use it to locate files by feature instea
 | `LicenseWarningBanner.swift` | Band plan violation warning banner |
 | `LoggerToastView.swift` | Toast notification system for logger |
 | `LoggerKeyboardAccessory.swift` | Number row and command buttons above keyboard |
+| `POTASpotRow.swift` | Individual POTA spot row component |
+| `POTASpotsView.swift` | POTA activator spots panel with filtering |
 | `SessionMapPanelView.swift` | Map panel showing session QSOs for MAP command |
+| `SpotFilters.swift` | Band and mode filter enums for spots |
 
 ## Views - CW Transcription (`CarrierWave/Views/CWTranscription/`)
 | File | Purpose |
@@ -272,6 +275,7 @@ This index maps files to their purpose. Use it to locate files by feature instea
 ## Utilities (`CarrierWave/Utilities/`)
 | File | Purpose |
 |------|---------|
+| `BandUtilities.swift` | Band derivation from frequency and band ordering |
 | `FrequencyFormatter.swift` | Frequency formatting with sub-kHz precision support |
 | `KeychainHelper.swift` | Secure credential storage |
 | `MaidenheadConverter.swift` | Grid square to coordinate conversion |

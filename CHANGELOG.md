@@ -16,6 +16,11 @@ All notable changes to Carrier Wave will be documented in this file.
   - Notes field is now always visible below callsign
   - Compact RST fields positioned beside Notes
   - Cleaner "More Fields" toggle for State/Grid/Park/Operator
+- **POTA Spots Panel** - Dedicated view for active POTA activator spots
+  - Filter by band and mode (defaults to session's current band/mode)
+  - Grouped by band with section headers
+  - Tap spot to tune to frequency
+  - Access via `POTA` command in logger
 
 ### Fixed
 - **Sync Callsign Filtering** - QSOs from previous callsigns no longer appear in sync queues
