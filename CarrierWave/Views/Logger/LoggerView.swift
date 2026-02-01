@@ -800,7 +800,7 @@ struct LoggerView: View {
             Text("Operator")
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            TextField("Operator name", text: $operatorName)
+            TextField(lookupResult?.displayName ?? "Operator name", text: $operatorName)
                 .font(.subheadline)
                 .padding(10)
                 .background(Color(.tertiarySystemGroupedBackground))
@@ -1301,7 +1301,7 @@ struct LoggerView: View {
             theirParkReference: theirPark.isEmpty ? nil : theirPark,
             notes: notes.isEmpty ? nil : notes,
             name: lookupResult?.name,
-            operatorName: operatorName.isEmpty ? nil : operatorName,
+            operatorName: operatorName.isEmpty ? lookupResult?.displayName : operatorName,
             state: lookupResult?.state,
             country: lookupResult?.country,
             qth: lookupResult?.qth,
