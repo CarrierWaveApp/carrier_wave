@@ -48,7 +48,67 @@ enum QuickEntryParser {
             return nil
         }
 
-        return QuickEntryResult(callsign: tokens[0])
+        var result = QuickEntryResult(callsign: tokens[0])
+        var unrecognized: [String] = []
+
+        // Process remaining tokens
+        for token in tokens.dropFirst() {
+            if isRST(token) {
+                if result.rstReceived == nil {
+                    result.rstReceived = token
+                } else if result.rstSent == nil {
+                    // Shift: first RST was actually sent, this one is received
+                    result.rstSent = result.rstReceived
+                    result.rstReceived = token
+                } else {
+                    // Already have both RSTs, treat as notes
+                    unrecognized.append(token)
+                }
+            } else {
+                unrecognized.append(token)
+            }
+        }
+
+        // Unrecognized tokens become notes
+        if !unrecognized.isEmpty {
+            result.notes = unrecognized.joined(separator: " ")
+        }
+
+        return result
+    }
+
+    /// Check if a string is a valid RST report
+    /// Phone: [1-5][1-9], CW/Digital: [1-5][1-9][1-9]
+    static func isRST(_ string: String) -> Bool {
+        let upper = string.uppercased()
+
+        // Must be 2 or 3 digits
+        guard upper.count == 2 || upper.count == 3,
+              upper.allSatisfy(\.isNumber)
+        else {
+            return false
+        }
+
+        let digits = upper.map { Int(String($0))! }
+
+        // R (readability): 1-5
+        guard digits[0] >= 1, digits[0] <= 5 else {
+            return false
+        }
+
+        // S (strength): 1-9
+        guard digits[1] >= 1, digits[1] <= 9 else {
+            return false
+        }
+
+        // T (tone) for CW: 1-9 (if present)
+        if digits.count == 3 {
+            guard digits[2] >= 1, digits[2] <= 9 else {
+                return false
+            }
+        }
+
+        return true
     }
 
     /// Check if a string looks like a valid amateur radio callsign

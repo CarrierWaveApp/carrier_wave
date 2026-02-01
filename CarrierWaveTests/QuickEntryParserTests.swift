@@ -54,4 +54,46 @@ final class QuickEntryParserTests: XCTestCase {
         XCTAssertNil(QuickEntryParser.parse("MODE CW"))
         XCTAssertNil(QuickEntryParser.parse("SPOT"))
     }
+
+    // MARK: - RST Detection
+
+    func testSingleRSTAppliedToReceived() {
+        let result = QuickEntryParser.parse("W1AW 579")
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result?.callsign, "W1AW")
+        XCTAssertNil(result?.rstSent)
+        XCTAssertEqual(result?.rstReceived, "579")
+    }
+
+    func testTwoRSTsAppliedToSentAndReceived() {
+        let result = QuickEntryParser.parse("W1AW 559 579")
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result?.rstSent, "559")
+        XCTAssertEqual(result?.rstReceived, "579")
+    }
+
+    func testPhoneRST() {
+        let result = QuickEntryParser.parse("W1AW 57")
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result?.rstReceived, "57")
+    }
+
+    func testValidRSTPatterns() {
+        XCTAssertTrue(QuickEntryParser.isRST("599"))
+        XCTAssertTrue(QuickEntryParser.isRST("579"))
+        XCTAssertTrue(QuickEntryParser.isRST("339"))
+        XCTAssertTrue(QuickEntryParser.isRST("59"))
+        XCTAssertTrue(QuickEntryParser.isRST("57"))
+        XCTAssertTrue(QuickEntryParser.isRST("44"))
+        XCTAssertTrue(QuickEntryParser.isRST("11"))
+    }
+
+    func testInvalidRSTPatterns() {
+        XCTAssertFalse(QuickEntryParser.isRST("999")) // R can't be 9
+        XCTAssertFalse(QuickEntryParser.isRST("69")) // R can't be 6
+        XCTAssertFalse(QuickEntryParser.isRST("50")) // S can't be 0
+        XCTAssertFalse(QuickEntryParser.isRST("5")) // Too short
+        XCTAssertFalse(QuickEntryParser.isRST("5999")) // Too long
+        XCTAssertFalse(QuickEntryParser.isRST("WA")) // Not a number
+    }
 }
