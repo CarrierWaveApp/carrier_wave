@@ -1,146 +1,311 @@
 import SwiftUI
 
-// MARK: - POTASpotRow
+// MARK: - POTASpotsView
 
-/// A row displaying a single POTA spot
-struct POTASpotRow: View {
+/// Panel showing active POTA spots with filtering
+struct POTASpotsView: View {
+    // MARK: Lifecycle
+
+    init(
+        initialBand: String? = nil,
+        initialMode: String? = nil,
+        onDismiss: @escaping () -> Void,
+        onSelectSpot: ((POTASpot) -> Void)? = nil
+    ) {
+        self.onDismiss = onDismiss
+        self.onSelectSpot = onSelectSpot
+        _bandFilter = State(initialValue: BandFilter.from(bandName: initialBand))
+        _modeFilter = State(initialValue: ModeFilter.from(modeName: initialMode))
+    }
+
     // MARK: Internal
 
-    let spot: POTASpot
-    let onTap: () -> Void
+    let onDismiss: () -> Void
+    let onSelectSpot: ((POTASpot) -> Void)?
 
     var body: some View {
-        Button(action: onTap) {
-            HStack(alignment: .top, spacing: 12) {
-                // Frequency column
-                VStack(alignment: .trailing, spacing: 2) {
-                    frequencyDisplay
-                    bandModeDisplay
-                }
-                .frame(width: 80, alignment: .trailing)
+        VStack(spacing: 0) {
+            header
+            filterBar
+            Divider()
 
-                // Callsign and park info
-                VStack(alignment: .leading, spacing: 2) {
-                    callsignRow
-                    parkInfoRow
-                }
-
-                Spacer()
-
-                // Time ago
-                Text(spot.timeAgo)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+            if isLoading {
+                loadingView
+            } else if let error = errorMessage {
+                errorView(error)
+            } else if filteredSpots.isEmpty {
+                emptyView
+            } else {
+                spotsList
             }
-            .padding(.vertical, 8)
-            .padding(.horizontal, 12)
-            .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .shadow(color: .black.opacity(0.1), radius: 8, y: 2)
+        .task {
+            await loadSpots()
+        }
     }
 
     // MARK: Private
 
-    private var parkDisplayText: String {
-        var parts: [String] = [spot.reference]
+    @State private var allSpots: [POTASpot] = []
+    @State private var isLoading = true
+    @State private var errorMessage: String?
+    @State private var bandFilter: BandFilter
+    @State private var modeFilter: ModeFilter
+    @State private var showFilterSheet = false
 
-        // Add location if available
-        if let loc = spot.locationDesc, !loc.isEmpty {
-            // Extract state from "US-CA" format
-            let state = loc.components(separatedBy: "-").last ?? loc
-            parts.append(state)
-        }
-
-        // Add park name if available
-        if let name = spot.parkName, !name.isEmpty {
-            parts.append(name)
-        }
-
-        return parts.joined(separator: " - ")
-    }
-
-    // MARK: - Subviews
-
-    private var frequencyDisplay: some View {
-        Group {
-            if let freqKHz = spot.frequencyKHz {
-                // Format as MHz with sub-kHz precision like "14.031.900"
-                let mhz = freqKHz / 1_000.0
-                let formatted = formatFrequencyWithSubKHz(mhz)
-                Text(formatted)
-                    .font(.subheadline.monospaced())
-            } else {
-                Text(spot.frequency)
-                    .font(.subheadline.monospaced())
+    private var filteredSpots: [POTASpot] {
+        allSpots.filter { spot in
+            if let targetBand = bandFilter.bandName {
+                guard let spotBand = deriveBand(from: spot.frequencyKHz),
+                      spotBand == targetBand
+                else {
+                    return false
+                }
             }
+            guard modeFilter.matches(spot.mode) else {
+                return false
+            }
+            return true
         }
     }
 
-    private var bandModeDisplay: some View {
-        HStack(spacing: 4) {
-            if let band = deriveBand(from: spot.frequencyKHz) {
-                Text(band)
-                    .font(.caption2)
+    private var spotsByBand: [(band: String, spots: [POTASpot])] {
+        let grouped = Dictionary(grouping: filteredSpots) { spot -> String in
+            deriveBand(from: spot.frequencyKHz) ?? "Other"
+        }
+        let bandOrder = [
+            "160m", "80m", "60m", "40m", "30m", "20m", "17m", "15m", "12m", "10m", "6m", "2m",
+            "70cm", "Other",
+        ]
+        return grouped.sorted { lhs, rhs in
+            let lhsIdx = bandOrder.firstIndex(of: lhs.key) ?? 999
+            let rhsIdx = bandOrder.firstIndex(of: rhs.key) ?? 999
+            return lhsIdx < rhsIdx
+        }.map {
+            (
+                band: $0.key,
+                spots: $0.value.sorted { ($0.frequencyKHz ?? 0) < ($1.frequencyKHz ?? 0) }
+            )
+        }
+    }
+
+    private var filterDisplayText: String {
+        let bandText = bandFilter == .all ? "All Bands" : bandFilter.rawValue
+        let modeText = modeFilter == .all ? "All Modes" : modeFilter.rawValue
+
+        if bandFilter == .all, modeFilter == .all {
+            return "All Spots"
+        } else if modeFilter == .all {
+            return bandText
+        } else if bandFilter == .all {
+            return modeText
+        } else {
+            return "\(bandText) • \(modeText)"
+        }
+    }
+
+    // MARK: - Header
+
+    private var header: some View {
+        HStack {
+            Image(systemName: "tree.fill")
+                .foregroundStyle(.green)
+            Text("POTA Spots")
+                .font(.headline)
+            Spacer()
+            Button {
+                Task { await loadSpots() }
+            } label: {
+                Image(systemName: "arrow.clockwise")
+                    .font(.system(size: 14))
+            }
+            .buttonStyle(.borderless)
+            Button(action: onDismiss) {
+                Image(systemName: "xmark.circle.fill")
                     .foregroundStyle(.secondary)
             }
-            Text(spot.mode)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
+            .buttonStyle(.borderless)
         }
+        .padding()
     }
 
-    private var callsignRow: some View {
-        HStack(spacing: 4) {
-            Text(spot.activator)
-                .font(.subheadline.weight(.semibold).monospaced())
-                .foregroundStyle(.primary)
+    // MARK: - Filter Bar
 
-            // Activity type icon based on reference prefix
-            if spot.reference.hasPrefix("K-") || spot.reference.hasPrefix("US-") {
-                Image(systemName: "tree.fill")
-                    .font(.caption2)
-                    .foregroundStyle(.green)
-            } else if spot.reference.contains("FF-") {
-                // Flora & Fauna
-                Image(systemName: "leaf.fill")
-                    .font(.caption2)
-                    .foregroundStyle(.green)
-            } else {
-                Image(systemName: "mappin.circle.fill")
-                    .font(.caption2)
-                    .foregroundStyle(.green)
+    private var filterBar: some View {
+        VStack(spacing: 8) {
+            Button {
+                showFilterSheet = true
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "line.3.horizontal.decrease.circle")
+                        .font(.caption)
+                    Text(filterDisplayText)
+                        .font(.subheadline.weight(.medium))
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(Color.blue.opacity(0.15))
+                .foregroundStyle(.blue)
+                .clipShape(Capsule())
             }
-        }
-    }
+            .buttonStyle(.plain)
+            .sheet(isPresented: $showFilterSheet) {
+                filterSheet
+            }
 
-    private var parkInfoRow: some View {
-        HStack(spacing: 4) {
-            Image(systemName: "tree.fill")
-                .font(.caption2)
-                .foregroundStyle(.green)
-
-            Text(parkDisplayText)
+            Text("Showing \(filteredSpots.count) of \(allSpots.count) Spots")
                 .font(.caption)
                 .foregroundStyle(.secondary)
-                .lineLimit(1)
+        }
+        .padding(.horizontal)
+        .padding(.bottom, 8)
+    }
+
+    private var filterSheet: some View {
+        NavigationStack {
+            Form {
+                Section("Band") {
+                    Picker("Band", selection: $bandFilter) {
+                        ForEach(BandFilter.allCases) { filter in
+                            Text(filter.rawValue).tag(filter)
+                        }
+                    }
+                    .pickerStyle(.inline)
+                    .labelsHidden()
+                }
+
+                Section("Mode") {
+                    Picker("Mode", selection: $modeFilter) {
+                        ForEach(ModeFilter.allCases) { filter in
+                            Text(filter.rawValue).tag(filter)
+                        }
+                    }
+                    .pickerStyle(.inline)
+                    .labelsHidden()
+                }
+            }
+            .navigationTitle("Filter Spots")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") {
+                        showFilterSheet = false
+                    }
+                }
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Reset") {
+                        bandFilter = .all
+                        modeFilter = .all
+                    }
+                }
+            }
+        }
+        .presentationDetents([.medium])
+    }
+
+    // MARK: - Content Views
+
+    private var loadingView: some View {
+        VStack(spacing: 12) {
+            ProgressView()
+            Text("Loading POTA spots...")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, minHeight: 200)
+    }
+
+    private var emptyView: some View {
+        VStack(spacing: 8) {
+            Image(systemName: "tree")
+                .font(.title2)
+                .foregroundStyle(.secondary)
+            Text("No spots match filters")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            if bandFilter != .all || modeFilter != .all {
+                Button("Clear Filters") {
+                    bandFilter = .all
+                    modeFilter = .all
+                }
+                .buttonStyle(.bordered)
+            }
+        }
+        .padding()
+        .frame(maxWidth: .infinity, minHeight: 200)
+    }
+
+    private var spotsList: some View {
+        ScrollView {
+            LazyVStack(spacing: 0, pinnedViews: .sectionHeaders) {
+                ForEach(spotsByBand, id: \.band) { section in
+                    Section {
+                        ForEach(section.spots) { spot in
+                            POTASpotRow(spot: spot) {
+                                onSelectSpot?(spot)
+                            }
+                            Divider()
+                                .padding(.leading, 92)
+                        }
+                    } header: {
+                        sectionHeader(section.band)
+                    }
+                }
+            }
+        }
+        .frame(maxHeight: 400)
+    }
+
+    private func errorView(_ message: String) -> some View {
+        VStack(spacing: 8) {
+            Image(systemName: "exclamationmark.triangle")
+                .font(.title2)
+                .foregroundStyle(.orange)
+            Text(message)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+            Button("Retry") {
+                Task { await loadSpots() }
+            }
+            .buttonStyle(.bordered)
+        }
+        .padding()
+        .frame(maxWidth: .infinity, minHeight: 200)
+    }
+
+    private func sectionHeader(_ band: String) -> some View {
+        HStack {
+            Text(band)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+            Spacer()
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(Color(.secondarySystemGroupedBackground))
+    }
+
+    // MARK: - Data Loading
+
+    private func loadSpots() async {
+        isLoading = true
+        errorMessage = nil
+
+        do {
+            let client = POTAClient(authService: POTAAuthService())
+            allSpots = try await client.fetchActiveSpots()
+            isLoading = false
+        } catch {
+            errorMessage = error.localizedDescription
+            isLoading = false
         }
     }
 
     // MARK: - Helpers
-
-    private func formatFrequencyWithSubKHz(_ mhz: Double) -> String {
-        // Format like "14.031.900" for 14031.9 kHz
-        let wholeMHz = Int(mhz)
-        let remainder = mhz - Double(wholeMHz)
-        let kHz = Int(remainder * 1_000)
-        let subKHz = Int((remainder * 1_000 - Double(kHz)) * 1_000)
-
-        if subKHz > 0 {
-            return String(format: "%d.%03d.%03d", wholeMHz, kHz, subKHz)
-        } else {
-            return String(format: "%d.%03d", wholeMHz, kHz)
-        }
-    }
 
     private func deriveBand(from frequencyKHz: Double?) -> String? {
         guard let kHz = frequencyKHz else {
@@ -165,4 +330,16 @@ struct POTASpotRow: View {
         default: return nil
         }
     }
+}
+
+// MARK: - Preview
+
+#Preview {
+    POTASpotsView(
+        initialBand: "20m",
+        initialMode: "CW",
+        onDismiss: {}
+    )
+    .frame(height: 500)
+    .padding()
 }
