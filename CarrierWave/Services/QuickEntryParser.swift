@@ -22,12 +22,14 @@ enum TokenType: Equatable {
 
 /// A parsed token with its text and type for UI preview
 struct ParsedToken: Equatable, Identifiable {
-    let id = UUID()
+    /// Position in the token list (used for stable SwiftUI identity)
+    let index: Int
     let text: String
     let type: TokenType
 
-    static func == (lhs: ParsedToken, rhs: ParsedToken) -> Bool {
-        lhs.text == rhs.text && lhs.type == rhs.type
+    /// Stable ID based on position to prevent view hierarchy rebuild during typing
+    var id: Int {
+        index
     }
 }
 
@@ -144,7 +146,7 @@ enum QuickEntryParser {
         }
 
         // Second pass: build tokens in original input order
-        var result: [ParsedToken] = [ParsedToken(text: tokens[0], type: .callsign)]
+        var result: [ParsedToken] = [ParsedToken(index: 0, text: tokens[0], type: .callsign)]
 
         for (index, token) in tokens.dropFirst().enumerated() {
             let originalIndex = index + 1
@@ -172,7 +174,7 @@ enum QuickEntryParser {
                 .notes
             }
 
-            result.append(ParsedToken(text: token, type: type))
+            result.append(ParsedToken(index: result.count, text: token, type: type))
         }
 
         return result

@@ -30,6 +30,9 @@ All notable changes to Carrier Wave will be documented in this file.
   - Access via `POTA` command in logger
 
 ### Fixed
+- **Quick Entry Typing Crash** - Fixed crash when typing in quick entry mode caused by unstable SwiftUI identifiers
+  - ParsedToken now uses position-based IDs instead of random UUIDs
+  - Prevents view hierarchy rebuild during active text input
 - **Sync Callsign Filtering** - QSOs from previous callsigns no longer appear in sync queues
   - Import now only creates upload markers for QSOs matching primary callsign
   - Sync fetch adds defense-in-depth filtering for legacy data

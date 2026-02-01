@@ -93,30 +93,30 @@ private struct TokenBadge: View {
     VStack(spacing: 20) {
         // Full example with all token types
         QuickEntryPreview(tokens: [
-            ParsedToken(text: "AJ7CM", type: .callsign),
-            ParsedToken(text: "579", type: .rstSent),
-            ParsedToken(text: "559", type: .rstReceived),
-            ParsedToken(text: "WA", type: .state),
-            ParsedToken(text: "US-0189", type: .park),
-            ParsedToken(text: "CN87", type: .grid),
-            ParsedToken(text: "SOTA", type: .notes),
+            ParsedToken(index: 0, text: "AJ7CM", type: .callsign),
+            ParsedToken(index: 1, text: "579", type: .rstSent),
+            ParsedToken(index: 2, text: "559", type: .rstReceived),
+            ParsedToken(index: 3, text: "WA", type: .state),
+            ParsedToken(index: 4, text: "US-0189", type: .park),
+            ParsedToken(index: 5, text: "CN87", type: .grid),
+            ParsedToken(index: 6, text: "SOTA", type: .notes),
         ])
 
         Divider()
 
         // Simple example
         QuickEntryPreview(tokens: [
-            ParsedToken(text: "W1AW", type: .callsign),
-            ParsedToken(text: "59", type: .rstReceived),
+            ParsedToken(index: 0, text: "W1AW", type: .callsign),
+            ParsedToken(index: 1, text: "59", type: .rstReceived),
         ])
 
         Divider()
 
         // POTA example
         QuickEntryPreview(tokens: [
-            ParsedToken(text: "K3LR", type: .callsign),
-            ParsedToken(text: "US-1234", type: .park),
-            ParsedToken(text: "PA", type: .state),
+            ParsedToken(index: 0, text: "K3LR", type: .callsign),
+            ParsedToken(index: 1, text: "US-1234", type: .park),
+            ParsedToken(index: 2, text: "PA", type: .state),
         ])
     }
     .padding()
