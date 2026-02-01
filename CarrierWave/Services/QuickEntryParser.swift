@@ -68,6 +68,8 @@ enum QuickEntryParser {
                 result.theirPark = token
             } else if isGridSquare(token) {
                 result.theirGrid = token.uppercased()
+            } else if isStateOrRegion(token) {
+                result.state = token
             } else {
                 unrecognized.append(token)
             }
@@ -178,7 +180,40 @@ enum QuickEntryParser {
         return true
     }
 
+    /// Check if a string is a valid US state, Canadian province, or DX region code
+    static func isStateOrRegion(_ string: String) -> Bool {
+        let upper = string.uppercased()
+        return knownRegions.contains(upper)
+    }
+
     // MARK: Private
+
+    /// Known state/province/region codes
+    private static let knownRegions: Set<String> = {
+        // US States + DC
+        let usStates: Set<String> = [
+            "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA",
+            "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD",
+            "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ",
+            "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC",
+            "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY",
+            "DC",
+        ]
+
+        // Canadian Provinces/Territories
+        let canada: Set<String> = [
+            "AB", "BC", "MB", "NB", "NL", "NS", "NT", "NU", "ON", "PE", "QC", "SK", "YT",
+        ]
+
+        // Common DX Region codes (country prefixes used as region identifiers)
+        let dxRegions: Set<String> = [
+            "DL", "EA", "EI", "CT", "HA", "HB", "LU", "LZ", "OE", "OH",
+            "OK", "OM", "OZ", "PA", "SM", "SP", "UA", "UR", "VK", "ZL",
+            "ZS", "JA", "HL", "BV", "BY", "YB", "HS", "VU", "UK",
+        ]
+
+        return usStates.union(canada).union(dxRegions)
+    }()
 
     // MARK: - Private Helpers
 

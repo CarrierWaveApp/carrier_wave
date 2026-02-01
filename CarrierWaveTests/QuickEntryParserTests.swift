@@ -161,4 +161,53 @@ final class QuickEntryParserTests: XCTestCase {
         XCTAssertFalse(QuickEntryParser.isGridSquare("W1AW")) // Callsign
         XCTAssertFalse(QuickEntryParser.isGridSquare("WA")) // State code
     }
+
+    // MARK: - State/Region Detection
+
+    func testUSStateDetection() {
+        let result = QuickEntryParser.parse("W1AW WA")
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result?.state, "WA")
+    }
+
+    func testCanadianProvinceDetection() {
+        let result = QuickEntryParser.parse("VE3ABC ON")
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result?.state, "ON")
+    }
+
+    func testDXRegionDetection() {
+        let result = QuickEntryParser.parse("DL1ABC DL")
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result?.state, "DL")
+    }
+
+    func testValidStatePatterns() {
+        // US States
+        XCTAssertTrue(QuickEntryParser.isStateOrRegion("WA"))
+        XCTAssertTrue(QuickEntryParser.isStateOrRegion("CA"))
+        XCTAssertTrue(QuickEntryParser.isStateOrRegion("TX"))
+        XCTAssertTrue(QuickEntryParser.isStateOrRegion("NY"))
+        XCTAssertTrue(QuickEntryParser.isStateOrRegion("DC"))
+
+        // Canadian Provinces
+        XCTAssertTrue(QuickEntryParser.isStateOrRegion("ON"))
+        XCTAssertTrue(QuickEntryParser.isStateOrRegion("BC"))
+        XCTAssertTrue(QuickEntryParser.isStateOrRegion("QC"))
+        XCTAssertTrue(QuickEntryParser.isStateOrRegion("AB"))
+
+        // DX Regions
+        XCTAssertTrue(QuickEntryParser.isStateOrRegion("DL"))
+        XCTAssertTrue(QuickEntryParser.isStateOrRegion("EA"))
+        XCTAssertTrue(QuickEntryParser.isStateOrRegion("JA"))
+        XCTAssertTrue(QuickEntryParser.isStateOrRegion("VK"))
+        XCTAssertTrue(QuickEntryParser.isStateOrRegion("ZL"))
+    }
+
+    func testInvalidStatePatterns() {
+        XCTAssertFalse(QuickEntryParser.isStateOrRegion("XX")) // Not a real code
+        XCTAssertFalse(QuickEntryParser.isStateOrRegion("W1")) // Callsign prefix
+        XCTAssertFalse(QuickEntryParser.isStateOrRegion("599")) // RST
+        XCTAssertFalse(QuickEntryParser.isStateOrRegion("USA")) // Too long
+    }
 }
