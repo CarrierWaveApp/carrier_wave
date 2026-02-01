@@ -64,8 +64,20 @@ ADIF Import → ADIFParser → ImportService → QSO + SyncRecord (pending)
 | `uploaded` | Successfully synced |
 | `failed` | Upload failed (will retry) |
 
+## Callsign Filtering (MANDATORY)
+
+**All uploads MUST filter to the user's primary callsign only.** See [Callsign Filtering Guidelines](callsign-filtering.md) for details.
+
+Users may have QSOs logged under previous callsigns (e.g., before a license upgrade or vanity call). These QSOs:
+- Are kept locally for records
+- MUST NOT be included in upload queues
+- MUST NOT have `ServicePresence` records created for upload services
+
+Services authenticate with the user's current callsign. Uploading QSOs from a different callsign will fail or associate data with the wrong account.
+
 ## Key Implementation Details
 
+- **Callsign filtering**: Only upload QSOs where `myCallsign` matches user's primary callsign
 - **Deduplication**: `QSO.deduplicationKey` uses 2-minute time buckets + band + mode + callsign
 - **ADIF preservation**: Original ADIF stored in `rawADIF` for reproducibility
 - **Batching**: QRZ uploads batched at 50 QSOs; POTA grouped by park

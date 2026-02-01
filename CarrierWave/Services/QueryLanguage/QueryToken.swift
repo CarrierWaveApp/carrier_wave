@@ -1,5 +1,7 @@
 import Foundation
 
+// MARK: - QueryToken
+
 /// Token types produced by the query lexer
 enum QueryToken: Equatable {
     /// Field qualifier (e.g., "band:", "mode:", "call:")
@@ -33,6 +35,8 @@ enum QueryToken: Equatable {
     case eof
 }
 
+// MARK: - QueryField
+
 /// Searchable fields in QSO records
 enum QueryField: String, CaseIterable {
     // Core identification
@@ -63,7 +67,7 @@ enum QueryField: String, CaseIterable {
     case after
     case before
 
-    // Power
+    /// Power
     case power
 
     // Confirmation/sync status
@@ -71,6 +75,8 @@ enum QueryField: String, CaseIterable {
     case synced
     case pending
     case source
+
+    // MARK: Internal
 
     /// All recognized aliases for field names
     static let aliases: [String: QueryField] = [
@@ -109,11 +115,6 @@ enum QueryField: String, CaseIterable {
         "source": .source,
     ]
 
-    /// Parse a field name (case-insensitive)
-    static func parse(_ name: String) -> QueryField? {
-        aliases[name.lowercased()]
-    }
-
     /// Display name for error messages
     var displayName: String {
         switch self {
@@ -146,7 +147,13 @@ enum QueryField: String, CaseIterable {
     /// Whether this field is indexed for fast lookups
     var isIndexed: Bool {
         switch self {
-        case .callsign, .band, .mode, .park, .date, .after, .before:
+        case .callsign,
+             .band,
+             .mode,
+             .park,
+             .date,
+             .after,
+             .before:
             true
         default:
             false
@@ -156,21 +163,36 @@ enum QueryField: String, CaseIterable {
     /// Whether this field requires text scanning (slow)
     var requiresTextScan: Bool {
         switch self {
-        case .notes, .name, .qth:
+        case .notes,
+             .name,
+             .qth:
             true
         default:
             false
         }
     }
+
+    /// Parse a field name (case-insensitive)
+    static func parse(_ name: String) -> QueryField? {
+        aliases[name.lowercased()]
+    }
 }
+
+// MARK: - SourcePosition
 
 /// Position in source string for error reporting
-struct SourcePosition: Equatable {
+struct SourcePosition: Sendable {
+    static let unknown = SourcePosition(offset: 0, length: 0)
+
     let offset: Int
     let length: Int
-
-    static let unknown = SourcePosition(offset: 0, length: 0)
 }
+
+// MARK: Equatable
+
+extension SourcePosition: Equatable {}
+
+// MARK: - PositionedToken
 
 /// Token with source position for error reporting
 struct PositionedToken: Equatable {

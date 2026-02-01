@@ -1,7 +1,11 @@
 import Foundation
 
+// MARK: - QueryAnalyzer
+
 /// Analyzes a parsed query for performance characteristics
-struct QueryAnalyzer {
+enum QueryAnalyzer {
+    // MARK: Internal
+
     /// Analyze a query and return performance warnings
     static func analyze(_ query: ParsedQuery, qsoCount: Int) -> QueryAnalysis {
         if query.isEmpty {
@@ -22,7 +26,7 @@ struct QueryAnalyzer {
         let indexedPositiveFields = positiveTerms.compactMap(\.field).filter(\.isIndexed)
         let usesIndex = !indexedPositiveFields.isEmpty
 
-        if !usesIndex && qsoCount > 1000 {
+        if !usesIndex && qsoCount > 1_000 {
             warnings.append(QueryWarning(
                 severity: .high,
                 message: "This search scans all \(qsoCount.formatted()) QSOs",
@@ -43,7 +47,7 @@ struct QueryAnalyzer {
 
         // Check 3: Negation-only query
         if !positiveTerms.isEmpty || !negatedTerms.isEmpty {
-            if positiveTerms.isEmpty && !negatedTerms.isEmpty {
+            if positiveTerms.isEmpty, !negatedTerms.isEmpty {
                 warnings.append(QueryWarning(
                     severity: .high,
                     message: "Exclusion-only query must scan all records",
@@ -82,7 +86,7 @@ struct QueryAnalyzer {
             return field == .date || field == .after || field == .before
         }
 
-        if !hasDateBound && qsoCount > 10000 && usesIndex {
+        if !hasDateBound, qsoCount > 10_000, usesIndex {
             warnings.append(QueryWarning(
                 severity: .hint,
                 message: "Searching \(qsoCount.formatted()) QSOs",
@@ -92,7 +96,7 @@ struct QueryAnalyzer {
 
         // Check 7: Frequency range queries
         let hasFrequencySearch = terms.contains { $0.field == .frequency }
-        if hasFrequencySearch && qsoCount > 5000 && !hasDateBound {
+        if hasFrequencySearch, qsoCount > 5_000, !hasDateBound {
             warnings.append(QueryWarning(
                 severity: .medium,
                 message: "Frequency searches may be slow on large datasets",
@@ -101,13 +105,12 @@ struct QueryAnalyzer {
         }
 
         // Determine overall cost
-        let cost: QueryCost
-        if usesIndex {
-            cost = .indexed
+        let cost: QueryCost = if usesIndex {
+            .indexed
         } else if hasDateBound {
-            cost = .bounded
+            .bounded
         } else {
-            cost = .fullScan
+            .fullScan
         }
 
         // Deduplicate warnings by message
@@ -120,8 +123,12 @@ struct QueryAnalyzer {
         )
     }
 
+    // MARK: Private
+
     /// Categorize terms into positive and negated
-    private static func categorizeTerms(_ expression: QueryExpression) -> (positive: [QueryTerm], negated: [QueryTerm]) {
+    private static func categorizeTerms(_ expression: QueryExpression)
+        -> (positive: [QueryTerm], negated: [QueryTerm])
+    {
         var positive: [QueryTerm] = []
         var negated: [QueryTerm] = []
 
@@ -135,7 +142,8 @@ struct QueryAnalyzer {
                 } else {
                     positive.append(term)
                 }
-            case let .and(exprs), let .or(exprs):
+            case let .and(exprs),
+                 let .or(exprs):
                 for e in exprs {
                     walk(e, isNegated: isNegated)
                 }
@@ -148,6 +156,8 @@ struct QueryAnalyzer {
         return (positive, negated)
     }
 }
+
+// MARK: - QueryAnalysis
 
 /// Result of query analysis
 struct QueryAnalysis {
@@ -171,21 +181,16 @@ struct QueryAnalysis {
     }
 }
 
+// MARK: - QueryWarning
+
 /// A performance warning for a query
 struct QueryWarning: Identifiable {
-    let id = UUID()
-    let severity: Severity
-    let message: String
-    let suggestion: String?
-
     enum Severity: Int, Comparable {
         case hint = 0
         case medium = 1
         case high = 2
 
-        static func < (lhs: Severity, rhs: Severity) -> Bool {
-            lhs.rawValue < rhs.rawValue
-        }
+        // MARK: Internal
 
         var icon: String {
             switch self {
@@ -202,8 +207,19 @@ struct QueryWarning: Identifiable {
             case .high: "red"
             }
         }
+
+        static func < (lhs: Severity, rhs: Severity) -> Bool {
+            lhs.rawValue < rhs.rawValue
+        }
     }
+
+    let id = UUID()
+    let severity: Severity
+    let message: String
+    let suggestion: String?
 }
+
+// MARK: - QueryCost
 
 /// Estimated query cost
 enum QueryCost: Comparable {
@@ -215,6 +231,8 @@ enum QueryCost: Comparable {
 
     /// Full table scan - warn user
     case fullScan
+
+    // MARK: Internal
 
     var description: String {
         switch self {

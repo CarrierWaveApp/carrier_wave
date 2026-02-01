@@ -47,6 +47,7 @@ Carrier Wave is a SwiftUI/SwiftData iOS app for amateur radio QSO (contact) logg
 - Store credentials in Keychain, never in SwiftData
 - Tests use in-memory SwiftData containers
 - **Follow [Performance Guidelines](docs/PERFORMANCE.md)** — especially for Logger, Map, and tab transitions
+- **Follow [Callsign Filtering Guidelines](docs/features/callsign-filtering.md)** — only operate on primary callsign for syncs
 
 ## Performance Rules (MANDATORY)
 

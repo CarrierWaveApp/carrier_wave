@@ -1,5 +1,7 @@
 import Foundation
 
+// MARK: - ParsedQuery
+
 /// Root node of a parsed query
 struct ParsedQuery: Equatable {
     let expression: QueryExpression
@@ -13,6 +15,8 @@ struct ParsedQuery: Equatable {
         return false
     }
 }
+
+// MARK: - QueryExpression
 
 /// Query expression tree
 indirect enum QueryExpression: Equatable {
@@ -31,11 +35,14 @@ indirect enum QueryExpression: Equatable {
     /// Logical NOT of expression
     case not(QueryExpression)
 
+    // MARK: Internal
+
     /// Flattens nested ANDs and ORs for easier processing
     var flattened: QueryExpression {
         switch self {
-        case .empty, .term:
-            self
+        case .empty,
+             .term:
+            return self
 
         case let .and(expressions):
             var flattened: [QueryExpression] = []
@@ -68,7 +75,7 @@ indirect enum QueryExpression: Equatable {
             return .or(flattened)
 
         case let .not(inner):
-            .not(inner.flattened)
+            return .not(inner.flattened)
         }
     }
 
@@ -79,7 +86,8 @@ indirect enum QueryExpression: Equatable {
             []
         case let .term(term):
             [term]
-        case let .and(expressions), let .or(expressions):
+        case let .and(expressions),
+             let .or(expressions):
             expressions.flatMap(\.allTerms)
         case let .not(inner):
             inner.allTerms
@@ -93,8 +101,9 @@ indirect enum QueryExpression: Equatable {
             false
         case let .term(term):
             term.field?.isIndexed ?? false
-        case let .and(expressions), let .or(expressions):
-            expressions.contains(\.hasIndexedPositiveTerm)
+        case let .and(expressions),
+             let .or(expressions):
+            expressions.contains(where: \.hasIndexedPositiveTerm)
         case .not:
             false // Negated terms don't help with indexing
         }
@@ -117,6 +126,8 @@ indirect enum QueryExpression: Equatable {
     }
 }
 
+// MARK: - QueryTerm
+
 /// A single search term
 struct QueryTerm: Equatable {
     /// The field being searched (nil for bare terms that match multiple fields)
@@ -128,6 +139,8 @@ struct QueryTerm: Equatable {
     /// Source position for error reporting
     let position: SourcePosition
 }
+
+// MARK: - TermCondition
 
 /// How a term matches values
 enum TermCondition: Equatable {
@@ -167,18 +180,28 @@ enum TermCondition: Equatable {
     /// Service type match (for confirmed:lotw, synced:qrz, etc.)
     case service(ServiceType)
 
+    // MARK: Internal
+
     /// The raw value for display purposes
     var displayValue: String {
         switch self {
-        case let .equals(v), let .contains(v), let .prefix(v), let .suffix(v):
+        case let .equals(v),
+             let .contains(v),
+             let .prefix(v),
+             let .suffix(v):
             v
-        case let .greaterThan(n), let .lessThan(n), let .greaterThanOrEqual(n), let .lessThanOrEqual(n):
+        case let .greaterThan(n),
+             let .lessThan(n),
+             let .greaterThanOrEqual(n),
+             let .lessThanOrEqual(n):
             String(n)
         case let .range(a, b):
             "\(a)..\(b)"
         case let .numericRange(a, b):
             "\(a)..\(b)"
-        case let .dateEquals(d), let .dateAfter(d), let .dateBefore(d):
+        case let .dateEquals(d),
+             let .dateAfter(d),
+             let .dateBefore(d):
             d.description
         case let .dateRange(a, b):
             "\(a.description)..\(b.description)"
@@ -192,13 +215,16 @@ enum TermCondition: Equatable {
     /// Whether this condition requires a full scan (no index help)
     var requiresFullScan: Bool {
         switch self {
-        case .suffix, .contains:
+        case .suffix,
+             .contains:
             true
         default:
             false
         }
     }
 }
+
+// MARK: - DateMatch
 
 /// Parsed date value
 enum DateMatch: Equatable, CustomStringConvertible {
@@ -220,6 +246,27 @@ enum DateMatch: Equatable, CustomStringConvertible {
     /// Year and month (matches entire month)
     case yearMonth(Int, Int)
 
+    // MARK: Internal
+
+    var description: String {
+        switch self {
+        case let .specific(date):
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd"
+            return formatter.string(from: date)
+        case let .relative(days):
+            return "\(days)d"
+        case .today:
+            return "today"
+        case .yesterday:
+            return "yesterday"
+        case let .year(year):
+            return String(year)
+        case let .yearMonth(year, month):
+            return String(format: "%04d-%02d", year, month)
+        }
+    }
+
     /// Resolve to actual date range
     func resolve() -> (start: Date, end: Date) {
         let calendar = Calendar.current
@@ -232,7 +279,9 @@ enum DateMatch: Equatable, CustomStringConvertible {
             return (start, end)
 
         case let .relative(days):
-            let start = calendar.startOfDay(for: calendar.date(byAdding: .day, value: -days, to: now)!)
+            let start = calendar.startOfDay(
+                for: calendar.date(byAdding: .day, value: -days, to: now)!
+            )
             return (start, now)
 
         case .today:
@@ -264,25 +313,6 @@ enum DateMatch: Equatable, CustomStringConvertible {
             let start = calendar.date(from: components)!
             let end = calendar.date(byAdding: .month, value: 1, to: start)!
             return (start, end)
-        }
-    }
-
-    var description: String {
-        switch self {
-        case let .specific(date):
-            let formatter = DateFormatter()
-            formatter.dateFormat = "yyyy-MM-dd"
-            return formatter.string(from: date)
-        case let .relative(days):
-            "\(days)d"
-        case .today:
-            "today"
-        case .yesterday:
-            "yesterday"
-        case let .year(year):
-            String(year)
-        case let .yearMonth(year, month):
-            String(format: "%04d-%02d", year, month)
         }
     }
 }

@@ -6,10 +6,22 @@ struct QueryParser {
 
     init(_ tokens: [PositionedToken]) {
         self.tokens = tokens
-        self.currentIndex = 0
+        currentIndex = 0
     }
 
     // MARK: Internal
+
+    /// Convenience: parse a string directly
+    static func parse(_ input: String) -> Result<ParsedQuery, QueryError> {
+        var lexer = QueryLexer(input)
+        switch lexer.tokenize() {
+        case let .success(tokens):
+            var parser = QueryParser(tokens)
+            return parser.parse()
+        case let .failure(error):
+            return .failure(error)
+        }
+    }
 
     /// Parse the token stream into a query AST
     mutating func parse() -> Result<ParsedQuery, QueryError> {
@@ -21,18 +33,6 @@ struct QueryParser {
         case let .success(expr):
             let sourceText = tokens.dropLast().map(\.rawText).joined(separator: " ")
             return .success(ParsedQuery(expression: expr.flattened, sourceText: sourceText))
-        case let .failure(error):
-            return .failure(error)
-        }
-    }
-
-    /// Convenience: parse a string directly
-    static func parse(_ input: String) -> Result<ParsedQuery, QueryError> {
-        var lexer = QueryLexer(input)
-        switch lexer.tokenize() {
-        case let .success(tokens):
-            var parser = QueryParser(tokens)
-            return parser.parse()
         case let .failure(error):
             return .failure(error)
         }
@@ -121,7 +121,7 @@ struct QueryParser {
 
     private mutating func parseUnary() -> Result<QueryExpression, QueryError> {
         if peekToken() == .not {
-            let notToken = advance()!
+            _ = advance()
             switch parsePrimary() {
             case let .success(inner):
                 return .success(.not(inner))
@@ -153,11 +153,13 @@ struct QueryParser {
             return .success(.empty)
 
         default:
-            return .failure(QueryError.unexpectedToken(
-                expected: "search term",
-                got: token.rawText,
-                position: token.position
-            ))
+            return .failure(
+                QueryError.unexpectedToken(
+                    expected: "search term",
+                    got: token.rawText,
+                    position: token.position
+                )
+            )
         }
     }
 
@@ -177,14 +179,19 @@ struct QueryParser {
         }
     }
 
-    private mutating func parseFieldTerm(_ field: QueryField, position: SourcePosition) -> Result<QueryExpression, QueryError> {
+    private mutating func parseFieldTerm(_ field: QueryField, position: SourcePosition) -> Result<
+        QueryExpression, QueryError
+    > {
         advance() // consume field token
 
         // Check for comparison operator
         var comparison: QueryToken?
         if let token = peekToken() {
             switch token {
-            case .greaterThan, .lessThan, .greaterThanOrEqual, .lessThanOrEqual:
+            case .greaterThan,
+                 .lessThan,
+                 .greaterThanOrEqual,
+                 .lessThanOrEqual:
                 comparison = token
                 advance()
             default:
@@ -194,11 +201,13 @@ struct QueryParser {
 
         // Get value
         guard let valueToken = peek(), case let .value(value) = valueToken.token else {
-            return .failure(QueryError.unexpectedToken(
-                expected: "value",
-                got: peek()?.rawText ?? "end of input",
-                position: peek()?.position ?? position
-            ))
+            return .failure(
+                QueryError.unexpectedToken(
+                    expected: "value",
+                    got: peek()?.rawText ?? "end of input",
+                    position: peek()?.position ?? position
+                )
+            )
         }
         advance()
 
@@ -223,13 +232,17 @@ struct QueryParser {
 
         switch conditionResult {
         case let .success(condition):
-            return .success(.term(QueryTerm(field: field, condition: condition, position: position)))
+            return .success(
+                .term(QueryTerm(field: field, condition: condition, position: position))
+            )
         case let .failure(error):
             return .failure(error)
         }
     }
 
-    private mutating func parseBareTerm(_ value: String, position: SourcePosition) -> Result<QueryExpression, QueryError> {
+    private mutating func parseBareTerm(_ value: String, position: SourcePosition) -> Result<
+        QueryExpression, QueryError
+    > {
         // Check for range
         var endValue: String?
         if peekToken() == .range {
@@ -254,12 +267,16 @@ struct QueryParser {
     ) -> Result<TermCondition, QueryError> {
         // Handle date fields
         if field == .date || field == .after || field == .before {
-            return buildDateCondition(field: field, value: value, endValue: endValue, position: position)
+            return buildDateCondition(
+                field: field, value: value, endValue: endValue, position: position
+            )
         }
 
         // Handle numeric fields with comparisons
         if field == .frequency || field == .power || field == .dxcc {
-            return buildNumericCondition(value: value, endValue: endValue, comparison: comparison, position: position)
+            return buildNumericCondition(
+                value: value, endValue: endValue, comparison: comparison, position: position
+            )
         }
 
         // Handle boolean/service fields
@@ -279,7 +296,7 @@ struct QueryParser {
 
         // Handle wildcards
         if value.contains("*") {
-            if value.hasPrefix("*") && value.hasSuffix("*") {
+            if value.hasPrefix("*"), value.hasSuffix("*") {
                 let inner = String(value.dropFirst().dropLast())
                 return .success(.contains(inner))
             } else if value.hasPrefix("*") {
@@ -378,48 +395,59 @@ struct QueryParser {
 
         // Try common aliases
         switch lowered {
-        case "lotw", "logbookoftheworld":
+        case "lotw",
+             "logbookoftheworld":
             return .success(.service(.lotw))
         case "qrz":
             return .success(.service(.qrz))
         case "pota":
             return .success(.service(.pota))
-        case "lofi", "ham2k":
+        case "lofi",
+             "ham2k":
             return .success(.service(.lofi))
         case "hamrs":
             return .success(.service(.hamrs))
         default:
-            return .failure(QueryError.unexpectedToken(
-                expected: "yes/no or service name (lotw, qrz, pota, lofi, hamrs)",
-                got: value,
-                position: position
-            ))
+            return .failure(
+                QueryError.unexpectedToken(
+                    expected: "yes/no or service name (lotw, qrz, pota, lofi, hamrs)",
+                    got: value,
+                    position: position
+                )
+            )
         }
     }
 
-    private func buildSourceCondition(value: String, position: SourcePosition) -> Result<TermCondition, QueryError> {
+    private func buildSourceCondition(value: String, position: SourcePosition) -> Result<
+        TermCondition, QueryError
+    > {
         let lowered = value.lowercased()
 
         // Map to service type for source filtering
         switch lowered {
-        case "lotw", "logbookoftheworld":
+        case "lotw",
+             "logbookoftheworld":
             return .success(.service(.lotw))
         case "qrz":
             return .success(.service(.qrz))
         case "pota":
             return .success(.service(.pota))
-        case "lofi", "ham2k":
+        case "lofi",
+             "ham2k":
             return .success(.service(.lofi))
         case "hamrs":
             return .success(.service(.hamrs))
-        case "manual", "local":
+        case "manual",
+             "local":
             return .success(.equals("manual"))
         default:
-            return .failure(QueryError.unexpectedToken(
-                expected: "source name (lotw, qrz, pota, lofi, hamrs, manual)",
-                got: value,
-                position: position
-            ))
+            return .failure(
+                QueryError.unexpectedToken(
+                    expected: "source name (lotw, qrz, pota, lofi, hamrs, manual)",
+                    got: value,
+                    position: position
+                )
+            )
         }
     }
 
@@ -430,7 +458,7 @@ struct QueryParser {
 
         // Handle wildcards
         if value.contains("*") {
-            if value.hasPrefix("*") && value.hasSuffix("*") {
+            if value.hasPrefix("*"), value.hasSuffix("*") {
                 return .contains(String(value.dropFirst().dropLast()))
             } else if value.hasPrefix("*") {
                 return .suffix(String(value.dropFirst()))

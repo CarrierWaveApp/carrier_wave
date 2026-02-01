@@ -1,12 +1,14 @@
 import Foundation
 
+// MARK: - QueryLexer
+
 /// Tokenizes a query string into a sequence of tokens
 struct QueryLexer {
     // MARK: Lifecycle
 
     init(_ input: String) {
         self.input = input
-        self.currentIndex = input.startIndex
+        currentIndex = input.startIndex
     }
 
     // MARK: Internal
@@ -26,80 +28,99 @@ struct QueryLexer {
             switch peek() {
             case "|":
                 advance()
-                tokens.append(PositionedToken(
-                    token: .or,
-                    position: SourcePosition(offset: startOffset, length: 1),
-                    rawText: "|"
-                ))
+                tokens.append(
+                    PositionedToken(
+                        token: .or,
+                        position: SourcePosition(offset: startOffset, length: 1),
+                        rawText: "|"
+                    )
+                )
 
             case "-":
                 advance()
-                tokens.append(PositionedToken(
-                    token: .not,
-                    position: SourcePosition(offset: startOffset, length: 1),
-                    rawText: "-"
-                ))
+                tokens.append(
+                    PositionedToken(
+                        token: .not,
+                        position: SourcePosition(offset: startOffset, length: 1),
+                        rawText: "-"
+                    )
+                )
 
             case "(":
                 advance()
-                tokens.append(PositionedToken(
-                    token: .openParen,
-                    position: SourcePosition(offset: startOffset, length: 1),
-                    rawText: "("
-                ))
+                tokens.append(
+                    PositionedToken(
+                        token: .openParen,
+                        position: SourcePosition(offset: startOffset, length: 1),
+                        rawText: "("
+                    )
+                )
 
             case ")":
                 advance()
-                tokens.append(PositionedToken(
-                    token: .closeParen,
-                    position: SourcePosition(offset: startOffset, length: 1),
-                    rawText: ")"
-                ))
+                tokens.append(
+                    PositionedToken(
+                        token: .closeParen,
+                        position: SourcePosition(offset: startOffset, length: 1),
+                        rawText: ")"
+                    )
+                )
 
             case ">":
                 advance()
                 if peek() == "=" {
                     advance()
-                    tokens.append(PositionedToken(
-                        token: .greaterThanOrEqual,
-                        position: SourcePosition(offset: startOffset, length: 2),
-                        rawText: ">="
-                    ))
+                    tokens.append(
+                        PositionedToken(
+                            token: .greaterThanOrEqual,
+                            position: SourcePosition(offset: startOffset, length: 2),
+                            rawText: ">="
+                        )
+                    )
                 } else {
-                    tokens.append(PositionedToken(
-                        token: .greaterThan,
-                        position: SourcePosition(offset: startOffset, length: 1),
-                        rawText: ">"
-                    ))
+                    tokens.append(
+                        PositionedToken(
+                            token: .greaterThan,
+                            position: SourcePosition(offset: startOffset, length: 1),
+                            rawText: ">"
+                        )
+                    )
                 }
 
             case "<":
                 advance()
                 if peek() == "=" {
                     advance()
-                    tokens.append(PositionedToken(
-                        token: .lessThanOrEqual,
-                        position: SourcePosition(offset: startOffset, length: 2),
-                        rawText: "<="
-                    ))
+                    tokens.append(
+                        PositionedToken(
+                            token: .lessThanOrEqual,
+                            position: SourcePosition(offset: startOffset, length: 2),
+                            rawText: "<="
+                        )
+                    )
                 } else {
-                    tokens.append(PositionedToken(
-                        token: .lessThan,
-                        position: SourcePosition(offset: startOffset, length: 1),
-                        rawText: "<"
-                    ))
+                    tokens.append(
+                        PositionedToken(
+                            token: .lessThan,
+                            position: SourcePosition(offset: startOffset, length: 1),
+                            rawText: "<"
+                        )
+                    )
                 }
 
             case "\"":
                 // Quoted string
                 switch scanQuotedString() {
                 case let .success(value):
-                    let length = input.distance(from: input.startIndex, to: currentIndex) - startOffset
-                    tokens.append(PositionedToken(
-                        token: .value(value),
-                        position: SourcePosition(offset: startOffset, length: length),
-                        rawText: value
-                    ))
+                    let length =
+                        input.distance(from: input.startIndex, to: currentIndex) - startOffset
+                    tokens.append(
+                        PositionedToken(
+                            token: .value(value),
+                            position: SourcePosition(offset: startOffset, length: length),
+                            rawText: value
+                        )
+                    )
                 case let .failure(error):
                     return .failure(error)
                 }
@@ -113,75 +134,97 @@ struct QueryLexer {
                     // This is a field qualifier
                     advance() // consume ':'
                     if let field = QueryField.parse(word) {
-                        tokens.append(PositionedToken(
-                            token: .field(field),
-                            position: SourcePosition(offset: startOffset, length: length + 1),
-                            rawText: word + ":"
-                        ))
+                        tokens.append(
+                            PositionedToken(
+                                token: .field(field),
+                                position: SourcePosition(offset: startOffset, length: length + 1),
+                                rawText: word + ":"
+                            )
+                        )
                     } else {
                         // Unknown field - suggest similar
                         let suggestion = findSimilarField(word)
-                        return .failure(QueryError.unknownField(
-                            word,
-                            suggestion: suggestion,
-                            position: SourcePosition(offset: startOffset, length: length)
-                        ))
+                        return .failure(
+                            QueryError.unknownField(
+                                word,
+                                suggestion: suggestion,
+                                position: SourcePosition(offset: startOffset, length: length)
+                            )
+                        )
                     }
                 } else if word == ".." {
                     // Range operator
-                    tokens.append(PositionedToken(
-                        token: .range,
-                        position: SourcePosition(offset: startOffset, length: 2),
-                        rawText: ".."
-                    ))
+                    tokens.append(
+                        PositionedToken(
+                            token: .range,
+                            position: SourcePosition(offset: startOffset, length: 2),
+                            rawText: ".."
+                        )
+                    )
                 } else if word.contains("..") {
                     // Value with embedded range - split it
-                    let parts = word.split(separator: ".", maxSplits: 2, omittingEmptySubsequences: false)
+                    let parts = word.split(
+                        separator: ".", maxSplits: 2, omittingEmptySubsequences: false
+                    )
                     if parts.count >= 2 {
                         let beforeRange = String(parts[0])
                         let afterRange = word.dropFirst(beforeRange.count + 2)
 
                         if !beforeRange.isEmpty {
-                            tokens.append(PositionedToken(
-                                token: .value(beforeRange),
-                                position: SourcePosition(offset: startOffset, length: beforeRange.count),
-                                rawText: beforeRange
-                            ))
+                            tokens.append(
+                                PositionedToken(
+                                    token: .value(beforeRange),
+                                    position: SourcePosition(
+                                        offset: startOffset, length: beforeRange.count
+                                    ),
+                                    rawText: beforeRange
+                                )
+                            )
                         }
 
-                        tokens.append(PositionedToken(
-                            token: .range,
-                            position: SourcePosition(offset: startOffset + beforeRange.count, length: 2),
-                            rawText: ".."
-                        ))
+                        tokens.append(
+                            PositionedToken(
+                                token: .range,
+                                position: SourcePosition(
+                                    offset: startOffset + beforeRange.count, length: 2
+                                ),
+                                rawText: ".."
+                            )
+                        )
 
                         if !afterRange.isEmpty {
-                            tokens.append(PositionedToken(
-                                token: .value(String(afterRange)),
-                                position: SourcePosition(
-                                    offset: startOffset + beforeRange.count + 2,
-                                    length: afterRange.count
-                                ),
-                                rawText: String(afterRange)
-                            ))
+                            tokens.append(
+                                PositionedToken(
+                                    token: .value(String(afterRange)),
+                                    position: SourcePosition(
+                                        offset: startOffset + beforeRange.count + 2,
+                                        length: afterRange.count
+                                    ),
+                                    rawText: String(afterRange)
+                                )
+                            )
                         }
                     }
                 } else {
                     // Plain value
-                    tokens.append(PositionedToken(
-                        token: .value(word),
-                        position: SourcePosition(offset: startOffset, length: length),
-                        rawText: word
-                    ))
+                    tokens.append(
+                        PositionedToken(
+                            token: .value(word),
+                            position: SourcePosition(offset: startOffset, length: length),
+                            rawText: word
+                        )
+                    )
                 }
             }
         }
 
-        tokens.append(PositionedToken(
-            token: .eof,
-            position: SourcePosition(offset: input.count, length: 0),
-            rawText: ""
-        ))
+        tokens.append(
+            PositionedToken(
+                token: .eof,
+                position: SourcePosition(offset: input.count, length: 0),
+                rawText: ""
+            )
+        )
 
         return .success(tokens)
     }
@@ -230,7 +273,8 @@ struct QueryLexer {
     private func isWordCharacter(_ char: Character) -> Bool {
         // Word characters include alphanumeric, wildcards, slashes (for callsigns/SOTA),
         // hyphens (for park refs like K-1234), periods (for ranges and decimals)
-        char.isLetter || char.isNumber || char == "*" || char == "/" || char == "-" || char == "." || char == "_"
+        char.isLetter || char.isNumber || char == "*" || char == "/" || char == "-" || char == "."
+            || char == "_"
     }
 
     private mutating func scanQuotedString() -> Result<String, QueryError> {
@@ -254,9 +298,11 @@ struct QueryLexer {
         }
 
         // Unterminated string
-        return .failure(QueryError.unterminatedString(
-            position: SourcePosition(offset: startOffset, length: result.count + 1)
-        ))
+        return .failure(
+            QueryError.unterminatedString(
+                position: SourcePosition(offset: startOffset, length: result.count + 1)
+            )
+        )
     }
 
     private func findSimilarField(_ input: String) -> String? {
@@ -269,7 +315,7 @@ struct QueryLexer {
 
         for name in allNames {
             let score = levenshteinDistance(lowercased, name)
-            if score < bestScore && score <= 2 {
+            if score < bestScore, score <= 2 {
                 bestScore = score
                 bestMatch = name
             }
@@ -314,6 +360,8 @@ struct QueryLexer {
     }
 }
 
+// MARK: - QueryError
+
 /// Query parsing/analysis errors
 enum QueryError: Error, Equatable {
     case unknownField(String, suggestion: String?, position: SourcePosition)
@@ -323,6 +371,8 @@ enum QueryError: Error, Equatable {
     case invalidNumberFormat(String, position: SourcePosition)
     case emptyQuery
     case unmatchedParenthesis(position: SourcePosition)
+
+    // MARK: Internal
 
     var message: String {
         switch self {
@@ -357,7 +407,7 @@ enum QueryError: Error, Equatable {
              let .unmatchedParenthesis(position):
             position
         case .emptyQuery:
-            .unknown
+            SourcePosition(offset: 0, length: 0)
         }
     }
 }

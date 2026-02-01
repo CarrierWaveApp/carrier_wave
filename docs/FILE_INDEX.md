@@ -254,6 +254,7 @@ This index maps files to their purpose. Use it to locate files by feature instea
 ## Documentation (`docs/features/`)
 | File | Purpose |
 |------|---------|
+| `callsign-filtering.md` | Primary callsign filtering requirements for syncs |
 | `logger-requirements.md` | Logger requirements and compliance checklist |
 | `sync.md` | QRZ, POTA, LoFi sync integration |
 | `statistics.md` | Dashboard stats and drilldown views |

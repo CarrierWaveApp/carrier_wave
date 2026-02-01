@@ -152,13 +152,13 @@ struct QSOMapView: View {
 
     // MARK: Private
 
-    @Environment(\.modelContext) private var modelContext
-
     /// Modes that represent activation metadata, not actual QSOs
     private static let metadataModes: Set<String> = ["WEATHER", "SOLAR", "NOTE"]
 
     /// Batch size for fetching filter options
     private static let filterOptionsBatchSize = 500
+
+    @Environment(\.modelContext) private var modelContext
 
     /// QSOs fetched on demand (not using @Query to avoid full table scan)
     @State private var allQSOs: [QSO] = []

@@ -1,12 +1,16 @@
 import Foundation
 import SwiftData
 
+// MARK: - QueryCompiler
+
 /// Compiles a parsed query into a filter function for QSOs
 ///
 /// Note: SwiftData's #Predicate macro doesn't support runtime construction,
 /// so we compile to a closure-based filter. For indexed fields, we also
 /// provide a FetchDescriptor with predicates where possible.
-struct QueryCompiler {
+enum QueryCompiler {
+    // MARK: Internal
+
     /// Compile a query to a filter closure
     static func compile(_ query: ParsedQuery) -> (QSO) -> Bool {
         if query.isEmpty {
@@ -40,6 +44,8 @@ struct QueryCompiler {
         )
     }
 
+    // MARK: Private
+
     // MARK: - Expression Compilation
 
     private static func compileExpression(_ expr: QueryExpression) -> (QSO) -> Bool {
@@ -66,82 +72,88 @@ struct QueryCompiler {
 
     private static func compileTerm(_ term: QueryTerm) -> (QSO) -> Bool {
         if let field = term.field {
-            return compileFieldTerm(field: field, condition: term.condition)
+            compileFieldTerm(field: field, condition: term.condition)
         } else {
-            return compileBareSearchTerm(condition: term.condition)
+            compileBareSearchTerm(condition: term.condition)
         }
     }
 
-    private static func compileFieldTerm(field: QueryField, condition: TermCondition) -> (QSO) -> Bool {
+    private static func compileFieldTerm(field: QueryField, condition: TermCondition) -> (QSO) ->
+        Bool
+    {
         switch field {
         case .callsign:
-            return compileStringMatch(condition) { $0.callsign }
+            compileStringMatch(condition) { $0.callsign }
 
         case .band:
-            return compileStringMatch(condition) { $0.band }
+            compileStringMatch(condition) { $0.band }
 
         case .mode:
-            return compileStringMatch(condition) { $0.mode }
+            compileStringMatch(condition) { $0.mode }
 
         case .frequency:
-            return compileNumericMatch(condition) { $0.frequency }
+            compileNumericMatch(condition) { $0.frequency }
 
         case .park:
-            return compileOptionalStringMatch(condition) { $0.parkReference }
+            compileOptionalStringMatch(condition) { $0.parkReference }
 
         case .sota:
-            return compileOptionalStringMatch(condition) { $0.sotaRef }
+            compileOptionalStringMatch(condition) { $0.sotaRef }
 
         case .grid:
-            return compileOptionalStringMatch(condition) { $0.theirGrid }
+            compileOptionalStringMatch(condition) { $0.theirGrid }
 
         case .state:
-            return compileOptionalStringMatch(condition) { $0.state }
+            compileOptionalStringMatch(condition) { $0.state }
 
         case .country:
-            return compileOptionalStringMatch(condition) { $0.country }
+            compileOptionalStringMatch(condition) { $0.country }
 
         case .dxcc:
-            return compileOptionalIntMatch(condition) { $0.dxcc }
+            compileOptionalIntMatch(condition) { $0.dxcc }
 
         case .name:
-            return compileOptionalStringMatch(condition) { $0.name }
+            compileOptionalStringMatch(condition) { $0.name }
 
         case .qth:
-            return compileOptionalStringMatch(condition) { $0.qth }
+            compileOptionalStringMatch(condition) { $0.qth }
 
         case .notes:
-            return compileOptionalStringMatch(condition) { $0.notes }
+            compileOptionalStringMatch(condition) { $0.notes }
 
         case .myCallsign:
-            return compileStringMatch(condition) { $0.myCallsign }
+            compileStringMatch(condition) { $0.myCallsign }
 
         case .myGrid:
-            return compileOptionalStringMatch(condition) { $0.myGrid }
+            compileOptionalStringMatch(condition) { $0.myGrid }
 
-        case .date, .after, .before:
-            return compileDateMatch(field: field, condition: condition)
+        case .date,
+             .after,
+             .before:
+            compileDateMatch(field: field, condition: condition)
 
         case .power:
-            return compileOptionalIntMatch(condition) { $0.power }
+            compileOptionalIntMatch(condition) { $0.power }
 
         case .confirmed:
-            return compileConfirmedMatch(condition)
+            compileConfirmedMatch(condition)
 
         case .synced:
-            return compileSyncedMatch(condition)
+            compileSyncedMatch(condition)
 
         case .pending:
-            return compilePendingMatch(condition)
+            compilePendingMatch(condition)
 
         case .source:
-            return compileSourceMatch(condition)
+            compileSourceMatch(condition)
         }
     }
 
     // MARK: - String Matching
 
-    private static func compileStringMatch(_ condition: TermCondition, extractor: @escaping (QSO) -> String) -> (QSO) -> Bool {
+    private static func compileStringMatch(
+        _ condition: TermCondition, extractor: @escaping (QSO) -> String
+    ) -> (QSO) -> Bool {
         switch condition {
         case let .equals(value):
             let lowered = value.lowercased()
@@ -210,7 +222,9 @@ struct QueryCompiler {
 
     // MARK: - Numeric Matching
 
-    private static func compileNumericMatch(_ condition: TermCondition, extractor: @escaping (QSO) -> Double?) -> (QSO) -> Bool {
+    private static func compileNumericMatch(
+        _ condition: TermCondition, extractor: @escaping (QSO) -> Double?
+    ) -> (QSO) -> Bool {
         switch condition {
         case let .greaterThan(value):
             return { extractor($0).map { $0 > value } ?? false }
@@ -239,7 +253,9 @@ struct QueryCompiler {
         }
     }
 
-    private static func compileOptionalIntMatch(_ condition: TermCondition, extractor: @escaping (QSO) -> Int?) -> (QSO) -> Bool {
+    private static func compileOptionalIntMatch(
+        _ condition: TermCondition, extractor: @escaping (QSO) -> Int?
+    ) -> (QSO) -> Bool {
         switch condition {
         case let .greaterThan(value):
             let intVal = Int(value)
@@ -275,7 +291,9 @@ struct QueryCompiler {
 
     // MARK: - Date Matching
 
-    private static func compileDateMatch(field: QueryField, condition: TermCondition) -> (QSO) -> Bool {
+    private static func compileDateMatch(field: QueryField, condition: TermCondition) -> (QSO) ->
+        Bool
+    {
         switch condition {
         case let .dateEquals(dateMatch):
             let (start, end) = dateMatch.resolve()
@@ -306,24 +324,24 @@ struct QueryCompiler {
         case let .boolean(value):
             if value {
                 // Confirmed on ANY service
-                return { $0.qrzConfirmed || $0.lotwConfirmed }
+                { $0.qrzConfirmed || $0.lotwConfirmed }
             } else {
                 // Not confirmed anywhere
-                return { !$0.qrzConfirmed && !$0.lotwConfirmed }
+                { !$0.qrzConfirmed && !$0.lotwConfirmed }
             }
 
         case let .service(service):
             switch service {
             case .lotw:
-                return { $0.lotwConfirmed }
+                { $0.lotwConfirmed }
             case .qrz:
-                return { $0.qrzConfirmed }
+                { $0.qrzConfirmed }
             default:
-                return { _ in false } // Only LoTW and QRZ have confirmation
+                { _ in false } // Only LoTW and QRZ have confirmation
             }
 
         default:
-            return { _ in true }
+            { _ in true }
         }
     }
 
@@ -331,16 +349,16 @@ struct QueryCompiler {
         switch condition {
         case let .boolean(value):
             if value {
-                return { !$0.servicePresence.filter(\.isPresent).isEmpty }
+                { !$0.servicePresence.filter(\.isPresent).isEmpty }
             } else {
-                return { $0.servicePresence.filter(\.isPresent).isEmpty }
+                { $0.servicePresence.filter(\.isPresent).isEmpty }
             }
 
         case let .service(service):
-            return { $0.isPresent(in: service) }
+            { $0.isPresent(in: service) }
 
         default:
-            return { _ in true }
+            { _ in true }
         }
     }
 
@@ -348,40 +366,39 @@ struct QueryCompiler {
         switch condition {
         case let .boolean(value):
             if value {
-                return { !$0.servicePresence.filter(\.needsUpload).isEmpty }
+                { !$0.servicePresence.filter(\.needsUpload).isEmpty }
             } else {
-                return { $0.servicePresence.filter(\.needsUpload).isEmpty }
+                { $0.servicePresence.filter(\.needsUpload).isEmpty }
             }
 
         case let .service(service):
-            return { $0.needsUpload(to: service) }
+            { $0.needsUpload(to: service) }
 
         default:
-            return { _ in true }
+            { _ in true }
         }
     }
 
     private static func compileSourceMatch(_ condition: TermCondition) -> (QSO) -> Bool {
         switch condition {
         case let .service(service):
-            let importSource: ImportSource
-            switch service {
+            let importSource: ImportSource = switch service {
             case .qrz:
-                importSource = .qrz
+                .qrz
             case .pota:
-                importSource = .pota
+                .pota
             case .lofi:
-                importSource = .lofi
+                .lofi
             case .hamrs:
-                importSource = .hamrs
+                .hamrs
             case .lotw:
-                importSource = .lotw
+                .lotw
             }
             return { $0.importSource == importSource }
 
         case let .equals(value):
-            if value.lowercased() == "manual" {
-                return { $0.importSource == .manual }
+            if value.lowercased() == "manual" || value.lowercased() == "logger" {
+                return { $0.importSource == .logger }
             }
             return { _ in false }
 
@@ -458,15 +475,17 @@ struct QueryCompiler {
         // Extract predicates for indexed fields
         switch field {
         case .callsign:
-            return extractStringPredicate(term.condition, keyPath: \QSO.callsign)
+            return extractCallsignPredicate(term.condition)
 
         case .band:
-            return extractStringPredicate(term.condition, keyPath: \QSO.band)
+            return extractBandPredicate(term.condition)
 
         case .mode:
-            return extractStringPredicate(term.condition, keyPath: \QSO.mode)
+            return extractModePredicate(term.condition)
 
-        case .date, .after, .before:
+        case .date,
+             .after,
+             .before:
             return extractDatePredicate(field: field, condition: term.condition)
 
         default:
@@ -474,27 +493,60 @@ struct QueryCompiler {
         }
     }
 
-    private static func extractStringPredicate(_ condition: TermCondition, keyPath: KeyPath<QSO, String>) -> Predicate<QSO>? {
+    private static func extractCallsignPredicate(_ condition: TermCondition) -> Predicate<QSO>? {
         switch condition {
         case let .equals(value):
             let upper = value.uppercased()
-            // Note: SwiftData predicates are case-sensitive, so we compare uppercase
             return #Predicate<QSO> { qso in
-                qso[keyPath: keyPath] == upper
+                qso.callsign == upper
             }
-
         case let .prefix(value):
             let upper = value.uppercased()
             return #Predicate<QSO> { qso in
-                qso[keyPath: keyPath].starts(with: upper)
+                qso.callsign.starts(with: upper)
             }
-
         default:
             return nil
         }
     }
 
-    private static func extractDatePredicate(field: QueryField, condition: TermCondition) -> Predicate<QSO>? {
+    private static func extractBandPredicate(_ condition: TermCondition) -> Predicate<QSO>? {
+        switch condition {
+        case let .equals(value):
+            let upper = value.uppercased()
+            return #Predicate<QSO> { qso in
+                qso.band == upper
+            }
+        case let .prefix(value):
+            let upper = value.uppercased()
+            return #Predicate<QSO> { qso in
+                qso.band.starts(with: upper)
+            }
+        default:
+            return nil
+        }
+    }
+
+    private static func extractModePredicate(_ condition: TermCondition) -> Predicate<QSO>? {
+        switch condition {
+        case let .equals(value):
+            let upper = value.uppercased()
+            return #Predicate<QSO> { qso in
+                qso.mode == upper
+            }
+        case let .prefix(value):
+            let upper = value.uppercased()
+            return #Predicate<QSO> { qso in
+                qso.mode.starts(with: upper)
+            }
+        default:
+            return nil
+        }
+    }
+
+    private static func extractDatePredicate(field: QueryField, condition: TermCondition)
+        -> Predicate<QSO>?
+    {
         switch condition {
         case let .dateEquals(dateMatch):
             let (start, end) = dateMatch.resolve()
@@ -526,6 +578,8 @@ struct QueryCompiler {
         }
     }
 }
+
+// MARK: - CompiledQuery
 
 /// Compiled query with both predicate and filter
 struct CompiledQuery {
