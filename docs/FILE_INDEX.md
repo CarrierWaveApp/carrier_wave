@@ -127,6 +127,7 @@ This index maps files to their purpose. Use it to locate files by feature instea
 | `FrequencyActivityService.swift` | Aggregates nearby frequency activity from RBN |
 | `HamDBClient.swift` | HamDB.org API client for US callsign license class lookup |
 | `UserProfileService.swift` | Persists and retrieves user profile data |
+| `QuickEntryParser.swift` | Parses quick entry strings (e.g., "AJ7CM 579 WA US-0189") into structured data |
 
 ## Services - Query Language (`CarrierWave/Services/QueryLanguage/`)
 | File | Purpose |
@@ -291,3 +292,4 @@ This index maps files to their purpose. Use it to locate files by feature instea
 | `QRZClientTests.swift` | QRZ client tests |
 | `Helpers/QSOFactory.swift` | Synthetic QSO generator for performance testing |
 | `PerformanceTests/QSOStatisticsPerformanceTests.swift` | Performance regression tests (50k/500k QSOs) |
+| `QuickEntryParserTests.swift` | Quick entry parser tests (callsign detection, commands) |
