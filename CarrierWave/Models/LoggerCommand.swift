@@ -16,6 +16,9 @@ enum LoggerCommand: Equatable {
     /// Show RBN spots panel for a callsign (nil = user's callsign)
     case rbn(callsign: String?)
 
+    /// Show POTA spots panel
+    case pota
+
     /// Show solar conditions panel
     case solar
 
@@ -47,6 +50,7 @@ enum LoggerCommand: Equatable {
                           e.g., SPOT QRT, SPOT QSY
         RBN [callsign]  - Show RBN/POTA spots
                           e.g., RBN W1AW (or just RBN for your spots)
+        POTA            - Show POTA activator spots
         SOLAR           - Show solar conditions
         WEATHER         - Show weather (or WX)
         MAP             - Show session QSO map
@@ -77,6 +81,8 @@ enum LoggerCommand: Equatable {
             } else {
                 "Show your spots"
             }
+        case .pota:
+            "Show POTA spots"
         case .solar:
             "Show solar conditions"
         case .weather:
@@ -103,6 +109,8 @@ enum LoggerCommand: Equatable {
             "mappin.and.ellipse"
         case .rbn:
             "dot.radiowaves.up.forward"
+        case .pota:
+            "tree.fill"
         case .solar:
             "sun.max"
         case .weather:
@@ -135,6 +143,9 @@ enum LoggerCommand: Equatable {
             return cmd
         }
         if let cmd = parseRBN(trimmed: trimmed, upper: upper) {
+            return cmd
+        }
+        if let cmd = parsePOTA(upper: upper) {
             return cmd
         }
         if let cmd = parseNote(trimmed: trimmed, upper: upper) {
@@ -219,6 +230,13 @@ enum LoggerCommand: Equatable {
             let callsign = String(trimmed.dropFirst(4)).trimmingCharacters(in: .whitespaces)
                 .uppercased()
             return .rbn(callsign: callsign.isEmpty ? nil : callsign)
+        }
+        return nil
+    }
+
+    private static func parsePOTA(upper: String) -> LoggerCommand? {
+        if upper == "POTA" || upper == "SPOTS" {
+            return .pota
         }
         return nil
     }
@@ -312,6 +330,11 @@ extension LoggerCommand {
         CommandSuggestion(
             command: "RBN W1AW", description: "Show spots for callsign",
             icon: "dot.radiowaves.up.forward", prefixes: ["RB"], exact: ["R"]
+        ),
+        // POTA
+        CommandSuggestion(
+            command: "POTA", description: "Show POTA activator spots",
+            icon: "tree.fill", prefixes: ["PO"], exact: ["P"]
         ),
         // SOLAR
         CommandSuggestion(
