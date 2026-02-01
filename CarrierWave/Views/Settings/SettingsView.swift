@@ -65,7 +65,6 @@ struct SettingsMainView: View {
     @AppStorage("callsignNotesDisplayMode") private var notesDisplayMode = "emoji"
 
     // Logger visible fields
-    @AppStorage("loggerShowNotes") private var showNotes = false
     @AppStorage("loggerShowTheirGrid") private var showTheirGrid = false
     @AppStorage("loggerShowTheirPark") private var showTheirPark = false
     @AppStorage("loggerShowOperator") private var showOperator = false
@@ -276,7 +275,6 @@ struct SettingsMainView: View {
             }
 
             DisclosureGroup("Always visible fields") {
-                Toggle("Notes", isOn: $showNotes)
                 Toggle("Their Grid", isOn: $showTheirGrid)
                 Toggle("Their Park", isOn: $showTheirPark)
                 Toggle("Operator", isOn: $showOperator)
@@ -286,7 +284,7 @@ struct SettingsMainView: View {
         } footer: {
             Text(
                 "Keep screen on prevents device sleep during sessions. "
-                    + "Always visible fields appear without tapping \"More\"."
+                    + "Notes and RST are always visible. Other fields appear without tapping \"More Fields\"."
             )
         }
     }

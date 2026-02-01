@@ -58,9 +58,16 @@ struct LoggerView: View {
                                 // Show callsign info or error when keyboard is not visible
                                 callsignLookupDisplay
 
-                                qsoFormSection
+                                // Notes with compact RST beside it
+                                notesAndRSTSection
 
+                                // Additional fields (State/Grid/Park/Operator when always visible)
                                 alwaysVisibleFieldsSection
+
+                                // More fields toggle + expanded section
+                                if hasMoreFields {
+                                    moreFieldsToggle
+                                }
 
                                 if showMoreFields, hasMoreFields {
                                     moreFieldsSection
@@ -236,7 +243,6 @@ struct LoggerView: View {
     @AppStorage("loggerAutoModeSwitch") private var autoModeSwitch = true
 
     // Always visible field settings
-    @AppStorage("loggerShowNotes") private var showNotesAlways = false
     @AppStorage("loggerShowTheirGrid") private var showTheirGridAlways = false
     @AppStorage("loggerShowTheirPark") private var showTheirParkAlways = false
     @AppStorage("loggerShowOperator") private var showOperatorAlways = false
@@ -354,13 +360,13 @@ struct LoggerView: View {
 
     /// Whether any fields are configured to always be visible
     private var hasAlwaysVisibleFields: Bool {
-        showNotesAlways || showTheirGridAlways || showTheirParkAlways || showOperatorAlways
+        showTheirGridAlways || showTheirParkAlways || showOperatorAlways
             || showTheirStateAlways
     }
 
     /// Whether there are any fields left to show in "More Fields"
     private var hasMoreFields: Bool {
-        !showNotesAlways || !showTheirGridAlways || !showTheirParkAlways || !showOperatorAlways
+        !showTheirGridAlways || !showTheirParkAlways || !showOperatorAlways
             || !showTheirStateAlways
     }
 
@@ -659,59 +665,82 @@ struct LoggerView: View {
         }
     }
 
-    // MARK: - QSO Form
+    // MARK: - Notes and RST Section
 
-    private var qsoFormSection: some View {
-        HStack(spacing: 12) {
+    /// Notes field with compact RST fields beside it
+    private var notesAndRSTSection: some View {
+        HStack(alignment: .top, spacing: 12) {
+            // Notes field (expandable)
             VStack(alignment: .leading, spacing: 4) {
-                Text("Sent")
+                Text("Notes")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                TextField(defaultRST, text: $rstSent)
-                    .font(.title3.monospaced())
-                    .multilineTextAlignment(.center)
-                    .keyboardType(.numberPad)
-                    .padding(10)
-                    .background(Color(.secondarySystemGroupedBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-            }
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Rcvd")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                TextField(defaultRST, text: $rstReceived)
-                    .font(.title3.monospaced())
-                    .multilineTextAlignment(.center)
-                    .keyboardType(.numberPad)
-                    .padding(10)
-                    .background(Color(.secondarySystemGroupedBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-            }
-
-            // Only show "More" button if there are fields not marked as always visible
-            if hasMoreFields {
-                Button {
-                    withAnimation {
-                        showMoreFields.toggle()
-                    }
-                } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: showMoreFields ? "chevron.up" : "chevron.down")
-                        Text(showMoreFields ? "Less" : "More")
-                    }
+                TextField("Notes...", text: $notes, axis: .vertical)
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .padding(.vertical, 10)
-                    .padding(.horizontal, 12)
-                    .background(Color(.secondarySystemGroupedBackground))
+                    .lineLimit(1 ... 3)
+                    .padding(10)
+                    .background(Color(.tertiarySystemGroupedBackground))
                     .clipShape(RoundedRectangle(cornerRadius: 8))
+            }
+
+            // Compact RST fields stacked vertically
+            VStack(spacing: 8) {
+                VStack(alignment: .center, spacing: 2) {
+                    Text("Sent")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                    TextField(defaultRST, text: $rstSent)
+                        .font(.subheadline.monospaced())
+                        .multilineTextAlignment(.center)
+                        .keyboardType(.numberPad)
+                        .padding(8)
+                        .background(Color(.tertiarySystemGroupedBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                        .frame(width: 55)
+                }
+
+                VStack(alignment: .center, spacing: 2) {
+                    Text("Rcvd")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                    TextField(defaultRST, text: $rstReceived)
+                        .font(.subheadline.monospaced())
+                        .multilineTextAlignment(.center)
+                        .keyboardType(.numberPad)
+                        .padding(8)
+                        .background(Color(.tertiarySystemGroupedBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                        .frame(width: 55)
                 }
             }
         }
+        .padding()
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 
-    /// Fields configured to always be visible (shown below RST)
+    // MARK: - More Fields Toggle
+
+    private var moreFieldsToggle: some View {
+        Button {
+            withAnimation {
+                showMoreFields.toggle()
+            }
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: showMoreFields ? "chevron.up" : "chevron.down")
+                Text(showMoreFields ? "Less" : "More Fields")
+            }
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+            .padding(.vertical, 8)
+            .padding(.horizontal, 12)
+            .background(Color(.secondarySystemGroupedBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+        }
+    }
+
+    /// Fields configured to always be visible (shown below Notes+RST)
     @ViewBuilder
     private var alwaysVisibleFieldsSection: some View {
         if hasAlwaysVisibleFields {
@@ -733,10 +762,6 @@ struct LoggerView: View {
 
                 if showOperatorAlways {
                     operatorField
-                }
-
-                if showNotesAlways {
-                    notesField
                 }
             }
             .padding()
@@ -764,10 +789,6 @@ struct LoggerView: View {
 
             if !showOperatorAlways {
                 operatorField
-            }
-
-            if !showNotesAlways {
-                notesField
             }
         }
         .padding()
@@ -827,20 +848,6 @@ struct LoggerView: View {
                 .foregroundStyle(.secondary)
             TextField(lookupResult?.displayName ?? "Operator name", text: $operatorName)
                 .font(.subheadline)
-                .padding(10)
-                .background(Color(.tertiarySystemGroupedBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-        }
-    }
-
-    private var notesField: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("Notes")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            TextField("Notes...", text: $notes, axis: .vertical)
-                .font(.subheadline)
-                .lineLimit(2 ... 4)
                 .padding(10)
                 .background(Color(.tertiarySystemGroupedBackground))
                 .clipShape(RoundedRectangle(cornerRadius: 8))
