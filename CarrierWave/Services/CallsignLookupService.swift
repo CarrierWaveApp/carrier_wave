@@ -231,10 +231,22 @@ final class CallsignLookupService {
         hasQRZCallbookCredentials()
     }
 
-    /// Check if any Polo notes sources are configured
+    /// Check if any Polo notes sources are configured (based on cached data)
     func hasPoloNotesSources() -> Bool {
-        let sources = fetchAllSourcesOnMainActor()
-        return !sources.isEmpty
+        // This is now a synchronous check - sources were loaded into the cache on app launch
+        // We can't easily check source count synchronously, but we can check if cache has entries
+        guard let context = modelContext else {
+            return false
+        }
+        // Quick check: if we have clubs or user sources configured
+        let clubCount = (try? context.fetchCount(FetchDescriptor<Club>())) ?? 0
+        let sourceCount =
+            (try? context.fetchCount(
+                FetchDescriptor<CallsignNotesSource>(
+                    predicate: #Predicate { $0.isEnabled }
+                )
+            )) ?? 0
+        return clubCount > 0 || sourceCount > 0
     }
 
     /// Get cached info for a callsign (synchronous, no network)
@@ -245,38 +257,27 @@ final class CallsignLookupService {
     }
 
     /// Preload Polo notes from all sources (clubs and user-configured)
+    /// This now delegates to the shared cache which persists to disk
     func preloadPoloNotes() async {
-        await loadPoloNotes()
+        guard let context = modelContext else {
+            return
+        }
+        let sources = NotesSourceInfo.fetchAll(modelContext: context)
+        await CallsignNotesCache.shared.ensureLoaded(sources: sources)
     }
 
     /// Clear all caches
     func clearCache() {
         cache.removeAll()
-        poloNotesCache.removeAll()
         pendingLookups.removeAll()
+        // Note: CallsignNotesCache.shared is managed separately and persists to disk
     }
 
     // MARK: Private
 
-    // MARK: - Types
-
-    /// Entry from a notes source with source title and optional emoji/note/name
-    private struct NotesEntry {
-        let title: String
-        let emoji: String?
-        let note: String?
-        let name: String?
-    }
-
-    /// A source with its title for tracking
-    private struct NotesSource {
-        let url: URL
-        let title: String
-    }
-
     // MARK: - Private State
 
-    /// Cache of recent lookups
+    /// Cache of recent lookups (QRZ results)
     private var cache: [String: CallsignInfo] = [:]
 
     /// Order of cache entries for LRU eviction
@@ -288,135 +289,15 @@ final class CallsignLookupService {
     /// Pending lookup tasks with results (for deduplication)
     private var pendingResultLookups: [String: Task<CallsignLookupResult, Never>] = [:]
 
-    /// Merged Polo notes from all clubs
-    private var poloNotesCache: [String: CallsignInfo] = [:]
-
-    /// When Polo notes were last loaded
-    private var poloNotesLoadedAt: Date?
-
-    /// ModelContext for accessing Club data
+    /// ModelContext for accessing Club data (used by CallsignNotesCache)
     private let modelContext: ModelContext?
 
     // MARK: - Polo Notes Lookup
 
     private func lookupInPoloNotes(_ callsign: String) async -> CallsignInfo? {
-        // Reload Polo notes if stale or empty
-        if poloNotesCache.isEmpty || isPoloNotesCacheStale() {
-            await loadPoloNotes()
-        }
-
-        return poloNotesCache[callsign]
-    }
-
-    private func isPoloNotesCacheStale() -> Bool {
-        guard let loadedAt = poloNotesLoadedAt else {
-            return true
-        }
-        // Refresh every 5 minutes
-        return Date().timeIntervalSince(loadedAt) > 300
-    }
-
-    private func loadPoloNotes() async {
-        // Fetch all sources with titles on main actor (SwiftData requirement)
-        let sources = fetchAllSourcesOnMainActor()
-
-        guard !sources.isEmpty else {
-            return
-        }
-
-        // Load all sources and track entries by source
-        var entriesByCallsign: [String: [NotesEntry]] = [:]
-
-        await withTaskGroup(of: (String, [String: CallsignInfo]).self) { group in
-            for source in sources {
-                group.addTask {
-                    let entries = await (try? PoloNotesParser.load(from: source.url)) ?? [:]
-                    return (source.title, entries)
-                }
-            }
-
-            for await (sourceTitle, entries) in group {
-                for (callsign, info) in entries {
-                    var existing = entriesByCallsign[callsign] ?? []
-                    existing.append(
-                        NotesEntry(
-                            title: sourceTitle,
-                            emoji: info.emoji,
-                            note: info.note,
-                            name: info.name
-                        )
-                    )
-                    entriesByCallsign[callsign] = existing
-                }
-            }
-        }
-
-        // Merge entries into CallsignInfo with all emojis and source titles
-        // Sort by source title for consistent ordering (requirement 5)
-        var merged: [String: CallsignInfo] = [:]
-        for (callsign, entries) in entriesByCallsign {
-            let sortedEntries = entries.sorted { $0.title < $1.title }
-            let allEmojis = sortedEntries.compactMap(\.emoji).filter { !$0.isEmpty }
-            let sourceTitles = sortedEntries.map(\.title)
-            // Use first non-nil name and note from sorted entries
-            let name = sortedEntries.compactMap(\.name).first
-            let note = sortedEntries.compactMap(\.note).first
-
-            merged[callsign] = CallsignInfo(
-                callsign: callsign,
-                name: name,
-                note: note,
-                emoji: allEmojis.first,
-                source: .poloNotes,
-                allEmojis: allEmojis.isEmpty ? nil : allEmojis,
-                matchingSources: sourceTitles
-            )
-        }
-
-        poloNotesCache = merged
-        poloNotesLoadedAt = Date()
-    }
-
-    private func fetchAllSourcesOnMainActor() -> [NotesSource] {
-        guard let context = modelContext else {
-            return []
-        }
-
-        var sources: [NotesSource] = []
-
-        // Fetch from clubs
-        do {
-            let clubDescriptor = FetchDescriptor<Club>()
-            let clubs = try context.fetch(clubDescriptor)
-
-            for club in clubs {
-                if !club.poloNotesListURL.isEmpty,
-                   let url = URL(string: club.poloNotesListURL)
-                {
-                    sources.append(NotesSource(url: url, title: club.name))
-                }
-            }
-        } catch {
-            print("[CallsignLookup] Failed to load clubs: \(error)")
-        }
-
-        // Fetch from user-configured sources
-        do {
-            let sourceDescriptor = FetchDescriptor<CallsignNotesSource>(
-                predicate: #Predicate { $0.isEnabled }
-            )
-            let userSources = try context.fetch(sourceDescriptor)
-
-            for source in userSources {
-                if let url = URL(string: source.url) {
-                    sources.append(NotesSource(url: url, title: source.title))
-                }
-            }
-        } catch {
-            print("[CallsignLookup] Failed to load callsign notes sources: \(error)")
-        }
-
-        return sources
+        // Use the shared cache - it loads from disk instantly and refreshes in background
+        // The cache should be preloaded on app launch, so this is a fast dictionary lookup
+        await CallsignNotesCache.shared.info(for: callsign)
     }
 
     // MARK: - Cache Management

@@ -46,7 +46,13 @@ struct CarrierWaveApp: App {
         WindowGroup {
             ContentView(tourState: tourState)
                 .task {
+                    // Preload caches on app launch (loads from disk, refreshes in background)
                     await POTAParksCache.shared.ensureLoaded()
+                    // Fetch sources on main actor, then pass to cache actor
+                    let sources = NotesSourceInfo.fetchAll(
+                        modelContext: sharedModelContainer.mainContext
+                    )
+                    await CallsignNotesCache.shared.ensureLoaded(sources: sources)
                 }
                 .onOpenURL { url in
                     handleURL(url)

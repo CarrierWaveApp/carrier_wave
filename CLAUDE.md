@@ -48,6 +48,31 @@ Carrier Wave is a SwiftUI/SwiftData iOS app for amateur radio QSO (contact) logg
 - Tests use in-memory SwiftData containers
 - **Follow [Performance Guidelines](docs/PERFORMANCE.md)** — especially for Logger, Map, and tab transitions
 
+## Performance Rules (MANDATORY)
+
+**These rules are non-negotiable. Violating them causes multi-second UI freezes for users with large datasets.**
+
+### No Full Table Scans on Main Thread
+
+1. **NEVER use `@Query` without `fetchLimit`** for unbounded collections (QSOs, ServicePresence)
+2. **NEVER call `FetchDescriptor` without `fetchLimit`** unless you're certain the result set is small
+3. **NEVER filter/map/iterate full collections in view code** — use database predicates instead
+4. **NEVER load data synchronously in `onAppear` or `onChange`** — use `.task` with cancellation
+
+### Network/IO in Input Handlers
+
+1. **NEVER trigger network requests from text field `onChange`** without aggressive debouncing (500ms+)
+2. **NEVER load remote resources (URLs, files) during first keystroke** — preload on view appear
+3. **NEVER block the main thread waiting for cache population** — show UI immediately, load async
+
+### Background Work Requirements
+
+1. **All statistics computation MUST use cooperative yielding** (`Task.yield()` between phases)
+2. **All bulk data loading MUST happen off the main thread** or use pagination
+3. **All network fetches MUST be cancellable** and not block UI updates
+
+See [Performance Guidelines](docs/PERFORMANCE.md) for detailed patterns and examples.
+
 ## Linting & Formatting
 
 Uses SwiftLint (`.swiftlint.yml`) and SwiftFormat (`.swiftformat`).

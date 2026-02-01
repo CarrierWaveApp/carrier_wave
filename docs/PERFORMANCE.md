@@ -2,6 +2,116 @@
 
 > **Goal**: Keep the app responsive at 60fps. View bodies should complete in <16ms.
 
+---
+
+## CRITICAL: No Full Table Scans
+
+**These rules are non-negotiable.** Violating them causes multi-second UI freezes for users with tens of thousands of QSOs.
+
+### Rule 1: Never Use `@Query` Without `fetchLimit`
+
+```swift
+// FORBIDDEN - loads ALL QSOs into memory
+@Query(filter: #Predicate<QSO> { !$0.isHidden }) var qsos: [QSO]
+
+// REQUIRED - paginate or limit
+@Query(
+    filter: #Predicate<QSO> { !$0.isHidden },
+    sort: \QSO.timestamp,
+    order: .reverse
+) var qsos: [QSO]
+// Then use: ForEach(qsos.prefix(50)) { ... }
+
+// BETTER - fetch with limit in code
+let descriptor = FetchDescriptor<QSO>(...)
+descriptor.fetchLimit = 50
+let qsos = try context.fetch(descriptor)
+```
+
+### Rule 2: Never Filter/Map Collections in View Bodies
+
+```swift
+// FORBIDDEN - O(n) on every render
+var body: some View {
+    let filtered = allQSOs.filter { $0.band == "20m" }
+    ForEach(filtered) { qso in ... }
+}
+
+// REQUIRED - use database predicate
+let predicate = #Predicate<QSO> { $0.band == "20m" && !$0.isHidden }
+let descriptor = FetchDescriptor(predicate: predicate)
+```
+
+### Rule 3: Never Load Data Synchronously in Input Handlers
+
+```swift
+// FORBIDDEN - blocks UI on first keystroke
+.onChange(of: callsignInput) { _, newValue in
+    let results = loadDataFromNetwork()  // Blocks!
+    // ...
+}
+
+// REQUIRED - async with cancellation
+.onChange(of: callsignInput) { _, newValue in
+    lookupTask?.cancel()
+    lookupTask = Task {
+        try? await Task.sleep(for: .milliseconds(300))  // Debounce
+        guard !Task.isCancelled else { return }
+        let results = await loadDataAsync()
+        // ...
+    }
+}
+```
+
+### Rule 4: Preload Caches on App Launch, Not On-Demand
+
+```swift
+// FORBIDDEN - downloads on first use, blocking lookup
+func lookup(_ callsign: String) async -> Info? {
+    if cache.isEmpty {
+        await downloadAndPopulateCache()  // Multi-second delay!
+    }
+    return cache[callsign]
+}
+
+// REQUIRED - preload on launch, lookup is instant
+// In App.swift:
+.task {
+    await MyCache.shared.ensureLoaded()  // Loads from disk
+}
+
+// In lookup:
+func lookup(_ callsign: String) -> Info? {
+    return MyCache.shared.infoSync(for: callsign)  // Instant
+}
+```
+
+### Rule 5: Use Persistent Caches for Remote Data
+
+Remote data (Polo notes, park lists) must be cached to disk and refreshed in background:
+
+```swift
+actor MyCache {
+    static let shared = MyCache()
+    
+    // Load from disk instantly, refresh in background daily
+    func ensureLoaded() async {
+        if loadFromDisk() {
+            Task { await refreshIfStale() }  // Background refresh
+            return
+        }
+        try? await downloadAndCache()
+    }
+    
+    // Synchronous lookup for UI
+    nonisolated func infoSync(for key: String) -> Info? {
+        cache[key]
+    }
+}
+```
+
+---
+
 ## General Principles
 
 ### SwiftUI View Bodies
@@ -312,6 +422,13 @@ struct DashboardView: View {
 
 When reviewing code for performance, verify:
 
+### CRITICAL: Full Table Scans (Reject PR if violated)
+- [ ] No `@Query` on QSO/ServicePresence without `fetchLimit` or `.prefix()`
+- [ ] No `FetchDescriptor` without `fetchLimit` for unbounded collections
+- [ ] No network/file loading in `onChange` handlers without debouncing
+- [ ] Remote data uses persistent cache (not downloaded on-demand)
+- [ ] Caches preloaded on app launch, not on first use
+
 ### View Bodies
 - [ ] No formatter creation in body
 - [ ] No filtering/sorting/mapping collections in body
@@ -328,14 +445,16 @@ When reviewing code for performance, verify:
 - [ ] `reserveCapacity` called when size is known
 - [ ] Lazy loading for large datasets
 - [ ] List rows are lightweight
+- [ ] Rows don't trigger network requests on appear (use cached data)
 
 ### Async Operations
 - [ ] Actor calls are batched where possible
 - [ ] Synchronous functions don't use `async` unnecessarily
 - [ ] Long operations show loading state, don't block UI
+- [ ] Input handlers use debouncing (300-500ms minimum)
 
 ### Critical Views (Logger, Map, Tabs)
-- [ ] Logger: Input is debounced, lookups don't block typing
+- [ ] Logger: Input is debounced, lookups use cached data, no network on keystroke
 - [ ] Map: Annotations limited to viewport, clustering enabled
 - [ ] Tabs: Heavy content deferred until visible
 

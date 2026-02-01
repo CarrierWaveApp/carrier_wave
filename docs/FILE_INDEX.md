@@ -112,7 +112,8 @@ This index maps files to their purpose. Use it to locate files by feature instea
 | `CallsignDetector.swift` | Callsign regex detection, context analysis, text element parsing |
 | `CWConversationTracker.swift` | Track CW conversation turns via frequency and prosign analysis |
 | `PoloNotesParser.swift` | Parse Ham2K Polo notes list files for callsign info |
-| `CallsignLookupService.swift` | Two-tier callsign lookup (Polo notes, then QRZ API) |
+| `CallsignLookupService.swift` | Two-tier callsign lookup (Polo notes cache, then QRZ API) |
+| `CallsignNotesCache.swift` | Persistent cache for Polo notes (loads from disk, refreshes daily) |
 | `MorseEditDistance.swift` | Levenshtein distance on morse patterns for word suggestions |
 | `CWSuggestionEngine.swift` | Word suggestion engine with dictionaries and settings |
 | `LoggingSessionManager.swift` | Session lifecycle management (start, end, log QSO, hide QSO) |
