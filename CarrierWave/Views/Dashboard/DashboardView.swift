@@ -119,7 +119,7 @@ struct DashboardView: View {
                 await checkForUnconfiguredCallsigns()
                 await checkForMismarkedPOTAPresence()
             }
-            .onChange(of: syncService.lastSyncTime) { _, _ in
+            .onChange(of: syncService.lastSyncDate) { _, _ in
                 // Recompute stats after sync completes
                 asyncStats.compute(from: modelContext)
                 presenceCounts.compute(from: modelContext)

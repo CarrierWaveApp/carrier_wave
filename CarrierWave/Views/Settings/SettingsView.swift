@@ -451,7 +451,7 @@ struct SettingsMainView: View {
             HStack {
                 Text("Version")
                 Spacer()
-                Text("1.16.1")
+                Text("1.16.2")
                     .foregroundStyle(.secondary)
             }
 
@@ -837,8 +837,10 @@ struct AllHiddenQSOsView: View {
                                         ProgressView()
                                             .padding(.vertical, 8)
                                     } else {
-                                        Text("Load More (\(totalCount - hiddenQSOs.count) remaining)")
-                                            .foregroundStyle(.blue)
+                                        Text(
+                                            "Load More (\(totalCount - hiddenQSOs.count) remaining)"
+                                        )
+                                        .foregroundStyle(.blue)
                                     }
                                 }
                                 .disabled(isLoadingMore)
@@ -930,7 +932,9 @@ struct AllHiddenQSOsView: View {
     }
 
     private func loadMoreHiddenQSOs() async {
-        guard !isLoadingMore, hasMoreQSOs else { return }
+        guard !isLoadingMore, hasMoreQSOs else {
+            return
+        }
         isLoadingMore = true
         defer { isLoadingMore = false }
 
@@ -959,8 +963,12 @@ struct AllHiddenQSOsView: View {
             descriptor.fetchOffset = offset
             descriptor.fetchLimit = Self.batchSize
 
-            guard let batch = try? modelContext.fetch(descriptor) else { break }
-            if batch.isEmpty { break }
+            guard let batch = try? modelContext.fetch(descriptor) else {
+                break
+            }
+            if batch.isEmpty {
+                break
+            }
 
             for qso in batch {
                 qso.isHidden = false
@@ -982,8 +990,12 @@ struct AllHiddenQSOsView: View {
             var descriptor = FetchDescriptor<QSO>(predicate: #Predicate { $0.isHidden })
             descriptor.fetchLimit = Self.batchSize
 
-            guard let batch = try? modelContext.fetch(descriptor) else { break }
-            if batch.isEmpty { break }
+            guard let batch = try? modelContext.fetch(descriptor) else {
+                break
+            }
+            if batch.isEmpty {
+                break
+            }
 
             for qso in batch {
                 modelContext.delete(qso)

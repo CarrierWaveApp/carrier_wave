@@ -43,6 +43,7 @@ final class AsyncQSOStatistics {
 
     private(set) var qrzConfirmedCount: Int = 0
     private(set) var lotwConfirmedCount: Int = 0
+    private(set) var icloudImportedCount: Int = 0
     private(set) var uniqueMyCallsigns: Set<String> = []
 
     // MARK: - Computation state
@@ -85,6 +86,7 @@ final class AsyncQSOStatistics {
         // Compute service stats
         qrzConfirmedCount = qsos.filter(\.qrzConfirmed).count
         lotwConfirmedCount = qsos.filter(\.lotwConfirmed).count
+        icloudImportedCount = qsos.filter { $0.importSource == .icloud }.count
         uniqueMyCallsigns = Set(qsos.map { $0.myCallsign.uppercased() }.filter { !$0.isEmpty })
 
         // For small datasets, compute everything synchronously
@@ -134,7 +136,9 @@ final class AsyncQSOStatistics {
         let count = (try? modelContext.fetchCount(countDescriptor)) ?? 0
         totalQSOs = count
 
-        guard !Task.isCancelled else { return cleanup() }
+        guard !Task.isCancelled else {
+            return cleanup()
+        }
 
         // For empty or very small datasets, fetch all and compute
         if count <= Self.progressiveThreshold {
@@ -157,7 +161,9 @@ final class AsyncQSOStatistics {
             return
         }
 
-        guard !Task.isCancelled else { return cleanup() }
+        guard !Task.isCancelled else {
+            return cleanup()
+        }
 
         // Create stats and compute
         let newStats = QSOStatistics(qsos: qsos)
@@ -168,6 +174,7 @@ final class AsyncQSOStatistics {
         uniqueGrids = newStats.uniqueGrids
         qrzConfirmedCount = qsos.filter(\.qrzConfirmed).count
         lotwConfirmedCount = qsos.filter(\.lotwConfirmed).count
+        icloudImportedCount = qsos.filter { $0.importSource == .icloud }.count
         uniqueMyCallsigns = Set(qsos.map { $0.myCallsign.uppercased() }.filter { !$0.isEmpty })
 
         computeAllSynchronously(from: newStats)
@@ -184,7 +191,9 @@ final class AsyncQSOStatistics {
 
         // Fetch in batches with yielding
         while offset < totalCount {
-            guard !Task.isCancelled else { return cleanup() }
+            guard !Task.isCancelled else {
+                return cleanup()
+            }
 
             var descriptor = FetchDescriptor<QSO>(predicate: #Predicate { !$0.isHidden })
             descriptor.sortBy = [SortDescriptor(\.timestamp, order: .reverse)]
@@ -202,7 +211,9 @@ final class AsyncQSOStatistics {
             await Task.yield()
         }
 
-        guard !Task.isCancelled else { return cleanup() }
+        guard !Task.isCancelled else {
+            return cleanup()
+        }
 
         // Create stats from all fetched QSOs
         let newStats = QSOStatistics(qsos: allQSOs)
@@ -214,10 +225,13 @@ final class AsyncQSOStatistics {
         uniqueGrids = newStats.uniqueGrids
         qrzConfirmedCount = allQSOs.filter(\.qrzConfirmed).count
         lotwConfirmedCount = allQSOs.filter(\.lotwConfirmed).count
+        icloudImportedCount = allQSOs.filter { $0.importSource == .icloud }.count
         uniqueMyCallsigns = Set(allQSOs.map { $0.myCallsign.uppercased() }.filter { !$0.isEmpty })
 
         await Task.yield()
-        guard !Task.isCancelled else { return cleanup() }
+        guard !Task.isCancelled else {
+            return cleanup()
+        }
 
         // Continue with progressive computation
         await computeProgressively(from: newStats)

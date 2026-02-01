@@ -288,12 +288,9 @@ struct GoalListView: View {
 // MARK: - QualifyingQSOsView
 
 struct QualifyingQSOsView: View {
+    // MARK: Internal
+
     let participation: ChallengeParticipation
-
-    @Environment(\.modelContext) private var modelContext
-
-    /// QSOs fetched by ID (not using @Query to avoid full table scan)
-    @State private var qualifyingQSOs: [QSO] = []
 
     var body: some View {
         List {
@@ -326,6 +323,13 @@ struct QualifyingQSOsView: View {
         }
     }
 
+    // MARK: Private
+
+    @Environment(\.modelContext) private var modelContext
+
+    /// QSOs fetched by ID (not using @Query to avoid full table scan)
+    @State private var qualifyingQSOs: [QSO] = []
+
     /// Load only the qualifying QSOs by their IDs
     private func loadQualifyingQSOs() async {
         let ids = participation.progress.qualifyingQSOIds
@@ -346,7 +350,7 @@ struct QualifyingQSOsView: View {
 
         // Limit fetch to avoid loading entire database
         // Challenge qualifying QSOs are typically under 1000
-        descriptor.fetchLimit = max(idSet.count * 2, 1000)
+        descriptor.fetchLimit = max(idSet.count * 2, 1_000)
 
         guard let fetched = try? modelContext.fetch(descriptor) else {
             qualifyingQSOs = []

@@ -15,7 +15,7 @@ final class AsyncServicePresenceCounts {
     // MARK: Internal
 
     /// Batch size for fetching
-    static let batchSize = 1000
+    static let batchSize = 1_000
 
     /// Counts by service type
     private(set) var uploadedCounts: [ServiceType: Int] = [:]

@@ -4,6 +4,8 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.16.2] - 2026-02-01
+
 ### Fixed
 - **Logger Text Input Lag** - Fixed multi-second input lag when typing in logger callsign field for users with large databases
   - Removed unbounded @Query from SessionMapPanelView (now uses passed session QSOs)
@@ -17,6 +19,7 @@ All notable changes to Carrier Wave will be documented in this file.
   - CallsignAliasesSettingsView: computes QSO counts in background
   - ChallengeDetailHelperViews: QualifyingQSOsView uses limited fetch
   - AllHiddenQSOsView: uses "Load More" pagination
+- **Dashboard Build Error** - Fixed reference to non-existent property in sync time observer
 
 ## [1.16.1] - 2026-01-31
 

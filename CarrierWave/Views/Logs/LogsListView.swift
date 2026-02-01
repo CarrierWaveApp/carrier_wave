@@ -98,7 +98,7 @@ struct LogsListContentView: View {
             }
         }
         .overlay {
-            if qsos.isEmpty && !isLoadingInitial {
+            if qsos.isEmpty, !isLoadingInitial {
                 ContentUnavailableView(
                     "No QSOs",
                     systemImage: "antenna.radiowaves.left.and.right",
@@ -195,7 +195,9 @@ struct LogsListContentView: View {
     }
 
     private func loadMoreQSOs() async {
-        guard !isLoadingMore, hasMoreQSOs else { return }
+        guard !isLoadingMore, hasMoreQSOs else {
+            return
+        }
 
         isLoadingMore = true
 
