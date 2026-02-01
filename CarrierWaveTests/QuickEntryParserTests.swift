@@ -324,4 +324,42 @@ final class QuickEntryParserTests: XCTestCase {
         XCTAssertEqual(result?.theirPark, "US-0189")
         XCTAssertNil(result?.notes)
     }
+
+    // MARK: - Edge Cases
+
+    func testEmptyStringReturnsNil() {
+        let result = QuickEntryParser.parse("")
+        XCTAssertNil(result)
+    }
+
+    func testWhitespaceOnlyReturnsNil() {
+        let result = QuickEntryParser.parse("   ")
+        XCTAssertNil(result)
+    }
+
+    func testLowercaseCallsignNormalized() {
+        // Callsign input should be normalized to uppercase
+        let result = QuickEntryParser.parse("w1aw 59")
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result?.callsign, "W1AW")
+        XCTAssertEqual(result?.rstReceived, "59")
+    }
+
+    func testThreeRSTValuesTreatsThirdAsNotes() {
+        // Third RST-like value should become notes (only 2 RSTs supported)
+        let result = QuickEntryParser.parse("W1AW 559 579 599")
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result?.rstSent, "559")
+        XCTAssertEqual(result?.rstReceived, "579")
+        XCTAssertEqual(result?.notes, "599")
+    }
+
+    func testSecondCallsignBecomesNotes() {
+        // If user enters two callsigns, second becomes notes
+        let result = QuickEntryParser.parse("W1AW K3LR 59")
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result?.callsign, "W1AW")
+        XCTAssertEqual(result?.rstReceived, "59")
+        XCTAssertEqual(result?.notes, "K3LR")
+    }
 }
