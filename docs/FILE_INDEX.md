@@ -128,6 +128,16 @@ This index maps files to their purpose. Use it to locate files by feature instea
 | `HamDBClient.swift` | HamDB.org API client for US callsign license class lookup |
 | `UserProfileService.swift` | Persists and retrieves user profile data |
 
+## Services - Query Language (`CarrierWave/Services/QueryLanguage/`)
+| File | Purpose |
+|------|---------|
+| `QueryToken.swift` | Token types and field definitions for query lexer |
+| `QueryLexer.swift` | Tokenizes query strings, handles field:value syntax |
+| `QueryAST.swift` | Abstract syntax tree nodes for parsed queries |
+| `QueryParser.swift` | Parses tokens into AST with boolean logic support |
+| `QueryAnalyzer.swift` | Performance analysis and slow query warnings |
+| `QueryCompiler.swift` | Compiles AST to SwiftData predicates and filter closures |
+
 ## Views - Logger (`CarrierWave/Views/Logger/`)
 | File | Purpose |
 |------|---------|
