@@ -240,6 +240,7 @@ struct LoggerView: View {
     @AppStorage("loggerShowTheirGrid") private var showTheirGridAlways = false
     @AppStorage("loggerShowTheirPark") private var showTheirParkAlways = false
     @AppStorage("loggerShowOperator") private var showOperatorAlways = false
+    @AppStorage("loggerShowTheirState") private var showTheirStateAlways = false
 
     /// QSOs for the current session (manually fetched, not @Query to avoid full-database refresh)
     @State private var sessionQSOs: [QSO] = []
@@ -260,6 +261,7 @@ struct LoggerView: View {
     @State private var theirPark = ""
     @State private var operatorName = ""
     @State private var theirGrid = ""
+    @State private var theirState = ""
 
     // Callsign lookup
     @State private var lookupResult: CallsignInfo?
@@ -353,11 +355,13 @@ struct LoggerView: View {
     /// Whether any fields are configured to always be visible
     private var hasAlwaysVisibleFields: Bool {
         showNotesAlways || showTheirGridAlways || showTheirParkAlways || showOperatorAlways
+            || showTheirStateAlways
     }
 
     /// Whether there are any fields left to show in "More Fields"
     private var hasMoreFields: Bool {
         !showNotesAlways || !showTheirGridAlways || !showTheirParkAlways || !showOperatorAlways
+            || !showTheirStateAlways
     }
 
     /// Detected command from input (if any)
@@ -712,9 +716,12 @@ struct LoggerView: View {
     private var alwaysVisibleFieldsSection: some View {
         if hasAlwaysVisibleFields {
             VStack(spacing: 12) {
-                // Grid and Park in a row if both visible
-                if showTheirGridAlways || showTheirParkAlways {
+                // State, Grid, and Park in a row if any visible
+                if showTheirStateAlways || showTheirGridAlways || showTheirParkAlways {
                     HStack(spacing: 12) {
+                        if showTheirStateAlways {
+                            theirStateField
+                        }
                         if showTheirGridAlways {
                             theirGridField
                         }
@@ -740,9 +747,12 @@ struct LoggerView: View {
 
     private var moreFieldsSection: some View {
         VStack(spacing: 12) {
-            // Grid and Park in a row (only if not always visible)
-            if !showTheirGridAlways || !showTheirParkAlways {
+            // State, Grid, and Park in a row (only if not always visible)
+            if !showTheirStateAlways || !showTheirGridAlways || !showTheirParkAlways {
                 HStack(spacing: 12) {
+                    if !showTheirStateAlways {
+                        theirStateField
+                    }
                     if !showTheirGridAlways {
                         theirGridField
                     }
@@ -766,6 +776,21 @@ struct LoggerView: View {
     }
 
     // MARK: - Reusable Field Views
+
+    private var theirStateField: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("State")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            TextField(lookupResult?.state ?? "ST", text: $theirState)
+                .font(.subheadline.monospaced())
+                .textInputAutocapitalization(.characters)
+                .padding(10)
+                .background(Color(.tertiarySystemGroupedBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .frame(width: 60)
+        }
+    }
 
     private var theirGridField: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -1293,6 +1318,14 @@ struct LoggerView: View {
                 lookupResult?.grid
             }
 
+        // Use manually entered state, or fall back to state from callsign lookup
+        let stateToUse: String? =
+            if !theirState.isEmpty {
+                theirState
+            } else {
+                lookupResult?.state
+            }
+
         _ = sessionManager?.logQSO(
             callsign: callsignInput,
             rstSent: rstSent.isEmpty ? defaultRST : rstSent,
@@ -1302,7 +1335,7 @@ struct LoggerView: View {
             notes: notes.isEmpty ? nil : notes,
             name: lookupResult?.name,
             operatorName: operatorName.isEmpty ? lookupResult?.displayName : operatorName,
-            state: lookupResult?.state,
+            state: stateToUse,
             country: lookupResult?.country,
             qth: lookupResult?.qth,
             theirLicenseClass: lookupResult?.licenseClass
@@ -1320,6 +1353,7 @@ struct LoggerView: View {
             lookupError = nil
             cachedPotaDuplicateStatus = nil
             theirGrid = ""
+            theirState = ""
             theirPark = ""
             notes = ""
             operatorName = ""
