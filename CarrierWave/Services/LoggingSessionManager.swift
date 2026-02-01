@@ -361,6 +361,9 @@ final class LoggingSessionManager {
             return
         }
 
+        // End the session first to properly mark it as completed
+        session.end()
+
         // Hide all QSOs in this session
         let sessionId = session.id
         let predicate = #Predicate<QSO> { qso in
