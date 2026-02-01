@@ -2,8 +2,50 @@
 //
 // Downloads and caches park reference data from pota.app for
 // displaying human-readable park names throughout the app.
+// Supports full-text search and nearby parks lookup.
 
 import Foundation
+
+// MARK: - POTAPark
+
+/// Full park metadata from POTA CSV
+struct POTAPark: Sendable {
+    let reference: String // "US-1234"
+    let name: String // "Yellowstone National Park"
+    let locationDesc: String // "US-WY" (state/region)
+    let latitude: Double?
+    let longitude: Double?
+    let grid: String?
+    let entityId: Int // DXCC entity (291 = USA)
+    let isActive: Bool
+
+    /// Extract country prefix from reference (e.g., "US" from "US-1234")
+    var countryPrefix: String {
+        let parts = reference.split(separator: "-")
+        guard let first = parts.first else {
+            return ""
+        }
+        return String(first)
+    }
+
+    /// Extract numeric part from reference (e.g., "1234" from "US-1234")
+    var numericPart: String {
+        let parts = reference.split(separator: "-")
+        guard parts.count >= 2 else {
+            return ""
+        }
+        return String(parts[1])
+    }
+
+    /// Extract state from locationDesc (e.g., "WY" from "US-WY")
+    var state: String? {
+        let parts = locationDesc.split(separator: "-")
+        guard parts.count >= 2 else {
+            return nil
+        }
+        return String(parts[1])
+    }
+}
 
 // MARK: - POTAParksCacheMetadata
 
@@ -66,6 +108,11 @@ actor POTAParksCache {
     /// Get park name for a reference (e.g., "K-1234" -> "Yellowstone National Park")
     /// Returns nil if park not found or cache not loaded
     func name(for reference: String) -> String? {
+        parks[reference.uppercased()]?.name
+    }
+
+    /// Get full park data for a reference
+    func park(for reference: String) -> POTAPark? {
         parks[reference.uppercased()]
     }
 
@@ -153,7 +200,120 @@ actor POTAParksCache {
     /// Synchronous park name lookup for UI use (nonisolated for MainActor access)
     /// Returns nil if park not found or cache not yet loaded
     nonisolated func nameSync(for reference: String) -> String? {
+        parks[reference.uppercased()]?.name
+    }
+
+    /// Synchronous full park lookup for UI use (nonisolated for MainActor access)
+    /// Returns nil if park not found or cache not yet loaded
+    nonisolated func parkSync(for reference: String) -> POTAPark? {
         parks[reference.uppercased()]
+    }
+
+    /// Search parks by name (full-text search on words)
+    /// Returns parks whose names contain all query words
+    nonisolated func searchByName(_ query: String, limit: Int = 20) -> [POTAPark] {
+        let queryWords = query.lowercased()
+            .components(separatedBy: .whitespaces)
+            .filter { !$0.isEmpty }
+
+        guard !queryWords.isEmpty else {
+            return []
+        }
+
+        // Find references that match ALL query words
+        var matchingRefs: Set<String>?
+
+        for word in queryWords {
+            var wordMatches = Set<String>()
+            // Find all index entries that start with this word (prefix match)
+            for (indexWord, refs) in nameIndex where indexWord.hasPrefix(word) {
+                wordMatches.formUnion(refs)
+            }
+
+            if let existing = matchingRefs {
+                matchingRefs = existing.intersection(wordMatches)
+            } else {
+                matchingRefs = wordMatches
+            }
+
+            // Early exit if no matches
+            if matchingRefs?.isEmpty == true {
+                return []
+            }
+        }
+
+        guard let refs = matchingRefs else {
+            return []
+        }
+
+        // Convert refs to parks and sort by relevance (shorter names first, then alphabetical)
+        var results = refs.compactMap { parks[$0] }
+        results.sort { lhs, rhs in
+            if lhs.name.count != rhs.name.count {
+                return lhs.name.count < rhs.name.count
+            }
+            return lhs.name < rhs.name
+        }
+
+        return Array(results.prefix(limit))
+    }
+
+    /// Find parks near a location
+    /// Returns parks sorted by distance, closest first
+    nonisolated func nearbyParks(
+        latitude: Double,
+        longitude: Double,
+        limit: Int = 20,
+        maxDistanceKm: Double = 100
+    ) -> [(park: POTAPark, distanceKm: Double)] {
+        var results: [(park: POTAPark, distanceKm: Double)] = []
+
+        for park in parks.values {
+            guard let parkLat = park.latitude, let parkLon = park.longitude else {
+                continue
+            }
+
+            let distance = haversineDistance(
+                lat1: latitude, lon1: longitude,
+                lat2: parkLat, lon2: parkLon
+            )
+
+            if distance <= maxDistanceKm {
+                results.append((park: park, distanceKm: distance))
+            }
+        }
+
+        // Sort by distance
+        results.sort { $0.distanceKm < $1.distanceKm }
+
+        return Array(results.prefix(limit))
+    }
+
+    /// Lookup a park by reference, supporting shorthand notation
+    /// - "1234" -> looks up with defaultCountry prefix (e.g., "US-1234")
+    /// - "K-1234" -> direct lookup
+    /// - "US-1234" -> direct lookup
+    nonisolated func lookupPark(_ query: String, defaultCountry: String = "US") -> POTAPark? {
+        let trimmed = query.trimmingCharacters(in: .whitespaces).uppercased()
+
+        // Direct lookup first
+        if let park = parks[trimmed] {
+            return park
+        }
+
+        // Try with default country prefix if query looks like just a number
+        if trimmed.allSatisfy(\.isNumber) {
+            let withPrefix = "\(defaultCountry.uppercased())-\(trimmed)"
+            return parks[withPrefix]
+        }
+
+        // Try common prefixes if not found (K- is an alias for US-)
+        if trimmed.hasPrefix("K-") {
+            let usRef = "US-" + trimmed.dropFirst(2)
+            return parks[String(usRef)]
+        }
+
+        return nil
     }
 
     // MARK: Private
@@ -164,7 +324,8 @@ actor POTAParksCache {
 
     /// Thread-safe parks lookup using nonisolated(unsafe) for synchronous access
     /// Safe because: writes only happen during ensureLoaded() which completes before reads
-    nonisolated(unsafe) private var parks: [String: String] = [:] // reference -> name
+    nonisolated(unsafe) private var parks: [String: POTAPark] = [:] // reference -> park
+    nonisolated(unsafe) private var nameIndex: [String: [String]] = [:] // lowercase word -> [references]
     private var isLoaded = false
 
     private var cacheDirectory: URL {
@@ -187,6 +348,7 @@ actor POTAParksCache {
         do {
             let csvData = try String(contentsOf: cacheFileURL, encoding: .utf8)
             parks = parseCSV(csvData)
+            buildNameIndex()
             return !parks.isEmpty
         } catch {
             print("POTAParksCache: Failed to load from disk: \(error)")
@@ -227,6 +389,7 @@ actor POTAParksCache {
         // Parse and store in memory
         let parsed = parseCSV(csvString)
         parks = parsed
+        buildNameIndex()
 
         // Save to disk
         try csvString.write(to: cacheFileURL, atomically: true, encoding: .utf8)
@@ -235,30 +398,35 @@ actor POTAParksCache {
         print("POTAParksCache: Downloaded \(parsed.count) parks")
     }
 
-    private func parseCSV(_ csv: String) -> [String: String] {
-        var result: [String: String] = [:]
-        let lines = csv.components(separatedBy: .newlines)
-
-        // Skip header row
-        for line in lines.dropFirst() {
+    /// Parse the POTA CSV into full park objects
+    /// CSV columns: reference, name, active, entityId, locationDesc, latitude, longitude, grid
+    private func parseCSV(_ csv: String) -> [String: POTAPark] {
+        var result: [String: POTAPark] = [:]
+        for line in csv.components(separatedBy: .newlines).dropFirst() {
             guard !line.isEmpty else {
                 continue
             }
-
             let fields = parseCSVLine(line)
-            guard fields.count >= 2 else {
+            guard fields.count >= 8 else {
                 continue
             }
-
             let reference = fields[0].uppercased()
             let name = fields[1]
-
             guard !reference.isEmpty, !name.isEmpty else {
                 continue
             }
-            result[reference] = name
+            let park = POTAPark(
+                reference: reference,
+                name: name,
+                locationDesc: fields[4],
+                latitude: Double(fields[5]),
+                longitude: Double(fields[6]),
+                grid: fields[7].isEmpty ? nil : fields[7],
+                entityId: Int(fields[3]) ?? 0,
+                isActive: fields[2].lowercased() == "1" || fields[2].lowercased() == "true"
+            )
+            result[reference] = park
         }
-
         return result
     }
 
@@ -281,5 +449,46 @@ actor POTAParksCache {
         fields.append(current.trimmingCharacters(in: .whitespaces))
 
         return fields
+    }
+
+    /// Build the name index for full-text search
+    /// Maps lowercase words to arrays of park references
+    private func buildNameIndex() {
+        var index: [String: [String]] = [:]
+
+        for (reference, park) in parks {
+            // Split name into words and index each
+            let words = park.name.lowercased()
+                .components(separatedBy: CharacterSet.alphanumerics.inverted)
+                .filter { !$0.isEmpty && $0.count >= 2 } // Skip very short words
+
+            for word in words {
+                if index[word] == nil {
+                    index[word] = [reference]
+                } else {
+                    index[word]?.append(reference)
+                }
+            }
+        }
+
+        nameIndex = index
+    }
+
+    /// Calculate distance between two coordinates using Haversine formula
+    /// Returns distance in kilometers
+    nonisolated private func haversineDistance(
+        lat1: Double, lon1: Double,
+        lat2: Double, lon2: Double
+    ) -> Double {
+        let earthRadiusKm = 6_371.0
+        let dLat = (lat2 - lat1) * .pi / 180
+        let dLon = (lon2 - lon1) * .pi / 180
+        let lat1Rad = lat1 * .pi / 180
+        let lat2Rad = lat2 * .pi / 180
+        let haversineLat = sin(dLat / 2) * sin(dLat / 2)
+        let haversineLon = sin(dLon / 2) * sin(dLon / 2) * cos(lat1Rad) * cos(lat2Rad)
+        let centralAngle =
+            2 * atan2(sqrt(haversineLat + haversineLon), sqrt(1 - haversineLat - haversineLon))
+        return earthRadiusKm * centralAngle
     }
 }
