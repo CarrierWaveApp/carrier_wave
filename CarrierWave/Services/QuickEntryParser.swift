@@ -5,6 +5,32 @@
 
 import Foundation
 
+// MARK: - TokenType
+
+/// Token types for quick entry color coding
+enum TokenType: Equatable {
+    case callsign
+    case rstSent
+    case rstReceived
+    case state
+    case park
+    case grid
+    case notes
+}
+
+// MARK: - ParsedToken
+
+/// A parsed token with its text and type for UI preview
+struct ParsedToken: Equatable, Identifiable {
+    let id = UUID()
+    let text: String
+    let type: TokenType
+
+    static func == (lhs: ParsedToken, rhs: ParsedToken) -> Bool {
+        lhs.text == rhs.text && lhs.type == rhs.type
+    }
+}
+
 // MARK: - QuickEntryResult
 
 /// Result of parsing a quick entry string
@@ -78,6 +104,67 @@ enum QuickEntryParser {
         // Unrecognized tokens become notes
         if !unrecognized.isEmpty {
             result.notes = unrecognized.joined(separator: " ")
+        }
+
+        return result
+    }
+
+    /// Parse a quick entry string into tokens with types for UI preview (color-coding)
+    /// Returns empty array if input is not valid quick entry (single callsign or command)
+    static func parseTokens(_ input: String) -> [ParsedToken] {
+        let tokens = input.uppercased()
+            .split(separator: " ", omittingEmptySubsequences: true)
+            .map(String.init)
+
+        // Need at least 2 tokens for quick entry
+        guard tokens.count >= 2 else {
+            return []
+        }
+
+        // First token must be a callsign
+        guard isCallsign(tokens[0]) else {
+            return []
+        }
+
+        // Don't trigger quick entry if first token looks like a command
+        if LoggerCommand.parse(tokens[0]) != nil {
+            return []
+        }
+
+        var result: [ParsedToken] = []
+        var rstTokens: [(text: String, index: Int)] = []
+
+        // Add callsign token
+        result.append(ParsedToken(text: tokens[0], type: .callsign))
+
+        // First pass: identify all tokens and track RST positions
+        for (index, token) in tokens.dropFirst().enumerated() {
+            if isRST(token) {
+                // Track RST tokens for second pass
+                rstTokens.append((text: token, index: index + 1))
+            } else if isParkReference(token) {
+                result.append(ParsedToken(text: token, type: .park))
+            } else if isGridSquare(token) {
+                result.append(ParsedToken(text: token.uppercased(), type: .grid))
+            } else if isStateOrRegion(token) {
+                result.append(ParsedToken(text: token, type: .state))
+            } else {
+                result.append(ParsedToken(text: token, type: .notes))
+            }
+        }
+
+        // Second pass: assign RST types based on count
+        // If one RST: it's received. If two RSTs: first is sent, second is received
+        if rstTokens.count == 1 {
+            result.insert(ParsedToken(text: rstTokens[0].text, type: .rstReceived), at: 1)
+        } else if rstTokens.count >= 2 {
+            // First two RSTs: sent then received. Additional RSTs become notes.
+            result.insert(ParsedToken(text: rstTokens[0].text, type: .rstSent), at: 1)
+            result.insert(ParsedToken(text: rstTokens[1].text, type: .rstReceived), at: 2)
+            // Any additional RSTs become notes
+            for rst in rstTokens.dropFirst(2) {
+                result.append(ParsedToken(text: rst.text, type: .notes))
+            }
         }
 
         return result
