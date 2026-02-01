@@ -53,7 +53,7 @@ extension DashboardView {
             name: "QRZ Logbook",
             status: qrzIsConfigured ? .connected : .notConfigured,
             primaryStat: qrzIsConfigured ? "\(uploadedCount(for: .qrz)) synced" : nil,
-            secondaryStat: qrzIsConfigured ? "\(qsos.filter(\.qrzConfirmed).count) QSLs" : nil,
+            secondaryStat: qrzIsConfigured ? "\(asyncStats.qrzConfirmedCount) QSLs" : nil,
             tertiaryInfo: qrzIsConfigured ? nil : "Not configured",
             showWarning: pendingCount(for: .qrz) > 0,
             isSyncing: syncService.isSyncing
@@ -93,7 +93,7 @@ extension DashboardView {
             name: "LoTW",
             status: lotwIsConfigured ? .connected : .notConfigured,
             primaryStat: lotwIsConfigured ? "\(uploadedCount(for: .lotw)) synced" : nil,
-            secondaryStat: lotwIsConfigured ? "\(qsos.filter(\.lotwConfirmed).count) QSLs" : nil,
+            secondaryStat: lotwIsConfigured ? "\(asyncStats.lotwConfirmedCount) QSLs" : nil,
             tertiaryInfo: lotwIsConfigured ? nil : "Not configured",
             showWarning: false,
             isSyncing: syncService.isSyncing

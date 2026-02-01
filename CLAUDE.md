@@ -52,12 +52,30 @@ Carrier Wave is a SwiftUI/SwiftData iOS app for amateur radio QSO (contact) logg
 
 **These rules are non-negotiable. Violating them causes multi-second UI freezes for users with large datasets.**
 
+### BANNED: @Query for QSO or ServicePresence
+
+**`@Query` is completely BANNED for QSO and ServicePresence tables.** No exceptions.
+
+```swift
+// BANNED - will freeze UI for seconds
+@Query var qsos: [QSO]
+@Query(filter: #Predicate<QSO> { !$0.isHidden }) var qsos: [QSO]
+@Query var presence: [ServicePresence]
+
+// REQUIRED - use @State with manual FetchDescriptor in .task
+@State private var qsos: [QSO] = []
+.task {
+    var descriptor = FetchDescriptor<QSO>(...)
+    descriptor.fetchLimit = 100
+    qsos = (try? modelContext.fetch(descriptor)) ?? []
+}
+```
+
 ### No Full Table Scans on Main Thread
 
-1. **NEVER use `@Query` without `fetchLimit`** for unbounded collections (QSOs, ServicePresence)
-2. **NEVER call `FetchDescriptor` without `fetchLimit`** unless you're certain the result set is small
-3. **NEVER filter/map/iterate full collections in view code** — use database predicates instead
-4. **NEVER load data synchronously in `onAppear` or `onChange`** — use `.task` with cancellation
+1. **NEVER call `FetchDescriptor` without `fetchLimit`** for QSO/ServicePresence
+2. **NEVER filter/map/iterate full collections in view code** — use database predicates instead
+3. **NEVER load data synchronously in `onAppear` or `onChange`** — use `.task` with cancellation
 
 ### Network/IO in Input Handlers
 

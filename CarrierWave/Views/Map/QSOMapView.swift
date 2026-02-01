@@ -53,7 +53,7 @@ struct QSOMapView: View {
 
                     VStack(alignment: .trailing, spacing: 4) {
                         MapStatsOverlay(
-                            totalQSOs: allQSOs.count,
+                            totalQSOs: totalQSOCount,
                             visibleQSOs: filteredQSOs.count,
                             gridCount: cachedAnnotations.count,
                             stateCount: uniqueStates,
@@ -108,12 +108,13 @@ struct QSOMapView: View {
             .presentationDetents([.medium, .large])
         }
         .task {
-            updateCachedFilterOptions()
-            updateCachedMapData()
+            await loadQSOsInBackground()
         }
-        .onChange(of: allQSOs.count) { _, newCount in
+        .onChange(of: totalQSOCount) { _, newCount in
             if newCount != lastQSOCount {
-                updateCachedFilterOptions()
+                Task {
+                    await loadFilterOptionsInBackground()
+                }
             }
             updateCachedMapData()
         }
@@ -136,7 +137,10 @@ struct QSOMapView: View {
             updateCachedMapData()
         }
         .onChange(of: filterState.showAllQSOs) { _, _ in
-            updateCachedMapData()
+            // Reload QSOs when showAllQSOs changes since it affects fetch limit
+            Task {
+                await loadQSOsInBackground()
+            }
         }
         .onChange(of: filterState.showIndividualQSOs) { _, _ in
             updateCachedMapData()
@@ -148,19 +152,25 @@ struct QSOMapView: View {
 
     // MARK: Private
 
+    @Environment(\.modelContext) private var modelContext
+
     /// Modes that represent activation metadata, not actual QSOs
     private static let metadataModes: Set<String> = ["WEATHER", "SOLAR", "NOTE"]
 
-    @Query(
-        filter: #Predicate<QSO> { !$0.isHidden },
-        sort: \QSO.timestamp,
-        order: .reverse
-    ) private var allQSOs: [QSO]
+    /// Batch size for fetching filter options
+    private static let filterOptionsBatchSize = 500
+
+    /// QSOs fetched on demand (not using @Query to avoid full table scan)
+    @State private var allQSOs: [QSO] = []
+
+    /// Total count of QSOs (for stats display)
+    @State private var totalQSOCount: Int = 0
 
     @State private var filterState = MapFilterState()
     @State private var showingFilterSheet = false
     @State private var selectedAnnotation: QSOAnnotation?
     @State private var cameraPosition: MapCameraPosition = .automatic
+    @State private var isLoadingQSOs = false
 
     // Cached computed values to avoid expensive recalculation on every render
     @State private var cachedAnnotations: [QSOAnnotation] = []
@@ -351,7 +361,7 @@ struct QSOMapView: View {
         cachedUniqueDXCCEntities = Set(filtered.compactMap { $0.dxccEntity?.number }).count
     }
 
-    /// Update cached filter options when QSO data changes
+    /// Update cached filter options from loaded QSOs
     private func updateCachedFilterOptions() {
         cachedAvailableBands = Array(Set(allQSOs.map(\.band))).sorted { band1, band2 in
             bandSortOrder(band1) < bandSortOrder(band2)
@@ -361,6 +371,92 @@ struct QSOMapView: View {
             .sorted()
         cachedAvailableParks = Array(Set(allQSOs.compactMap(\.parkReference))).sorted()
         cachedEarliestQSODate = allQSOs.map(\.timestamp).min()
-        lastQSOCount = allQSOs.count
+        lastQSOCount = totalQSOCount
+    }
+
+    /// Load QSOs in background with pagination
+    private func loadQSOsInBackground() async {
+        isLoadingQSOs = true
+
+        // First get total count
+        let countDescriptor = FetchDescriptor<QSO>(predicate: #Predicate { !$0.isHidden })
+        totalQSOCount = (try? modelContext.fetchCount(countDescriptor)) ?? 0
+
+        // Determine how many to fetch based on filter settings
+        let fetchLimit = filterState.showAllQSOs ? totalQSOCount : MapFilterState.maxQSOsDefault * 2
+
+        // Fetch QSOs with limit
+        var descriptor = FetchDescriptor<QSO>(predicate: #Predicate { !$0.isHidden })
+        descriptor.sortBy = [SortDescriptor(\.timestamp, order: .reverse)]
+        descriptor.fetchLimit = fetchLimit
+
+        if let fetched = try? modelContext.fetch(descriptor) {
+            allQSOs = fetched
+        }
+
+        // Load filter options in background
+        await loadFilterOptionsInBackground()
+
+        updateCachedMapData()
+        isLoadingQSOs = false
+    }
+
+    /// Load filter options by scanning QSOs in batches (for large datasets)
+    private func loadFilterOptionsInBackground() async {
+        var bands: Set<String> = []
+        var modes: Set<String> = []
+        var parks: Set<String> = []
+        var earliestDate: Date?
+
+        // For small datasets, just use loaded QSOs
+        if totalQSOCount <= MapFilterState.maxQSOsDefault * 2 {
+            updateCachedFilterOptions()
+            return
+        }
+
+        // For large datasets, scan in batches
+        var offset = 0
+        let batchSize = Self.filterOptionsBatchSize
+
+        while offset < totalQSOCount {
+            var descriptor = FetchDescriptor<QSO>(predicate: #Predicate { !$0.isHidden })
+            descriptor.sortBy = [SortDescriptor(\.timestamp, order: .reverse)]
+            descriptor.fetchOffset = offset
+            descriptor.fetchLimit = batchSize
+
+            guard let batch = try? modelContext.fetch(descriptor) else {
+                break
+            }
+
+            if batch.isEmpty {
+                break
+            }
+
+            // Collect unique values
+            for qso in batch {
+                bands.insert(qso.band)
+                modes.insert(qso.mode)
+                if let park = qso.parkReference {
+                    parks.insert(park)
+                }
+                if earliestDate == nil || qso.timestamp < earliestDate! {
+                    earliestDate = qso.timestamp
+                }
+            }
+
+            offset += batchSize
+            await Task.yield()
+        }
+
+        // Update cached values
+        cachedAvailableBands = Array(bands).sorted { band1, band2 in
+            bandSortOrder(band1) < bandSortOrder(band2)
+        }
+        cachedAvailableModes = Array(modes)
+            .filter { !Self.metadataModes.contains($0.uppercased()) }
+            .sorted()
+        cachedAvailableParks = Array(parks).sorted()
+        cachedEarliestQSODate = earliestDate
+        lastQSOCount = totalQSOCount
     }
 }

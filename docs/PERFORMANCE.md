@@ -4,6 +4,41 @@
 
 ---
 
+## BANNED: @Query for QSO or ServicePresence
+
+**`@Query` is BANNED for QSO and ServicePresence tables.** This is the #1 cause of UI freezes.
+
+```swift
+// BANNED - will cause multi-second freezes for users with large databases
+@Query var qsos: [QSO]
+@Query(filter: #Predicate<QSO> { !$0.isHidden }) var qsos: [QSO]
+@Query var presence: [ServicePresence]
+
+// REQUIRED - use @State with manual FetchDescriptor
+@State private var qsos: [QSO] = []
+
+.task {
+    var descriptor = FetchDescriptor<QSO>(predicate: #Predicate { !$0.isHidden })
+    descriptor.fetchLimit = 100
+    descriptor.sortBy = [SortDescriptor(\QSO.timestamp, order: .reverse)]
+    qsos = (try? modelContext.fetch(descriptor)) ?? []
+}
+```
+
+**Why @Query is dangerous:**
+- Loads ALL matching records into memory synchronously
+- Blocks the main thread during fetch
+- Re-fetches on ANY SwiftData change, not just relevant changes
+- Cannot be paginated or cancelled
+- No way to add fetchLimit
+
+**Approved alternatives:**
+1. Manual `FetchDescriptor` with `fetchLimit` in `.task`
+2. `@Observable` class that computes in background (see `AsyncQSOStatistics`)
+3. Pass pre-fetched data as parameter from parent view
+
+---
+
 ## CRITICAL: No Full Table Scans
 
 **These rules are non-negotiable.** Violating them causes multi-second UI freezes for users with tens of thousands of QSOs.
@@ -422,9 +457,13 @@ struct DashboardView: View {
 
 When reviewing code for performance, verify:
 
+### CRITICAL: @Query Ban (REJECT PR immediately if violated)
+- [ ] **NO `@Query` for QSO** - Search for `@Query.*QSO` - must use FetchDescriptor
+- [ ] **NO `@Query` for ServicePresence** - Search for `@Query.*ServicePresence` - must use FetchDescriptor
+- [ ] Any new `@Query` usage must be for small, bounded tables only (e.g., Session, Challenge)
+
 ### CRITICAL: Full Table Scans (Reject PR if violated)
-- [ ] No `@Query` on QSO/ServicePresence without `fetchLimit` or `.prefix()`
-- [ ] No `FetchDescriptor` without `fetchLimit` for unbounded collections
+- [ ] No `FetchDescriptor` without `fetchLimit` for QSO/ServicePresence
 - [ ] No network/file loading in `onChange` handlers without debouncing
 - [ ] Remote data uses persistent cache (not downloaded on-demand)
 - [ ] Caches preloaded on app launch, not on first use

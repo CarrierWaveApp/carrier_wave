@@ -35,8 +35,10 @@ struct CallsignAliasesSettingsView: View {
 
     // MARK: Private
 
+    /// Batch size for computing QSO counts
+    private static let batchSize = 500
+
     @Environment(\.modelContext) private var modelContext
-    @Query(filter: #Predicate<QSO> { !$0.isHidden }) private var allQSOs: [QSO]
 
     @State private var currentCallsign = ""
     @State private var previousCallsigns: [String] = []
@@ -47,25 +49,11 @@ struct CallsignAliasesSettingsView: View {
     @State private var showingDeleteConfirmation = false
     @State private var callsignToDelete = ""
 
+    /// QSO counts grouped by non-primary callsigns (computed in background)
+    @State private var nonPrimaryQSOCounts: [String: Int] = [:]
+    @State private var isComputingCounts = false
+
     private let aliasService = CallsignAliasService.shared
-
-    /// QSO counts grouped by non-primary callsigns
-    private var nonPrimaryQSOCounts: [String: Int] {
-        guard !currentCallsign.isEmpty else {
-            return [:]
-        }
-        let primary = currentCallsign.uppercased()
-
-        var counts: [String: Int] = [:]
-        for qso in allQSOs {
-            let myCall = qso.myCallsign.uppercased()
-            guard !myCall.isEmpty, myCall != primary else {
-                continue
-            }
-            counts[myCall, default: 0] += 1
-        }
-        return counts
-    }
 
     // MARK: - Sections
 
@@ -173,6 +161,56 @@ struct CallsignAliasesSettingsView: View {
 
         currentCallsign = aliasService.getCurrentCallsign() ?? ""
         previousCallsigns = aliasService.getPreviousCallsigns()
+
+        // Compute QSO counts in background
+        await computeNonPrimaryQSOCounts()
+    }
+
+    /// Compute QSO counts by callsign in background with batch processing
+    private func computeNonPrimaryQSOCounts() async {
+        guard !currentCallsign.isEmpty else {
+            nonPrimaryQSOCounts = [:]
+            return
+        }
+
+        isComputingCounts = true
+        defer { isComputingCounts = false }
+
+        let primary = currentCallsign.uppercased()
+        var counts: [String: Int] = [:]
+
+        // Get total count first
+        let countDescriptor = FetchDescriptor<QSO>(predicate: #Predicate { !$0.isHidden })
+        let totalCount = (try? modelContext.fetchCount(countDescriptor)) ?? 0
+
+        // Process in batches
+        var offset = 0
+        while offset < totalCount {
+            var descriptor = FetchDescriptor<QSO>(predicate: #Predicate { !$0.isHidden })
+            descriptor.fetchOffset = offset
+            descriptor.fetchLimit = Self.batchSize
+
+            guard let batch = try? modelContext.fetch(descriptor) else {
+                break
+            }
+
+            if batch.isEmpty {
+                break
+            }
+
+            for qso in batch {
+                let myCall = qso.myCallsign.uppercased()
+                guard !myCall.isEmpty, myCall != primary else {
+                    continue
+                }
+                counts[myCall, default: 0] += 1
+            }
+
+            offset += Self.batchSize
+            await Task.yield()
+        }
+
+        nonPrimaryQSOCounts = counts
     }
 
     private func saveCurrentCallsign() async {
@@ -218,18 +256,43 @@ struct CallsignAliasesSettingsView: View {
 
     private func deleteQSOsForCallsign(_ callsign: String) async {
         let upperCallsign = callsign.uppercased()
-        let qsosToDelete = allQSOs.filter { $0.myCallsign.uppercased() == upperCallsign }
+        var deletedCount = 0
 
-        for qso in qsosToDelete {
-            modelContext.delete(qso)
+        // Fetch and delete in batches to avoid loading entire table
+        var offset = 0
+        while true {
+            var descriptor = FetchDescriptor<QSO>(predicate: #Predicate { !$0.isHidden })
+            descriptor.fetchOffset = offset
+            descriptor.fetchLimit = Self.batchSize
+
+            guard let batch = try? modelContext.fetch(descriptor) else {
+                break
+            }
+
+            if batch.isEmpty {
+                break
+            }
+
+            // Filter and delete matching QSOs
+            let matchingQSOs = batch.filter { $0.myCallsign.uppercased() == upperCallsign }
+            for qso in matchingQSOs {
+                modelContext.delete(qso)
+                deletedCount += 1
+            }
+
+            offset += Self.batchSize
+            await Task.yield()
         }
 
         do {
             try modelContext.save()
             SyncDebugLog.shared.info(
-                "Deleted \(qsosToDelete.count) QSOs from callsign \(callsign)",
+                "Deleted \(deletedCount) QSOs from callsign \(callsign)",
                 service: nil
             )
+
+            // Refresh counts after deletion
+            await computeNonPrimaryQSOCounts()
         } catch {
             errorMessage = "Failed to delete QSOs: \(error.localizedDescription)"
             showingError = true

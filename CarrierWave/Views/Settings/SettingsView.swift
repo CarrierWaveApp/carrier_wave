@@ -811,7 +811,7 @@ struct AllHiddenQSOsView: View {
 
     var body: some View {
         Group {
-            if hiddenQSOs.isEmpty {
+            if hiddenQSOs.isEmpty, !isLoading {
                 ContentUnavailableView(
                     "No Hidden QSOs",
                     systemImage: "checkmark.circle",
@@ -825,8 +825,28 @@ struct AllHiddenQSOsView: View {
                                 restoreQSO(qso)
                             }
                         }
+
+                        // Load more button if there are more hidden QSOs
+                        if hasMoreQSOs {
+                            HStack {
+                                Spacer()
+                                Button {
+                                    Task { await loadMoreHiddenQSOs() }
+                                } label: {
+                                    if isLoadingMore {
+                                        ProgressView()
+                                            .padding(.vertical, 8)
+                                    } else {
+                                        Text("Load More (\(totalCount - hiddenQSOs.count) remaining)")
+                                            .foregroundStyle(.blue)
+                                    }
+                                }
+                                .disabled(isLoadingMore)
+                                Spacer()
+                            }
+                        }
                     } header: {
-                        Text("\(hiddenQSOs.count) hidden QSO\(hiddenQSOs.count == 1 ? "" : "s")")
+                        Text("\(totalCount) hidden QSO\(totalCount == 1 ? "" : "s")")
                     } footer: {
                         Text(
                             "Hidden QSOs are excluded from sync and statistics. "
@@ -849,22 +869,25 @@ struct AllHiddenQSOsView: View {
             }
         }
         .navigationTitle("Hidden QSOs")
+        .task {
+            await loadHiddenQSOs()
+        }
         .alert("Restore All?", isPresented: $showRestoreAllConfirmation) {
             Button("Cancel", role: .cancel) {}
             Button("Restore All") {
-                restoreAllQSOs()
+                Task { await restoreAllQSOs() }
             }
         } message: {
-            Text("This will restore \(hiddenQSOs.count) hidden QSO(s) and include them in sync.")
+            Text("This will restore \(totalCount) hidden QSO(s) and include them in sync.")
         }
         .alert("Permanently Delete All?", isPresented: $showDeleteAllConfirmation) {
             Button("Cancel", role: .cancel) {}
             Button("Delete All", role: .destructive) {
-                permanentlyDeleteAllQSOs()
+                Task { await permanentlyDeleteAllQSOs() }
             }
         } message: {
             Text(
-                "This will permanently delete \(hiddenQSOs.count) hidden QSO(s). "
+                "This will permanently delete \(totalCount) hidden QSO(s). "
                     + "This cannot be undone."
             )
         }
@@ -872,35 +895,106 @@ struct AllHiddenQSOsView: View {
 
     // MARK: Private
 
+    private static let batchSize = 100
+
     @Environment(\.modelContext) private var modelContext
 
-    @Query(
-        filter: #Predicate<QSO> { $0.isHidden },
-        sort: \QSO.timestamp,
-        order: .reverse
-    )
-    private var hiddenQSOs: [QSO]
-
+    /// Hidden QSOs loaded on demand (not using @Query to avoid full table scan)
+    @State private var hiddenQSOs: [QSO] = []
+    @State private var totalCount = 0
+    @State private var isLoading = false
+    @State private var isLoadingMore = false
     @State private var showRestoreAllConfirmation = false
     @State private var showDeleteAllConfirmation = false
+
+    private var hasMoreQSOs: Bool {
+        hiddenQSOs.count < totalCount
+    }
+
+    private func loadHiddenQSOs() async {
+        isLoading = true
+        defer { isLoading = false }
+
+        // Get total count
+        let countDescriptor = FetchDescriptor<QSO>(predicate: #Predicate { $0.isHidden })
+        totalCount = (try? modelContext.fetchCount(countDescriptor)) ?? 0
+
+        // Fetch initial batch
+        var descriptor = FetchDescriptor<QSO>(predicate: #Predicate { $0.isHidden })
+        descriptor.sortBy = [SortDescriptor(\QSO.timestamp, order: .reverse)]
+        descriptor.fetchLimit = Self.batchSize
+
+        if let fetched = try? modelContext.fetch(descriptor) {
+            hiddenQSOs = fetched
+        }
+    }
+
+    private func loadMoreHiddenQSOs() async {
+        guard !isLoadingMore, hasMoreQSOs else { return }
+        isLoadingMore = true
+        defer { isLoadingMore = false }
+
+        var descriptor = FetchDescriptor<QSO>(predicate: #Predicate { $0.isHidden })
+        descriptor.sortBy = [SortDescriptor(\QSO.timestamp, order: .reverse)]
+        descriptor.fetchOffset = hiddenQSOs.count
+        descriptor.fetchLimit = Self.batchSize
+
+        if let fetched = try? modelContext.fetch(descriptor) {
+            hiddenQSOs.append(contentsOf: fetched)
+        }
+    }
 
     private func restoreQSO(_ qso: QSO) {
         qso.isHidden = false
         try? modelContext.save()
+        // Refresh list
+        Task { await loadHiddenQSOs() }
     }
 
-    private func restoreAllQSOs() {
-        for qso in hiddenQSOs {
-            qso.isHidden = false
+    private func restoreAllQSOs() async {
+        // Process in batches to avoid memory issues with large datasets
+        var offset = 0
+        while true {
+            var descriptor = FetchDescriptor<QSO>(predicate: #Predicate { $0.isHidden })
+            descriptor.fetchOffset = offset
+            descriptor.fetchLimit = Self.batchSize
+
+            guard let batch = try? modelContext.fetch(descriptor) else { break }
+            if batch.isEmpty { break }
+
+            for qso in batch {
+                qso.isHidden = false
+            }
+            offset += Self.batchSize
+            await Task.yield()
         }
         try? modelContext.save()
+
+        // Refresh list
+        await loadHiddenQSOs()
     }
 
-    private func permanentlyDeleteAllQSOs() {
-        for qso in hiddenQSOs {
-            modelContext.delete(qso)
+    private func permanentlyDeleteAllQSOs() async {
+        // Process in batches to avoid memory issues with large datasets
+        var deletedCount = 0
+        while true {
+            // Always fetch from offset 0 since we're deleting
+            var descriptor = FetchDescriptor<QSO>(predicate: #Predicate { $0.isHidden })
+            descriptor.fetchLimit = Self.batchSize
+
+            guard let batch = try? modelContext.fetch(descriptor) else { break }
+            if batch.isEmpty { break }
+
+            for qso in batch {
+                modelContext.delete(qso)
+                deletedCount += 1
+            }
+            await Task.yield()
         }
         try? modelContext.save()
+
+        // Refresh list
+        await loadHiddenQSOs()
     }
 }
 

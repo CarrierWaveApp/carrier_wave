@@ -40,12 +40,32 @@ struct LogsListContentView: View {
                 QSORow(qso: qso, serviceConfig: serviceConfig)
             }
             .onDelete(perform: deleteQSOs)
+
+            // Load more button if there are more QSOs to fetch
+            if hasMoreQSOs {
+                HStack {
+                    Spacer()
+                    Button {
+                        Task {
+                            await loadMoreQSOs()
+                        }
+                    } label: {
+                        if isLoadingMore {
+                            ProgressView()
+                                .padding(.vertical, 8)
+                        } else {
+                            Text("Load More (\(totalQSOCount - qsos.count) remaining)")
+                                .foregroundStyle(.blue)
+                        }
+                    }
+                    .disabled(isLoadingMore)
+                    Spacer()
+                }
+            }
         }
         .searchable(text: $searchText, prompt: "Search callsigns or parks")
-        .onAppear {
-            loadServiceConfiguration()
-            updateAvailableFilters()
-            updateFilteredQSOs()
+        .task {
+            await loadInitialQSOs()
         }
         .onChange(of: searchText) { _, _ in
             updateFilteredQSOs()
@@ -55,12 +75,6 @@ struct LogsListContentView: View {
         }
         .onChange(of: selectedMode) { _, _ in
             updateFilteredQSOs()
-        }
-        .onChange(of: qsos.count) { _, _ in
-            if qsos.count != lastQSOCount {
-                updateAvailableFilters()
-                updateFilteredQSOs()
-            }
         }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -84,7 +98,7 @@ struct LogsListContentView: View {
             }
         }
         .overlay {
-            if qsos.isEmpty {
+            if qsos.isEmpty && !isLoadingInitial {
                 ContentUnavailableView(
                     "No QSOs",
                     systemImage: "antenna.radiowaves.left.and.right",
@@ -96,23 +110,31 @@ struct LogsListContentView: View {
 
     // MARK: Private
 
+    /// Initial batch size for loading QSOs
+    private static let initialBatchSize = 500
+
+    /// Batch size for loading more QSOs
+    private static let loadMoreBatchSize = 500
+
     @Environment(\.modelContext) private var modelContext
-    @Query(
-        filter: #Predicate<QSO> { !$0.isHidden },
-        sort: \QSO.timestamp,
-        order: .reverse
-    ) private var qsos: [QSO]
+
+    /// QSOs loaded on demand (not using @Query to avoid full table scan)
+    @State private var qsos: [QSO] = []
+
+    /// Total count of QSOs in database
+    @State private var totalQSOCount: Int = 0
 
     @State private var searchText = ""
     @State private var selectedBand: String?
     @State private var selectedMode: String?
     @State private var serviceConfig = ServiceConfiguration()
+    @State private var isLoadingInitial = true
+    @State private var isLoadingMore = false
 
     // Cached filter results to avoid recomputation on every render
     @State private var cachedFilteredQSOs: [QSO] = []
     @State private var cachedAvailableBands: [String] = []
     @State private var cachedAvailableModes: [String] = []
-    @State private var lastQSOCount: Int = 0
 
     private var filteredQSOs: [QSO] {
         cachedFilteredQSOs
@@ -126,10 +148,18 @@ struct LogsListContentView: View {
         cachedAvailableModes
     }
 
+    private var hasMoreQSOs: Bool {
+        qsos.count < totalQSOCount
+    }
+
     private func deleteQSOs(at offsets: IndexSet) {
         for index in offsets {
             let qso = filteredQSOs[index]
             modelContext.delete(qso)
+        }
+        // Refresh the list after deletion
+        Task {
+            await refreshQSOCount()
         }
     }
 
@@ -141,6 +171,51 @@ struct LogsListContentView: View {
             hamrs: hamrsClient.isConfigured,
             lotw: lotwClient.isConfigured
         )
+    }
+
+    private func loadInitialQSOs() async {
+        isLoadingInitial = true
+        loadServiceConfiguration()
+
+        // Get total count
+        await refreshQSOCount()
+
+        // Fetch initial batch
+        var descriptor = FetchDescriptor<QSO>(predicate: #Predicate { !$0.isHidden })
+        descriptor.sortBy = [SortDescriptor(\.timestamp, order: .reverse)]
+        descriptor.fetchLimit = Self.initialBatchSize
+
+        if let fetched = try? modelContext.fetch(descriptor) {
+            qsos = fetched
+        }
+
+        updateAvailableFilters()
+        updateFilteredQSOs()
+        isLoadingInitial = false
+    }
+
+    private func loadMoreQSOs() async {
+        guard !isLoadingMore, hasMoreQSOs else { return }
+
+        isLoadingMore = true
+
+        var descriptor = FetchDescriptor<QSO>(predicate: #Predicate { !$0.isHidden })
+        descriptor.sortBy = [SortDescriptor(\.timestamp, order: .reverse)]
+        descriptor.fetchOffset = qsos.count
+        descriptor.fetchLimit = Self.loadMoreBatchSize
+
+        if let fetched = try? modelContext.fetch(descriptor) {
+            qsos.append(contentsOf: fetched)
+        }
+
+        updateAvailableFilters()
+        updateFilteredQSOs()
+        isLoadingMore = false
+    }
+
+    private func refreshQSOCount() async {
+        let countDescriptor = FetchDescriptor<QSO>(predicate: #Predicate { !$0.isHidden })
+        totalQSOCount = (try? modelContext.fetchCount(countDescriptor)) ?? 0
     }
 
     private func updateFilteredQSOs() {
@@ -159,7 +234,6 @@ struct LogsListContentView: View {
     private func updateAvailableFilters() {
         cachedAvailableBands = Array(Set(qsos.map(\.band))).sorted()
         cachedAvailableModes = Array(Set(qsos.map(\.mode))).sorted()
-        lastQSOCount = qsos.count
     }
 }
 

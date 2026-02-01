@@ -3,30 +3,15 @@
 // Displays a map of QSOs from the current logging session.
 
 import MapKit
-import SwiftData
 import SwiftUI
 
 // MARK: - SessionMapPanelView
 
 struct SessionMapPanelView: View {
-    // MARK: Lifecycle
-
-    init(sessionId: UUID?, myGrid: String?, onDismiss: @escaping () -> Void) {
-        self.sessionId = sessionId
-        self.myGrid = myGrid
-        self.onDismiss = onDismiss
-
-        // Filter to non-hidden QSOs
-        _allQSOs = Query(
-            filter: #Predicate<QSO> { !$0.isHidden },
-            sort: \QSO.timestamp,
-            order: .reverse
-        )
-    }
-
     // MARK: Internal
 
-    let sessionId: UUID?
+    /// QSOs for the current session (passed in to avoid full table scan with @Query)
+    let sessionQSOs: [QSO]
     let myGrid: String?
     let onDismiss: () -> Void
 
@@ -48,17 +33,7 @@ struct SessionMapPanelView: View {
 
     // MARK: Private
 
-    @Query private var allQSOs: [QSO]
-
     @State private var cameraPosition: MapCameraPosition = .automatic
-
-    /// QSOs for the current session only
-    private var sessionQSOs: [QSO] {
-        guard let sessionId else {
-            return []
-        }
-        return allQSOs.filter { $0.loggingSessionId == sessionId }
-    }
 
     /// QSOs with valid grid squares
     private var mappableQSOs: [QSO] {

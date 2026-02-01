@@ -4,6 +4,20 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **Logger Text Input Lag** - Fixed multi-second input lag when typing in logger callsign field for users with large databases
+  - Removed unbounded @Query from SessionMapPanelView (now uses passed session QSOs)
+  - Removed unbounded @Query from HiddenQSOsSheet (now fetches by session ID)
+  - Removed dead keyboard height tracking that triggered unnecessary re-renders
+- **App-Wide Full Table Scan Elimination** - Replaced all unbounded @Query usages with paginated background fetching
+  - DashboardView: stats and service counts now compute in background
+  - QSOMapView: uses pagination with "Show All" option
+  - LogsListView: uses "Load More" pagination
+  - POTAActivationsView: loads park QSOs in batches
+  - CallsignAliasesSettingsView: computes QSO counts in background
+  - ChallengeDetailHelperViews: QualifyingQSOsView uses limited fetch
+  - AllHiddenQSOsView: uses "Load More" pagination
+
 ## [1.16.1] - 2026-01-31
 
 ### Added
