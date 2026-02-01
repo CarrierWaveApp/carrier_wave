@@ -261,7 +261,9 @@ struct SessionStartSheet: View {
         ActivationSectionView(
             activationType: $activationType,
             parkReference: $parkReference,
-            sotaReference: $sotaReference
+            sotaReference: $sotaReference,
+            userGrid: myGrid.isEmpty ? defaultGrid : myGrid,
+            defaultCountry: "US"
         )
     }
 
@@ -374,6 +376,11 @@ struct ActivationSectionView: View {
     @Binding var parkReference: String
     @Binding var sotaReference: String
 
+    /// User's grid square for nearby parks
+    var userGrid: String?
+    /// Default country prefix for park shorthand
+    var defaultCountry: String = "US"
+
     var body: some View {
         Section("Activation Type") {
             Picker("Type", selection: $activationType) {
@@ -385,21 +392,13 @@ struct ActivationSectionView: View {
             .pickerStyle(.segmented)
 
             if activationType == .pota {
-                HStack {
-                    Text("Park")
-                        .foregroundStyle(.secondary)
-                    Spacer()
-                    TextField("K-1234", text: $parkReference)
-                        .textInputAutocapitalization(.characters)
-                        .multilineTextAlignment(.trailing)
-                        .font(.subheadline.monospaced())
-                }
-
-                if let parkName = POTAParksCache.shared.nameSync(for: parkReference.uppercased()) {
-                    Text(parkName)
-                        .font(.caption)
-                        .foregroundStyle(.green)
-                }
+                ParkEntryField(
+                    parkReference: $parkReference,
+                    label: "Park",
+                    placeholder: "1234 or US-1234",
+                    userGrid: userGrid,
+                    defaultCountry: defaultCountry
+                )
             }
 
             if activationType == .sota {
