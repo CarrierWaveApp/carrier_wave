@@ -213,10 +213,31 @@ struct LogsListContentView: View {
     }
 
     private func deleteQSOs(at offsets: IndexSet) {
-        for index in offsets {
-            let qso = filteredQSOs[index]
+        // Collect QSOs to delete BEFORE any mutations to avoid index invalidation
+        let qsosToDelete = offsets.compactMap { index -> QSO? in
+            guard index < cachedFilteredQSOs.count else {
+                return nil
+            }
+            return cachedFilteredQSOs[index]
+        }
+
+        guard !qsosToDelete.isEmpty else {
+            return
+        }
+
+        // Get the IDs to remove from our cached arrays
+        let idsToRemove = Set(qsosToDelete.map(\.id))
+
+        // Update cached arrays BEFORE deleting from model context
+        // This prevents SwiftUI from seeing stale data during the update cycle
+        cachedFilteredQSOs.removeAll { idsToRemove.contains($0.id) }
+        qsos.removeAll { idsToRemove.contains($0.id) }
+
+        // Now delete from model context
+        for qso in qsosToDelete {
             modelContext.delete(qso)
         }
+
         Task {
             await refreshQSOCount()
         }
@@ -293,7 +314,7 @@ struct LogsListContentView: View {
 
         // Parse the query
         switch QueryParser.parse(trimmed) {
-        case let .success(query):
+        case .success(let query):
             parsedQuery = query
             queryError = nil
 
@@ -317,12 +338,12 @@ struct LogsListContentView: View {
             await searchWithFilter(filter)
             isSearching = false
 
-        case let .failure(error):
+        case .failure(let error):
             parsedQuery = nil
             queryError = error
             queryAnalysis = nil
             compiledFilter = nil
-            // On error, keep showing current results
+        // On error, keep showing current results
         }
     }
 
@@ -345,7 +366,7 @@ struct LogsListContentView: View {
                 results.append(qso)
             }
             // Yield periodically to keep UI responsive
-            if index % 100 == 0 {
+            if index.isMultiple(of: 100) {
                 await Task.yield()
             }
         }
@@ -400,7 +421,7 @@ struct QueryWarningBanner: View {
                     .controlSize(.small)
 
                     if let suggestion = analysis.warnings.first?.suggestion,
-                       suggestion.contains("after:")
+                        suggestion.contains("after:")
                     {
                         Button("Add Date Filter") {
                             onAddFilter("after:30d")
@@ -612,11 +633,11 @@ struct ServicePresenceBadge: View {
     private var isBidirectional: Bool {
         switch presence.serviceType {
         case .qrz,
-             .pota,
-             .hamrs:
+            .pota,
+            .hamrs:
             true
         case .lofi,
-             .lotw:
+            .lotw:
             false
         }
     }
