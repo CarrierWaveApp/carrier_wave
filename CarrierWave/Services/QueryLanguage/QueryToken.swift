@@ -148,12 +148,12 @@ enum QueryField: String, CaseIterable {
     var isIndexed: Bool {
         switch self {
         case .callsign,
-             .band,
-             .mode,
-             .park,
-             .date,
-             .after,
-             .before:
+            .band,
+            .mode,
+            .park,
+            .date,
+            .after,
+            .before:
             true
         default:
             false
@@ -164,8 +164,8 @@ enum QueryField: String, CaseIterable {
     var requiresTextScan: Bool {
         switch self {
         case .notes,
-             .name,
-             .qth:
+            .name,
+            .qth:
             true
         default:
             false
@@ -181,16 +181,12 @@ enum QueryField: String, CaseIterable {
 // MARK: - SourcePosition
 
 /// Position in source string for error reporting
-struct SourcePosition: Sendable {
+struct SourcePosition: Sendable, Equatable {
     static let unknown = SourcePosition(offset: 0, length: 0)
 
     let offset: Int
     let length: Int
 }
-
-// MARK: Equatable
-
-extension SourcePosition: Equatable {}
 
 // MARK: - PositionedToken
 
