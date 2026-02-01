@@ -52,6 +52,14 @@ enum MiniTourContent {
             directly in the callsign field. Press Return to execute.
             """
         ),
+        TourPage(
+            icon: "text.line.first.and.arrowtriangle.forward",
+            title: "Quick Entry",
+            body: """
+            Type everything in one line: callsign, RST, state, park, and notes. \
+            Example: "AJ7CM 579 WA US-0189" auto-fills the form instantly.
+            """
+        ),
     ]
 
     static let logs: [TourPage] = [
