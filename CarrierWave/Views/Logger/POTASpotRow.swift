@@ -78,7 +78,7 @@ struct POTASpotRow: View {
 
     private var bandModeDisplay: some View {
         HStack(spacing: 4) {
-            if let band = deriveBand(from: spot.frequencyKHz) {
+            if let band = BandUtilities.deriveBand(from: spot.frequencyKHz) {
                 Text(band)
                     .font(.caption2)
                     .foregroundStyle(.secondary)
@@ -139,30 +139,6 @@ struct POTASpotRow: View {
             return String(format: "%d.%03d.%03d", wholeMHz, kHz, subKHz)
         } else {
             return String(format: "%d.%03d", wholeMHz, kHz)
-        }
-    }
-
-    private func deriveBand(from frequencyKHz: Double?) -> String? {
-        guard let kHz = frequencyKHz else {
-            return nil
-        }
-        let mhz = kHz / 1_000.0
-
-        switch mhz {
-        case 1.8 ..< 2.0: return "160m"
-        case 3.5 ..< 4.0: return "80m"
-        case 5.3 ..< 5.4: return "60m"
-        case 7.0 ..< 7.3: return "40m"
-        case 10.1 ..< 10.15: return "30m"
-        case 14.0 ..< 14.35: return "20m"
-        case 18.068 ..< 18.168: return "17m"
-        case 21.0 ..< 21.45: return "15m"
-        case 24.89 ..< 24.99: return "12m"
-        case 28.0 ..< 29.7: return "10m"
-        case 50.0 ..< 54.0: return "6m"
-        case 144.0 ..< 148.0: return "2m"
-        case 420.0 ..< 450.0: return "70cm"
-        default: return nil
         }
     }
 }
