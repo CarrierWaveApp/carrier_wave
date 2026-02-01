@@ -181,11 +181,19 @@ enum QueryField: String, CaseIterable {
 // MARK: - SourcePosition
 
 /// Position in source string for error reporting
-struct SourcePosition: Sendable, Equatable {
+struct SourcePosition: Sendable {
     static let unknown = SourcePosition(offset: 0, length: 0)
 
     let offset: Int
     let length: Int
+}
+
+// MARK: Equatable
+
+extension SourcePosition: Equatable {
+    nonisolated static func == (lhs: SourcePosition, rhs: SourcePosition) -> Bool {
+        lhs.offset == rhs.offset && lhs.length == rhs.length
+    }
 }
 
 // MARK: - PositionedToken
