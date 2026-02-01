@@ -111,6 +111,10 @@ enum QuickEntryParser {
 
     /// Parse a quick entry string into tokens with types for UI preview (color-coding)
     /// Returns empty array if input is not valid quick entry (single callsign or command)
+    ///
+    /// Note: Unlike `parse()` which combines unrecognized tokens into a single notes field,
+    /// this method returns each word as a separate token to enable per-word color coding.
+    /// Tokens are returned in the original input order.
     static func parseTokens(_ input: String) -> [ParsedToken] {
         let tokens = input.uppercased()
             .split(separator: " ", omittingEmptySubsequences: true)
@@ -131,40 +135,44 @@ enum QuickEntryParser {
             return []
         }
 
-        var result: [ParsedToken] = []
-        var rstTokens: [(text: String, index: Int)] = []
-
-        // Add callsign token
-        result.append(ParsedToken(text: tokens[0], type: .callsign))
-
-        // First pass: identify all tokens and track RST positions
-        for (index, token) in tokens.dropFirst().enumerated() {
+        // First pass: find RST indices to determine sent vs received
+        var rstIndices: [Int] = []
+        for (index, token) in tokens.enumerated() where index > 0 {
             if isRST(token) {
-                // Track RST tokens for second pass
-                rstTokens.append((text: token, index: index + 1))
-            } else if isParkReference(token) {
-                result.append(ParsedToken(text: token, type: .park))
-            } else if isGridSquare(token) {
-                result.append(ParsedToken(text: token.uppercased(), type: .grid))
-            } else if isStateOrRegion(token) {
-                result.append(ParsedToken(text: token, type: .state))
-            } else {
-                result.append(ParsedToken(text: token, type: .notes))
+                rstIndices.append(index)
             }
         }
 
-        // Second pass: assign RST types based on count
-        // If one RST: it's received. If two RSTs: first is sent, second is received
-        if rstTokens.count == 1 {
-            result.insert(ParsedToken(text: rstTokens[0].text, type: .rstReceived), at: 1)
-        } else if rstTokens.count >= 2 {
-            // First two RSTs: sent then received. Additional RSTs become notes.
-            result.insert(ParsedToken(text: rstTokens[0].text, type: .rstSent), at: 1)
-            result.insert(ParsedToken(text: rstTokens[1].text, type: .rstReceived), at: 2)
-            // Any additional RSTs become notes
-            for rst in rstTokens.dropFirst(2) {
-                result.append(ParsedToken(text: rst.text, type: .notes))
+        // Second pass: build tokens in original input order
+        var result: [ParsedToken] = [ParsedToken(text: tokens[0], type: .callsign)]
+
+        for (index, token) in tokens.dropFirst().enumerated() {
+            let originalIndex = index + 1
+            let type: TokenType = if isRST(token) {
+                if let rstPos = rstIndices.firstIndex(of: originalIndex) {
+                    if rstIndices.count == 1 {
+                        .rstReceived
+                    } else if rstPos == 0 {
+                        .rstSent
+                    } else if rstPos == 1 {
+                        .rstReceived
+                    } else {
+                        .notes // 3rd+ RST becomes notes
+                    }
+                } else {
+                    .notes
+                }
+            } else if isParkReference(token) {
+                .park
+            } else if isGridSquare(token) {
+                .grid
+            } else if isStateOrRegion(token) {
+                .state
+            } else {
+                .notes
             }
+
+            result.append(ParsedToken(text: token, type: type))
         }
 
         return result

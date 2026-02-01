@@ -184,4 +184,34 @@ final class QuickEntryParserIntegrationTests: XCTestCase {
         XCTAssertEqual(tokens[2].text, "CN87")
         XCTAssertEqual(tokens[2].type, .grid)
     }
+
+    func testParsedTokensPreserveInputOrder() {
+        // Tokens should appear in the order user typed them
+        let tokens = QuickEntryParser.parseTokens("W1AW WA 579 US-0189")
+        XCTAssertEqual(tokens.count, 4)
+
+        XCTAssertEqual(tokens[0].text, "W1AW")
+        XCTAssertEqual(tokens[0].type, .callsign)
+
+        XCTAssertEqual(tokens[1].text, "WA")
+        XCTAssertEqual(tokens[1].type, .state)
+
+        XCTAssertEqual(tokens[2].text, "579")
+        XCTAssertEqual(tokens[2].type, .rstReceived)
+
+        XCTAssertEqual(tokens[3].text, "US-0189")
+        XCTAssertEqual(tokens[3].type, .park)
+    }
+
+    func testParsedTokensWithThreeRSTsBecomeNotes() {
+        // Third RST and beyond become notes
+        let tokens = QuickEntryParser.parseTokens("W1AW 559 579 599")
+        XCTAssertEqual(tokens.count, 4)
+
+        XCTAssertEqual(tokens[0].type, .callsign)
+        XCTAssertEqual(tokens[1].type, .rstSent)
+        XCTAssertEqual(tokens[2].type, .rstReceived)
+        XCTAssertEqual(tokens[3].type, .notes)
+        XCTAssertEqual(tokens[3].text, "599")
+    }
 }
