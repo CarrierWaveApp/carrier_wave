@@ -4,6 +4,8 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.17.0] - 2026-02-01
+
 ### Added
 - **Quick Entry Mode** - Type complete QSOs in a single line for rapid logging
   - Type "AJ7CM 579 WA US-0189" to auto-fill callsign, RST, state, and park reference
@@ -28,17 +30,6 @@ All notable changes to Carrier Wave will be documented in this file.
   - Grouped by band with section headers
   - Tap spot to tune to frequency
   - Access via `POTA` command in logger
-
-### Fixed
-- **Quick Entry Typing Crash** - Fixed crash when typing in quick entry mode caused by unstable SwiftUI identifiers
-  - ParsedToken now uses position-based IDs instead of random UUIDs
-  - Prevents view hierarchy rebuild during active text input
-- **Sync Callsign Filtering** - QSOs from previous callsigns no longer appear in sync queues
-  - Import now only creates upload markers for QSOs matching primary callsign
-  - Sync fetch adds defense-in-depth filtering for legacy data
-  - Prevents failed uploads to QRZ/POTA when user has changed callsigns
-
-### Added
 - **Operator Field QRZ Hint** - Operator field now shows QRZ name as placeholder hint and logs it automatically if not overridden
 - **Logs Tab Tour** - Added intro tour for the Logs tab explaining the query language
   - Overview of simple callsign search and wildcards
@@ -55,6 +46,22 @@ All notable changes to Carrier Wave will be documented in this file.
   - Performance warnings for slow queries with suggestions to add filters
   - Quick filters menu for common searches
   - Help sheet with syntax reference
+
+### Changed
+- **QSO Deletion Confirmation** - Deleting a QSO in the logger now shows a confirmation dialog
+
+### Fixed
+- **QSO Deletion in Logger** - Fixed deleted QSOs not disappearing from session log until view refresh
+  - QSO list now updates immediately when a QSO is deleted from the edit sheet
+- **Quick Entry Notes Display** - Multi-word notes now display as a single combined badge instead of separate badges per word
+- **Quick Entry Button Logging** - Fixed Log QSO button logging entire input string instead of parsed callsign in quick entry mode
+- **Quick Entry Typing Crash** - Fixed crash when typing in quick entry mode caused by unstable SwiftUI identifiers
+  - ParsedToken now uses position-based IDs instead of random UUIDs
+  - Prevents view hierarchy rebuild during active text input
+- **Sync Callsign Filtering** - QSOs from previous callsigns no longer appear in sync queues
+  - Import now only creates upload markers for QSOs matching primary callsign
+  - Sync fetch adds defense-in-depth filtering for legacy data
+  - Prevents failed uploads to QRZ/POTA when user has changed callsigns
 
 ## [1.16.2] - 2026-02-01
 

@@ -809,7 +809,12 @@ struct LoggerView: View {
         } else {
             // Show "Log QSO" button normally
             Button {
-                logQSO()
+                // Use quick entry if we have parsed results, otherwise normal log
+                if quickEntryResult != nil {
+                    logQuickEntry()
+                } else {
+                    logQSO()
+                }
             } label: {
                 Text("Log QSO")
                     .font(.headline)
@@ -851,7 +856,8 @@ struct LoggerView: View {
                                 qso: qso,
                                 sessionQSOs: displayQSOs,
                                 isPOTASession: sessionManager?.activeSession?.activationType
-                                    == .pota
+                                    == .pota,
+                                onQSODeleted: refreshSessionQSOs
                             )
                         case let .note(note):
                             LoggerNoteRow(note: note)
@@ -1035,11 +1041,12 @@ struct LoggerView: View {
         }
 
         // Use parsed callsign in quick entry mode, otherwise use raw input
-        let callsign: String = if let qeResult = quickEntryResult {
-            qeResult.callsign.uppercased()
-        } else {
-            callsignInput.uppercased()
-        }
+        let callsign: String =
+            if let qeResult = quickEntryResult {
+                qeResult.callsign.uppercased()
+            } else {
+                callsignInput.uppercased()
+            }
         let currentBand = session.band ?? "Unknown"
 
         // Find all QSOs with this callsign in the current session
@@ -1467,6 +1474,8 @@ struct LoggerQSORow: View {
     var sessionQSOs: [QSO] = []
     /// Whether this is a POTA session
     var isPOTASession: Bool = false
+    /// Callback when QSO is deleted (hidden)
+    var onQSODeleted: (() -> Void)?
 
     var body: some View {
         Button {
@@ -1476,7 +1485,7 @@ struct LoggerQSORow: View {
         }
         .buttonStyle(.plain)
         .sheet(isPresented: $showEditSheet) {
-            QSOEditSheet(qso: qso)
+            QSOEditSheet(qso: qso, onDelete: onQSODeleted)
         }
         .onAppear {
             // Use QSO's stored data if available (from pre-fetch during logging)
@@ -1717,6 +1726,8 @@ struct QSOEditSheet: View {
     // MARK: Internal
 
     let qso: QSO
+    /// Callback when QSO is deleted (hidden)
+    var onDelete: (() -> Void)?
 
     var body: some View {
         NavigationStack {
@@ -1792,7 +1803,7 @@ struct QSOEditSheet: View {
 
                 Section {
                     Button(role: .destructive) {
-                        hideQSO()
+                        showDeleteConfirmation = true
                     } label: {
                         HStack {
                             Spacer()
@@ -1820,6 +1831,18 @@ struct QSOEditSheet: View {
             .onAppear {
                 loadQSOData()
             }
+            .confirmationDialog(
+                "Delete QSO?",
+                isPresented: $showDeleteConfirmation,
+                titleVisibility: .visible
+            ) {
+                Button("Delete", role: .destructive) {
+                    hideQSO()
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("This QSO will be hidden and won't sync to any services.")
+            }
         }
     }
 
@@ -1834,6 +1857,7 @@ struct QSOEditSheet: View {
     @State private var grid = ""
     @State private var theirPark = ""
     @State private var notes = ""
+    @State private var showDeleteConfirmation = false
 
     private func loadQSOData() {
         rstSent = qso.rstSent ?? "599"
@@ -1858,6 +1882,7 @@ struct QSOEditSheet: View {
         qso.isHidden = true
         try? modelContext.save()
         dismiss()
+        onDelete?()
     }
 }
 

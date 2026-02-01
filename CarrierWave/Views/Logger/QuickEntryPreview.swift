@@ -52,14 +52,61 @@ extension TokenType {
 
 /// Displays parsed quick entry tokens with color coding
 struct QuickEntryPreview: View {
+    // MARK: Internal
+
     let tokens: [ParsedToken]
 
     var body: some View {
         HStack(spacing: 8) {
-            ForEach(tokens) { token in
+            ForEach(displayTokens) { token in
                 TokenBadge(token: token)
             }
         }
+    }
+
+    // MARK: Private
+
+    /// Tokens with consecutive notes combined into a single token
+    private var displayTokens: [ParsedToken] {
+        var result: [ParsedToken] = []
+        var noteTexts: [String] = []
+        var noteStartIndex: Int?
+
+        for token in tokens {
+            if token.type == .notes {
+                if noteStartIndex == nil {
+                    noteStartIndex = token.index
+                }
+                noteTexts.append(token.text)
+            } else {
+                // Flush accumulated notes before adding this token
+                if !noteTexts.isEmpty, let startIndex = noteStartIndex {
+                    result.append(
+                        ParsedToken(
+                            index: startIndex,
+                            text: noteTexts.joined(separator: " "),
+                            type: .notes
+                        )
+                    )
+                    noteTexts = []
+                    noteStartIndex = nil
+                }
+                result.append(token)
+            }
+        }
+
+        // Flush any remaining notes at the end
+        if !noteTexts.isEmpty, let startIndex = noteStartIndex {
+            result.append(
+                ParsedToken(
+                    index: startIndex,
+                    text: noteTexts.joined(separator: " "),
+                    type: .notes
+                )
+            )
+        }
+
+        return result
     }
 }
 
@@ -117,6 +164,17 @@ private struct TokenBadge: View {
             ParsedToken(index: 0, text: "K3LR", type: .callsign),
             ParsedToken(index: 1, text: "US-1234", type: .park),
             ParsedToken(index: 2, text: "PA", type: .state),
+        ])
+
+        Divider()
+
+        // Example with multi-word notes (should combine into single badge)
+        QuickEntryPreview(tokens: [
+            ParsedToken(index: 0, text: "W1AW", type: .callsign),
+            ParsedToken(index: 1, text: "59", type: .rstReceived),
+            ParsedToken(index: 2, text: "GREAT", type: .notes),
+            ParsedToken(index: 3, text: "SIGNAL", type: .notes),
+            ParsedToken(index: 4, text: "TODAY", type: .notes),
         ])
     }
     .padding()

@@ -149,7 +149,7 @@ struct LoFiOperation: Decodable, @unchecked Sendable {
         title = try container.decodeIfPresent(String.self, forKey: .title)
         subtitle = try container.decodeIfPresent(String.self, forKey: .subtitle)
         grid = try container.decodeIfPresent(String.self, forKey: .grid)
-        refs = try container.decode([LoFiOperationRef].self, forKey: .refs)
+        refs = try container.decodeIfPresent([LoFiOperationRef].self, forKey: .refs) ?? []
         qsoCount = try container.decode(Int.self, forKey: .qsoCount)
         startAtMillisMin = try container.decodeIfPresent(Double.self, forKey: .startAtMillisMin)
         startAtMillisMax = try container.decodeIfPresent(Double.self, forKey: .startAtMillisMax)
