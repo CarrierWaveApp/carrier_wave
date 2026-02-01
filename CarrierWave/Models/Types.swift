@@ -60,6 +60,13 @@ enum ServiceType: String, Codable, CaseIterable {
 
 // MARK: - String Helpers
 
+extension String {
+    /// Returns self if non-empty, otherwise nil
+    var nonEmpty: String? {
+        isEmpty ? nil : self
+    }
+}
+
 extension String? {
     /// Returns self if non-nil and non-empty, otherwise nil
     var nonEmpty: String? {

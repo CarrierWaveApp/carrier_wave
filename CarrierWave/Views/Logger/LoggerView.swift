@@ -236,6 +236,10 @@ struct LoggerView: View {
     @State private var showMoreFields = false
     @FocusState private var callsignFieldFocused: Bool
 
+    // Quick entry
+    @State private var quickEntryResult: QuickEntryResult?
+    @State private var quickEntryTokens: [ParsedToken] = []
+
     // Expanded fields
     @State private var notes = ""
     @State private var theirPark = ""
@@ -301,16 +305,26 @@ struct LoggerView: View {
 
     /// Whether the log button should be enabled
     private var canLog: Bool {
-        guard sessionManager?.hasActiveSession == true,
-              !callsignInput.isEmpty,
-              callsignInput.count >= 3
-        else {
+        guard sessionManager?.hasActiveSession == true else {
             return false
+        }
+
+        // Determine which callsign to validate
+        let callsignToValidate: String
+        if let qeResult = quickEntryResult {
+            // In quick entry mode, use the parsed callsign
+            callsignToValidate = qeResult.callsign
+        } else {
+            // Normal mode, use the input directly
+            guard !callsignInput.isEmpty, callsignInput.count >= 3 else {
+                return false
+            }
+            callsignToValidate = callsignInput.uppercased()
         }
 
         // Don't allow logging your own callsign
         let myCallsign = sessionManager?.activeSession?.myCallsign.uppercased() ?? ""
-        if !myCallsign.isEmpty, callsignInput.uppercased() == myCallsign {
+        if !myCallsign.isEmpty, callsignToValidate.uppercased() == myCallsign {
             return false
         }
 
@@ -638,6 +652,8 @@ struct LoggerView: View {
                         callsignInput = ""
                         lookupResult = nil
                         lookupError = nil
+                        quickEntryResult = nil
+                        quickEntryTokens = []
                     } label: {
                         Image(systemName: "xmark.circle.fill")
                             .foregroundStyle(.secondary)
@@ -668,6 +684,14 @@ struct LoggerView: View {
                 .padding(.horizontal, 12)
                 .padding(.top, 6)
                 .transition(.move(edge: .top).combined(with: .opacity))
+            }
+
+            // Quick entry preview
+            if !quickEntryTokens.isEmpty, detectedCommand == nil {
+                QuickEntryPreview(tokens: quickEntryTokens)
+                    .padding(.horizontal, 12)
+                    .padding(.top, 6)
+                    .transition(.move(edge: .top).combined(with: .opacity))
             }
 
             // Cancel spot button - shown when tuned away from session frequency
@@ -971,6 +995,8 @@ struct LoggerView: View {
         notes = ""
         lookupResult = nil
         lookupError = nil
+        quickEntryResult = nil
+        quickEntryTokens = []
         ToastManager.shared.info("Spot cancelled")
     }
 
@@ -1032,10 +1058,18 @@ struct LoggerView: View {
         if let command = LoggerCommand.parse(callsignInput) {
             executeCommand(command)
             callsignInput = ""
+            quickEntryResult = nil
+            quickEntryTokens = []
             return
         }
 
-        // Otherwise try to log
+        // Check for quick entry mode
+        if quickEntryResult != nil, canLog {
+            logQuickEntry()
+            return
+        }
+
+        // Otherwise try to log normally
         if canLog {
             logQSO()
         }
@@ -1216,9 +1250,28 @@ struct LoggerView: View {
 
         let trimmed = callsign.trimmingCharacters(in: .whitespaces).uppercased()
 
+        // Check for quick entry mode (input contains spaces)
+        let isQuickEntry = callsign.contains(" ")
+        if isQuickEntry {
+            quickEntryResult = QuickEntryParser.parse(callsign)
+            quickEntryTokens = QuickEntryParser.parseTokens(callsign)
+        } else {
+            quickEntryResult = nil
+            quickEntryTokens = []
+        }
+
+        // Determine the callsign to look up
+        let callsignForLookup: String =
+            if let qeResult = quickEntryResult {
+                // In quick entry mode, use the parsed callsign
+                qeResult.callsign
+            } else {
+                trimmed
+            }
+
         // Don't lookup if too short or looks like a command
-        guard trimmed.count >= 3,
-              LoggerCommand.parse(trimmed) == nil
+        guard callsignForLookup.count >= 3,
+              LoggerCommand.parse(callsignForLookup) == nil
         else {
             lookupResult = nil
             lookupError = nil
@@ -1226,7 +1279,7 @@ struct LoggerView: View {
         }
 
         // Extract the primary callsign for lookup (strip prefix/suffix)
-        let primaryCallsign = extractPrimaryCallsign(trimmed)
+        let primaryCallsign = extractPrimaryCallsign(callsignForLookup)
 
         // Don't lookup if primary is too short
         guard primaryCallsign.count >= 3 else {
@@ -1263,47 +1316,72 @@ struct LoggerView: View {
             return
         }
 
-        // Use manually entered grid, or fall back to grid from callsign lookup
-        let gridToUse: String? =
-            if !theirGrid.isEmpty {
-                theirGrid
-            } else {
-                lookupResult?.grid
-            }
-
-        // Use manually entered state, or fall back to state from callsign lookup
-        let stateToUse: String? =
-            if !theirState.isEmpty {
-                theirState
-            } else {
-                lookupResult?.state
-            }
+        // Build field values with fallback: form > lookup
+        let gridToUse = theirGrid.nonEmpty ?? lookupResult?.grid
+        let stateToUse = theirState.nonEmpty ?? lookupResult?.state
 
         _ = sessionManager?.logQSO(
             callsign: callsignInput,
-            rstSent: rstSent.isEmpty ? defaultRST : rstSent,
-            rstReceived: rstReceived.isEmpty ? defaultRST : rstReceived,
+            rstSent: rstSent.nonEmpty ?? defaultRST,
+            rstReceived: rstReceived.nonEmpty ?? defaultRST,
             theirGrid: gridToUse,
-            theirParkReference: theirPark.isEmpty ? nil : theirPark,
-            notes: notes.isEmpty ? nil : notes,
+            theirParkReference: theirPark.nonEmpty,
+            notes: notes.nonEmpty,
             name: lookupResult?.name,
-            operatorName: operatorName.isEmpty ? lookupResult?.displayName : operatorName,
+            operatorName: operatorName.nonEmpty ?? lookupResult?.displayName,
             state: stateToUse,
             country: lookupResult?.country,
             qth: lookupResult?.qth,
             theirLicenseClass: lookupResult?.licenseClass
         )
 
-        // Refresh the QSO list with the new entry
         refreshSessionQSOs()
+        restorePreSpotFrequency()
+        resetFormAfterLog()
+    }
 
-        // Restore session frequency if we tuned away for a spot
+    /// Log a QSO using quick entry data
+    private func logQuickEntry() {
+        guard let qeResult = quickEntryResult, canLog else {
+            return
+        }
+
+        // Build field values with fallback chain: quick entry > form > lookup
+        let gridToUse = qeResult.theirGrid.nonEmpty ?? theirGrid.nonEmpty ?? lookupResult?.grid
+        let stateToUse = qeResult.state.nonEmpty ?? theirState.nonEmpty ?? lookupResult?.state
+        let parkToUse = qeResult.theirPark.nonEmpty ?? theirPark.nonEmpty
+        let notesToUse = qeResult.notes.nonEmpty ?? notes.nonEmpty
+
+        _ = sessionManager?.logQSO(
+            callsign: qeResult.callsign,
+            rstSent: qeResult.rstSent ?? rstSent.nonEmpty ?? defaultRST,
+            rstReceived: qeResult.rstReceived ?? rstReceived.nonEmpty ?? defaultRST,
+            theirGrid: gridToUse,
+            theirParkReference: parkToUse,
+            notes: notesToUse,
+            name: lookupResult?.name,
+            operatorName: operatorName.nonEmpty ?? lookupResult?.displayName,
+            state: stateToUse,
+            country: lookupResult?.country,
+            qth: lookupResult?.qth,
+            theirLicenseClass: lookupResult?.licenseClass
+        )
+
+        refreshSessionQSOs()
+        restorePreSpotFrequency()
+        resetFormAfterLog()
+    }
+
+    /// Restore frequency if we tuned away for a spot
+    private func restorePreSpotFrequency() {
         if let freq = preSpotFrequency {
             _ = sessionManager?.updateFrequency(freq)
             preSpotFrequency = nil
         }
+    }
 
-        // Reset form without animations for instant feedback
+    /// Reset form fields without animations after logging
+    private func resetFormAfterLog() {
         var transaction = Transaction()
         transaction.disablesAnimations = true
         withTransaction(transaction) {
@@ -1311,6 +1389,8 @@ struct LoggerView: View {
             lookupResult = nil
             lookupError = nil
             cachedPotaDuplicateStatus = nil
+            quickEntryResult = nil
+            quickEntryTokens = []
             theirGrid = ""
             theirState = ""
             theirPark = ""
@@ -1319,8 +1399,6 @@ struct LoggerView: View {
             rstSent = ""
             rstReceived = ""
         }
-
-        // Immediately focus callsign field for next QSO
         callsignFieldFocused = true
     }
 
