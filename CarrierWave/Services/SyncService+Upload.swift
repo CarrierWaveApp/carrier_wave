@@ -69,10 +69,21 @@ extension SyncService {
     }
 
     func fetchQSOsNeedingUpload() throws -> [QSO] {
+        // Defense-in-depth: filter to primary callsign even though ImportService
+        // should not create upload markers for non-primary callsign QSOs.
+        // This catches any legacy data or edge cases.
+        let primaryCallsign = CallsignAliasService.shared.getCurrentCallsign()?.uppercased()
+
         let descriptor = FetchDescriptor<QSO>()
         let allQSOs = try modelContext.fetch(descriptor)
         return allQSOs.filter { qso in
-            qso.servicePresence.contains { $0.needsUpload }
+            // Must have at least one service needing upload
+            guard qso.servicePresence.contains(where: { $0.needsUpload }) else {
+                return false
+            }
+            // Must match primary callsign (or be empty, or no primary configured)
+            let qsoCallsign = qso.myCallsign.uppercased()
+            return qsoCallsign.isEmpty || primaryCallsign == nil || qsoCallsign == primaryCallsign
         }
     }
 
@@ -83,7 +94,7 @@ extension SyncService {
 
         for batch in stride(from: 0, to: qsos.count, by: batchSize) {
             let end = min(batch + batchSize, qsos.count)
-            let batchQSOs = Array(qsos[batch ..< end])
+            let batchQSOs = Array(qsos[batch..<end])
 
             let uploadResult = try await qrzClient.uploadQSOs(batchQSOs)
             totalUploaded += uploadResult.uploaded

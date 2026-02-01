@@ -4,6 +4,12 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **Sync Callsign Filtering** - QSOs from previous callsigns no longer appear in sync queues
+  - Import now only creates upload markers for QSOs matching primary callsign
+  - Sync fetch adds defense-in-depth filtering for legacy data
+  - Prevents failed uploads to QRZ/POTA when user has changed callsigns
+
 ### Added
 - **Operator Field QRZ Hint** - Operator field now shows QRZ name as placeholder hint and logs it automatically if not overridden
 - **Logs Tab Tour** - Added intro tour for the Logs tab explaining the query language

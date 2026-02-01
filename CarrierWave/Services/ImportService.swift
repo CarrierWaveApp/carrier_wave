@@ -145,12 +145,24 @@ class ImportService: ObservableObject {
     }
 
     func createServicePresenceRecords(for qso: QSO, importedFrom: ServiceType?) {
+        // Only create upload markers for QSOs matching the user's primary callsign.
+        // QSOs from previous callsigns are kept locally but won't sync to services.
+        let primaryCallsign = CallsignAliasService.shared.getCurrentCallsign()?.uppercased()
+        let qsoCallsign = qso.myCallsign.uppercased()
+        let matchesPrimary =
+            qsoCallsign.isEmpty || primaryCallsign == nil
+            || qsoCallsign == primaryCallsign
+
         for service in ServiceType.allCases {
             if service == importedFrom {
                 let presence = ServicePresence.downloaded(from: service, qso: qso)
                 modelContext.insert(presence)
                 qso.servicePresence.append(presence)
             } else if service.supportsUpload {
+                // Skip upload markers for QSOs not matching primary callsign
+                guard matchesPrimary else {
+                    continue
+                }
                 // POTA uploads only apply to QSOs where user was activating from a park
                 if service == .pota, qso.parkReference?.isEmpty ?? true {
                     continue
@@ -198,7 +210,7 @@ class ImportService: ObservableObject {
             } else if let qsoTimestamp = lofiQso.timestamp {
                 qsoTimestamp
             } else {
-                Date() // Fallback to now if no timestamp available
+                Date()  // Fallback to now if no timestamp available
             }
 
         var calendar = Calendar.current
@@ -264,7 +276,7 @@ enum ImportError: Error, LocalizedError {
         switch self {
         case .invalidFile: "Could not read the ADIF file"
         case .missingTimestamp: "QSO record missing date/time"
-        case let .parseError(message): "Parse error: \(message)"
+        case .parseError(let message): "Parse error: \(message)"
         }
     }
 }
