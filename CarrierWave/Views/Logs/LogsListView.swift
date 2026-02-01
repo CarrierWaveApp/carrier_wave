@@ -33,6 +33,7 @@ struct LogsListContentView: View {
     let hamrsClient: HAMRSClient
     let lotwClient: LoTWClient
     let potaAuth: POTAAuthService
+    let tourState: TourState
 
     var body: some View {
         VStack(spacing: 0) {
@@ -65,7 +66,7 @@ struct LogsListContentView: View {
                     .onDelete(perform: deleteQSOs)
 
                     // Load more button if there are more QSOs to fetch
-                    if hasMoreQSOs && !hasActiveQuery {
+                    if hasMoreQSOs, !hasActiveQuery {
                         HStack {
                             Spacer()
                             Button {
@@ -120,7 +121,9 @@ struct LogsListContentView: View {
                     Menu("Quick Filters") {
                         Button("Last 7 days") { queryText = "after:7d" }
                         Button("Last 30 days") { queryText = "after:30d" }
-                        Button("This year") { queryText = "date:\(Calendar.current.component(.year, from: Date()))" }
+                        Button("This year") {
+                            queryText = "date:\(Calendar.current.component(.year, from: Date()))"
+                        }
 
                         Divider()
 
@@ -165,13 +168,14 @@ struct LogsListContentView: View {
         .sheet(isPresented: $showQueryHelp) {
             QueryHelpSheet()
         }
+        .miniTour(.logs, tourState: tourState)
     }
 
     // MARK: Private
 
     private static let initialBatchSize = 500
     private static let loadMoreBatchSize = 500
-    private static let searchBatchSize = 1000
+    private static let searchBatchSize = 1_000
 
     @Environment(\.modelContext) private var modelContext
 
@@ -193,7 +197,7 @@ struct LogsListContentView: View {
     @State private var queryAnalysis: QueryAnalysis?
     @State private var compiledFilter: ((QSO) -> Bool)?
 
-    // Cached results
+    /// Cached results
     @State private var cachedFilteredQSOs: [QSO] = []
 
     private var filteredQSOs: [QSO] {
@@ -298,7 +302,7 @@ struct LogsListContentView: View {
             queryAnalysis = analysis
 
             // Check if we need confirmation for slow queries
-            if analysis.requiresConfirmation && !proceedWithSlowQuery && totalQSOCount > 5000 {
+            if analysis.requiresConfirmation, !proceedWithSlowQuery, totalQSOCount > 5_000 {
                 // Don't execute yet - wait for user to confirm
                 cachedFilteredQSOs = []
                 return
@@ -361,6 +365,8 @@ struct LogsListContentView: View {
 // MARK: - QueryWarningBanner
 
 struct QueryWarningBanner: View {
+    // MARK: Internal
+
     let analysis: QueryAnalysis
     let onProceed: () -> Void
     let onAddFilter: (String) -> Void
@@ -394,7 +400,8 @@ struct QueryWarningBanner: View {
                     .controlSize(.small)
 
                     if let suggestion = analysis.warnings.first?.suggestion,
-                       suggestion.contains("after:") {
+                       suggestion.contains("after:")
+                    {
                         Button("Add Date Filter") {
                             onAddFilter("after:30d")
                         }
@@ -409,6 +416,8 @@ struct QueryWarningBanner: View {
         .background(Color.orange.opacity(0.1))
     }
 
+    // MARK: Private
+
     private func warningColor(_ severity: QueryWarning.Severity) -> Color {
         switch severity {
         case .hint: .blue
@@ -421,7 +430,7 @@ struct QueryWarningBanner: View {
 // MARK: - QueryHelpSheet
 
 struct QueryHelpSheet: View {
-    @Environment(\.dismiss) private var dismiss
+    // MARK: Internal
 
     var body: some View {
         NavigationStack {
@@ -477,6 +486,10 @@ struct QueryHelpSheet: View {
             }
         }
     }
+
+    // MARK: Private
+
+    @Environment(\.dismiss) private var dismiss
 
     private func helpRow(_ query: String, _ description: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {

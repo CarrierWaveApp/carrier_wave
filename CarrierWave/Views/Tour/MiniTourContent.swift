@@ -54,6 +54,57 @@ enum MiniTourContent {
         ),
     ]
 
+    static let logs: [TourPage] = [
+        TourPage(
+            icon: "list.bullet.rectangle",
+            title: "Your QSO Log",
+            body: """
+            Browse and search your logged contacts here. QSOs sync from QRZ, POTA, \
+            and LoFi, and are uploaded when you log new contacts.
+            """
+        ),
+        TourPage(
+            icon: "magnifyingglass",
+            title: "Simple Search",
+            body: """
+            Type a callsign like W1AW to find contacts with that station. \
+            Use wildcards like K1* to match all callsigns starting with K1.
+            """
+        ),
+        TourPage(
+            icon: "line.3.horizontal.decrease",
+            title: "Field Filters",
+            body: """
+            Filter by field using field:value syntax. Examples: band:20m, mode:CW, \
+            state:CA, park:K-1234, grid:FN31.
+            """
+        ),
+        TourPage(
+            icon: "calendar",
+            title: "Date Filters",
+            body: """
+            Use date:today, after:7d (last 7 days), after:30d (last 30 days), \
+            or specific dates like date:2024-01 or before:2024-06-01.
+            """
+        ),
+        TourPage(
+            icon: "checkmark.circle",
+            title: "Status Filters",
+            body: """
+            Find confirmed contacts with confirmed:lotw or confirmed:qrz. \
+            Check upload status with synced:pota or pending:yes.
+            """
+        ),
+        TourPage(
+            icon: "plus.circle",
+            title: "Combining Filters",
+            body: """
+            Combine filters with spaces (AND): band:20m mode:CW after:30d. \
+            Use | for OR: W1AW | K1ABC. Exclude with -: -mode:FT8.
+            """
+        ),
+    ]
+
     static let potaActivations: [TourPage] = [
         TourPage(
             icon: "tree",
@@ -158,6 +209,7 @@ enum MiniTourContent {
     static func pages(for id: TourState.MiniTourID) -> [TourPage] {
         switch id {
         case .logger: logger
+        case .logs: logs
         case .potaActivations: potaActivations
         case .potaAccountSetup: potaAccountSetup
         case .challenges: challenges

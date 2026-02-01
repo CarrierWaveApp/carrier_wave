@@ -61,10 +61,13 @@ struct LogsContainerView: View {
                 qrzClient: qrzClient,
                 hamrsClient: hamrsClient,
                 lotwClient: lotwClient,
-                potaAuth: potaAuth
+                potaAuth: potaAuth,
+                tourState: tourState
             )
         case .potaActivations:
-            POTAActivationsContentView(potaClient: potaClient, potaAuth: potaAuth, tourState: tourState)
+            POTAActivationsContentView(
+                potaClient: potaClient, potaAuth: potaAuth, tourState: tourState
+            )
         }
     }
 }

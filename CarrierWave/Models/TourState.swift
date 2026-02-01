@@ -19,6 +19,7 @@ final class TourState {
 
     enum MiniTourID: String, CaseIterable {
         case logger
+        case logs
         case potaActivations = "pota_activations"
         case potaAccountSetup = "pota_account_setup"
         case challenges

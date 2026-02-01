@@ -6,6 +6,12 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ### Added
 - **Operator Field QRZ Hint** - Operator field now shows QRZ name as placeholder hint and logs it automatically if not overridden
+- **Logs Tab Tour** - Added intro tour for the Logs tab explaining the query language
+  - Overview of simple callsign search and wildcards
+  - Field filter syntax (band, mode, state, park, grid)
+  - Date filter examples (after:7d, date:today, before:)
+  - Status filters (confirmed, synced, pending)
+  - Combining filters with AND/OR/NOT
 - **Log Search Query Language** - Powerful search for QSO logs with field-specific filters
   - Basic search: type callsigns, park references, or SOTA refs directly
   - Field filters: `band:20m`, `mode:CW`, `state:CA`, `park:K-*`, `grid:FN31`
