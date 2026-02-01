@@ -59,7 +59,7 @@ struct SettingsMainView: View {
     @AppStorage("loggerShowActivityPanel") private var showActivityPanel = true
     @AppStorage("loggerShowLicenseWarnings") private var showLicenseWarnings = true
     @AppStorage("loggerKeepScreenOn") private var keepScreenOn = true
-    @AppStorage("loggerQuickLogMode") private var quickLogMode = false
+
     @AppStorage("potaAutoSpotEnabled") private var potaAutoSpotEnabled = false
     @AppStorage("loggerAutoModeSwitch") private var autoModeSwitch = true
     @AppStorage("callsignNotesDisplayMode") private var notesDisplayMode = "emoji"
@@ -268,7 +268,6 @@ struct SettingsMainView: View {
             Toggle("Skip session wizard", isOn: $skipWizard)
             Toggle("Show frequency activity", isOn: $showActivityPanel)
             Toggle("Keep screen on", isOn: $keepScreenOn)
-            Toggle("Quick Log Mode", isOn: $quickLogMode)
             Toggle("Auto-switch mode for frequency", isOn: $autoModeSwitch)
 
             Picker("Notes display", selection: $notesDisplayMode) {
@@ -286,8 +285,7 @@ struct SettingsMainView: View {
             Text("Logger")
         } footer: {
             Text(
-                "Quick Log Mode disables animations for faster QSO entry. "
-                    + "Keep screen on prevents device sleep during sessions. "
+                "Keep screen on prevents device sleep during sessions. "
                     + "Always visible fields appear without tapping \"More\"."
             )
         }

@@ -33,7 +33,6 @@ struct LoggerSettingsView: View {
     @AppStorage("loggerShowActivityPanel") private var showActivityPanel = true
     @AppStorage("loggerShowLicenseWarnings") private var showLicenseWarnings = true
     @AppStorage("loggerKeepScreenOn") private var keepScreenOn = true
-    @AppStorage("loggerQuickLogMode") private var quickLogMode = false
     @AppStorage("potaAutoSpotEnabled") private var potaAutoSpotEnabled = false
 
     @State private var isLookingUp = false
@@ -124,14 +123,10 @@ struct LoggerSettingsView: View {
     private var behaviorSection: some View {
         Section {
             Toggle("Keep screen on", isOn: $keepScreenOn)
-            Toggle("Quick Log Mode", isOn: $quickLogMode)
         } header: {
             Text("Behavior")
         } footer: {
-            Text(
-                "Keep screen on prevents device sleep during active sessions. "
-                    + "Quick Log Mode disables animations for faster QSO entry during pileups."
-            )
+            Text("Keep screen on prevents device sleep during active sessions.")
         }
     }
 

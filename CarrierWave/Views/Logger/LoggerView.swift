@@ -144,15 +144,7 @@ struct LoggerView: View {
                 // Load session QSOs after session manager is ready
                 refreshSessionQSOs()
             }
-            .animation(quickLogMode ? nil : .easeInOut(duration: 0.2), value: lookupResult != nil)
-            .animation(quickLogMode ? nil : .easeInOut(duration: 0.2), value: lookupError)
-            .animation(quickLogMode ? nil : .easeInOut(duration: 0.2), value: showMoreFields)
-            .animation(
-                quickLogMode ? nil : .easeInOut(duration: 0.2), value: currentViolation?.message
-            )
-            .animation(
-                quickLogMode ? nil : .easeInOut(duration: 0.2), value: potaDuplicateStatusKey
-            )
+
             .onChange(of: sessionManager?.activeSession?.frequency) { _, _ in
                 dismissedViolation = nil
             }
@@ -229,7 +221,7 @@ struct LoggerView: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
-            .animation(quickLogMode ? nil : .easeInOut(duration: 0.2), value: callsignFieldFocused)
+
             .onReceive(
                 NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)
             ) { notification in
@@ -254,7 +246,7 @@ struct LoggerView: View {
 
     @AppStorage("userLicenseClass") private var licenseClassRaw: String = LicenseClass.extra
         .rawValue
-    @AppStorage("loggerQuickLogMode") private var quickLogMode = false
+
     @AppStorage("loggerAutoModeSwitch") private var autoModeSwitch = true
 
     // Always visible field settings
@@ -678,7 +670,6 @@ struct LoggerView: View {
                 .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
-        .animation(quickLogMode ? nil : .easeInOut(duration: 0.15), value: detectedCommand != nil)
     }
 
     // MARK: - QSO Form
@@ -1352,6 +1343,9 @@ struct LoggerView: View {
             rstSent = ""
             rstReceived = ""
         }
+
+        // Immediately focus callsign field for next QSO
+        callsignFieldFocused = true
     }
 
     private func lookupParkName(_ reference: String?) -> String? {
