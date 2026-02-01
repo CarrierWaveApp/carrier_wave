@@ -144,6 +144,8 @@ This index maps files to their purpose. Use it to locate files by feature instea
 | `LoggerView.swift` | Main logger view with session header, callsign input, QSO form |
 | `LoggerCallsignCard.swift` | Callsign info display card for logger |
 | `SessionStartSheet.swift` | Session wizard for mode, frequency, activation type |
+| `ParkPickerSheet.swift` | Park search and nearby selection sheet |
+| `ParkEntryField.swift` | Enhanced park entry with search picker and shorthand |
 | `LoggerSettingsView.swift` | (Deprecated) Logger settings moved to main SettingsView |
 | `RBNPanelView.swift` | Combined RBN/POTA spots panel with mini-map |
 | `SpotCommentsSheet.swift` | POTA spot comments display sheet |
