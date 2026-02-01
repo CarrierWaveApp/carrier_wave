@@ -148,12 +148,12 @@ enum QueryField: String, CaseIterable {
     var isIndexed: Bool {
         switch self {
         case .callsign,
-            .band,
-            .mode,
-            .park,
-            .date,
-            .after,
-            .before:
+             .band,
+             .mode,
+             .park,
+             .date,
+             .after,
+             .before:
             true
         default:
             false
@@ -164,8 +164,8 @@ enum QueryField: String, CaseIterable {
     var requiresTextScan: Bool {
         switch self {
         case .notes,
-            .name,
-            .qth:
+             .name,
+             .qth:
             true
         default:
             false
@@ -186,15 +186,18 @@ struct SourcePosition: Sendable {
 
     let offset: Int
     let length: Int
+
+    // swiftformat:disable all
+    // Explicit nonisolated Equatable to avoid Swift 6 actor isolation inference
+    nonisolated static func == (lhs: SourcePosition, rhs: SourcePosition) -> Bool {
+        lhs.offset == rhs.offset && lhs.length == rhs.length
+    }
+    // swiftformat:enable all
 }
 
 // MARK: Equatable
 
-extension SourcePosition: Equatable {
-    nonisolated static func == (lhs: SourcePosition, rhs: SourcePosition) -> Bool {
-        lhs.offset == rhs.offset && lhs.length == rhs.length
-    }
-}
+extension SourcePosition: Equatable {}
 
 // MARK: - PositionedToken
 
