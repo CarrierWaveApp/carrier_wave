@@ -27,6 +27,19 @@ enum StreakCategory: String, Identifiable, CaseIterable {
 // MARK: - StreakInfo
 
 struct StreakInfo: Identifiable {
+    /// Placeholder for loading states
+    static let placeholder = StreakInfo(
+        id: "placeholder",
+        category: .daily,
+        subcategory: nil,
+        currentStreak: 0,
+        longestStreak: 0,
+        currentStartDate: nil,
+        longestStartDate: nil,
+        longestEndDate: nil,
+        lastActiveDate: nil
+    )
+
     let id: String
     let category: StreakCategory
     let subcategory: String? // Mode name or band name for specific streaks
@@ -105,8 +118,8 @@ enum StreakCalculator {
 
         let longestStreak = streaks.max { $0.length < $1.length }
         let currentStreak = streaks.first { streak in
-            cal.isDate(streak.end, inSameDayAs: today) ||
-                cal.isDate(streak.end, inSameDayAs: yesterday)
+            cal.isDate(streak.end, inSameDayAs: today)
+                || cal.isDate(streak.end, inSameDayAs: yesterday)
         }
 
         return StreakResult(
@@ -121,7 +134,9 @@ enum StreakCalculator {
 
     // MARK: Private
 
-    private static func findAllStreaks(from sortedDates: [Date], calendar cal: Calendar) -> [StreakSegment] {
+    private static func findAllStreaks(from sortedDates: [Date], calendar cal: Calendar)
+        -> [StreakSegment]
+    {
         var streaks: [StreakSegment] = []
         var currentStart = sortedDates[0]
         var previousDate = sortedDates[0]
@@ -132,7 +147,9 @@ enum StreakCalculator {
             if dayDiff == 1 {
                 length += 1
             } else if dayDiff > 1 {
-                streaks.append(StreakSegment(start: currentStart, end: previousDate, length: length))
+                streaks.append(
+                    StreakSegment(start: currentStart, end: previousDate, length: length)
+                )
                 currentStart = date
                 length = 1
             }

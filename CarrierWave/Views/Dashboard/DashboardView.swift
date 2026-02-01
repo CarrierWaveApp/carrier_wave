@@ -60,10 +60,9 @@ struct DashboardView: View {
     @State var mismarkedPOTACount = 0
     @State var showingPOTARepairAlert = false
 
-    /// Cached statistics - updated when QSO count changes
-    @State var cachedStats: QSOStatistics?
+    /// Progressive statistics - computes expensive stats in background for large datasets
+    @State var asyncStats = AsyncQSOStatistics()
     @State var lastQSOCount: Int = 0
-    @State var isComputingStats: Bool = false
 
     let lofiClient = LoFiClient()
     let qrzClient = QRZClient()
@@ -74,16 +73,6 @@ struct DashboardView: View {
 
     var importService: ImportService {
         ImportService(modelContext: modelContext)
-    }
-
-    /// Statistics (cached to avoid expensive recomputation on every render)
-    var stats: QSOStatistics {
-        // Return cached stats if QSO count hasn't changed
-        if let cached = cachedStats, qsos.count == lastQSOCount {
-            return cached
-        }
-        // Compute fresh stats - the cache update happens in .task
-        return QSOStatistics(qsos: qsos)
     }
 
     var statsGridColumns: [GridItem] {
@@ -123,17 +112,24 @@ struct DashboardView: View {
                 await checkForMismarkedPOTAPresence()
             }
             .onChange(of: qsos.count) { _, newCount in
-                // Update cached stats when QSO count changes
+                // Trigger progressive stats computation when QSO count changes
                 if newCount != lastQSOCount {
-                    computeStatsAsync()
+                    lastQSOCount = newCount
+                    asyncStats.compute(from: qsos)
                 }
             }
             .task(id: qsos.count) {
-                // Initialize cache on first load or when count changes
-                if cachedStats == nil || qsos.count != lastQSOCount {
-                    computeStatsAsync()
+                // Initialize stats on first load or when count changes
+                if qsos.count != lastQSOCount {
+                    lastQSOCount = qsos.count
+                    asyncStats.compute(from: qsos)
                 }
             }
+            // NOTE: No .onDisappear cancellation - computation continues in background
+            // when user switches tabs. This is intentional because:
+            // 1. TabView keeps the view alive, so @State persists
+            // 2. Cooperative yielding (Task.yield) prevents blocking other tabs
+            // 3. Results will be ready when user returns to dashboard
             .callsignAliasDetectionAlert(
                 unconfiguredCallsigns: $unconfiguredCallsigns,
                 showingAlert: $showingCallsignAliasAlert,
@@ -166,24 +162,6 @@ struct DashboardView: View {
 
     func pendingCount(for service: ServiceType) -> Int {
         allPresence.filter { $0.serviceType == service && $0.needsUpload }.count
-    }
-
-    /// Compute statistics - caching ensures this is only expensive on first access
-    func computeStatsAsync() {
-        guard !isComputingStats else {
-            return
-        }
-        isComputingStats = true
-        let currentCount = qsos.count
-
-        // QSO is @MainActor isolated, so computation must stay on main actor
-        // The QSOStatistics class caches all expensive computations internally,
-        // so subsequent property accesses are O(1)
-        let newStats = QSOStatistics(qsos: qsos)
-
-        cachedStats = newStats
-        lastQSOCount = currentCount
-        isComputingStats = false
     }
 
     // MARK: Private
@@ -228,12 +206,12 @@ struct DashboardView: View {
                 Text("Activity")
                     .font(.headline)
                 Spacer()
-                Text("\(stats.totalQSOs) QSOs")
+                Text("\(asyncStats.totalQSOs) QSOs")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
-            ActivityGrid(activityData: stats.activityByDate)
+            ActivityGrid(activityData: asyncStats.activityByDate)
         }
         .padding()
         .background(Color(.systemGray6))
@@ -244,9 +222,15 @@ struct DashboardView: View {
 
     private var streaksCard: some View {
         NavigationLink {
-            StreakDetailView(stats: stats, tourState: tourState)
+            if let stats = asyncStats.getStats() {
+                StreakDetailView(stats: stats, tourState: tourState)
+            } else {
+                ProgressView("Loading...")
+            }
         } label: {
-            StreaksCard(dailyStreak: stats.dailyStreak, potaStreak: stats.potaActivationStreak)
+            StreaksCard(
+                dailyStreak: asyncStats.dailyStreak, potaStreak: asyncStats.potaActivationStreak
+            )
         }
         .buttonStyle(.plain)
     }
@@ -279,15 +263,19 @@ struct DashboardView: View {
         HStack(alignment: .top, spacing: 16) {
             // Streaks section (left side)
             NavigationLink {
-                StreakDetailView(stats: stats, tourState: tourState)
+                if let stats = asyncStats.getStats() {
+                    StreakDetailView(stats: stats, tourState: tourState)
+                } else {
+                    ProgressView("Loading...")
+                }
             } label: {
                 VStack(alignment: .leading, spacing: 12) {
                     Text("Streaks")
                         .font(.headline)
 
                     VStack(spacing: 12) {
-                        streakRow(title: "Daily", streak: stats.dailyStreak)
-                        streakRow(title: "POTA", streak: stats.potaActivationStreak)
+                        streakRow(title: "Daily", streak: asyncStats.dailyStreak)
+                        streakRow(title: "POTA", streak: asyncStats.potaActivationStreak)
                     }
                 }
             }
@@ -318,8 +306,23 @@ struct DashboardView: View {
 
     // MARK: - Favorites Card
 
+    @ViewBuilder
     private var favoritesCard: some View {
-        FavoritesCard(stats: stats, tourState: tourState)
+        if let stats = asyncStats.getStats() {
+            FavoritesCard(stats: stats, tourState: tourState)
+        } else {
+            // Show placeholder while stats are loading
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Favorites")
+                    .font(.headline)
+                Text("Loading...")
+                    .foregroundStyle(.secondary)
+            }
+            .padding()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color(.systemGray6))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+        }
     }
 }
 

@@ -26,19 +26,60 @@ struct StatBox: View {
     }
 }
 
+// MARK: - StatBoxDeferred
+
+/// StatBox variant for deferred (progressively computed) values.
+/// Shows "--" with reduced opacity when value is nil (still computing).
+struct StatBoxDeferred: View {
+    let title: String
+    let value: Int?
+    let icon: String
+
+    var body: some View {
+        VStack(spacing: 4) {
+            Image(systemName: icon)
+                .font(.title3)
+                .foregroundStyle(.blue)
+            Group {
+                if let value {
+                    Text("\(value)")
+                } else {
+                    Text("--")
+                }
+            }
+            .font(.title2)
+            .fontWeight(.bold)
+            Text(title)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 8)
+        .background(Color(.systemGray5))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .opacity(value == nil ? 0.6 : 1.0)
+    }
+}
+
 // MARK: - ActivationsStatBox
 
 struct ActivationsStatBox: View {
-    let successful: Int
+    let successful: Int?
 
     var body: some View {
         VStack(spacing: 4) {
             Image(systemName: "leaf")
                 .font(.title3)
                 .foregroundStyle(.blue)
-            Text("\(successful)")
-                .font(.title2)
-                .fontWeight(.bold)
+            Group {
+                if let successful {
+                    Text("\(successful)")
+                } else {
+                    Text("--")
+                }
+            }
+            .font(.title2)
+            .fontWeight(.bold)
             Text("Activations")
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -47,6 +88,7 @@ struct ActivationsStatBox: View {
         .padding(.vertical, 8)
         .background(Color(.systemGray5))
         .clipShape(RoundedRectangle(cornerRadius: 8))
+        .opacity(successful == nil ? 0.6 : 1.0)
     }
 }
 
@@ -74,8 +116,8 @@ struct StreakStatBox: View {
 // MARK: - StreaksCard
 
 struct StreaksCard: View {
-    let dailyStreak: StreakInfo
-    let potaStreak: StreakInfo
+    let dailyStreak: StreakInfo?
+    let potaStreak: StreakInfo?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -87,8 +129,9 @@ struct StreaksCard: View {
                     Text("Daily QSOs")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
-                    StreakStatBox(streak: dailyStreak)
+                    StreakStatBox(streak: dailyStreak ?? .placeholder)
                 }
+                .opacity(dailyStreak == nil ? 0.6 : 1.0)
 
                 Divider()
 
@@ -96,8 +139,9 @@ struct StreaksCard: View {
                     Text("POTA Activations")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
-                    StreakStatBox(streak: potaStreak)
+                    StreakStatBox(streak: potaStreak ?? .placeholder)
                 }
+                .opacity(potaStreak == nil ? 0.6 : 1.0)
             }
         }
         .padding()
@@ -111,12 +155,13 @@ struct StreaksCard: View {
 struct ActivityGrid: View {
     // MARK: Internal
 
-    let activityData: [Date: Int]
+    let activityData: [Date: Int]?
 
     var body: some View {
-        ActivityGridContent(activityData: activityData, selectedDate: $selectedDate)
+        ActivityGridContent(activityData: activityData ?? [:], selectedDate: $selectedDate)
             .accessibilityElement(children: .contain)
             .accessibilityLabel("Activity grid showing QSO history")
+            .opacity(activityData == nil ? 0.5 : 1.0)
     }
 
     // MARK: Private

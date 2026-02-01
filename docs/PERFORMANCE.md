@@ -130,6 +130,53 @@ for qso in qsos {
 }
 ```
 
+### Background Computation with Cooperative Yielding
+
+For expensive computations that must run on `@MainActor` (e.g., processing SwiftData objects that can't be sent to background threads), use cooperative yielding to prevent UI blocking.
+
+**DO:**
+```swift
+@MainActor
+func computeExpensiveStats() {
+    // Show instant results immediately
+    totalCount = items.count
+    
+    // Defer expensive work with yielding
+    computeTask = Task {
+        expensiveResult1 = computePhase1()
+        await Task.yield()  // Let UI update
+        guard !Task.isCancelled else { return }
+        
+        expensiveResult2 = computePhase2()
+        await Task.yield()
+        guard !Task.isCancelled else { return }
+        
+        expensiveResult3 = computePhase3()
+    }
+}
+```
+
+**Key principles:**
+- Split work into phases with `Task.yield()` between each
+- Check `Task.isCancelled` after each yield to support cancellation
+- Show placeholder UI (e.g., "--" or dimmed state) for pending values
+- Use a threshold to skip yielding for small datasets where it's unnecessary
+- Don't cancel on tab switch - let computation finish in background
+- Only cancel when new computation supersedes old (e.g., data changed)
+
+**DON'T:**
+```swift
+// Don't block the main thread with synchronous heavy work
+func computeStats() {
+    result = items.map { expensiveTransform($0) }  // Blocks UI!
+}
+
+// Don't cancel on every onDisappear - user loses progress
+.onDisappear {
+    computeTask?.cancel()  // User switching tabs loses computation progress
+}
+```
+
 ---
 
 ## Critical Views

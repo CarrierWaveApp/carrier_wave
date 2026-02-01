@@ -162,8 +162,11 @@ This index maps files to their purpose. Use it to locate files by feature instea
 | `DashboardView.swift` | Main dashboard with stats grid and services list |
 | `DashboardView+Actions.swift` | Dashboard action handlers (sync, clear data) |
 | `DashboardView+Services.swift` | Services list builder and detail sheet builders |
-| `DashboardHelperViews.swift` | Reusable dashboard components (StatBox, ActivityGrid, StreaksCard) |
+| `DashboardView+Stats.swift` | Stats grid and streak row components |
+| `DashboardHelperViews.swift` | Reusable dashboard components (StatBox, StatBoxDeferred, ActivityGrid, StreaksCard) |
 | `QSOStatistics.swift` | QSO statistics calculations (entities, grids, bands, parks, frequencies) |
+| `QSOStatistics+Streaks.swift` | Streak calculation extensions for QSOStatistics |
+| `AsyncQSOStatistics.swift` | Progressive stats computation wrapper with cooperative yielding |
 | `ServiceListView.swift` | Vertical stacked service list with status indicators |
 | `ServiceDetailSheet.swift` | Service detail sheet for tap-through actions |
 | `StatDetailView.swift` | Drilldown view for stat categories |
@@ -257,3 +260,15 @@ This index maps files to their purpose. Use it to locate files by feature instea
 |------|---------|
 | `KeychainHelper.swift` | Secure credential storage |
 | `MaidenheadConverter.swift` | Grid square to coordinate conversion |
+
+## Tests (`CarrierWaveTests/`)
+| File | Purpose |
+|------|---------|
+| `CarrierWaveTests.swift` | Main test file placeholder |
+| `ADIFParserTests.swift` | ADIF parsing tests |
+| `DeduplicationServiceTests.swift` | QSO deduplication logic tests |
+| `ImportServiceTests.swift` | Import service tests |
+| `LoFiClientTests.swift` | LoFi client tests |
+| `QRZClientTests.swift` | QRZ client tests |
+| `Helpers/QSOFactory.swift` | Synthetic QSO generator for performance testing |
+| `PerformanceTests/QSOStatisticsPerformanceTests.swift` | Performance regression tests (50k/500k QSOs) |

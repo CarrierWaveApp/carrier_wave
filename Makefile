@@ -1,4 +1,4 @@
-.PHONY: build build-device test devices install launch deploy clean lint format format-check setup-hooks release warnings
+.PHONY: build build-device test test-performance test-performance-quick devices install launch deploy clean lint format format-check setup-hooks release warnings
 
 DEVICE_NAME := theseus
 BUNDLE_ID := com.jsvana.FullDuplex
@@ -23,6 +23,20 @@ build-device:
 test:
 	xcodebuild -project $(PROJECT) -scheme $(SCHEME) \
 		-destination 'platform=iOS Simulator,name=$(SIMULATOR)' test
+
+# Run quick performance tests (for CI - 50k QSOs, ~1-2 min)
+test-performance-quick:
+	xcodebuild -project $(PROJECT) -scheme $(SCHEME) \
+		-destination 'platform=iOS Simulator,name=$(SIMULATOR)' \
+		-only-testing:CarrierWaveTests/QSOStatisticsPerformanceTests/testQuickStatisticsPerformance \
+		test
+
+# Run full performance tests (pre-release validation - 500k QSOs, ~5-10 min)
+test-performance:
+	xcodebuild -project $(PROJECT) -scheme $(SCHEME) \
+		-destination 'platform=iOS Simulator,name=$(SIMULATOR)' \
+		-only-testing:CarrierWaveTests/QSOStatisticsPerformanceTests \
+		test
 
 # List available devices
 devices:

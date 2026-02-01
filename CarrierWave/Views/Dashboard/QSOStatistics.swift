@@ -57,7 +57,8 @@ final class QSOStatistics {
         if let cached = _confirmedQSLs {
             return cached
         }
-        let result = realQSOs.filter(\.lotwConfirmed).count
+        // Count QSOs confirmed by either LoTW OR QRZ
+        let result = realQSOs.filter { $0.lotwConfirmed || $0.qrzConfirmed }.count
         _confirmedQSLs = result
         return result
     }
@@ -248,7 +249,8 @@ final class QSOStatistics {
     }
 
     private func groupedByQSL() -> [StatCategoryItem] {
-        let confirmed = realQSOs.filter(\.lotwConfirmed)
+        // Include QSOs confirmed by either LoTW OR QRZ
+        let confirmed = realQSOs.filter { $0.lotwConfirmed || $0.qrzConfirmed }
         // Group by DXCC entity for confirmed QSLs
         let withEntity = confirmed.filter { $0.dxccEntity != nil }
         let grouped = Dictionary(grouping: withEntity) { $0.dxccEntity!.number }
