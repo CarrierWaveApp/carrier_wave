@@ -58,28 +58,8 @@ struct LoggerView: View {
                                 // Show callsign info or error when keyboard is not visible
                                 callsignLookupDisplay
 
-                                // Notes with compact RST beside it
-                                notesAndRSTSection
-
-                                // Additional fields (State/Grid/Park/Operator when always visible)
-                                alwaysVisibleFieldsSection
-
-                                // More fields toggle + expanded section
-                                if hasMoreFields {
-                                    moreFieldsToggle
-                                }
-
-                                if showMoreFields, hasMoreFields {
-                                    moreFieldsSection
-                                        .transition(
-                                            .asymmetric(
-                                                insertion: .move(edge: .top).combined(
-                                                    with: .opacity
-                                                ),
-                                                removal: .opacity
-                                            )
-                                        )
-                                }
+                                // Compact fields: State, RSTs, with More expansion
+                                compactFieldsSection
 
                                 logButtonSection
                             }
@@ -242,12 +222,6 @@ struct LoggerView: View {
 
     @AppStorage("loggerAutoModeSwitch") private var autoModeSwitch = true
 
-    // Always visible field settings
-    @AppStorage("loggerShowTheirGrid") private var showTheirGridAlways = false
-    @AppStorage("loggerShowTheirPark") private var showTheirParkAlways = false
-    @AppStorage("loggerShowOperator") private var showOperatorAlways = false
-    @AppStorage("loggerShowTheirState") private var showTheirStateAlways = false
-
     /// QSOs for the current session (manually fetched, not @Query to avoid full-database refresh)
     @State private var sessionQSOs: [QSO] = []
 
@@ -311,6 +285,11 @@ struct LoggerView: View {
     /// Callback when session ends with QSOs logged
     private let onSessionEnd: (() -> Void)?
 
+    // MARK: - Compact Form Fields
+
+    /// Unified field height for consistency
+    private let fieldHeight: CGFloat = 36
+
     private var userLicenseClass: LicenseClass {
         LicenseClass(rawValue: licenseClassRaw) ?? .extra
     }
@@ -360,18 +339,6 @@ struct LoggerView: View {
     /// Default RST based on current mode
     private var defaultRST: String {
         isCWMode ? "599" : "59"
-    }
-
-    /// Whether any fields are configured to always be visible
-    private var hasAlwaysVisibleFields: Bool {
-        showTheirGridAlways || showTheirParkAlways || showOperatorAlways
-            || showTheirStateAlways
-    }
-
-    /// Whether there are any fields left to show in "More Fields"
-    private var hasMoreFields: Bool {
-        !showTheirGridAlways || !showTheirParkAlways || !showOperatorAlways
-            || !showTheirStateAlways
     }
 
     /// Detected command from input (if any)
@@ -642,14 +609,11 @@ struct LoggerView: View {
     private var callsignInputSection: some View {
         VStack(spacing: 0) {
             HStack(spacing: 12) {
-                // Icon changes based on whether input is a command
+                // Icon only shown for commands
                 if let command = detectedCommand {
                     Image(systemName: command.icon)
                         .foregroundStyle(.purple)
                         .transition(.scale.combined(with: .opacity))
-                } else {
-                    Image(systemName: "magnifyingglass")
-                        .foregroundStyle(.secondary)
                 }
 
                 TextField("Callsign or command...", text: $callsignInput)
@@ -727,193 +691,75 @@ struct LoggerView: View {
         }
     }
 
-    // MARK: - Notes and RST Section
+    /// Compact RST and State fields with inline More expansion
+    private var compactFieldsSection: some View {
+        VStack(spacing: 8) {
+            // Row 1: State, RST Sent, RST Rcvd, More chevron
+            HStack(spacing: 8) {
+                // State field
+                compactField(
+                    label: "State",
+                    placeholder: lookupResult?.state ?? "ST",
+                    text: $theirState,
+                    width: 50
+                )
 
-    /// Notes field with compact RST fields beside it
-    private var notesAndRSTSection: some View {
-        HStack(alignment: .top, spacing: 12) {
-            // Notes field (expandable)
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Notes")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                TextField("Notes...", text: $notes, axis: .vertical)
-                    .font(.subheadline)
-                    .lineLimit(1 ... 3)
-                    .padding(10)
-                    .background(Color(.tertiarySystemGroupedBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                // RST Sent
+                compactField(label: "Sent", placeholder: defaultRST, text: $rstSent, width: 50)
+                    .keyboardType(.numberPad)
+
+                // RST Rcvd
+                compactField(label: "Rcvd", placeholder: defaultRST, text: $rstReceived, width: 50)
+                    .keyboardType(.numberPad)
+
+                Spacer()
+
+                // More fields chevron
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        showMoreFields.toggle()
+                    }
+                } label: {
+                    Image(systemName: showMoreFields ? "chevron.up" : "chevron.down")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 32, height: fieldHeight)
+                        .background(Color(.tertiarySystemGroupedBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
+                .buttonStyle(.plain)
             }
 
-            // Compact RST fields stacked vertically
-            VStack(spacing: 8) {
-                VStack(alignment: .center, spacing: 2) {
-                    Text("Sent")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                    TextField(defaultRST, text: $rstSent)
-                        .font(.subheadline.monospaced())
-                        .multilineTextAlignment(.center)
-                        .keyboardType(.numberPad)
-                        .padding(8)
-                        .background(Color(.tertiarySystemGroupedBackground))
-                        .clipShape(RoundedRectangle(cornerRadius: 6))
-                        .frame(width: 55)
+            // Row 2: Expanded fields (Grid, Park, Operator, Notes)
+            if showMoreFields {
+                VStack(spacing: 8) {
+                    HStack(spacing: 8) {
+                        compactField(
+                            label: "Grid",
+                            placeholder: lookupResult?.grid ?? "",
+                            text: $theirGrid
+                        )
+                        compactField(label: "Park", placeholder: "", text: $theirPark)
+                    }
+                    compactField(
+                        label: "Operator",
+                        placeholder: lookupResult?.displayName ?? "",
+                        text: $operatorName,
+                        isMonospaced: false
+                    )
+                    compactField(
+                        label: "Notes",
+                        placeholder: "",
+                        text: $notes,
+                        isMonospaced: false
+                    )
                 }
-
-                VStack(alignment: .center, spacing: 2) {
-                    Text("Rcvd")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                    TextField(defaultRST, text: $rstReceived)
-                        .font(.subheadline.monospaced())
-                        .multilineTextAlignment(.center)
-                        .keyboardType(.numberPad)
-                        .padding(8)
-                        .background(Color(.tertiarySystemGroupedBackground))
-                        .clipShape(RoundedRectangle(cornerRadius: 6))
-                        .frame(width: 55)
-                }
+                .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
-        .padding()
+        .padding(12)
         .background(Color(.secondarySystemGroupedBackground))
         .clipShape(RoundedRectangle(cornerRadius: 12))
-    }
-
-    // MARK: - More Fields Toggle
-
-    private var moreFieldsToggle: some View {
-        Button {
-            withAnimation {
-                showMoreFields.toggle()
-            }
-        } label: {
-            HStack(spacing: 4) {
-                Image(systemName: showMoreFields ? "chevron.up" : "chevron.down")
-                Text(showMoreFields ? "Less" : "More Fields")
-            }
-            .font(.subheadline)
-            .foregroundStyle(.secondary)
-            .padding(.vertical, 8)
-            .padding(.horizontal, 12)
-            .background(Color(.secondarySystemGroupedBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 8))
-        }
-    }
-
-    /// Fields configured to always be visible (shown below Notes+RST)
-    @ViewBuilder
-    private var alwaysVisibleFieldsSection: some View {
-        if hasAlwaysVisibleFields {
-            VStack(spacing: 12) {
-                // State, Grid, and Park in a row if any visible
-                if showTheirStateAlways || showTheirGridAlways || showTheirParkAlways {
-                    HStack(spacing: 12) {
-                        if showTheirStateAlways {
-                            theirStateField
-                        }
-                        if showTheirGridAlways {
-                            theirGridField
-                        }
-                        if showTheirParkAlways {
-                            theirParkField
-                        }
-                    }
-                }
-
-                if showOperatorAlways {
-                    operatorField
-                }
-            }
-            .padding()
-            .background(Color(.secondarySystemGroupedBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-        }
-    }
-
-    private var moreFieldsSection: some View {
-        VStack(spacing: 12) {
-            // State, Grid, and Park in a row (only if not always visible)
-            if !showTheirStateAlways || !showTheirGridAlways || !showTheirParkAlways {
-                HStack(spacing: 12) {
-                    if !showTheirStateAlways {
-                        theirStateField
-                    }
-                    if !showTheirGridAlways {
-                        theirGridField
-                    }
-                    if !showTheirParkAlways {
-                        theirParkField
-                    }
-                }
-            }
-
-            if !showOperatorAlways {
-                operatorField
-            }
-        }
-        .padding()
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-    }
-
-    // MARK: - Reusable Field Views
-
-    private var theirStateField: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("State")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            TextField(lookupResult?.state ?? "ST", text: $theirState)
-                .font(.subheadline.monospaced())
-                .textInputAutocapitalization(.characters)
-                .padding(10)
-                .background(Color(.tertiarySystemGroupedBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-                .frame(width: 60)
-        }
-    }
-
-    private var theirGridField: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("Their Grid")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            TextField(lookupResult?.grid ?? "", text: $theirGrid)
-                .font(.subheadline.monospaced())
-                .textInputAutocapitalization(.characters)
-                .padding(10)
-                .background(Color(.tertiarySystemGroupedBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-        }
-    }
-
-    private var theirParkField: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("Their Park")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            TextField("", text: $theirPark)
-                .font(.subheadline.monospaced())
-                .textInputAutocapitalization(.characters)
-                .padding(10)
-                .background(Color(.tertiarySystemGroupedBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-        }
-    }
-
-    private var operatorField: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("Operator")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            TextField(lookupResult?.displayName ?? "Operator name", text: $operatorName)
-                .font(.subheadline)
-                .padding(10)
-                .background(Color(.tertiarySystemGroupedBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-        }
     }
 
     // MARK: - Log Button
@@ -992,6 +838,30 @@ struct LoggerView: View {
             .padding()
             .background(Color(.secondarySystemGroupedBackground))
             .clipShape(RoundedRectangle(cornerRadius: 12))
+        }
+    }
+
+    /// Reusable compact field with label above
+    private func compactField(
+        label: String,
+        placeholder: String,
+        text: Binding<String>,
+        width: CGFloat? = nil,
+        isMonospaced: Bool = true
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(label)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            TextField(placeholder, text: text)
+                .font(isMonospaced ? .subheadline.monospaced() : .subheadline)
+                .textInputAutocapitalization(.characters)
+                .autocorrectionDisabled()
+                .padding(.horizontal, 8)
+                .frame(height: fieldHeight)
+                .background(Color(.tertiarySystemGroupedBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .frame(width: width)
         }
     }
 

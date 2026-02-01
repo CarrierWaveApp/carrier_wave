@@ -12,10 +12,11 @@ All notable changes to Carrier Wave will be documented in this file.
 - **State Entry Field** - Manual state entry/override in QSO logger
   - Appears in More Fields section (can be set to always visible)
   - Overrides QRZ lookup state when manually entered
-- **Logger Layout Improvements** - Reorganized QSO entry form
-  - Notes field is now always visible below callsign
-  - Compact RST fields positioned beside Notes
-  - Cleaner "More Fields" toggle for State/Grid/Park/Operator
+- **Logger Layout Improvements** - Condensed QSO entry form
+  - Removed magnifying glass icon from callsign input (only shows command icon when applicable)
+  - Default fields: State, RST Sent, RST Received on single row
+  - Chevron button expands to show Grid, Park, Operator, Notes
+  - All text fields use consistent height and font size
 - **POTA Spots Panel** - Dedicated view for active POTA activator spots
   - Filter by band and mode (defaults to session's current band/mode)
   - Grouped by band with section headers
