@@ -81,6 +81,13 @@ echo -e "${GREEN}Pushed tag $TAG_NAME to origin${NC}"
 if [[ -n "${DISCORD_WEBHOOK_URL:-}" ]]; then
     echo -e "${YELLOW}Sending Discord notification...${NC}"
 
+    # Truncate changelog if it exceeds Discord's 1024 character field limit
+    MAX_LENGTH=1000  # Leave room for truncation message
+    if [[ ${#CHANGELOG_CONTENT} -gt $MAX_LENGTH ]]; then
+        CHANGELOG_CONTENT="${CHANGELOG_CONTENT:0:$MAX_LENGTH}..."
+        echo -e "${YELLOW}Changelog truncated to fit Discord field limit${NC}"
+    fi
+
     # Build Discord webhook payload using jq for proper JSON escaping
     PAYLOAD=$(jq -n \
         --arg title "Carrier Wave $TAG_NAME Released" \
