@@ -1618,7 +1618,42 @@ struct LoggerQSORow: View {
         }
 
         let service = CallsignLookupService(modelContext: modelContext)
-        callsignInfo = await service.lookup(qso.callsign)
+        guard let info = await service.lookup(qso.callsign) else {
+            return
+        }
+
+        callsignInfo = info
+
+        // Update QSO with enriched data (background fill-in for fast logging)
+        var updated = false
+        if qso.name == nil, let name = info.name {
+            qso.name = name
+            updated = true
+        }
+        if qso.theirGrid == nil, let grid = info.grid {
+            qso.theirGrid = grid
+            updated = true
+        }
+        if qso.state == nil, let state = info.state {
+            qso.state = state
+            updated = true
+        }
+        if qso.country == nil, let country = info.country {
+            qso.country = country
+            updated = true
+        }
+        if qso.qth == nil, let qth = info.qth {
+            qso.qth = qth
+            updated = true
+        }
+        if qso.theirLicenseClass == nil, let licenseClass = info.licenseClass {
+            qso.theirLicenseClass = licenseClass
+            updated = true
+        }
+
+        if updated {
+            try? modelContext.save()
+        }
     }
 }
 
