@@ -96,4 +96,36 @@ final class QuickEntryParserTests: XCTestCase {
         XCTAssertFalse(QuickEntryParser.isRST("5999")) // Too long
         XCTAssertFalse(QuickEntryParser.isRST("WA")) // Not a number
     }
+
+    // MARK: - Park Reference Detection
+
+    func testParkReferenceDetection() {
+        let result = QuickEntryParser.parse("W1AW US-0189")
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result?.theirPark, "US-0189")
+    }
+
+    func testParkReferenceWithOtherTokens() {
+        let result = QuickEntryParser.parse("W1AW 579 US-0189")
+        XCTAssertNotNil(result)
+        XCTAssertEqual(result?.rstReceived, "579")
+        XCTAssertEqual(result?.theirPark, "US-0189")
+    }
+
+    func testValidParkPatterns() {
+        XCTAssertTrue(QuickEntryParser.isParkReference("US-0189"))
+        XCTAssertTrue(QuickEntryParser.isParkReference("K-1234"))
+        XCTAssertTrue(QuickEntryParser.isParkReference("VE-0001"))
+        XCTAssertTrue(QuickEntryParser.isParkReference("G-0001"))
+        XCTAssertTrue(QuickEntryParser.isParkReference("DL-0001"))
+        XCTAssertTrue(QuickEntryParser.isParkReference("JA-12345"))
+    }
+
+    func testInvalidParkPatterns() {
+        XCTAssertFalse(QuickEntryParser.isParkReference("US0189")) // Missing dash
+        XCTAssertFalse(QuickEntryParser.isParkReference("US-01")) // Too short
+        XCTAssertFalse(QuickEntryParser.isParkReference("USA-0189")) // Prefix too long
+        XCTAssertFalse(QuickEntryParser.isParkReference("W1AW")) // Callsign
+        XCTAssertFalse(QuickEntryParser.isParkReference("579")) // RST
+    }
 }

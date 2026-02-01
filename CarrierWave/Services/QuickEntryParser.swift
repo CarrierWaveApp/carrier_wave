@@ -64,6 +64,8 @@ enum QuickEntryParser {
                     // Already have both RSTs, treat as notes
                     unrecognized.append(token)
                 }
+            } else if isParkReference(token) {
+                result.theirPark = token
             } else {
                 unrecognized.append(token)
             }
@@ -120,6 +122,22 @@ enum QuickEntryParser {
         let primaryPart = parts.count == 1 ? upper : extractPrimaryCallsign(parts)
 
         return isBasicCallsign(primaryPart)
+    }
+
+    /// Check if a string is a valid POTA/WWFF park reference
+    /// Pattern: 1-2 letter country code, dash, 4-5 digits
+    static func isParkReference(_ string: String) -> Bool {
+        let upper = string.uppercased()
+
+        // Pattern: XX-#### or XX-#####
+        let pattern = #"^[A-Z]{1,2}-[0-9]{4,5}$"#
+
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else {
+            return false
+        }
+
+        let range = NSRange(upper.startIndex..., in: upper)
+        return regex.firstMatch(in: upper, options: [], range: range) != nil
     }
 
     // MARK: Private
