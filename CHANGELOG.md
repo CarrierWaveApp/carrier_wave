@@ -5,6 +5,12 @@ All notable changes to Carrier Wave will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- **Quick Entry Mode** - Type complete QSOs in a single line for rapid logging
+  - Type "AJ7CM 579 WA US-0189" to auto-fill callsign, RST, state, and park reference
+  - Supports RST (2-3 digit), grid square (4-6 char), state/province codes, POTA park references
+  - Color-coded token preview shows what each field will be populated with
+  - Single RST applies to received; two consecutive RSTs become sent/received
+  - Unrecognized tokens become QSO notes
 - **Park Search and Nearby** - Enhanced park entry with name search and nearby parks
   - Search parks by name with full-text search picker
   - See nearby parks based on your grid square location

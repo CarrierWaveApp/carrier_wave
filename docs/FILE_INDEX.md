@@ -293,4 +293,5 @@ This index maps files to their purpose. Use it to locate files by feature instea
 | `QRZClientTests.swift` | QRZ client tests |
 | `Helpers/QSOFactory.swift` | Synthetic QSO generator for performance testing |
 | `PerformanceTests/QSOStatisticsPerformanceTests.swift` | Performance regression tests (50k/500k QSOs) |
-| `QuickEntryParserTests.swift` | Quick entry parser tests (callsign detection, commands) |
+| `QuickEntryParserTests.swift` | Quick entry parser unit tests (callsign, RST, park, grid, state detection) |
+| `QuickEntryParserIntegrationTests.swift` | Quick entry parser integration tests (full parsing, token preview) |
