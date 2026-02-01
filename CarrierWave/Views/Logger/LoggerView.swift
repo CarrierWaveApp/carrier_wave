@@ -1034,7 +1034,12 @@ struct LoggerView: View {
             return nil
         }
 
-        let callsign = callsignInput.uppercased()
+        // Use parsed callsign in quick entry mode, otherwise use raw input
+        let callsign: String = if let qeResult = quickEntryResult {
+            qeResult.callsign.uppercased()
+        } else {
+            callsignInput.uppercased()
+        }
         let currentBand = session.band ?? "Unknown"
 
         // Find all QSOs with this callsign in the current session
