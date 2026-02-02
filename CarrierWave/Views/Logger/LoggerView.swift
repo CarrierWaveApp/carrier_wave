@@ -167,10 +167,8 @@ struct LoggerView: View {
             .overlay(alignment: .bottom) {
                 panelOverlays
             }
-            .alert("Logger Commands", isPresented: $showHelpAlert) {
-                Button("OK", role: .cancel) {}
-            } message: {
-                Text(LoggerCommand.helpText)
+            .sheet(isPresented: $showHelpSheet) {
+                LoggerHelpSheet()
             }
             .confirmationDialog(
                 "End Session",
@@ -284,7 +282,7 @@ struct LoggerView: View {
     @State private var showSolarPanel = false
     @State private var showWeatherPanel = false
     @State private var showPOTAPanel = false
-    @State private var showHelpAlert = false
+    @State private var showHelpSheet = false
     @State private var showHiddenQSOsSheet = false
 
     // Session title editing
@@ -1145,7 +1143,7 @@ struct LoggerView: View {
         case .weather: showWeatherPanel = true
         case .map: executeMapCommand()
         case .hidden: showHiddenQSOsSheet = true
-        case .help: showHelpAlert = true
+        case .help: showHelpSheet = true
         case let .note(text): executeNoteCommand(text)
         }
     }
