@@ -249,6 +249,24 @@ final class LoggingSessionManager {
         try? modelContext.save()
     }
 
+    /// Update park reference for the current session
+    /// Only valid for POTA activations
+    func updateParkReference(_ parkReference: String?) {
+        guard let session = activeSession,
+              session.activationType == .pota
+        else {
+            return
+        }
+
+        session.parkReference = parkReference?.uppercased()
+        try? modelContext.save()
+
+        // Restart spot comments polling with new park reference
+        spotCommentsService.stopPolling()
+        spotCommentsService.clear()
+        startSpotCommentsPolling()
+    }
+
     /// Append a note to the session log
     /// Notes are stored with ISO8601 timestamps for sorting: [ISO8601|HH:mm] text
     func appendNote(_ text: String) {
