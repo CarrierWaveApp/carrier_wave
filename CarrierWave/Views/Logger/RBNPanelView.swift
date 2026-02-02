@@ -243,7 +243,7 @@ struct RBNPanelView: View {
 
                     Text(spot.timeAgo)
                         .font(.caption2)
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(spot.ageColor)
                 }
 
                 // POTA comments

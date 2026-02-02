@@ -30,7 +30,7 @@ struct POTASpotRow: View {
                 // Time ago
                 Text(spot.timeAgo)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(spot.ageColor)
             }
             .padding(.vertical, 8)
             .padding(.horizontal, 12)
