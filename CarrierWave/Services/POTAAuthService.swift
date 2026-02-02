@@ -214,6 +214,11 @@ class POTAAuthService: NSObject, ObservableObject {
         try? keychain.readString(for: KeychainHelper.Keys.potaUsername)
     }
 
+    /// Get the stored password (for pre-filling settings form)
+    func getStoredPassword() -> String? {
+        try? keychain.readString(for: KeychainHelper.Keys.potaPassword)
+    }
+
     /// Authenticates using stored credentials without user interaction
     func authenticateWithStoredCredentials() async throws -> POTAToken {
         guard let username = try? keychain.readString(for: KeychainHelper.Keys.potaUsername),
@@ -312,11 +317,12 @@ class POTAAuthService: NSObject, ObservableObject {
 
         // Extract actual expiry from JWT 'exp' claim (Unix timestamp)
         // Fall back to 50 minutes from now if exp claim is missing
-        let expiresAt = if let exp = claims["exp"] as? TimeInterval {
-            Date(timeIntervalSince1970: exp)
-        } else {
-            Date().addingTimeInterval(50 * 60)
-        }
+        let expiresAt =
+            if let exp = claims["exp"] as? TimeInterval {
+                Date(timeIntervalSince1970: exp)
+            } else {
+                Date().addingTimeInterval(50 * 60)
+            }
 
         return POTAToken(
             idToken: jwt,
