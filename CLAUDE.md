@@ -55,6 +55,7 @@ Carrier Wave is a SwiftUI/SwiftData iOS app for amateur radio QSO (contact) logg
 |------|-------------|---------|
 | Architecture | Data models, services, view hierarchy | [docs/architecture.md](docs/architecture.md) |
 | Setup | Development environment, build commands | [docs/SETUP.md](docs/SETUP.md) |
+| Design Language | Visual patterns, colors, typography, components | [docs/design-language.md](docs/design-language.md) |
 | Sync System | QRZ, POTA, LoFi integration | [docs/features/sync.md](docs/features/sync.md) |
 | Statistics | Dashboard stats and drilldown views | [docs/features/statistics.md](docs/features/statistics.md) |
 | Performance | View body rules, critical views, review checklist | [docs/PERFORMANCE.md](docs/PERFORMANCE.md) |
@@ -68,6 +69,7 @@ Carrier Wave is a SwiftUI/SwiftData iOS app for amateur radio QSO (contact) logg
 - Tests use in-memory SwiftData containers
 - **Follow [Performance Guidelines](docs/PERFORMANCE.md)** — especially for Logger, Map, and tab transitions
 - **Follow [Callsign Filtering Guidelines](docs/features/callsign-filtering.md)** — only operate on primary callsign for syncs
+- **Follow [Design Language](docs/design-language.md)** — colors, typography, spacing, and component patterns
 
 ## Performance Rules (MANDATORY)
 
