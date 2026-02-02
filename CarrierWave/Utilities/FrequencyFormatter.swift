@@ -44,16 +44,39 @@ enum FrequencyFormatter {
     }
 
     /// Parse a frequency string, handling various input formats
-    /// Supports: "14.060", "14.06050", "14060.5" (kHz)
+    /// Supports:
+    /// - Plain numbers: "14.060" (MHz if 1.8-450), "14060" (kHz, auto-converted to MHz)
+    /// - With units: "14.060 MHz", "14060 kHz", "14060kHz", "14.060mhz"
     /// - Parameter input: User input string
     /// - Returns: Frequency in MHz, or nil if invalid
     static func parse(_ input: String) -> Double? {
-        let trimmed = input.trimmingCharacters(in: .whitespaces)
+        var trimmed = input.trimmingCharacters(in: .whitespaces).lowercased()
+
+        // Check for unit suffix and extract multiplier
+        var explicitKHz = false
+        var explicitMHz = false
+
+        if trimmed.hasSuffix("khz") {
+            trimmed = String(trimmed.dropLast(3)).trimmingCharacters(in: .whitespaces)
+            explicitKHz = true
+        } else if trimmed.hasSuffix("mhz") {
+            trimmed = String(trimmed.dropLast(3)).trimmingCharacters(in: .whitespaces)
+            explicitMHz = true
+        }
 
         guard let value = Double(trimmed) else {
             return nil
         }
 
+        // If explicit unit was provided, use it
+        if explicitKHz {
+            return value / 1_000.0
+        }
+        if explicitMHz {
+            return value
+        }
+
+        // No explicit unit - use heuristics
         // If value is > 1000, assume it's in kHz and convert to MHz
         if value > 1_000 {
             return value / 1_000.0

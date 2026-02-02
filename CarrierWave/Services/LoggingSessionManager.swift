@@ -197,12 +197,6 @@ final class LoggingSessionManager {
         session.updateFrequency(frequency)
         try? modelContext.save()
 
-        // Check if this is a QSY that could be spotted
-        let shouldPromptForSpot =
-            session.activationType == .pota
-                && oldFrequency != nil
-                && oldFrequency != frequency
-
         // Check if mode should change based on frequency
         let suggestedMode = BandPlanService.suggestedMode(for: frequency)
         let currentMode = session.mode.uppercased()
@@ -214,6 +208,30 @@ final class LoggingSessionManager {
             } else {
                 nil
             }
+
+        // Check if this is a QSY that could be spotted
+        // Don't prompt for spot if frequency is outside amateur bands or violates license
+        var shouldPromptForSpot = false
+        if session.activationType == .pota,
+           oldFrequency != nil,
+           oldFrequency != frequency
+        {
+            // Get user's license class
+            let licenseRaw =
+                UserDefaults.standard.string(forKey: "userLicenseClass")
+                    ?? LicenseClass.extra.rawValue
+            let license = LicenseClass(rawValue: licenseRaw) ?? .extra
+
+            // Only prompt for spot if frequency is valid for the user's license
+            let violation = BandPlanService.validate(
+                frequencyMHz: frequency,
+                mode: modeToSuggest ?? currentMode,
+                license: license
+            )
+
+            // Allow spot prompt only if no violation, or if it's just an unusual frequency warning
+            shouldPromptForSpot = violation == nil || violation?.type == .unusualFrequency
+        }
 
         return FrequencyUpdateResult(
             shouldPromptForSpot: shouldPromptForSpot,
