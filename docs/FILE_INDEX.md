@@ -42,6 +42,7 @@ This index maps files to their purpose. Use it to locate files by feature instea
 | `CallsignNotesSource.swift` | SwiftData model for user-configured callsign notes file sources |
 | `BandPlan.swift` | US amateur radio band plan data with license class privileges |
 | `UserProfile.swift` | User's amateur radio profile (callsign, name, QTH, grid, license) |
+| `SpotRegion.swift` | Geographic region classification for spots (SpotRegion, EnrichedSpot, SpotSummary) |
 
 ## Services (`CarrierWave/Services/`)
 | File | Purpose |
@@ -123,6 +124,7 @@ This index maps files to their purpose. Use it to locate files by feature instea
 | `POTAClient+Spots.swift` | POTA spots and spot comments API |
 | `SpotsService.swift` | Combined RBN + POTA spots service |
 | `SpotCommentsService.swift` | Background polling for POTA spot comments |
+| `SpotMonitoringService.swift` | Background RBN/POTA spot polling during logging sessions |
 | `BandPlanService.swift` | Validates frequency/mode against license class privileges |
 | `FrequencyActivityService.swift` | Aggregates nearby frequency activity from RBN |
 | `HamDBClient.swift` | HamDB.org API client for US callsign license class lookup |
@@ -162,6 +164,7 @@ This index maps files to their purpose. Use it to locate files by feature instea
 | `SessionMapPanelView.swift` | Map panel showing session QSOs for MAP command |
 | `SpotFilters.swift` | Band and mode filter enums for spots |
 | `QuickEntryPreview.swift` | Quick entry token display with color-coded badges |
+| `SpotSummaryView.swift` | Compact spot monitoring summary with region breakdown |
 
 ## Views - CW Transcription (`CarrierWave/Views/CWTranscription/`)
 | File | Purpose |

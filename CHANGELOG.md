@@ -7,6 +7,12 @@ All notable changes to Carrier Wave will be documented in this file.
 ### Added
 - RBN spots map shows spotter locations via HamDB grid lookup with arcs to target station
 - Spotter circles sized by signal strength (SNR)
+- **Background Spot Monitoring** - Automatic RBN/POTA spot monitoring during logging sessions
+  - Spots polled every 45 seconds while session is active
+  - Compact summary banner shows spot count, region breakdown (NE, EU, etc.), and distance range
+  - Tap to expand and see individual spots with SNR, distance, and time ago
+  - POTA spots included for POTA activations only
+  - Distance shown in miles or kilometers (user setting in Logger settings)
 
 ### Changed
 - RBN spots now limited to last 10 minutes (was 6 hours)

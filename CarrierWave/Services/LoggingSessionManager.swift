@@ -34,6 +34,9 @@ final class LoggingSessionManager {
     /// Service for polling POTA spot comments
     let spotCommentsService = SpotCommentsService()
 
+    /// Service for monitoring RBN/POTA spots during session
+    let spotMonitoringService = SpotMonitoringService()
+
     /// Whether there's an active session
     var hasActiveSession: Bool {
         activeSession != nil
@@ -83,6 +86,9 @@ final class LoggingSessionManager {
         // Start spot comments polling for POTA activations
         startSpotCommentsPolling()
 
+        // Start spot monitoring
+        startSpotMonitoring()
+
         try? modelContext.save()
     }
 
@@ -103,6 +109,9 @@ final class LoggingSessionManager {
         spotCommentsService.stopPolling()
         spotCommentsService.clear()
 
+        // Stop spot monitoring
+        spotMonitoringService.stopMonitoring()
+
         // Re-enable screen timeout
         UIApplication.shared.isIdleTimerDisabled = false
 
@@ -122,6 +131,9 @@ final class LoggingSessionManager {
         // Pause spot comments polling
         spotCommentsService.stopPolling()
 
+        // Pause spot monitoring
+        spotMonitoringService.stopMonitoring()
+
         try? modelContext.save()
     }
 
@@ -137,6 +149,9 @@ final class LoggingSessionManager {
 
         // Restart spot comments polling
         startSpotCommentsPolling()
+
+        // Restart spot monitoring
+        startSpotMonitoring()
 
         try? modelContext.save()
     }
@@ -164,6 +179,9 @@ final class LoggingSessionManager {
 
         // Restart spot comments polling
         startSpotCommentsPolling()
+
+        // Restart spot monitoring
+        startSpotMonitoring()
 
         try? modelContext.save()
     }
@@ -390,6 +408,7 @@ final class LoggingSessionManager {
         stopAutoSpotTimer()
         spotCommentsService.stopPolling()
         spotCommentsService.clear()
+        spotMonitoringService.stopMonitoring()
 
         // Re-enable screen timeout
         UIApplication.shared.isIdleTimerDisabled = false
@@ -512,6 +531,27 @@ final class LoggingSessionManager {
         spotCommentsService.startPolling(activator: callsign, parkRef: parkRef)
     }
 
+    /// Start spot monitoring for the current session
+    private func startSpotMonitoring() {
+        guard let session = activeSession else {
+            return
+        }
+
+        let callsign = session.myCallsign
+        guard !callsign.isEmpty else {
+            return
+        }
+
+        // Include POTA spots only for POTA activations
+        let includePOTA = session.activationType == .pota
+
+        spotMonitoringService.startMonitoring(
+            callsign: callsign,
+            myGrid: session.myGrid,
+            includePOTA: includePOTA
+        )
+    }
+
     /// Post a spot to POTA (used for both auto-spots and QSY spots)
     private func postSpot(comment: String? = nil, showToast: Bool = false) async {
         guard let session = activeSession, session.activationType == .pota,
@@ -567,6 +607,8 @@ final class LoggingSessionManager {
                 startAutoSpotTimer()
                 // Restart spot comments polling for restored POTA session
                 startSpotCommentsPolling()
+                // Restart spot monitoring for restored session
+                startSpotMonitoring()
             } else {
                 // Session was ended or not found, clear the stored ID
                 clearActiveSessionId()

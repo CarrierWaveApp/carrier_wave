@@ -63,6 +63,7 @@ struct SettingsMainView: View {
     @AppStorage("potaAutoSpotEnabled") private var potaAutoSpotEnabled = false
     @AppStorage("loggerAutoModeSwitch") private var autoModeSwitch = true
     @AppStorage("callsignNotesDisplayMode") private var notesDisplayMode = "emoji"
+    @AppStorage("useMetricDistance") private var useMetricDistance = false
 
     // Logger visible fields
     @AppStorage("loggerShowTheirGrid") private var showTheirGrid = false
@@ -268,6 +269,7 @@ struct SettingsMainView: View {
             Toggle("Show frequency activity", isOn: $showActivityPanel)
             Toggle("Keep screen on", isOn: $keepScreenOn)
             Toggle("Auto-switch mode for frequency", isOn: $autoModeSwitch)
+            Toggle("Use kilometers for distance", isOn: $useMetricDistance)
 
             Picker("Notes display", selection: $notesDisplayMode) {
                 Text("Emoji").tag("emoji")
