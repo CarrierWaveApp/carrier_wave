@@ -145,6 +145,7 @@ extension KeychainHelper {
         nonisolated static let lofiEmail = "lofi.email"
         nonisolated static let lofiDeviceLinked = "lofi.device.linked"
         nonisolated static let lofiLastSyncMillis = "lofi.last.sync.millis"
+        nonisolated static let lofiSyncFlags = "lofi.sync.flags" // JSON LoFiSyncFlags
 
         /// HAMRS
         nonisolated static let hamrsApiKey = "hamrs.api.key"
