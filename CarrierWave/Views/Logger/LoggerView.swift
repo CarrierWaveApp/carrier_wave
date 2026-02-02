@@ -24,6 +24,13 @@ struct LoggerView: View {
                 VStack(spacing: 0) {
                     sessionHeader
 
+                    // Spot monitoring summary (always visible when session active)
+                    if let manager = sessionManager {
+                        SpotSummaryView(monitoringService: manager.spotMonitoringService)
+                            .padding(.horizontal)
+                            .padding(.top, 8)
+                    }
+
                     // License warning banner
                     if let violation = currentViolation {
                         LicenseWarningBanner(violation: violation) {
