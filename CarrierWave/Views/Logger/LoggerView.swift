@@ -98,6 +98,21 @@ struct LoggerView: View {
                 )
                 .presentationDetents([.height(200)])
             }
+            .sheet(isPresented: $showParkEditSheet) {
+                SessionParkEditSheet(
+                    parkReference: $editingParkReference,
+                    userGrid: sessionManager?.activeSession?.myGrid
+                        ?? UserDefaults.standard.string(forKey: "loggerDefaultGrid"),
+                    onSave: { newPark in
+                        sessionManager?.updateParkReference(newPark.isEmpty ? nil : newPark)
+                        showParkEditSheet = false
+                    },
+                    onCancel: {
+                        showParkEditSheet = false
+                    }
+                )
+                .presentationDetents([.height(280)])
+            }
             .sheet(isPresented: $showHiddenQSOsSheet) {
                 HiddenQSOsSheet(sessionId: sessionManager?.activeSession?.id)
             }
@@ -275,6 +290,10 @@ struct LoggerView: View {
     // Session title editing
     @State private var showTitleEditSheet = false
     @State private var editingTitle = ""
+
+    // Session park editing
+    @State private var showParkEditSheet = false
+    @State private var editingParkReference = ""
 
     /// Session end/delete confirmation
     @State private var showEndSessionConfirmation = false
@@ -943,11 +962,32 @@ struct LoggerView: View {
             }
 
             HStack {
-                if let parkName = lookupParkName(session.parkReference) {
-                    Text(parkName)
-                        .font(.caption)
-                        .foregroundStyle(.green)
-                        .lineLimit(1)
+                if session.activationType == .pota {
+                    Button {
+                        editingParkReference = session.parkReference ?? ""
+                        showParkEditSheet = true
+                    } label: {
+                        HStack(spacing: 2) {
+                            if let parkName = lookupParkName(session.parkReference) {
+                                Text(parkName)
+                                    .font(.caption)
+                                    .foregroundStyle(.green)
+                                    .lineLimit(1)
+                            } else if let ref = session.parkReference {
+                                Text(ref)
+                                    .font(.caption.monospaced())
+                                    .foregroundStyle(.green)
+                            } else {
+                                Text("No park")
+                                    .font(.caption)
+                                    .foregroundStyle(.orange)
+                            }
+                            Image(systemName: "pencil")
+                                .font(.system(size: 8))
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .buttonStyle(.plain)
                 }
 
                 if let freq = session.frequency {
@@ -2034,6 +2074,72 @@ struct SessionTitleEditSheet: View {
     // MARK: Private
 
     @FocusState private var isFocused: Bool
+}
+
+// MARK: - SessionParkEditSheet
+
+/// Sheet for editing the park reference on an active POTA session
+struct SessionParkEditSheet: View {
+    // MARK: Internal
+
+    @Binding var parkReference: String
+
+    let userGrid: String?
+    let onSave: (String) -> Void
+    let onCancel: () -> Void
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 16) {
+                ParkEntryField(
+                    parkReference: $parkReference,
+                    label: "Park Reference",
+                    placeholder: "K-1234",
+                    userGrid: userGrid,
+                    defaultCountry: "US"
+                )
+
+                Text("Change the park for this activation session")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                Spacer()
+            }
+            .padding()
+            .navigationTitle("Edit Park")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        onCancel()
+                    }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        // Normalize the park reference (e.g., "4571" -> "US-4571")
+                        let normalized = normalizeParkReference(parkReference)
+                        onSave(normalized)
+                    }
+                    .disabled(parkReference.isEmpty)
+                }
+            }
+        }
+    }
+
+    // MARK: Private
+
+    /// Normalize park reference by looking it up and returning the full reference
+    private func normalizeParkReference(_ input: String) -> String {
+        let trimmed = input.trimmingCharacters(in: .whitespaces).uppercased()
+        if let park = POTAParksCache.shared.lookupPark(trimmed, defaultCountry: "US") {
+            return park.reference
+        }
+        // If lookup fails, still try to add prefix for numeric-only input
+        if trimmed.allSatisfy(\.isNumber) {
+            return "US-\(trimmed)"
+        }
+        return trimmed
+    }
 }
 
 // MARK: - HiddenQSOsSheet
