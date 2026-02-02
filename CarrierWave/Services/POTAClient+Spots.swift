@@ -89,7 +89,7 @@ struct POTASpot: Decodable, Identifiable, Sendable {
     // MARK: Private
 
     /// Normalize callsign by removing portable suffixes and uppercasing
-    private static func normalizeCallsign(_ callsign: String) -> String {
+    nonisolated private static func normalizeCallsign(_ callsign: String) -> String {
         let upper = callsign.uppercased()
         // Remove common portable suffixes: /P, /M, /QRP, /0-9, etc.
         if let slashIndex = upper.firstIndex(of: "/") {
