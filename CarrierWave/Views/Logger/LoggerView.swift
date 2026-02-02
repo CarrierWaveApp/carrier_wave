@@ -565,6 +565,7 @@ struct LoggerView: View {
             if showPOTAPanel {
                 SwipeToDismissPanel(isPresented: $showPOTAPanel) {
                     POTASpotsView(
+                        userCallsign: sessionManager?.activeSession?.myCallsign,
                         initialBand: sessionManager?.activeSession?.band,
                         initialMode: sessionManager?.activeSession?.mode,
                         onDismiss: { showPOTAPanel = false },

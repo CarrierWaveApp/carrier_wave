@@ -7,11 +7,13 @@ struct POTASpotsView: View {
     // MARK: Lifecycle
 
     init(
+        userCallsign: String? = nil,
         initialBand: String? = nil,
         initialMode: String? = nil,
         onDismiss: @escaping () -> Void,
         onSelectSpot: ((POTASpot) -> Void)? = nil
     ) {
+        self.userCallsign = userCallsign
         self.onDismiss = onDismiss
         self.onSelectSpot = onSelectSpot
         _bandFilter = State(initialValue: BandFilter.from(bandName: initialBand))
@@ -20,6 +22,7 @@ struct POTASpotsView: View {
 
     // MARK: Internal
 
+    let userCallsign: String?
     let onDismiss: () -> Void
     let onSelectSpot: ((POTASpot) -> Void)?
 
@@ -242,7 +245,7 @@ struct POTASpotsView: View {
                 ForEach(spotsByBand, id: \.band) { section in
                     Section {
                         ForEach(section.spots) { spot in
-                            POTASpotRow(spot: spot) {
+                            POTASpotRow(spot: spot, userCallsign: userCallsign) {
                                 onSelectSpot?(spot)
                             }
                             Divider()
@@ -309,6 +312,7 @@ struct POTASpotsView: View {
 
 #Preview {
     POTASpotsView(
+        userCallsign: "W1AW",
         initialBand: "20m",
         initialMode: "CW",
         onDismiss: {}
