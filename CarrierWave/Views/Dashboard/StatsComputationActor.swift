@@ -391,6 +391,7 @@ actor StatsComputationActor {
     }
 
     /// Shared streak computation logic for sorted unique dates
+    /// Matches the logic in StreakCalculator.findAllStreaks
     private func computeStreakFromDates(_ uniqueDates: [Date], using calendar: Calendar)
         -> StreakResult
     {
@@ -405,8 +406,10 @@ actor StatsComputationActor {
             if let prev = previousDate {
                 let daysDiff = calendar.dateComponents([.day], from: prev, to: date).day ?? 0
                 if daysDiff == 1 {
+                    // Consecutive day - extend streak
                     currentStreak += 1
-                } else {
+                } else if daysDiff > 1 {
+                    // Gap found - save current streak if longest, then reset
                     if currentStreak > longestStreak {
                         longestStreak = currentStreak
                         longestStreakStart = streakStart
@@ -415,6 +418,7 @@ actor StatsComputationActor {
                     currentStreak = 1
                     streakStart = date
                 }
+                // daysDiff == 0 means same day (shouldn't happen with Set dedup) - ignore
             } else {
                 currentStreak = 1
                 streakStart = date
@@ -431,7 +435,12 @@ actor StatsComputationActor {
         // Check if current streak is active (includes today or yesterday)
         let today = calendar.startOfDay(for: Date())
         let yesterday = calendar.date(byAdding: .day, value: -1, to: today)!
-        let isActive = previousDate == today || previousDate == yesterday
+        // Use calendar comparison instead of direct equality for robustness
+        let isActive =
+            previousDate.map {
+                calendar.isDate($0, inSameDayAs: today)
+                    || calendar.isDate($0, inSameDayAs: yesterday)
+            } ?? false
 
         return StreakResult(
             current: isActive ? currentStreak : 0,

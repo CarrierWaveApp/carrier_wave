@@ -31,7 +31,7 @@ private struct ActivityGridContent: View {
     @Binding var selectedDate: Date?
 
     var body: some View {
-        ScrollViewReader { proxy in
+        ScrollViewReader { _ in
             ScrollView(.horizontal, showsIndicators: false) {
                 VStack(alignment: .leading, spacing: gridToLabelSpacing) {
                     HStack(alignment: .top, spacing: spacing) {
@@ -39,7 +39,7 @@ private struct ActivityGridContent: View {
                             VStack(spacing: spacing) {
                                 ForEach(0 ..< rows, id: \.self) { row in
                                     let date = dateFor(column: column, row: row)
-                                    let count = activityData[date] ?? 0
+                                    let count = countFor(date: date)
 
                                     RoundedRectangle(cornerRadius: 2)
                                         .fill(colorFor(count: count))
@@ -102,10 +102,7 @@ private struct ActivityGridContent: View {
                 }
                 .padding(.trailing, 4)
             }
-            .onAppear {
-                // Scroll to show today (rightmost column) without animation on initial load
-                proxy.scrollTo(totalColumns - 1, anchor: .trailing)
-            }
+            .defaultScrollAnchor(.trailing)
         }
         .frame(height: calculatedHeight)
     }
@@ -195,6 +192,23 @@ private struct ActivityGridContent: View {
         let weeksBack = totalColumns - 1 - column
         let daysBack = weeksBack * 7 + (todayWeekday - 1 - row)
         return calendar.date(byAdding: .day, value: -daysBack, to: today) ?? today
+    }
+
+    /// Look up count for a date, handling potential Date precision mismatches
+    private func countFor(date: Date) -> Int {
+        // First try direct lookup
+        if let count = activityData[date] {
+            return count
+        }
+
+        // Fall back to finding a matching date within the same calendar day
+        // This handles cases where Date objects have slightly different times
+        let targetDay = calendar.startOfDay(for: date)
+        for (key, value) in activityData where calendar.isDate(key, inSameDayAs: targetDay) {
+            return value
+        }
+
+        return 0
     }
 
     private func colorFor(count: Int) -> Color {

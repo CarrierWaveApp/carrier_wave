@@ -290,11 +290,7 @@ struct DashboardView: View {
 
     private var streaksCard: some View {
         NavigationLink {
-            if let stats = asyncStats.getStats() {
-                StreakDetailView(stats: stats, tourState: tourState)
-            } else {
-                ProgressView("Loading...")
-            }
+            LazyStreakDetailView(asyncStats: asyncStats, tourState: tourState)
         } label: {
             StreaksCard(
                 dailyStreak: asyncStats.dailyStreak, potaStreak: asyncStats.potaActivationStreak
@@ -331,11 +327,7 @@ struct DashboardView: View {
         HStack(alignment: .top, spacing: 16) {
             // Streaks section (left side)
             NavigationLink {
-                if let stats = asyncStats.getStats() {
-                    StreakDetailView(stats: stats, tourState: tourState)
-                } else {
-                    ProgressView("Loading...")
-                }
+                LazyStreakDetailView(asyncStats: asyncStats, tourState: tourState)
             } label: {
                 VStack(alignment: .leading, spacing: 12) {
                     Text("Streaks")

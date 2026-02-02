@@ -33,20 +33,17 @@ extension StatsComputationActor {
     /// Compute top frequency, friend, and hunter for the favorites card
     func computeTopFavorites(into stats: inout ComputedStats, from qsos: [QSOSnapshot]) {
         // Top frequency - group by rounded frequency
-        var frequencyCounts: [String: Int] = [:]
+        // Note: qso.frequency is stored in MHz
+        var frequencyCounts: [Double: Int] = [:]
         for qso in qsos {
-            if let freq = qso.frequency, freq > 0 {
-                // Round to nearest kHz for grouping
-                let roundedKHz = Int(freq / 1_000) * 1_000
-                let key = "\(roundedKHz)"
-                frequencyCounts[key, default: 0] += 1
+            if let freqMHz = qso.frequency, freqMHz > 0 {
+                // Round to nearest kHz (0.001 MHz) for grouping
+                let roundedMHz = (freqMHz * 1_000).rounded() / 1_000
+                frequencyCounts[roundedMHz, default: 0] += 1
             }
         }
-        if let (freq, count) = frequencyCounts.max(by: { $0.value < $1.value }) {
-            // Format as MHz
-            if let freqHz = Double(freq) {
-                stats.topFrequency = String(format: "%.3f", freqHz / 1_000_000)
-            }
+        if let (freqMHz, count) = frequencyCounts.max(by: { $0.value < $1.value }) {
+            stats.topFrequency = String(format: "%.3f", freqMHz)
             stats.topFrequencyCount = count
         }
 

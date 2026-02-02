@@ -270,6 +270,45 @@ private struct AsyncFavoriteRow: View {
     }
 }
 
+// MARK: - LazyStreakDetailView
+
+/// Wrapper that lazily loads QSOStatistics for StreakDetailView when the view appears
+struct LazyStreakDetailView: View {
+    // MARK: Internal
+
+    let asyncStats: AsyncQSOStatistics
+    let tourState: TourState
+
+    var body: some View {
+        Group {
+            if let stats {
+                StreakDetailView(stats: stats, tourState: tourState)
+            } else {
+                ProgressView("Loading...")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+        .task {
+            // Load stats on background-ish (still main actor but deferred)
+            if let existingStats = asyncStats.getStats() {
+                stats = existingStats
+            } else {
+                // Fall back to computing fresh if needed
+                var descriptor = FetchDescriptor<QSO>(predicate: #Predicate { !$0.isHidden })
+                descriptor.sortBy = [SortDescriptor(\.timestamp, order: .reverse)]
+                if let qsos = try? modelContext.fetch(descriptor) {
+                    stats = QSOStatistics(qsos: qsos)
+                }
+            }
+        }
+    }
+
+    // MARK: Private
+
+    @Environment(\.modelContext) private var modelContext
+    @State private var stats: QSOStatistics?
+}
+
 // MARK: - LazyStatDetailView
 
 /// Wrapper that lazily loads QSOStatistics when the view appears
