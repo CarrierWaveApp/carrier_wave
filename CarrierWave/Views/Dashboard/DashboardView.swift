@@ -128,6 +128,13 @@ struct DashboardView: View {
                     presenceCounts.recompute(from: modelContext)
                 }
             }
+            .onReceive(NotificationCenter.default.publisher(for: .didClearQSOs)) { _ in
+                // Reset and recompute stats after QSOs are cleared
+                asyncStats.reset()
+                presenceCounts.recompute(from: modelContext)
+                // Recompute after reset to show zeros
+                asyncStats.compute(from: modelContext)
+            }
             // NOTE: No .onDisappear cancellation - computation continues in background
             // when user switches tabs. This is intentional because:
             // 1. TabView keeps the view alive, so @State persists

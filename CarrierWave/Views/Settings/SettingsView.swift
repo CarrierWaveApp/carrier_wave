@@ -512,6 +512,9 @@ struct SettingsMainView: View {
 
             // Reset LoFi sync timestamp so QSOs can be re-downloaded
             lofiClient.resetSyncTimestamp()
+
+            // Notify dashboard to reset stats
+            NotificationCenter.default.post(name: .didClearQSOs, object: nil)
         } catch {
             errorMessage = "Failed to clear QSOs: \(error.localizedDescription)"
             showingError = true

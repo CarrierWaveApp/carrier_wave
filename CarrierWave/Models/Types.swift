@@ -2,7 +2,7 @@ import Foundation
 
 // MARK: - ImportSource
 
-enum ImportSource: String, Codable {
+enum ImportSource: String, Codable, Sendable {
     case lofi
     case adifFile
     case icloud
@@ -15,7 +15,7 @@ enum ImportSource: String, Codable {
 
 // MARK: - ServiceType
 
-enum ServiceType: String, Codable, CaseIterable {
+enum ServiceType: String, Codable, CaseIterable, Sendable {
     case qrz
     case pota
     case lofi
@@ -47,7 +47,7 @@ enum ServiceType: String, Codable, CaseIterable {
     }
 
     /// Convert to ImportSource for comparison
-    var toImportSource: ImportSource {
+    nonisolated var toImportSource: ImportSource {
         switch self {
         case .qrz: .qrz
         case .pota: .pota
@@ -62,14 +62,14 @@ enum ServiceType: String, Codable, CaseIterable {
 
 extension String {
     /// Returns self if non-empty, otherwise nil
-    var nonEmpty: String? {
+    nonisolated var nonEmpty: String? {
         isEmpty ? nil : self
     }
 }
 
 extension String? {
     /// Returns self if non-nil and non-empty, otherwise nil
-    var nonEmpty: String? {
+    nonisolated var nonEmpty: String? {
         guard let value = self, !value.isEmpty else {
             return nil
         }

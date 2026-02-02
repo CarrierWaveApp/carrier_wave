@@ -73,6 +73,7 @@ This index maps files to their purpose. Use it to locate files by feature instea
 | `SyncService+Upload.swift` | Upload logic for all services |
 | `SyncService+Download.swift` | Download/import logic |
 | `SyncService+Process.swift` | QSO processing during sync |
+| `QSOProcessingActor.swift` | Background actor for QSO processing without blocking UI |
 | `SyncDebugLog.swift` | Sync debugging utilities |
 | `ImportService.swift` | ADIF parsing, deduplication, QSO creation |
 | `ImportService+External.swift` | External file import handling |

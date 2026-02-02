@@ -117,7 +117,7 @@ final class QSO {
     var servicePresence: [ServicePresence] = []
 
     /// Deduplication key: callsign + band + mode + timestamp (rounded to 2 min)
-    var deduplicationKey: String {
+    nonisolated var deduplicationKey: String {
         let roundedTimestamp = timestamp.timeIntervalSince1970
         let rounded = Int(roundedTimestamp / 120) * 120 // 2 minute buckets
         return "\(callsign.uppercased())|\(band.uppercased())|\(mode.uppercased())|\(rounded)"
