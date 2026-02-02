@@ -108,6 +108,7 @@ final class LoggingSessionManager {
         // Stop spot comments polling
         spotCommentsService.stopPolling()
         spotCommentsService.clear()
+        attachedSpotCommentIds = []
 
         // Stop spot monitoring
         spotMonitoringService.stopMonitoring()
@@ -444,6 +445,7 @@ final class LoggingSessionManager {
         stopAutoSpotTimer()
         spotCommentsService.stopPolling()
         spotCommentsService.clear()
+        attachedSpotCommentIds = []
         spotMonitoringService.stopMonitoring()
 
         // Re-enable screen timeout
@@ -507,6 +509,9 @@ final class LoggingSessionManager {
     /// Auto-spot interval (10 minutes)
     private let autoSpotInterval: TimeInterval = 10 * 60
 
+    /// Track which spot comment IDs have been attached to QSOs
+    private var attachedSpotCommentIds: Set<Int64> = []
+
     /// Whether to keep screen on during active session (from settings)
     private var keepScreenOn: Bool {
         UserDefaults.standard.bool(forKey: "loggerKeepScreenOn")
@@ -564,7 +569,66 @@ final class LoggingSessionManager {
             return
         }
 
+        spotCommentsService.onNewComments = { [weak self] comments in
+            self?.attachSpotComments(comments)
+        }
+
         spotCommentsService.startPolling(activator: callsign, parkRef: parkRef)
+    }
+
+    /// Attach spot comments to matching QSOs in the current session
+    /// Matches by callsign and ±5 minute time window
+    private func attachSpotComments(_ comments: [POTASpotComment]) {
+        guard activeSession != nil else {
+            return
+        }
+
+        let sessionQSOs = getSessionQSOs()
+        guard !sessionQSOs.isEmpty else {
+            return
+        }
+
+        for comment in comments {
+            // Skip if already attached
+            guard !attachedSpotCommentIds.contains(comment.spotId) else {
+                continue
+            }
+
+            // Skip if no comment text
+            guard let commentText = comment.comments, !commentText.isEmpty else {
+                continue
+            }
+
+            guard let commentTimestamp = comment.timestamp else {
+                continue
+            }
+
+            // Find matching QSO: same callsign, within ±5 minutes
+            let spotter = comment.spotter.uppercased()
+            let timeWindow: TimeInterval = 5 * 60 // 5 minutes
+
+            for qso in sessionQSOs {
+                let timeDiff = abs(qso.timestamp.timeIntervalSince(commentTimestamp))
+                if qso.callsign.uppercased() == spotter, timeDiff <= timeWindow {
+                    // Attach comment to QSO
+                    let spotNote = "[Spot: \(comment.spotter)] \(commentText)"
+                    if let existingNotes = qso.notes, !existingNotes.isEmpty {
+                        qso.notes = "\(existingNotes) | \(spotNote)"
+                    } else {
+                        qso.notes = spotNote
+                    }
+
+                    attachedSpotCommentIds.insert(comment.spotId)
+                    try? modelContext.save()
+
+                    SyncDebugLog.shared.info(
+                        "Attached spot comment from \(comment.spotter) to QSO with \(qso.callsign)",
+                        service: .pota
+                    )
+                    break // Only attach to first matching QSO
+                }
+            }
+        }
     }
 
     /// Start spot monitoring for the current session
