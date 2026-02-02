@@ -17,6 +17,11 @@ All notable changes to Carrier Wave will be documented in this file.
   - Tap to expand and see individual spots with SNR, distance, and time ago
   - POTA spots included for POTA activations only
   - Distance shown in miles or kilometers (user setting in Logger settings)
+- Spot age color coding: green (<2m), blue (2-10m), orange (10-30m), gray (>30m)
+- "SELF" badge on spots where the activator matches your callsign
+- Auto-attach POTA spot comments to matching QSOs as notes
+- QRT spot posted automatically when ending POTA session (if session was spotted)
+- Setting to enable/disable QRT spotting (Settings → POTA Activations)
 
 ### Changed
 - RBN spots now limited to last 10 minutes (was 6 hours)
