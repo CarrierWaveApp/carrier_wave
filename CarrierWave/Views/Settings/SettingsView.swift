@@ -61,6 +61,7 @@ struct SettingsMainView: View {
     @AppStorage("loggerKeepScreenOn") private var keepScreenOn = true
 
     @AppStorage("potaAutoSpotEnabled") private var potaAutoSpotEnabled = false
+    @AppStorage("potaQRTSpotEnabled") private var potaQRTSpotEnabled = true
     @AppStorage("loggerAutoModeSwitch") private var autoModeSwitch = true
     @AppStorage("callsignNotesDisplayMode") private var notesDisplayMode = "emoji"
     @AppStorage("useMetricDistance") private var useMetricDistance = false
@@ -294,12 +295,13 @@ struct SettingsMainView: View {
     private var potaSection: some View {
         Section {
             Toggle("Auto-spot every 10 minutes", isOn: $potaAutoSpotEnabled)
+            Toggle("Post QRT when ending session", isOn: $potaQRTSpotEnabled)
         } header: {
             Text("POTA Activations")
         } footer: {
             Text(
-                "When enabled, automatically posts a spot to POTA every 10 minutes "
-                    + "during active POTA sessions."
+                "Auto-spot posts your frequency to POTA every 10 minutes. "
+                    + "QRT spot notifies hunters when you end your activation."
             )
         }
     }
