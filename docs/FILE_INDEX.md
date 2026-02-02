@@ -194,6 +194,7 @@ This index maps files to their purpose. Use it to locate files by feature instea
 | `AsyncQSOStatistics.swift` | Progressive stats computation wrapper with cooperative yielding |
 | `AsyncServicePresenceCounts.swift` | Background computation of service presence counts |
 | `StatsComputationActor.swift` | Background actor for QSO statistics computation |
+| `StatsComputationActor+Extensions.swift` | Extensions for activations and favorites computation |
 | `ServiceListView.swift` | Vertical stacked service list with status indicators |
 | `ServiceDetailSheet.swift` | Service detail sheet for tap-through actions |
 | `StatDetailView.swift` | Drilldown view for stat categories |

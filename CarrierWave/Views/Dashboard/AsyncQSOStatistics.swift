@@ -34,6 +34,15 @@ final class AsyncQSOStatistics {
     private(set) var icloudImportedCount: Int = 0
     private(set) var uniqueMyCallsigns: Set<String> = []
 
+    // MARK: - Favorites (for dashboard card)
+
+    private(set) var topFrequency: String?
+    private(set) var topFrequencyCount: Int = 0
+    private(set) var topFriend: String?
+    private(set) var topFriendCount: Int = 0
+    private(set) var topHunter: String?
+    private(set) var topHunterCount: Int = 0
+
     // MARK: - Computation state
 
     private(set) var isComputing = false
@@ -106,6 +115,12 @@ final class AsyncQSOStatistics {
         lotwConfirmedCount = 0
         icloudImportedCount = 0
         uniqueMyCallsigns = []
+        topFrequency = nil
+        topFrequencyCount = 0
+        topFriend = nil
+        topFriendCount = 0
+        topHunter = nil
+        topHunterCount = 0
         stats = nil
         hasComputed = false
     }
@@ -200,6 +215,14 @@ final class AsyncQSOStatistics {
         lotwConfirmedCount = computed.lotwConfirmedCount
         icloudImportedCount = computed.icloudImportedCount
         uniqueMyCallsigns = computed.uniqueMyCallsigns
+
+        // Favorites
+        topFrequency = computed.topFrequency
+        topFrequencyCount = computed.topFrequencyCount
+        topFriend = computed.topFriend
+        topFriendCount = computed.topFriendCount
+        topHunter = computed.topHunter
+        topHunterCount = computed.topHunterCount
 
         // NOTE: We intentionally do NOT clear `stats` here.
         // Keeping old stats available prevents UI hangs when navigating to drill-down views.
