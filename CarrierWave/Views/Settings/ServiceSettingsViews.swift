@@ -370,6 +370,9 @@ struct POTASettingsView: View {
         if let savedUsername = potaAuth.getStoredUsername() {
             username = savedUsername
         }
+        if let savedPassword = potaAuth.getStoredPassword() {
+            password = savedPassword
+        }
     }
 
     private func testLogin() async {
