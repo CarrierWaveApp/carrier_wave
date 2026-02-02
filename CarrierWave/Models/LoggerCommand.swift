@@ -44,7 +44,8 @@ enum LoggerCommand: Equatable {
         """
         Available Commands:
 
-        FREQ <MHz>      - Set frequency (e.g., 14.060)
+        FREQ <freq>     - Set frequency
+                          e.g., 14.060, 14060 kHz, 14.060 MHz
         <mode>          - Set mode (CW, SSB, FT8, etc.)
         SPOT [comment]  - Self-spot to POTA
                           e.g., SPOT QRT, SPOT QSY
@@ -58,7 +59,7 @@ enum LoggerCommand: Equatable {
         NOTE <text>     - Add a note to the session log
         HELP            - Show this help (or ?)
 
-        You can also just type a frequency like "14.060"
+        Type a frequency directly: 14.060, 14060, 14060kHz
         """
     }
 
@@ -178,15 +179,16 @@ enum LoggerCommand: Equatable {
     ]
 
     private static func parseFrequency(trimmed: String, upper: String) -> LoggerCommand? {
-        // Check for frequency (number only, between 1.8 and 450 MHz)
-        if let freq = Double(trimmed), freq >= 1.8, freq <= 450.0 {
+        // Check for frequency (supports MHz, kHz, or bare numbers)
+        // FrequencyFormatter.parse handles unit suffixes and kHz->MHz conversion
+        if let freq = FrequencyFormatter.parse(trimmed) {
             return .frequency(freq)
         }
 
         // Check for FREQ command
         if upper.hasPrefix("FREQ ") || upper.hasPrefix("FREQ\t") {
             let value = String(trimmed.dropFirst(5)).trimmingCharacters(in: .whitespaces)
-            if let freq = Double(value), freq >= 1.8, freq <= 450.0 {
+            if let freq = FrequencyFormatter.parse(value) {
                 return .frequency(freq)
             }
         }

@@ -102,7 +102,7 @@ struct SessionStartSheet: View {
     }
 
     private var parsedFrequency: Double? {
-        Double(frequency)
+        FrequencyFormatter.parse(frequency)
     }
 
     // MARK: - Sections
@@ -249,7 +249,9 @@ struct SessionStartSheet: View {
         } header: {
             Text("Frequency")
         } footer: {
-            Text("Optional - you can change frequency during the session")
+            Text(
+                "Enter as MHz (14.060) or kHz (14060). You can also type \"14060 kHz\" or \"14.060 MHz\"."
+            )
         }
     }
 

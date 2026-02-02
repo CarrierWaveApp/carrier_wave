@@ -5,6 +5,10 @@ All notable changes to Carrier Wave will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- **Flexible frequency input** - Enter frequencies as kHz or MHz with optional unit suffixes
+  - Type "14060" or "14060 kHz" for kHz input (auto-converted to MHz)
+  - Type "14.060" or "14.060 MHz" for MHz input
+  - Units are case-insensitive ("khz", "KHz", "kHz" all work)
 - RBN spots map shows spotter locations via HamDB grid lookup with arcs to target station
 - Spotter circles sized by signal strength (SNR)
 - **Background Spot Monitoring** - Automatic RBN/POTA spot monitoring during logging sessions
