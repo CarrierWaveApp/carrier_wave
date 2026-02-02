@@ -7,9 +7,66 @@ extension SyncService {
     struct ProcessResult {
         let created: Int
         let merged: Int
-        let createdQSOs: [QSO]
+        let createdQSOIds: [UUID]
+
+        /// Fetch created QSOs from context (for activity detection).
+        /// Call this on the main actor after processing completes.
+        func fetchCreatedQSOs(from context: ModelContext) -> [QSO] {
+            guard !createdQSOIds.isEmpty else {
+                return []
+            }
+            let ids = createdQSOIds
+            let descriptor = FetchDescriptor<QSO>(predicate: #Predicate { ids.contains($0.id) })
+            return (try? context.fetch(descriptor)) ?? []
+        }
     }
 
+    /// Background actor for heavy QSO processing work.
+    private static let processingActor = QSOProcessingActor()
+
+    /// Process downloaded QSOs on a background thread to avoid blocking the UI.
+    /// Returns counts and created QSO IDs; use fetchCreatedQSOs() to get actual QSO objects.
+    func processDownloadedQSOsAsync(_ fetched: [FetchedQSO]) async throws -> ProcessResult {
+        let debugLog = SyncDebugLog.shared
+
+        let result = try await Self.processingActor.processDownloadedQSOs(
+            fetched,
+            container: modelContext.container
+        ) { phase in
+            // Progress updates - just print since we're on background thread
+            print("[DEBUG] \(phase)")
+        }
+
+        // Log messages from background processing
+        for message in result.logMessages {
+            debugLog.info(message)
+        }
+
+        return ProcessResult(
+            created: result.created,
+            merged: result.merged,
+            createdQSOIds: result.createdQSOIds
+        )
+    }
+
+    /// Reconcile QRZ presence records against what QRZ actually returned.
+    /// Now runs on background thread to avoid blocking UI.
+    func reconcileQRZPresenceAsync(downloadedKeys: Set<String>) async throws {
+        // Get user's callsign aliases for matching
+        let aliasService = CallsignAliasService.shared
+        let userCallsigns = aliasService.getAllUserCallsigns()
+
+        try await Self.processingActor.reconcileQRZPresence(
+            downloadedKeys: downloadedKeys,
+            userCallsigns: userCallsigns,
+            container: modelContext.container
+        )
+    }
+
+    // MARK: - Legacy Synchronous Methods (kept for backwards compatibility)
+
+    /// Synchronous version - kept for backwards compatibility.
+    /// Prefer processDownloadedQSOsAsync for better UI responsiveness.
     func processDownloadedQSOs(_ fetched: [FetchedQSO]) throws -> ProcessResult {
         let debugLog = SyncDebugLog.shared
 
@@ -31,7 +88,7 @@ extension SyncService {
 
         var created = 0
         var merged = 0
-        var createdQSOs: [QSO] = []
+        var createdQSOIds: [UUID] = []
 
         for (key, fetchedGroup) in byKey {
             if let existing = existingByKey[key]?.first {
@@ -41,13 +98,13 @@ extension SyncService {
                 merged += 1
             } else {
                 let newQSO = createNewQSOFromGroup(fetchedGroup)
-                createdQSOs.append(newQSO)
+                createdQSOIds.append(newQSO.id)
                 created += 1
             }
         }
 
         debugLog.info("Process result: created=\(created), merged=\(merged)")
-        return ProcessResult(created: created, merged: merged, createdQSOs: createdQSOs)
+        return ProcessResult(created: created, merged: merged, createdQSOIds: createdQSOIds)
     }
 
     private func buildSourceBreakdown(_ fetched: [FetchedQSO]) -> String {
@@ -260,13 +317,14 @@ extension SyncService {
             // POTA uploads only apply to QSOs where user was activating from a park
             let skipPOTAUpload = service == .pota && (qso.parkReference?.isEmpty ?? true)
 
-            let presence = if service == source {
-                ServicePresence.downloaded(from: service, qso: qso)
-            } else if service.supportsUpload, !skipPOTAUpload {
-                ServicePresence.needsUpload(to: service, qso: qso)
-            } else {
-                ServicePresence(serviceType: service, isPresent: false, qso: qso)
-            }
+            let presence =
+                if service == source {
+                    ServicePresence.downloaded(from: service, qso: qso)
+                } else if service.supportsUpload, !skipPOTAUpload {
+                    ServicePresence.needsUpload(to: service, qso: qso)
+                } else {
+                    ServicePresence(serviceType: service, isPresent: false, qso: qso)
+                }
             modelContext.insert(presence)
             qso.servicePresence.append(presence)
         }

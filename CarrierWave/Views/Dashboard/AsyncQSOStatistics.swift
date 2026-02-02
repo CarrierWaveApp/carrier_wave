@@ -76,37 +76,38 @@ final class AsyncQSOStatistics {
     }
 
     /// Access underlying QSOStatistics for drill-down views.
-    /// Lazily fetches QSOs from main context if not already loaded.
+    /// Returns cached stats if available, or nil if not yet computed.
     func getStats() -> QSOStatistics? {
-        // Return cached stats if available
-        if let stats {
-            return stats
-        }
-
-        // If we have no container or are still computing, return nil
-        guard let container = modelContainer, !isComputing else {
-            return nil
-        }
-
-        // Lazily fetch QSOs on main thread for drill-down
-        // This is acceptable because it's triggered by explicit user navigation
-        let context = ModelContext(container)
-        var descriptor = FetchDescriptor<QSO>(predicate: #Predicate { !$0.isHidden })
-        descriptor.sortBy = [SortDescriptor(\.timestamp, order: .reverse)]
-
-        guard let qsos = try? context.fetch(descriptor) else {
-            return nil
-        }
-
-        let newStats = QSOStatistics(qsos: qsos)
-        stats = newStats
-        return newStats
+        stats
     }
 
     /// Cancel any in-flight computation.
     func cancel() {
         computeTask?.cancel()
         cleanup()
+    }
+
+    /// Reset all stats to initial state.
+    /// Call this when data is deleted (e.g., "Clear All QSOs").
+    func reset() {
+        computeTask?.cancel()
+        cleanup()
+
+        totalQSOs = 0
+        uniqueBands = 0
+        uniqueGrids = 0
+        confirmedQSLs = nil
+        uniqueEntities = nil
+        successfulActivations = nil
+        activityByDate = nil
+        dailyStreak = nil
+        potaActivationStreak = nil
+        qrzConfirmedCount = 0
+        lotwConfirmedCount = 0
+        icloudImportedCount = 0
+        uniqueMyCallsigns = []
+        stats = nil
+        hasComputed = false
     }
 
     // MARK: Private
@@ -200,8 +201,10 @@ final class AsyncQSOStatistics {
         icloudImportedCount = computed.icloudImportedCount
         uniqueMyCallsigns = computed.uniqueMyCallsigns
 
-        // Clear cached stats so getStats() will lazily reload if needed
-        stats = nil
+        // NOTE: We intentionally do NOT clear `stats` here.
+        // Keeping old stats available prevents UI hangs when navigating to drill-down views.
+        // The stats will be slightly stale until the user navigates to a detail view,
+        // which is acceptable since the summary values above are already updated.
 
         progress = 1.0
         progressPhase = ""

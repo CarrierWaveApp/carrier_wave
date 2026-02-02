@@ -9,6 +9,9 @@ All notable changes to Carrier Wave will be documented in this file.
   - Statistics computation now runs entirely on a background thread
   - Progress bar shows loading progress under Activity card
   - UI remains responsive during computation
+- Sync processing no longer freezes UI at the end of QSO loading
+  - QSO deduplication and creation now runs on a background thread
+  - UI stays responsive during the "Processing" phase of sync
 
 ### Added
 - Dynamic sync progress indicator shows QSO count as services complete

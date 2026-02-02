@@ -82,25 +82,24 @@ class SyncService: ObservableObject {
         let downloadResults = await downloadFromAllSources()
         let allFetched = collectDownloadResults(downloadResults, into: &result)
 
-        // PHASE 2: Process and deduplicate
+        // PHASE 2: Process and deduplicate (on background thread)
         syncPhase = .processing
-        let processResult = try processDownloadedQSOs(allFetched)
+        let processResult = try await processDownloadedQSOsAsync(allFetched)
         result.newQSOs = processResult.created
         result.mergedQSOs = processResult.merged
         notifyNewQSOsIfNeeded(count: processResult.created)
 
         // PHASE 2.5a: Process activities for newly created QSOs
-        if !processResult.createdQSOs.isEmpty {
-            await processActivities(newQSOs: processResult.createdQSOs)
+        let createdQSOs = processResult.fetchCreatedQSOs(from: modelContext)
+        if !createdQSOs.isEmpty {
+            await processActivities(newQSOs: createdQSOs)
         }
 
-        // PHASE 2.5b: Reconcile QRZ presence against what QRZ actually returned
+        // PHASE 2.5b: Reconcile QRZ presence against what QRZ actually returned (on background thread)
         let qrzDownloadedKeys = Set(allFetched.filter { $0.source == .qrz }.map(\.deduplicationKey))
         if !qrzDownloadedKeys.isEmpty {
-            try await reconcileQRZPresence(downloadedKeys: qrzDownloadedKeys)
+            try await reconcileQRZPresenceAsync(downloadedKeys: qrzDownloadedKeys)
         }
-
-        try modelContext.save()
 
         // PHASE 3: Upload to all destinations in parallel (unless read-only mode)
         await performUploadsIfEnabled(into: &result, debugLog: debugLog)
@@ -131,19 +130,18 @@ class SyncService: ObservableObject {
         let fetched = qsos.map { FetchedQSO.fromQRZ($0) }
 
         syncPhase = .processing
-        let processResult = try processDownloadedQSOs(fetched)
+        let processResult = try await processDownloadedQSOsAsync(fetched)
         downloaded = processResult.created
 
         // Process activities for newly created QSOs
-        if !processResult.createdQSOs.isEmpty {
-            await processActivities(newQSOs: processResult.createdQSOs)
+        let createdQSOs = processResult.fetchCreatedQSOs(from: modelContext)
+        if !createdQSOs.isEmpty {
+            await processActivities(newQSOs: createdQSOs)
         }
 
         // Reconcile QRZ presence against what QRZ actually returned
         let qrzDownloadedKeys = Set(fetched.map(\.deduplicationKey))
-        try await reconcileQRZPresence(downloadedKeys: qrzDownloadedKeys)
-
-        try modelContext.save()
+        try await reconcileQRZPresenceAsync(downloadedKeys: qrzDownloadedKeys)
 
         // Upload with timeout (unless read-only mode)
         if !isReadOnlyMode {
@@ -184,15 +182,14 @@ class SyncService: ObservableObject {
         let fetched = qsos.map { FetchedQSO.fromPOTA($0) }
 
         syncPhase = .processing
-        let processResult = try processDownloadedQSOs(fetched)
+        let processResult = try await processDownloadedQSOsAsync(fetched)
         downloaded = processResult.created
 
         // Process activities for newly created QSOs
-        if !processResult.createdQSOs.isEmpty {
-            await processActivities(newQSOs: processResult.createdQSOs)
+        let createdQSOs = processResult.fetchCreatedQSOs(from: modelContext)
+        if !createdQSOs.isEmpty {
+            await processActivities(newQSOs: createdQSOs)
         }
-
-        try modelContext.save()
 
         // Upload with timeout (unless read-only mode)
         if !isReadOnlyMode {
@@ -229,14 +226,13 @@ class SyncService: ObservableObject {
         debugLog.info("After filtering: \(fetched.count) valid QSOs", service: .lofi)
 
         syncPhase = .processing
-        let processResult = try processDownloadedQSOs(fetched)
+        let processResult = try await processDownloadedQSOsAsync(fetched)
 
         // Process activities for newly created QSOs
-        if !processResult.createdQSOs.isEmpty {
-            await processActivities(newQSOs: processResult.createdQSOs)
+        let createdQSOs = processResult.fetchCreatedQSOs(from: modelContext)
+        if !createdQSOs.isEmpty {
+            await processActivities(newQSOs: createdQSOs)
         }
-
-        try modelContext.save()
 
         return processResult.created
     }
@@ -257,14 +253,13 @@ class SyncService: ObservableObject {
         let fetched = qsos.compactMap { FetchedQSO.fromHAMRS($0.0, logbook: $0.1) }
 
         syncPhase = .processing
-        let processResult = try processDownloadedQSOs(fetched)
+        let processResult = try await processDownloadedQSOsAsync(fetched)
 
         // Process activities for newly created QSOs
-        if !processResult.createdQSOs.isEmpty {
-            await processActivities(newQSOs: processResult.createdQSOs)
+        let createdQSOs = processResult.fetchCreatedQSOs(from: modelContext)
+        if !createdQSOs.isEmpty {
+            await processActivities(newQSOs: createdQSOs)
         }
-
-        try modelContext.save()
 
         return processResult.created
     }
@@ -285,11 +280,12 @@ class SyncService: ObservableObject {
         let fetched = response.qsos.map { FetchedQSO.fromLoTW($0) }
 
         syncPhase = .processing
-        let processResult = try processDownloadedQSOs(fetched)
+        let processResult = try await processDownloadedQSOsAsync(fetched)
 
         // Process activities for newly created QSOs
-        if !processResult.createdQSOs.isEmpty {
-            await processActivities(newQSOs: processResult.createdQSOs)
+        let createdQSOs = processResult.fetchCreatedQSOs(from: modelContext)
+        if !createdQSOs.isEmpty {
+            await processActivities(newQSOs: createdQSOs)
         }
 
         // Save timestamp for incremental sync
@@ -297,7 +293,6 @@ class SyncService: ObservableObject {
             try lotwClient.saveLastQSORxDate(lastQSORx)
         }
 
-        try modelContext.save()
         return processResult.created
     }
 
@@ -338,18 +333,17 @@ class SyncService: ObservableObject {
             }
         }
 
-        // PHASE 2: Process and deduplicate
+        // PHASE 2: Process and deduplicate (on background thread)
         syncPhase = .processing
-        let processResult = try processDownloadedQSOs(allFetched)
+        let processResult = try await processDownloadedQSOsAsync(allFetched)
         result.newQSOs = processResult.created
         result.mergedQSOs = processResult.merged
 
         // Process activities for newly created QSOs
-        if !processResult.createdQSOs.isEmpty {
-            await processActivities(newQSOs: processResult.createdQSOs)
+        let createdQSOs = processResult.fetchCreatedQSOs(from: modelContext)
+        if !createdQSOs.isEmpty {
+            await processActivities(newQSOs: createdQSOs)
         }
-
-        try modelContext.save()
 
         // Skip upload phase
         return result

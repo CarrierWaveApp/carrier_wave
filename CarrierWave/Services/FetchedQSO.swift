@@ -3,7 +3,7 @@ import Foundation
 // MARK: - FetchedQSO
 
 /// Common format for QSOs fetched from any service
-struct FetchedQSO {
+struct FetchedQSO: Sendable {
     let callsign: String
     let band: String
     let mode: String
