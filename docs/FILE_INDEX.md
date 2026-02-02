@@ -258,13 +258,14 @@ This index maps files to their purpose. Use it to locate files by feature instea
 | `SettingsSections.swift` | Sync Sources section with service navigation links |
 | `CallsignNotesSettingsView.swift` | Manage callsign notes file sources (URL + title) |
 
-## Documentation (`docs/features/`)
+## Documentation (`docs/`)
 | File | Purpose |
 |------|---------|
-| `callsign-filtering.md` | Primary callsign filtering requirements for syncs |
-| `logger-requirements.md` | Logger requirements and compliance checklist |
-| `sync.md` | QRZ, POTA, LoFi sync integration |
-| `statistics.md` | Dashboard stats and drilldown views |
+| `design-language.md` | Visual and interaction design patterns specification |
+| `features/callsign-filtering.md` | Primary callsign filtering requirements for syncs |
+| `features/logger-requirements.md` | Logger requirements and compliance checklist |
+| `features/sync.md` | QRZ, POTA, LoFi sync integration |
+| `features/statistics.md` | Dashboard stats and drilldown views |
 
 ## Views - Map (`CarrierWave/Views/Map/`)
 | File | Purpose |
