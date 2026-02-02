@@ -72,6 +72,15 @@ actor StatsComputationActor {
     /// Batch size for fetching - larger batches are fine since we're off the main thread
     static let fetchBatchSize = 1_000
 
+    // MARK: - Internal Helpers
+
+    /// Get UTC date for a timestamp (for POTA activation grouping)
+    static func utcDateOnly(from date: Date) -> Date {
+        var calendar = Calendar.current
+        calendar.timeZone = TimeZone(identifier: "UTC")!
+        return calendar.startOfDay(for: date)
+    }
+
     /// Fetch QSOs and compute all statistics on background thread.
     func computeStats(
         container: ModelContainer,
@@ -102,15 +111,6 @@ actor StatsComputationActor {
     private static let metadataModes: Set<String> = [
         "INFO", "METADATA", "NOTE", "NOTES", "COMMENT",
     ]
-
-    // MARK: - Private Helpers
-
-    /// Get UTC date for a timestamp (for POTA activation grouping)
-    private static func utcDateOnly(from date: Date) -> Date {
-        var calendar = Calendar.current
-        calendar.timeZone = TimeZone(identifier: "UTC")!
-        return calendar.startOfDay(for: date)
-    }
 
     /// Extract the base callsign from a potentially prefixed/suffixed callsign
     private static func extractBaseCallsign(_ callsign: String) -> String {

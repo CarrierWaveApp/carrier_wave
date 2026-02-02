@@ -121,9 +121,9 @@ struct DashboardView: View {
             }
             .onChange(of: syncService.lastSyncDate) { _, _ in
                 // Recompute stats after sync completes
-                // Delay slightly to allow UI to update first (dismiss spinners, etc.)
+                // Delay to ensure background saves are fully committed to SQLite
                 Task {
-                    try? await Task.sleep(for: .milliseconds(100))
+                    try? await Task.sleep(for: .milliseconds(300))
                     asyncStats.recompute(from: modelContext)
                     presenceCounts.recompute(from: modelContext)
                 }

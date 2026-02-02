@@ -15,7 +15,7 @@ actor QSOProcessingActor {
         /// IDs of newly created QSOs (for activity detection on main actor)
         let createdQSOIds: [UUID]
         /// Log messages generated during processing (for SyncDebugLog on main actor)
-        let logMessages: [String]
+        var logMessages: [String]
     }
 
     /// Progress callback info
@@ -52,57 +52,88 @@ actor QSOProcessingActor {
         let existingByKey = try await fetchExistingQSOKeys(context: context)
         logMessages.append("Found \(existingByKey.count) existing QSOs in database")
 
+        // Process and save QSOs in batches
+        var result = try await processQSOGroups(
+            byKey: byKey,
+            existingByKey: existingByKey,
+            context: context,
+            onProgress: onProgress
+        )
+
+        logMessages.append("Process result: created=\(result.created), merged=\(result.merged)")
+        result.logMessages = logMessages
+        return result
+    }
+
+    // MARK: Private
+
+    /// Process QSO groups with batched saves to avoid UI stalls.
+    private func processQSOGroups(
+        byKey: [String: [FetchedQSO]],
+        existingByKey: [String: UUID],
+        context: ModelContext,
+        onProgress: (@Sendable (ProgressInfo) -> Void)?
+    ) async throws -> ProcessingResult {
         var created = 0
         var merged = 0
         var createdQSOIds: [UUID] = []
 
         let totalGroups = byKey.count
         var processedGroups = 0
+        let saveBatchSize = 500
+        var unsavedCount = 0
 
         for (key, fetchedGroup) in byKey {
             try Task.checkCancellation()
 
             if let existingId = existingByKey[key] {
-                // Existing QSO - merge into it
                 try mergeIntoExisting(
                     existingId: existingId, fetchedGroup: fetchedGroup, context: context
                 )
                 merged += 1
             } else {
-                // New QSO - create it
                 let newId = try createNewQSOFromGroup(fetchedGroup, context: context)
                 createdQSOIds.append(newId)
                 created += 1
             }
 
             processedGroups += 1
-            if processedGroups.isMultiple(of: 100) {
+            unsavedCount += 1
+
+            // Save in batches to avoid one huge save at the end
+            if unsavedCount >= saveBatchSize {
                 onProgress?(
                     ProgressInfo(
-                        processed: processedGroups,
-                        total: totalGroups,
-                        phase: "Processing QSOs..."
+                        processed: processedGroups, total: totalGroups, phase: "Saving batch..."
                     )
                 )
-                // Yield periodically to allow cancellation and reduce memory pressure
+                try context.save()
+                unsavedCount = 0
+                await Task.yield()
+            } else if processedGroups.isMultiple(of: 100) {
+                onProgress?(
+                    ProgressInfo(
+                        processed: processedGroups, total: totalGroups, phase: "Processing QSOs..."
+                    )
+                )
                 await Task.yield()
             }
         }
 
-        // Save all changes
-        onProgress?(ProgressInfo(processed: totalGroups, total: totalGroups, phase: "Saving..."))
-        try context.save()
+        // Save any remaining changes
+        if unsavedCount > 0 {
+            onProgress?(
+                ProgressInfo(
+                    processed: totalGroups, total: totalGroups, phase: "Saving..."
+                )
+            )
+            try context.save()
+        }
 
-        logMessages.append("Process result: created=\(created), merged=\(merged)")
         return ProcessingResult(
-            created: created,
-            merged: merged,
-            createdQSOIds: createdQSOIds,
-            logMessages: logMessages
+            created: created, merged: merged, createdQSOIds: createdQSOIds, logMessages: []
         )
     }
-
-    // MARK: Private
 
     /// Fetch existing QSO deduplication keys in batches.
     private func fetchExistingQSOKeys(context: ModelContext) async throws -> [String: UUID] {

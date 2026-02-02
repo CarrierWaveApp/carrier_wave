@@ -35,6 +35,13 @@ extension DashboardView {
             if result.potaMaintenanceSkipped {
                 potaSyncResult = "Maintenance until 0400 UTC"
             }
+
+            // Small delay to ensure SQLite writes are fully committed
+            try? await Task.sleep(for: .milliseconds(50))
+
+            // Recompute stats after sync completes
+            asyncStats.recompute(from: modelContext)
+            presenceCounts.recompute(from: modelContext)
         } catch {
             print("Sync error: \(error.localizedDescription)")
         }
@@ -56,6 +63,13 @@ extension DashboardView {
             if !result.errors.isEmpty {
                 print("Download-only sync errors: \(result.errors)")
             }
+
+            // Small delay to ensure SQLite writes are fully committed
+            try? await Task.sleep(for: .milliseconds(50))
+
+            // Recompute stats after sync completes
+            asyncStats.recompute(from: modelContext)
+            presenceCounts.recompute(from: modelContext)
         } catch {
             print("Download-only sync error: \(error.localizedDescription)")
         }
