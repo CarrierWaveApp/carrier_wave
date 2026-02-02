@@ -210,10 +210,8 @@ struct DashboardView: View {
 
     @ViewBuilder
     private var syncProgressLabel: some View {
-        if let lofiProgress = syncService.syncProgress.lofiProgress,
-           syncService.syncPhase == .downloading(service: .lofi)
-        {
-            // Show progress bar for LoFi sync
+        if let lofiProgress = syncService.syncProgress.lofiProgress {
+            // Show progress bar for LoFi sync (regardless of current phase, since downloads are parallel)
             HStack(spacing: 6) {
                 ProgressView(value: lofiProgress)
                     .frame(width: 60)
