@@ -19,6 +19,26 @@
 
 See [docs/FILE_INDEX.md](docs/FILE_INDEX.md) for the complete file-to-purpose mapping.
 
+## Model Selection
+
+When spawning subagents via the Task tool, select models based on task complexity:
+
+| Task Type | Model | Reasoning |
+|-----------|-------|-----------|
+| Exploration/search | Haiku | Fast, cheap, good enough for finding files |
+| Simple edits | Haiku | Single-file changes, clear instructions |
+| Multi-file implementation | Sonnet | Best balance for coding |
+| Complex architecture | Opus | Deep reasoning needed |
+| PR reviews | Sonnet | Understands context, catches nuance |
+| Security analysis | Opus | Can't afford to miss vulnerabilities |
+| Writing docs | Haiku | Structure is simple |
+| Debugging complex bugs | Opus | Needs to hold entire system in mind |
+
+**Guidelines:**
+- Default to **Sonnet** for 90% of coding tasks
+- Upgrade to **Opus** when: first attempt failed, task spans 5+ files, architectural decisions, or security-critical code
+- Downgrade to **Haiku** when: task is repetitive, instructions are very clear, or using as a "worker" in multi-agent setup
+
 ## Building and Testing
 
 **NEVER build, run tests, or use the iOS simulator yourself. Always prompt the user to do so.**
