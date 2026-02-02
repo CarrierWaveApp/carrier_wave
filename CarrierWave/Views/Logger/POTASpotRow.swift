@@ -7,6 +7,7 @@ struct POTASpotRow: View {
     // MARK: Internal
 
     let spot: POTASpot
+    let userCallsign: String?
     let onTap: () -> Void
 
     var body: some View {
@@ -87,9 +88,21 @@ struct POTASpotRow: View {
     }
 
     private var callsignRow: some View {
-        Text(spot.activator)
-            .font(.subheadline.weight(.semibold).monospaced())
-            .foregroundStyle(.primary)
+        HStack(spacing: 4) {
+            Text(spot.activator)
+                .font(.subheadline.weight(.semibold).monospaced())
+                .foregroundStyle(.primary)
+
+            if let userCallsign, spot.isSelfSpot(userCallsign: userCallsign) {
+                Text("SELF")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Color.indigo)
+                    .clipShape(Capsule())
+            }
+        }
     }
 
     private var parkInfoRow: some View {
