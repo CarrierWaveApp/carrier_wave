@@ -33,11 +33,19 @@ struct POTASpotsView: View {
             Divider()
 
             if isLoading {
-                loadingView
+                POTASpotsLoadingView()
             } else if let error = errorMessage {
-                errorView(error)
+                POTASpotsErrorView(message: error) {
+                    Task { await loadSpots() }
+                }
             } else if filteredSpots.isEmpty {
-                emptyView
+                POTASpotsEmptyView(
+                    hasFilters: bandFilter != .all || modeFilter != .all,
+                    onClearFilters: {
+                        bandFilter = .all
+                        modeFilter = .all
+                    }
+                )
             } else {
                 spotsList
             }
@@ -58,6 +66,7 @@ struct POTASpotsView: View {
     @State private var bandFilter: BandFilter
     @State private var modeFilter: ModeFilter
     @State private var showFilterSheet = false
+    @State private var showAutomatedSpots = false
 
     private var filteredSpots: [POTASpot] {
         allSpots.filter { spot in
@@ -75,20 +84,22 @@ struct POTASpotsView: View {
         }
     }
 
+    /// Human-generated spots (highlighted, shown first)
+    private var humanSpots: [POTASpot] {
+        filteredSpots.filter(\.isHumanSpot)
+    }
+
+    /// Automated spots from RBN (collapsed by default)
+    private var automatedSpots: [POTASpot] {
+        filteredSpots.filter(\.isAutomatedSpot)
+    }
+
     private var spotsByBand: [(band: String, spots: [POTASpot])] {
-        let grouped = Dictionary(grouping: filteredSpots) { spot -> String in
-            BandUtilities.deriveBand(from: spot.frequencyKHz) ?? "Other"
-        }
-        return grouped.sorted { lhs, rhs in
-            let lhsIdx = BandUtilities.bandOrder.firstIndex(of: lhs.key) ?? 999
-            let rhsIdx = BandUtilities.bandOrder.firstIndex(of: rhs.key) ?? 999
-            return lhsIdx < rhsIdx
-        }.map {
-            (
-                band: $0.key,
-                spots: $0.value.sorted { ($0.frequencyKHz ?? 0) < ($1.frequencyKHz ?? 0) }
-            )
-        }
+        Self.groupSpotsByBand(humanSpots)
+    }
+
+    private var automatedSpotsByBand: [(band: String, spots: [POTASpot])] {
+        Self.groupSpotsByBand(automatedSpots)
     }
 
     private var filterDisplayText: String {
@@ -152,96 +163,36 @@ struct POTASpotsView: View {
             }
             .buttonStyle(.plain)
             .sheet(isPresented: $showFilterSheet) {
-                filterSheet
+                POTASpotsFilterSheet(
+                    bandFilter: $bandFilter,
+                    modeFilter: $modeFilter,
+                    isPresented: $showFilterSheet
+                )
             }
 
             Spacer()
 
-            Text("\(filteredSpots.count)/\(allSpots.count) spots")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            // Show human/total breakdown
+            if automatedSpots.isEmpty {
+                Text("\(filteredSpots.count) spots")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else {
+                Text("\(humanSpots.count) + \(automatedSpots.count) RBN")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
         .padding(.horizontal)
         .padding(.bottom, 6)
     }
 
-    private var filterSheet: some View {
-        NavigationStack {
-            Form {
-                Section("Band") {
-                    Picker("Band", selection: $bandFilter) {
-                        ForEach(BandFilter.allCases) { filter in
-                            Text(filter.rawValue).tag(filter)
-                        }
-                    }
-                    .pickerStyle(.inline)
-                    .labelsHidden()
-                }
-
-                Section("Mode") {
-                    Picker("Mode", selection: $modeFilter) {
-                        ForEach(ModeFilter.allCases) { filter in
-                            Text(filter.rawValue).tag(filter)
-                        }
-                    }
-                    .pickerStyle(.inline)
-                    .labelsHidden()
-                }
-            }
-            .navigationTitle("Filter Spots")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") {
-                        showFilterSheet = false
-                    }
-                }
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Reset") {
-                        bandFilter = .all
-                        modeFilter = .all
-                    }
-                }
-            }
-        }
-        .presentationDetents([.medium])
-    }
-
     // MARK: - Content Views
-
-    private var loadingView: some View {
-        VStack(spacing: 12) {
-            ProgressView()
-            Text("Loading POTA spots...")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, minHeight: 200)
-    }
-
-    private var emptyView: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "tree")
-                .font(.title2)
-                .foregroundStyle(.secondary)
-            Text("No spots match filters")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-            if bandFilter != .all || modeFilter != .all {
-                Button("Clear Filters") {
-                    bandFilter = .all
-                    modeFilter = .all
-                }
-                .buttonStyle(.bordered)
-            }
-        }
-        .padding()
-        .frame(maxWidth: .infinity, minHeight: 200)
-    }
 
     private var spotsList: some View {
         ScrollView {
             LazyVStack(spacing: 0, pinnedViews: .sectionHeaders) {
+                // Human spots first (by band)
                 ForEach(spotsByBand, id: \.band) { section in
                     Section {
                         ForEach(section.spots) { spot in
@@ -252,42 +203,39 @@ struct POTASpotsView: View {
                                 .padding(.leading, 92)
                         }
                     } header: {
-                        sectionHeader(section.band)
+                        POTASpotsBandHeader(band: section.band)
                     }
+                }
+
+                // Collapsible automated spots section
+                if !automatedSpots.isEmpty {
+                    AutomatedSpotsSection(
+                        automatedSpots: automatedSpots,
+                        automatedSpotsByBand: automatedSpotsByBand,
+                        userCallsign: userCallsign,
+                        onSelectSpot: onSelectSpot,
+                        isExpanded: $showAutomatedSpots
+                    )
                 }
             }
         }
         .frame(maxHeight: 400)
     }
 
-    private func errorView(_ message: String) -> some View {
-        VStack(spacing: 8) {
-            Image(systemName: "exclamationmark.triangle")
-                .font(.title2)
-                .foregroundStyle(.orange)
-            Text(message)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-            Button("Retry") {
-                Task { await loadSpots() }
-            }
-            .buttonStyle(.bordered)
+    private static func groupSpotsByBand(_ spots: [POTASpot]) -> [(band: String, spots: [POTASpot])] {
+        let grouped = Dictionary(grouping: spots) { spot -> String in
+            BandUtilities.deriveBand(from: spot.frequencyKHz) ?? "Other"
         }
-        .padding()
-        .frame(maxWidth: .infinity, minHeight: 200)
-    }
-
-    private func sectionHeader(_ band: String) -> some View {
-        HStack {
-            Text(band)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-            Spacer()
+        return grouped.sorted { lhs, rhs in
+            let lhsIdx = BandUtilities.bandOrder.firstIndex(of: lhs.key) ?? 999
+            let rhsIdx = BandUtilities.bandOrder.firstIndex(of: rhs.key) ?? 999
+            return lhsIdx < rhsIdx
+        }.map {
+            (
+                band: $0.key,
+                spots: $0.value.sorted { ($0.frequencyKHz ?? 0) < ($1.frequencyKHz ?? 0) }
+            )
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 6)
-        .background(Color(.secondarySystemGroupedBackground))
     }
 
     // MARK: - Data Loading

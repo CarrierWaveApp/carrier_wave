@@ -40,9 +40,15 @@ struct CallsignTextField: UIViewRepresentable {
 
         var parent: CallsignTextField
 
+        /// Track whether we're currently processing a user edit
+        /// to avoid re-entrant updates from SwiftUI
+        var isUpdatingFromUIKit = false
+
         @objc
         func textFieldDidChange(_ textField: UITextField) {
+            isUpdatingFromUIKit = true
             parent.text = textField.text ?? ""
+            isUpdatingFromUIKit = false
         }
 
         func textFieldDidBeginEditing(_ textField: UITextField) {
@@ -84,17 +90,41 @@ struct CallsignTextField: UIViewRepresentable {
     }
 
     func updateUIView(_ uiView: UITextField, context: Context) {
-        // Only update text if it differs to avoid cursor jumps
-        if uiView.text != text {
+        // Skip updates that originated from user typing to preserve cursor position
+        // Only update for programmatic changes (e.g., clearing field after logging)
+        if !context.coordinator.isUpdatingFromUIKit, uiView.text != text {
+            // Save cursor position relative to end of text
+            let cursorOffsetFromEnd: Int
+            if let selectedRange = uiView.selectedTextRange {
+                let cursorPosition = uiView.offset(
+                    from: uiView.endOfDocument, to: selectedRange.end
+                )
+                cursorOffsetFromEnd = cursorPosition
+            } else {
+                cursorOffsetFromEnd = 0
+            }
+
             uiView.text = text
+
+            // Restore cursor position relative to end of text
+            // This handles cases where text length changed
+            if let newPosition = uiView.position(
+                from: uiView.endOfDocument,
+                offset: cursorOffsetFromEnd
+            ) {
+                uiView.selectedTextRange = uiView.textRange(from: newPosition, to: newPosition)
+            }
         }
 
-        // Handle focus state
-        DispatchQueue.main.async {
-            if isFocused.wrappedValue, !uiView.isFirstResponder {
-                uiView.becomeFirstResponder()
-            } else if !isFocused.wrappedValue, uiView.isFirstResponder {
-                uiView.resignFirstResponder()
+        // Handle focus state changes from SwiftUI
+        // Skip during active editing to prevent focus loss
+        if !context.coordinator.isUpdatingFromUIKit {
+            DispatchQueue.main.async {
+                if isFocused.wrappedValue, !uiView.isFirstResponder {
+                    uiView.becomeFirstResponder()
+                } else if !isFocused.wrappedValue, uiView.isFirstResponder {
+                    uiView.resignFirstResponder()
+                }
             }
         }
     }

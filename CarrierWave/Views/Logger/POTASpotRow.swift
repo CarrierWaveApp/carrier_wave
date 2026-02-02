@@ -89,9 +89,16 @@ struct POTASpotRow: View {
 
     private var callsignRow: some View {
         HStack(spacing: 4) {
+            // Human spots get a star indicator
+            if spot.isHumanSpot {
+                Image(systemName: "person.fill")
+                    .font(.caption2)
+                    .foregroundStyle(.orange)
+            }
+
             Text(spot.activator)
                 .font(.subheadline.weight(.semibold).monospaced())
-                .foregroundStyle(.primary)
+                .foregroundStyle(spot.isHumanSpot ? .primary : .secondary)
 
             if let userCallsign, spot.isSelfSpot(userCallsign: userCallsign) {
                 Text("SELF")
@@ -101,6 +108,17 @@ struct POTASpotRow: View {
                     .padding(.vertical, 2)
                     .background(Color.indigo)
                     .clipShape(Capsule())
+            }
+
+            // Show RBN badge for automated spots
+            if spot.isAutomatedSpot {
+                Text("RBN")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 4)
+                    .padding(.vertical, 1)
+                    .background(Color(.tertiarySystemFill))
+                    .clipShape(RoundedRectangle(cornerRadius: 3))
             }
         }
     }

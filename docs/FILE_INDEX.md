@@ -164,6 +164,7 @@ This index maps files to their purpose. Use it to locate files by feature instea
 | `LoggerKeyboardAccessory.swift` | Number row and command buttons above keyboard |
 | `POTASpotRow.swift` | Individual POTA spot row component |
 | `POTASpotsView.swift` | POTA activator spots panel with filtering |
+| `POTASpotsHelperViews.swift` | Helper views for POTA spots (filter sheet, loading, empty, error states) |
 | `P2PPanelView.swift` | Park-to-park opportunities panel with SNR display |
 | `SessionMapPanelView.swift` | Map panel showing session QSOs for MAP command |
 | `SpotFilters.swift` | Band and mode filter enums for spots |

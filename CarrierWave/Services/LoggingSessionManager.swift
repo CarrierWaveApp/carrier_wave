@@ -218,9 +218,12 @@ final class LoggingSessionManager {
             }
 
         // Check if this is a QSY that could be spotted
-        // Don't prompt for spot if frequency is outside amateur bands or violates license
+        // Don't prompt for spot if:
+        // - QSY spots are disabled in settings
+        // - Frequency is outside amateur bands or violates license
         var shouldPromptForSpot = false
-        if session.activationType == .pota,
+        if potaQSYSpotEnabled,
+           session.activationType == .pota,
            oldFrequency != nil,
            oldFrequency != frequency
         {
@@ -265,7 +268,9 @@ final class LoggingSessionManager {
         try? modelContext.save()
 
         // Return whether this is a QSY that could be spotted
-        return session.activationType == .pota
+        // Only prompt if QSY spots are enabled in settings
+        return potaQSYSpotEnabled
+            && session.activationType == .pota
             && oldMode != mode
     }
 
@@ -520,13 +525,28 @@ final class LoggingSessionManager {
     private var attachedSpotCommentIds: Set<Int64> = []
 
     /// Whether to keep screen on during active session (from settings)
+    /// Defaults to true if the setting hasn't been explicitly set (matches @AppStorage default)
     private var keepScreenOn: Bool {
-        UserDefaults.standard.bool(forKey: "loggerKeepScreenOn")
+        if UserDefaults.standard.object(forKey: "loggerKeepScreenOn") == nil {
+            return true
+        }
+        return UserDefaults.standard.bool(forKey: "loggerKeepScreenOn")
     }
 
     /// Whether auto-spotting is enabled (from settings)
+    /// Controls recurring spots every 10 minutes AND initial spot on session start
     private var potaAutoSpotEnabled: Bool {
         UserDefaults.standard.bool(forKey: "potaAutoSpotEnabled")
+    }
+
+    /// Whether QSY spot prompts are enabled (from settings)
+    /// When true, prompts user to post a spot after frequency/mode changes
+    /// Defaults to true if setting hasn't been explicitly set
+    private var potaQSYSpotEnabled: Bool {
+        if UserDefaults.standard.object(forKey: "potaQSYSpotEnabled") == nil {
+            return true
+        }
+        return UserDefaults.standard.bool(forKey: "potaQSYSpotEnabled")
     }
 
     /// Whether QRT spotting is enabled (from settings)

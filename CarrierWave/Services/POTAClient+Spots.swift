@@ -79,6 +79,20 @@ struct POTASpot: Decodable, Identifiable, Sendable {
         }
     }
 
+    /// Check if this is an automated spot (from RBN or similar)
+    nonisolated var isAutomatedSpot: Bool {
+        guard let source = source?.uppercased() else {
+            return false
+        }
+        // RBN = Reverse Beacon Network (automated CW/FT8 decoder)
+        return source == "RBN"
+    }
+
+    /// Check if this is a human-generated spot
+    nonisolated var isHumanSpot: Bool {
+        !isAutomatedSpot
+    }
+
     /// Check if this spot is a self-spot for the given user callsign
     nonisolated func isSelfSpot(userCallsign: String) -> Bool {
         let normalizedUser = Self.normalizeCallsign(userCallsign)
