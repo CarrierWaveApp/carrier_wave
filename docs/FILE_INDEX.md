@@ -38,7 +38,7 @@ This index maps files to their purpose. Use it to locate files by feature instea
 | `CWConversation.swift` | CW conversation and message models for chat display |
 | `CallsignInfo.swift` | Callsign lookup result with name, note, emoji, source |
 | `LoggingSession.swift` | Logging session model with activation type, frequency, mode |
-| `LoggerCommand.swift` | Command enum for logger input (FREQ, MODE, SPOT, RBN, SOLAR, WEATHER, MAP) |
+| `LoggerCommand.swift` | Command enum for logger input (FREQ, MODE, SPOT, RBN, POTA, P2P, SOLAR, WEATHER, MAP) |
 | `CallsignNotesSource.swift` | SwiftData model for user-configured callsign notes file sources |
 | `BandPlan.swift` | US amateur radio band plan data with license class privileges |
 | `UserProfile.swift` | User's amateur radio profile (callsign, name, QTH, grid, license) |
@@ -123,6 +123,7 @@ This index maps files to their purpose. Use it to locate files by feature instea
 | `POTAClient+Spot.swift` | POTA self-spotting extension |
 | `POTAClient+Spots.swift` | POTA spots and spot comments API |
 | `SpotsService.swift` | Combined RBN + POTA spots service |
+| `P2PService.swift` | Park-to-park discovery via RBN skimmers near user's grid |
 | `SpotCommentsService.swift` | Background polling for POTA spot comments |
 | `SpotMonitoringService.swift` | Background RBN/POTA spot polling during logging sessions |
 | `BandPlanService.swift` | Validates frequency/mode against license class privileges |
@@ -161,6 +162,7 @@ This index maps files to their purpose. Use it to locate files by feature instea
 | `LoggerKeyboardAccessory.swift` | Number row and command buttons above keyboard |
 | `POTASpotRow.swift` | Individual POTA spot row component |
 | `POTASpotsView.swift` | POTA activator spots panel with filtering |
+| `P2PPanelView.swift` | Park-to-park opportunities panel with SNR display |
 | `SessionMapPanelView.swift` | Map panel showing session QSOs for MAP command |
 | `SpotFilters.swift` | Band and mode filter enums for spots |
 | `QuickEntryPreview.swift` | Quick entry token display with color-coded badges |

@@ -19,6 +19,9 @@ enum LoggerCommand: Equatable {
     /// Show POTA spots panel
     case pota
 
+    /// Show P2P (park-to-park) opportunities panel
+    case p2p
+
     /// Show solar conditions panel
     case solar
 
@@ -52,6 +55,8 @@ enum LoggerCommand: Equatable {
         RBN [callsign]  - Show RBN/POTA spots
                           e.g., RBN W1AW (or just RBN for your spots)
         POTA            - Show POTA activator spots
+        P2P             - Find park-to-park opportunities
+                          (POTA activations only)
         SOLAR           - Show solar conditions
         WEATHER         - Show weather (or WX)
         MAP             - Show session QSO map
@@ -84,6 +89,8 @@ enum LoggerCommand: Equatable {
             }
         case .pota:
             "Show POTA spots"
+        case .p2p:
+            "Find P2P opportunities"
         case .solar:
             "Show solar conditions"
         case .weather:
@@ -112,6 +119,8 @@ enum LoggerCommand: Equatable {
             "dot.radiowaves.up.forward"
         case .pota:
             "tree.fill"
+        case .p2p:
+            "arrow.left.arrow.right"
         case .solar:
             "sun.max"
         case .weather:
@@ -147,6 +156,9 @@ enum LoggerCommand: Equatable {
             return cmd
         }
         if let cmd = parsePOTA(upper: upper) {
+            return cmd
+        }
+        if let cmd = parseP2P(upper: upper) {
             return cmd
         }
         if let cmd = parseNote(trimmed: trimmed, upper: upper) {
@@ -239,6 +251,13 @@ enum LoggerCommand: Equatable {
     private static func parsePOTA(upper: String) -> LoggerCommand? {
         if upper == "POTA" || upper == "SPOTS" {
             return .pota
+        }
+        return nil
+    }
+
+    private static func parseP2P(upper: String) -> LoggerCommand? {
+        if upper == "P2P" {
+            return .p2p
         }
         return nil
     }
@@ -337,6 +356,11 @@ extension LoggerCommand {
         CommandSuggestion(
             command: "POTA", description: "Show POTA activator spots",
             icon: "tree.fill", prefixes: ["PO"], exact: ["P"]
+        ),
+        // P2P
+        CommandSuggestion(
+            command: "P2P", description: "Find P2P opportunities",
+            icon: "arrow.left.arrow.right", prefixes: ["P2"]
         ),
         // SOLAR
         CommandSuggestion(

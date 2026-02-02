@@ -156,6 +156,70 @@ extension RBNStats: Decodable {
     }
 }
 
+// MARK: - RBNSkimmer
+
+/// An active skimmer from the RBN network
+struct RBNSkimmer: Identifiable, Sendable {
+    let spotter: String
+    let spotCount: Int
+    let lastSpot: Date?
+    let modes: [String]?
+
+    var id: String {
+        spotter
+    }
+
+    /// Alias for compatibility
+    var callsign: String {
+        spotter
+    }
+}
+
+// MARK: Decodable
+
+extension RBNSkimmer: Decodable {
+    enum CodingKeys: String, CodingKey {
+        case spotter
+        case spotCount
+        case lastSpot
+        case modes
+    }
+
+    nonisolated init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        spotter = try container.decode(String.self, forKey: .spotter)
+        spotCount = try container.decode(Int.self, forKey: .spotCount)
+        lastSpot = try container.decodeIfPresent(Date.self, forKey: .lastSpot)
+        modes = try container.decodeIfPresent([String].self, forKey: .modes)
+    }
+}
+
+// MARK: - RBNSkimmersResponse
+
+/// Response wrapper from the /skimmers endpoint
+struct RBNSkimmersResponse: Sendable {
+    let count: Int
+    let hours: Int
+    let skimmers: [RBNSkimmer]
+}
+
+// MARK: Decodable
+
+extension RBNSkimmersResponse: Decodable {
+    nonisolated init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        count = try container.decode(Int.self, forKey: .count)
+        hours = try container.decode(Int.self, forKey: .hours)
+        skimmers = try container.decode([RBNSkimmer].self, forKey: .skimmers)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case count
+        case hours
+        case skimmers
+    }
+}
+
 // MARK: - RBNClient
 
 /// Client for the Vail ReRBN API
@@ -262,6 +326,67 @@ actor RBNClient {
 
         let decoder = JSONDecoder()
         return try decoder.decode(RBNStats.self, from: data)
+    }
+
+    /// Fetch active skimmers from RBN
+    /// - Parameter hours: Time range to consider (default 1 hour)
+    /// - Returns: List of active skimmers with grid squares
+    func fetchSkimmers(hours: Int = 1) async throws -> [RBNSkimmer] {
+        var components = URLComponents(string: "\(baseURL)/skimmers")!
+        components.queryItems = [
+            URLQueryItem(name: "hours", value: String(hours)),
+        ]
+
+        guard let url = components.url else {
+            throw RBNError.invalidURL
+        }
+
+        let (data, response) = try await performRequest(url)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw RBNError.invalidResponse("Not an HTTP response")
+        }
+
+        checkRateLimitHeaders(httpResponse)
+
+        guard httpResponse.statusCode == 200 else {
+            if httpResponse.statusCode == 429 {
+                throw RBNError.rateLimited
+            }
+            throw RBNError.invalidResponse("HTTP \(httpResponse.statusCode)")
+        }
+
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let skimmersResponse = try decoder.decode(RBNSkimmersResponse.self, from: data)
+        return skimmersResponse.skimmers
+    }
+
+    /// Fetch spots from a specific skimmer
+    /// - Parameters:
+    ///   - spotter: The skimmer callsign to filter by
+    ///   - hours: Time range (default 1 hour)
+    ///   - limit: Maximum spots to return (default 100)
+    /// - Returns: List of spots from this skimmer
+    func spots(spotter: String, hours: Int = 1, limit: Int = 100) async throws -> [RBNSpot] {
+        var components = URLComponents(string: "\(baseURL)/spots")!
+        components.queryItems = [
+            URLQueryItem(name: "spotter", value: spotter),
+            URLQueryItem(name: "limit", value: String(limit)),
+        ]
+
+        // Add time filter
+        let since = Date().addingTimeInterval(-Double(hours) * 3_600)
+        let formatter = ISO8601DateFormatter()
+        components.queryItems?.append(
+            URLQueryItem(name: "since", value: formatter.string(from: since))
+        )
+
+        guard let url = components.url else {
+            throw RBNError.invalidURL
+        }
+
+        return try await fetchSpots(from: url)
     }
 
     // MARK: Private

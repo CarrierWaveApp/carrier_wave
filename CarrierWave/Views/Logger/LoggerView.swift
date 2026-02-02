@@ -282,6 +282,7 @@ struct LoggerView: View {
     @State private var showSolarPanel = false
     @State private var showWeatherPanel = false
     @State private var showPOTAPanel = false
+    @State private var showP2PPanel = false
     @State private var showHelpSheet = false
     @State private var showHiddenQSOsSheet = false
 
@@ -600,12 +601,53 @@ struct LoggerView: View {
                 .padding()
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
+
+            if showP2PPanel {
+                SwipeToDismissPanel(isPresented: $showP2PPanel) {
+                    P2PPanelView(
+                        userCallsign: sessionManager?.activeSession?.myCallsign ?? "",
+                        userGrid: sessionManager?.activeSession?.myGrid
+                            ?? UserDefaults.standard.string(forKey: "loggerDefaultGrid") ?? "",
+                        initialBand: sessionManager?.activeSession?.band,
+                        initialMode: sessionManager?.activeSession?.mode,
+                        onDismiss: { showP2PPanel = false },
+                        onSelectOpportunity: { opportunity in
+                            // Save session frequency before tuning to spot
+                            preSpotFrequency = sessionManager?.activeSession?.frequency
+
+                            // Auto-fill form fields from opportunity
+                            callsignInput = opportunity.callsign
+
+                            _ = sessionManager?.updateFrequency(opportunity.frequencyMHz)
+
+                            // Build notes from park info (P2P format)
+                            var noteParts: [String] = ["P2P", opportunity.parkRef]
+                            if let loc = opportunity.locationDesc {
+                                let state = loc.components(separatedBy: "-").last ?? loc
+                                noteParts.append(state)
+                            }
+                            if let parkName = opportunity.parkName {
+                                noteParts.append(parkName)
+                            }
+                            notes = noteParts.joined(separator: " - ")
+
+                            showP2PPanel = false
+                            ToastManager.shared.info(
+                                "P2P: \(opportunity.callsign) @ \(opportunity.parkRef)"
+                            )
+                        }
+                    )
+                }
+                .padding()
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
         }
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: showRBNPanel)
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: showSolarPanel)
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: showWeatherPanel)
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: showMapPanel)
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: showPOTAPanel)
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: showP2PPanel)
     }
 
     /// Session header - shows active session info or "no session" prompt
@@ -1140,6 +1182,7 @@ struct LoggerView: View {
         case let .spot(comment): Task { await postSpot(comment: comment) }
         case let .rbn(callsign): executeRBNCommand(callsign)
         case .pota: showPOTAPanel = true
+        case .p2p: executeP2PCommand()
         case .solar: showSolarPanel = true
         case .weather: showWeatherPanel = true
         case .map: executeMapCommand()
@@ -1178,6 +1221,26 @@ struct LoggerView: View {
     private func executeRBNCommand(_ callsign: String?) {
         rbnTargetCallsign = callsign
         showRBNPanel = true
+    }
+
+    private func executeP2PCommand() {
+        // P2P only works during POTA activations
+        guard sessionManager?.activeSession?.activationType == .pota else {
+            ToastManager.shared.error("P2P is only available during POTA activations")
+            return
+        }
+
+        // Check for user grid
+        let myGrid =
+            sessionManager?.activeSession?.myGrid
+                ?? UserDefaults.standard.string(forKey: "loggerDefaultGrid")
+
+        if myGrid == nil || myGrid?.isEmpty == true {
+            ToastManager.shared.error("Set your grid in session settings to find P2P opportunities")
+            return
+        }
+
+        showP2PPanel = true
     }
 
     private func executeMapCommand() {

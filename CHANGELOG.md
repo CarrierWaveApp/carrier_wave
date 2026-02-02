@@ -22,6 +22,11 @@ All notable changes to Carrier Wave will be documented in this file.
 - Auto-attach POTA spot comments to matching QSOs as notes
 - QRT spot posted automatically when ending POTA session (if session was spotted)
 - Setting to enable/disable QRT spotting (Settings → POTA Activations)
+- **P2P command** - Find park-to-park opportunities during POTA activations
+  - Type `P2P` in logger to discover other POTA activators heard by nearby RBN skimmers
+  - Cross-references POTA spots with RBN data from skimmers within 500km of your grid
+  - Shows SNR, frequency, park info, and age for each opportunity
+  - Tap to auto-fill callsign, frequency, and P2P notes in logger
 
 ### Changed
 - RBN spots now limited to last 10 minutes (was 6 hours)
