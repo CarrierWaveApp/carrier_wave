@@ -32,6 +32,9 @@ final class SpotCommentsService {
     /// Last error (if any)
     private(set) var lastError: String?
 
+    /// Callback when new comments are received (comments that haven't been seen before)
+    var onNewComments: (([POTASpotComment]) -> Void)?
+
     /// Start polling for spot comments
     /// - Parameters:
     ///   - activator: The activator's callsign
@@ -87,6 +90,7 @@ final class SpotCommentsService {
         comments = []
         newCommentCount = 0
         seenSpotIds = []
+        reportedSpotIds = []
         lastError = nil
     }
 
@@ -100,6 +104,9 @@ final class SpotCommentsService {
 
     /// Poll interval in seconds
     private let pollInterval: TimeInterval = 60
+
+    /// Track which comment IDs have been reported via callback
+    private var reportedSpotIds: Set<Int64> = []
 
     private func fetchComments() async {
         guard let activator, let parkRef else {
@@ -123,6 +130,13 @@ final class SpotCommentsService {
 
             comments = sorted
             lastError = nil
+
+            // Report truly new comments via callback (ones we haven't reported before)
+            let unreportedComments = sorted.filter { !reportedSpotIds.contains($0.spotId) }
+            if !unreportedComments.isEmpty {
+                reportedSpotIds.formUnion(unreportedComments.map(\.spotId))
+                onNewComments?(unreportedComments)
+            }
 
             if !newIds.isEmpty {
                 SyncDebugLog.shared.info(
