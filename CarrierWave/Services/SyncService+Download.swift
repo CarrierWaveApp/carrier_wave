@@ -138,12 +138,20 @@ extension SyncService {
 
         do {
             let qsos = try await withTimeout(seconds: timeout, service: .lofi) {
-                try await self.lofiClient.fetchAllQsosSinceLastSync { progress in
-                    Task { @MainActor in
-                        self.syncProgress.lofiTotalQSOs = progress.totalQSOs
-                        self.syncProgress.lofiTotalOperations = progress.totalOperations
-                        self.syncProgress.lofiDownloadedQSOs = progress.downloadedQSOs
+                try await self.lofiClient.fetchAllQsosSinceLastSync { [weak self] progress in
+                    guard let self else {
+                        return
                     }
+                    // Update progress - must modify struct to trigger @Published
+                    NSLog(
+                        "[LoFi Progress] total=%d, downloaded=%d",
+                        progress.totalQSOs, progress.downloadedQSOs
+                    )
+                    var updated = syncProgress
+                    updated.lofiTotalQSOs = progress.totalQSOs
+                    updated.lofiTotalOperations = progress.totalOperations
+                    updated.lofiDownloadedQSOs = progress.downloadedQSOs
+                    syncProgress = updated
                 }
             }
             debugLog.info("Downloaded \(qsos.count) raw QSOs from LoFi API", service: .lofi)
@@ -163,22 +171,8 @@ extension SyncService {
                 )
             }
 
-            var skippedCount = 0
-            var fetchedList: [FetchedQSO] = []
-            for (lofiQso, operation) in qsos {
-                if let fetched = FetchedQSO.fromLoFi(lofiQso, operation: operation) {
-                    fetchedList.append(fetched)
-                } else {
-                    skippedCount += 1
-                    debugLog.warning(
-                        """
-                        Skipped QSO: call=\(lofiQso.theirCall ?? "nil"), \
-                        band=\(lofiQso.band ?? "nil"), mode=\(lofiQso.mode ?? "nil")
-                        """,
-                        service: .lofi
-                    )
-                }
-            }
+            // Convert to FetchedQSO with periodic yields to avoid blocking UI
+            let (fetchedList, skippedCount) = await convertLoFiQSOsWithYielding(qsos)
 
             debugLog.info(
                 "After filtering: \(fetchedList.count) valid, \(skippedCount) skipped",
@@ -191,6 +185,30 @@ extension SyncService {
             debugLog.error("LoFi download failed: \(error.localizedDescription)", service: .lofi)
             return (.lofi, .failure(error))
         }
+    }
+
+    /// Convert LoFi QSOs to FetchedQSO format with periodic yields to avoid blocking UI
+    private func convertLoFiQSOsWithYielding(
+        _ qsos: [(LoFiQso, LoFiOperation)]
+    ) async -> ([FetchedQSO], Int) {
+        var skippedCount = 0
+        var fetchedList: [FetchedQSO] = []
+        fetchedList.reserveCapacity(qsos.count)
+
+        for (index, (lofiQso, operation)) in qsos.enumerated() {
+            if let fetched = FetchedQSO.fromLoFi(lofiQso, operation: operation) {
+                fetchedList.append(fetched)
+            } else {
+                skippedCount += 1
+            }
+
+            // Yield periodically to allow UI updates and other tasks to run
+            if index.isMultiple(of: 500) {
+                await Task.yield()
+            }
+        }
+
+        return (fetchedList, skippedCount)
     }
 
     private func logLoFiSampleQSOs(

@@ -18,11 +18,18 @@ actor QSOProcessingActor {
         let logMessages: [String]
     }
 
+    /// Progress callback info
+    struct ProgressInfo: Sendable {
+        let processed: Int
+        let total: Int
+        let phase: String
+    }
+
     /// Process fetched QSOs on background thread, returning counts and created QSO IDs.
     func processDownloadedQSOs(
         _ fetched: [FetchedQSO],
         container: ModelContainer,
-        onProgress: (@Sendable (String) -> Void)? = nil
+        onProgress: (@Sendable (ProgressInfo) -> Void)? = nil
     ) async throws -> ProcessingResult {
         var logMessages: [String] = []
 
@@ -30,8 +37,10 @@ actor QSOProcessingActor {
         let context = ModelContext(container)
         context.autosaveEnabled = false
 
+        let totalFetched = fetched.count
+
         // Group fetched QSOs by deduplication key
-        onProgress?("Grouping downloaded QSOs...")
+        onProgress?(ProgressInfo(processed: 0, total: totalFetched, phase: "Grouping QSOs..."))
         let byKey = groupByDeduplicationKey(fetched)
 
         // Log source breakdown
@@ -39,7 +48,7 @@ actor QSOProcessingActor {
         logMessages.append("Processing \(fetched.count) QSOs: \(breakdownStr)")
 
         // Fetch existing QSO deduplication keys (not full objects - we only need keys)
-        onProgress?("Loading existing QSOs...")
+        onProgress?(ProgressInfo(processed: 0, total: totalFetched, phase: "Loading database..."))
         let existingByKey = try await fetchExistingQSOKeys(context: context)
         logMessages.append("Found \(existingByKey.count) existing QSOs in database")
 
@@ -68,14 +77,20 @@ actor QSOProcessingActor {
 
             processedGroups += 1
             if processedGroups.isMultiple(of: 100) {
-                onProgress?("Processing \(processedGroups)/\(totalGroups) QSOs...")
+                onProgress?(
+                    ProgressInfo(
+                        processed: processedGroups,
+                        total: totalGroups,
+                        phase: "Processing QSOs..."
+                    )
+                )
                 // Yield periodically to allow cancellation and reduce memory pressure
                 await Task.yield()
             }
         }
 
         // Save all changes
-        onProgress?("Saving...")
+        onProgress?(ProgressInfo(processed: totalGroups, total: totalGroups, phase: "Saving..."))
         try context.save()
 
         logMessages.append("Process result: created=\(created), merged=\(merged)")

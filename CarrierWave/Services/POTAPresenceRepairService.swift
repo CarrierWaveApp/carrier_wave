@@ -24,12 +24,11 @@ class POTAPresenceRepairService {
     /// Count QSOs that are incorrectly marked for POTA upload (no park reference but needsUpload=true)
     /// Uses batched fetching to avoid loading all records at once.
     func countMismarkedQSOs() throws -> Int {
-        // First, get just the POTA presence records that need upload
-        // This filters at the database level to avoid loading all ServicePresence records
-        let potaService = ServiceType.pota
+        // SwiftData predicates don't support enum comparisons, so we filter needsUpload
+        // at the database level and filter serviceType in memory
         var descriptor = FetchDescriptor<ServicePresence>(
             predicate: #Predicate<ServicePresence> { presence in
-                presence.serviceType == potaService && presence.needsUpload
+                presence.needsUpload
             }
         )
 
@@ -48,6 +47,10 @@ class POTAPresenceRepairService {
             }
 
             for presence in batch {
+                // Filter to POTA in memory since predicates don't support enum comparison
+                guard presence.serviceType == .pota else {
+                    continue
+                }
                 guard let qso = presence.qso else {
                     continue
                 }
@@ -70,11 +73,11 @@ class POTAPresenceRepairService {
     /// Repair mismarked POTA service presence records by setting needsUpload=false
     /// for QSOs that don't have a park reference.
     func repairMismarkedQSOs() throws -> RepairResult {
-        // Filter to only POTA presence records that need upload
-        let potaService = ServiceType.pota
+        // SwiftData predicates don't support enum comparisons, so we filter needsUpload
+        // at the database level and filter serviceType in memory
         var descriptor = FetchDescriptor<ServicePresence>(
             predicate: #Predicate<ServicePresence> { presence in
-                presence.serviceType == potaService && presence.needsUpload
+                presence.needsUpload
             }
         )
 
@@ -93,6 +96,10 @@ class POTAPresenceRepairService {
             }
 
             for presence in batch {
+                // Filter to POTA in memory since predicates don't support enum comparison
+                guard presence.serviceType == .pota else {
+                    continue
+                }
                 guard let qso = presence.qso else {
                     continue
                 }
