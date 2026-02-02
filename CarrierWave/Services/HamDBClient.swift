@@ -11,8 +11,11 @@ import Foundation
 actor HamDBClient {
     // MARK: Lifecycle
 
-    init(session: URLSession = .shared) {
-        self.session = session
+    init() {
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 5
+        config.timeoutIntervalForResource = 10
+        session = URLSession(configuration: config)
     }
 
     // MARK: Internal
