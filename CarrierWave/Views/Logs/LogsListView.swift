@@ -314,7 +314,7 @@ struct LogsListContentView: View {
 
         // Parse the query
         switch QueryParser.parse(trimmed) {
-        case .success(let query):
+        case let .success(query):
             parsedQuery = query
             queryError = nil
 
@@ -338,12 +338,12 @@ struct LogsListContentView: View {
             await searchWithFilter(filter)
             isSearching = false
 
-        case .failure(let error):
+        case let .failure(error):
             parsedQuery = nil
             queryError = error
             queryAnalysis = nil
             compiledFilter = nil
-        // On error, keep showing current results
+            // On error, keep showing current results
         }
     }
 
@@ -421,7 +421,7 @@ struct QueryWarningBanner: View {
                     .controlSize(.small)
 
                     if let suggestion = analysis.warnings.first?.suggestion,
-                        suggestion.contains("after:")
+                       suggestion.contains("after:")
                     {
                         Button("Add Date Filter") {
                             onAddFilter("after:30d")
@@ -633,11 +633,11 @@ struct ServicePresenceBadge: View {
     private var isBidirectional: Bool {
         switch presence.serviceType {
         case .qrz,
-            .pota,
-            .hamrs:
+             .pota,
+             .hamrs:
             true
         case .lofi,
-            .lotw:
+             .lotw:
             false
         }
     }

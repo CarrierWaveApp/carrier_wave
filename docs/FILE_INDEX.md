@@ -149,6 +149,7 @@ This index maps files to their purpose. Use it to locate files by feature instea
 | `ParkEntryField.swift` | Enhanced park entry with search picker and shorthand |
 | `LoggerSettingsView.swift` | (Deprecated) Logger settings moved to main SettingsView |
 | `RBNPanelView.swift` | Combined RBN/POTA spots panel with mini-map |
+| `SpotsMiniMapView.swift` | Map view showing spotter locations with arcs to target |
 | `SpotCommentsSheet.swift` | POTA spot comments display sheet |
 | `SolarPanelView.swift` | Solar conditions panel (K-index, SFI, propagation) |
 | `WeatherPanelView.swift` | Weather conditions panel from NOAA |

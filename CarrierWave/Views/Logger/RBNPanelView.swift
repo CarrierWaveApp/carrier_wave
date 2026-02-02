@@ -3,7 +3,6 @@
 // Displays combined RBN and POTA spots for a callsign
 // with optional mini-map showing spotter locations.
 
-import MapKit
 import SwiftUI
 
 // MARK: - RBNPanelView
@@ -53,13 +52,17 @@ struct RBNPanelView: View {
     @State private var isLoading = true
     @State private var errorMessage: String?
     @State private var showMap = false
+    @State private var targetGrid: String?
 
-    /// Created lazily on first use (view is @MainActor so this is safe)
-    private var spotsService: SpotsService {
-        SpotsService(
-            rbnClient: RBNClient(),
-            potaClient: POTAClient(authService: POTAAuthService())
-        )
+    /// Shared spots service instance for this view
+    @State private var spotsService = SpotsService(
+        rbnClient: RBNClient(),
+        potaClient: POTAClient(authService: POTAAuthService())
+    )
+
+    /// Whether any spots have location data for the map
+    private var hasMappableSpots: Bool {
+        spots.contains { $0.spotterGrid != nil }
     }
 
     // MARK: - Header
@@ -85,13 +88,15 @@ struct RBNPanelView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
-            Button {
-                showMap.toggle()
-            } label: {
-                Image(systemName: showMap ? "list.bullet" : "map")
-                    .font(.system(size: 16))
+            if hasMappableSpots {
+                Button {
+                    showMap.toggle()
+                } label: {
+                    Image(systemName: showMap ? "list.bullet" : "map")
+                        .font(.system(size: 16))
+                }
+                .buttonStyle(.borderless)
             }
-            .buttonStyle(.borderless)
 
             Button {
                 Task { await loadData() }
@@ -143,8 +148,12 @@ struct RBNPanelView: View {
     private var spotsList: some View {
         Group {
             if showMap {
-                SpotsMiniMapView(spots: spots)
-                    .frame(height: 200)
+                SpotsMiniMapView(
+                    spots: spots,
+                    targetCallsign: displayCallsign,
+                    targetGrid: targetGrid
+                )
+                .frame(height: 200)
             } else {
                 ScrollView {
                     LazyVStack(spacing: 0) {
@@ -321,117 +330,28 @@ struct RBNPanelView: View {
         errorMessage = nil
 
         do {
-            spots = try await spotsService.fetchSpots(for: displayCallsign, hours: 6)
+            // Fetch spots and target grid in parallel
+            async let spotsTask = spotsService.fetchSpots(for: displayCallsign, minutes: 10)
+            async let gridTask = lookupTargetGrid()
+
+            spots = try await spotsTask
+            targetGrid = await gridTask
+
+            // Reset map view if no spots have location data
+            if showMap, !spots.contains(where: { $0.spotterGrid != nil }) {
+                showMap = false
+            }
             isLoading = false
         } catch {
             errorMessage = error.localizedDescription
             isLoading = false
         }
     }
-}
 
-// MARK: - SpotsMiniMapView
-
-struct SpotsMiniMapView: View {
-    // MARK: Internal
-
-    let spots: [UnifiedSpot]
-
-    var body: some View {
-        Map {
-            ForEach(spotAnnotations) { annotation in
-                Marker(annotation.title, coordinate: annotation.coordinate)
-                    .tint(annotation.color)
-            }
-        }
-        .mapStyle(.standard)
+    /// Look up the grid for the target callsign (uses shared cache)
+    private func lookupTargetGrid() async -> String? {
+        await spotsService.lookupGrid(for: displayCallsign)
     }
-
-    // MARK: Private
-
-    private var spotAnnotations: [SpotMapAnnotation] {
-        spots.compactMap { spot in
-            guard let grid = spot.spotterGrid,
-                  let (lat, lon) = gridToCoordinates(grid)
-            else {
-                return nil
-            }
-
-            let color: Color =
-                switch spot.source {
-                case .rbn:
-                    if let snr = spot.snr {
-                        snrColor(snr)
-                    } else {
-                        .blue
-                    }
-                case .pota:
-                    .green
-                }
-
-            return SpotMapAnnotation(
-                id: spot.id,
-                title: spot.spotter ?? spot.callsign,
-                coordinate: CLLocationCoordinate2D(latitude: lat, longitude: lon),
-                color: color
-            )
-        }
-    }
-
-    private func snrColor(_ snr: Int) -> Color {
-        switch snr {
-        case 25...: .green
-        case 15...: .blue
-        case 5...: .orange
-        default: .red
-        }
-    }
-
-    /// Convert a Maidenhead grid square to approximate coordinates
-    private func gridToCoordinates(_ grid: String) -> (Double, Double)? {
-        let upper = grid.uppercased()
-        guard upper.count >= 4 else {
-            return nil
-        }
-
-        let chars = Array(upper)
-
-        guard let lon1 = chars[0].asciiValue, let lat1 = chars[1].asciiValue,
-              lon1 >= 65, lon1 <= 82, lat1 >= 65, lat1 <= 82
-        else {
-            return nil
-        }
-
-        guard let lon2 = chars[2].wholeNumberValue, let lat2 = chars[3].wholeNumberValue else {
-            return nil
-        }
-
-        var longitude = Double(lon1 - 65) * 20 - 180
-        longitude += Double(lon2) * 2 + 1
-
-        var latitude = Double(lat1 - 65) * 10 - 90
-        latitude += Double(lat2) + 0.5
-
-        if upper.count >= 6 {
-            if let lon3 = chars[4].asciiValue, let lat3 = chars[5].asciiValue,
-               lon3 >= 65, lon3 <= 88, lat3 >= 65, lat3 <= 88
-            {
-                longitude += Double(lon3 - 65) * (2.0 / 24.0) + (1.0 / 24.0)
-                latitude += Double(lat3 - 65) * (1.0 / 24.0) + (0.5 / 24.0)
-            }
-        }
-
-        return (latitude, longitude)
-    }
-}
-
-// MARK: - SpotMapAnnotation
-
-private struct SpotMapAnnotation: Identifiable {
-    let id: String
-    let title: String
-    let coordinate: CLLocationCoordinate2D
-    let color: Color
 }
 
 #Preview {

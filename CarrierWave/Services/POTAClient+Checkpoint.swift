@@ -31,8 +31,11 @@ enum POTADownloadConfig {
 
 extension POTAClient {
     func loadDownloadCheckpoint() -> POTADownloadCheckpoint? {
-        guard let data = try? KeychainHelper.shared.read(for: KeychainHelper.Keys.potaDownloadProgress),
-              let checkpoint = try? JSONDecoder().decode(POTADownloadCheckpoint.self, from: data)
+        guard
+            let data = try? KeychainHelper.shared.read(
+                for: KeychainHelper.Keys.potaDownloadProgress
+            ),
+            let checkpoint = try? JSONDecoder().decode(POTADownloadCheckpoint.self, from: data)
         else {
             return nil
         }
@@ -68,19 +71,26 @@ extension POTAClient {
             return state.allFetched
         }
 
-        debugLog.info("Processing \(remainingActivations.count) remaining activations", service: .pota)
+        debugLog.info(
+            "Processing \(remainingActivations.count) remaining activations", service: .pota
+        )
 
         var activationIndex = 0
         while activationIndex < remainingActivations.count {
             let batchEnd = min(activationIndex + state.currentBatchSize, remainingActivations.count)
             let batch = Array(remainingActivations[activationIndex ..< batchEnd])
 
-            logBatchStart(index: activationIndex, batchEnd: batchEnd, total: remainingActivations.count, state: state)
+            logBatchStart(
+                index: activationIndex, batchEnd: batchEnd, total: remainingActivations.count,
+                state: state
+            )
 
             let result = try await processBatch(batch, state: &state)
 
             if result.succeeded {
-                handleBatchSuccess(batchCount: batch.count, batchElapsed: result.elapsed, state: &state)
+                handleBatchSuccess(
+                    batchCount: batch.count, batchElapsed: result.elapsed, state: &state
+                )
                 activationIndex = batchEnd
             }
 
@@ -174,7 +184,9 @@ extension POTAClient {
     }
 
     /// Fetch a single activation with timeout
-    func fetchActivationWithTimeout(_ activation: POTARemoteActivation) async throws -> [POTARemoteQSO] {
+    func fetchActivationWithTimeout(_ activation: POTARemoteActivation) async throws
+        -> [POTARemoteQSO]
+    {
         try await withThrowingTaskGroup(of: [POTARemoteQSO].self) { group in
             group.addTask {
                 try await self.fetchAllActivationQSOs(
@@ -183,7 +195,9 @@ extension POTAClient {
             }
 
             group.addTask {
-                try await Task.sleep(nanoseconds: UInt64(POTADownloadConfig.perActivationTimeout * 1_000_000_000))
+                try await Task.sleep(
+                    nanoseconds: UInt64(POTADownloadConfig.perActivationTimeout * 1_000_000_000)
+                )
                 throw POTAError.fetchFailed("Activation fetch timed out")
             }
 
@@ -249,7 +263,7 @@ extension POTAClient {
 
 extension Array {
     /// Splits array into chunks of the specified size
-    func chunked(into size: Int) -> [[Element]] {
+    nonisolated func chunked(into size: Int) -> [[Element]] {
         stride(from: 0, to: count, by: size).map {
             Array(self[$0 ..< Swift.min($0 + size, count)])
         }

@@ -38,9 +38,9 @@ struct RBNSpot: Decodable, Identifiable, Sendable {
         case mode
         case timestamp
         case snr
-        case wpm = "speed"
-        case spotter = "de_call"
-        case spotterGrid = "de_grid"
+        case wpm
+        case spotter
+        case spotterGrid = "spotter_grid"
     }
 
     let id: Int
@@ -83,6 +83,7 @@ struct RBNSpot: Decodable, Identifiable, Sendable {
 
 // MARK: - RBNSpotsResponse
 
+/// Response from the /spots endpoint (with total count)
 struct RBNSpotsResponse: Sendable {
     let total: Int
     let spots: [RBNSpot]
@@ -99,6 +100,29 @@ extension RBNSpotsResponse: Decodable {
 
     private enum CodingKeys: String, CodingKey {
         case total
+        case spots
+    }
+}
+
+// MARK: - RBNCallsignSpotsResponse
+
+/// Response from the /spots/:callsign endpoint (with callsign echo)
+struct RBNCallsignSpotsResponse: Sendable {
+    let callsign: String
+    let spots: [RBNSpot]
+}
+
+// MARK: Decodable
+
+extension RBNCallsignSpotsResponse: Decodable {
+    nonisolated init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        callsign = try container.decode(String.self, forKey: .callsign)
+        spots = try container.decode([RBNSpot].self, forKey: .spots)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case callsign
         case spots
     }
 }
@@ -268,7 +292,12 @@ actor RBNClient {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
 
-        // Try to decode as response object first, then as array
+        // Try to decode as callsign response first (from /spots/:callsign endpoint)
+        if let response = try? decoder.decode(RBNCallsignSpotsResponse.self, from: data) {
+            return response.spots
+        }
+
+        // Try general spots response (from /spots endpoint with total count)
         if let response = try? decoder.decode(RBNSpotsResponse.self, from: data) {
             return response.spots
         }

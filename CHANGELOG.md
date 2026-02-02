@@ -4,8 +4,16 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- RBN spots map shows spotter locations via HamDB grid lookup with arcs to target station
+- Spotter circles sized by signal strength (SNR)
+
+### Changed
+- RBN spots now limited to last 10 minutes (was 6 hours)
+
 ### Fixed
 - Fix crash when deleting QSOs from Logs tab due to array index invalidation during SwiftUI list update
+- Fix RBN spots not appearing in spot menu due to incorrect API response field mapping
 
 ## [1.17.0] - 2026-02-01
 

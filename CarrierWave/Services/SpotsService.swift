@@ -1,7 +1,8 @@
 // Combined spots service for RBN and POTA
 //
 // Fetches and merges spots from both RBN (Reverse Beacon Network) and
-// POTA (Parks on the Air) into a unified format.
+// POTA (Parks on the Air) into a unified format. Enriches spots with
+// spotter grid squares from HamDB for map display.
 
 import Foundation
 
@@ -28,7 +29,7 @@ struct UnifiedSpot: Identifiable, Sendable {
     let snr: Int?
     let wpm: Int?
     let spotter: String?
-    let spotterGrid: String?
+    var spotterGrid: String?
 
     // POTA-specific fields
     let parkRef: String?
@@ -63,6 +64,58 @@ struct UnifiedSpot: Identifiable, Sendable {
     }
 }
 
+// MARK: - GridCache
+
+/// Shared cache for callsign grid lookups with time-based expiration
+actor GridCache {
+    // MARK: Internal
+
+    static let shared = GridCache()
+
+    /// Get a cached grid if it exists and hasn't expired
+    func get(_ callsign: String) -> String?? {
+        let key = callsign.uppercased()
+        guard let entry = cache[key] else {
+            return nil // Not in cache
+        }
+        if Date().timeIntervalSince(entry.timestamp) > expirationInterval {
+            cache.removeValue(forKey: key)
+            return nil // Expired
+        }
+        return entry.grid // Return cached value (may be nil if lookup found nothing)
+    }
+
+    /// Store a grid lookup result
+    func set(_ callsign: String, grid: String?) {
+        let key = callsign.uppercased()
+        cache[key] = CacheEntry(grid: grid, timestamp: Date())
+
+        // Prune old entries periodically (when cache gets large)
+        if cache.count > 200 {
+            pruneExpired()
+        }
+    }
+
+    // MARK: Private
+
+    /// Cache entry with timestamp
+    private struct CacheEntry {
+        let grid: String?
+        let timestamp: Date
+    }
+
+    private var cache: [String: CacheEntry] = [:]
+
+    /// Cache entries expire after 1 hour
+    private let expirationInterval: TimeInterval = 3_600
+
+    /// Remove expired entries
+    private func pruneExpired() {
+        let now = Date()
+        cache = cache.filter { now.timeIntervalSince($0.value.timestamp) <= expirationInterval }
+    }
+}
+
 // MARK: - SpotsService
 
 /// Service for fetching combined spots from RBN and POTA
@@ -70,9 +123,10 @@ actor SpotsService {
     // MARK: Lifecycle
 
     /// Initialize with pre-created clients from a @MainActor context
-    init(rbnClient: RBNClient, potaClient: POTAClient) {
+    init(rbnClient: RBNClient, potaClient: POTAClient, hamDBClient: HamDBClient = HamDBClient()) {
         self.rbnClient = rbnClient
         self.potaClient = potaClient
+        self.hamDBClient = hamDBClient
     }
 
     // MARK: Internal
@@ -80,12 +134,14 @@ actor SpotsService {
     /// Fetch combined spots for a callsign from both RBN and POTA
     /// - Parameters:
     ///   - callsign: The callsign to look up spots for
-    ///   - hours: How many hours back to search (for RBN)
+    ///   - minutes: How many minutes back to search (default 10)
     /// - Returns: Combined and sorted list of spots
-    func fetchSpots(for callsign: String, hours: Int = 6) async throws -> [UnifiedSpot] {
-        // Fetch from both sources concurrently
-        async let rbnSpots = fetchRBNSpots(for: callsign, hours: hours)
+    func fetchSpots(for callsign: String, minutes: Int = 10) async throws -> [UnifiedSpot] {
+        // Fetch from both sources concurrently (use 1 hour for API, filter locally)
+        async let rbnSpots = fetchRBNSpots(for: callsign, hours: 1)
         async let potaSpots = fetchPOTASpots(for: callsign)
+
+        let cutoffDate = Date().addingTimeInterval(-Double(minutes) * 60)
 
         // Combine results, handling errors gracefully
         var allSpots: [UnifiedSpot] = []
@@ -110,14 +166,101 @@ actor SpotsService {
             )
         }
 
+        // Filter to requested time window
+        let filteredSpots = allSpots.filter { $0.timestamp >= cutoffDate }
+
+        // Enrich spots with spotter grid squares from HamDB
+        let enrichedSpots = await enrichSpotsWithGrids(filteredSpots)
+
         // Sort by timestamp, most recent first
-        return allSpots.sorted { $0.timestamp > $1.timestamp }
+        return enrichedSpots.sorted { $0.timestamp > $1.timestamp }
+    }
+
+    /// Look up a grid square for a callsign, using the shared cache
+    /// - Parameter callsign: The callsign to look up
+    /// - Returns: Grid square if found, nil otherwise
+    func lookupGrid(for callsign: String) async -> String? {
+        let normalized = callsign.uppercased()
+
+        // Check shared cache first
+        if let cached = await GridCache.shared.get(normalized) {
+            return cached
+        }
+
+        // Look up from HamDB
+        let grid = try? await hamDBClient.lookup(callsign: normalized)?.grid
+        await GridCache.shared.set(normalized, grid: grid)
+        return grid
     }
 
     // MARK: Private
 
     private let rbnClient: RBNClient
     private let potaClient: POTAClient
+    private let hamDBClient: HamDBClient
+
+    /// Maximum number of spotters to look up per request (keeps UI responsive)
+    private let maxGridLookups = 15
+
+    /// Look up grids for spotters that don't have them
+    private func enrichSpotsWithGrids(_ spots: [UnifiedSpot]) async -> [UnifiedSpot] {
+        // Find unique spotters without grids that aren't already cached
+        var spottersNeedingGrids: [String] = []
+        for spotter in Set(spots.compactMap(\.spotter)) {
+            if await GridCache.shared.get(spotter) == nil {
+                spottersNeedingGrids.append(spotter)
+            }
+            if spottersNeedingGrids.count >= maxGridLookups {
+                break
+            }
+        }
+
+        // Look up grids in parallel
+        if !spottersNeedingGrids.isEmpty {
+            await lookupGrids(for: spottersNeedingGrids)
+        }
+
+        // Apply cached grids to spots
+        var enrichedSpots: [UnifiedSpot] = []
+        for spot in spots {
+            var enrichedSpot = spot
+            if enrichedSpot.spotterGrid == nil,
+               let spotter = spot.spotter,
+               let cachedGrid = await GridCache.shared.get(spotter)
+            {
+                enrichedSpot.spotterGrid = cachedGrid
+            }
+            enrichedSpots.append(enrichedSpot)
+        }
+        return enrichedSpots
+    }
+
+    /// Look up grids for callsigns in parallel
+    private func lookupGrids(for callsigns: [String]) async {
+        let client = hamDBClient
+
+        let results = await withTaskGroup(
+            of: (String, String?).self,
+            returning: [(String, String?)].self
+        ) { group in
+            for callsign in callsigns {
+                group.addTask {
+                    let grid = try? await client.lookup(callsign: callsign)?.grid
+                    return (callsign, grid)
+                }
+            }
+
+            var results: [(String, String?)] = []
+            for await result in group {
+                results.append(result)
+            }
+            return results
+        }
+
+        for (callsign, grid) in results {
+            await GridCache.shared.set(callsign, grid: grid)
+        }
+    }
 
     private func fetchRBNSpots(for callsign: String, hours: Int) async throws -> [UnifiedSpot] {
         let spots = try await rbnClient.spots(for: callsign, hours: hours, limit: 50)
