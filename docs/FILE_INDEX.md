@@ -206,6 +206,7 @@ This index maps files to their purpose. Use it to locate files by feature instea
 |------|---------|
 | `LogsContainerView.swift` | Container with segmented picker for QSOs and POTA Uploads |
 | `LogsListView.swift` | Searchable/filterable QSO list content |
+| `LogsListHelperViews.swift` | Helper views (QueryWarningBanner, QueryHelpSheet, QSORow, ServicePresenceBadge) |
 
 ## Views - POTA Activations (`CarrierWave/Views/POTAActivations/`)
 | File | Purpose |
