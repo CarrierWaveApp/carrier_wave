@@ -286,6 +286,7 @@ This index maps files to their purpose. Use it to locate files by feature instea
 | `QSOMapHelperViews.swift` | Map markers, filter sheet, callout views |
 | `MapFilterState.swift` | Observable filter state for map |
 | `QSOAnnotation.swift` | Annotation model for map markers and arcs |
+| `MapDataLoadingActor.swift` | Background actor for loading map QSO data off main thread |
 
 ## Utilities (`CarrierWave/Utilities/`)
 | File | Purpose |

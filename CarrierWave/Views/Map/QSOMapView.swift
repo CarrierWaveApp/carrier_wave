@@ -9,78 +9,14 @@ struct QSOMapView: View {
 
     var body: some View {
         ZStack {
-            Map(position: $cameraPosition) {
-                ForEach(cachedAnnotations) { annotation in
-                    Annotation(
-                        annotation.displayTitle,
-                        coordinate: annotation.coordinate,
-                        anchor: .bottom
-                    ) {
-                        QSOMarkerView(
-                            annotation: annotation,
-                            isSelected: selectedAnnotation?.id == annotation.id
-                        )
-                        .onTapGesture {
-                            withAnimation {
-                                if selectedAnnotation?.id == annotation.id {
-                                    selectedAnnotation = nil
-                                } else {
-                                    selectedAnnotation = annotation
-                                }
-                            }
-                        }
-                    }
-                }
-
-                if filterState.showPaths {
-                    ForEach(cachedArcs) { arc in
-                        MapPolyline(coordinates: arc.geodesicPath())
-                            .stroke(.blue.opacity(0.5), lineWidth: 2.5)
-                    }
-                }
+            if isLoadingQSOs {
+                loadingView
+            } else {
+                mapContentView
             }
-            .mapStyle(.standard(elevation: .realistic))
 
-            VStack {
-                HStack(alignment: .top) {
-                    ActiveFiltersView(
-                        filterState: filterState,
-                        earliestDate: earliestQSODate,
-                        latestDate: Date()
-                    )
-
-                    Spacer()
-
-                    VStack(alignment: .trailing, spacing: 4) {
-                        MapStatsOverlay(
-                            totalQSOs: totalQSOCount,
-                            visibleQSOs: filteredQSOs.count,
-                            gridCount: cachedAnnotations.count,
-                            stateCount: uniqueStates,
-                            dxccCount: uniqueDXCCEntities
-                        )
-
-                        if isLimited {
-                            Text("Limited to \(MapFilterState.maxQSOsDefault) for performance")
-                                .font(.caption2)
-                                .foregroundStyle(.orange)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 4)
-                                .background(.ultraThinMaterial, in: Capsule())
-                        }
-                    }
-                }
-                .padding()
-
-                Spacer()
-
-                if let annotation = selectedAnnotation {
-                    QSOCalloutView(annotation: annotation)
-                        .padding()
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                }
-            }
-            .animation(.easeInOut, value: selectedAnnotation?.id)
+            // Overlays shown regardless of loading state
+            overlayView
         }
         .navigationTitle("Map")
         .navigationBarTitleDisplayMode(.inline)
@@ -100,23 +36,19 @@ struct QSOMapView: View {
         .sheet(isPresented: $showingFilterSheet) {
             MapFilterSheet(
                 filterState: filterState,
-                availableBands: availableBands,
-                availableModes: availableModes,
-                availableParks: availableParks,
-                earliestDate: earliestQSODate
+                availableBands: cachedAvailableBands,
+                availableModes: cachedAvailableModes,
+                availableParks: cachedAvailableParks,
+                earliestDate: cachedEarliestQSODate
             )
             .presentationDetents([.medium, .large])
         }
         .task {
-            await loadQSOsInBackground()
-        }
-        .onChange(of: totalQSOCount) { _, newCount in
-            if newCount != lastQSOCount {
-                Task {
-                    await loadFilterOptionsInBackground()
-                }
+            // Only load if we haven't loaded initial data yet
+            guard !hasLoadedInitialData else {
+                return
             }
-            updateCachedMapData()
+            await loadDataInBackground()
         }
         .onChange(of: filterState.selectedBand) { _, _ in
             updateCachedMapData()
@@ -138,8 +70,9 @@ struct QSOMapView: View {
         }
         .onChange(of: filterState.showAllQSOs) { _, _ in
             // Reload QSOs when showAllQSOs changes since it affects fetch limit
+            hasLoadedInitialData = false
             Task {
-                await loadQSOsInBackground()
+                await loadDataInBackground()
             }
         }
         .onChange(of: filterState.showIndividualQSOs) { _, _ in
@@ -152,16 +85,13 @@ struct QSOMapView: View {
 
     // MARK: Private
 
-    /// Modes that represent activation metadata, not actual QSOs
-    private static let metadataModes: Set<String> = ["WEATHER", "SOLAR", "NOTE"]
-
-    /// Batch size for fetching filter options
-    private static let filterOptionsBatchSize = 500
+    /// Background actor for loading data off the main thread
+    private static let loadingActor = MapDataLoadingActor()
 
     @Environment(\.modelContext) private var modelContext
 
-    /// QSOs fetched on demand (not using @Query to avoid full table scan)
-    @State private var allQSOs: [QSO] = []
+    /// Snapshots fetched from background actor
+    @State private var allSnapshots: [MapQSOSnapshot] = []
 
     /// Total count of QSOs (for stats display)
     @State private var totalQSOCount: Int = 0
@@ -170,7 +100,9 @@ struct QSOMapView: View {
     @State private var showingFilterSheet = false
     @State private var selectedAnnotation: QSOAnnotation?
     @State private var cameraPosition: MapCameraPosition = .automatic
-    @State private var isLoadingQSOs = false
+    @State private var isLoadingQSOs = true
+    @State private var hasLoadedInitialData = false
+    @State private var loadingProgress: Int = 0
 
     // Cached computed values to avoid expensive recalculation on every render
     @State private var cachedAnnotations: [QSOAnnotation] = []
@@ -181,282 +113,192 @@ struct QSOMapView: View {
     @State private var cachedAvailableModes: [String] = []
     @State private var cachedAvailableParks: [String] = []
     @State private var cachedEarliestQSODate: Date?
-    @State private var lastQSOCount: Int = 0
 
-    private var filteredQSOs: [QSO] {
-        allQSOs.filter { qso in
-            // Must have their grid
-            guard qso.theirGrid?.isEmpty == false else {
-                return false
-            }
+    // Additional cached values to avoid computed property access in view body
+    @State private var cachedFilteredSnapshotCount: Int = 0
+    @State private var cachedIsLimited: Bool = false
 
-            // Date range filter
-            if let start = filterState.startDate, qso.timestamp < start {
-                return false
-            }
-            if let end = filterState.endDate, qso.timestamp > end {
-                return false
-            }
-
-            // Band filter
-            if let band = filterState.selectedBand, qso.band != band {
-                return false
-            }
-
-            // Mode filter
-            if let mode = filterState.selectedMode, qso.mode != mode {
-                return false
-            }
-
-            // Park filter
-            if let park = filterState.selectedPark, qso.parkReference != park {
-                return false
-            }
-
-            // Confirmed filter (include if confirmed by either QRZ or LoTW)
-            if filterState.confirmedOnly, !qso.lotwConfirmed, !qso.qrzConfirmed {
-                return false
-            }
-
-            return true
-        }
+    /// Filter snapshots based on current filter state
+    private var filteredSnapshots: [MapQSOSnapshot] {
+        Self.filterSnapshots(allSnapshots, with: filterState)
     }
 
-    /// QSOs to display on map, limited for performance unless showAllQSOs is enabled
-    private var displayedQSOs: [QSO] {
+    /// Snapshots to display on map, limited for performance unless showAllQSOs is enabled
+    private var displayedSnapshots: [MapQSOSnapshot] {
         if filterState.showAllQSOs {
-            return filteredQSOs
+            return filteredSnapshots
         }
-        return Array(filteredQSOs.prefix(MapFilterState.maxQSOsDefault))
+        return Array(filteredSnapshots.prefix(MapFilterState.maxQSOsDefault))
     }
 
-    /// Whether the display is limited due to too many QSOs
-    private var isLimited: Bool {
-        !filterState.showAllQSOs && filteredQSOs.count > MapFilterState.maxQSOsDefault
-    }
-
+    /// Compute annotations from displayed snapshots
     private var annotations: [QSOAnnotation] {
-        if filterState.showIndividualQSOs {
-            // Show each QSO as an individual marker
-            return displayedQSOs.compactMap { qso -> QSOAnnotation? in
-                guard let grid = qso.theirGrid, grid.count >= 4,
-                      let coordinate = MaidenheadConverter.coordinate(from: grid)
-                else {
-                    return nil
-                }
-
-                return QSOAnnotation(
-                    id: qso.id.uuidString,
-                    coordinate: coordinate,
-                    gridSquare: String(grid.prefix(4)).uppercased(),
-                    qsoCount: 1,
-                    callsigns: [qso.callsign],
-                    mostRecentDate: qso.timestamp
-                )
-            }
-        } else {
-            // Group QSOs by 4-char grid for clustering
-            var gridGroups: [String: [QSO]] = [:]
-
-            for qso in displayedQSOs {
-                guard let grid = qso.theirGrid, grid.count >= 4 else {
-                    continue
-                }
-                let gridKey = String(grid.prefix(4)).uppercased()
-                gridGroups[gridKey, default: []].append(qso)
-            }
-
-            return gridGroups.compactMap { gridKey, qsos -> QSOAnnotation? in
-                guard let coordinate = MaidenheadConverter.coordinate(from: gridKey) else {
-                    return nil
-                }
-
-                let callsigns = qsos.map(\.callsign).sorted()
-                let mostRecent = qsos.map(\.timestamp).max() ?? Date()
-
-                return QSOAnnotation(
-                    id: gridKey,
-                    coordinate: coordinate,
-                    gridSquare: gridKey,
-                    qsoCount: qsos.count,
-                    callsigns: callsigns,
-                    mostRecentDate: mostRecent
-                )
-            }
-        }
+        Self.computeAnnotations(
+            from: displayedSnapshots, showIndividual: filterState.showIndividualQSOs
+        )
     }
 
+    /// Compute arcs from displayed snapshots
     private var arcs: [QSOArc] {
         guard filterState.showPaths else {
             return []
         }
+        return Self.computeArcs(from: displayedSnapshots)
+    }
 
-        var result: [QSOArc] = []
+    // MARK: - View Components
 
-        for qso in displayedQSOs {
-            guard let myGrid = qso.myGrid,
-                  let theirGrid = qso.theirGrid,
-                  let from = MaidenheadConverter.coordinate(from: myGrid),
-                  let to = MaidenheadConverter.coordinate(from: theirGrid)
-            else {
-                continue
+    private var loadingView: some View {
+        VStack(spacing: 16) {
+            ProgressView()
+                .scaleEffect(1.5)
+            if totalQSOCount > 0 {
+                Text("Loading QSOs... \(loadingProgress)/\(totalQSOCount)")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            } else {
+                Text("Loading QSOs...")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(.systemBackground))
+    }
+
+    private var mapContentView: some View {
+        Map(position: $cameraPosition) {
+            ForEach(cachedAnnotations) { annotation in
+                Annotation(
+                    annotation.displayTitle,
+                    coordinate: annotation.coordinate,
+                    anchor: .bottom
+                ) {
+                    QSOMarkerView(
+                        annotation: annotation,
+                        isSelected: selectedAnnotation?.id == annotation.id
+                    )
+                    .onTapGesture {
+                        withAnimation {
+                            if selectedAnnotation?.id == annotation.id {
+                                selectedAnnotation = nil
+                            } else {
+                                selectedAnnotation = annotation
+                            }
+                        }
+                    }
+                }
             }
 
-            result.append(
-                QSOArc(
-                    id: qso.id.uuidString,
-                    from: from,
-                    to: to,
-                    callsign: qso.callsign
-                )
-            )
+            if filterState.showPaths {
+                ForEach(cachedArcs) { arc in
+                    MapPolyline(coordinates: arc.geodesicPath())
+                        .stroke(.blue.opacity(0.5), lineWidth: 2.5)
+                }
+            }
         }
-
-        return result
+        .mapStyle(.standard(elevation: .realistic))
     }
 
-    private var availableBands: [String] {
-        cachedAvailableBands
-    }
+    private var overlayView: some View {
+        VStack {
+            if !isLoadingQSOs {
+                HStack(alignment: .top) {
+                    ActiveFiltersView(
+                        filterState: filterState,
+                        earliestDate: cachedEarliestQSODate,
+                        latestDate: Date()
+                    )
 
-    private var availableModes: [String] {
-        cachedAvailableModes
-    }
+                    Spacer()
 
-    /// Earliest QSO date for date picker defaults
-    private var earliestQSODate: Date? {
-        cachedEarliestQSODate
-    }
+                    VStack(alignment: .trailing, spacing: 4) {
+                        MapStatsOverlay(
+                            totalQSOs: totalQSOCount,
+                            visibleQSOs: cachedFilteredSnapshotCount,
+                            gridCount: cachedAnnotations.count,
+                            stateCount: cachedUniqueStates,
+                            dxccCount: cachedUniqueDXCCEntities
+                        )
 
-    private var availableParks: [String] {
-        cachedAvailableParks
-    }
+                        if cachedIsLimited {
+                            Text("Limited to \(MapFilterState.maxQSOsDefault) for performance")
+                                .font(.caption2)
+                                .foregroundStyle(.orange)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(.ultraThinMaterial, in: Capsule())
+                        }
+                    }
+                }
+                .padding()
+            }
 
-    /// Unique US states from filtered QSOs
-    private var uniqueStates: Int {
-        cachedUniqueStates
-    }
+            Spacer()
 
-    /// Unique DXCC entities from filtered QSOs
-    private var uniqueDXCCEntities: Int {
-        cachedUniqueDXCCEntities
-    }
-
-    private func bandSortOrder(_ band: String) -> Int {
-        let order = [
-            "160M", "80M", "60M", "40M", "30M", "20M", "17M", "15M", "12M", "10M", "6M", "2M",
-            "70CM",
-        ]
-        return order.firstIndex(of: band.uppercased()) ?? 999
+            if let annotation = selectedAnnotation {
+                QSOCalloutView(annotation: annotation)
+                    .padding()
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .animation(.easeInOut, value: selectedAnnotation?.id)
     }
 
     /// Update cached annotations and arcs when data or filters change
     private func updateCachedMapData() {
+        // Cache filtered snapshots first since other computations depend on it
+        let filtered = filteredSnapshots
+        cachedFilteredSnapshotCount = filtered.count
+        cachedIsLimited = !filterState.showAllQSOs && filtered.count > MapFilterState.maxQSOsDefault
+
+        // Now compute annotations and arcs
         cachedAnnotations = annotations
         cachedArcs = arcs
 
-        // Update stats that depend on filtered QSOs
-        let filtered = filteredQSOs
+        // Update stats that depend on filtered snapshots
         cachedUniqueStates = Set(filtered.compactMap(\.state).filter { !$0.isEmpty }).count
-        cachedUniqueDXCCEntities = Set(filtered.compactMap { $0.dxccEntity?.number }).count
+        cachedUniqueDXCCEntities = Set(filtered.compactMap(\.dxccNumber)).count
     }
 
-    /// Update cached filter options from loaded QSOs
-    private func updateCachedFilterOptions() {
-        cachedAvailableBands = Array(Set(allQSOs.map(\.band))).sorted { band1, band2 in
-            bandSortOrder(band1) < bandSortOrder(band2)
-        }
-        cachedAvailableModes = Array(Set(allQSOs.map(\.mode)))
-            .filter { !Self.metadataModes.contains($0.uppercased()) }
-            .sorted()
-        cachedAvailableParks = Array(Set(allQSOs.compactMap(\.parkReference))).sorted()
-        cachedEarliestQSODate = allQSOs.map(\.timestamp).min()
-        lastQSOCount = totalQSOCount
-    }
-
-    /// Load QSOs in background with pagination
-    private func loadQSOsInBackground() async {
+    /// Load data using background actor to avoid blocking the main thread
+    private func loadDataInBackground() async {
         isLoadingQSOs = true
+        loadingProgress = 0
+        totalQSOCount = 0
 
-        // First get total count
-        let countDescriptor = FetchDescriptor<QSO>(predicate: #Predicate { !$0.isHidden })
-        totalQSOCount = (try? modelContext.fetchCount(countDescriptor)) ?? 0
+        let container = modelContext.container
+        let fetchLimit = filterState.showAllQSOs ? nil : MapFilterState.maxQSOsDefault * 2
 
-        // Determine how many to fetch based on filter settings
-        let fetchLimit = filterState.showAllQSOs ? totalQSOCount : MapFilterState.maxQSOsDefault * 2
+        do {
+            let data = try await Self.loadingActor.loadMapData(
+                container: container,
+                fetchLimit: fetchLimit,
+                onProgress: { [self] progress in
+                    Task { @MainActor in
+                        loadingProgress = progress.loaded
+                        totalQSOCount = progress.total
+                    }
+                }
+            )
 
-        // Fetch QSOs with limit
-        var descriptor = FetchDescriptor<QSO>(predicate: #Predicate { !$0.isHidden })
-        descriptor.sortBy = [SortDescriptor(\.timestamp, order: .reverse)]
-        descriptor.fetchLimit = fetchLimit
+            // Apply results on main actor
+            allSnapshots = data.snapshots
+            totalQSOCount = data.totalCount
+            cachedAvailableBands = data.availableBands
+            cachedAvailableModes = data.availableModes
+            cachedAvailableParks = data.availableParks
+            cachedEarliestQSODate = data.earliestDate
 
-        if let fetched = try? modelContext.fetch(descriptor) {
-            allQSOs = fetched
+            updateCachedMapData()
+            hasLoadedInitialData = true
+        } catch {
+            // Handle cancellation silently, log other errors
+            if !(error is CancellationError) {
+                print("Map data loading failed: \(error)")
+            }
         }
 
-        // Load filter options in background
-        await loadFilterOptionsInBackground()
-
-        updateCachedMapData()
         isLoadingQSOs = false
-    }
-
-    /// Load filter options by scanning QSOs in batches (for large datasets)
-    private func loadFilterOptionsInBackground() async {
-        var bands: Set<String> = []
-        var modes: Set<String> = []
-        var parks: Set<String> = []
-        var earliestDate: Date?
-
-        // For small datasets, just use loaded QSOs
-        if totalQSOCount <= MapFilterState.maxQSOsDefault * 2 {
-            updateCachedFilterOptions()
-            return
-        }
-
-        // For large datasets, scan in batches
-        var offset = 0
-        let batchSize = Self.filterOptionsBatchSize
-
-        while offset < totalQSOCount {
-            var descriptor = FetchDescriptor<QSO>(predicate: #Predicate { !$0.isHidden })
-            descriptor.sortBy = [SortDescriptor(\.timestamp, order: .reverse)]
-            descriptor.fetchOffset = offset
-            descriptor.fetchLimit = batchSize
-
-            guard let batch = try? modelContext.fetch(descriptor) else {
-                break
-            }
-
-            if batch.isEmpty {
-                break
-            }
-
-            // Collect unique values
-            for qso in batch {
-                bands.insert(qso.band)
-                modes.insert(qso.mode)
-                if let park = qso.parkReference {
-                    parks.insert(park)
-                }
-                if earliestDate == nil || qso.timestamp < earliestDate! {
-                    earliestDate = qso.timestamp
-                }
-            }
-
-            offset += batchSize
-            await Task.yield()
-        }
-
-        // Update cached values
-        cachedAvailableBands = Array(bands).sorted { band1, band2 in
-            bandSortOrder(band1) < bandSortOrder(band2)
-        }
-        cachedAvailableModes = Array(modes)
-            .filter { !Self.metadataModes.contains($0.uppercased()) }
-            .sorted()
-        cachedAvailableParks = Array(parks).sorted()
-        cachedEarliestQSODate = earliestDate
-        lastQSOCount = totalQSOCount
     }
 }

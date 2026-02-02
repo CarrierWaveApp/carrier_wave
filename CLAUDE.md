@@ -108,9 +108,22 @@ Carrier Wave is a SwiftUI/SwiftData iOS app for amateur radio QSO (contact) logg
 
 ### Background Work Requirements
 
-1. **All statistics computation MUST use cooperative yielding** (`Task.yield()` between phases)
-2. **All bulk data loading MUST happen off the main thread** or use pagination
+1. **All bulk data loading MUST happen on a background actor** — create a new `ModelContext(container)` on the actor
+2. **Convert managed objects to `Sendable` snapshots** immediately after fetching, before crossing actor boundaries
 3. **All network fetches MUST be cancellable** and not block UI updates
+
+**Pattern for background SwiftData loading:**
+```swift
+actor MyLoadingActor {
+    func loadData(container: ModelContainer) async throws -> [MySnapshot] {
+        let context = ModelContext(container)  // Create context on background actor
+        context.autosaveEnabled = false
+        // Fetch and convert to Sendable snapshots here
+    }
+}
+```
+
+See `StatsComputationActor`, `MapDataLoadingActor` for full examples.
 
 See [Performance Guidelines](docs/PERFORMANCE.md) for detailed patterns and examples.
 

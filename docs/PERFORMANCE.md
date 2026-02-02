@@ -275,11 +275,19 @@ for qso in qsos {
 }
 ```
 
-### Background Thread Aggregates (REQUIRED for Large Tables)
+### Background Thread Data Loading (REQUIRED for Large Tables)
 
-**All statistics and aggregates over QSO or ServicePresence MUST be computed on a background thread.**
+**All data loading, statistics, and aggregates over QSO or ServicePresence MUST be computed on a background thread.**
 
-SwiftData `ModelContext` is thread-confined, but you can create a new context on a background thread from the same `ModelContainer`. Use this pattern for any aggregate computation:
+SwiftData `ModelContext` can be created on any thread from a `ModelContainer`. Create a new context on a background actor and perform all fetching there. This is the standard pattern used throughout the app:
+
+**Existing implementations to reference:**
+- `StatsComputationActor` - Dashboard statistics computation
+- `MapDataLoadingActor` - Map view QSO loading
+- `AsyncServicePresenceCounts` - Service presence counting
+- `QSOProcessingActor` - Sync service QSO processing
+
+Use this pattern for any data loading or aggregate computation:
 
 **DO:**
 ```swift
