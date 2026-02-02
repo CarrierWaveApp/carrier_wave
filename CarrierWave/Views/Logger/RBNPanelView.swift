@@ -196,6 +196,17 @@ struct RBNPanelView: View {
             // Source indicator
             sourceIndicator(spot)
 
+            // Self-spot badge
+            if spot.isSelfSpot(userCallsign: callsign) {
+                Text("SELF")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Color.indigo)
+                    .clipShape(Capsule())
+            }
+
             VStack(alignment: .leading, spacing: 2) {
                 HStack {
                     if let spotter = spot.spotter {
