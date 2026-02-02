@@ -214,8 +214,10 @@ This index maps files to their purpose. Use it to locate files by feature instea
 | File | Purpose |
 |------|---------|
 | `POTAActivationsView.swift` | POTA activations grouped by park with upload |
-| `POTAActivationsHelperViews.swift` | Helper views for POTA activations (rows, sheets) |
+| `POTAActivationsHelperViews.swift` | Helper views for POTA activations (rows, sheets, share) |
 | `POTALogEntryRow.swift` | Individual POTA log entry display (legacy) |
+| `ActivationShareCardView.swift` | Shareable activation card with map and stats |
+| `ActivationShareRenderer.swift` | Render activation card to UIImage for sharing |
 
 ## Views - Challenges (`CarrierWave/Views/Challenges/`)
 | File | Purpose |

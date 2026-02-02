@@ -4,6 +4,13 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **Activation Share Cards** - Share POTA activation summaries as images
+  - Swipe right on any activation in POTA Uploads to reveal Share action
+  - Card shows map with QSO locations and geodesic arcs to your location
+  - Displays park reference, name, date, and stats (QSOs, duration, bands, modes)
+  - Branded Carrier Wave styling for social sharing
+
 ## [1.18.0] - 2026-02-02
 
 ### Fixed

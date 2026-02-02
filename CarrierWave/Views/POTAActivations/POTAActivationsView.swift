@@ -79,6 +79,13 @@ struct POTAActivationsContentView: View {
                 Text(rejectMessage(for: parkDisplay, pendingCount: activation.pendingCount))
             }
         }
+        .sheet(item: $activationToShare) { activation in
+            ActivationShareSheet(
+                activation: activation,
+                parkName: parkName(for: activation.parkReference),
+                myGrid: activation.qsos.first?.myGrid
+            )
+        }
         .task {
             await loadParkQSOs()
             if isAuthenticated, potaClient != nil, jobs.isEmpty {
@@ -112,6 +119,7 @@ struct POTAActivationsContentView: View {
     @State private var errorMessage: String?
     @State private var activationToUpload: POTAActivation?
     @State private var activationToReject: POTAActivation?
+    @State private var activationToShare: POTAActivation?
     @State private var maintenanceTimeRemaining: String?
     @State private var maintenanceTimer: Timer?
     @State private var cachedParkNames: [String: String] = [:]
@@ -207,6 +215,7 @@ struct POTAActivationsContentView: View {
                             showUploadButton: isAuthenticated,
                             onUploadTapped: { activationToUpload = activation },
                             onRejectTapped: { activationToReject = activation },
+                            onShareTapped: { activationToShare = activation },
                             showParkReference: true
                         )
                     }
@@ -224,7 +233,8 @@ struct POTAActivationsContentView: View {
                             isUploadDisabled: isInMaintenance || potaClient == nil,
                             showUploadButton: isAuthenticated,
                             onUploadTapped: { activationToUpload = activation },
-                            onRejectTapped: { activationToReject = activation }
+                            onRejectTapped: { activationToReject = activation },
+                            onShareTapped: { activationToShare = activation }
                         )
                     }
                 } header: {

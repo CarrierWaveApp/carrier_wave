@@ -15,6 +15,7 @@ struct ActivationRow: View {
     var showUploadButton: Bool = true
     let onUploadTapped: () -> Void
     let onRejectTapped: () -> Void
+    let onShareTapped: () -> Void
     var showParkReference: Bool = false
 
     var body: some View {
@@ -68,6 +69,14 @@ struct ActivationRow: View {
                 }
                 .tint(.red)
             }
+        }
+        .swipeActions(edge: .leading, allowsFullSwipe: false) {
+            Button {
+                onShareTapped()
+            } label: {
+                Label("Share", systemImage: "square.and.arrow.up")
+            }
+            .tint(.blue)
         }
     }
 
@@ -250,5 +259,66 @@ struct UploadDetailRow: View {
             Text(value)
                 .fontWeight(.medium)
         }
+    }
+}
+
+// MARK: - ActivationShareSheet
+
+struct ActivationShareSheet: View {
+    // MARK: Internal
+
+    let activation: POTAActivation
+    let parkName: String?
+    let myGrid: String?
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 24) {
+                // Preview of the share card
+                ActivationShareCardView(
+                    activation: activation,
+                    parkName: parkName,
+                    myGrid: myGrid
+                )
+                .scaleEffect(0.85)
+                .frame(width: 340, height: 510)
+
+                Spacer()
+
+                // Share button
+                Button {
+                    shareActivation()
+                } label: {
+                    Label("Share", systemImage: "square.and.arrow.up")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+            }
+            .padding()
+            .navigationTitle("Share Activation")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+        .presentationDetents([.large])
+    }
+
+    // MARK: Private
+
+    @Environment(\.dismiss) private var dismiss
+
+    private func shareActivation() {
+        ActivationShareHelper.shareActivation(
+            activation,
+            parkName: parkName,
+            myGrid: myGrid,
+            from: nil
+        )
     }
 }

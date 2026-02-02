@@ -85,6 +85,49 @@ struct POTAActivation: Identifiable {
         pendingCount > 0
     }
 
+    // MARK: - Stats for Sharing
+
+    /// Duration of the activation (first QSO to last QSO)
+    var duration: TimeInterval {
+        guard let first = qsos.min(by: { $0.timestamp < $1.timestamp }),
+              let last = qsos.max(by: { $0.timestamp < $1.timestamp })
+        else {
+            return 0
+        }
+        return last.timestamp.timeIntervalSince(first.timestamp)
+    }
+
+    /// Formatted duration string (e.g., "2h 15m" or "45m")
+    var formattedDuration: String {
+        let totalMinutes = Int(duration) / 60
+        let hours = totalMinutes / 60
+        let minutes = totalMinutes % 60
+        if hours > 0 {
+            return "\(hours)h \(minutes)m"
+        }
+        return "\(minutes)m"
+    }
+
+    /// Unique bands worked during this activation
+    var uniqueBands: Set<String> {
+        Set(qsos.map(\.band))
+    }
+
+    /// Unique modes used during this activation
+    var uniqueModes: Set<String> {
+        Set(qsos.map(\.mode))
+    }
+
+    /// QSOs that have valid grid squares for mapping
+    var mappableQSOs: [QSO] {
+        qsos.filter { qso in
+            guard let grid = qso.theirGrid, grid.count >= 4 else {
+                return false
+            }
+            return true
+        }
+    }
+
     /// Whether this activation has been rejected (all non-uploaded QSOs are rejected)
     var isRejected: Bool {
         let notUploaded = qsos.filter { !$0.isPresentInPOTA() }
