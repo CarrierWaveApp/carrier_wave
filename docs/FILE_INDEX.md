@@ -191,6 +191,8 @@ This index maps files to their purpose. Use it to locate files by feature instea
 | `QSOStatistics.swift` | QSO statistics calculations (entities, grids, bands, parks, frequencies) |
 | `QSOStatistics+Streaks.swift` | Streak calculation extensions for QSOStatistics |
 | `AsyncQSOStatistics.swift` | Progressive stats computation wrapper with cooperative yielding |
+| `AsyncServicePresenceCounts.swift` | Background computation of service presence counts |
+| `StatsComputationActor.swift` | Background actor for QSO statistics computation |
 | `ServiceListView.swift` | Vertical stacked service list with status indicators |
 | `ServiceDetailSheet.swift` | Service detail sheet for tap-through actions |
 | `StatDetailView.swift` | Drilldown view for stat categories |
