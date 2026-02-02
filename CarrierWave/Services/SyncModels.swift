@@ -76,12 +76,29 @@ struct SyncProgress {
     /// LoFi-specific: QSOs downloaded so far
     var lofiDownloadedQSOs: Int = 0
 
+    /// Processing phase: total QSOs to process
+    var processingTotalQSOs: Int = 0
+
+    /// Processing phase: QSOs processed so far
+    var processingProcessedQSOs: Int = 0
+
+    /// Processing phase: current phase description
+    var processingPhase: String = ""
+
     /// LoFi progress as a fraction (0.0 to 1.0), or nil if total unknown
     var lofiProgress: Double? {
         guard let total = lofiTotalQSOs, total > 0 else {
             return nil
         }
         return min(Double(lofiDownloadedQSOs) / Double(total), 1.0)
+    }
+
+    /// Processing progress as a fraction (0.0 to 1.0), or nil if not processing
+    var processingProgress: Double? {
+        guard processingTotalQSOs > 0 else {
+            return nil
+        }
+        return min(Double(processingProcessedQSOs) / Double(processingTotalQSOs), 1.0)
     }
 
     /// Reset progress for a new sync
@@ -91,12 +108,22 @@ struct SyncProgress {
         lofiTotalQSOs = nil
         lofiTotalOperations = nil
         lofiDownloadedQSOs = 0
+        processingTotalQSOs = 0
+        processingProcessedQSOs = 0
+        processingPhase = ""
     }
 
     /// Add downloaded QSOs for a service
     mutating func addDownloaded(_ count: Int, for service: ServiceType) {
         downloadedQSOCount += count
         downloadedByService[service, default: 0] += count
+    }
+
+    /// Update processing progress
+    mutating func updateProcessing(processed: Int, total: Int, phase: String) {
+        processingProcessedQSOs = processed
+        processingTotalQSOs = total
+        processingPhase = phase
     }
 }
 

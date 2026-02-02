@@ -9,6 +9,7 @@ All notable changes to Carrier Wave will be documented in this file.
   - Field-specific queries like `band:6m` now use database predicates for efficient full-table search
   - Fixed case mismatch bug where band queries failed (bands stored lowercase, query used uppercase)
 - LoFi sync progress bar now displays during parallel service downloads
+- Fixed POTA presence repair service crash due to SwiftData predicate not supporting enum values
 - Dashboard no longer freezes UI when loading statistics for large QSO databases
   - Statistics computation now runs entirely on a background thread
   - Progress bar shows loading progress under Activity card
@@ -16,6 +17,14 @@ All notable changes to Carrier Wave will be documented in this file.
 - Sync processing no longer freezes UI at the end of QSO loading
   - QSO deduplication and creation now runs on a background thread
   - UI stays responsive during the "Processing" phase of sync
+- LoFi sync no longer freezes UI during operation downloads
+  - Parallel downloads with adaptive concurrency (2-8 concurrent requests)
+  - Automatic backoff and concurrency reduction on errors
+  - UI remains responsive during large syncs
+- QSO conversion after download now yields periodically
+  - Prevents UI freeze when processing large batches of downloaded QSOs
+- Processing phase now shows progress bar instead of indefinite spinner
+  - Displays current phase (Grouping, Loading, Processing, Saving)
 
 ### Added
 - Dynamic sync progress indicator shows QSO count as services complete

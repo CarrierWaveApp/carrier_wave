@@ -288,29 +288,22 @@ final class LoFiClient {
         let isFreshSync = lastSyncMillis == 0
         let debugLog = SyncDebugLog.shared
 
-        NSLog("[LoFi] ========== STARTING SYNC ==========")
         debugLog.info("Starting LoFi sync", service: .lofi)
-
-        NSLog("[LoFi] Callsign: %@", getCallsign() ?? "unknown")
         debugLog.info("Callsign: \(getCallsign() ?? "unknown")", service: .lofi)
 
-        NSLog("[LoFi] Last Sync Millis: %lld", lastSyncMillis)
         if lastSyncMillis > 0 {
             let lastSyncDate = Date(timeIntervalSince1970: Double(lastSyncMillis) / 1_000.0)
             let formatter = ISO8601DateFormatter()
-            NSLog("[LoFi] Last Sync Date: %@", formatter.string(from: lastSyncDate))
             debugLog.info("Last sync: \(formatter.string(from: lastSyncDate))", service: .lofi)
         } else {
             debugLog.info("Last sync: Never (fresh sync)", service: .lofi)
         }
-        NSLog("[LoFi] Is Fresh Sync: %@", isFreshSync ? "true" : "false")
 
         // Re-register to get fresh account info (including cutoff date)
         do {
             let registration = try await register()
             logRegistrationToDebugLog(registration, debugLog: debugLog)
         } catch {
-            NSLog("[LoFi] Warning: Could not refresh registration: %@", error.localizedDescription)
             debugLog.warning(
                 "Could not refresh registration: \(error.localizedDescription)", service: .lofi
             )
@@ -319,7 +312,8 @@ final class LoFiClient {
         // Fetch account info for progress tracking
         var totalQSOs = 0
         var totalOperations = 0
-        if onProgress != nil {
+        NSLog("[LoFi Progress] onProgress callback is %@", onProgress != nil ? "PROVIDED" : "nil")
+        if let onProgress {
             do {
                 let accountInfo = try await fetchAccountInfo()
                 totalQSOs = accountInfo.qsos.syncable
@@ -328,7 +322,25 @@ final class LoFiClient {
                     "Account has \(totalQSOs) syncable QSOs in \(totalOperations) operations",
                     service: .lofi
                 )
+                // Initialize progress bar immediately with totals
+                NSLog(
+                    "[LoFi Progress] Calling initial onProgress with total=%d, operations=%d",
+                    totalQSOs, totalOperations
+                )
+                onProgress(
+                    SyncProgressInfo(
+                        totalQSOs: totalQSOs,
+                        totalOperations: totalOperations,
+                        downloadedQSOs: 0,
+                        processedOperations: 0
+                    )
+                )
+                NSLog("[LoFi Progress] Initial onProgress call completed")
             } catch {
+                NSLog(
+                    "[LoFi Progress] Failed to fetch account info: %@",
+                    error.localizedDescription
+                )
                 debugLog.warning(
                     "Could not fetch account info for progress: \(error.localizedDescription)",
                     service: .lofi
@@ -376,8 +388,6 @@ final class LoFiClient {
     func fetchAllQsos() async throws -> [(LoFiQso, LoFiOperation)] {
         let debugLog = SyncDebugLog.shared
 
-        NSLog("[LoFi] ========== FORCE RE-DOWNLOAD ==========")
-        NSLog("[LoFi] Fetching ALL QSOs (ignoring last sync timestamp)")
         debugLog.info("Force re-downloading ALL QSOs", service: .lofi)
 
         // Re-register to get fresh account info (including cutoff date)
@@ -385,7 +395,6 @@ final class LoFiClient {
             let registration = try await register()
             logRegistrationToDebugLog(registration, debugLog: debugLog)
         } catch {
-            NSLog("[LoFi] Warning: Could not refresh registration: %@", error.localizedDescription)
             debugLog.warning(
                 "Could not refresh registration: \(error.localizedDescription)", service: .lofi
             )
@@ -414,10 +423,7 @@ final class LoFiClient {
 
     /// Reset just the sync timestamp so QSOs can be re-downloaded
     func resetSyncTimestamp() {
-        let before = getLastSyncMillis()
         try? keychain.delete(for: KeychainHelper.Keys.lofiLastSyncMillis)
-        let after = getLastSyncMillis()
-        NSLog("[LoFi] resetSyncTimestamp: before=%lld, after=%lld", before, after)
     }
 
     func clearCredentials() throws {
@@ -433,31 +439,7 @@ final class LoFiClient {
     // MARK: Private
 
     private func logRegistrationDetails(_ registration: LoFiRegistrationResponse) {
-        NSLog("[LoFi] ========== REGISTRATION ==========")
-        NSLog("[LoFi] Account UUID: %@", registration.account.uuid)
-        NSLog("[LoFi] Account Call: %@", registration.account.call)
-        NSLog("[LoFi] Account Name: %@", registration.account.name ?? "nil")
-        NSLog("[LoFi] Account Email: %@", registration.account.email ?? "nil")
-
-        if let cutoffDate = registration.account.cutoffDate {
-            NSLog("[LoFi] ⚠️ CUTOFF DATE: %@", cutoffDate)
-        } else {
-            NSLog("[LoFi] Cutoff Date: nil (no restriction)")
-        }
-
-        if let cutoffMillis = registration.account.cutoffDateMillis {
-            let date = Date(timeIntervalSince1970: Double(cutoffMillis) / 1_000.0)
-            let formatter = ISO8601DateFormatter()
-            NSLog(
-                "[LoFi] ⚠️ CUTOFF DATE MILLIS: %lld (%@)", cutoffMillis, formatter.string(from: date)
-            )
-        } else {
-            NSLog("[LoFi] Cutoff Date Millis: nil (no restriction)")
-        }
-
-        NSLog("[LoFi] Sync Batch Size: %d", registration.meta.flags.suggestedSyncBatchSize)
-        NSLog("[LoFi] Sync Loop Delay: %d ms", registration.meta.flags.suggestedSyncLoopDelay)
-        NSLog("[LoFi] Sync Check Period: %d ms", registration.meta.flags.suggestedSyncCheckPeriod)
+        // Logging handled by logRegistrationToDebugLog for sync debug log
     }
 
     private func logRegistrationToDebugLog(
@@ -487,21 +469,13 @@ final class LoFiClient {
         qsos: [(LoFiQso, LoFiOperation)],
         debugLog: SyncDebugLog
     ) {
-        NSLog("[LoFi] ========== SYNC SUMMARY ==========")
-        NSLog("[LoFi] Total Operations: %d", operations.count)
         debugLog.info("Total operations: \(operations.count)", service: .lofi)
 
         let expectedQsoCount = operations.reduce(0) { $0 + $1.qsoCount }
-        NSLog("[LoFi] Expected QSOs (from operation.qsoCount): %d", expectedQsoCount)
-        NSLog("[LoFi] Actual QSOs fetched: %d", qsos.count)
         debugLog.info("Expected QSOs: \(expectedQsoCount), Actual: \(qsos.count)", service: .lofi)
 
         if qsos.count != expectedQsoCount {
             let diff = expectedQsoCount - qsos.count
-            NSLog(
-                "[LoFi] ⚠️ QSO COUNT MISMATCH: expected %d, got %d (diff: %d)",
-                expectedQsoCount, qsos.count, diff
-            )
             debugLog.warning(
                 "⚠️ QSO MISMATCH: expected \(expectedQsoCount), got \(qsos.count) (missing \(diff))",
                 service: .lofi
@@ -519,28 +493,18 @@ final class LoFiClient {
             formatter.dateStyle = .medium
             formatter.timeStyle = .short
 
-            NSLog(
-                "[LoFi] QSO Date Range: %@ to %@", formatter.string(from: minDate),
-                formatter.string(from: maxDate)
-            )
             debugLog.info(
                 "QSO date range: \(formatter.string(from: minDate)) to \(formatter.string(from: maxDate))",
                 service: .lofi
             )
         }
 
-        // Log operations with QSO count mismatches
+        // Count operations with QSO count mismatches
         var mismatchCount = 0
         for op in operations {
             let opQsos = qsos.filter { $0.1.uuid == op.uuid }
             if opQsos.count != op.qsoCount {
                 mismatchCount += 1
-                if mismatchCount <= 10 {
-                    NSLog(
-                        "[LoFi] ⚠️ Operation %@ (%@): expected %d QSOs, got %d",
-                        op.uuid, op.title ?? "untitled", op.qsoCount, opQsos.count
-                    )
-                }
             }
         }
         if mismatchCount > 0 {
@@ -548,10 +512,6 @@ final class LoFiClient {
                 "\(mismatchCount) operations have QSO count mismatches", service: .lofi
             )
         }
-        if mismatchCount > 10 {
-            NSLog("[LoFi] ... and %d more operations with mismatches", mismatchCount - 10)
-        }
-        NSLog("[LoFi] ========== END SUMMARY ==========")
     }
 
     private func fetchAllOperations(
@@ -637,30 +597,89 @@ final class LoFiClient {
         debugLog: SyncDebugLog,
         onProgress: ((Int, Int) -> Void)? = nil
     ) async throws -> ([String: (LoFiQso, LoFiOperation)], Int64) {
-        var qsosByUUID: [String: (LoFiQso, LoFiOperation)] = [:]
-        var maxSyncMillis = lastSyncMillis
         let qsoSyncStart: Int64 = isFreshSync ? 0 : lastSyncMillis
+        let totalOperations = operations.count
 
-        debugLog.info("Fetching QSOs from \(operations.count) operations", service: .lofi)
+        debugLog.info(
+            "Fetching QSOs from \(totalOperations) operations with parallel downloads",
+            service: .lofi
+        )
 
-        var processedOperations = 0
-        for operation in operations {
-            let (opQsos, opMaxSync) = try await fetchQsosForOperation(
-                operation,
-                syncStart: qsoSyncStart,
-                isFreshSync: isFreshSync,
-                debugLog: debugLog
-            )
-            for (qso, op) in opQsos where qsosByUUID[qso.uuid] == nil {
-                qsosByUUID[qso.uuid] = (qso, op)
+        // Use actor for thread-safe accumulation with adaptive concurrency
+        let accumulator = QSODownloadAccumulator(initialSyncMillis: lastSyncMillis)
+
+        // Process operations in batches with adaptive concurrency
+        var operationIndex = 0
+        while operationIndex < totalOperations {
+            let concurrency = await accumulator.getConcurrency()
+            let batchEnd = min(operationIndex + concurrency, totalOperations)
+            let batch = Array(operations[operationIndex ..< batchEnd])
+
+            // Launch parallel fetches for this batch
+            await withTaskGroup(
+                of: Result<([(LoFiQso, LoFiOperation)], Int64), Error>.self
+            ) { group in
+                for operation in batch {
+                    group.addTask { [self] in
+                        do {
+                            let result = try await fetchQsosForOperation(
+                                operation,
+                                syncStart: qsoSyncStart,
+                                isFreshSync: isFreshSync,
+                                debugLog: debugLog
+                            )
+                            return .success(result)
+                        } catch {
+                            return .failure(error)
+                        }
+                    }
+                }
+
+                // Collect results
+                for await result in group {
+                    switch result {
+                    case .success(let (qsos, syncMillis)):
+                        await accumulator.addResults(qsos, syncMillis: syncMillis)
+                    case let .failure(error):
+                        await accumulator.recordError()
+                        debugLog.warning(
+                            "Operation fetch failed: \(error.localizedDescription)",
+                            service: .lofi
+                        )
+                    }
+                }
             }
-            maxSyncMillis = max(maxSyncMillis, opMaxSync)
 
-            processedOperations += 1
-            onProgress?(qsosByUUID.count, processedOperations)
+            // Update progress after each batch
+            let processedCount = await accumulator.getProcessedCount()
+            let qsoCount = await accumulator.getQSOCount()
+
+            if let onProgress {
+                if processedCount == batch.count || processedCount.isMultiple(of: 50) {
+                    NSLog(
+                        "[LoFi Progress] %d QSOs, %d/%d operations (concurrency: %d)",
+                        qsoCount, processedCount, totalOperations, concurrency
+                    )
+                }
+                onProgress(qsoCount, processedCount)
+            }
+
+            // Apply backoff delay if there were errors
+            let backoffDelay = await accumulator.getBackoffDelay()
+            if backoffDelay > 0 {
+                try await Task.sleep(nanoseconds: backoffDelay * 1_000_000)
+            }
+
+            // Periodically try to increase concurrency if stable
+            if operationIndex.isMultiple(of: 20) {
+                await accumulator.increaseIfStable()
+            }
+
+            operationIndex = batchEnd
+            await Task.yield()
         }
 
-        return (qsosByUUID, maxSyncMillis)
+        return await accumulator.getResults()
     }
 
     private func fetchQsosForOperation(

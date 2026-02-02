@@ -32,9 +32,15 @@ extension SyncService {
         let result = try await Self.processingActor.processDownloadedQSOs(
             fetched,
             container: modelContext.container
-        ) { phase in
-            // Progress updates - just print since we're on background thread
-            print("[DEBUG] \(phase)")
+        ) { progress in
+            // Update sync progress on main actor
+            Task { @MainActor in
+                self.syncProgress.updateProcessing(
+                    processed: progress.processed,
+                    total: progress.total,
+                    phase: progress.phase
+                )
+            }
         }
 
         // Log messages from background processing

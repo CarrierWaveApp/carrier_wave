@@ -1,5 +1,89 @@
-// swiftlint:disable function_body_length
 import Foundation
+
+// MARK: - QSODownloadAccumulator
+
+/// Actor to safely accumulate QSO results from parallel downloads
+actor QSODownloadAccumulator {
+    // MARK: Lifecycle
+
+    init(initialSyncMillis: Int64) {
+        maxSyncMillis = initialSyncMillis
+        currentConcurrency = initialConcurrency
+    }
+
+    // MARK: Internal
+
+    let minConcurrency = 2
+    let maxConcurrency = 8
+    let initialConcurrency = 4
+    let baseBackoffMs: UInt64 = 100
+    let maxBackoffMs: UInt64 = 5_000
+
+    func addResults(_ qsos: [(LoFiQso, LoFiOperation)], syncMillis: Int64) {
+        for (qso, op) in qsos where qsosByUUID[qso.uuid] == nil {
+            qsosByUUID[qso.uuid] = (qso, op)
+        }
+        maxSyncMillis = max(maxSyncMillis, syncMillis)
+        processedCount += 1
+        consecutiveErrors = 0
+        // Reset backoff on success
+        backoffDelayMs = 0
+    }
+
+    func recordError() {
+        consecutiveErrors += 1
+        // Reduce concurrency on errors
+        if consecutiveErrors >= 2, currentConcurrency > minConcurrency {
+            currentConcurrency = max(minConcurrency, currentConcurrency - 1)
+            NSLog(
+                "[LoFi Progress] Reducing concurrency to %d after %d consecutive errors",
+                currentConcurrency, consecutiveErrors
+            )
+        }
+        // Exponential backoff
+        if backoffDelayMs == 0 {
+            backoffDelayMs = baseBackoffMs
+        } else {
+            backoffDelayMs = min(backoffDelayMs * 2, maxBackoffMs)
+        }
+    }
+
+    func getBackoffDelay() -> UInt64 {
+        backoffDelayMs
+    }
+
+    func increaseIfStable() {
+        // Increase concurrency if we're doing well (no recent errors)
+        if consecutiveErrors == 0, currentConcurrency < maxConcurrency {
+            currentConcurrency = min(maxConcurrency, currentConcurrency + 1)
+        }
+    }
+
+    func getConcurrency() -> Int {
+        currentConcurrency
+    }
+
+    func getProcessedCount() -> Int {
+        processedCount
+    }
+
+    func getQSOCount() -> Int {
+        qsosByUUID.count
+    }
+
+    func getResults() -> ([String: (LoFiQso, LoFiOperation)], Int64) {
+        (qsosByUUID, maxSyncMillis)
+    }
+
+    // MARK: Private
+
+    private var qsosByUUID: [String: (LoFiQso, LoFiOperation)] = [:]
+    private var maxSyncMillis: Int64 = 0
+    private var processedCount = 0
+    private var currentConcurrency: Int
+    private var consecutiveErrors = 0
+    private var backoffDelayMs: UInt64 = 0
+}
 
 // MARK: - LoFiClient Private Helpers
 
@@ -46,89 +130,10 @@ extension LoFiClient {
     }
 
     private func logResponseDetails(_ response: HTTPURLResponse, data: Data) {
-        NSLog("[LoFi] ========== RESPONSE ==========")
-        NSLog("[LoFi] Status: %d", response.statusCode)
-        NSLog("[LoFi] Response Headers:")
-        for (key, value) in response.allHeaderFields {
-            NSLog("[LoFi]   %@: %@", String(describing: key), String(describing: value))
-        }
-
-        if let bodyStr = String(data: data, encoding: .utf8) {
-            if bodyStr.count > 2_000 {
-                NSLog("[LoFi] Body (truncated): %@...", String(bodyStr.prefix(2_000)))
-            } else {
-                NSLog("[LoFi] Body: %@", bodyStr)
-            }
-        }
+        // Verbose logging disabled - use SyncDebugLog for structured logging
     }
 
     private func logResponseCounts(_ decoded: some Any) {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .short
-
-        if let opsResponse = decoded as? LoFiOperationsResponse {
-            let meta = opsResponse.meta.operations
-            NSLog("[LoFi] ========== OPERATIONS RESPONSE ==========")
-            NSLog("[LoFi] Operations in page: %d", opsResponse.operations.count)
-            NSLog("[LoFi] Total records: %d", meta.totalRecords)
-            NSLog("[LoFi] Records left: %d", meta.recordsLeft)
-            NSLog("[LoFi] Limit: %d", meta.limit)
-
-            if let syncedUntil = meta.syncedUntilMillis {
-                let date = Date(timeIntervalSince1970: syncedUntil / 1_000.0)
-                NSLog(
-                    "[LoFi] Synced until: %@ (millis: %.0f)", formatter.string(from: date),
-                    syncedUntil
-                )
-            }
-            if let syncedSince = meta.syncedSinceMillis {
-                let date = Date(timeIntervalSince1970: syncedSince / 1_000.0)
-                NSLog(
-                    "[LoFi] Synced since: %@ (millis: %.0f)", formatter.string(from: date),
-                    syncedSince
-                )
-            }
-            if let next = meta.nextSyncedAtMillis {
-                let date = Date(timeIntervalSince1970: next / 1_000.0)
-                NSLog(
-                    "[LoFi] Next synced at: %@ (millis: %.0f)", formatter.string(from: date), next
-                )
-            }
-            if let otherClientsOnly = meta.otherClientsOnly {
-                NSLog("[LoFi] Other clients only: %@", otherClientsOnly ? "true" : "false")
-            }
-        } else if let qsosResponse = decoded as? LoFiQsosResponse {
-            let meta = qsosResponse.meta.qsos
-            NSLog("[LoFi] ========== QSOS RESPONSE ==========")
-            NSLog("[LoFi] QSOs in page: %d", qsosResponse.qsos.count)
-            NSLog("[LoFi] Total records: %d", meta.totalRecords)
-            NSLog("[LoFi] Records left: %d", meta.recordsLeft)
-            NSLog("[LoFi] Limit: %d", meta.limit)
-
-            if let syncedUntil = meta.syncedUntilMillis {
-                let date = Date(timeIntervalSince1970: syncedUntil / 1_000.0)
-                NSLog(
-                    "[LoFi] Synced until: %@ (millis: %.0f)", formatter.string(from: date),
-                    syncedUntil
-                )
-            }
-            if let syncedSince = meta.syncedSinceMillis {
-                let date = Date(timeIntervalSince1970: syncedSince / 1_000.0)
-                NSLog(
-                    "[LoFi] Synced since: %@ (millis: %.0f)", formatter.string(from: date),
-                    syncedSince
-                )
-            }
-            if let next = meta.nextSyncedAtMillis {
-                let date = Date(timeIntervalSince1970: next / 1_000.0)
-                NSLog(
-                    "[LoFi] Next synced at: %@ (millis: %.0f)", formatter.string(from: date), next
-                )
-            }
-            if let otherClientsOnly = meta.otherClientsOnly {
-                NSLog("[LoFi] Other clients only: %@", otherClientsOnly ? "true" : "false")
-            }
-        }
+        // Verbose logging disabled - use SyncDebugLog for structured logging
     }
 }

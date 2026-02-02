@@ -211,15 +211,25 @@ class SyncService: ObservableObject {
         let debugLog = SyncDebugLog.shared
         debugLog.info("Starting LoFi-only sync", service: .lofi)
         isSyncing = true
+        syncProgress.reset()
         defer {
             isSyncing = false
             syncPhase = nil
         }
 
-        // Download with timeout
+        // Download with timeout and progress tracking
         syncPhase = .downloading(service: .lofi)
         let qsos = try await withTimeout(seconds: syncTimeoutSeconds, service: .lofi) {
-            try await self.lofiClient.fetchAllQsosSinceLastSync()
+            try await self.lofiClient.fetchAllQsosSinceLastSync { [weak self] progress in
+                guard let self else {
+                    return
+                }
+                var updated = syncProgress
+                updated.lofiTotalQSOs = progress.totalQSOs
+                updated.lofiTotalOperations = progress.totalOperations
+                updated.lofiDownloadedQSOs = progress.downloadedQSOs
+                syncProgress = updated
+            }
         }
         debugLog.info("Fetched \(qsos.count) raw QSOs", service: .lofi)
         let fetched = qsos.compactMap { FetchedQSO.fromLoFi($0.0, operation: $0.1) }
@@ -295,7 +305,11 @@ class SyncService: ObservableObject {
 
         return processResult.created
     }
+}
 
+// MARK: - SyncService Helpers
+
+extension SyncService {
     /// Download from all sources without uploading (debug mode)
     func downloadOnly() async throws -> SyncResult {
         isSyncing = true
@@ -349,9 +363,7 @@ class SyncService: ObservableObject {
         return result
     }
 
-    // MARK: Private
-
-    private func collectDownloadResults(
+    func collectDownloadResults(
         _ downloadResults: [ServiceType: Result<[FetchedQSO], Error>],
         into result: inout SyncResult
     ) -> [FetchedQSO] {
@@ -371,7 +383,7 @@ class SyncService: ObservableObject {
         return allFetched
     }
 
-    private func notifyNewQSOsIfNeeded(count: Int) {
+    func notifyNewQSOsIfNeeded(count: Int) {
         guard count > 0 else {
             return
         }
@@ -382,7 +394,7 @@ class SyncService: ObservableObject {
         )
     }
 
-    private func performUploadsIfEnabled(
+    func performUploadsIfEnabled(
         into result: inout SyncResult,
         debugLog: SyncDebugLog
     ) async {
