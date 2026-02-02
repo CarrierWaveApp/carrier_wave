@@ -19,6 +19,8 @@ enum SpotSource: Sendable {
 
 /// A spot from either RBN or POTA in a unified format
 struct UnifiedSpot: Identifiable, Sendable {
+    // MARK: Internal
+
     let id: String
     let callsign: String
     let frequencyKHz: Double
@@ -77,6 +79,25 @@ struct UnifiedSpot: Identifiable, Sendable {
         default:
             return .secondary // > 30 minutes: old
         }
+    }
+
+    /// Check if this spot is a self-spot for the given user callsign
+    func isSelfSpot(userCallsign: String) -> Bool {
+        let normalizedUser = Self.normalizeCallsign(userCallsign)
+        let normalizedSpot = Self.normalizeCallsign(callsign)
+        return normalizedUser == normalizedSpot
+    }
+
+    // MARK: Private
+
+    /// Normalize callsign by removing portable suffixes and uppercasing
+    private static func normalizeCallsign(_ callsign: String) -> String {
+        let upper = callsign.uppercased()
+        // Remove common portable suffixes: /P, /M, /QRP, /0-9, etc.
+        if let slashIndex = upper.firstIndex(of: "/") {
+            return String(upper[..<slashIndex])
+        }
+        return upper
     }
 }
 

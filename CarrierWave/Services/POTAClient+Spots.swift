@@ -10,6 +10,8 @@ import SwiftUI
 
 /// A spot from the POTA spotting system
 struct POTASpot: Decodable, Identifiable, Sendable {
+    // MARK: Internal
+
     let spotId: Int64
     let activator: String
     let frequency: String
@@ -75,6 +77,25 @@ struct POTASpot: Decodable, Identifiable, Sendable {
         default:
             return .secondary // > 30 minutes: old
         }
+    }
+
+    /// Check if this spot is a self-spot for the given user callsign
+    nonisolated func isSelfSpot(userCallsign: String) -> Bool {
+        let normalizedUser = Self.normalizeCallsign(userCallsign)
+        let normalizedSpot = Self.normalizeCallsign(activator)
+        return normalizedUser == normalizedSpot
+    }
+
+    // MARK: Private
+
+    /// Normalize callsign by removing portable suffixes and uppercasing
+    private static func normalizeCallsign(_ callsign: String) -> String {
+        let upper = callsign.uppercased()
+        // Remove common portable suffixes: /P, /M, /QRP, /0-9, etc.
+        if let slashIndex = upper.firstIndex(of: "/") {
+            return String(upper[..<slashIndex])
+        }
+        return upper
     }
 }
 
