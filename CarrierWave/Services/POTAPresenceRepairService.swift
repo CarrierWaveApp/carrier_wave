@@ -4,26 +4,32 @@ import SwiftData
 /// Service to detect and repair incorrectly marked POTA service presence records.
 /// Prior to the fix, QSOs without park references were incorrectly marked as needing
 /// upload to POTA. This service finds and optionally fixes those records.
-@MainActor
-class POTAPresenceRepairService {
+///
+/// All work happens on a background thread to avoid blocking the UI.
+actor POTAPresenceRepairService {
     // MARK: Lifecycle
 
-    init(modelContext: ModelContext) {
-        self.modelContext = modelContext
+    init(container: ModelContainer) {
+        self.container = container
     }
 
     // MARK: Internal
 
-    struct RepairResult {
+    struct RepairResult: Sendable {
         let mismarkedCount: Int
         let repairedCount: Int
     }
 
-    let modelContext: ModelContext
+    let container: ModelContainer
 
     /// Count QSOs that are incorrectly marked for POTA upload (no park reference but needsUpload=true)
     /// Uses batched fetching to avoid loading all records at once.
+    /// Runs on background thread.
     func countMismarkedQSOs() throws -> Int {
+        // Create background context for this work
+        let context = ModelContext(container)
+        context.autosaveEnabled = false
+
         // SwiftData predicates don't support enum comparisons, so we filter needsUpload
         // at the database level and filter serviceType in memory
         var descriptor = FetchDescriptor<ServicePresence>(
@@ -41,7 +47,7 @@ class POTAPresenceRepairService {
             descriptor.fetchOffset = offset
             descriptor.fetchLimit = batchSize
 
-            let batch = try modelContext.fetch(descriptor)
+            let batch = try context.fetch(descriptor)
             if batch.isEmpty {
                 break
             }
@@ -72,7 +78,12 @@ class POTAPresenceRepairService {
 
     /// Repair mismarked POTA service presence records by setting needsUpload=false
     /// for QSOs that don't have a park reference.
+    /// Runs on background thread.
     func repairMismarkedQSOs() throws -> RepairResult {
+        // Create background context for this work
+        let context = ModelContext(container)
+        context.autosaveEnabled = false
+
         // SwiftData predicates don't support enum comparisons, so we filter needsUpload
         // at the database level and filter serviceType in memory
         var descriptor = FetchDescriptor<ServicePresence>(
@@ -90,7 +101,7 @@ class POTAPresenceRepairService {
             descriptor.fetchOffset = offset
             descriptor.fetchLimit = batchSize
 
-            let batch = try modelContext.fetch(descriptor)
+            let batch = try context.fetch(descriptor)
             if batch.isEmpty {
                 break
             }
@@ -118,7 +129,7 @@ class POTAPresenceRepairService {
         }
 
         if repairedCount > 0 {
-            try modelContext.save()
+            try context.save()
         }
 
         return RepairResult(mismarkedCount: mismarkedCount, repairedCount: repairedCount)

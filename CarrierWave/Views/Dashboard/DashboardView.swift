@@ -113,8 +113,12 @@ struct DashboardView: View {
                 presenceCounts.compute(from: modelContext)
             }
             .task {
-                // Check for callsign aliases after stats are computed
+                // Check for callsign aliases after stats are computed (only once per session)
                 // Wait a bit for asyncStats to populate uniqueMyCallsigns
+                guard !hasCheckedCallsignAliases else {
+                    return
+                }
+                hasCheckedCallsignAliases = true
                 try? await Task.sleep(for: .milliseconds(500))
                 await checkForUnconfiguredCallsigns()
                 await checkForMismarkedPOTAPresence()
@@ -175,6 +179,10 @@ struct DashboardView: View {
     }
 
     // MARK: Private
+
+    /// Track whether we've already run the one-time checks (callsign aliases, POTA repair)
+    /// to avoid re-running expensive queries on every tab switch
+    @State private var hasCheckedCallsignAliases = false
 
     // MARK: - Toolbar
 

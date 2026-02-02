@@ -284,10 +284,11 @@ extension DashboardView {
     // MARK: - POTA Presence Repair
 
     /// Check for QSOs incorrectly marked for POTA upload (no park reference but needsUpload=true)
+    /// Runs on background thread via actor.
     func checkForMismarkedPOTAPresence() async {
-        let repairService = POTAPresenceRepairService(modelContext: modelContext)
+        let repairService = POTAPresenceRepairService(container: modelContext.container)
         do {
-            let count = try repairService.countMismarkedQSOs()
+            let count = try await repairService.countMismarkedQSOs()
             if count > 0 {
                 mismarkedPOTACount = count
                 showingPOTARepairAlert = true
@@ -298,10 +299,11 @@ extension DashboardView {
     }
 
     /// Repair incorrectly marked POTA service presence records
+    /// Runs on background thread via actor.
     func repairMismarkedPOTAPresence() async {
-        let repairService = POTAPresenceRepairService(modelContext: modelContext)
+        let repairService = POTAPresenceRepairService(container: modelContext.container)
         do {
-            let result = try repairService.repairMismarkedQSOs()
+            let result = try await repairService.repairMismarkedQSOs()
             print("Repaired \(result.repairedCount) mismarked POTA presence records")
             mismarkedPOTACount = 0
         } catch {

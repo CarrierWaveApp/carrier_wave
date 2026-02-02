@@ -386,15 +386,17 @@ struct ContentView: View {
     }
 
     private var logsTabContent: some View {
-        LogsContainerView(
-            potaClient: potaClient,
-            potaAuth: potaAuthService,
-            lofiClient: lofiClient,
-            qrzClient: qrzClient,
-            hamrsClient: hamrsClient,
-            lotwClient: lotwClient,
-            tourState: tourState
-        )
+        LazyTabContent {
+            LogsContainerView(
+                potaClient: potaClient,
+                potaAuth: potaAuthService,
+                lofiClient: lofiClient,
+                qrzClient: qrzClient,
+                hamrsClient: hamrsClient,
+                lotwClient: lotwClient,
+                tourState: tourState
+            )
+        }
     }
 
     private var cwDecoderTabContent: some View {

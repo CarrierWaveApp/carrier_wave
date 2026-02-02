@@ -8,6 +8,11 @@ class ICloudMonitor: ObservableObject {
 
     init() {
         setupNotifications()
+        // Refresh container URL in background to avoid blocking app launch.
+        // The URL check can take 100-500ms, which would cause a visible launch delay.
+        Task {
+            await refreshContainerURLAsync()
+        }
     }
 
     // MARK: Internal
@@ -15,17 +20,24 @@ class ICloudMonitor: ObservableObject {
     @Published var pendingFiles: [URL] = []
     @Published var isMonitoring = false
 
-    var iCloudContainerURL: URL? {
-        fileManager.url(forUbiquityContainerIdentifier: nil)?
-            .appendingPathComponent("Documents")
-            .appendingPathComponent("Import")
-    }
+    /// Cached iCloud container URL - refreshed on init and when monitoring starts.
+    /// Using a cached value avoids the slow fileManager.url(forUbiquityContainerIdentifier:)
+    /// call on every view body evaluation, which can block the main thread for 100-500ms.
+    @Published private(set) var iCloudContainerURL: URL?
 
     var statusDescription: String {
-        if fileManager.url(forUbiquityContainerIdentifier: nil) != nil {
+        if iCloudContainerURL != nil {
             isMonitoring ? "Available (Monitoring)" : "Available"
         } else {
             "Not Available"
+        }
+    }
+
+    /// Refresh the cached container URL. Call this if iCloud availability may have changed.
+    /// Runs the slow FileManager call on a background thread to avoid blocking UI.
+    func refreshContainerURL() {
+        Task {
+            await refreshContainerURLAsync()
         }
     }
 
@@ -33,6 +45,10 @@ class ICloudMonitor: ObservableObject {
         guard !isMonitoring else {
             return
         }
+        // Refresh cache in case iCloud became available since init.
+        // Use sync version here since we need the result immediately.
+        // This only runs once when monitoring starts, not on every view update.
+        refreshContainerURLSync()
         guard iCloudContainerURL != nil else {
             print("iCloud not available")
             return
@@ -98,6 +114,24 @@ class ICloudMonitor: ObservableObject {
 
     private var metadataQuery: NSMetadataQuery?
     private let fileManager = FileManager.default
+
+    /// Async refresh that performs the slow FileManager call off the main actor.
+    private func refreshContainerURLAsync() async {
+        let url = await Task.detached {
+            FileManager.default.url(forUbiquityContainerIdentifier: nil)?
+                .appendingPathComponent("Documents")
+                .appendingPathComponent("Import")
+        }.value
+        iCloudContainerURL = url
+    }
+
+    /// Synchronous refresh for use during monitoring start (when we need the result immediately).
+    /// Only call this when absolutely necessary as it blocks the main thread.
+    private func refreshContainerURLSync() {
+        iCloudContainerURL = fileManager.url(forUbiquityContainerIdentifier: nil)?
+            .appendingPathComponent("Documents")
+            .appendingPathComponent("Import")
+    }
 
     private func setupNotifications() {
         Task {
