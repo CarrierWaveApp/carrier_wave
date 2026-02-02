@@ -382,18 +382,19 @@ enum QueryCompiler {
     private static func compileSourceMatch(_ condition: TermCondition) -> (QSO) -> Bool {
         switch condition {
         case let .service(service):
-            let importSource: ImportSource = switch service {
-            case .qrz:
-                .qrz
-            case .pota:
-                .pota
-            case .lofi:
-                .lofi
-            case .hamrs:
-                .hamrs
-            case .lotw:
-                .lotw
-            }
+            let importSource: ImportSource =
+                switch service {
+                case .qrz:
+                    .qrz
+                case .pota:
+                    .pota
+                case .lofi:
+                    .lofi
+                case .hamrs:
+                    .hamrs
+                case .lotw:
+                    .lotw
+                }
             return { $0.importSource == importSource }
 
         case let .equals(value):
@@ -494,16 +495,17 @@ enum QueryCompiler {
     }
 
     private static func extractCallsignPredicate(_ condition: TermCondition) -> Predicate<QSO>? {
+        // Callsigns are stored in uppercase
         switch condition {
         case let .equals(value):
             let upper = value.uppercased()
             return #Predicate<QSO> { qso in
-                qso.callsign == upper
+                !qso.isHidden && qso.callsign == upper
             }
         case let .prefix(value):
             let upper = value.uppercased()
             return #Predicate<QSO> { qso in
-                qso.callsign.starts(with: upper)
+                !qso.isHidden && qso.callsign.starts(with: upper)
             }
         default:
             return nil
@@ -511,16 +513,17 @@ enum QueryCompiler {
     }
 
     private static func extractBandPredicate(_ condition: TermCondition) -> Predicate<QSO>? {
+        // Bands are stored in lowercase (e.g., "6m", "20m")
         switch condition {
         case let .equals(value):
-            let upper = value.uppercased()
+            let lower = value.lowercased()
             return #Predicate<QSO> { qso in
-                qso.band == upper
+                !qso.isHidden && qso.band == lower
             }
         case let .prefix(value):
-            let upper = value.uppercased()
+            let lower = value.lowercased()
             return #Predicate<QSO> { qso in
-                qso.band.starts(with: upper)
+                !qso.isHidden && qso.band.starts(with: lower)
             }
         default:
             return nil
@@ -528,16 +531,17 @@ enum QueryCompiler {
     }
 
     private static func extractModePredicate(_ condition: TermCondition) -> Predicate<QSO>? {
+        // Modes are stored in uppercase
         switch condition {
         case let .equals(value):
             let upper = value.uppercased()
             return #Predicate<QSO> { qso in
-                qso.mode == upper
+                !qso.isHidden && qso.mode == upper
             }
         case let .prefix(value):
             let upper = value.uppercased()
             return #Predicate<QSO> { qso in
-                qso.mode.starts(with: upper)
+                !qso.isHidden && qso.mode.starts(with: upper)
             }
         default:
             return nil
@@ -551,26 +555,26 @@ enum QueryCompiler {
         case let .dateEquals(dateMatch):
             let (start, end) = dateMatch.resolve()
             return #Predicate<QSO> { qso in
-                qso.timestamp >= start && qso.timestamp < end
+                !qso.isHidden && qso.timestamp >= start && qso.timestamp < end
             }
 
         case let .dateAfter(dateMatch):
             let (start, _) = dateMatch.resolve()
             return #Predicate<QSO> { qso in
-                qso.timestamp >= start
+                !qso.isHidden && qso.timestamp >= start
             }
 
         case let .dateBefore(dateMatch):
             let (_, end) = dateMatch.resolve()
             return #Predicate<QSO> { qso in
-                qso.timestamp < end
+                !qso.isHidden && qso.timestamp < end
             }
 
         case let .dateRange(startMatch, endMatch):
             let (start, _) = startMatch.resolve()
             let (_, end) = endMatch.resolve()
             return #Predicate<QSO> { qso in
-                qso.timestamp >= start && qso.timestamp < end
+                !qso.isHidden && qso.timestamp >= start && qso.timestamp < end
             }
 
         default:

@@ -5,6 +5,9 @@ All notable changes to Carrier Wave will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+- Log search now searches all QSOs instead of only the most recent 1,000
+  - Field-specific queries like `band:6m` now use database predicates for efficient full-table search
+  - Fixed case mismatch bug where band queries failed (bands stored lowercase, query used uppercase)
 - LoFi sync progress bar now displays during parallel service downloads
 - Dashboard no longer freezes UI when loading statistics for large QSO databases
   - Statistics computation now runs entirely on a background thread
