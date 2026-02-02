@@ -4,6 +4,8 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.18.0] - 2026-02-02
+
 ### Fixed
 - Log search now searches all QSOs instead of only the most recent 1,000
   - Field-specific queries like `band:6m` now use database predicates for efficient full-table search
