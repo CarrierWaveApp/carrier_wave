@@ -185,6 +185,7 @@ This index maps files to their purpose. Use it to locate files by feature instea
 ## Views - Dashboard (`CarrierWave/Views/Dashboard/`)
 | File | Purpose |
 |------|---------|
+| `ActivityGridView.swift` | GitHub-style activity grid with horizontal scrolling |
 | `DashboardView.swift` | Main dashboard with stats grid and services list |
 | `DashboardView+Actions.swift` | Dashboard action handlers (sync, clear data) |
 | `DashboardView+Services.swift` | Services list builder and detail sheet builders |
