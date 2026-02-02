@@ -13,9 +13,9 @@ actor QSODownloadAccumulator {
 
     // MARK: Internal
 
-    let minConcurrency = 2
-    let maxConcurrency = 8
-    let initialConcurrency = 4
+    let minConcurrency = 4
+    let maxConcurrency = 16
+    let initialConcurrency = 8
     let baseBackoffMs: UInt64 = 100
     let maxBackoffMs: UInt64 = 5_000
 

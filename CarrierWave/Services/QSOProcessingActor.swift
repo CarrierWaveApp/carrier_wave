@@ -102,49 +102,6 @@ actor QSOProcessingActor {
         )
     }
 
-    /// Reconcile QRZ presence against downloaded keys on background thread.
-    func reconcileQRZPresence(
-        downloadedKeys: Set<String>,
-        userCallsigns: Set<String>,
-        container: ModelContainer
-    ) async throws {
-        let context = ModelContext(container)
-        context.autosaveEnabled = false
-
-        // Fetch all QSOs that have QRZ presence marked as present
-        let descriptor = FetchDescriptor<QSO>()
-        let allQSOs = try context.fetch(descriptor)
-
-        for qso in allQSOs {
-            try Task.checkCancellation()
-
-            guard let presence = qso.presence(for: .qrz), presence.isPresent else {
-                continue
-            }
-
-            // Check if QRZ returned this QSO
-            let qsoKey = Self.computeDeduplicationKey(
-                callsign: qso.callsign,
-                band: qso.band,
-                mode: qso.mode,
-                timestamp: qso.timestamp
-            )
-            let isPresent = isQSOPresentInDownloaded(
-                qsoDeduplicationKey: qsoKey,
-                qsoMyCallsign: qso.myCallsign,
-                downloadedKeys: downloadedKeys,
-                userCallsigns: userCallsigns
-            )
-
-            if !isPresent {
-                presence.isPresent = false
-                presence.needsUpload = true
-            }
-        }
-
-        try context.save()
-    }
-
     // MARK: Private
 
     /// Fetch existing QSO deduplication keys in batches.
@@ -393,6 +350,62 @@ actor QSOProcessingActor {
 // MARK: - QSOProcessingActor Helpers
 
 extension QSOProcessingActor {
+    /// Reconcile QRZ presence against downloaded keys on background thread.
+    func reconcileQRZPresence(
+        downloadedKeys: Set<String>,
+        userCallsigns: Set<String>,
+        container: ModelContainer
+    ) async throws {
+        let context = ModelContext(container)
+        context.autosaveEnabled = false
+
+        // Fetch ServicePresence records for QRZ that are marked as present
+        // This is more efficient than fetching all QSOs
+        let qrzService = ServiceType.qrz
+        let presenceDescriptor = FetchDescriptor<ServicePresence>(
+            predicate: #Predicate<ServicePresence> { $0.serviceType == qrzService && $0.isPresent }
+        )
+        let presenceRecords = try context.fetch(presenceDescriptor)
+
+        var modifiedCount = 0
+        for (index, presence) in presenceRecords.enumerated() {
+            try Task.checkCancellation()
+
+            guard let qso = presence.qso else {
+                continue
+            }
+
+            // Check if QRZ returned this QSO
+            let qsoKey = Self.computeDeduplicationKey(
+                callsign: qso.callsign,
+                band: qso.band,
+                mode: qso.mode,
+                timestamp: qso.timestamp
+            )
+            let isPresent = isQSOPresentInDownloaded(
+                qsoDeduplicationKey: qsoKey,
+                qsoMyCallsign: qso.myCallsign,
+                downloadedKeys: downloadedKeys,
+                userCallsigns: userCallsigns
+            )
+
+            if !isPresent {
+                presence.isPresent = false
+                presence.needsUpload = true
+                modifiedCount += 1
+            }
+
+            // Yield periodically to allow cancellation
+            if index.isMultiple(of: 500) {
+                await Task.yield()
+            }
+        }
+
+        if modifiedCount > 0 {
+            try context.save()
+        }
+    }
+
     /// Check if a QSO is present in the downloaded set, considering callsign aliases.
     func isQSOPresentInDownloaded(
         qsoDeduplicationKey: String,
