@@ -597,6 +597,20 @@ final class LoggingSessionManager {
             return
         }
 
+        // Validate frequency is within amateur bands before spotting
+        let violation = BandPlanService.validate(
+            frequencyMHz: freq,
+            mode: session.mode,
+            license: .extra // Use most permissive for band boundary check
+        )
+        if let violation, violation.type == .outOfBand {
+            SyncDebugLog.shared.warning(
+                "Skipping spot: frequency \(FrequencyFormatter.format(freq)) is outside amateur bands",
+                service: .pota
+            )
+            return
+        }
+
         do {
             let potaClient = POTAClient(authService: POTAAuthService())
             _ = try await potaClient.postSpot(
