@@ -47,6 +47,7 @@ struct ParkEntryField: View {
                     .font(.subheadline.monospaced())
                     .textInputAutocapitalization(.characters)
                     .autocorrectionDisabled()
+                    .keyboardType(.numbersAndPunctuation)
                     .onChange(of: parkReference) { _, newValue in
                         handleParkInput(newValue)
                     }

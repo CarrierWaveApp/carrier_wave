@@ -114,7 +114,7 @@ struct BugReportView: View {
     private var infoSection: some View {
         Section {
             DisclosureGroup("Report includes...") {
-                LabeledContent("Version", value: "\(deviceInfo.appVersion) (\(deviceInfo.buildNumber))")
+                LabeledContent("Version", value: deviceInfo.appVersion)
                 LabeledContent("iOS", value: deviceInfo.iosVersion)
                 LabeledContent("Device", value: deviceInfo.deviceModel)
                 LabeledContent(
@@ -122,14 +122,25 @@ struct BugReportView: View {
                 )
                 if !callsignInfo.previousCallsigns.isEmpty {
                     LabeledContent(
-                        "Previous Callsigns", value: callsignInfo.previousCallsigns.joined(separator: ", ")
+                        "Previous Callsigns",
+                        value: callsignInfo.previousCallsigns.joined(separator: ", ")
                     )
                 }
-                LabeledContent("QRZ", value: serviceStatus.qrzConfigured ? "Configured" : "Not configured")
-                LabeledContent("POTA", value: serviceStatus.potaConfigured ? "Configured" : "Not configured")
-                LabeledContent("LoFi", value: serviceStatus.lofiConfigured ? "Configured" : "Not configured")
-                LabeledContent("LoTW", value: serviceStatus.lotwConfigured ? "Configured" : "Not configured")
-                LabeledContent("HAMRS", value: serviceStatus.hamrsConfigured ? "Configured" : "Not configured")
+                LabeledContent(
+                    "QRZ", value: serviceStatus.qrzConfigured ? "Configured" : "Not configured"
+                )
+                LabeledContent(
+                    "POTA", value: serviceStatus.potaConfigured ? "Configured" : "Not configured"
+                )
+                LabeledContent(
+                    "LoFi", value: serviceStatus.lofiConfigured ? "Configured" : "Not configured"
+                )
+                LabeledContent(
+                    "LoTW", value: serviceStatus.lotwConfigured ? "Configured" : "Not configured"
+                )
+                LabeledContent(
+                    "HAMRS", value: serviceStatus.hamrsConfigured ? "Configured" : "Not configured"
+                )
                 LabeledContent("iCloud", value: serviceStatus.iCloudStatus)
             }
         } footer: {
@@ -155,8 +166,8 @@ struct BugReportView: View {
                     .font(.headline)
 
                 Text(
-                    "Your bug report has been copied to the clipboard. " +
-                        "Please paste it in the **#bug-reports** channel on Discord."
+                    "Your bug report has been copied to the clipboard. "
+                        + "Please paste it in the **#bug-reports** channel on Discord."
                 )
                 .font(.subheadline)
 

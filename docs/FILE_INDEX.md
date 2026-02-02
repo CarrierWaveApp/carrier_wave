@@ -147,6 +147,7 @@ This index maps files to their purpose. Use it to locate files by feature instea
 | File | Purpose |
 |------|---------|
 | `LoggerView.swift` | Main logger view with session header, callsign input, QSO form |
+| `CallsignTextField.swift` | UITextField wrapper for callsign entry with proper cursor handling |
 | `LoggerCallsignCard.swift` | Callsign info display card for logger |
 | `SessionStartSheet.swift` | Session wizard for mode, frequency, activation type |
 | `ParkPickerSheet.swift` | Park search and nearby selection sheet |

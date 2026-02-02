@@ -697,22 +697,21 @@ struct LoggerView: View {
                         .transition(.scale.combined(with: .opacity))
                 }
 
-                TextField("Callsign or command...", text: $callsignInput)
-                    .font(.title3.monospaced())
-                    .textInputAutocapitalization(.characters)
-                    .autocorrectionDisabled()
-                    .foregroundStyle(detectedCommand != nil ? .purple : .primary)
-                    .focused($callsignFieldFocused)
-                    .onSubmit {
-                        // Defer to next run loop to avoid UICollectionView crash
-                        // when keyboard dismiss triggers List updates simultaneously
-                        DispatchQueue.main.async {
-                            handleInputSubmit()
-                        }
+                CallsignTextField(
+                    "Callsign or command...",
+                    text: $callsignInput,
+                    isFocused: $callsignFieldFocused
+                ) {
+                    // Defer to next run loop to avoid UICollectionView crash
+                    // when keyboard dismiss triggers List updates simultaneously
+                    DispatchQueue.main.async {
+                        handleInputSubmit()
                     }
-                    .onChange(of: callsignInput) { _, newValue in
-                        onCallsignChanged(newValue)
-                    }
+                }
+                .foregroundStyle(detectedCommand != nil ? .purple : .primary)
+                .onChange(of: callsignInput) { _, newValue in
+                    onCallsignChanged(newValue)
+                }
 
                 if !callsignInput.isEmpty {
                     Button {
@@ -1845,17 +1844,18 @@ struct QSOEditSheet: View {
                     HStack {
                         Text("Callsign")
                         Spacer()
-                        Text(qso.callsign)
+                        TextField("Callsign", text: $callsign)
                             .font(.body.monospaced())
-                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.trailing)
+                            .textInputAutocapitalization(.characters)
+                            .autocorrectionDisabled()
                     }
 
-                    HStack {
-                        Text("Time")
-                        Spacer()
-                        Text(qso.timestamp, format: .dateTime)
-                            .foregroundStyle(.secondary)
-                    }
+                    DatePicker(
+                        "Time",
+                        selection: $timestamp,
+                        displayedComponents: [.date, .hourAndMinute]
+                    )
                 }
 
                 Section("Signal Reports") {
@@ -1960,6 +1960,8 @@ struct QSOEditSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
 
+    @State private var callsign = ""
+    @State private var timestamp = Date()
     @State private var rstSent = ""
     @State private var rstReceived = ""
     @State private var name = ""
@@ -1969,6 +1971,8 @@ struct QSOEditSheet: View {
     @State private var showDeleteConfirmation = false
 
     private func loadQSOData() {
+        callsign = qso.callsign
+        timestamp = qso.timestamp
         rstSent = qso.rstSent ?? "599"
         rstReceived = qso.rstReceived ?? "599"
         name = qso.name ?? ""
@@ -1978,6 +1982,8 @@ struct QSOEditSheet: View {
     }
 
     private func saveChanges() {
+        qso.callsign = callsign.trimmingCharacters(in: .whitespaces).uppercased()
+        qso.timestamp = timestamp
         qso.rstSent = rstSent.isEmpty ? nil : rstSent
         qso.rstReceived = rstReceived.isEmpty ? nil : rstReceived
         qso.name = name.isEmpty ? nil : name
