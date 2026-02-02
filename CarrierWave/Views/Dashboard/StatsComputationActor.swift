@@ -1,4 +1,5 @@
 import Foundation
+import SwiftData
 
 // MARK: - QSOSnapshot
 
@@ -53,55 +54,38 @@ struct ComputedStats: Sendable {
     var uniqueMyCallsigns: Set<String> = []
 }
 
-// MARK: - StreakResult
-
-/// Internal result type for streak computation
-struct StreakResult: Sendable {
-    var current: Int = 0
-    var longest: Int = 0
-    var currentStart: Date?
-    var longestStart: Date?
-    var longestEnd: Date?
-    var lastActive: Date?
-}
-
 // MARK: - StatsComputationActor
 
-/// Background actor for computing statistics without blocking the main thread.
-/// Receives pre-converted snapshots and computes all stats in background.
+/// Background actor for fetching and computing statistics without blocking the main thread.
+/// Creates its own ModelContext from the container to perform all work off the main thread.
 actor StatsComputationActor {
     // MARK: Internal
 
-    /// Compute all statistics from pre-fetched snapshots on background thread.
+    /// Batch size for fetching - larger batches are fine since we're off the main thread
+    static let fetchBatchSize = 1_000
+
+    /// Fetch QSOs and compute all statistics on background thread.
     func computeStats(
-        from snapshots: [QSOSnapshot],
+        container: ModelContainer,
         onProgress: @escaping @Sendable (Double, String) -> Void
     ) async throws -> ComputedStats {
+        // Create background context - this is the key to off-main-thread fetching
+        let context = ModelContext(container)
+        context.autosaveEnabled = false
+
+        // Phase 1: Fetch and convert to snapshots
+        let snapshots = try await fetchAndConvertToSnapshots(
+            context: context,
+            onProgress: onProgress
+        )
+
         if snapshots.isEmpty {
             onProgress(1.0, "")
             return ComputedStats()
         }
 
-        onProgress(0.0, "Computing statistics...")
-
-        // Filter out metadata modes
-        let realQSOs = snapshots.filter { !Self.metadataModes.contains($0.mode.uppercased()) }
-
-        // Phase 1: Basic counts
-        var stats = try await computeBasicCounts(
-            from: snapshots, realQSOs: realQSOs, onProgress: onProgress
-        )
-
-        // Phase 2: Activations and activity
-        try await computeActivationsAndActivity(
-            into: &stats, from: realQSOs, onProgress: onProgress
-        )
-
-        // Phase 3: Streaks
-        try await computeStreaks(into: &stats, from: realQSOs, onProgress: onProgress)
-
-        onProgress(1.0, "")
-        return stats
+        // Phase 2: Compute stats from snapshots
+        return try await computeStatsFromSnapshots(snapshots, onProgress: onProgress)
     }
 
     // MARK: Private
@@ -155,6 +139,106 @@ actor StatsComputationActor {
         return parts.max(by: { $0.count < $1.count }) ?? callsign
     }
 
+    // MARK: - Fetching
+
+    /// Fetch QSOs in batches on background thread and convert to Sendable snapshots.
+    private func fetchAndConvertToSnapshots(
+        context: ModelContext,
+        onProgress: @escaping @Sendable (Double, String) -> Void
+    ) async throws -> [QSOSnapshot] {
+        onProgress(0.0, "Counting QSOs...")
+
+        // Get total count
+        let countDescriptor = FetchDescriptor<QSO>(predicate: #Predicate { !$0.isHidden })
+        let totalCount = (try? context.fetchCount(countDescriptor)) ?? 0
+
+        if totalCount == 0 {
+            return []
+        }
+
+        var snapshots: [QSOSnapshot] = []
+        snapshots.reserveCapacity(totalCount)
+
+        var offset = 0
+        let batchSize = Self.fetchBatchSize
+
+        onProgress(0.02, "Loading QSOs...")
+
+        while offset < totalCount {
+            try Task.checkCancellation()
+
+            var descriptor = FetchDescriptor<QSO>(predicate: #Predicate { !$0.isHidden })
+            descriptor.sortBy = [SortDescriptor(\.timestamp, order: .reverse)]
+            descriptor.fetchOffset = offset
+            descriptor.fetchLimit = batchSize
+
+            guard let batch = try? context.fetch(descriptor) else {
+                break
+            }
+
+            if batch.isEmpty {
+                break
+            }
+
+            // Convert to snapshots
+            for qso in batch {
+                let snapshot = QSOSnapshot(
+                    id: qso.id,
+                    callsign: qso.callsign,
+                    band: qso.band,
+                    mode: qso.mode,
+                    frequency: qso.frequency,
+                    timestamp: qso.timestamp,
+                    myCallsign: qso.myCallsign,
+                    theirGrid: qso.theirGrid,
+                    parkReference: qso.parkReference,
+                    importSource: qso.importSource,
+                    qrzConfirmed: qso.qrzConfirmed,
+                    lotwConfirmed: qso.lotwConfirmed,
+                    dxcc: qso.dxcc
+                )
+                snapshots.append(snapshot)
+            }
+
+            offset += batchSize
+
+            // Update progress (fetch phase is 0-50%)
+            let fetchProgress = 0.5 * Double(min(offset, totalCount)) / Double(totalCount)
+            onProgress(fetchProgress, "Loading QSOs... \(min(offset, totalCount))/\(totalCount)")
+        }
+
+        return snapshots
+    }
+
+    // MARK: - Statistics Computation
+
+    /// Compute all statistics from pre-fetched snapshots.
+    private func computeStatsFromSnapshots(
+        _ snapshots: [QSOSnapshot],
+        onProgress: @escaping @Sendable (Double, String) -> Void
+    ) async throws -> ComputedStats {
+        onProgress(0.50, "Computing statistics...")
+
+        // Filter out metadata modes
+        let realQSOs = snapshots.filter { !Self.metadataModes.contains($0.mode.uppercased()) }
+
+        // Phase 1: Basic counts
+        var stats = try await computeBasicCounts(
+            from: snapshots, realQSOs: realQSOs, onProgress: onProgress
+        )
+
+        // Phase 2: Activations and activity
+        try await computeActivationsAndActivity(
+            into: &stats, from: realQSOs, onProgress: onProgress
+        )
+
+        // Phase 3: Streaks
+        try await computeStreaks(into: &stats, from: realQSOs, onProgress: onProgress)
+
+        onProgress(1.0, "")
+        return stats
+    }
+
     // MARK: - Computation Phases
 
     private func computeBasicCounts(
@@ -165,29 +249,29 @@ actor StatsComputationActor {
         var stats = ComputedStats()
 
         stats.totalQSOs = realQSOs.count
-        onProgress(0.10, "Computing bands...")
+        onProgress(0.55, "Computing bands...")
 
         try Task.checkCancellation()
         stats.uniqueBands = Set(realQSOs.map { $0.band.lowercased() }).count
-        onProgress(0.15, "Computing grids...")
+        onProgress(0.58, "Computing grids...")
 
         try Task.checkCancellation()
         stats.uniqueGrids = Set(realQSOs.compactMap(\.theirGrid).filter { !$0.isEmpty }).count
-        onProgress(0.20, "Computing entities...")
+        onProgress(0.61, "Computing entities...")
 
         try Task.checkCancellation()
         stats.uniqueEntities = Set(realQSOs.compactMap(\.dxcc)).count
-        onProgress(0.25, "Computing confirmations...")
+        onProgress(0.64, "Computing confirmations...")
 
         try Task.checkCancellation()
         stats.confirmedQSLs = realQSOs.filter { $0.lotwConfirmed || $0.qrzConfirmed }.count
-        onProgress(0.30, "Computing service stats...")
+        onProgress(0.67, "Computing service stats...")
 
         try Task.checkCancellation()
         stats.qrzConfirmedCount = snapshots.filter(\.qrzConfirmed).count
         stats.lotwConfirmedCount = snapshots.filter(\.lotwConfirmed).count
         stats.icloudImportedCount = snapshots.filter { $0.importSource == .icloud }.count
-        onProgress(0.35, "Computing callsigns...")
+        onProgress(0.70, "Computing callsigns...")
 
         try Task.checkCancellation()
         stats.uniqueMyCallsigns = Set(
@@ -203,7 +287,7 @@ actor StatsComputationActor {
         from realQSOs: [QSOSnapshot],
         onProgress: @escaping @Sendable (Double, String) -> Void
     ) async throws {
-        onProgress(0.45, "Computing activations...")
+        onProgress(0.75, "Computing activations...")
 
         try Task.checkCancellation()
         // Compute activations (park + UTC date combinations)
@@ -212,7 +296,7 @@ actor StatsComputationActor {
             "\(qso.parkReference!)|\(Self.utcDateOnly(from: qso.timestamp).timeIntervalSince1970)"
         }
         stats.successfulActivations = activationGroups.values.filter { $0.count >= 10 }.count
-        onProgress(0.55, "Computing activity grid...")
+        onProgress(0.80, "Computing activity grid...")
 
         try Task.checkCancellation()
         // Activity by date
@@ -230,7 +314,7 @@ actor StatsComputationActor {
         from realQSOs: [QSOSnapshot],
         onProgress: @escaping @Sendable (Double, String) -> Void
     ) async throws {
-        onProgress(0.70, "Computing daily streak...")
+        onProgress(0.85, "Computing daily streak...")
 
         try Task.checkCancellation()
         let dailyResult = computeDailyStreak(from: realQSOs)
@@ -240,7 +324,7 @@ actor StatsComputationActor {
         stats.dailyStreakLongestStart = dailyResult.longestStart
         stats.dailyStreakLongestEnd = dailyResult.longestEnd
         stats.dailyStreakLastActive = dailyResult.lastActive
-        onProgress(0.85, "Computing POTA streak...")
+        onProgress(0.92, "Computing POTA streak...")
 
         try Task.checkCancellation()
         // Get activation groups for POTA streak
@@ -259,27 +343,31 @@ actor StatsComputationActor {
 
     private func computeDailyStreak(from qsos: [QSOSnapshot]) -> StreakResult {
         guard !qsos.isEmpty else {
-            return StreakResult()
+            return StreakResult(
+                current: 0, longest: 0, currentStart: nil,
+                longestStart: nil, longestEnd: nil, lastActive: nil
+            )
         }
 
         let calendar = Calendar.current
         let uniqueDates = Set(qsos.map { calendar.startOfDay(for: $0.timestamp) }).sorted()
 
         guard !uniqueDates.isEmpty else {
-            return StreakResult()
+            return StreakResult(
+                current: 0, longest: 0, currentStart: nil,
+                longestStart: nil, longestEnd: nil, lastActive: nil
+            )
         }
 
-        var result = StreakResult()
-        result.lastActive = uniqueDates.last
-
         let streakData = computeStreakFromDates(uniqueDates, using: calendar)
-        result.current = streakData.current
-        result.longest = streakData.longest
-        result.currentStart = streakData.currentStart
-        result.longestStart = streakData.longestStart
-        result.longestEnd = streakData.longestEnd
-
-        return result
+        return StreakResult(
+            current: streakData.current,
+            longest: streakData.longest,
+            currentStart: streakData.currentStart,
+            longestStart: streakData.longestStart,
+            longestEnd: streakData.longestEnd,
+            lastActive: uniqueDates.last
+        )
     }
 
     private func computePOTAStreak(from activationGroups: [String: [QSOSnapshot]]) -> StreakResult {
@@ -294,7 +382,10 @@ actor StatsComputationActor {
             }
 
         guard !successfulDates.isEmpty else {
-            return StreakResult()
+            return StreakResult(
+                current: 0, longest: 0, currentStart: nil,
+                longestStart: nil, longestEnd: nil, lastActive: nil
+            )
         }
 
         var calendar = Calendar.current
@@ -302,17 +393,15 @@ actor StatsComputationActor {
 
         let uniqueDates = Set(successfulDates).sorted()
 
-        var result = StreakResult()
-        result.lastActive = uniqueDates.last
-
         let streakData = computeStreakFromDates(uniqueDates, using: calendar)
-        result.current = streakData.current
-        result.longest = streakData.longest
-        result.currentStart = streakData.currentStart
-        result.longestStart = streakData.longestStart
-        result.longestEnd = streakData.longestEnd
-
-        return result
+        return StreakResult(
+            current: streakData.current,
+            longest: streakData.longest,
+            currentStart: streakData.currentStart,
+            longestStart: streakData.longestStart,
+            longestEnd: streakData.longestEnd,
+            lastActive: uniqueDates.last
+        )
     }
 
     /// Shared streak computation logic for sorted unique dates
@@ -358,12 +447,13 @@ actor StatsComputationActor {
         let yesterday = calendar.date(byAdding: .day, value: -1, to: today)!
         let isActive = previousDate == today || previousDate == yesterday
 
-        var result = StreakResult()
-        result.current = isActive ? currentStreak : 0
-        result.longest = longestStreak
-        result.currentStart = isActive ? streakStart : nil
-        result.longestStart = longestStreakStart
-        result.longestEnd = longestStreakEnd
-        return result
+        return StreakResult(
+            current: isActive ? currentStreak : 0,
+            longest: longestStreak,
+            currentStart: isActive ? streakStart : nil,
+            longestStart: longestStreakStart,
+            longestEnd: longestStreakEnd,
+            lastActive: previousDate
+        )
     }
 }

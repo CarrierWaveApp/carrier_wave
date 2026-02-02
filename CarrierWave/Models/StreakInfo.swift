@@ -72,7 +72,7 @@ struct StreakInfo: Identifiable {
 
 // MARK: - StreakResult
 
-struct StreakResult {
+struct StreakResult: Sendable {
     static let empty = StreakResult(
         current: 0, longest: 0, currentStart: nil,
         longestStart: nil, longestEnd: nil, lastActive: nil

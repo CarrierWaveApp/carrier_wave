@@ -4,8 +4,8 @@ import SwiftData
 // MARK: - AsyncQSOStatistics
 
 /// Wrapper for QSOStatistics that computes expensive stats on a background thread.
-/// Fetches on main thread (required for SwiftData), converts to snapshots,
-/// then computes stats on background actor.
+/// All fetching and computation happens off the main thread via StatsComputationActor.
+/// Only the final result application runs on the main actor.
 @MainActor
 @Observable
 final class AsyncQSOStatistics {
@@ -14,9 +14,6 @@ final class AsyncQSOStatistics {
     init() {}
 
     // MARK: Internal
-
-    /// Batch size for fetching - small batches with yields to keep UI responsive during fetch
-    static let fetchBatchSize = 100
 
     // MARK: - Published Stats
 
@@ -47,24 +44,35 @@ final class AsyncQSOStatistics {
     private(set) var hasComputed = false
 
     /// Compute statistics from the model context.
-    /// Fetches on main thread with yields, then computes on background.
+    /// All fetching and computation happens on a background thread.
     /// If already computing or already computed, this is a no-op.
     /// Use `recompute()` to force a fresh computation.
     func compute(from modelContext: ModelContext) {
+        compute(from: modelContext.container)
+    }
+
+    /// Compute statistics from the model container.
+    /// All fetching and computation happens on a background thread.
+    func compute(from container: ModelContainer) {
         // Skip if already computing or already have results
         if isComputing || hasComputed {
             return
         }
 
-        startComputation(from: modelContext)
+        startComputation(from: container)
     }
 
     /// Force recomputation of statistics (e.g., after sync)
     func recompute(from modelContext: ModelContext) {
+        recompute(from: modelContext.container)
+    }
+
+    /// Force recomputation of statistics from container
+    func recompute(from container: ModelContainer) {
         // Cancel any in-flight computation and start fresh
         computeTask?.cancel()
         hasComputed = false
-        startComputation(from: modelContext)
+        startComputation(from: container)
     }
 
     /// Access underlying QSOStatistics for drill-down views.
@@ -75,13 +83,14 @@ final class AsyncQSOStatistics {
             return stats
         }
 
-        // If we have no context or are still computing, return nil
-        guard let context = mainModelContext, !isComputing else {
+        // If we have no container or are still computing, return nil
+        guard let container = modelContainer, !isComputing else {
             return nil
         }
 
         // Lazily fetch QSOs on main thread for drill-down
         // This is acceptable because it's triggered by explicit user navigation
+        let context = ModelContext(container)
         var descriptor = FetchDescriptor<QSO>(predicate: #Predicate { !$0.isHidden })
         descriptor.sortBy = [SortDescriptor(\.timestamp, order: .reverse)]
 
@@ -102,37 +111,42 @@ final class AsyncQSOStatistics {
 
     // MARK: Private
 
+    /// Throttle interval for progress updates to reduce main thread work
+    private static let progressUpdateInterval: TimeInterval = 0.1
+
     private var stats: QSOStatistics?
-    private var mainModelContext: ModelContext?
+    private var modelContainer: ModelContainer?
     private var computeTask: Task<Void, Never>?
     private let computationActor = StatsComputationActor()
 
-    private func startComputation(from modelContext: ModelContext) {
+    private var lastProgressUpdate: Date = .distantPast
+
+    private func startComputation(from container: ModelContainer) {
         isComputing = true
         progress = 0.0
         progressPhase = "Starting..."
 
-        // Store reference to main context for lazy QSOStatistics loading
-        mainModelContext = modelContext
+        // Store reference to container for lazy QSOStatistics loading
+        modelContainer = container
 
         computeTask = Task {
             do {
-                // Phase 1: Fetch and convert to snapshots on main thread with yields
-                let snapshots = await fetchAndConvertToSnapshots(from: modelContext)
-
-                guard !Task.isCancelled else {
-                    cleanup()
-                    return
-                }
-
-                // Phase 2: Compute stats on background actor
                 let result = try await computationActor.computeStats(
-                    from: snapshots,
+                    container: container,
                     onProgress: { [weak self] progress, phase in
                         Task { @MainActor [weak self] in
-                            // Adjust progress to account for fetch phase (0-50%)
-                            self?.progress = 0.5 + progress * 0.5
-                            self?.progressPhase = phase
+                            guard let self else {
+                                return
+                            }
+                            // Throttle progress updates to reduce UI churn
+                            let now = Date()
+                            if now.timeIntervalSince(lastProgressUpdate)
+                                >= Self.progressUpdateInterval
+                            {
+                                self.progress = progress
+                                progressPhase = phase
+                                lastProgressUpdate = now
+                            }
                         }
                     }
                 )
@@ -145,79 +159,6 @@ final class AsyncQSOStatistics {
                 cleanup()
             }
         }
-    }
-
-    /// Fetch QSOs in batches on main thread and convert to Sendable snapshots.
-    /// Uses yields between batches to keep UI responsive.
-    @MainActor
-    private func fetchAndConvertToSnapshots(from modelContext: ModelContext) async -> [QSOSnapshot] {
-        progressPhase = "Counting QSOs..."
-
-        // Get total count
-        let countDescriptor = FetchDescriptor<QSO>(predicate: #Predicate { !$0.isHidden })
-        let totalCount = (try? modelContext.fetchCount(countDescriptor)) ?? 0
-
-        if totalCount == 0 {
-            return []
-        }
-
-        var snapshots: [QSOSnapshot] = []
-        snapshots.reserveCapacity(totalCount)
-
-        var offset = 0
-        let batchSize = Self.fetchBatchSize
-
-        progressPhase = "Loading QSOs..."
-
-        while offset < totalCount {
-            // Yield before each batch to keep UI responsive
-            await Task.yield()
-
-            guard !Task.isCancelled else {
-                return []
-            }
-
-            var descriptor = FetchDescriptor<QSO>(predicate: #Predicate { !$0.isHidden })
-            descriptor.sortBy = [SortDescriptor(\.timestamp, order: .reverse)]
-            descriptor.fetchOffset = offset
-            descriptor.fetchLimit = batchSize
-
-            guard let batch = try? modelContext.fetch(descriptor) else {
-                break
-            }
-
-            if batch.isEmpty {
-                break
-            }
-
-            // Convert to snapshots (this accesses @Model properties on main actor)
-            for qso in batch {
-                let snapshot = QSOSnapshot(
-                    id: qso.id,
-                    callsign: qso.callsign,
-                    band: qso.band,
-                    mode: qso.mode,
-                    frequency: qso.frequency,
-                    timestamp: qso.timestamp,
-                    myCallsign: qso.myCallsign,
-                    theirGrid: qso.theirGrid,
-                    parkReference: qso.parkReference,
-                    importSource: qso.importSource,
-                    qrzConfirmed: qso.qrzConfirmed,
-                    lotwConfirmed: qso.lotwConfirmed,
-                    dxcc: qso.dxcc
-                )
-                snapshots.append(snapshot)
-            }
-
-            offset += batchSize
-
-            // Update progress (fetch phase is 0-50%)
-            progress = 0.5 * Double(offset) / Double(totalCount)
-            progressPhase = "Loading QSOs... \(min(offset, totalCount))/\(totalCount)"
-        }
-
-        return snapshots
     }
 
     private func applyResults(_ computed: ComputedStats) {
