@@ -52,12 +52,13 @@ final class AsyncQSOStatistics {
 
     /// Compute statistics by fetching from database in background.
     /// This is the preferred method - avoids loading all QSOs into memory at once.
+    /// Preserves existing values while computing to avoid UI flashing.
     func compute(from modelContext: ModelContext) {
         // Cancel any in-flight computation
         computeTask?.cancel()
 
-        // Reset deferred values to nil (shows placeholders in UI)
-        resetDeferredValues()
+        // Don't reset values - keep showing old data until new data is ready
+        // This prevents UI flashing during recomputation
 
         isComputing = true
         computeTask = Task {
@@ -67,12 +68,12 @@ final class AsyncQSOStatistics {
 
     /// Legacy method for compatibility - compute from pre-fetched QSOs.
     /// Prefer compute(from: ModelContext) to avoid memory pressure.
+    /// Preserves existing values while computing to avoid UI flashing.
     func compute(from qsos: [QSO]) {
         // Cancel any in-flight computation
         computeTask?.cancel()
 
-        // Reset deferred values to nil (shows placeholders in UI)
-        resetDeferredValues()
+        // Don't reset values - keep showing old data until new data is ready
 
         // Create fresh stats object (lazy caching happens inside)
         let newStats = QSOStatistics(qsos: qsos)
@@ -87,7 +88,9 @@ final class AsyncQSOStatistics {
         qrzConfirmedCount = qsos.filter(\.qrzConfirmed).count
         lotwConfirmedCount = qsos.filter(\.lotwConfirmed).count
         icloudImportedCount = qsos.filter { $0.importSource == .icloud }.count
-        uniqueMyCallsigns = Set(qsos.map { $0.myCallsign.uppercased() }.filter { !$0.isEmpty })
+        uniqueMyCallsigns = Set(
+            qsos.map { Self.extractBaseCallsign($0.myCallsign.uppercased()) }.filter { !$0.isEmpty }
+        )
 
         // For small datasets, compute everything synchronously
         if qsos.count <= Self.progressiveThreshold {
@@ -118,6 +121,53 @@ final class AsyncQSOStatistics {
 
     private var stats: QSOStatistics?
     private var computeTask: Task<Void, Never>?
+
+    /// Extract the base callsign from a potentially prefixed/suffixed callsign
+    /// e.g., "W6JSV/P" -> "W6JSV", "VE3/W6JSV" -> "W6JSV", "W1WC/CW" -> "W1WC"
+    private static func extractBaseCallsign(_ callsign: String) -> String {
+        let parts = callsign.split(separator: "/").map(String.init)
+
+        guard parts.count > 1 else {
+            return callsign
+        }
+
+        // Common suffixes that indicate the base callsign is before them
+        let knownSuffixes: Set<String> = [
+            "P", "M", "MM", "AM", "QRP", "R", "A", "B", "LH", "LGT", "CW", "SSB", "FT8",
+        ]
+
+        // For 2 parts: check if second part is a known suffix or short
+        if parts.count == 2 {
+            let first = parts[0]
+            let second = parts[1]
+
+            // If second is a known suffix, first is the base
+            if knownSuffixes.contains(second.uppercased()) {
+                return first
+            }
+
+            // If second is very short (1-3 chars), it's likely a suffix
+            if second.count <= 3 {
+                return first
+            }
+
+            // If first is very short (1-2 chars), it's likely a country prefix
+            if first.count <= 2 {
+                return second
+            }
+
+            // Otherwise, return the longer one
+            return first.count >= second.count ? first : second
+        }
+
+        // For 3 parts (prefix/call/suffix): middle is the base
+        if parts.count == 3 {
+            return parts[1]
+        }
+
+        // Fallback: return the longest part
+        return parts.max(by: { $0.count < $1.count }) ?? callsign
+    }
 
     private func resetDeferredValues() {
         confirmedQSLs = nil
@@ -175,7 +225,9 @@ final class AsyncQSOStatistics {
         qrzConfirmedCount = qsos.filter(\.qrzConfirmed).count
         lotwConfirmedCount = qsos.filter(\.lotwConfirmed).count
         icloudImportedCount = qsos.filter { $0.importSource == .icloud }.count
-        uniqueMyCallsigns = Set(qsos.map { $0.myCallsign.uppercased() }.filter { !$0.isEmpty })
+        uniqueMyCallsigns = Set(
+            qsos.map { Self.extractBaseCallsign($0.myCallsign.uppercased()) }.filter { !$0.isEmpty }
+        )
 
         computeAllSynchronously(from: newStats)
     }
@@ -226,7 +278,10 @@ final class AsyncQSOStatistics {
         qrzConfirmedCount = allQSOs.filter(\.qrzConfirmed).count
         lotwConfirmedCount = allQSOs.filter(\.lotwConfirmed).count
         icloudImportedCount = allQSOs.filter { $0.importSource == .icloud }.count
-        uniqueMyCallsigns = Set(allQSOs.map { $0.myCallsign.uppercased() }.filter { !$0.isEmpty })
+        uniqueMyCallsigns = Set(
+            allQSOs.map { Self.extractBaseCallsign($0.myCallsign.uppercased()) }
+                .filter { !$0.isEmpty }
+        )
 
         await Task.yield()
         guard !Task.isCancelled else {

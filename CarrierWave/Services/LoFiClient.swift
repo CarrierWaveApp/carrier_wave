@@ -48,6 +48,18 @@ final class LoFiClient {
 
     // MARK: Internal
 
+    /// Progress info passed to callback during sync
+    struct SyncProgressInfo {
+        /// Total QSOs expected (from accounts endpoint)
+        let totalQSOs: Int
+        /// Total operations expected
+        let totalOperations: Int
+        /// QSOs downloaded so far
+        let downloadedQSOs: Int
+        /// Operations processed so far
+        let processedOperations: Int
+    }
+
     // MARK: Internal (for extension access)
 
     let baseURL = "https://lofi.ham2k.net"
@@ -189,6 +201,19 @@ final class LoFiClient {
         return registration.token
     }
 
+    // MARK: - Fetch Account Info
+
+    /// Fetch account info including total QSO and operation counts
+    /// Used to display sync progress
+    func fetchAccountInfo() async throws -> LoFiAccountsResponse {
+        let token = try getToken()
+
+        var urlRequest = URLRequest(url: URL(string: "\(baseURL)/v1/accounts")!)
+        urlRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+
+        return try await performRequest(urlRequest)
+    }
+
     // MARK: - Fetch Operations
 
     /// Fetch operations with pagination
@@ -255,7 +280,10 @@ final class LoFiClient {
     }
 
     /// Fetch all QSOs from all operations since last sync
-    func fetchAllQsosSinceLastSync() async throws -> [(LoFiQso, LoFiOperation)] {
+    /// - Parameter onProgress: Optional callback invoked as QSOs are downloaded
+    func fetchAllQsosSinceLastSync(
+        onProgress: ((SyncProgressInfo) -> Void)? = nil
+    ) async throws -> [(LoFiQso, LoFiOperation)] {
         let lastSyncMillis = getLastSyncMillis()
         let isFreshSync = lastSyncMillis == 0
         let debugLog = SyncDebugLog.shared
@@ -288,15 +316,47 @@ final class LoFiClient {
             )
         }
 
+        // Fetch account info for progress tracking
+        var totalQSOs = 0
+        var totalOperations = 0
+        if onProgress != nil {
+            do {
+                let accountInfo = try await fetchAccountInfo()
+                totalQSOs = accountInfo.qsos.syncable
+                totalOperations = accountInfo.operations.syncable
+                debugLog.info(
+                    "Account has \(totalQSOs) syncable QSOs in \(totalOperations) operations",
+                    service: .lofi
+                )
+            } catch {
+                debugLog.warning(
+                    "Could not fetch account info for progress: \(error.localizedDescription)",
+                    service: .lofi
+                )
+            }
+        }
+
         // Fetch all operations (both active and deleted)
         let operations = try await fetchAllOperations(isFreshSync: isFreshSync, debugLog: debugLog)
 
-        // Fetch QSOs for each operation
+        // Fetch QSOs for each operation with progress tracking
         let (qsosByUUID, maxSyncMillis) = try await fetchQsosForOperations(
             operations,
             lastSyncMillis: lastSyncMillis,
             isFreshSync: isFreshSync,
-            debugLog: debugLog
+            debugLog: debugLog,
+            onProgress: onProgress.map { callback in
+                { downloadedQSOs, processedOperations in
+                    callback(
+                        SyncProgressInfo(
+                            totalQSOs: totalQSOs,
+                            totalOperations: totalOperations,
+                            downloadedQSOs: downloadedQSOs,
+                            processedOperations: processedOperations
+                        )
+                    )
+                }
+            }
         )
 
         // Update last sync timestamp
@@ -574,7 +634,8 @@ final class LoFiClient {
         _ operations: [LoFiOperation],
         lastSyncMillis: Int64,
         isFreshSync: Bool,
-        debugLog: SyncDebugLog
+        debugLog: SyncDebugLog,
+        onProgress: ((Int, Int) -> Void)? = nil
     ) async throws -> ([String: (LoFiQso, LoFiOperation)], Int64) {
         var qsosByUUID: [String: (LoFiQso, LoFiOperation)] = [:]
         var maxSyncMillis = lastSyncMillis
@@ -582,6 +643,7 @@ final class LoFiClient {
 
         debugLog.info("Fetching QSOs from \(operations.count) operations", service: .lofi)
 
+        var processedOperations = 0
         for operation in operations {
             let (opQsos, opMaxSync) = try await fetchQsosForOperation(
                 operation,
@@ -593,6 +655,9 @@ final class LoFiClient {
                 qsosByUUID[qso.uuid] = (qso, op)
             }
             maxSyncMillis = max(maxSyncMillis, opMaxSync)
+
+            processedOperations += 1
+            onProgress?(qsosByUUID.count, processedOperations)
         }
 
         return (qsosByUUID, maxSyncMillis)

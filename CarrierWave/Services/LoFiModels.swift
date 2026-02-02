@@ -90,6 +90,22 @@ struct LoFiLinkDeviceRequest: Encodable, @unchecked Sendable {
     let email: String
 }
 
+// MARK: - LoFiAccountsResponse
+
+/// Response from GET /v1/accounts - includes total counts for progress display
+struct LoFiAccountsResponse: Decodable, @unchecked Sendable {
+    let operations: LoFiRecordCounts
+    let qsos: LoFiRecordCounts
+}
+
+// MARK: - LoFiRecordCounts
+
+/// Total and syncable counts for a record type
+struct LoFiRecordCounts: Decodable, @unchecked Sendable {
+    let total: Int
+    let syncable: Int
+}
+
 // MARK: - LoFiOperationsResponse
 
 struct LoFiOperationsResponse: Decodable, @unchecked Sendable {
@@ -143,7 +159,7 @@ struct LoFiOperation: Decodable, @unchecked Sendable {
         account = try container.decode(String.self, forKey: .account)
         createdAtMillis = try container.decode(Double.self, forKey: .createdAtMillis)
         createdOnDeviceId = try container.decodeIfPresent(String.self, forKey: .createdOnDeviceId)
-        updatedAtMillis = try container.decode(Double.self, forKey: .updatedAtMillis)
+        updatedAtMillis = try container.decodeIfPresent(Double.self, forKey: .updatedAtMillis)
         updatedOnDeviceId = try container.decodeIfPresent(String.self, forKey: .updatedOnDeviceId)
         syncedAtMillis = try container.decodeIfPresent(Double.self, forKey: .syncedAtMillis)
         title = try container.decodeIfPresent(String.self, forKey: .title)
@@ -202,7 +218,7 @@ struct LoFiOperation: Decodable, @unchecked Sendable {
     let account: String
     let createdAtMillis: Double
     let createdOnDeviceId: String?
-    let updatedAtMillis: Double
+    let updatedAtMillis: Double?
     let updatedOnDeviceId: String?
     let syncedAtMillis: Double?
     let title: String?
