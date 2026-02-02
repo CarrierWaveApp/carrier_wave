@@ -3,9 +3,9 @@ import SwiftData
 
 // MARK: - AsyncQSOStatistics
 
-/// Wrapper for QSOStatistics that computes expensive stats progressively.
-/// Fetches data in the background to avoid blocking the UI.
-/// Uses cooperative yielding (Task.yield) to prevent UI blocking on large datasets.
+/// Wrapper for QSOStatistics that computes expensive stats on a background thread.
+/// Fetches on main thread (required for SwiftData), converts to snapshots,
+/// then computes stats on background actor.
 @MainActor
 @Observable
 final class AsyncQSOStatistics {
@@ -15,31 +15,22 @@ final class AsyncQSOStatistics {
 
     // MARK: Internal
 
-    /// Threshold for progressive loading (compute everything synchronously below this)
-    static let progressiveThreshold = 1_000
+    /// Batch size for fetching - small batches with yields to keep UI responsive during fetch
+    static let fetchBatchSize = 100
 
-    /// Batch size for paginated fetching
-    static let fetchBatchSize = 500
-
-    // MARK: - Phase 1: Instant stats (from count queries)
+    // MARK: - Published Stats
 
     private(set) var totalQSOs: Int = 0
     private(set) var uniqueBands: Int = 0
     private(set) var uniqueGrids: Int = 0
-
-    // MARK: - Phase 2: Deferred stats (nil = still computing)
-
     private(set) var confirmedQSLs: Int?
     private(set) var uniqueEntities: Int?
     private(set) var successfulActivations: Int?
-
-    // MARK: - Phase 3: Expensive stats
-
     private(set) var activityByDate: [Date: Int]?
     private(set) var dailyStreak: StreakInfo?
     private(set) var potaActivationStreak: StreakInfo?
 
-    // MARK: - Service stats (for dashboard cards)
+    // MARK: - Service stats
 
     private(set) var qrzConfirmedCount: Int = 0
     private(set) var lotwConfirmedCount: Int = 0
@@ -49,66 +40,58 @@ final class AsyncQSOStatistics {
     // MARK: - Computation state
 
     private(set) var isComputing = false
+    private(set) var progress: Double = 0.0
+    private(set) var progressPhase: String = ""
 
-    /// Compute statistics by fetching from database in background.
-    /// This is the preferred method - avoids loading all QSOs into memory at once.
-    /// Preserves existing values while computing to avoid UI flashing.
+    /// Whether stats have been computed at least once
+    private(set) var hasComputed = false
+
+    /// Compute statistics from the model context.
+    /// Fetches on main thread with yields, then computes on background.
+    /// If already computing or already computed, this is a no-op.
+    /// Use `recompute()` to force a fresh computation.
     func compute(from modelContext: ModelContext) {
-        // Cancel any in-flight computation
-        computeTask?.cancel()
-
-        // Don't reset values - keep showing old data until new data is ready
-        // This prevents UI flashing during recomputation
-
-        isComputing = true
-        computeTask = Task {
-            await computeFromDatabase(modelContext: modelContext)
-        }
-    }
-
-    /// Legacy method for compatibility - compute from pre-fetched QSOs.
-    /// Prefer compute(from: ModelContext) to avoid memory pressure.
-    /// Preserves existing values while computing to avoid UI flashing.
-    func compute(from qsos: [QSO]) {
-        // Cancel any in-flight computation
-        computeTask?.cancel()
-
-        // Don't reset values - keep showing old data until new data is ready
-
-        // Create fresh stats object (lazy caching happens inside)
-        let newStats = QSOStatistics(qsos: qsos)
-        stats = newStats
-
-        // Phase 1: Instant stats (these are cheap - just array access)
-        totalQSOs = newStats.totalQSOs
-        uniqueBands = newStats.uniqueBands
-        uniqueGrids = newStats.uniqueGrids
-
-        // Compute service stats
-        qrzConfirmedCount = qsos.filter(\.qrzConfirmed).count
-        lotwConfirmedCount = qsos.filter(\.lotwConfirmed).count
-        icloudImportedCount = qsos.filter { $0.importSource == .icloud }.count
-        uniqueMyCallsigns = Set(
-            qsos.map { Self.extractBaseCallsign($0.myCallsign.uppercased()) }.filter { !$0.isEmpty }
-        )
-
-        // For small datasets, compute everything synchronously
-        if qsos.count <= Self.progressiveThreshold {
-            computeAllSynchronously(from: newStats)
+        // Skip if already computing or already have results
+        if isComputing || hasComputed {
             return
         }
 
-        // For large datasets, compute progressively with yielding
-        isComputing = true
-        computeTask = Task {
-            await computeProgressively(from: newStats)
-        }
+        startComputation(from: modelContext)
+    }
+
+    /// Force recomputation of statistics (e.g., after sync)
+    func recompute(from modelContext: ModelContext) {
+        // Cancel any in-flight computation and start fresh
+        computeTask?.cancel()
+        hasComputed = false
+        startComputation(from: modelContext)
     }
 
     /// Access underlying QSOStatistics for drill-down views.
-    /// Returns nil if no computation has been done yet.
+    /// Lazily fetches QSOs from main context if not already loaded.
     func getStats() -> QSOStatistics? {
-        stats
+        // Return cached stats if available
+        if let stats {
+            return stats
+        }
+
+        // If we have no context or are still computing, return nil
+        guard let context = mainModelContext, !isComputing else {
+            return nil
+        }
+
+        // Lazily fetch QSOs on main thread for drill-down
+        // This is acceptable because it's triggered by explicit user navigation
+        var descriptor = FetchDescriptor<QSO>(predicate: #Predicate { !$0.isHidden })
+        descriptor.sortBy = [SortDescriptor(\.timestamp, order: .reverse)]
+
+        guard let qsos = try? context.fetch(descriptor) else {
+            return nil
+        }
+
+        let newStats = QSOStatistics(qsos: qsos)
+        stats = newStats
+        return newStats
     }
 
     /// Cancel any in-flight computation.
@@ -120,131 +103,78 @@ final class AsyncQSOStatistics {
     // MARK: Private
 
     private var stats: QSOStatistics?
+    private var mainModelContext: ModelContext?
     private var computeTask: Task<Void, Never>?
+    private let computationActor = StatsComputationActor()
 
-    /// Extract the base callsign from a potentially prefixed/suffixed callsign
-    /// e.g., "W6JSV/P" -> "W6JSV", "VE3/W6JSV" -> "W6JSV", "W1WC/CW" -> "W1WC"
-    private static func extractBaseCallsign(_ callsign: String) -> String {
-        let parts = callsign.split(separator: "/").map(String.init)
+    private func startComputation(from modelContext: ModelContext) {
+        isComputing = true
+        progress = 0.0
+        progressPhase = "Starting..."
 
-        guard parts.count > 1 else {
-            return callsign
-        }
+        // Store reference to main context for lazy QSOStatistics loading
+        mainModelContext = modelContext
 
-        // Common suffixes that indicate the base callsign is before them
-        let knownSuffixes: Set<String> = [
-            "P", "M", "MM", "AM", "QRP", "R", "A", "B", "LH", "LGT", "CW", "SSB", "FT8",
-        ]
+        computeTask = Task {
+            do {
+                // Phase 1: Fetch and convert to snapshots on main thread with yields
+                let snapshots = await fetchAndConvertToSnapshots(from: modelContext)
 
-        // For 2 parts: check if second part is a known suffix or short
-        if parts.count == 2 {
-            let first = parts[0]
-            let second = parts[1]
+                guard !Task.isCancelled else {
+                    cleanup()
+                    return
+                }
 
-            // If second is a known suffix, first is the base
-            if knownSuffixes.contains(second.uppercased()) {
-                return first
+                // Phase 2: Compute stats on background actor
+                let result = try await computationActor.computeStats(
+                    from: snapshots,
+                    onProgress: { [weak self] progress, phase in
+                        Task { @MainActor [weak self] in
+                            // Adjust progress to account for fetch phase (0-50%)
+                            self?.progress = 0.5 + progress * 0.5
+                            self?.progressPhase = phase
+                        }
+                    }
+                )
+
+                // Apply results on main actor
+                applyResults(result)
+            } catch is CancellationError {
+                cleanup()
+            } catch {
+                cleanup()
             }
-
-            // If second is very short (1-3 chars), it's likely a suffix
-            if second.count <= 3 {
-                return first
-            }
-
-            // If first is very short (1-2 chars), it's likely a country prefix
-            if first.count <= 2 {
-                return second
-            }
-
-            // Otherwise, return the longer one
-            return first.count >= second.count ? first : second
         }
-
-        // For 3 parts (prefix/call/suffix): middle is the base
-        if parts.count == 3 {
-            return parts[1]
-        }
-
-        // Fallback: return the longest part
-        return parts.max(by: { $0.count < $1.count }) ?? callsign
     }
 
-    private func resetDeferredValues() {
-        confirmedQSLs = nil
-        uniqueEntities = nil
-        successfulActivations = nil
-        activityByDate = nil
-        dailyStreak = nil
-        potaActivationStreak = nil
-    }
-
-    /// Compute stats by fetching from database in batches to avoid memory pressure.
+    /// Fetch QSOs in batches on main thread and convert to Sendable snapshots.
+    /// Uses yields between batches to keep UI responsive.
     @MainActor
-    private func computeFromDatabase(modelContext: ModelContext) async {
-        // Phase 1: Quick count query for total
+    private func fetchAndConvertToSnapshots(from modelContext: ModelContext) async -> [QSOSnapshot] {
+        progressPhase = "Counting QSOs..."
+
+        // Get total count
         let countDescriptor = FetchDescriptor<QSO>(predicate: #Predicate { !$0.isHidden })
-        let count = (try? modelContext.fetchCount(countDescriptor)) ?? 0
-        totalQSOs = count
+        let totalCount = (try? modelContext.fetchCount(countDescriptor)) ?? 0
 
-        guard !Task.isCancelled else {
-            return cleanup()
+        if totalCount == 0 {
+            return []
         }
 
-        // For empty or very small datasets, fetch all and compute
-        if count <= Self.progressiveThreshold {
-            await fetchAllAndCompute(modelContext: modelContext)
-            return
-        }
-
-        // For large datasets, fetch in batches
-        await fetchInBatchesAndCompute(modelContext: modelContext, totalCount: count)
-    }
-
-    /// Fetch all QSOs and compute (for small datasets)
-    @MainActor
-    private func fetchAllAndCompute(modelContext: ModelContext) async {
-        var descriptor = FetchDescriptor<QSO>(predicate: #Predicate { !$0.isHidden })
-        descriptor.sortBy = [SortDescriptor(\.timestamp, order: .reverse)]
-
-        guard let qsos = try? modelContext.fetch(descriptor) else {
-            cleanup()
-            return
-        }
-
-        guard !Task.isCancelled else {
-            return cleanup()
-        }
-
-        // Create stats and compute
-        let newStats = QSOStatistics(qsos: qsos)
-        stats = newStats
-
-        totalQSOs = newStats.totalQSOs
-        uniqueBands = newStats.uniqueBands
-        uniqueGrids = newStats.uniqueGrids
-        qrzConfirmedCount = qsos.filter(\.qrzConfirmed).count
-        lotwConfirmedCount = qsos.filter(\.lotwConfirmed).count
-        icloudImportedCount = qsos.filter { $0.importSource == .icloud }.count
-        uniqueMyCallsigns = Set(
-            qsos.map { Self.extractBaseCallsign($0.myCallsign.uppercased()) }.filter { !$0.isEmpty }
-        )
-
-        computeAllSynchronously(from: newStats)
-    }
-
-    /// Fetch QSOs in batches and compute progressively (for large datasets)
-    @MainActor
-    private func fetchInBatchesAndCompute(modelContext: ModelContext, totalCount: Int) async {
-        var allQSOs: [QSO] = []
-        allQSOs.reserveCapacity(totalCount)
+        var snapshots: [QSOSnapshot] = []
+        snapshots.reserveCapacity(totalCount)
 
         var offset = 0
         let batchSize = Self.fetchBatchSize
 
-        // Fetch in batches with yielding
+        progressPhase = "Loading QSOs..."
+
         while offset < totalCount {
+            // Yield before each batch to keep UI responsive
+            await Task.yield()
+
             guard !Task.isCancelled else {
-                return cleanup()
+                return []
             }
 
             var descriptor = FetchDescriptor<QSO>(predicate: #Predicate { !$0.isHidden })
@@ -256,90 +186,91 @@ final class AsyncQSOStatistics {
                 break
             }
 
-            allQSOs.append(contentsOf: batch)
+            if batch.isEmpty {
+                break
+            }
+
+            // Convert to snapshots (this accesses @Model properties on main actor)
+            for qso in batch {
+                let snapshot = QSOSnapshot(
+                    id: qso.id,
+                    callsign: qso.callsign,
+                    band: qso.band,
+                    mode: qso.mode,
+                    frequency: qso.frequency,
+                    timestamp: qso.timestamp,
+                    myCallsign: qso.myCallsign,
+                    theirGrid: qso.theirGrid,
+                    parkReference: qso.parkReference,
+                    importSource: qso.importSource,
+                    qrzConfirmed: qso.qrzConfirmed,
+                    lotwConfirmed: qso.lotwConfirmed,
+                    dxcc: qso.dxcc
+                )
+                snapshots.append(snapshot)
+            }
+
             offset += batchSize
 
-            // Yield after each batch to keep UI responsive
-            await Task.yield()
+            // Update progress (fetch phase is 0-50%)
+            progress = 0.5 * Double(offset) / Double(totalCount)
+            progressPhase = "Loading QSOs... \(min(offset, totalCount))/\(totalCount)"
         }
 
-        guard !Task.isCancelled else {
-            return cleanup()
-        }
+        return snapshots
+    }
 
-        // Create stats from all fetched QSOs
-        let newStats = QSOStatistics(qsos: allQSOs)
-        stats = newStats
+    private func applyResults(_ computed: ComputedStats) {
+        totalQSOs = computed.totalQSOs
+        uniqueBands = computed.uniqueBands
+        uniqueGrids = computed.uniqueGrids
+        confirmedQSLs = computed.confirmedQSLs
+        uniqueEntities = computed.uniqueEntities
+        successfulActivations = computed.successfulActivations
+        activityByDate = computed.activityByDate
 
-        // Phase 1: Basic stats
-        totalQSOs = newStats.totalQSOs
-        uniqueBands = newStats.uniqueBands
-        uniqueGrids = newStats.uniqueGrids
-        qrzConfirmedCount = allQSOs.filter(\.qrzConfirmed).count
-        lotwConfirmedCount = allQSOs.filter(\.lotwConfirmed).count
-        icloudImportedCount = allQSOs.filter { $0.importSource == .icloud }.count
-        uniqueMyCallsigns = Set(
-            allQSOs.map { Self.extractBaseCallsign($0.myCallsign.uppercased()) }
-                .filter { !$0.isEmpty }
+        // Convert streak data to StreakInfo
+        dailyStreak = StreakInfo(
+            id: "daily",
+            category: .daily,
+            subcategory: nil,
+            currentStreak: computed.dailyStreakCurrent,
+            longestStreak: computed.dailyStreakLongest,
+            currentStartDate: computed.dailyStreakCurrentStart,
+            longestStartDate: computed.dailyStreakLongestStart,
+            longestEndDate: computed.dailyStreakLongestEnd,
+            lastActiveDate: computed.dailyStreakLastActive
         )
 
-        await Task.yield()
-        guard !Task.isCancelled else {
-            return cleanup()
-        }
+        potaActivationStreak = StreakInfo(
+            id: "pota",
+            category: .pota,
+            subcategory: nil,
+            currentStreak: computed.potaStreakCurrent,
+            longestStreak: computed.potaStreakLongest,
+            currentStartDate: computed.potaStreakCurrentStart,
+            longestStartDate: computed.potaStreakLongestStart,
+            longestEndDate: computed.potaStreakLongestEnd,
+            lastActiveDate: computed.potaStreakLastActive
+        )
 
-        // Continue with progressive computation
-        await computeProgressively(from: newStats)
-    }
+        qrzConfirmedCount = computed.qrzConfirmedCount
+        lotwConfirmedCount = computed.lotwConfirmedCount
+        icloudImportedCount = computed.icloudImportedCount
+        uniqueMyCallsigns = computed.uniqueMyCallsigns
 
-    private func computeAllSynchronously(from stats: QSOStatistics) {
-        confirmedQSLs = stats.confirmedQSLs
-        uniqueEntities = stats.uniqueEntities
-        successfulActivations = stats.successfulActivations
-        activityByDate = stats.activityByDate
-        dailyStreak = stats.dailyStreak
-        potaActivationStreak = stats.potaActivationStreak
+        // Clear cached stats so getStats() will lazily reload if needed
+        stats = nil
+
+        progress = 1.0
+        progressPhase = ""
         isComputing = false
-    }
-
-    private func computeProgressively(from stats: QSOStatistics) async {
-        // Phase 2: Medium cost stats
-        confirmedQSLs = stats.confirmedQSLs
-        await Task.yield()
-        guard !Task.isCancelled else {
-            return cleanup()
-        }
-
-        uniqueEntities = stats.uniqueEntities
-        await Task.yield()
-        guard !Task.isCancelled else {
-            return cleanup()
-        }
-
-        successfulActivations = stats.successfulActivations
-        await Task.yield()
-        guard !Task.isCancelled else {
-            return cleanup()
-        }
-
-        // Phase 3: Expensive stats
-        activityByDate = stats.activityByDate
-        await Task.yield()
-        guard !Task.isCancelled else {
-            return cleanup()
-        }
-
-        dailyStreak = stats.dailyStreak
-        await Task.yield()
-        guard !Task.isCancelled else {
-            return cleanup()
-        }
-
-        potaActivationStreak = stats.potaActivationStreak
-        isComputing = false
+        hasComputed = true
     }
 
     private func cleanup() {
         isComputing = false
+        progress = 0.0
+        progressPhase = ""
     }
 }

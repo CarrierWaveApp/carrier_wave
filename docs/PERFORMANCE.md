@@ -275,9 +275,121 @@ for qso in qsos {
 }
 ```
 
-### Background Computation with Cooperative Yielding
+### Background Thread Aggregates (REQUIRED for Large Tables)
 
-For expensive computations that must run on `@MainActor` (e.g., processing SwiftData objects that can't be sent to background threads), use cooperative yielding to prevent UI blocking.
+**All statistics and aggregates over QSO or ServicePresence MUST be computed on a background thread.**
+
+SwiftData `ModelContext` is thread-confined, but you can create a new context on a background thread from the same `ModelContainer`. Use this pattern for any aggregate computation:
+
+**DO:**
+```swift
+/// Lightweight Sendable snapshot for background processing
+struct QSOSnapshot: Sendable {
+    let band: String
+    let mode: String
+    let timestamp: Date
+    // ... only fields needed for computation
+    
+    init(from qso: QSO) {
+        band = qso.band
+        mode = qso.mode
+        timestamp = qso.timestamp
+    }
+}
+
+/// Background actor for computation
+actor StatsComputationActor {
+    func computeStats(
+        container: ModelContainer,
+        onProgress: @escaping @Sendable (Double) -> Void
+    ) async throws -> ComputedStats {
+        // Create NEW context on this background thread
+        let context = ModelContext(container)
+        context.autosaveEnabled = false
+        
+        // Fetch in batches, convert to snapshots immediately
+        var snapshots: [QSOSnapshot] = []
+        var offset = 0
+        let batchSize = 500
+        
+        while true {
+            try Task.checkCancellation()
+            
+            var descriptor = FetchDescriptor<QSO>(...)
+            descriptor.fetchOffset = offset
+            descriptor.fetchLimit = batchSize
+            
+            let batch = (try? context.fetch(descriptor)) ?? []
+            if batch.isEmpty { break }
+            
+            // Convert to Sendable snapshots immediately
+            snapshots.append(contentsOf: batch.map(QSOSnapshot.init))
+            offset += batchSize
+            onProgress(Double(offset) / Double(totalCount))
+        }
+        
+        // Compute stats from snapshots (all in background)
+        return computeFromSnapshots(snapshots)
+    }
+}
+
+/// Main actor wrapper
+@MainActor
+@Observable
+final class AsyncStats {
+    private let actor = StatsComputationActor()
+    private(set) var isComputing = false
+    private(set) var progress: Double = 0
+    
+    func compute(from container: ModelContainer) {
+        computeTask?.cancel()
+        isComputing = true
+        
+        computeTask = Task {
+            let result = try await actor.computeStats(
+                container: container,
+                onProgress: { [weak self] p in
+                    Task { @MainActor in self?.progress = p }
+                }
+            )
+            applyResults(result)
+            isComputing = false
+        }
+    }
+}
+```
+
+**Key principles:**
+- Create a fresh `ModelContext` on the background actor from the `ModelContainer`
+- Convert managed objects to `Sendable` value types (snapshots) immediately after fetch
+- Report progress via `@Sendable` callback that dispatches to main actor
+- Apply final results atomically on main actor
+- Use `Task.checkCancellation()` between batches
+
+**DON'T:**
+```swift
+// Don't pass ModelContext to background - it's not thread-safe
+actor BadActor {
+    func compute(context: ModelContext) async {  // WRONG!
+        context.fetch(...)  // Crash or corruption
+    }
+}
+
+// Don't pass managed objects across actors
+let qsos = context.fetch(descriptor)
+await backgroundActor.process(qsos)  // WRONG - QSO is not Sendable
+
+// Don't compute aggregates on main thread
+@MainActor
+func computeStats() {
+    let qsos = context.fetch(descriptor)
+    result = qsos.filter { ... }.count  // Blocks UI!
+}
+```
+
+### Cooperative Yielding (Fallback for Small Datasets)
+
+For small datasets where background thread overhead isn't worth it, use cooperative yielding:
 
 **DO:**
 ```swift
