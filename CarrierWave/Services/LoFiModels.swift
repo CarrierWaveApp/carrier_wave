@@ -72,16 +72,20 @@ struct LoFiMetaInfo: Decodable, @unchecked Sendable {
 
 // MARK: - LoFiSyncFlags
 
-struct LoFiSyncFlags: Decodable, @unchecked Sendable {
+struct LoFiSyncFlags: Codable, @unchecked Sendable {
     enum CodingKeys: String, CodingKey {
         case suggestedSyncBatchSize = "suggested_sync_batch_size"
         case suggestedSyncLoopDelay = "suggested_sync_loop_delay"
         case suggestedSyncCheckPeriod = "suggested_sync_check_period"
     }
 
-    let suggestedSyncBatchSize: Int
-    let suggestedSyncLoopDelay: Int
-    let suggestedSyncCheckPeriod: Int
+    static let defaults = LoFiSyncFlags(
+        suggestedSyncBatchSize: 50, suggestedSyncLoopDelay: 10_000, suggestedSyncCheckPeriod: 20_000
+    )
+
+    let suggestedSyncBatchSize: Int // QSOs/operations per batch (default: 50)
+    let suggestedSyncLoopDelay: Int // ms between batches (default: 10000)
+    let suggestedSyncCheckPeriod: Int // ms between sync polls (default: 20000)
 }
 
 // MARK: - LoFiLinkDeviceRequest

@@ -104,6 +104,22 @@ final class LoFiClient {
         return value
     }
 
+    /// Get the sync flags from the last registration, or defaults if not available
+    func getSyncFlags() -> LoFiSyncFlags {
+        guard let data = try? keychain.read(for: KeychainHelper.Keys.lofiSyncFlags),
+              let flags = try? JSONDecoder().decode(LoFiSyncFlags.self, from: data)
+        else {
+            return .defaults
+        }
+        return flags
+    }
+
+    /// Get the recommended interval between sync checks (in seconds)
+    /// This is how often the client should poll for new data
+    func getSuggestedSyncCheckInterval() -> TimeInterval {
+        TimeInterval(getSyncFlags().suggestedSyncCheckPeriod) / 1_000.0
+    }
+
     // MARK: - Setup
 
     /// Configure LoFi with callsign and optional email
@@ -159,6 +175,9 @@ final class LoFiClient {
 
         // Save the token
         try keychain.save(registration.token, for: KeychainHelper.Keys.lofiAuthToken)
+
+        // Store sync flags for use during sync operations
+        storeSyncFlags(registration.meta.flags)
 
         return registration
     }
@@ -222,19 +241,21 @@ final class LoFiClient {
     /// - Parameter deleted: When true, fetches only deleted operations. When nil/false, fetches only active.
     ///   Note: The server checks `if params[:deleted]` so passing "false" is treated as truthy.
     ///   Only pass this parameter when true, omit it entirely for active operations.
+    /// - Parameter limit: Page size. If nil, uses the server-suggested batch size.
     func fetchOperations(
         syncedSinceMillis: Int64 = 0,
-        limit: Int = 50,
+        limit: Int? = nil,
         otherClientsOnly: Bool = true,
         deleted: Bool = false
     ) async throws -> LoFiOperationsResponse {
+        let effectiveLimit = limit ?? getSyncFlags().suggestedSyncBatchSize
         let token = try getToken()
 
         var components = URLComponents(string: "\(baseURL)/v1/operations")!
         components.queryItems = [
             URLQueryItem(name: "synced_since_millis", value: String(syncedSinceMillis)),
             URLQueryItem(name: "other_clients_only", value: String(otherClientsOnly)),
-            URLQueryItem(name: "limit", value: String(limit)),
+            URLQueryItem(name: "limit", value: String(effectiveLimit)),
         ]
         // Only include deleted param when true - server treats any value as truthy
         if deleted {
@@ -253,20 +274,22 @@ final class LoFiClient {
     /// - Parameter deleted: When true, fetches deleted QSOs. When nil/false, fetches active QSOs.
     ///   Note: The server checks `if params[:deleted]` so passing "false" is treated as truthy.
     ///   Only pass this parameter when true, omit it entirely for active QSOs.
+    /// - Parameter limit: Page size. If nil, uses the server-suggested batch size.
     func fetchOperationQsos(
         operationUUID: String,
         syncedSinceMillis: Int64 = 0,
-        limit: Int = 50,
+        limit: Int? = nil,
         otherClientsOnly: Bool = true,
         deleted: Bool = false
     ) async throws -> LoFiQsosResponse {
+        let effectiveLimit = limit ?? getSyncFlags().suggestedSyncBatchSize
         let token = try getToken()
 
         var components = URLComponents(string: "\(baseURL)/v1/operations/\(operationUUID)/qsos")!
         components.queryItems = [
             URLQueryItem(name: "synced_since_millis", value: String(syncedSinceMillis)),
             URLQueryItem(name: "other_clients_only", value: String(otherClientsOnly)),
-            URLQueryItem(name: "limit", value: String(limit)),
+            URLQueryItem(name: "limit", value: String(effectiveLimit)),
         ]
         // Only include deleted param when true - server treats any value as truthy
         if deleted {
@@ -434,9 +457,18 @@ final class LoFiClient {
         try? keychain.delete(for: KeychainHelper.Keys.lofiEmail)
         try? keychain.delete(for: KeychainHelper.Keys.lofiDeviceLinked)
         try? keychain.delete(for: KeychainHelper.Keys.lofiLastSyncMillis)
+        try? keychain.delete(for: KeychainHelper.Keys.lofiSyncFlags)
     }
 
     // MARK: Private
+
+    /// Store sync flags from registration response
+    private func storeSyncFlags(_ flags: LoFiSyncFlags) {
+        guard let data = try? JSONEncoder().encode(flags) else {
+            return
+        }
+        try? keychain.save(data, for: KeychainHelper.Keys.lofiSyncFlags)
+    }
 
     private func logRegistrationDetails(_ registration: LoFiRegistrationResponse) {
         // Logging handled by logRegistrationToDebugLog for sync debug log
@@ -531,7 +563,6 @@ final class LoFiClient {
                 pageCount += 1
                 let response = try await fetchOperations(
                     syncedSinceMillis: syncedSince,
-                    limit: 50,
                     otherClientsOnly: !isFreshSync,
                     deleted: deleted
                 )
@@ -599,9 +630,14 @@ final class LoFiClient {
     ) async throws -> ([String: (LoFiQso, LoFiOperation)], Int64) {
         let qsoSyncStart: Int64 = isFreshSync ? 0 : lastSyncMillis
         let totalOperations = operations.count
+        let syncFlags = getSyncFlags()
 
         debugLog.info(
             "Fetching QSOs from \(totalOperations) operations with parallel downloads",
+            service: .lofi
+        )
+        debugLog.info(
+            "Using sync flags: batch=\(syncFlags.suggestedSyncBatchSize), delay=\(syncFlags.suggestedSyncLoopDelay)ms",
             service: .lofi
         )
 
@@ -664,10 +700,14 @@ final class LoFiClient {
                 onProgress(qsoCount, processedCount)
             }
 
-            // Apply backoff delay if there were errors
+            // Apply backoff delay if there were errors, otherwise use server-suggested loop delay
             let backoffDelay = await accumulator.getBackoffDelay()
-            if backoffDelay > 0 {
-                try await Task.sleep(nanoseconds: backoffDelay * 1_000_000)
+            let loopDelayMs = syncFlags.suggestedSyncLoopDelay
+            let delayMs = max(backoffDelay, UInt64(loopDelayMs))
+
+            // Only apply delay if there are more batches to process
+            if operationIndex + batch.count < totalOperations, delayMs > 0 {
+                try await Task.sleep(nanoseconds: delayMs * 1_000_000)
             }
 
             // Periodically try to increase concurrency if stable
@@ -698,7 +738,6 @@ final class LoFiClient {
                 let response = try await fetchOperationQsos(
                     operationUUID: operation.uuid,
                     syncedSinceMillis: qsoSyncedSince,
-                    limit: 50,
                     otherClientsOnly: !isFreshSync,
                     deleted: deleted
                 )
