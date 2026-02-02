@@ -6,7 +6,7 @@ enum MaidenheadConverter {
     /// Supports 4-char (e.g., "FN31") and 6-char (e.g., "FN31pr") formats
     /// - Parameter grid: The grid locator string (case insensitive)
     /// - Returns: The center coordinate of the grid square, or nil if invalid
-    static func coordinate(from grid: String) -> CLLocationCoordinate2D? {
+    nonisolated static func coordinate(from grid: String) -> CLLocationCoordinate2D? {
         let grid = grid.uppercased()
 
         guard grid.count >= 4 else {
@@ -61,7 +61,7 @@ enum MaidenheadConverter {
     }
 
     /// Check if a grid locator string is valid
-    static func isValid(_ grid: String) -> Bool {
+    nonisolated static func isValid(_ grid: String) -> Bool {
         coordinate(from: grid) != nil
     }
 }
