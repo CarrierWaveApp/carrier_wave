@@ -52,6 +52,14 @@ struct ComputedStats: Sendable {
     var lotwConfirmedCount: Int = 0
     var icloudImportedCount: Int = 0
     var uniqueMyCallsigns: Set<String> = []
+
+    // Top favorites for dashboard card
+    var topFrequency: String?
+    var topFrequencyCount: Int = 0
+    var topFriend: String?
+    var topFriendCount: Int = 0
+    var topHunter: String?
+    var topHunterCount: Int = 0
 }
 
 // MARK: - StatsComputationActor
@@ -279,34 +287,12 @@ actor StatsComputationActor {
                 .filter { !$0.isEmpty }
         )
 
+        // Compute top favorites for dashboard card
+        try Task.checkCancellation()
+        onProgress(0.72, "Computing favorites...")
+        computeTopFavorites(into: &stats, from: realQSOs)
+
         return stats
-    }
-
-    private func computeActivationsAndActivity(
-        into stats: inout ComputedStats,
-        from realQSOs: [QSOSnapshot],
-        onProgress: @escaping @Sendable (Double, String) -> Void
-    ) async throws {
-        onProgress(0.75, "Computing activations...")
-
-        try Task.checkCancellation()
-        // Compute activations (park + UTC date combinations)
-        let parksOnly = realQSOs.filter { $0.parkReference != nil && !$0.parkReference!.isEmpty }
-        let activationGroups = Dictionary(grouping: parksOnly) { qso in
-            "\(qso.parkReference!)|\(Self.utcDateOnly(from: qso.timestamp).timeIntervalSince1970)"
-        }
-        stats.successfulActivations = activationGroups.values.filter { $0.count >= 10 }.count
-        onProgress(0.80, "Computing activity grid...")
-
-        try Task.checkCancellation()
-        // Activity by date
-        var activity: [Date: Int] = [:]
-        let calendar = Calendar.current
-        for qso in realQSOs {
-            let dateOnly = calendar.startOfDay(for: qso.timestamp)
-            activity[dateOnly, default: 0] += 1
-        }
-        stats.activityByDate = activity
     }
 
     private func computeStreaks(
@@ -457,3 +443,5 @@ actor StatsComputationActor {
         )
     }
 }
+
+// Additional computation methods are in StatsComputationActor+Extensions.swift

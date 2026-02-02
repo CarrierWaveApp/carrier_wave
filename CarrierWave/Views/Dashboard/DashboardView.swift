@@ -368,8 +368,8 @@ struct DashboardView: View {
 
     @ViewBuilder
     private var favoritesCard: some View {
-        if let stats = asyncStats.getStats() {
-            FavoritesCard(stats: stats, tourState: tourState)
+        if asyncStats.hasComputed {
+            FavoritesCard(asyncStats: asyncStats, tourState: tourState)
         } else {
             // Show placeholder while stats are loading
             VStack(alignment: .leading, spacing: 12) {

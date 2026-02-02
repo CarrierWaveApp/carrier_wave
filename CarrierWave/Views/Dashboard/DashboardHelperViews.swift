@@ -1,3 +1,4 @@
+import SwiftData
 import SwiftUI
 
 // MARK: - StatBox
@@ -325,7 +326,7 @@ private struct ActivityGridContent: View {
 // MARK: - FavoritesCard
 
 struct FavoritesCard: View {
-    let stats: QSOStatistics
+    let asyncStats: AsyncQSOStatistics
     let tourState: TourState
 
     var body: some View {
@@ -334,39 +335,42 @@ struct FavoritesCard: View {
                 .font(.headline)
 
             VStack(spacing: 0) {
-                // Top Frequency - items computed lazily on navigation
-                FavoriteRow(
+                // Top Frequency
+                AsyncFavoriteRow(
                     title: "Top Frequency",
                     icon: "dial.medium.fill",
-                    topItem: stats.topFrequencies(limit: 1).first,
+                    identifier: asyncStats.topFrequency.map { "\($0) MHz" },
+                    count: asyncStats.topFrequencyCount,
                     category: .frequencies,
-                    stats: stats,
+                    asyncStats: asyncStats,
                     tourState: tourState
                 )
 
                 Divider()
                     .padding(.leading, 44)
 
-                // Best Friend - items computed lazily on navigation
-                FavoriteRow(
+                // Best Friend
+                AsyncFavoriteRow(
                     title: "Best Friend",
                     icon: "person.2.fill",
-                    topItem: stats.topFriends(limit: 1).first,
+                    identifier: asyncStats.topFriend,
+                    count: asyncStats.topFriendCount,
                     category: .bestFriends,
-                    stats: stats,
+                    asyncStats: asyncStats,
                     tourState: tourState
                 )
 
                 Divider()
                     .padding(.leading, 44)
 
-                // Best Hunter - items computed lazily on navigation
-                FavoriteRow(
+                // Best Hunter
+                AsyncFavoriteRow(
                     title: "Best Hunter",
                     icon: "scope",
-                    topItem: stats.topHunters(limit: 1).first,
+                    identifier: asyncStats.topHunter,
+                    count: asyncStats.topHunterCount,
                     category: .bestHunters,
-                    stats: stats,
+                    asyncStats: asyncStats,
                     tourState: tourState
                 )
             }
@@ -377,21 +381,26 @@ struct FavoritesCard: View {
     }
 }
 
-// MARK: - FavoriteRow
+// MARK: - AsyncFavoriteRow
 
-private struct FavoriteRow: View {
+/// Favorite row that uses pre-computed data from AsyncQSOStatistics
+/// and lazily loads full stats only when navigating to detail view
+private struct AsyncFavoriteRow: View {
     let title: String
     let icon: String
-    let topItem: StatCategoryItem?
+    let identifier: String?
+    let count: Int
     let category: StatCategoryType
-    let stats: QSOStatistics
+    let asyncStats: AsyncQSOStatistics
     let tourState: TourState
 
     var body: some View {
         NavigationLink {
-            // Items computed lazily when navigation occurs (already cached in stats)
-            StatDetailView(
-                category: category, items: stats.items(for: category), tourState: tourState
+            // Load full stats lazily when navigating
+            LazyStatDetailView(
+                category: category,
+                asyncStats: asyncStats,
+                tourState: tourState
             )
         } label: {
             HStack(spacing: 12) {
@@ -404,8 +413,8 @@ private struct FavoriteRow: View {
                     Text(title)
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                    if let item = topItem {
-                        Text(item.identifier)
+                    if let identifier {
+                        Text(identifier)
                             .font(.subheadline)
                             .fontWeight(.medium)
                     } else {
@@ -417,8 +426,8 @@ private struct FavoriteRow: View {
 
                 Spacer()
 
-                if let item = topItem {
-                    Text("\(item.count)")
+                if identifier != nil {
+                    Text("\(count)")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
@@ -431,4 +440,45 @@ private struct FavoriteRow: View {
         }
         .buttonStyle(.plain)
     }
+}
+
+// MARK: - LazyStatDetailView
+
+/// Wrapper that lazily loads QSOStatistics when the view appears
+private struct LazyStatDetailView: View {
+    // MARK: Internal
+
+    let category: StatCategoryType
+    let asyncStats: AsyncQSOStatistics
+    let tourState: TourState
+
+    var body: some View {
+        Group {
+            if let items {
+                StatDetailView(category: category, items: items, tourState: tourState)
+            } else {
+                ProgressView("Loading...")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+        .task {
+            // Load stats on background-ish (still main actor but deferred)
+            if let stats = asyncStats.getStats() {
+                items = stats.items(for: category)
+            } else {
+                // Fall back to computing fresh if needed
+                var descriptor = FetchDescriptor<QSO>(predicate: #Predicate { !$0.isHidden })
+                descriptor.sortBy = [SortDescriptor(\.timestamp, order: .reverse)]
+                if let qsos = try? modelContext.fetch(descriptor) {
+                    let stats = QSOStatistics(qsos: qsos)
+                    items = stats.items(for: category)
+                }
+            }
+        }
+    }
+
+    // MARK: Private
+
+    @Environment(\.modelContext) private var modelContext
+    @State private var items: [StatCategoryItem]?
 }
