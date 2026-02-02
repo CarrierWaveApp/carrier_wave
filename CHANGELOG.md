@@ -5,6 +5,7 @@ All notable changes to Carrier Wave will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+- LoFi sync progress bar now displays during parallel service downloads
 - Dashboard no longer freezes UI when loading statistics for large QSO databases
   - Statistics computation now runs entirely on a background thread
   - Progress bar shows loading progress under Activity card
