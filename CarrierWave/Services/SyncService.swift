@@ -104,7 +104,12 @@ class SyncService: ObservableObject {
         // PHASE 3: Upload to all destinations in parallel (unless read-only mode)
         await performUploadsIfEnabled(into: &result, debugLog: debugLog)
 
-        try modelContext.save()
+        // Only save if uploads made changes (presence records modified)
+        // Background processing actor already saved QSO/presence changes
+        if modelContext.hasChanges {
+            try modelContext.save()
+        }
+
         return result
     }
 

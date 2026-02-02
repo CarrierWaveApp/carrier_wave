@@ -5,20 +5,42 @@ import SwiftData
 
 extension SyncService {
     struct ProcessResult {
+        // MARK: Internal
+
         let created: Int
         let merged: Int
         let createdQSOIds: [UUID]
 
         /// Fetch created QSOs from context (for activity detection).
         /// Call this on the main actor after processing completes.
+        /// Limited to most recent QSOs to avoid UI hang on large syncs.
         func fetchCreatedQSOs(from context: ModelContext) -> [QSO] {
             guard !createdQSOIds.isEmpty else {
                 return []
             }
-            let ids = createdQSOIds
-            let descriptor = FetchDescriptor<QSO>(predicate: #Predicate { ids.contains($0.id) })
-            return (try? context.fetch(descriptor)) ?? []
+
+            // For large syncs, skip activity detection to avoid UI hang
+            // Activity detection is most useful for small incremental syncs
+            guard createdQSOIds.count <= Self.maxActivityDetectionQSOs else {
+                return []
+            }
+
+            // Fetch in batches to avoid slow ids.contains() predicate
+            var results: [QSO] = []
+            for id in createdQSOIds {
+                var descriptor = FetchDescriptor<QSO>(predicate: #Predicate { $0.id == id })
+                descriptor.fetchLimit = 1
+                if let qso = try? context.fetch(descriptor).first {
+                    results.append(qso)
+                }
+            }
+            return results
         }
+
+        // MARK: Private
+
+        /// Maximum QSOs to fetch for activity detection (avoid UI hang on large syncs)
+        private static let maxActivityDetectionQSOs = 100
     }
 
     /// Background actor for heavy QSO processing work.

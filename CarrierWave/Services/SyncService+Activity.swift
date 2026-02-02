@@ -14,7 +14,9 @@ extension SyncService {
 
         // Initialize detector if needed
         if activityDetector == nil {
-            activityDetector = ActivityDetector(modelContext: modelContext, userCallsign: userCallsign)
+            activityDetector = ActivityDetector(
+                modelContext: modelContext, userCallsign: userCallsign
+            )
         }
         if activityReporter == nil {
             activityReporter = ActivityReporter()
@@ -34,8 +36,10 @@ extension SyncService {
         // Create local activity items
         detector.createActivityItems(from: detected)
 
-        // Report to server (fire and forget)
-        await reporter.reportActivities(detected, sourceURL: activitySourceURL)
+        // Report to server (fire and forget) - skip if using placeholder URL
+        if !activitySourceURL.contains("example.com") {
+            await reporter.reportActivities(detected, sourceURL: activitySourceURL)
+        }
 
         // Post notification for UI updates
         NotificationCenter.default.post(
