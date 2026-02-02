@@ -39,11 +39,13 @@ final class SpotCommentsService {
     /// - Parameters:
     ///   - activator: The activator's callsign
     ///   - parkRef: The park reference (e.g., "K-1234")
-    func startPolling(activator: String, parkRef: String) {
+    ///   - sessionStart: Only show comments after this time (filters out stale comments)
+    func startPolling(activator: String, parkRef: String, sessionStart: Date = Date()) {
         stopPolling()
 
         self.activator = activator
         self.parkRef = parkRef
+        sessionStartTime = sessionStart
         isPolling = true
         lastError = nil
 
@@ -102,6 +104,9 @@ final class SpotCommentsService {
     private var parkRef: String?
     private var seenSpotIds: Set<Int64> = []
 
+    /// Session start time - only show comments after this time
+    private var sessionStartTime = Date()
+
     /// Poll interval in seconds
     private let pollInterval: TimeInterval = 60
 
@@ -119,8 +124,15 @@ final class SpotCommentsService {
                 parkRef: parkRef
             )
 
-            // Sort by timestamp, most recent first
-            let sorted = fetchedComments.sorted { c1, c2 in
+            // Filter to only comments after session start, then sort by timestamp (most recent first)
+            let filtered = fetchedComments.filter { comment in
+                guard let timestamp = comment.timestamp else {
+                    return false
+                }
+                return timestamp >= sessionStartTime
+            }
+
+            let sorted = filtered.sorted { c1, c2 in
                 (c1.timestamp ?? .distantPast) > (c2.timestamp ?? .distantPast)
             }
 

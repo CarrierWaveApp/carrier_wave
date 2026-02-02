@@ -131,6 +131,9 @@ final class LoggingSession {
     /// Number of QSOs logged in this session
     var qsoCount: Int = 0
 
+    /// Serialized spot comments JSON (stored as Data for SwiftData compatibility)
+    var spotCommentsData: Data?
+
     /// Activation type enum accessor
     var activationType: ActivationType {
         get { ActivationType(rawValue: activationTypeRawValue) ?? .casual }
@@ -141,6 +144,19 @@ final class LoggingSession {
     var status: LoggingSessionStatus {
         get { LoggingSessionStatus(rawValue: statusRawValue) ?? .active }
         set { statusRawValue = newValue.rawValue }
+    }
+
+    /// Spot comments from the session (decoded from JSON data)
+    var spotComments: [POTASpotComment] {
+        get {
+            guard let data = spotCommentsData else {
+                return []
+            }
+            return (try? JSONDecoder().decode([POTASpotComment].self, from: data)) ?? []
+        }
+        set {
+            spotCommentsData = try? JSONEncoder().encode(newValue)
+        }
     }
 
     /// Whether the session is currently active

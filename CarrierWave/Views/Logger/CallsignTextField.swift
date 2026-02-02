@@ -48,7 +48,11 @@ struct CallsignTextField: UIViewRepresentable {
         func textFieldDidChange(_ textField: UITextField) {
             isUpdatingFromUIKit = true
             parent.text = textField.text ?? ""
-            isUpdatingFromUIKit = false
+            // Delay resetting the flag until after SwiftUI has processed the update
+            // This ensures updateUIView sees isUpdatingFromUIKit = true
+            DispatchQueue.main.async { [weak self] in
+                self?.isUpdatingFromUIKit = false
+            }
         }
 
         func textFieldDidBeginEditing(_ textField: UITextField) {
@@ -117,15 +121,13 @@ struct CallsignTextField: UIViewRepresentable {
         }
 
         // Handle focus state changes from SwiftUI
-        // Skip during active editing to prevent focus loss
-        if !context.coordinator.isUpdatingFromUIKit {
-            DispatchQueue.main.async {
-                if isFocused.wrappedValue, !uiView.isFirstResponder {
-                    uiView.becomeFirstResponder()
-                } else if !isFocused.wrappedValue, uiView.isFirstResponder {
-                    uiView.resignFirstResponder()
-                }
-            }
+        // Only becomeFirstResponder if SwiftUI wants focus and we don't have it
+        // Only resignFirstResponder if SwiftUI doesn't want focus AND we're not actively editing
+        // The isEditing check prevents focus loss during typing
+        if isFocused.wrappedValue, !uiView.isFirstResponder {
+            uiView.becomeFirstResponder()
+        } else if !isFocused.wrappedValue, uiView.isFirstResponder, !uiView.isEditing {
+            uiView.resignFirstResponder()
         }
     }
 

@@ -116,7 +116,7 @@ struct POTASpot: Decodable, Identifiable, Sendable {
 // MARK: - POTASpotComment
 
 /// A comment on a POTA spot
-struct POTASpotComment: Decodable, Identifiable, Sendable {
+struct POTASpotComment: Codable, Identifiable, Sendable {
     let spotId: Int64
     let spotter: String
     let comments: String?

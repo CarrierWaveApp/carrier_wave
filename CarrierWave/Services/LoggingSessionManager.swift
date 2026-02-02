@@ -112,6 +112,9 @@ final class LoggingSessionManager {
         // Stop auto-spot timer
         stopAutoSpotTimer()
 
+        // Save spot comments to session before clearing
+        session.spotComments = spotCommentsService.comments
+
         // Stop spot comments polling
         spotCommentsService.stopPolling()
         spotCommentsService.clear()
@@ -609,7 +612,11 @@ final class LoggingSessionManager {
             self?.attachSpotComments(comments)
         }
 
-        spotCommentsService.startPolling(activator: callsign, parkRef: parkRef)
+        spotCommentsService.startPolling(
+            activator: callsign,
+            parkRef: parkRef,
+            sessionStart: session.startedAt
+        )
     }
 
     /// Attach spot comments to matching QSOs in the current session
