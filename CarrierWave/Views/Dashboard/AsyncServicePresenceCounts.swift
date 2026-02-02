@@ -30,6 +30,7 @@ actor PresenceComputationActor {
     func computeCounts(
         container: ModelContainer
     ) async throws -> (uploaded: [ServiceType: Int], pending: [ServiceType: Int]) {
+        // Create fresh context to ensure we see latest persisted data
         let context = ModelContext(container)
         context.autosaveEnabled = false
 
