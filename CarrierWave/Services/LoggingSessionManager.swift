@@ -98,6 +98,13 @@ final class LoggingSessionManager {
             return
         }
 
+        // Post QRT spot before cleanup (fire and forget)
+        // Capture session before it's cleared
+        let sessionForSpot = session
+        Task {
+            await postQRTSpotIfNeeded(for: sessionForSpot)
+        }
+
         session.end()
         activeSession = nil
         clearActiveSessionId()
@@ -522,6 +529,15 @@ final class LoggingSessionManager {
         UserDefaults.standard.bool(forKey: "potaAutoSpotEnabled")
     }
 
+    /// Whether QRT spotting is enabled (from settings)
+    private var potaQRTSpotEnabled: Bool {
+        // Default to true if setting hasn't been explicitly set
+        if UserDefaults.standard.object(forKey: "potaQRTSpotEnabled") == nil {
+            return true
+        }
+        return UserDefaults.standard.bool(forKey: "potaQRTSpotEnabled")
+    }
+
     /// Start the auto-spot timer for POTA activations
     private func startAutoSpotTimer() {
         stopAutoSpotTimer()
@@ -690,6 +706,52 @@ final class LoggingSessionManager {
             }
         } catch {
             SyncDebugLog.shared.error("Spot failed: \(error.localizedDescription)", service: .pota)
+        }
+    }
+
+    /// Post a QRT spot if enabled and the session had spots
+    private func postQRTSpotIfNeeded(for session: LoggingSession) async {
+        guard potaQRTSpotEnabled,
+              session.activationType == .pota,
+              let parkRef = session.parkReference,
+              let freq = session.frequency,
+              !session.myCallsign.isEmpty
+        else {
+            return
+        }
+
+        // Check if this activation has any spots on POTA
+        do {
+            let potaClient = POTAClient(authService: POTAAuthService())
+            let comments = try await potaClient.fetchSpotComments(
+                activator: session.myCallsign,
+                parkRef: parkRef
+            )
+
+            // If there are any spots/comments, the activation was spotted
+            guard !comments.isEmpty else {
+                SyncDebugLog.shared.info(
+                    "No spots found for \(parkRef), skipping QRT spot",
+                    service: .pota
+                )
+                return
+            }
+
+            // Post QRT spot
+            _ = try await potaClient.postSpot(
+                callsign: session.myCallsign,
+                reference: parkRef,
+                frequency: freq * 1_000,
+                mode: session.mode,
+                comments: "QRT"
+            )
+
+            SyncDebugLog.shared.info("QRT spot posted for \(parkRef)", service: .pota)
+        } catch {
+            SyncDebugLog.shared.warning(
+                "Failed to post QRT spot: \(error.localizedDescription)",
+                service: .pota
+            )
         }
     }
 
