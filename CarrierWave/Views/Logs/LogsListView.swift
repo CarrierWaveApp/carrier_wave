@@ -331,11 +331,11 @@ struct LogsListContentView: View {
 
             // Compile and execute
             isSearching = true
-            let filter = QueryCompiler.compile(query)
-            compiledFilter = filter
+            let compiled = QueryCompiler.compileWithPredicate(query)
+            compiledFilter = compiled.filter
 
-            // Execute search in background
-            await searchWithFilter(filter)
+            // Execute search in background using both predicate and filter
+            await searchWithCompiledQuery(compiled)
             isSearching = false
 
         case let .failure(error):
@@ -347,22 +347,38 @@ struct LogsListContentView: View {
         }
     }
 
-    private func searchWithFilter(_ filter: @escaping (QSO) -> Bool) async {
-        // For queries, we may need to fetch more data than currently loaded
-        // Use a larger batch and apply the filter
-        var descriptor = FetchDescriptor<QSO>(predicate: #Predicate { !$0.isHidden })
-        descriptor.sortBy = [SortDescriptor(\.timestamp, order: .reverse)]
-        descriptor.fetchLimit = Self.searchBatchSize
+    private func searchWithCompiledQuery(_ compiled: CompiledQuery) async {
+        // Build descriptor using the compiled predicate if available
+        // This pushes filtering to the database for indexed fields
+        var descriptor = if let predicate = compiled.predicate {
+            // Combine with !isHidden check
+            FetchDescriptor<QSO>(predicate: predicate)
+        } else {
+            FetchDescriptor<QSO>(predicate: #Predicate { !$0.isHidden })
+        }
+        descriptor.sortBy = compiled.sortDescriptors
+
+        // When we have a predicate, let the database do the work - no limit needed
+        // When we don't have a predicate, we still need to scan but use a larger batch
+        if compiled.predicate == nil {
+            descriptor.fetchLimit = Self.searchBatchSize
+        }
 
         guard let fetched = try? modelContext.fetch(descriptor) else {
             cachedFilteredQSOs = []
             return
         }
 
-        // Apply filter with cooperative yielding for large datasets
+        // Apply the full filter for any conditions the predicate couldn't handle
+        // (e.g., complex boolean logic, non-indexed fields)
         var results: [QSO] = []
         for (index, qso) in fetched.enumerated() {
-            if filter(qso) {
+            // Skip hidden QSOs (in case predicate didn't include this check)
+            guard !qso.isHidden else {
+                continue
+            }
+
+            if compiled.filter(qso) {
                 results.append(qso)
             }
             // Yield periodically to keep UI responsive
