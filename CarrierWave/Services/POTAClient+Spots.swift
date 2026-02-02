@@ -4,6 +4,7 @@
 // for activations.
 
 import Foundation
+import SwiftUI
 
 // MARK: - POTASpot
 
@@ -55,6 +56,24 @@ struct POTASpot: Decodable, Identifiable, Sendable {
             return "\(Int(seconds / 60))m ago"
         } else {
             return "\(Int(seconds / 3_600))h ago"
+        }
+    }
+
+    /// Color based on spot freshness
+    nonisolated var ageColor: Color {
+        guard let timestamp else {
+            return .secondary
+        }
+        let seconds = Date().timeIntervalSince(timestamp)
+        switch seconds {
+        case ..<120:
+            return .green // < 2 minutes: very fresh
+        case ..<600:
+            return .blue // 2-10 minutes: recent
+        case ..<1_800:
+            return .orange // 10-30 minutes: getting stale
+        default:
+            return .secondary // > 30 minutes: old
         }
     }
 }
