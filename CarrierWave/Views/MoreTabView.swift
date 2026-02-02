@@ -1,5 +1,26 @@
 import SwiftUI
 
+// MARK: - LazyView
+
+/// Defers view initialization until the view actually appears.
+/// Used to prevent NavigationLink destinations from triggering @Query
+/// or other expensive initializations when building the parent view.
+private struct LazyView<Content: View>: View {
+    // MARK: Lifecycle
+
+    init(_ build: @escaping () -> Content) {
+        self.build = build
+    }
+
+    // MARK: Internal
+
+    let build: () -> Content
+
+    var body: some View {
+        build()
+    }
+}
+
 // MARK: - MoreTabView
 
 /// A custom "More" tab that shows hidden tabs and Settings
@@ -22,7 +43,10 @@ struct MoreTabView: View {
                     Section {
                         ForEach(hiddenTabs, id: \.self) { tab in
                             NavigationLink {
-                                tabContent(for: tab)
+                                // Use LazyView to defer view initialization until navigation.
+                                // This prevents @Query and other expensive initializations
+                                // from running when MoreTabView is first displayed.
+                                LazyView { tabContent(for: tab) }
                             } label: {
                                 Label(tab.title, systemImage: tab.icon)
                             }
@@ -32,7 +56,7 @@ struct MoreTabView: View {
 
                 Section {
                     NavigationLink {
-                        settingsContent
+                        LazyView { settingsContent }
                     } label: {
                         Label("Settings", systemImage: "gear")
                     }
