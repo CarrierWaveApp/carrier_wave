@@ -124,8 +124,8 @@ struct DashboardView: View {
                 // Delay slightly to allow UI to update first (dismiss spinners, etc.)
                 Task {
                     try? await Task.sleep(for: .milliseconds(100))
-                    asyncStats.compute(from: modelContext)
-                    presenceCounts.compute(from: modelContext)
+                    asyncStats.recompute(from: modelContext)
+                    presenceCounts.recompute(from: modelContext)
                 }
             }
             // NOTE: No .onDisappear cancellation - computation continues in background
@@ -241,10 +241,25 @@ struct DashboardView: View {
             }
 
             ActivityGrid(activityData: asyncStats.activityByDate)
+
+            // Show progress bar while computing
+            if asyncStats.isComputing {
+                VStack(alignment: .leading, spacing: 4) {
+                    ProgressView(value: asyncStats.progress)
+                        .tint(.blue)
+                    if !asyncStats.progressPhase.isEmpty {
+                        Text(asyncStats.progressPhase)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .transition(.opacity)
+            }
         }
         .padding()
         .background(Color(.systemGray6))
         .clipShape(RoundedRectangle(cornerRadius: 12))
+        .animation(.easeInOut(duration: 0.2), value: asyncStats.isComputing)
     }
 
     // MARK: - Streaks Card

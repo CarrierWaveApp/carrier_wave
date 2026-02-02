@@ -1,10 +1,96 @@
 import Foundation
 import SwiftData
 
+// MARK: - PresenceSnapshot
+
+/// Lightweight snapshot of ServicePresence for background computation.
+struct PresenceSnapshot: Sendable {
+    // MARK: Lifecycle
+
+    init(from presence: ServicePresence) {
+        serviceType = presence.serviceType
+        isPresent = presence.isPresent
+        needsUpload = presence.needsUpload
+    }
+
+    // MARK: Internal
+
+    let serviceType: ServiceType
+    let isPresent: Bool
+    let needsUpload: Bool
+}
+
+// MARK: - PresenceComputationActor
+
+/// Background actor for computing service presence counts.
+actor PresenceComputationActor {
+    // MARK: Internal
+
+    /// Compute presence counts on background thread.
+    func computeCounts(
+        container: ModelContainer
+    ) async throws -> (uploaded: [ServiceType: Int], pending: [ServiceType: Int]) {
+        let context = ModelContext(container)
+        context.autosaveEnabled = false
+
+        // Initialize counts
+        var uploaded: [ServiceType: Int] = [:]
+        var pending: [ServiceType: Int] = [:]
+
+        for serviceType in ServiceType.allCases {
+            uploaded[serviceType] = 0
+            pending[serviceType] = 0
+        }
+
+        // Get total count
+        let countDescriptor = FetchDescriptor<ServicePresence>()
+        let totalCount = (try? context.fetchCount(countDescriptor)) ?? 0
+
+        if totalCount == 0 {
+            return (uploaded, pending)
+        }
+
+        // Fetch in batches
+        var offset = 0
+        let batchSize = Self.fetchBatchSize
+
+        while offset < totalCount {
+            try Task.checkCancellation()
+
+            var descriptor = FetchDescriptor<ServicePresence>()
+            descriptor.fetchOffset = offset
+            descriptor.fetchLimit = batchSize
+
+            let batch = (try? context.fetch(descriptor)) ?? []
+            if batch.isEmpty {
+                break
+            }
+
+            // Count from managed objects directly (no need for snapshots here)
+            for presence in batch {
+                if presence.isPresent {
+                    uploaded[presence.serviceType, default: 0] += 1
+                }
+                if presence.needsUpload {
+                    pending[presence.serviceType, default: 0] += 1
+                }
+            }
+
+            offset += batchSize
+        }
+
+        return (uploaded, pending)
+    }
+
+    // MARK: Private
+
+    /// Batch size for fetching - larger batches are fine on background thread
+    private static let fetchBatchSize = 500
+}
+
 // MARK: - AsyncServicePresenceCounts
 
-/// Computes ServicePresence counts in the background to avoid blocking UI.
-/// Fetches in batches and counts in memory to work around SwiftData predicate limitations.
+/// Computes ServicePresence counts on a background thread to avoid blocking UI.
 @MainActor
 @Observable
 final class AsyncServicePresenceCounts {
@@ -14,14 +100,14 @@ final class AsyncServicePresenceCounts {
 
     // MARK: Internal
 
-    /// Batch size for fetching
-    static let batchSize = 1_000
-
     /// Counts by service type
     private(set) var uploadedCounts: [ServiceType: Int] = [:]
     private(set) var pendingCounts: [ServiceType: Int] = [:]
 
     private(set) var isComputing = false
+
+    /// Whether counts have been computed at least once
+    private(set) var hasComputed = false
 
     /// Get uploaded count for a service
     func uploadedCount(for service: ServiceType) -> Int {
@@ -33,14 +119,33 @@ final class AsyncServicePresenceCounts {
         pendingCounts[service] ?? 0
     }
 
-    /// Compute counts from database in background
-    func compute(from modelContext: ModelContext) {
-        computeTask?.cancel()
-        isComputing = true
-
-        computeTask = Task {
-            await computeCounts(modelContext: modelContext)
+    /// Compute counts from model container on background thread.
+    /// If already computing or already computed, this is a no-op.
+    /// Use `recompute()` to force a fresh computation.
+    func compute(from container: ModelContainer) {
+        // Skip if already computing or already have results
+        if isComputing || hasComputed {
+            return
         }
+
+        startComputation(from: container)
+    }
+
+    /// Force recomputation of counts (e.g., after sync)
+    func recompute(from container: ModelContainer) {
+        computeTask?.cancel()
+        hasComputed = false
+        startComputation(from: container)
+    }
+
+    /// Legacy method - compute from ModelContext (extracts container)
+    func compute(from modelContext: ModelContext) {
+        compute(from: modelContext.container)
+    }
+
+    /// Legacy method - recompute from ModelContext (extracts container)
+    func recompute(from modelContext: ModelContext) {
+        recompute(from: modelContext.container)
     }
 
     /// Cancel any in-flight computation
@@ -52,58 +157,23 @@ final class AsyncServicePresenceCounts {
     // MARK: Private
 
     private var computeTask: Task<Void, Never>?
+    private let computationActor = PresenceComputationActor()
 
-    private func computeCounts(modelContext: ModelContext) async {
-        // Initialize counts
-        var uploaded: [ServiceType: Int] = [:]
-        var pending: [ServiceType: Int] = [:]
+    private func startComputation(from container: ModelContainer) {
+        isComputing = true
 
-        for serviceType in ServiceType.allCases {
-            uploaded[serviceType] = 0
-            pending[serviceType] = 0
+        computeTask = Task {
+            do {
+                let result = try await computationActor.computeCounts(container: container)
+                uploadedCounts = result.uploaded
+                pendingCounts = result.pending
+                hasComputed = true
+            } catch is CancellationError {
+                // Cancelled, just clean up
+            } catch {
+                // Other error, clean up
+            }
+            isComputing = false
         }
-
-        // Fetch in batches
-        var offset = 0
-        let batchSize = Self.batchSize
-
-        while true {
-            guard !Task.isCancelled else {
-                isComputing = false
-                return
-            }
-
-            var descriptor = FetchDescriptor<ServicePresence>()
-            descriptor.fetchOffset = offset
-            descriptor.fetchLimit = batchSize
-
-            guard let batch = try? modelContext.fetch(descriptor) else {
-                break
-            }
-
-            if batch.isEmpty {
-                break
-            }
-
-            // Count in memory
-            for presence in batch {
-                if presence.isPresent {
-                    uploaded[presence.serviceType, default: 0] += 1
-                }
-                if presence.needsUpload {
-                    pending[presence.serviceType, default: 0] += 1
-                }
-            }
-
-            offset += batchSize
-
-            // Yield between batches
-            await Task.yield()
-        }
-
-        // Update published values
-        uploadedCounts = uploaded
-        pendingCounts = pending
-        isComputing = false
     }
 }

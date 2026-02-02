@@ -4,6 +4,12 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- Dashboard no longer freezes UI when loading statistics for large QSO databases
+  - Statistics computation now runs entirely on a background thread
+  - Progress bar shows loading progress under Activity card
+  - UI remains responsive during computation
+
 ### Added
 - Dynamic sync progress indicator shows QSO count as services complete
 - LoFi sync shows progress bar with percentage based on total QSOs
