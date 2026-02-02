@@ -5,6 +5,8 @@ All notable changes to Carrier Wave will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Dynamic sync progress indicator shows QSO count as services complete
+- LoFi sync shows progress bar with percentage based on total QSOs
 - **Flexible frequency input** - Enter frequencies as kHz or MHz with optional unit suffixes
   - Type "14060" or "14060 kHz" for kHz input (auto-converted to MHz)
   - Type "14.060" or "14.060 MHz" for MHz input
@@ -32,6 +34,10 @@ All notable changes to Carrier Wave will be documented in this file.
 - RBN spots now limited to last 10 minutes (was 6 hours)
 
 ### Fixed
+- Fix LoFi sync failing when operations are missing `updatedAtMillis` field
+- Fix Dashboard stats flashing during recomputation after sync
+- Fix UI freeze when service detail sheet is open during stats recomputation
+- Fix callsign suffix detection treating W1WC/CW as unconfigured alternate callsign
 - Fix crash when deleting QSOs from Logs tab due to array index invalidation during SwiftUI list update
 - Fix RBN spots not appearing in spot menu due to incorrect API response field mapping
 

@@ -82,6 +82,7 @@ extension SyncService {
                     parsedFields: fetched[index].debugFields
                 )
             }
+            await MainActor.run { self.syncProgress.addDownloaded(fetched.count, for: .qrz) }
             return (.qrz, .success(fetched))
         } catch {
             debugLog.error("QRZ download failed: \(error.localizedDescription)", service: .qrz)
@@ -108,6 +109,7 @@ extension SyncService {
                     parsedFields: qso.debugFields
                 )
             }
+            await MainActor.run { self.syncProgress.addDownloaded(fetched.count, for: .pota) }
             return (.pota, .success(fetched))
         } catch {
             debugLog.error("POTA download failed: \(error.localizedDescription)", service: .pota)
@@ -136,7 +138,13 @@ extension SyncService {
 
         do {
             let qsos = try await withTimeout(seconds: timeout, service: .lofi) {
-                try await self.lofiClient.fetchAllQsosSinceLastSync()
+                try await self.lofiClient.fetchAllQsosSinceLastSync { progress in
+                    Task { @MainActor in
+                        self.syncProgress.lofiTotalQSOs = progress.totalQSOs
+                        self.syncProgress.lofiTotalOperations = progress.totalOperations
+                        self.syncProgress.lofiDownloadedQSOs = progress.downloadedQSOs
+                    }
+                }
             }
             debugLog.info("Downloaded \(qsos.count) raw QSOs from LoFi API", service: .lofi)
 
@@ -177,6 +185,7 @@ extension SyncService {
                 service: .lofi
             )
             logLoFiSampleQSOs(qsos: qsos, fetched: fetchedList, debugLog: debugLog)
+            await MainActor.run { self.syncProgress.addDownloaded(fetchedList.count, for: .lofi) }
             return (.lofi, .success(fetchedList))
         } catch {
             debugLog.error("LoFi download failed: \(error.localizedDescription)", service: .lofi)
@@ -251,6 +260,7 @@ extension SyncService {
                     parsedFields: fetched.debugFields
                 )
             }
+            await MainActor.run { self.syncProgress.addDownloaded(fetchedList.count, for: .hamrs) }
             return (.hamrs, .success(fetchedList))
         } catch HAMRSError.subscriptionInactive {
             debugLog.warning("HAMRS subscription inactive - skipping download", service: .hamrs)
@@ -288,6 +298,7 @@ extension SyncService {
                     parsedFields: fetched[index].debugFields
                 )
             }
+            await MainActor.run { self.syncProgress.addDownloaded(fetched.count, for: .lotw) }
             return (.lotw, .success(fetched))
         } catch {
             debugLog.error("LoTW download failed: \(error.localizedDescription)", service: .lotw)

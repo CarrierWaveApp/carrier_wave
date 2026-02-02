@@ -121,8 +121,12 @@ struct DashboardView: View {
             }
             .onChange(of: syncService.lastSyncDate) { _, _ in
                 // Recompute stats after sync completes
-                asyncStats.compute(from: modelContext)
-                presenceCounts.compute(from: modelContext)
+                // Delay slightly to allow UI to update first (dismiss spinners, etc.)
+                Task {
+                    try? await Task.sleep(for: .milliseconds(100))
+                    asyncStats.compute(from: modelContext)
+                    presenceCounts.compute(from: modelContext)
+                }
             }
             // NOTE: No .onDisappear cancellation - computation continues in background
             // when user switches tabs. This is intentional because:
@@ -174,7 +178,7 @@ struct DashboardView: View {
                     Task { await performDownloadOnly() }
                 } label: {
                     if isSyncing {
-                        ProgressView()
+                        syncProgressLabel
                     } else {
                         Image(systemName: "arrow.down.circle")
                     }
@@ -187,13 +191,39 @@ struct DashboardView: View {
                 Task { await performFullSync() }
             } label: {
                 if isSyncing {
-                    ProgressView()
+                    syncProgressLabel
                 } else {
                     Image(systemName: "arrow.triangle.2.circlepath")
                 }
             }
             .disabled(isSyncing)
             .accessibilityLabel("Sync all services")
+        }
+    }
+
+    @ViewBuilder
+    private var syncProgressLabel: some View {
+        if let lofiProgress = syncService.syncProgress.lofiProgress,
+           syncService.syncPhase == .downloading(service: .lofi)
+        {
+            // Show progress bar for LoFi sync
+            HStack(spacing: 6) {
+                ProgressView(value: lofiProgress)
+                    .frame(width: 60)
+                Text("\(syncService.syncProgress.lofiDownloadedQSOs)")
+                    .font(.caption)
+                    .monospacedDigit()
+            }
+        } else {
+            // Show spinner with count for other services
+            HStack(spacing: 4) {
+                ProgressView()
+                if syncService.syncProgress.downloadedQSOCount > 0 {
+                    Text("\(syncService.syncProgress.downloadedQSOCount)")
+                        .font(.caption)
+                        .monospacedDigit()
+                }
+            }
         }
     }
 

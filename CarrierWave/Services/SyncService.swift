@@ -2,74 +2,6 @@ import Combine
 import Foundation
 import SwiftData
 
-// MARK: - SyncTimeoutError
-
-enum SyncTimeoutError: Error, LocalizedError, Sendable {
-    case timeout(service: ServiceType)
-
-    // MARK: Internal
-
-    nonisolated var errorDescription: String? {
-        switch self {
-        case let .timeout(service):
-            "\(service.displayName) sync timed out"
-        }
-    }
-}
-
-/// Execute an async operation with a timeout
-/// Note: Uses nonisolated(unsafe) to allow SwiftData model access across actor boundaries
-/// This is safe because the operation runs on MainActor and completes before returning
-nonisolated func withTimeout<T>(
-    seconds: TimeInterval,
-    service: ServiceType,
-    operation: @escaping () async throws -> T
-) async throws -> T {
-    // Use a simple race between operation and timeout
-    // This avoids TaskGroup Sendable requirements
-    let timeoutTask = Task {
-        try await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
-        throw SyncTimeoutError.timeout(service: service)
-    }
-
-    do {
-        let result = try await operation()
-        timeoutTask.cancel()
-        return result
-    } catch {
-        timeoutTask.cancel()
-        throw error
-    }
-}
-
-// MARK: - QRZSyncResult
-
-/// Result of syncing with QRZ
-struct QRZSyncResult {
-    let downloaded: Int
-    let uploaded: Int
-    let skipped: Int
-}
-
-// MARK: - SyncPhase
-
-enum SyncPhase: Equatable {
-    case downloading(service: ServiceType)
-    case processing
-    case uploading(service: ServiceType)
-}
-
-// MARK: - SyncResult
-
-struct SyncResult {
-    var downloaded: [ServiceType: Int]
-    var uploaded: [ServiceType: Int]
-    var errors: [String]
-    var newQSOs: Int
-    var mergedQSOs: Int
-    var potaMaintenanceSkipped: Bool
-}
-
 // MARK: - SyncService
 
 @MainActor
@@ -99,6 +31,7 @@ class SyncService: ObservableObject {
     @Published var isSyncing = false
     @Published var lastSyncDate: Date?
     @Published var syncPhase: SyncPhase?
+    @Published var syncProgress = SyncProgress()
 
     let modelContext: ModelContext
     let qrzClient: QRZClient
@@ -128,12 +61,14 @@ class SyncService: ObservableObject {
     /// Full sync: download from all sources, deduplicate, upload to all destinations
     func syncAll() async throws -> SyncResult {
         isSyncing = true
+        syncProgress.reset()
         let debugLog = SyncDebugLog.shared
         debugLog.info("Starting full sync")
 
         defer {
             isSyncing = false
             syncPhase = nil
+            syncProgress.reset()
             lastSyncDate = Date()
             debugLog.info("Sync complete")
         }
@@ -369,12 +304,14 @@ class SyncService: ObservableObject {
     /// Download from all sources without uploading (debug mode)
     func downloadOnly() async throws -> SyncResult {
         isSyncing = true
+        syncProgress.reset()
         let debugLog = SyncDebugLog.shared
         debugLog.info("Starting download-only sync")
 
         defer {
             isSyncing = false
             syncPhase = nil
+            syncProgress.reset()
             lastSyncDate = Date()
             debugLog.info("Download-only sync complete")
         }
@@ -392,6 +329,7 @@ class SyncService: ObservableObject {
             switch fetchResult {
             case let .success(qsos):
                 result.downloaded[service] = qsos.count
+                // Note: syncProgress is updated in downloadFrom* methods for real-time updates
                 allFetched.append(contentsOf: qsos)
             case let .failure(error):
                 result.errors.append(
@@ -428,6 +366,7 @@ class SyncService: ObservableObject {
             switch fetchResult {
             case let .success(qsos):
                 result.downloaded[service] = qsos.count
+                // Note: syncProgress is updated in downloadFrom* methods for real-time updates
                 allFetched.append(contentsOf: qsos)
             case let .failure(error):
                 result.errors.append(
