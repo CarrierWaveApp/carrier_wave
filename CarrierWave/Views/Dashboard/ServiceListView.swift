@@ -114,18 +114,18 @@ struct ServiceRow: View {
             if service.isSyncing, let phase = syncPhase, let serviceType = service.serviceType {
                 SyncingIndicator(phase: phase, serviceType: serviceType)
             } else if let primary = service.primaryStat {
-                HStack(spacing: 4) {
-                    Text(primary)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-
-                    if let secondary = service.secondaryStat {
-                        Text("·")
-                            .font(.subheadline)
-                            .foregroundStyle(.quaternary)
-                        Text(secondary)
+                HStack(spacing: 8) {
+                    // Stack stats vertically, right-aligned
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text(primary)
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
+
+                        if let secondary = service.secondaryStat {
+                            Text(secondary)
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
+                        }
                     }
 
                     if service.showWarning {
