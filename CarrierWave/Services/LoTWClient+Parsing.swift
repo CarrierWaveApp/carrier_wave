@@ -112,11 +112,19 @@ extension LoTWClient {
     func parseQSORecord(_ record: String) -> LoTWFetchedQSO? {
         guard let callsign = extractField("CALL", from: record),
               let band = extractField("BAND", from: record),
-              let mode = extractField("MODE", from: record),
               let qsoDateStr = extractField("QSO_DATE", from: record),
               let timestamp = parseQSOTimestamp(
                   dateStr: qsoDateStr, timeStr: extractField("TIME_ON", from: record)
               )
+        else {
+            return nil
+        }
+
+        // LoTW may emit APP_LoTW_MODE instead of (or in addition to) MODE when the mode
+        // can't be cleanly mapped to standard ADIF. Prefer MODE but fall back to APP_LoTW_MODE.
+        guard
+            let mode = extractField("MODE", from: record)
+            ?? extractField("APP_LoTW_MODE", from: record)
         else {
             return nil
         }

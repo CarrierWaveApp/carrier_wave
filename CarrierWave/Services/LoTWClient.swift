@@ -41,6 +41,15 @@ final class LoTWClient {
     let baseURL = "https://lotw.arrl.org/lotwuser/lotwreport.adi"
     let userAgent = "CarrierWave/1.0"
 
+    /// URLSession configured with generous timeout for large LoTW queries
+    /// API docs recommend 120+ seconds as large logs can take 30-60+ seconds to generate
+    let session: URLSession = {
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 180 // 3 minutes for request
+        config.timeoutIntervalForResource = 300 // 5 minutes total
+        return URLSession(configuration: config)
+    }()
+
     // MARK: - Configuration
 
     var isConfigured: Bool {
@@ -109,7 +118,8 @@ final class LoTWClient {
         let endDate = Date()
 
         // If date range is small (< 30 days), just do a single request
-        let daysBetween = Calendar.current.dateComponents([.day], from: startDate, to: endDate).day ?? 0
+        let daysBetween =
+            Calendar.current.dateComponents([.day], from: startDate, to: endDate).day ?? 0
         if daysBetween <= 30 {
             return try await fetchQSOsForDateRange(
                 credentials: credentials, startDate: startDate, endDate: nil
@@ -143,7 +153,7 @@ final class LoTWClient {
         var request = URLRequest(url: components.url!)
         request.setValue(userAgent, forHTTPHeaderField: "User-Agent")
 
-        let (data, _) = try await URLSession.shared.data(for: request)
+        let (data, _) = try await session.data(for: request)
 
         guard let responseString = String(data: data, encoding: .utf8) else {
             throw LoTWError.invalidResponse("Cannot decode response as UTF-8")
@@ -158,10 +168,13 @@ final class LoTWClient {
     }
 
     /// Fetch QSOs for a specific date range
+    /// Note: Only uses qso_qsorxsince for filtering. The API's qso_enddate filters by QSO date
+    /// (when contact occurred), not by upload/receipt date, so we don't use it for windowing.
+    /// Progress is tracked by advancing qso_qsorxsince based on APP_LoTW_LASTQSORX from responses.
     func fetchQSOsForDateRange(
         credentials: (username: String, password: String),
         startDate: Date,
-        endDate: Date?
+        endDate _: Date?
     ) async throws -> LoTWResponse {
         var components = URLComponents(string: baseURL)!
 
@@ -169,7 +182,11 @@ final class LoTWClient {
         dateFormatter.dateFormat = "yyyy-MM-dd"
         dateFormatter.timeZone = TimeZone(identifier: "UTC")
 
-        var queryItems: [URLQueryItem] = [
+        // Note: We intentionally don't use qso_enddate here. That parameter filters by QSO date
+        // (when the contact occurred), but qso_qsorxsince filters by upload/receipt date (when
+        // LoTW received the QSO). These are different fields and mixing them causes issues.
+        // Instead, we rely solely on qso_qsorxsince and track progress via APP_LoTW_LASTQSORX.
+        let queryItems: [URLQueryItem] = [
             URLQueryItem(name: "login", value: credentials.username),
             URLQueryItem(name: "password", value: credentials.password),
             URLQueryItem(name: "qso_query", value: "1"),
@@ -180,20 +197,12 @@ final class LoTWClient {
             URLQueryItem(name: "qso_withown", value: "yes"),
         ]
 
-        // Add end date filter if specified (for windowed requests)
-        if let endDate {
-            // LoTW uses qso_enddate for the QSO date, not upload date
-            // We'll filter by upload date range using qso_qsorxsince already
-            // For windowing, we track progress by startDate advancement
-            queryItems.append(URLQueryItem(name: "qso_enddate", value: dateFormatter.string(from: endDate)))
-        }
-
         components.queryItems = queryItems
 
         var request = URLRequest(url: components.url!)
         request.setValue(userAgent, forHTTPHeaderField: "User-Agent")
 
-        let (data, _) = try await URLSession.shared.data(for: request)
+        let (data, _) = try await session.data(for: request)
 
         guard let responseString = String(data: data, encoding: .utf8) else {
             throw LoTWError.invalidResponse("Cannot decode response as UTF-8")
@@ -230,9 +239,16 @@ final class LoTWClient {
 
     // MARK: Private
 
+    /// Check if response indicates authentication failure
+    /// LoTW returns HTML error pages, so we check for various auth-related error strings
     private func isAuthenticationError(_ response: String) -> Bool {
         let lowercased = response.lowercased()
         return lowercased.contains("password incorrect")
             || lowercased.contains("username not found")
+            || lowercased.contains("invalid login")
+            || lowercased.contains("login failed")
+            || lowercased.contains("authentication failed")
+            || lowercased.contains("not authorized")
+            || lowercased.contains("access denied")
     }
 }

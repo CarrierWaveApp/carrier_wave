@@ -139,23 +139,33 @@ extension LoTWClient {
         state.consecutiveFailures += 1
         state.consecutiveSuccesses = 0
 
+        // Use exponential backoff: base delay doubles with each consecutive failure
+        // LoTW rate limit is per-concurrent-request, and large queries can take 30-60+ seconds
+        // to generate server-side, so we need generous delays
+        let baseDelaySeconds: UInt64
+        let backoffMultiplier = min(state.consecutiveFailures, 4) // Cap at 4x to avoid excessive waits
+
         // Rate limited - shrink window or wait
         if state.windowDays <= 30 {
-            // Already at minimum, wait and retry
-            debugLog.warning(
-                "Rate limited at min window (\(state.windowDays)d), wait 30s (#\(state.consecutiveFailures))",
-                service: .lotw
-            )
-            try await Task.sleep(nanoseconds: 30_000_000_000)
+            // Already at minimum window, use exponential backoff starting at 30s
+            // 30s -> 60s -> 120s -> 240s (capped)
+            baseDelaySeconds = 30 * UInt64(1 << (backoffMultiplier - 1))
+            let msg =
+                "Rate limited at min window (\(state.windowDays)d), "
+                    + "wait \(baseDelaySeconds)s (#\(state.consecutiveFailures))"
+            debugLog.warning(msg, service: .lotw)
+            try await Task.sleep(nanoseconds: baseDelaySeconds * 1_000_000_000)
         } else {
-            // Shrink window
+            // Shrink window and use shorter exponential backoff starting at 5s
+            // 5s -> 10s -> 20s -> 40s (capped)
             let oldWindow = state.windowDays
             state.windowDays = max(state.windowDays / 2, 30)
-            debugLog.info(
-                "Adaptive: rate limited, shrinking \(oldWindow) → \(state.windowDays) days, waiting 5s",
-                service: .lotw
-            )
-            try await Task.sleep(nanoseconds: 5_000_000_000)
+            baseDelaySeconds = 5 * UInt64(1 << (backoffMultiplier - 1))
+            let msg =
+                "Adaptive: rate limited, shrinking \(oldWindow) → \(state.windowDays) days, "
+                    + "waiting \(baseDelaySeconds)s"
+            debugLog.info(msg, service: .lotw)
+            try await Task.sleep(nanoseconds: baseDelaySeconds * 1_000_000_000)
         }
 
         // Safety: bail if too many consecutive failures
