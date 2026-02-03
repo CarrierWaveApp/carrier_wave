@@ -51,6 +51,135 @@ struct BandSegment: Sendable {
     }
 }
 
+// MARK: - TimeWindow
+
+/// A recurring time window for scheduled activities (e.g., CWOps CWT)
+struct TimeWindow: Sendable {
+    /// Day of week (1=Sunday, 2=Monday, ..., 7=Saturday)
+    let dayOfWeek: Int
+    let startHourUTC: Int
+    let startMinuteUTC: Int
+    let durationMinutes: Int
+    /// Buffer before/after the window to warn users
+    let bufferMinutes: Int
+
+    /// Check if a given date falls within this time window (including buffer)
+    func contains(date: Date) -> Bool {
+        let calendar = Calendar(identifier: .gregorian)
+        var utcCalendar = calendar
+        utcCalendar.timeZone = TimeZone(identifier: "UTC")!
+
+        let components = utcCalendar.dateComponents([.weekday, .hour, .minute], from: date)
+        guard let weekday = components.weekday,
+              let hour = components.hour,
+              let minute = components.minute
+        else {
+            return false
+        }
+
+        // Check if day matches
+        guard weekday == dayOfWeek else {
+            return false
+        }
+
+        // Convert to minutes since midnight for easier comparison
+        let currentMinutes = hour * 60 + minute
+        let windowStart = startHourUTC * 60 + startMinuteUTC - bufferMinutes
+        let windowEnd = startHourUTC * 60 + startMinuteUTC + durationMinutes + bufferMinutes
+
+        return currentMinutes >= windowStart && currentMinutes <= windowEnd
+    }
+}
+
+// MARK: - FrequencyActivity
+
+/// A special-purpose frequency or frequency range for common activities
+struct FrequencyActivity: Sendable {
+    /// Type of activity
+    enum ActivityType: String, Sendable {
+        case qrpCW = "QRP CW"
+        case qrpSSB = "QRP SSB"
+        case ssbCalling = "SSB Calling"
+        case amCalling = "AM Calling"
+        case fmSimplex = "FM Simplex"
+        case sstv = "SSTV"
+        case digitalFT = "FT8/FT4"
+        case digitalPSK = "PSK31"
+        case cwtContest = "CWOps CWT"
+        case net = "Net"
+    }
+
+    let type: ActivityType
+    let band: String
+    let centerMHz: Double
+    /// ± tolerance in kHz for matching
+    let toleranceKHz: Double
+    /// Expected modes for this activity
+    let modes: Set<String>
+    let description: String
+    /// For time-based activities like CWT
+    let timeWindows: [TimeWindow]?
+
+    /// Check if a frequency is within tolerance of this activity
+    func matches(frequencyMHz: Double) -> Bool {
+        let distanceKHz = abs(frequencyMHz - centerMHz) * 1_000
+        return distanceKHz <= toleranceKHz
+    }
+
+    /// Check if the activity is currently active (for time-based activities)
+    func isActive(at date: Date = Date()) -> Bool {
+        guard let windows = timeWindows else {
+            return true
+        }
+        return windows.contains { $0.contains(date: date) }
+    }
+
+    /// Check if a mode matches the expected modes for this activity
+    func matchesMode(_ mode: String) -> Bool {
+        let normalizedMode = mode.uppercased()
+        // Check direct match
+        if modes.contains(normalizedMode) {
+            return true
+        }
+        // Check phone mode variants
+        if modes.contains("SSB"), ["LSB", "USB", "PHONE"].contains(normalizedMode) {
+            return true
+        }
+        if modes.contains("USB"), normalizedMode == "SSB" {
+            return true
+        }
+        // Check digital mode variants
+        if modes.contains("DATA"),
+           ["FT8", "FT4", "PSK31", "PSK", "RTTY", "JS8", "WSPR"].contains(normalizedMode)
+        {
+            return true
+        }
+        return false
+    }
+}
+
+// MARK: - CWTRange
+
+/// A CWT frequency range (defined as offset from band edge)
+struct CWTRange: Sendable {
+    let band: String
+    let bandEdgeMHz: Double
+    let startOffsetKHz: Double
+    let endOffsetKHz: Double
+
+    var startMHz: Double {
+        bandEdgeMHz + startOffsetKHz / 1_000
+    }
+
+    var endMHz: Double {
+        bandEdgeMHz + endOffsetKHz / 1_000
+    }
+
+    func contains(frequencyMHz: Double) -> Bool {
+        frequencyMHz >= startMHz && frequencyMHz <= endMHz
+    }
+}
+
 // MARK: - BandPlan
 
 /// US amateur radio band plan

@@ -5,9 +5,74 @@
 
 import Foundation
 
+// MARK: - FrequencyWarning
+
+/// Unified warning for frequency/mode issues (replaces BandPlanViolation)
+struct FrequencyWarning: Sendable, Equatable {
+    // MARK: Lifecycle
+
+    init(
+        type: WarningType,
+        message: String,
+        suggestion: String? = nil,
+        activity: FrequencyActivity.ActivityType? = nil
+    ) {
+        self.type = type
+        self.message = message
+        self.suggestion = suggestion
+        self.activity = activity
+    }
+
+    // MARK: Internal
+
+    enum WarningType: Sendable, Equatable {
+        // License violations (high priority)
+        case noPrivileges
+        case wrongMode
+        case outOfBand
+
+        // Activity warnings (medium priority)
+        case activityConflict // Mode mismatch with expected activity
+        case activityCrowded // Time-based event active (CWT, etc.)
+
+        // Informational (low priority)
+        case unusualFrequency // CW in phone segment, etc.
+        case activityInfo // Matching activity - "You're on QRP freq!"
+    }
+
+    let type: WarningType
+    let message: String
+    let suggestion: String?
+    let activity: FrequencyActivity.ActivityType?
+
+    /// Priority for sorting (lower = higher priority, shown first)
+    var priority: Int {
+        switch type {
+        case .noPrivileges,
+             .outOfBand: 0
+        case .wrongMode: 1
+        case .activityConflict,
+             .activityCrowded: 2
+        case .unusualFrequency: 3
+        case .activityInfo: 4
+        }
+    }
+
+    /// Whether this warning blocks operation (vs informational)
+    var isBlocking: Bool {
+        switch type {
+        case .noPrivileges,
+             .wrongMode,
+             .outOfBand: true
+        default: false
+        }
+    }
+}
+
 // MARK: - BandPlanViolation
 
 /// Describes a band plan violation
+/// - Note: Deprecated. Use `FrequencyWarning` instead.
 struct BandPlanViolation: Sendable {
     enum ViolationType: Sendable {
         case noPrivileges
@@ -19,6 +84,18 @@ struct BandPlanViolation: Sendable {
     let type: ViolationType
     let message: String
     let suggestion: String?
+
+    /// Convert to FrequencyWarning
+    var asFrequencyWarning: FrequencyWarning {
+        let warningType: FrequencyWarning.WarningType =
+            switch type {
+            case .noPrivileges: .noPrivileges
+            case .wrongMode: .wrongMode
+            case .outOfBand: .outOfBand
+            case .unusualFrequency: .unusualFrequency
+            }
+        return FrequencyWarning(type: warningType, message: message, suggestion: suggestion)
+    }
 }
 
 // MARK: - BandPlanService
@@ -193,6 +270,130 @@ enum BandPlanService {
 
         // Mixed segment - don't auto-switch
         return nil
+    }
+
+    // MARK: - Unified Frequency Validation
+
+    /// Full frequency validation - returns all applicable warnings sorted by priority
+    /// - Parameters:
+    ///   - frequencyMHz: Operating frequency in MHz
+    ///   - mode: Operating mode (CW, SSB, etc.)
+    ///   - license: User's license class
+    /// - Returns: All warnings sorted by priority (highest priority first)
+    static func validateFrequency(
+        frequencyMHz: Double,
+        mode: String,
+        license: LicenseClass
+    ) -> [FrequencyWarning] {
+        var warnings: [FrequencyWarning] = []
+
+        // 1. Check license privileges (existing logic)
+        if let licenseViolation = validate(
+            frequencyMHz: frequencyMHz,
+            mode: mode,
+            license: license
+        ) {
+            warnings.append(licenseViolation.asFrequencyWarning)
+        }
+
+        // 2. Check activity frequencies
+        warnings.append(
+            contentsOf: checkActivityWarnings(
+                frequencyMHz: frequencyMHz,
+                mode: mode
+            )
+        )
+
+        // Return sorted by priority (highest priority first)
+        return warnings.sorted { $0.priority < $1.priority }
+    }
+
+    /// Check for activity-related warnings
+    /// - Parameters:
+    ///   - frequencyMHz: Operating frequency in MHz
+    ///   - mode: Operating mode
+    /// - Returns: Activity warnings (conflicts or informational)
+    static func checkActivityWarnings(
+        frequencyMHz: Double,
+        mode: String
+    ) -> [FrequencyWarning] {
+        var warnings: [FrequencyWarning] = []
+
+        // Check CWT first (time-based, takes priority)
+        if let cwtRange = BandPlan.isInCWTRange(frequencyMHz: frequencyMHz) {
+            let freqStr = FrequencyFormatter.formatWithUnit(frequencyMHz)
+            let rangeStr =
+                "\(FrequencyFormatter.format(cwtRange.startMHz))-\(FrequencyFormatter.formatWithUnit(cwtRange.endMHz))"
+
+            // CWT is CW only - warn if not in CW mode
+            let normalizedMode = mode.uppercased()
+            if normalizedMode != "CW" {
+                warnings.append(
+                    FrequencyWarning(
+                        type: .activityConflict,
+                        message: "\(freqStr) is in the CWOps CWT range",
+                        suggestion: "CWT uses CW mode only (\(rangeStr))",
+                        activity: .cwtContest
+                    )
+                )
+            } else {
+                warnings.append(
+                    FrequencyWarning(
+                        type: .activityCrowded,
+                        message: "CWOps CWT is active",
+                        suggestion: "Expect heavy CW traffic \(rangeStr)",
+                        activity: .cwtContest
+                    )
+                )
+            }
+        }
+
+        // Check other activities
+        let matchingActivities = BandPlan.activitiesMatching(frequencyMHz: frequencyMHz)
+
+        for activity in matchingActivities {
+            // Skip time-based activities that aren't active
+            guard activity.isActive() else {
+                continue
+            }
+
+            let freqStr = FrequencyFormatter.formatWithUnit(activity.centerMHz)
+
+            if activity.matchesMode(mode) {
+                // Mode matches - informational notice
+                warnings.append(
+                    FrequencyWarning(
+                        type: .activityInfo,
+                        message: "\(freqStr) is the \(activity.description)",
+                        suggestion: nil,
+                        activity: activity.type
+                    )
+                )
+            } else {
+                // Mode mismatch - warning
+                let expectedModes = activity.modes.sorted().joined(separator: "/")
+                warnings.append(
+                    FrequencyWarning(
+                        type: .activityConflict,
+                        message: "\(freqStr) is the \(activity.description)",
+                        suggestion: "Expected mode: \(expectedModes), you're in \(mode)",
+                        activity: activity.type
+                    )
+                )
+            }
+        }
+
+        return warnings
+    }
+
+    /// Check if currently within a CWT time window (with buffer)
+    static func isWithinCWTWindow(at date: Date = Date()) -> Bool {
+        BandPlan.cwtTimeWindows.contains { $0.contains(date: date) }
+    }
+
+    /// Find all activities near a frequency
+    static func activitiesNear(frequencyMHz: Double) -> [FrequencyActivity] {
+        BandPlan.activitiesMatching(frequencyMHz: frequencyMHz)
     }
 
     // MARK: Private

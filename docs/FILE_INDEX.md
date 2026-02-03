@@ -41,6 +41,7 @@ This index maps files to their purpose. Use it to locate files by feature instea
 | `LoggerCommand.swift` | Command enum for logger input (FREQ, MODE, SPOT, RBN, POTA, P2P, SOLAR, WEATHER, MAP) |
 | `CallsignNotesSource.swift` | SwiftData model for user-configured callsign notes file sources |
 | `BandPlan.swift` | US amateur radio band plan data with license class privileges |
+| `BandPlan+Activities.swift` | Frequency activity data (QRP, SSTV, FT8, CWT, nets) and time windows |
 | `UserProfile.swift` | User's amateur radio profile (callsign, name, QTH, grid, license) |
 | `SpotRegion.swift` | Geographic region classification for spots (SpotRegion, EnrichedSpot, SpotSummary) |
 
@@ -159,7 +160,7 @@ This index maps files to their purpose. Use it to locate files by feature instea
 | `SolarPanelView.swift` | Solar conditions panel (K-index, SFI, propagation) |
 | `WeatherPanelView.swift` | Weather conditions panel from NOAA |
 | `FrequencyActivityView.swift` | Nearby frequency activity display with QRM assessment |
-| `LicenseWarningBanner.swift` | Band plan violation warning banner |
+| `FrequencyWarningBanner.swift` | Unified frequency warning banner (license violations + activity warnings) |
 | `LoggerToastView.swift` | Toast notification system for logger |
 | `LoggerKeyboardAccessory.swift` | Number row and command buttons above keyboard |
 | `POTASpotRow.swift` | Individual POTA spot row component |

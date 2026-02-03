@@ -31,10 +31,10 @@ struct LoggerView: View {
                             .padding(.top, 8)
                     }
 
-                    // License warning banner
-                    if let violation = currentViolation {
-                        LicenseWarningBanner(violation: violation) {
-                            dismissedViolation = violation.message
+                    // Frequency warning banner (license violations + activity warnings)
+                    if let warning = currentWarning {
+                        FrequencyWarningBanner(warning: warning) {
+                            dismissedWarning = warning.message
                         }
                         .padding(.horizontal)
                         .padding(.top, 8)
@@ -155,10 +155,10 @@ struct LoggerView: View {
             }
 
             .onChange(of: sessionManager?.activeSession?.frequency) { _, _ in
-                dismissedViolation = nil
+                dismissedWarning = nil
             }
             .onChange(of: sessionManager?.activeSession?.mode) { _, _ in
-                dismissedViolation = nil
+                dismissedWarning = nil
                 // RST fields stay empty - placeholder shows correct default based on mode
             }
             .onChange(of: sessionManager?.activeSession?.id) { _, _ in
@@ -306,7 +306,8 @@ struct LoggerView: View {
     @State private var preSpotFrequency: Double?
 
     /// License warning
-    @State private var dismissedViolation: String?
+    /// Dismissed warning message (to avoid re-showing the same warning)
+    @State private var dismissedWarning: String?
 
     /// Tour state for mini-tour
     private let tourState: TourState
@@ -318,6 +319,12 @@ struct LoggerView: View {
 
     /// Unified field height for consistency
     private let fieldHeight: CGFloat = 36
+
+    /// Deprecated: Use dismissedWarning
+    private var dismissedViolation: String? {
+        get { dismissedWarning }
+        set { dismissedWarning = newValue }
+    }
 
     private var userLicenseClass: LicenseClass {
         LicenseClass(rawValue: licenseClassRaw) ?? .extra
@@ -407,26 +414,42 @@ struct LoggerView: View {
         }
     }
 
-    /// Current band plan violation (if any)
-    private var currentViolation: BandPlanViolation? {
+    /// Current frequency warning (if any) - includes license violations and activity warnings
+    private var currentWarning: FrequencyWarning? {
         guard let session = sessionManager?.activeSession,
               let freq = session.frequency
         else {
             return nil
         }
 
-        let violation = BandPlanService.validate(
+        let warnings = BandPlanService.validateFrequency(
             frequencyMHz: freq,
             mode: session.mode,
             license: userLicenseClass
         )
 
-        // Don't show if user dismissed this specific violation
-        if let violation, violation.message == dismissedViolation {
+        // Return the highest priority warning not dismissed
+        return warnings.first { $0.message != dismissedWarning }
+    }
+
+    /// Deprecated: Use currentWarning instead
+    private var currentViolation: BandPlanViolation? {
+        guard let warning = currentWarning else {
             return nil
         }
-
-        return violation
+        // Convert back for compatibility (if needed elsewhere)
+        let violationType: BandPlanViolation.ViolationType =
+            switch warning.type {
+            case .noPrivileges: .noPrivileges
+            case .wrongMode: .wrongMode
+            case .outOfBand: .outOfBand
+            default: .unusualFrequency
+            }
+        return BandPlanViolation(
+            type: violationType,
+            message: warning.message,
+            suggestion: warning.suggestion
+        )
     }
 
     // MARK: - QSO List
