@@ -101,6 +101,9 @@ class SyncService: ObservableObject {
             try await reconcileQRZPresenceAsync(downloadedKeys: qrzDownloadedKeys)
         }
 
+        // Refresh main context to pick up changes from background actor
+        modelContext.rollback()
+
         // PHASE 3: Upload to all destinations in parallel (unless read-only mode)
         await performUploadsIfEnabled(into: &result, debugLog: debugLog)
 
@@ -121,6 +124,7 @@ class SyncService: ObservableObject {
         defer {
             isSyncing = false
             syncPhase = nil
+            lastSyncDate = Date()
         }
 
         var downloaded = 0
@@ -148,6 +152,9 @@ class SyncService: ObservableObject {
         let qrzDownloadedKeys = Set(fetched.map(\.deduplicationKey))
         try await reconcileQRZPresenceAsync(downloadedKeys: qrzDownloadedKeys)
 
+        // Refresh main context to pick up changes from background actor
+        modelContext.rollback()
+
         // Upload with timeout (unless read-only mode)
         if !isReadOnlyMode {
             syncPhase = .uploading(service: .qrz)
@@ -157,7 +164,9 @@ class SyncService: ObservableObject {
             }
             uploaded = uploadResult.uploaded
             skipped = uploadResult.skipped
-            try modelContext.save()
+            if modelContext.hasChanges {
+                try modelContext.save()
+            }
         }
 
         return QRZSyncResult(downloaded: downloaded, uploaded: uploaded, skipped: skipped)
@@ -169,6 +178,7 @@ class SyncService: ObservableObject {
         defer {
             isSyncing = false
             syncPhase = nil
+            lastSyncDate = Date()
         }
 
         // Check maintenance window
@@ -196,6 +206,9 @@ class SyncService: ObservableObject {
             await processActivities(newQSOs: createdQSOs)
         }
 
+        // Refresh main context to pick up changes from background actor
+        modelContext.rollback()
+
         // Upload with timeout (unless read-only mode)
         if !isReadOnlyMode {
             syncPhase = .uploading(service: .pota)
@@ -205,7 +218,9 @@ class SyncService: ObservableObject {
             uploaded = try await withTimeout(seconds: syncTimeoutSeconds, service: .pota) {
                 try await self.uploadToPOTA(qsos: qsosToUpload)
             }
-            try modelContext.save()
+            if modelContext.hasChanges {
+                try modelContext.save()
+            }
         }
 
         return (downloaded, uploaded)
@@ -220,6 +235,7 @@ class SyncService: ObservableObject {
         defer {
             isSyncing = false
             syncPhase = nil
+            lastSyncDate = Date()
         }
 
         // Download with timeout and progress tracking
@@ -258,6 +274,7 @@ class SyncService: ObservableObject {
         defer {
             isSyncing = false
             syncPhase = nil
+            lastSyncDate = Date()
         }
 
         // Download with timeout
@@ -285,6 +302,7 @@ class SyncService: ObservableObject {
         defer {
             isSyncing = false
             syncPhase = nil
+            lastSyncDate = Date()
         }
 
         syncPhase = .downloading(service: .lotw)

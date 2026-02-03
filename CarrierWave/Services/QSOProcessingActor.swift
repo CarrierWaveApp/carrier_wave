@@ -392,11 +392,13 @@ extension QSOProcessingActor {
 
         // Fetch ServicePresence records for QRZ that are marked as present
         // This is more efficient than fetching all QSOs
-        let qrzService = ServiceType.qrz
+        // Note: SwiftData predicates don't support enum captures, so we fetch all
+        // presence records marked as present and filter in memory
         let presenceDescriptor = FetchDescriptor<ServicePresence>(
-            predicate: #Predicate<ServicePresence> { $0.serviceType == qrzService && $0.isPresent }
+            predicate: #Predicate<ServicePresence> { $0.isPresent }
         )
-        let presenceRecords = try context.fetch(presenceDescriptor)
+        let allPresenceRecords = try context.fetch(presenceDescriptor)
+        let presenceRecords = allPresenceRecords.filter { $0.serviceType == .qrz }
 
         var modifiedCount = 0
         for (index, presence) in presenceRecords.enumerated() {
