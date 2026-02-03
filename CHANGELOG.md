@@ -4,6 +4,8 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.19.1] - 2026-02-03
+
 ### Added
 - Action Required log level in Sync Debug with purple highlighting for issues needing user attention
 
