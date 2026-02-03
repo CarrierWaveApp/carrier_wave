@@ -68,10 +68,26 @@ extension SyncService {
     ) {
         await MainActor.run { self.syncPhase = .downloading(service: .qrz) }
         let debugLog = SyncDebugLog.shared
-        debugLog.info("Starting QRZ download", service: .qrz)
+
+        // Use incremental sync if we have a last download date
+        let lastDownload = qrzClient.getLastDownloadDate()
+        let syncStartTime = Date()
+
+        if let lastDownload {
+            let formatter = DateFormatter()
+            formatter.dateStyle = .medium
+            formatter.timeStyle = .short
+            debugLog.info(
+                "Starting incremental QRZ download (since \(formatter.string(from: lastDownload)))",
+                service: .qrz
+            )
+        } else {
+            debugLog.info("Starting full QRZ download (no previous sync)", service: .qrz)
+        }
+
         do {
             let qsos = try await withTimeout(seconds: timeout, service: .qrz) {
-                try await self.qrzClient.fetchQSOs(since: nil)
+                try await self.qrzClient.fetchQSOs(since: lastDownload)
             }
             debugLog.info("Downloaded \(qsos.count) QSOs from QRZ", service: .qrz)
             let fetched = qsos.map { FetchedQSO.fromQRZ($0) }
@@ -82,6 +98,10 @@ extension SyncService {
                     parsedFields: fetched[index].debugFields
                 )
             }
+
+            // Save sync timestamp on success
+            qrzClient.saveLastDownloadDate(syncStartTime)
+
             await MainActor.run { self.syncProgress.addDownloaded(fetched.count, for: .qrz) }
             return (.qrz, .success(fetched))
         } catch {

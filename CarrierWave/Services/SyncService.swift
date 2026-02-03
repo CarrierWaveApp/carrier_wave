@@ -65,6 +65,9 @@ class SyncService: ObservableObject {
         let debugLog = SyncDebugLog.shared
         debugLog.info("Starting full sync")
 
+        // Capture whether this will be an incremental QRZ sync (before downloads modify it)
+        let qrzWasIncremental = qrzClient.getLastDownloadDate() != nil
+
         defer {
             isSyncing = false
             syncPhase = nil
@@ -95,10 +98,15 @@ class SyncService: ObservableObject {
             await processActivities(newQSOs: createdQSOs)
         }
 
-        // PHASE 2.5b: Reconcile QRZ presence against what QRZ actually returned (on background thread)
-        let qrzDownloadedKeys = Set(allFetched.filter { $0.source == .qrz }.map(\.deduplicationKey))
-        if !qrzDownloadedKeys.isEmpty {
-            try await reconcileQRZPresenceAsync(downloadedKeys: qrzDownloadedKeys)
+        // PHASE 2.5b: Reconcile QRZ presence - only on full sync (not incremental)
+        // Incremental sync doesn't have the complete picture, so reconciliation would be inaccurate
+        if !qrzWasIncremental {
+            let qrzDownloadedKeys = Set(
+                allFetched.filter { $0.source == .qrz }.map(\.deduplicationKey)
+            )
+            if !qrzDownloadedKeys.isEmpty {
+                try await reconcileQRZPresenceAsync(downloadedKeys: qrzDownloadedKeys)
+            }
         }
 
         // PHASE 2.5c: Repair orphaned QSOs (logged when services weren't configured)
@@ -124,7 +132,8 @@ class SyncService: ObservableObject {
     // MARK: - Single Service Sync (for UI buttons)
 
     /// Sync only with QRZ (download then upload)
-    func syncQRZ() async throws -> QRZSyncResult {
+    /// - Parameter forceFullSync: If true, ignores last sync date and downloads all QSOs
+    func syncQRZ(forceFullSync: Bool = false) async throws -> QRZSyncResult {
         isSyncing = true
         defer {
             isSyncing = false
@@ -136,12 +145,19 @@ class SyncService: ObservableObject {
         var uploaded = 0
         var skipped = 0
 
+        // Use incremental sync unless forced full
+        let lastDownload = forceFullSync ? nil : qrzClient.getLastDownloadDate()
+        let syncStartTime = Date()
+
         // Download with timeout
         syncPhase = .downloading(service: .qrz)
         let qsos = try await withTimeout(seconds: syncTimeoutSeconds, service: .qrz) {
-            try await self.qrzClient.fetchQSOs(since: nil)
+            try await self.qrzClient.fetchQSOs(since: lastDownload)
         }
         let fetched = qsos.map { FetchedQSO.fromQRZ($0) }
+
+        // Save sync timestamp on success
+        qrzClient.saveLastDownloadDate(syncStartTime)
 
         syncPhase = .processing
         let processResult = try await processDownloadedQSOsAsync(fetched)
@@ -153,9 +169,11 @@ class SyncService: ObservableObject {
             await processActivities(newQSOs: createdQSOs)
         }
 
-        // Reconcile QRZ presence against what QRZ actually returned
-        let qrzDownloadedKeys = Set(fetched.map(\.deduplicationKey))
-        try await reconcileQRZPresenceAsync(downloadedKeys: qrzDownloadedKeys)
+        // Only reconcile on full sync - incremental sync doesn't have complete picture
+        if forceFullSync || lastDownload == nil {
+            let qrzDownloadedKeys = Set(fetched.map(\.deduplicationKey))
+            try await reconcileQRZPresenceAsync(downloadedKeys: qrzDownloadedKeys)
+        }
 
         // Repair orphaned QSOs (logged when QRZ wasn't configured)
         await repairOrphanedQSOsAsync(for: .qrz)

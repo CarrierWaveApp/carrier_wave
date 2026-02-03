@@ -255,7 +255,9 @@ final class QRZClient {
         let bookId = accountCallsign.flatMap { getBookId(for: $0) }
 
         // Filter to only QSOs matching the QRZ account callsign
-        let (matchingQSOs, skippedCount) = filterQSOsForUpload(qsos, accountCallsign: accountCallsign)
+        let (matchingQSOs, skippedCount) = filterQSOsForUpload(
+            qsos, accountCallsign: accountCallsign
+        )
 
         guard !matchingQSOs.isEmpty else {
             return QRZUploadResult(uploaded: 0, duplicates: 0, skipped: skippedCount)
@@ -265,7 +267,9 @@ final class QRZClient {
             qso.rawADIF ?? generateADIF(for: qso)
         }.joined(separator: "\n")
 
-        let request = try buildUploadRequest(apiKey: apiKey, adifContent: adifContent, bookId: bookId)
+        let request = try buildUploadRequest(
+            apiKey: apiKey, adifContent: adifContent, bookId: bookId
+        )
         let (data, _) = try await URLSession.shared.data(for: request)
 
         guard let responseString = String(data: data, encoding: .utf8) else {
@@ -273,7 +277,9 @@ final class QRZClient {
         }
 
         let result = try parseUploadResponse(responseString)
-        return QRZUploadResult(uploaded: result.uploaded, duplicates: result.duplicates, skipped: skippedCount)
+        return QRZUploadResult(
+            uploaded: result.uploaded, duplicates: result.duplicates, skipped: skippedCount
+        )
     }
 
     /// Fetch QSOs from QRZ logbook with pagination
@@ -327,6 +333,29 @@ final class QRZClient {
 
         NSLog("[QRZ] Fetch complete: total=%d QSOs", allQSOs.count)
         return allQSOs
+    }
+
+    // MARK: - Sync Timestamps
+
+    /// Get the last successful download date for incremental sync
+    func getLastDownloadDate() -> Date? {
+        guard
+            let dateString = try? keychain.readString(for: KeychainHelper.Keys.qrzLastDownloadDate)
+        else {
+            return nil
+        }
+        return ISO8601DateFormatter().date(from: dateString)
+    }
+
+    /// Save the last successful download date
+    func saveLastDownloadDate(_ date: Date) {
+        let dateString = ISO8601DateFormatter().string(from: date)
+        try? keychain.save(dateString, for: KeychainHelper.Keys.qrzLastDownloadDate)
+    }
+
+    /// Clear the last download date (forces full sync on next run)
+    func clearLastDownloadDate() {
+        try? keychain.delete(for: KeychainHelper.Keys.qrzLastDownloadDate)
     }
 
     // MARK: - Session Management
@@ -384,7 +413,9 @@ final class QRZClient {
         request.setValue(userAgent, forHTTPHeaderField: "User-Agent")
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
 
-        var formData = ["KEY": apiKey, "ACTION": "INSERT", "OPTION": "REPLACE", "ADIF": adifContent]
+        var formData = [
+            "KEY": apiKey, "ACTION": "INSERT", "OPTION": "REPLACE", "ADIF": adifContent,
+        ]
         if let bookId {
             formData["BOOKID"] = bookId
         }
@@ -393,7 +424,9 @@ final class QRZClient {
     }
 
     /// Parse the upload response and return counts or throw appropriate error
-    private func parseUploadResponse(_ responseString: String) throws -> (uploaded: Int, duplicates: Int) {
+    private func parseUploadResponse(_ responseString: String) throws -> (
+        uploaded: Int, duplicates: Int
+    ) {
         let parsed = Self.parseResponse(responseString)
 
         if parsed["RESULT"] == "AUTH" {
@@ -410,80 +443,7 @@ final class QRZClient {
         let dupes = Int(parsed["DUPES"] ?? "0") ?? 0
         return (uploaded: count, duplicates: dupes)
     }
-
-    private func buildFetchRequest(
-        url: URL, apiKey: String, afterLogId: Int64, pageSize: Int, since: Date?
-    ) -> URLRequest {
-        // Use AFTERLOGID for pagination (OFFSET doesn't work in QRZ API)
-        var optionParts = ["MAX:\(pageSize)", "AFTERLOGID:\(afterLogId)"]
-        if let since {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "yyyy-MM-dd"
-            formatter.timeZone = TimeZone(identifier: "UTC")
-            optionParts.append("MODSINCE:\(formatter.string(from: since))")
-        }
-
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue(userAgent, forHTTPHeaderField: "User-Agent")
-        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
-
-        let formData = [
-            "KEY": apiKey, "ACTION": "FETCH", "OPTION": optionParts.joined(separator: ","),
-        ]
-        request.httpBody = formEncode(formData).data(using: .utf8)
-        return request
-    }
-
-    private func fetchQSOPage(request: URLRequest) async throws -> ([QRZFetchedQSO], Int) {
-        let (data, response) = try await URLSession.shared.data(for: request)
-
-        if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode != 200 {
-            let bodyPreview = String(data: data, encoding: .utf8)?.prefix(200) ?? "nil"
-            throw QRZError.invalidResponse("HTTP \(httpResponse.statusCode), body: \(bodyPreview)")
-        }
-
-        let responseString = try decodeResponseData(data)
-        let parsed = Self.parseResponse(responseString)
-
-        if parsed["RESULT"] == "AUTH" {
-            throw QRZError.sessionExpired
-        }
-
-        let result = parsed["RESULT"] ?? ""
-        let reason = parsed["REASON"]?.lowercased() ?? ""
-        let responseCount = Int(parsed["COUNT"] ?? "") ?? 0
-
-        if reason.contains("no log entries found") || (result == "FAIL" && responseCount == 0) {
-            return ([], 0)
-        }
-
-        guard result == "OK" else {
-            let errorReason =
-                parsed["REASON"] ?? "RESULT=\(result), Response: \(responseString.prefix(300))"
-            throw QRZError.fetchFailed(errorReason)
-        }
-
-        guard let encodedADIF = parsed["ADIF"] else {
-            return ([], 0)
-        }
-
-        let adif = decodeADIF(encodedADIF)
-        return (parseADIFRecords(adif), responseCount)
-    }
-
-    private func decodeResponseData(_ data: Data) throws -> String {
-        if let utf8String = String(data: data, encoding: .utf8) {
-            return utf8String
-        }
-        if let latin1String = String(data: data, encoding: .isoLatin1) {
-            return latin1String
-        }
-        let firstBytes = data.prefix(20).map { String(format: "%02x", $0) }.joined(separator: " ")
-        throw QRZError.invalidResponse(
-            "Cannot decode \(data.count) bytes, first bytes: \(firstBytes)"
-        )
-    }
 }
 
+// Fetch helper methods are in QRZClient+Fetch.swift
 // ADIF helper methods are in QRZClient+ADIF.swift
