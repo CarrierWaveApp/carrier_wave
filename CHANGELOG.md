@@ -4,6 +4,9 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- POTA spot timestamps now parse correctly, showing "spotted X ago" in nearby operator warnings
+
 ## [1.19.1] - 2026-02-03
 
 ### Added
