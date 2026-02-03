@@ -1689,7 +1689,7 @@ struct LoggerView: View {
         resetFormAfterLog()
     }
 
-    /// Update only the callsign of an existing QSO (preserves timestamp and other fields)
+    /// Update only the callsign of an existing QSO (preserves timestamp and notes)
     private func updateExistingQSOCallsign(_ qso: QSO) {
         let newCallsign = callsignInput.trimmingCharacters(in: .whitespaces).uppercased()
 
@@ -1700,13 +1700,28 @@ struct LoggerView: View {
 
         qso.callsign = newCallsign
 
-        // Clear any cached lookup data since the callsign changed
-        qso.name = nil
-        qso.theirGrid = nil
-        qso.state = nil
-        qso.country = nil
-        qso.qth = nil
-        qso.theirLicenseClass = nil
+        // Update with new callsign's metadata from lookup (if available)
+        if let info = lookupResult {
+            qso.name = info.name
+            qso.theirGrid = info.grid
+            qso.state = info.state
+            qso.country = info.country
+            qso.qth = info.qth
+            qso.theirLicenseClass = info.licenseClass
+        } else {
+            // No lookup result yet - clear metadata and fetch async
+            qso.name = nil
+            qso.theirGrid = nil
+            qso.state = nil
+            qso.country = nil
+            qso.qth = nil
+            qso.theirLicenseClass = nil
+
+            // Trigger async lookup to populate metadata
+            Task {
+                await fetchAndUpdateQSOMetadata(qso, callsign: newCallsign)
+            }
+        }
 
         try? modelContext.save()
 
@@ -1714,6 +1729,25 @@ struct LoggerView: View {
         resetFormAfterLog()
         editingQSO = nil
         ToastManager.shared.success("Callsign updated")
+    }
+
+    /// Fetch callsign metadata and update QSO (called when editing without existing lookup)
+    private func fetchAndUpdateQSOMetadata(_ qso: QSO, callsign: String) async {
+        let service = CallsignLookupService(modelContext: modelContext)
+        guard let info = await service.lookup(callsign) else {
+            return
+        }
+
+        await MainActor.run {
+            qso.name = info.name
+            qso.theirGrid = info.grid
+            qso.state = info.state
+            qso.country = info.country
+            qso.qth = info.qth
+            qso.theirLicenseClass = info.licenseClass
+            try? modelContext.save()
+            refreshSessionQSOs()
+        }
     }
 
     /// Log a QSO using quick entry data
