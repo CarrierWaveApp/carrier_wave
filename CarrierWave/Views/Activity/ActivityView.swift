@@ -58,6 +58,15 @@ struct ActivityView: View {
     @State private var showingShareSheet = false
     @State private var showingSummarySheet = false
 
+    // Friend profile navigation
+    @State private var selectedCallsign: String?
+    @State private var showingFriendProfile = false
+
+    // Friend invite handling
+    @State private var pendingFriendInviteToken: String?
+    @State private var showingFriendInviteSheet = false
+    @State private var isProcessingFriendInvite = false
+
     private var activeParticipations: [ChallengeParticipation] {
         allParticipations.filter { $0.status == .active }
     }
@@ -206,6 +215,22 @@ struct ActivityView: View {
         ) { _ in
             Task { await evaluateNewQSOs() }
         }
+        .onReceive(
+            NotificationCenter.default.publisher(for: .didReceiveFriendInvite)
+        ) { notification in
+            handleFriendInviteNotification(notification)
+        }
+        .sheet(isPresented: $showingFriendInviteSheet) {
+            FriendInviteConfirmSheet(
+                token: pendingFriendInviteToken ?? "",
+                isProcessing: $isProcessingFriendInvite,
+                onAccept: { acceptFriendInvite() },
+                onDismiss: {
+                    showingFriendInviteSheet = false
+                    pendingFriendInviteToken = nil
+                }
+            )
+        }
         .miniTour(.challenges, tourState: tourState)
     }
 
@@ -288,13 +313,34 @@ struct ActivityView: View {
             } else {
                 LazyVStack(spacing: 12) {
                     ForEach(filteredActivityItems) { item in
-                        ActivityItemRow(item: item) {
-                            shareActivity(item)
-                        }
+                        ActivityItemRow(
+                            item: item,
+                            onShare: { shareActivity(item) },
+                            onCallsignTap: { callsign in
+                                navigateToProfile(callsign: callsign)
+                            }
+                        )
                     }
                 }
             }
         }
+        .navigationDestination(isPresented: $showingFriendProfile) {
+            if let callsign = selectedCallsign {
+                FriendProfileView(
+                    callsign: callsign,
+                    friendship: friendshipFor(callsign: callsign)
+                )
+            }
+        }
+    }
+
+    private func navigateToProfile(callsign: String) {
+        selectedCallsign = callsign
+        showingFriendProfile = true
+    }
+
+    private func friendshipFor(callsign: String) -> Friendship? {
+        acceptedFriends.first { $0.friendCallsign.uppercased() == callsign.uppercased() }
     }
 
     private var activityEmptyState: some View {
@@ -377,7 +423,107 @@ extension ActivityView {
             // Silently fail - background operation
         }
     }
+
+    func handleFriendInviteNotification(_ notification: Notification) {
+        guard let userInfo = notification.userInfo,
+              let token = userInfo["token"] as? String
+        else {
+            return
+        }
+
+        pendingFriendInviteToken = token
+        showingFriendInviteSheet = true
+    }
+
+    func acceptFriendInvite() {
+        guard let token = pendingFriendInviteToken,
+              let service = friendsSyncService
+        else {
+            return
+        }
+
+        isProcessingFriendInvite = true
+
+        Task {
+            do {
+                try await service.sendFriendRequestWithInvite(
+                    inviteToken: token,
+                    sourceURL: "https://challenges.example.com"
+                )
+                showingFriendInviteSheet = false
+                pendingFriendInviteToken = nil
+            } catch {
+                errorMessage = error.localizedDescription
+                showingError = true
+            }
+            isProcessingFriendInvite = false
+        }
+    }
 }
+
+// MARK: - FriendInviteConfirmSheet
+
+private struct FriendInviteConfirmSheet: View {
+    let token: String
+    @Binding var isProcessing: Bool
+    let onAccept: () -> Void
+    let onDismiss: () -> Void
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 24) {
+                Spacer()
+
+                Image(systemName: "person.badge.plus")
+                    .font(.system(size: 60))
+                    .foregroundStyle(.accent)
+
+                Text("Friend Invite")
+                    .font(.title)
+                    .fontWeight(.bold)
+
+                Text("Someone has invited you to connect on Carrier Wave. Accept to send them a friend request.")
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal)
+
+                Spacer()
+
+                VStack(spacing: 12) {
+                    Button {
+                        onAccept()
+                    } label: {
+                        if isProcessing {
+                            ProgressView()
+                                .frame(maxWidth: .infinity)
+                        } else {
+                            Text("Accept Invite")
+                                .frame(maxWidth: .infinity)
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+                    .disabled(isProcessing)
+
+                    Button("Cancel", role: .cancel) {
+                        onDismiss()
+                    }
+                    .disabled(isProcessing)
+                }
+                .padding()
+            }
+            .navigationTitle("Friend Invite")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { onDismiss() }
+                        .disabled(isProcessing)
+                }
+            }
+        }
+        .presentationDetents([.medium])
+    }
 
 #Preview {
     ActivityView(tourState: TourState())

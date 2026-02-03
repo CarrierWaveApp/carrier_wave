@@ -27,6 +27,13 @@ struct FriendsListView: View {
                     Image(systemName: "plus")
                 }
             }
+            ToolbarItem(placement: .secondaryAction) {
+                Button {
+                    generateInviteLink()
+                } label: {
+                    Label("Invite Friend", systemImage: "link.badge.plus")
+                }
+            }
         }
         .onAppear {
             if friendsSyncService == nil {
@@ -39,6 +46,13 @@ struct FriendsListView: View {
             if let errorMessage {
                 Text(errorMessage)
             }
+        }
+        .sheet(isPresented: $showingInviteSheet) {
+            InviteLinkSheet(
+                inviteLink: inviteLink,
+                isGenerating: isGeneratingInvite,
+                onDismiss: { showingInviteSheet = false }
+            )
         }
     }
 
@@ -53,6 +67,11 @@ struct FriendsListView: View {
     @State private var isLoading = false
     @State private var errorMessage: String?
     @State private var showingError = false
+
+    // Invite link state
+    @State private var showingInviteSheet = false
+    @State private var isGeneratingInvite = false
+    @State private var inviteLink: InviteLinkDTO?
 
     /// For now, hardcode the source URL (will come from settings later)
     private let sourceURL = "https://challenges.example.com"
@@ -94,7 +113,11 @@ struct FriendsListView: View {
             if !acceptedFriends.isEmpty {
                 Section("Friends") {
                     ForEach(acceptedFriends) { friendship in
-                        FriendRow(friendship: friendship)
+                        NavigationLink {
+                            FriendProfileView(callsign: friendship.friendCallsign, friendship: friendship)
+                        } label: {
+                            FriendRow(friendship: friendship)
+                        }
                     }
                     .onDelete { offsets in
                         for index in offsets {
@@ -145,6 +168,27 @@ struct FriendsListView: View {
                 errorMessage = error.localizedDescription
                 showingError = true
             }
+        }
+    }
+
+    private func generateInviteLink() {
+        guard let service = friendsSyncService else {
+            return
+        }
+
+        inviteLink = nil
+        isGeneratingInvite = true
+        showingInviteSheet = true
+
+        Task {
+            do {
+                inviteLink = try await service.generateInviteLink(sourceURL: sourceURL)
+            } catch {
+                errorMessage = error.localizedDescription
+                showingError = true
+                showingInviteSheet = false
+            }
+            isGeneratingInvite = false
         }
     }
 }
@@ -202,8 +246,102 @@ private struct FriendRow: View {
     let friendship: Friendship
 
     var body: some View {
-        Text(friendship.friendCallsign)
-            .font(.headline)
+        HStack {
+            Text(friendship.friendCallsign)
+                .font(.headline)
+
+            Spacer()
+
+            if let acceptedAt = friendship.acceptedAt {
+                Text(acceptedAt, style: .date)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+}
+
+// MARK: - InviteLinkSheet
+
+private struct InviteLinkSheet: View {
+    let inviteLink: InviteLinkDTO?
+    let isGenerating: Bool
+    let onDismiss: () -> Void
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 24) {
+                if isGenerating {
+                    ProgressView("Generating invite link...")
+                        .frame(maxHeight: .infinity)
+                } else if let invite = inviteLink {
+                    inviteContent(invite)
+                } else {
+                    ContentUnavailableView(
+                        "Unable to Generate Link",
+                        systemImage: "exclamationmark.triangle",
+                        description: Text("Please try again later.")
+                    )
+                }
+            }
+            .padding()
+            .navigationTitle("Invite Friend")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Done") { onDismiss() }
+                }
+            }
+        }
+        .presentationDetents([.medium])
+    }
+
+    @ViewBuilder
+    private func inviteContent(_ invite: InviteLinkDTO) -> some View {
+        VStack(spacing: 20) {
+            Image(systemName: "link.circle.fill")
+                .font(.system(size: 60))
+                .foregroundStyle(.accent)
+
+            Text("Share this link with a friend")
+                .font(.headline)
+
+            Text("When they tap the link, they'll be able to send you a friend request in Carrier Wave.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+
+            Text(invite.url)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .padding()
+                .background(Color(.secondarySystemBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+
+            if invite.expiresAt > Date() {
+                Text("Expires \(invite.expiresAt, style: .relative)")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
+
+            Spacer()
+
+            ShareLink(item: URL(string: invite.url)!) {
+                Label("Share Link", systemImage: "square.and.arrow.up")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+
+            Button {
+                UIPasteboard.general.string = invite.url
+            } label: {
+                Label("Copy to Clipboard", systemImage: "doc.on.doc")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.large)
+        }
     }
 }
 

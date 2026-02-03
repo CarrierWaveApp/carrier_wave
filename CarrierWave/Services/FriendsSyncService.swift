@@ -125,6 +125,41 @@ final class FriendsSyncService: ObservableObject {
         try modelContext.save()
     }
 
+    // MARK: - Invite Links
+
+    /// Generate a shareable invite link
+    func generateInviteLink(sourceURL: String) async throws -> InviteLinkDTO {
+        guard let authToken = try? client.getAuthToken() else {
+            throw FriendsSyncError.notAuthenticated
+        }
+
+        return try await client.generateInviteLink(sourceURL: sourceURL, authToken: authToken)
+    }
+
+    /// Send a friend request using an invite token
+    func sendFriendRequestWithInvite(inviteToken: String, sourceURL: String) async throws {
+        guard let authToken = try? client.getAuthToken() else {
+            throw FriendsSyncError.notAuthenticated
+        }
+
+        let request = try await client.sendFriendRequestWithInvite(
+            inviteToken: inviteToken,
+            sourceURL: sourceURL,
+            authToken: authToken
+        )
+
+        // Create local pending friendship
+        let friendship = Friendship(
+            friendCallsign: request.toCallsign,
+            friendUserId: request.toUserId,
+            status: .pending,
+            requestedAt: request.requestedAt,
+            isOutgoing: true
+        )
+        modelContext.insert(friendship)
+        try modelContext.save()
+    }
+
     // MARK: Private
 
     private func updateLocalFriendships(friends: [FriendDTO], pending: PendingRequestsDTO) throws {

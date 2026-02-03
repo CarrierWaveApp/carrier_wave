@@ -201,6 +201,62 @@ extension ChallengesClient {
         return apiResponse.data
     }
 
+    // MARK: - Invite Links
+
+    /// Generate a shareable invite link for adding friends
+    func generateInviteLink(
+        sourceURL: String,
+        authToken: String
+    ) async throws -> InviteLinkDTO {
+        guard let url = URL(string: sourceURL + "/v1/friends/invite-link") else {
+            throw ChallengesError.invalidServerURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+
+        let (data, response) = try await performFriendRequest(request)
+        try validateFriendResponse(response, data: data)
+
+        let apiResponse = try JSONDecoder.challengesDecoder.decode(
+            APIResponse<InviteLinkDTO>.self,
+            from: data
+        )
+        return apiResponse.data
+    }
+
+    /// Send a friend request using an invite token
+    func sendFriendRequestWithInvite(
+        inviteToken: String,
+        sourceURL: String,
+        authToken: String
+    ) async throws -> FriendRequestDTO {
+        guard let url = URL(string: sourceURL + "/v1/friends/requests") else {
+            throw ChallengesError.invalidServerURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+
+        let body = SendFriendRequestWithInviteBody(inviteToken: inviteToken)
+        request.httpBody = try JSONEncoder.challengesEncoder.encode(body)
+
+        let (data, response) = try await performFriendRequest(request)
+        try validateFriendResponse(response, data: data)
+
+        let apiResponse = try JSONDecoder.challengesDecoder.decode(
+            APIResponse<FriendRequestDTO>.self,
+            from: data
+        )
+        return apiResponse.data
+    }
+
     // MARK: - Private Helpers
 
     private func performFriendRequest(_ request: URLRequest) async throws -> (Data, URLResponse) {
@@ -273,4 +329,18 @@ struct PendingRequestsDTO: Codable {
 
 private struct SendFriendRequestBody: Codable {
     var toUserId: String
+}
+
+// MARK: - SendFriendRequestWithInviteBody
+
+private struct SendFriendRequestWithInviteBody: Codable {
+    var inviteToken: String
+}
+
+// MARK: - InviteLinkDTO
+
+struct InviteLinkDTO: Codable {
+    var token: String
+    var url: String
+    var expiresAt: Date
 }

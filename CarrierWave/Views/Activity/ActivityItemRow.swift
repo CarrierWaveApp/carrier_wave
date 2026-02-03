@@ -7,6 +7,7 @@ struct ActivityItemRow: View {
 
     let item: ActivityItem
     var onShare: (() -> Void)?
+    var onCallsignTap: ((String) -> Void)?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -19,17 +20,31 @@ struct ActivityItemRow: View {
 
                 VStack(alignment: .leading, spacing: 2) {
                     HStack {
-                        Text(item.callsign)
-                            .font(.subheadline)
-                            .fontWeight(.semibold)
-
                         if item.isOwn {
+                            Text(item.callsign)
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+
                             Text("You")
                                 .font(.caption2)
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
                                 .background(Color.accentColor.opacity(0.2))
                                 .clipShape(Capsule())
+                        } else if let onCallsignTap {
+                            Button {
+                                onCallsignTap(item.callsign)
+                            } label: {
+                                Text(item.callsign)
+                                    .font(.subheadline)
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(.primary)
+                            }
+                            .buttonStyle(.plain)
+                        } else {
+                            Text(item.callsign)
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
                         }
 
                         Spacer()
