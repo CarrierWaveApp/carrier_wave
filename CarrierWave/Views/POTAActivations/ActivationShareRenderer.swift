@@ -34,25 +34,33 @@ enum ActivationShareRenderer {
         parkName: String?,
         myGrid: String?
     ) async -> UIImage? {
-        // Capture grid data for background processing
+        // Capture minimal data on main thread, then yield immediately
         let qsoGrids: [(id: UUID, grid: String)] = activation.mappableQSOs.compactMap { qso in
             guard let grid = qso.theirGrid else {
                 return nil
             }
             return (qso.id, grid)
         }
+        let capturedMyGrid = myGrid
 
-        // Compute coordinates on background thread
-        let qsoCoordinates: [CLLocationCoordinate2D] = qsoGrids.compactMap { item in
-            MaidenheadConverter.coordinate(from: item.grid)
-        }
+        // Yield to let UI update (show spinner) before heavy computation
+        await Task.yield()
 
-        let myCoordinate: CLLocationCoordinate2D? =
-            if let grid = myGrid, grid.count >= 4 {
-                MaidenheadConverter.coordinate(from: grid)
-            } else {
-                nil
+        // Compute coordinates off main thread
+        let (qsoCoordinates, myCoordinate) = await Task.detached {
+            let coords: [CLLocationCoordinate2D] = qsoGrids.compactMap { item in
+                MaidenheadConverter.coordinate(from: item.grid)
             }
+
+            let myCoord: CLLocationCoordinate2D? =
+                if let grid = capturedMyGrid, grid.count >= 4 {
+                    MaidenheadConverter.coordinate(from: grid)
+                } else {
+                    nil
+                }
+
+            return (coords, myCoord)
+        }.value
 
         // Generate map snapshot if we have coordinates
         let mapImage: UIImage? =

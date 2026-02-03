@@ -5,6 +5,7 @@
 
 import SwiftData
 import SwiftUI
+import UIKit
 
 // MARK: - POTAActivationsContentView
 
@@ -79,12 +80,29 @@ struct POTAActivationsContentView: View {
                 Text(rejectMessage(for: parkDisplay, pendingCount: activation.pendingCount))
             }
         }
-        .sheet(item: $activationToShare) { activation in
-            ActivationShareSheet(
-                activation: activation,
-                parkName: parkName(for: activation.parkReference),
-                myGrid: activation.qsos.first?.myGrid
-            )
+        .overlay {
+            if isGeneratingShareImage {
+                Color.black.opacity(0.4)
+                    .ignoresSafeArea()
+                    .overlay {
+                        VStack(spacing: 16) {
+                            ProgressView()
+                                .scaleEffect(1.5)
+                                .tint(.white)
+                            Text("Generating share image...")
+                                .foregroundStyle(.white)
+                        }
+                        .padding(24)
+                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+                    }
+            }
+        }
+        .onChange(of: activationToShare) { _, newValue in
+            if let activation = newValue {
+                Task {
+                    await generateAndShare(activation: activation)
+                }
+            }
         }
         .task {
             await loadParkQSOs()
@@ -120,6 +138,7 @@ struct POTAActivationsContentView: View {
     @State private var activationToUpload: POTAActivation?
     @State private var activationToReject: POTAActivation?
     @State private var activationToShare: POTAActivation?
+    @State private var isGeneratingShareImage = false
     @State private var maintenanceTimeRemaining: String?
     @State private var maintenanceTimer: Timer?
     @State private var cachedParkNames: [String: String] = [:]
@@ -418,6 +437,55 @@ extension POTAActivationsContentView {
             qso.markUploadRejected(for: .pota, context: modelContext)
         }
         activationToReject = nil
+    }
+
+    func generateAndShare(activation: POTAActivation) async {
+        isGeneratingShareImage = true
+        activationToShare = nil
+
+        // Render the image in background
+        let image = await ActivationShareRenderer.renderWithMap(
+            activation: activation,
+            parkName: parkName(for: activation.parkReference),
+            myGrid: activation.qsos.first?.myGrid
+        )
+
+        isGeneratingShareImage = false
+
+        guard let image else {
+            return
+        }
+
+        // Present share sheet
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let window = windowScene.windows.first,
+              let rootVC = window.rootViewController
+        else {
+            return
+        }
+
+        var topVC = rootVC
+        while let presented = topVC.presentedViewController {
+            topVC = presented
+        }
+
+        let activityVC = UIActivityViewController(
+            activityItems: [image],
+            applicationActivities: nil
+        )
+
+        if let popover = activityVC.popoverPresentationController {
+            popover.sourceView = topVC.view
+            popover.sourceRect = CGRect(
+                x: topVC.view.bounds.midX,
+                y: topVC.view.bounds.midY,
+                width: 0,
+                height: 0
+            )
+            popover.permittedArrowDirections = []
+        }
+
+        topVC.present(activityVC, animated: true)
     }
 }
 

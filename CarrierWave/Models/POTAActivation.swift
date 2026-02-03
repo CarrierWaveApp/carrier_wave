@@ -33,7 +33,7 @@ enum POTAActivationStatus {
 
 // MARK: - POTAActivation
 
-struct POTAActivation: Identifiable {
+struct POTAActivation: Identifiable, Equatable {
     // MARK: Internal
 
     /// Modes that represent activation metadata, not actual QSOs (from Ham2K PoLo)
@@ -135,6 +135,10 @@ struct POTAActivation: Identifiable {
             return false
         }
         return notUploaded.allSatisfy { $0.isUploadRejected(for: .pota) }
+    }
+
+    static func == (lhs: POTAActivation, rhs: POTAActivation) -> Bool {
+        lhs.id == rhs.id
     }
 
     // MARK: - Grouping
