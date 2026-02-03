@@ -18,6 +18,19 @@ struct SessionStartSheet: View {
                 activationSection
                 optionsSection
             }
+            .safeAreaInset(edge: .bottom) {
+                if let reason = startDisabledReason {
+                    HStack(spacing: 8) {
+                        Image(systemName: "exclamationmark.circle.fill")
+                            .foregroundStyle(.orange)
+                        Text(reason)
+                            .font(.subheadline)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(.ultraThinMaterial)
+                }
+            }
             .navigationTitle("Start Session")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -97,7 +110,23 @@ struct SessionStartSheet: View {
     }
 
     private var canStart: Bool {
-        !defaultCallsign.isEmpty && defaultCallsign.count >= 3
+        SessionStartValidation.canStart(
+            callsign: defaultCallsign,
+            activationType: activationType,
+            parkReference: parkReference,
+            sotaReference: sotaReference,
+            frequency: parsedFrequency
+        )
+    }
+
+    private var startDisabledReason: String? {
+        SessionStartValidation.disabledReason(
+            callsign: defaultCallsign,
+            activationType: activationType,
+            parkReference: parkReference,
+            sotaReference: sotaReference,
+            frequency: parsedFrequency
+        )
     }
 
     private var parsedFrequency: Double? {
@@ -244,7 +273,7 @@ struct SessionStartSheet: View {
                     .foregroundStyle(.secondary)
             }
 
-            frequencySuggestions
+            FrequencySuggestionsView(selectedMode: selectedMode, frequency: $frequency)
         } header: {
             Text("Frequency")
         } footer: {
@@ -252,10 +281,6 @@ struct SessionStartSheet: View {
                 "Enter as MHz (14.060) or kHz (14060). You can also type \"14060 kHz\" or \"14.060 MHz\"."
             )
         }
-    }
-
-    private var frequencySuggestions: some View {
-        FrequencySuggestionsView(selectedMode: selectedMode, frequency: $frequency)
     }
 
     private var activationSection: some View {
@@ -320,155 +345,6 @@ struct SessionStartSheet: View {
         withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
             showSavedConfirmation = true
         }
-    }
-}
-
-// MARK: - CallsignBreakdownView
-
-/// Extracted view showing callsign prefix/base/suffix breakdown
-struct CallsignBreakdownView: View {
-    let prefix: String
-    let baseCallsign: String
-    let suffix: String
-
-    var body: some View {
-        HStack(spacing: 4) {
-            if !prefix.isEmpty {
-                Text(prefix.uppercased())
-                    .font(.caption.monospaced())
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Color.orange.opacity(0.2))
-                    .clipShape(Capsule())
-                Text("/")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            Text(baseCallsign.uppercased())
-                .font(.caption.monospaced())
-                .padding(.horizontal, 6)
-                .padding(.vertical, 2)
-                .background(Color.blue.opacity(0.2))
-                .clipShape(Capsule())
-
-            if !suffix.isEmpty {
-                Text("/")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text(suffix)
-                    .font(.caption.monospaced())
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Color.green.opacity(0.2))
-                    .clipShape(Capsule())
-            }
-        }
-    }
-}
-
-// MARK: - ActivationSectionView
-
-/// Extracted view for activation type selection
-struct ActivationSectionView: View {
-    @Binding var activationType: ActivationType
-    @Binding var parkReference: String
-    @Binding var sotaReference: String
-
-    /// User's grid square for nearby parks
-    var userGrid: String?
-    /// Default country prefix for park shorthand
-    var defaultCountry: String = "US"
-
-    var body: some View {
-        Section("Activation Type") {
-            Picker("Type", selection: $activationType) {
-                ForEach(ActivationType.allCases, id: \.self) { type in
-                    Label(type.displayName, systemImage: type.icon)
-                        .tag(type)
-                }
-            }
-            .pickerStyle(.segmented)
-
-            if activationType == .pota {
-                ParkEntryField(
-                    parkReference: $parkReference,
-                    label: "Park",
-                    placeholder: "1234 or US-1234",
-                    userGrid: userGrid,
-                    defaultCountry: defaultCountry
-                )
-            }
-
-            if activationType == .sota {
-                HStack {
-                    Text("Summit")
-                        .foregroundStyle(.secondary)
-                    Spacer()
-                    TextField("W4C/CM-001", text: $sotaReference)
-                        .textInputAutocapitalization(.characters)
-                        .multilineTextAlignment(.trailing)
-                        .font(.subheadline.monospaced())
-                }
-            }
-        }
-    }
-}
-
-// MARK: - FrequencySuggestionsView
-
-/// Extracted view for frequency band suggestions
-struct FrequencySuggestionsView: View {
-    // MARK: Internal
-
-    let selectedMode: String
-
-    @Binding var frequency: String
-
-    var body: some View {
-        let suggestions = LoggingSession.suggestedFrequencies(for: selectedMode)
-        let availableBands = Self.sortedBands.filter { suggestions[$0] != nil }
-
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(availableBands, id: \.self) { band in
-                    if let freq = suggestions[band] {
-                        bandButton(band: band, freq: freq)
-                    }
-                }
-            }
-        }
-    }
-
-    // MARK: Private
-
-    private static let sortedBands = [
-        "160m", "80m", "40m", "30m", "20m", "17m", "15m", "12m", "10m",
-    ]
-
-    private func bandButton(band: String, freq: Double) -> some View {
-        let freqString = FrequencyFormatter.format(freq)
-        let isSelected = frequency == freqString
-
-        return Button {
-            frequency = freqString
-        } label: {
-            VStack(spacing: 2) {
-                Text(band)
-                    .font(.caption.weight(.medium))
-                Text(freqString)
-                    .font(.caption2.monospaced())
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(
-                isSelected
-                    ? Color.accentColor.opacity(0.2)
-                    : Color(.tertiarySystemGroupedBackground)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 8))
-        }
-        .buttonStyle(.plain)
     }
 }
 
