@@ -75,6 +75,7 @@ This index maps files to their purpose. Use it to locate files by feature instea
 | `SyncService+Download.swift` | Download/import logic |
 | `SyncService+Process.swift` | QSO processing during sync |
 | `QSOProcessingActor.swift` | Background actor for QSO processing without blocking UI |
+| `QSOProcessingActor+OrphanRepair.swift` | Repair QSOs missing ServicePresence records |
 | `SyncDebugLog.swift` | Sync debugging utilities |
 | `ImportService.swift` | ADIF parsing, deduplication, QSO creation |
 | `ImportService+External.swift` | External file import handling |
