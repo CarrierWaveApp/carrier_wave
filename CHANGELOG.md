@@ -4,6 +4,8 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.19.0] - 2026-02-03
+
 ### Added
 - **Activation Share Cards** - Share POTA activation summaries as images
   - Swipe right on any activation in POTA Uploads to reveal Share action
@@ -16,6 +18,9 @@ All notable changes to Carrier Wave will be documented in this file.
   - Logs upload results and any errors for each service
   - Warns about QSOs that need POTA upload but have no park reference
   - View logs in Settings > Sync Debug
+
+### Changed
+- CW decoder feature hidden and disabled from the app (code retained for future re-enablement)
 
 ### Fixed
 - Metadata pseudo-modes (WEATHER, SOLAR, NOTE) are no longer marked for upload
