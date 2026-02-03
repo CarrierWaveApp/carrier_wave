@@ -118,6 +118,10 @@ class SyncService: ObservableObject {
         // PHASE 2.5d: Clear upload flags on metadata pseudo-modes (WEATHER, SOLAR, NOTE)
         await clearMetadataUploadFlagsAsync()
 
+        // PHASE 2.5e: Clear upload flags on QSOs from non-primary callsigns
+        // These will never upload because services are configured with current callsign
+        await clearNonPrimaryCallsignUploadFlagsAsync()
+
         // Refresh main context to pick up changes from background actor
         modelContext.rollback()
 
@@ -184,6 +188,9 @@ class SyncService: ObservableObject {
 
         // Clear upload flags on metadata pseudo-modes (WEATHER, SOLAR, NOTE)
         await clearMetadataUploadFlagsAsync()
+
+        // Clear upload flags on QSOs from non-primary callsigns
+        await clearNonPrimaryCallsignUploadFlagsAsync()
 
         // Refresh main context to pick up changes from background actor
         modelContext.rollback()

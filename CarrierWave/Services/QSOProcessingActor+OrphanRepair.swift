@@ -13,6 +13,12 @@ extension QSOProcessingActor {
         let clearedCount: Int
     }
 
+    /// Result of clearing upload flags on non-primary callsign QSOs
+    struct NonPrimaryCallsignRepairResult: Sendable {
+        let clearedCount: Int
+        let byCallsign: [String: Int]
+    }
+
     /// Clear needsUpload flags on metadata pseudo-modes (WEATHER, SOLAR, NOTE).
     /// These are activation metadata from Ham2K PoLo that should never be synced.
     func clearMetadataUploadFlags(container: ModelContainer) async throws -> MetadataRepairResult {
@@ -56,6 +62,66 @@ extension QSOProcessingActor {
         }
 
         return MetadataRepairResult(clearedCount: clearedCount)
+    }
+
+    /// Clear needsUpload flags on QSOs that don't match the primary callsign.
+    /// These QSOs were logged under a previous callsign and will never be uploaded
+    /// to services configured with the current callsign.
+    func clearNonPrimaryCallsignUploadFlags(
+        primaryCallsign: String?,
+        container: ModelContainer
+    ) async throws -> NonPrimaryCallsignRepairResult {
+        // If no primary callsign configured, nothing to do
+        guard let primaryCallsign, !primaryCallsign.isEmpty else {
+            return NonPrimaryCallsignRepairResult(clearedCount: 0, byCallsign: [:])
+        }
+
+        let upperPrimary = primaryCallsign.uppercased()
+        let context = ModelContext(container)
+        context.autosaveEnabled = false
+
+        // Fetch all ServicePresence records that need upload
+        let presenceDescriptor = FetchDescriptor<ServicePresence>(
+            predicate: #Predicate<ServicePresence> { $0.needsUpload }
+        )
+        let presenceRecords = try context.fetch(presenceDescriptor)
+
+        var clearedCount = 0
+        var unsavedCount = 0
+        var byCallsign: [String: Int] = [:]
+
+        for presence in presenceRecords {
+            try Task.checkCancellation()
+
+            guard let qso = presence.qso else {
+                continue
+            }
+
+            // Check if this QSO's myCallsign matches the primary callsign
+            let myCallsign = qso.myCallsign.uppercased()
+
+            // Empty myCallsign is allowed (matches any account)
+            // Only clear if there's a non-empty myCallsign that doesn't match primary
+            if !myCallsign.isEmpty, myCallsign != upperPrimary {
+                presence.needsUpload = false
+                clearedCount += 1
+                unsavedCount += 1
+                byCallsign[myCallsign, default: 0] += 1
+
+                // Save periodically
+                if unsavedCount >= 100 {
+                    try context.save()
+                    unsavedCount = 0
+                }
+            }
+        }
+
+        // Save any remaining changes
+        if unsavedCount > 0 {
+            try context.save()
+        }
+
+        return NonPrimaryCallsignRepairResult(clearedCount: clearedCount, byCallsign: byCallsign)
     }
 
     /// Snapshot of an orphaned QSO for logging purposes.

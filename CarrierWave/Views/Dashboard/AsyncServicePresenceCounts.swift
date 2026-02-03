@@ -7,10 +7,11 @@ import SwiftData
 struct PresenceSnapshot: Sendable {
     // MARK: Lifecycle
 
-    init(from presence: ServicePresence) {
+    init(from presence: ServicePresence, qsoMyCallsign: String) {
         serviceType = presence.serviceType
         isPresent = presence.isPresent
         needsUpload = presence.needsUpload
+        self.qsoMyCallsign = qsoMyCallsign.uppercased()
     }
 
     // MARK: Internal
@@ -18,6 +19,7 @@ struct PresenceSnapshot: Sendable {
     let serviceType: ServiceType
     let isPresent: Bool
     let needsUpload: Bool
+    let qsoMyCallsign: String
 }
 
 // MARK: - PresenceComputationActor
@@ -27,12 +29,16 @@ actor PresenceComputationActor {
     // MARK: Internal
 
     /// Compute presence counts on background thread.
+    /// Only counts pending uploads for QSOs matching the primary callsign (if set).
     func computeCounts(
-        container: ModelContainer
+        container: ModelContainer,
+        primaryCallsign: String?
     ) async throws -> (uploaded: [ServiceType: Int], pending: [ServiceType: Int]) {
         // Create fresh context to ensure we see latest persisted data
         let context = ModelContext(container)
         context.autosaveEnabled = false
+
+        let upperPrimary = primaryCallsign?.uppercased()
 
         // Initialize counts
         var uploaded: [ServiceType: Int] = [:]
@@ -67,13 +73,20 @@ actor PresenceComputationActor {
                 break
             }
 
-            // Count from managed objects directly (no need for snapshots here)
+            // Count from managed objects directly
             for presence in batch {
                 if presence.isPresent {
                     uploaded[presence.serviceType, default: 0] += 1
                 }
                 if presence.needsUpload {
-                    pending[presence.serviceType, default: 0] += 1
+                    // Only count pending uploads for QSOs matching primary callsign
+                    // This matches the filtering logic in SyncService.fetchQSOsNeedingUpload()
+                    let qsoCallsign = presence.qso?.myCallsign.uppercased() ?? ""
+                    let matchesPrimary =
+                        qsoCallsign.isEmpty || upperPrimary == nil || qsoCallsign == upperPrimary
+                    if matchesPrimary {
+                        pending[presence.serviceType, default: 0] += 1
+                    }
                 }
             }
 
@@ -160,12 +173,21 @@ final class AsyncServicePresenceCounts {
     private var computeTask: Task<Void, Never>?
     private let computationActor = PresenceComputationActor()
 
+    /// Get the primary callsign for filtering pending counts
+    private func getPrimaryCallsign() -> String? {
+        CallsignAliasService.shared.getCurrentCallsign()
+    }
+
     private func startComputation(from container: ModelContainer) {
         isComputing = true
+        let primaryCallsign = getPrimaryCallsign()
 
         computeTask = Task {
             do {
-                let result = try await computationActor.computeCounts(container: container)
+                let result = try await computationActor.computeCounts(
+                    container: container,
+                    primaryCallsign: primaryCallsign
+                )
                 uploadedCounts = result.uploaded
                 pendingCounts = result.pending
                 hasComputed = true

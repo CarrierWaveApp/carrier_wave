@@ -119,7 +119,8 @@ struct SyncDebugView: View {
             let descriptor = FetchDescriptor<ServicePresence>()
             let allPresence = try modelContext.fetch(descriptor)
             for service in ServiceType.allCases {
-                counts[service] = allPresence.filter { $0.serviceType == service && $0.isPresent }.count
+                counts[service] =
+                    allPresence.filter { $0.serviceType == service && $0.isPresent }.count
             }
         } catch {
             for service in ServiceType.allCases {
@@ -182,7 +183,8 @@ struct RawQSORow: View {
                         .font(.caption)
                         .fontWeight(.semibold)
 
-                    ForEach(qso.parsedFields.sorted(by: { $0.key < $1.key }), id: \.key) { key, value in
+                    let sortedFields = qso.parsedFields.sorted { $0.key < $1.key }
+                    ForEach(sortedFields, id: \.key) { key, value in
                         HStack(alignment: .top) {
                             Text(key)
                                 .font(.caption2)
@@ -245,6 +247,10 @@ struct LogEntryRow: View {
                     .font(.caption2)
                     .fontWeight(.bold)
                     .foregroundStyle(levelColor)
+                    .padding(.horizontal, isActionRequired ? 6 : 0)
+                    .padding(.vertical, isActionRequired ? 2 : 0)
+                    .background(isActionRequired ? Color.purple.opacity(0.3) : Color.clear)
+                    .clipShape(RoundedRectangle(cornerRadius: 4))
 
                 if let service = entry.service {
                     Text(service.displayName)
@@ -257,11 +263,20 @@ struct LogEntryRow: View {
 
             Text(entry.message)
                 .font(.caption)
+                .foregroundStyle(isActionRequired ? .primary : .primary)
                 .textSelection(.enabled)
         }
+        .padding(.vertical, isActionRequired ? 4 : 0)
+        .padding(.horizontal, isActionRequired ? 8 : 0)
+        .background(isActionRequired ? Color.purple.opacity(0.1) : Color.clear)
+        .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 
     // MARK: Private
+
+    private var isActionRequired: Bool {
+        entry.level == .actionRequired
+    }
 
     private var timeFormatter: DateFormatter {
         let formatter = DateFormatter()
@@ -275,6 +290,7 @@ struct LogEntryRow: View {
         case .warning: .orange
         case .error: .red
         case .debug: .gray
+        case .actionRequired: .purple
         }
     }
 }

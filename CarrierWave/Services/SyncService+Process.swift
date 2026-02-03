@@ -49,30 +49,20 @@ extension SyncService {
     /// Process downloaded QSOs on a background thread to avoid blocking the UI.
     /// Returns counts and created QSO IDs; use fetchCreatedQSOs() to get actual QSO objects.
     func processDownloadedQSOsAsync(_ fetched: [FetchedQSO]) async throws -> ProcessResult {
-        let debugLog = SyncDebugLog.shared
-
         let result = try await Self.processingActor.processDownloadedQSOs(
-            fetched,
-            container: modelContext.container
+            fetched, container: modelContext.container
         ) { progress in
-            // Update sync progress on main actor
             Task { @MainActor in
                 self.syncProgress.updateProcessing(
-                    processed: progress.processed,
-                    total: progress.total,
-                    phase: progress.phase
+                    processed: progress.processed, total: progress.total, phase: progress.phase
                 )
             }
         }
-
-        // Log messages from background processing
         for message in result.logMessages {
-            debugLog.info(message)
+            SyncDebugLog.shared.info(message)
         }
-
         return ProcessResult(
-            created: result.created,
-            merged: result.merged,
+            created: result.created, merged: result.merged,
             createdQSOIds: result.createdQSOIds
         )
     }
@@ -99,40 +89,30 @@ extension SyncService {
 
         do {
             let result = try await Self.processingActor.repairOrphanedQSOs(
-                for: [service],
-                userCallsigns: userCallsigns,
-                container: modelContext.container
+                for: [service], userCallsigns: userCallsigns, container: modelContext.container
             )
-
             if result.orphanedQSOs.isEmpty {
                 debugLog.debug(
                     "No orphaned QSOs found for \(service.displayName)", service: service
                 )
             } else {
-                debugLog.warning(
+                let msg =
                     "Found \(result.orphanedQSOs.count) QSOs without \(service.displayName) "
-                        + "presence - created \(result.repairedCount) ServicePresence records:",
-                    service: service
-                )
-
-                // Log details for first 10 orphaned QSOs
-                let dateFormatter = ISO8601DateFormatter()
-                dateFormatter.formatOptions = [.withInternetDateTime]
-
-                for (index, qso) in result.orphanedQSOs.prefix(10).enumerated() {
-                    let timestamp = dateFormatter.string(from: qso.timestamp)
-                    let services = qso.missingServices.map(\.displayName).joined(separator: ", ")
-                    debugLog.warning(
-                        "  \(index + 1). \(qso.callsign) \(qso.band) \(qso.mode) @ \(timestamp) "
-                            + "(my: \(qso.myCallsign)) - missing: \(services)",
-                        service: service
-                    )
+                        + "presence - created \(result.repairedCount) ServicePresence records:"
+                debugLog.warning(msg, service: service)
+                let dateFmt = ISO8601DateFormatter()
+                dateFmt.formatOptions = [.withInternetDateTime]
+                for (idx, qso) in result.orphanedQSOs.prefix(10).enumerated() {
+                    let ts = dateFmt.string(from: qso.timestamp)
+                    let svcs = qso.missingServices.map(\.displayName).joined(separator: ", ")
+                    let detail =
+                        "  \(idx + 1). \(qso.callsign) \(qso.band) \(qso.mode) @ \(ts) "
+                            + "(my: \(qso.myCallsign)) - missing: \(svcs)"
+                    debugLog.warning(detail, service: service)
                 }
-
                 if result.orphanedQSOs.count > 10 {
                     debugLog.warning(
-                        "  ... and \(result.orphanedQSOs.count - 10) more orphaned QSOs",
-                        service: service
+                        "  ... and \(result.orphanedQSOs.count - 10) more", service: service
                     )
                 }
             }
@@ -143,20 +123,37 @@ extension SyncService {
 
     /// Clear needsUpload flags on metadata pseudo-modes (WEATHER, SOLAR, NOTE from Ham2K PoLo).
     func clearMetadataUploadFlagsAsync() async {
-        let debugLog = SyncDebugLog.shared
-
         do {
             let result = try await Self.processingActor.clearMetadataUploadFlags(
                 container: modelContext.container
             )
-
             if result.clearedCount > 0 {
-                debugLog.info(
-                    "Cleared needsUpload flag on \(result.clearedCount) metadata QSO(s) (WEATHER/SOLAR/NOTE)"
-                )
+                let msg =
+                    "Cleared needsUpload on \(result.clearedCount) metadata QSO(s) (WEATHER/SOLAR/NOTE)"
+                SyncDebugLog.shared.info(msg)
             }
         } catch {
-            debugLog.error("Failed to clear metadata upload flags: \(error)")
+            SyncDebugLog.shared.error("Failed to clear metadata upload flags: \(error)")
+        }
+    }
+
+    /// Clear needsUpload flags on QSOs logged under non-primary callsigns.
+    func clearNonPrimaryCallsignUploadFlagsAsync() async {
+        let primaryCallsign = CallsignAliasService.shared.getCurrentCallsign()
+        do {
+            let result = try await Self.processingActor.clearNonPrimaryCallsignUploadFlags(
+                primaryCallsign: primaryCallsign, container: modelContext.container
+            )
+            if result.clearedCount > 0 {
+                let msg =
+                    "Cleared needsUpload on \(result.clearedCount) QSO(s) from non-primary callsigns"
+                SyncDebugLog.shared.info(msg)
+                for (call, count) in result.byCallsign.sorted(by: { $0.value > $1.value }) {
+                    SyncDebugLog.shared.debug("  - \(call): \(count) QSO(s)")
+                }
+            }
+        } catch {
+            SyncDebugLog.shared.error("Failed to clear non-primary callsign upload flags: \(error)")
         }
     }
 

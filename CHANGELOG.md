@@ -4,6 +4,19 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Action Required log level in Sync Debug with purple highlighting for issues needing user attention
+
+### Fixed
+- QSOs logged under previous callsigns no longer show as permanently pending
+  - Upload counts now only include QSOs matching the current primary callsign
+  - New fixer automatically clears needsUpload flags on QSOs that would never upload
+  - Logs which callsigns had pending uploads cleared during sync
+- QSOs with missing band/frequency are now skipped during upload with a warning
+  - Sync log shows which QSOs need manual correction (edit in Logs to add band)
+  - Prevents silent upload failures for incomplete QSOs
+  - Uses new "ACTION" log level with purple highlighting to stand out
+
 ## [1.19.0] - 2026-02-03
 
 ### Added
