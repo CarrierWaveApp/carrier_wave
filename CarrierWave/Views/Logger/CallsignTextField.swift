@@ -36,6 +36,10 @@ struct CallsignTextField: UIViewRepresentable {
             self.parent = parent
         }
 
+        deinit {
+            stopObservingConfigurationChanges()
+        }
+
         // MARK: Internal
 
         var parent: CallsignTextField
@@ -43,6 +47,9 @@ struct CallsignTextField: UIViewRepresentable {
         /// Track whether we're currently processing a user edit
         /// to avoid re-entrant updates from SwiftUI
         var isUpdatingFromUIKit = false
+
+        /// Reference to the text field for explicit dismiss
+        weak var textField: UITextField?
 
         @objc
         func textFieldDidChange(_ textField: UITextField) {
@@ -80,15 +87,69 @@ struct CallsignTextField: UIViewRepresentable {
 
         @objc
         func dismissKeyboard(_ sender: UIButton) {
+            // Explicitly resign first responder, then update SwiftUI state
+            textField?.resignFirstResponder()
             parent.isFocused.wrappedValue = false
         }
+
+        func startObservingConfigurationChanges() {
+            configurationObserver = NotificationCenter.default.addObserver(
+                forName: .keyboardRowConfigurationChanged,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                self?.rebuildAccessoryView()
+            }
+        }
+
+        func stopObservingConfigurationChanges() {
+            if let observer = configurationObserver {
+                NotificationCenter.default.removeObserver(observer)
+                configurationObserver = nil
+            }
+        }
+
+        // MARK: Private
+
+        /// Observer for keyboard configuration changes
+        private var configurationObserver: NSObjectProtocol?
+
+        private func rebuildAccessoryView() {
+            guard let textField else {
+                return
+            }
+            textField.inputAccessoryView = parent.createInputAccessoryView(coordinator: self)
+            // Force layout update if keyboard is visible
+            textField.reloadInputViews()
+        }
     }
+
+    /// Default symbols for the keyboard row
+    static let defaultSymbols = "/"
 
     @Binding var text: String
 
     let placeholder: String
     var isFocused: FocusState<Bool>.Binding
     let onSubmit: () -> Void
+
+    /// Returns the configured characters for the keyboard row based on user settings
+    static func configuredCharacters() -> [String] {
+        // Use object(forKey:) to detect if key exists, since bool(forKey:) returns false for missing keys
+        let showNumbers =
+            UserDefaults.standard.object(forKey: "keyboardRowShowNumbers") as? Bool ?? true
+        let symbolsString =
+            UserDefaults.standard.string(forKey: "keyboardRowSymbols") ?? defaultSymbols
+
+        var characters: [String] = []
+        if showNumbers {
+            characters += ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"]
+        }
+        if !symbolsString.isEmpty {
+            characters += symbolsString.components(separatedBy: ",")
+        }
+        return characters
+    }
 
     func makeUIView(context: Context) -> UITextField {
         let textField = UITextField()
@@ -105,6 +166,10 @@ struct CallsignTextField: UIViewRepresentable {
             action: #selector(Coordinator.textFieldDidChange(_:)),
             for: .editingChanged
         )
+
+        // Store reference for explicit dismiss and start observing config changes
+        context.coordinator.textField = textField
+        context.coordinator.startObservingConfigurationChanges()
 
         // Add input accessory view with number row
         textField.inputAccessoryView = createInputAccessoryView(coordinator: context.coordinator)
@@ -154,11 +219,9 @@ struct CallsignTextField: UIViewRepresentable {
         Coordinator(self)
     }
 
-    // MARK: Private
-
     // MARK: - Input Accessory View
 
-    private func createInputAccessoryView(coordinator: Coordinator) -> UIView {
+    func createInputAccessoryView(coordinator: Coordinator) -> UIView {
         let accessoryView = UIView()
         accessoryView.backgroundColor = .secondarySystemBackground
         accessoryView.translatesAutoresizingMaskIntoConstraints = false
@@ -169,8 +232,8 @@ struct CallsignTextField: UIViewRepresentable {
         stackView.spacing = 6
         stackView.translatesAutoresizingMaskIntoConstraints = false
 
-        // Number buttons 1-9, 0, ., and dismiss
-        let characters = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "."]
+        // Read configuration from UserDefaults
+        let characters = Self.configuredCharacters()
         for char in characters {
             let button = createNumberButton(title: char, coordinator: coordinator)
             stackView.addArrangedSubview(button)
@@ -210,7 +273,7 @@ struct CallsignTextField: UIViewRepresentable {
         return accessoryView
     }
 
-    private func createNumberButton(title: String, coordinator: Coordinator) -> UIButton {
+    func createNumberButton(title: String, coordinator: Coordinator) -> UIButton {
         let button = UIButton(type: .system)
         button.setTitle(title, for: .normal)
         button.titleLabel?.font = .monospacedSystemFont(ofSize: 18, weight: .medium)

@@ -66,6 +66,10 @@ struct SettingsMainView: View {
     @AppStorage("callsignNotesDisplayMode") private var notesDisplayMode = "emoji"
     @AppStorage("useMetricDistance") private var useMetricDistance = false
 
+    // Keyboard row settings
+    @AppStorage("keyboardRowShowNumbers") private var keyboardRowShowNumbers = true
+    @AppStorage("keyboardRowSymbols") private var keyboardRowSymbols = "/"
+
     // Logger visible fields
     @AppStorage("loggerShowTheirGrid") private var showTheirGrid = false
     @AppStorage("loggerShowTheirPark") private var showTheirPark = false
@@ -88,6 +92,19 @@ struct SettingsMainView: View {
     private let qrzClient = QRZClient()
     private let hamrsClient = HAMRSClient()
     private let lotwClient = LoTWClient()
+
+    /// Summary text for keyboard row settings
+    private var keyboardRowSummary: String {
+        var parts: [String] = []
+        if keyboardRowShowNumbers {
+            parts.append("0-9")
+        }
+        let symbols = keyboardRowSymbols.components(separatedBy: ",").filter { !$0.isEmpty }
+        if !symbols.isEmpty {
+            parts.append(symbols.joined())
+        }
+        return parts.isEmpty ? "None" : parts.joined(separator: " ")
+    }
 
     private var settingsContent: some View {
         List {
@@ -263,6 +280,17 @@ struct SettingsMainView: View {
             Picker("Default Mode", selection: $defaultMode) {
                 ForEach(["CW", "SSB", "FT8", "FT4", "RTTY"], id: \.self) { mode in
                     Text(mode).tag(mode)
+                }
+            }
+
+            NavigationLink {
+                KeyboardRowSettingsView()
+            } label: {
+                HStack {
+                    Text("Keyboard Row")
+                    Spacer()
+                    Text(keyboardRowSummary)
+                        .foregroundStyle(.secondary)
                 }
             }
 

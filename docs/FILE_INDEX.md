@@ -278,6 +278,7 @@ This index maps files to their purpose. Use it to locate files by feature instea
 | `CallsignAliasesSettingsView.swift` | Manage current and previous callsigns |
 | `SettingsSections.swift` | Sync Sources section with service navigation links |
 | `CallsignNotesSettingsView.swift` | Manage callsign notes file sources (URL + title) |
+| `KeyboardRowSettingsView.swift` | Configure number row symbols above keyboard |
 
 ## Documentation (`docs/`)
 | File | Purpose |
