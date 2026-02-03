@@ -101,6 +101,11 @@ class SyncService: ObservableObject {
             try await reconcileQRZPresenceAsync(downloadedKeys: qrzDownloadedKeys)
         }
 
+        // PHASE 2.5c: Repair orphaned QSOs (logged when services weren't configured)
+        if qrzClient.hasApiKey() {
+            await repairOrphanedQSOsAsync(for: .qrz)
+        }
+
         // Refresh main context to pick up changes from background actor
         modelContext.rollback()
 
@@ -151,6 +156,9 @@ class SyncService: ObservableObject {
         // Reconcile QRZ presence against what QRZ actually returned
         let qrzDownloadedKeys = Set(fetched.map(\.deduplicationKey))
         try await reconcileQRZPresenceAsync(downloadedKeys: qrzDownloadedKeys)
+
+        // Repair orphaned QSOs (logged when QRZ wasn't configured)
+        await repairOrphanedQSOsAsync(for: .qrz)
 
         // Refresh main context to pick up changes from background actor
         modelContext.rollback()

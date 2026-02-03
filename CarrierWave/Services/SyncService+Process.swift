@@ -91,6 +91,57 @@ extension SyncService {
         )
     }
 
+    /// Detect and repair QSOs that are missing ServicePresence records for a service.
+    /// Creates ServicePresence records with needsUpload=true for orphaned QSOs.
+    func repairOrphanedQSOsAsync(for service: ServiceType) async {
+        let debugLog = SyncDebugLog.shared
+        let aliasService = CallsignAliasService.shared
+        let userCallsigns = aliasService.getAllUserCallsigns()
+
+        do {
+            let result = try await Self.processingActor.repairOrphanedQSOs(
+                for: [service],
+                userCallsigns: userCallsigns,
+                container: modelContext.container
+            )
+
+            if result.orphanedQSOs.isEmpty {
+                debugLog.debug(
+                    "No orphaned QSOs found for \(service.displayName)", service: service
+                )
+            } else {
+                debugLog.warning(
+                    "Found \(result.orphanedQSOs.count) QSOs without \(service.displayName) "
+                        + "presence - created \(result.repairedCount) ServicePresence records:",
+                    service: service
+                )
+
+                // Log details for first 10 orphaned QSOs
+                let dateFormatter = ISO8601DateFormatter()
+                dateFormatter.formatOptions = [.withInternetDateTime]
+
+                for (index, qso) in result.orphanedQSOs.prefix(10).enumerated() {
+                    let timestamp = dateFormatter.string(from: qso.timestamp)
+                    let services = qso.missingServices.map(\.displayName).joined(separator: ", ")
+                    debugLog.warning(
+                        "  \(index + 1). \(qso.callsign) \(qso.band) \(qso.mode) @ \(timestamp) "
+                            + "(my: \(qso.myCallsign)) - missing: \(services)",
+                        service: service
+                    )
+                }
+
+                if result.orphanedQSOs.count > 10 {
+                    debugLog.warning(
+                        "  ... and \(result.orphanedQSOs.count - 10) more orphaned QSOs",
+                        service: service
+                    )
+                }
+            }
+        } catch {
+            debugLog.error("Failed to repair orphaned QSOs: \(error)", service: service)
+        }
+    }
+
     // MARK: - Legacy Synchronous Methods (kept for backwards compatibility)
 
     /// Synchronous version - kept for backwards compatibility.
