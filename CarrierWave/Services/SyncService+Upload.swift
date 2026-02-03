@@ -22,7 +22,8 @@ extension SyncService {
         }
 
         // POTA upload (skip during maintenance window)
-        if potaAuthService.isAuthenticated {
+        // Use isConfigured to allow upload even if token expired - ensureValidToken will re-auth
+        if potaAuthService.isConfigured {
             if POTAClient.isInMaintenanceWindow() {
                 potaMaintenanceSkipped = true
             } else {

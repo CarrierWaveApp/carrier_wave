@@ -114,6 +114,12 @@ class POTAAuthService: NSObject, ObservableObject {
         return !token.isExpired
     }
 
+    /// Check if POTA is configured (has stored credentials for auto-login)
+    /// This returns true even if the token is expired, as long as we can re-authenticate
+    var isConfigured: Bool {
+        hasStoredCredentials()
+    }
+
     /// Invalidate the current token (called when API returns 401/403)
     /// This clears the in-memory token but keeps stored credentials for re-auth
     func invalidateToken() {

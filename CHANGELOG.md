@@ -12,6 +12,10 @@ All notable changes to Carrier Wave will be documented in this file.
   - Branded Carrier Wave styling for social sharing
 
 ### Fixed
+- POTA no longer shows "Not configured" when session token expires
+  - Now uses stored credentials to determine configuration status
+  - Auto-reauthenticates with saved credentials when token expires during sync
+  - Dashboard, sync, and upload all work seamlessly after token expiry
 - LoTW sync no longer triggers "Page Request Limit!" (503) errors
   - Increased delay between requests from 0.5s to 3s to respect LoTW rate limits
 

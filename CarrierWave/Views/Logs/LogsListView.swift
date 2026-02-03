@@ -246,7 +246,7 @@ struct LogsListContentView: View {
     private func loadServiceConfiguration() {
         serviceConfig = ServiceConfiguration(
             qrz: qrzClient.hasApiKey(),
-            pota: potaAuth.isAuthenticated,
+            pota: potaAuth.isConfigured,
             lofi: lofiClient.isConfigured && lofiClient.isLinked,
             hamrs: hamrsClient.isConfigured,
             lotw: lotwClient.isConfigured

@@ -65,10 +65,10 @@ extension DashboardView {
             id: .service(.pota),
             name: "POTA",
             status: potaStatus(inMaintenance: inMaintenance),
-            primaryStat: potaAuth.isAuthenticated ? "\(uploadedCount(for: .pota)) synced" : nil,
+            primaryStat: potaAuth.isConfigured ? "\(uploadedCount(for: .pota)) synced" : nil,
             secondaryStat: pendingCount(for: .pota) > 0
                 ? "\(pendingCount(for: .pota)) pending" : nil,
-            tertiaryInfo: potaAuth.isAuthenticated ? nil : "Not configured",
+            tertiaryInfo: potaAuth.isConfigured ? nil : "Not configured",
             showWarning: inMaintenance || potaAuth.currentToken?.isExpiringSoon() == true,
             isSyncing: syncService.isSyncing
         )
@@ -139,7 +139,9 @@ extension DashboardView {
         if inMaintenance {
             return .maintenance
         }
-        return potaAuth.isAuthenticated ? .connected : .notConfigured
+        // Use isConfigured (has stored credentials) for status
+        // This shows "connected" even if token expired - will re-auth on sync
+        return potaAuth.isConfigured ? .connected : .notConfigured
     }
 
     // MARK: - Service Detail Sheet Builder
@@ -227,8 +229,8 @@ extension DashboardView {
 
         return ServiceDetailSheet(
             serviceId: .service(.pota),
-            isConfigured: potaAuth.isAuthenticated,
-            callsign: potaAuth.currentToken?.callsign,
+            isConfigured: potaAuth.isConfigured,
+            callsign: potaAuth.currentToken?.callsign ?? potaAuth.getStoredUsername(),
             syncedCount: uploadedCount(for: .pota),
             pendingCount: pendingCount(for: .pota),
             confirmedCount: nil,

@@ -11,7 +11,9 @@ extension SyncService {
 
         // Capture service configuration state before entering task group
         let qrzHasKey = qrzClient.hasApiKey()
-        let potaIsAuth = potaAuthService.isAuthenticated
+        // Use isConfigured (has stored credentials) instead of isAuthenticated (has valid token)
+        // This allows POTA sync to proceed even if token expired - ensureValidToken will re-auth
+        let potaIsConfigured = potaAuthService.isConfigured
         let potaInMaintenance = POTAClient.isInMaintenanceWindow()
         let lofiReady = lofiClient.isConfigured && lofiClient.isLinked
         let hamrsReady = hamrsClient.isConfigured
@@ -27,7 +29,7 @@ extension SyncService {
 
             // POTA download (skip during maintenance window)
             // Uses extended timeout - POTA handles its own per-activation timeouts
-            if potaIsAuth, !potaInMaintenance {
+            if potaIsConfigured, !potaInMaintenance {
                 group.addTask {
                     await self.downloadFromPOTA(timeout: extendedTimeout)
                 }

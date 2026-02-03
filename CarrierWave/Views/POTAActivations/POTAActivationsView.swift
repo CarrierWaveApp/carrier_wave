@@ -151,7 +151,9 @@ struct POTAActivationsContentView: View {
     }
 
     private var isAuthenticated: Bool {
-        potaAuth.isAuthenticated
+        // Use isConfigured to show upload buttons even if token expired
+        // Will re-authenticate automatically when user taps upload
+        potaAuth.isConfigured
     }
 
     private var activations: [POTAActivation] {
