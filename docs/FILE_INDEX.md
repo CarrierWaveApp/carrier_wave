@@ -153,6 +153,7 @@ This index maps files to their purpose. Use it to locate files by feature instea
 | `CallsignTextField.swift` | UITextField wrapper for callsign entry with proper cursor handling |
 | `LoggerCallsignCard.swift` | Callsign info display card for logger |
 | `SessionStartSheet.swift` | Session wizard for mode, frequency, activation type |
+| `SessionStartHelperViews.swift` | Helper views and validation for session start (CallsignBreakdown, ActivationSection, FrequencySuggestions) |
 | `ParkPickerSheet.swift` | Park search and nearby selection sheet |
 | `ParkEntryField.swift` | Enhanced park entry with search picker and shorthand |
 | `LoggerSettingsView.swift` | (Deprecated) Logger settings moved to main SettingsView |
