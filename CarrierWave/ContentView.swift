@@ -15,8 +15,9 @@ enum AppTab: String, Hashable, CaseIterable, Codable {
     // MARK: Internal
 
     /// Tabs that can be reordered/hidden by the user
+    /// Note: cwDecoder is intentionally excluded - feature is disabled
     static var configurableTabs: [AppTab] {
-        [.dashboard, .logger, .logs, .cwDecoder, .map, .activity]
+        [.dashboard, .logger, .logs, .map, .activity]
     }
 
     /// Default tab order
@@ -27,6 +28,12 @@ enum AppTab: String, Hashable, CaseIterable, Codable {
     /// Default hidden tabs (not shown in tab bar initially)
     static var defaultHidden: Set<AppTab> {
         [.logger, .cwDecoder, .activity]
+    }
+
+    /// Tabs that are completely disabled and should never appear anywhere
+    /// These are filtered out from all tab lists
+    static var disabledTabs: Set<AppTab> {
+        [.cwDecoder]
     }
 
     var title: String {
@@ -76,19 +83,24 @@ enum TabConfiguration {
     static func visibleTabs() -> [AppTab] {
         let order = tabOrder()
         let hidden = hiddenTabs()
-        return order.filter { !hidden.contains($0) }
+        return order.filter { !hidden.contains($0) && !AppTab.disabledTabs.contains($0) }
     }
 
-    /// Get the current tab order (including hidden tabs)
+    /// Get the current tab order (including hidden tabs, but excluding disabled tabs)
     static func tabOrder() -> [AppTab] {
         guard let data = UserDefaults.standard.data(forKey: orderKey),
               let order = try? JSONDecoder().decode([AppTab].self, from: data)
         else {
-            return AppTab.defaultOrder
+            return AppTab.defaultOrder.filter { !AppTab.disabledTabs.contains($0) }
         }
         // Ensure all tabs are present (in case new tabs were added)
-        var result = order.filter { AppTab.allCases.contains($0) }
-        for tab in AppTab.defaultOrder where !result.contains(tab) {
+        // Filter out disabled tabs
+        var result = order.filter {
+            AppTab.allCases.contains($0) && !AppTab.disabledTabs.contains($0)
+        }
+        for tab in AppTab.defaultOrder
+            where !result.contains(tab) && !AppTab.disabledTabs.contains(tab)
+        {
             if tab == .more {
                 result.append(tab)
             } else {
@@ -98,19 +110,20 @@ enum TabConfiguration {
         return result
     }
 
-    /// Get hidden tabs
+    /// Get hidden tabs (excludes disabled tabs which shouldn't appear anywhere)
     static func hiddenTabs() -> Set<AppTab> {
         // Check if user has ever configured tabs
         guard UserDefaults.standard.data(forKey: hiddenKey) != nil else {
-            // First launch: use default hidden tabs
-            return AppTab.defaultHidden
+            // First launch: use default hidden tabs (minus disabled ones)
+            return AppTab.defaultHidden.subtracting(AppTab.disabledTabs)
         }
         guard let data = UserDefaults.standard.data(forKey: hiddenKey),
               let hidden = try? JSONDecoder().decode([AppTab].self, from: data)
         else {
-            return AppTab.defaultHidden
+            return AppTab.defaultHidden.subtracting(AppTab.disabledTabs)
         }
-        return Set(hidden)
+        // Filter out disabled tabs - they shouldn't appear even in hidden list
+        return Set(hidden).subtracting(AppTab.disabledTabs)
     }
 
     /// Save tab order
