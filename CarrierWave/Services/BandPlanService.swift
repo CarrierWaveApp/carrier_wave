@@ -34,6 +34,7 @@ struct FrequencyWarning: Sendable, Equatable {
         // Activity warnings (medium priority)
         case activityConflict // Mode mismatch with expected activity
         case activityCrowded // Time-based event active (CWT, etc.)
+        case spotNearby // Other operator spotted near this frequency
 
         // Informational (low priority)
         case unusualFrequency // CW in phone segment, etc.
@@ -49,10 +50,13 @@ struct FrequencyWarning: Sendable, Equatable {
     var priority: Int {
         switch type {
         case .noPrivileges,
-             .outOfBand: 0
+             .outOfBand:
+            0
         case .wrongMode: 1
         case .activityConflict,
-             .activityCrowded: 2
+             .activityCrowded,
+             .spotNearby:
+            2
         case .unusualFrequency: 3
         case .activityInfo: 4
         }
@@ -63,7 +67,8 @@ struct FrequencyWarning: Sendable, Equatable {
         switch type {
         case .noPrivileges,
              .wrongMode,
-             .outOfBand: true
+             .outOfBand:
+            true
         default: false
         }
     }

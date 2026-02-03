@@ -69,6 +69,7 @@ struct FrequencyWarningBanner: View {
         case .outOfBand: "antenna.radiowaves.left.and.right.slash"
         case .activityConflict: "waveform.badge.exclamationmark"
         case .activityCrowded: "clock.badge.exclamationmark"
+        case .spotNearby: "person.wave.2.fill"
         case .unusualFrequency: "info.circle.fill"
         case .activityInfo: "checkmark.circle.fill"
         }
@@ -78,11 +79,15 @@ struct FrequencyWarningBanner: View {
         switch warning.type {
         case .noPrivileges: .orange
         case .wrongMode,
-             .outOfBand: .red
+             .outOfBand:
+            .red
         case .activityConflict,
-             .activityCrowded: .yellow
+             .activityCrowded,
+             .spotNearby:
+            .yellow
         case .unusualFrequency,
-             .activityInfo: .blue
+             .activityInfo:
+            .blue
         }
     }
 
@@ -90,11 +95,15 @@ struct FrequencyWarningBanner: View {
         switch warning.type {
         case .noPrivileges: Color.orange.opacity(0.1)
         case .wrongMode,
-             .outOfBand: Color.red.opacity(0.1)
+             .outOfBand:
+            Color.red.opacity(0.1)
         case .activityConflict,
-             .activityCrowded: Color.yellow.opacity(0.1)
+             .activityCrowded,
+             .spotNearby:
+            Color.yellow.opacity(0.1)
         case .unusualFrequency,
-             .activityInfo: Color.blue.opacity(0.1)
+             .activityInfo:
+            Color.blue.opacity(0.1)
         }
     }
 
@@ -102,11 +111,15 @@ struct FrequencyWarningBanner: View {
         switch warning.type {
         case .noPrivileges: Color.orange.opacity(0.3)
         case .wrongMode,
-             .outOfBand: Color.red.opacity(0.3)
+             .outOfBand:
+            Color.red.opacity(0.3)
         case .activityConflict,
-             .activityCrowded: Color.yellow.opacity(0.3)
+             .activityCrowded,
+             .spotNearby:
+            Color.yellow.opacity(0.3)
         case .unusualFrequency,
-             .activityInfo: Color.blue.opacity(0.3)
+             .activityInfo:
+            Color.blue.opacity(0.3)
         }
     }
 }

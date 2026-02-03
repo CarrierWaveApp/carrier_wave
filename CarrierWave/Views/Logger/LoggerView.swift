@@ -152,8 +152,22 @@ struct LoggerView: View {
 
                 // Load session QSOs after session manager is ready
                 refreshSessionQSOs()
-            }
 
+                // Fetch POTA spots for nearby frequency detection
+                Task {
+                    await refreshPOTASpots()
+                }
+            }
+            .task {
+                // Periodic refresh of POTA spots (every 60 seconds)
+                while !Task.isCancelled {
+                    try? await Task.sleep(for: .seconds(60))
+                    guard !Task.isCancelled else {
+                        break
+                    }
+                    await refreshPOTASpots()
+                }
+            }
             .onChange(of: sessionManager?.activeSession?.frequency) { _, _ in
                 dismissedWarning = nil
             }
@@ -305,6 +319,10 @@ struct LoggerView: View {
     /// POTA spot tracking - stores session frequency before tuning to a spot
     @State private var preSpotFrequency: Double?
 
+    /// Cached POTA activator spots for nearby frequency detection
+    @State private var cachedPOTASpots: [POTASpot] = []
+    @State private var spotsLastFetched: Date?
+
     /// License warning
     /// Dismissed warning message (to avoid re-showing the same warning)
     @State private var dismissedWarning: String?
@@ -414,7 +432,7 @@ struct LoggerView: View {
         }
     }
 
-    /// Current frequency warning (if any) - includes license violations and activity warnings
+    /// Current frequency warning (if any) - includes license violations, activity warnings, and nearby spots
     private var currentWarning: FrequencyWarning? {
         guard let session = sessionManager?.activeSession,
               let freq = session.frequency
@@ -422,11 +440,17 @@ struct LoggerView: View {
             return nil
         }
 
-        let warnings = BandPlanService.validateFrequency(
+        var warnings = BandPlanService.validateFrequency(
             frequencyMHz: freq,
             mode: session.mode,
             license: userLicenseClass
         )
+
+        // Check for nearby POTA spots
+        if let nearbyWarning = checkNearbySpots(frequencyMHz: freq, mode: session.mode) {
+            warnings.append(nearbyWarning)
+            warnings.sort { $0.priority < $1.priority }
+        }
 
         // Return the highest priority warning not dismissed
         return warnings.first { $0.message != dismissedWarning }
@@ -1101,6 +1125,73 @@ struct LoggerView: View {
         .background(Color(.secondarySystemGroupedBackground))
     }
 
+    /// Tolerance for nearby spot detection based on mode
+    private func spotToleranceKHz(for mode: String) -> Double {
+        let normalizedMode = mode.uppercased()
+        // CW is narrower, SSB/phone is wider
+        if normalizedMode == "CW" {
+            return 2.0
+        } else if ["SSB", "USB", "LSB", "PHONE", "AM"].contains(normalizedMode) {
+            return 3.0
+        } else {
+            // Digital modes, etc.
+            return 3.0
+        }
+    }
+
+    /// Check if there are POTA spots near the current frequency
+    private func checkNearbySpots(frequencyMHz: Double, mode: String) -> FrequencyWarning? {
+        let tolerance = spotToleranceKHz(for: mode)
+        let freqKHz = frequencyMHz * 1_000
+
+        // Find spots within tolerance
+        let nearbySpots = cachedPOTASpots.filter { spot in
+            guard let spotFreqKHz = spot.frequencyKHz else {
+                return false
+            }
+            let distanceKHz = abs(spotFreqKHz - freqKHz)
+            return distanceKHz <= tolerance
+        }
+
+        guard
+            let closestSpot = nearbySpots.min(by: { spot1, spot2 in
+                guard let freq1 = spot1.frequencyKHz, let freq2 = spot2.frequencyKHz else {
+                    return false
+                }
+                return abs(freq1 - freqKHz) < abs(freq2 - freqKHz)
+            })
+        else {
+            return nil
+        }
+
+        // Don't warn about our own spots
+        if let myCallsign = sessionManager?.activeSession?.myCallsign,
+           closestSpot.activator.uppercased().hasPrefix(myCallsign.uppercased())
+        {
+            return nil
+        }
+
+        guard let spotFreqKHz = closestSpot.frequencyKHz else {
+            return nil
+        }
+        let distanceKHz = abs(spotFreqKHz - freqKHz)
+        let distanceStr =
+            distanceKHz < 0.1 ? "same frequency" : String(format: "%.1f kHz away", distanceKHz)
+
+        let parkInfo =
+            if let parkName = closestSpot.parkName {
+                "\(closestSpot.reference) - \(parkName)"
+            } else {
+                closestSpot.reference
+            }
+
+        return FrequencyWarning(
+            type: .spotNearby,
+            message: "\(closestSpot.activator) spotted at \(closestSpot.frequency) kHz",
+            suggestion: "\(distanceStr) • \(parkInfo)"
+        )
+    }
+
     /// Cancel the current spot and restore session frequency
     private func cancelSpot() {
         if let freq = preSpotFrequency {
@@ -1136,6 +1227,32 @@ struct LoggerView: View {
             sessionQSOs = try modelContext.fetch(descriptor)
         } catch {
             sessionQSOs = []
+        }
+    }
+
+    /// Refresh POTA spots for nearby frequency detection
+    private func refreshPOTASpots() async {
+        // Only fetch if we have an active session
+        guard sessionManager?.hasActiveSession == true else {
+            return
+        }
+
+        // Throttle fetches to at most once per 30 seconds
+        if let lastFetch = spotsLastFetched,
+           Date().timeIntervalSince(lastFetch) < 30
+        {
+            return
+        }
+
+        do {
+            let client = POTAClient(authService: POTAAuthService())
+            let spots = try await client.fetchActiveSpots()
+            await MainActor.run {
+                cachedPOTASpots = spots
+                spotsLastFetched = Date()
+            }
+        } catch {
+            // Silently fail - spots are a nice-to-have
         }
     }
 
