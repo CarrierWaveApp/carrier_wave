@@ -115,6 +115,33 @@ struct LoggerView: View {
                 )
                 .presentationDetents([.height(280)])
             }
+            .sheet(isPresented: $showBandEditSheet) {
+                SessionBandEditSheet(
+                    currentFrequency: sessionManager?.activeSession?.frequency,
+                    currentMode: sessionManager?.activeSession?.mode ?? "CW",
+                    onSelectFrequency: { freq in
+                        _ = sessionManager?.updateFrequency(freq)
+                        showBandEditSheet = false
+                    },
+                    onCancel: {
+                        showBandEditSheet = false
+                    }
+                )
+                .presentationDetents([.medium])
+            }
+            .sheet(isPresented: $showModeEditSheet) {
+                SessionModeEditSheet(
+                    currentMode: sessionManager?.activeSession?.mode ?? "CW",
+                    onSelectMode: { newMode in
+                        _ = sessionManager?.updateMode(newMode)
+                        showModeEditSheet = false
+                    },
+                    onCancel: {
+                        showModeEditSheet = false
+                    }
+                )
+                .presentationDetents([.height(280)])
+            }
             .sheet(isPresented: $showHiddenQSOsSheet) {
                 HiddenQSOsSheet(sessionId: sessionManager?.activeSession?.id)
             }
@@ -275,6 +302,10 @@ struct LoggerView: View {
     // Session park editing
     @State private var showParkEditSheet = false
     @State private var editingParkReference = ""
+
+    // Session band/mode editing
+    @State private var showBandEditSheet = false
+    @State private var showModeEditSheet = false
 
     /// Session end/delete confirmation
     @State private var showEndSessionConfirmation = false
@@ -987,21 +1018,44 @@ struct LoggerView: View {
                         .font(.caption.monospaced())
                 }
 
-                if let band = session.band {
-                    Text(band)
-                        .font(.caption.weight(.medium))
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(Color.blue.opacity(0.2))
-                        .clipShape(Capsule())
-                }
-
-                Text(session.mode)
+                Button {
+                    showBandEditSheet = true
+                } label: {
+                    HStack(spacing: 2) {
+                        if let band = session.band {
+                            Text(band)
+                        } else {
+                            Text("Band")
+                                .foregroundStyle(.secondary)
+                        }
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(.system(size: 8))
+                            .foregroundStyle(.secondary)
+                    }
                     .font(.caption.weight(.medium))
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
                     .background(Color.blue.opacity(0.2))
                     .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+
+                Button {
+                    showModeEditSheet = true
+                } label: {
+                    HStack(spacing: 2) {
+                        Text(session.mode)
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(.system(size: 8))
+                            .foregroundStyle(.secondary)
+                    }
+                    .font(.caption.weight(.medium))
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Color.blue.opacity(0.2))
+                    .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
 
                 Text(session.formattedDuration)
                     .font(.caption.weight(.medium))
@@ -2554,6 +2608,136 @@ struct DeleteSessionConfirmationSheet: View {
     private var isConfirmationValid: Bool {
         confirmationText.lowercased() == "delete"
     }
+}
+
+// MARK: - SessionBandEditSheet
+
+/// Sheet for selecting a new band/frequency during an active session
+struct SessionBandEditSheet: View {
+    // MARK: Internal
+
+    let currentFrequency: Double?
+    let currentMode: String
+    let onSelectFrequency: (Double) -> Void
+    let onCancel: () -> Void
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    ForEach(bandOptions, id: \.band) { option in
+                        Button {
+                            onSelectFrequency(option.frequency)
+                        } label: {
+                            HStack {
+                                Text(option.band)
+                                    .font(.headline.monospaced())
+                                    .frame(width: 50, alignment: .leading)
+
+                                Text(FrequencyFormatter.formatWithUnit(option.frequency))
+                                    .font(.subheadline.monospaced())
+                                    .foregroundStyle(.secondary)
+
+                                Spacer()
+
+                                if currentBand == option.band {
+                                    Image(systemName: "checkmark")
+                                        .foregroundStyle(.blue)
+                                }
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                } header: {
+                    Text("Select Band")
+                } footer: {
+                    Text("Frequency will be set to a common \(currentMode) frequency for the band")
+                }
+            }
+            .navigationTitle("Change Band")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        onCancel()
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: Private
+
+    private var currentBand: String? {
+        guard let freq = currentFrequency else {
+            return nil
+        }
+        return LoggingSession.bandForFrequency(freq)
+    }
+
+    private var bandOptions: [(band: String, frequency: Double)] {
+        let frequencies = LoggingSession.suggestedFrequencies(for: currentMode)
+        let bands = ["160m", "80m", "60m", "40m", "30m", "20m", "17m", "15m", "12m", "10m"]
+        return bands.compactMap { band in
+            if let freq = frequencies[band] {
+                return (band, freq)
+            }
+            return nil
+        }
+    }
+}
+
+// MARK: - SessionModeEditSheet
+
+/// Sheet for selecting a new mode during an active session
+struct SessionModeEditSheet: View {
+    // MARK: Internal
+
+    let currentMode: String
+    let onSelectMode: (String) -> Void
+    let onCancel: () -> Void
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    ForEach(modeOptions, id: \.self) { mode in
+                        Button {
+                            onSelectMode(mode)
+                        } label: {
+                            HStack {
+                                Text(mode)
+                                    .font(.headline)
+
+                                Spacer()
+
+                                if currentMode.uppercased() == mode {
+                                    Image(systemName: "checkmark")
+                                        .foregroundStyle(.blue)
+                                }
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                } header: {
+                    Text("Select Mode")
+                }
+            }
+            .navigationTitle("Change Mode")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        onCancel()
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: Private
+
+    private let modeOptions = ["CW", "SSB", "FT8", "FT4", "RTTY", "AM", "FM"]
 }
 
 // MARK: - Preview
