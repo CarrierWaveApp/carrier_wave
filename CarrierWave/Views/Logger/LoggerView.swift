@@ -122,36 +122,6 @@ struct LoggerView: View {
                 if sessionManager == nil {
                     sessionManager = LoggingSessionManager(modelContext: modelContext)
                 }
-                // Auto-start session if skip wizard is enabled and no active session
-                // Read directly from UserDefaults to avoid @AppStorage observation overhead
-                let defaults = UserDefaults.standard
-                let skipWizard = defaults.bool(forKey: "loggerSkipWizard")
-                let defaultCallsign = defaults.string(forKey: "loggerDefaultCallsign") ?? ""
-
-                if skipWizard,
-                   sessionManager?.hasActiveSession != true,
-                   !defaultCallsign.isEmpty
-                {
-                    let defaultMode = defaults.string(forKey: "loggerDefaultMode") ?? "CW"
-                    let defaultGrid = defaults.string(forKey: "loggerDefaultGrid") ?? ""
-                    let defaultActivationType =
-                        defaults.string(forKey: "loggerDefaultActivationType") ?? "casual"
-                    let defaultParkReference =
-                        defaults.string(forKey: "loggerDefaultParkReference") ?? ""
-
-                    let activationType = ActivationType(rawValue: defaultActivationType) ?? .casual
-                    let parkRef = activationType == .pota ? defaultParkReference : nil
-                    sessionManager?.startSession(
-                        myCallsign: defaultCallsign,
-                        mode: defaultMode,
-                        frequency: nil,
-                        activationType: activationType,
-                        parkReference: parkRef,
-                        sotaReference: nil,
-                        myGrid: defaultGrid.isEmpty ? nil : defaultGrid
-                    )
-                }
-
                 // Load session QSOs after session manager is ready
                 refreshSessionQSOs()
 

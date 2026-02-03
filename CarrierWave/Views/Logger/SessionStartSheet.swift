@@ -43,7 +43,6 @@ struct SessionStartSheet: View {
     @AppStorage("loggerDefaultGrid") private var defaultGrid = ""
     @AppStorage("loggerDefaultActivationType") private var defaultActivationType = "casual"
     @AppStorage("loggerDefaultParkReference") private var defaultParkReference = ""
-    @AppStorage("loggerSkipWizard") private var skipWizard = false
 
     @State private var selectedMode = "CW"
     @State private var frequency = ""
@@ -271,8 +270,6 @@ struct SessionStartSheet: View {
 
     private var optionsSection: some View {
         Section {
-            Toggle("Skip wizard next time", isOn: $skipWizard)
-
             Button {
                 saveDefaults()
             } label: {

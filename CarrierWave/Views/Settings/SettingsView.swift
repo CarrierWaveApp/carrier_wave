@@ -55,7 +55,6 @@ struct SettingsMainView: View {
 
     // Logger settings
     @AppStorage("loggerDefaultMode") private var defaultMode = "CW"
-    @AppStorage("loggerSkipWizard") private var skipWizard = false
     @AppStorage("loggerShowActivityPanel") private var showActivityPanel = true
     @AppStorage("loggerShowLicenseWarnings") private var showLicenseWarnings = true
     @AppStorage("loggerKeepScreenOn") private var keepScreenOn = true
@@ -267,7 +266,6 @@ struct SettingsMainView: View {
                 }
             }
 
-            Toggle("Skip session wizard", isOn: $skipWizard)
             Toggle("Show frequency activity", isOn: $showActivityPanel)
             Toggle("Keep screen on", isOn: $keepScreenOn)
             Toggle("Auto-switch mode for frequency", isOn: $autoModeSwitch)

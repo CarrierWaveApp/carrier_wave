@@ -29,7 +29,6 @@ struct LoggerSettingsView: View {
     @AppStorage("loggerDefaultCallsign") private var defaultCallsign = ""
     @AppStorage("loggerDefaultMode") private var defaultMode = "CW"
     @AppStorage("loggerDefaultGrid") private var defaultGrid = ""
-    @AppStorage("loggerSkipWizard") private var skipWizard = false
     @AppStorage("loggerShowActivityPanel") private var showActivityPanel = true
     @AppStorage("loggerShowLicenseWarnings") private var showLicenseWarnings = true
     @AppStorage("loggerKeepScreenOn") private var keepScreenOn = true
@@ -101,8 +100,6 @@ struct LoggerSettingsView: View {
                     Text(mode).tag(mode)
                 }
             }
-
-            Toggle("Skip session wizard", isOn: $skipWizard)
         } header: {
             Text("Defaults")
         } footer: {
