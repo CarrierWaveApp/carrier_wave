@@ -4,6 +4,7 @@
 // row views, upload confirmation sheet, and detail components.
 
 import SwiftUI
+import UniformTypeIdentifiers
 
 // MARK: - ActivationRow
 
@@ -48,6 +49,16 @@ struct ActivationRow: View {
                 }
 
                 Spacer()
+
+                // Share button
+                Button {
+                    onShareTapped()
+                } label: {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.body)
+                }
+                .buttonStyle(.borderless)
+                .foregroundStyle(.blue)
 
                 if activation.hasQSOsToUpload, showUploadButton {
                     Button("Upload") {
@@ -274,26 +285,48 @@ struct ActivationShareSheet: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 24) {
-                // Preview of the share card
-                ActivationShareCardView(
-                    activation: activation,
-                    parkName: parkName,
-                    myGrid: myGrid
-                )
-                .scaleEffect(0.85)
-                .frame(width: 340, height: 510)
+                // Preview of the share card - show rendered image if available, otherwise placeholder
+                if let renderedImage {
+                    Image(uiImage: renderedImage)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 340, height: 510)
+                } else {
+                    // Placeholder while loading
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(Color(red: 0.12, green: 0.10, blue: 0.18))
+                        .frame(width: 340, height: 510)
+                        .overlay(
+                            ProgressView()
+                                .tint(.white)
+                        )
+                }
 
                 Spacer()
 
-                // Share button
-                Button {
-                    shareActivation()
-                } label: {
-                    Label("Share", systemImage: "square.and.arrow.up")
-                        .frame(maxWidth: .infinity)
+                // Share button - uses pre-rendered image
+                if let renderedImage {
+                    ShareLink(
+                        item: ShareableImage(uiImage: renderedImage),
+                        preview: SharePreview(
+                            "POTA Activation - \(activation.parkReference)",
+                            image: Image(uiImage: renderedImage)
+                        )
+                    ) {
+                        Label("Share", systemImage: "square.and.arrow.up")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+                } else {
+                    Button {} label: {
+                        Label("Share", systemImage: "square.and.arrow.up")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+                    .disabled(true)
                 }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
             }
             .padding()
             .navigationTitle("Share Activation")
@@ -307,18 +340,37 @@ struct ActivationShareSheet: View {
             }
         }
         .presentationDetents([.large])
+        .task {
+            // Small delay to let sheet animation complete before heavy rendering
+            try? await Task.sleep(for: .milliseconds(100))
+            await renderImage()
+        }
     }
 
     // MARK: Private
 
     @Environment(\.dismiss) private var dismiss
+    @State private var renderedImage: UIImage?
 
-    private func shareActivation() {
-        ActivationShareHelper.shareActivation(
-            activation,
+    private func renderImage() async {
+        renderedImage = await ActivationShareRenderer.renderWithMap(
+            activation: activation,
             parkName: parkName,
-            myGrid: myGrid,
-            from: nil
+            myGrid: myGrid
         )
     }
+}
+
+// MARK: - ShareableImage
+
+/// A transferable wrapper for sharing images that supports "Save Image"
+struct ShareableImage: Transferable {
+    static var transferRepresentation: some TransferRepresentation {
+        // Export as PNG to preserve transparency
+        DataRepresentation(exportedContentType: .png) { item in
+            item.uiImage.pngData() ?? Data()
+        }
+    }
+
+    let uiImage: UIImage
 }

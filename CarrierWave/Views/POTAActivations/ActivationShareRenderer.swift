@@ -2,6 +2,7 @@
 //
 // Renders ActivationShareCardView to UIImage for sharing.
 
+import MapKit
 import SwiftUI
 import UIKit
 
@@ -12,36 +13,196 @@ import UIKit
 enum ActivationShareRenderer {
     // MARK: Internal
 
-    /// Render an activation share card to a UIImage
+    /// Render an activation share card to a UIImage (synchronous, no map)
     static func render(
         activation: POTAActivation,
         parkName: String?,
         myGrid: String?
     ) -> UIImage? {
-        let view = ActivationShareCardView(
+        // For synchronous rendering, use nil map (will show placeholder)
+        let view = ActivationShareCardForExport(
             activation: activation,
             parkName: parkName,
-            myGrid: myGrid
+            mapImage: nil
         )
         return renderToImage(view)
     }
 
+    /// Render an activation share card with map snapshot (async)
+    static func renderWithMap(
+        activation: POTAActivation,
+        parkName: String?,
+        myGrid: String?
+    ) async -> UIImage? {
+        // Capture grid data for background processing
+        let qsoGrids: [(id: UUID, grid: String)] = activation.mappableQSOs.compactMap { qso in
+            guard let grid = qso.theirGrid else {
+                return nil
+            }
+            return (qso.id, grid)
+        }
+
+        // Compute coordinates on background thread
+        let qsoCoordinates: [CLLocationCoordinate2D] = qsoGrids.compactMap { item in
+            MaidenheadConverter.coordinate(from: item.grid)
+        }
+
+        let myCoordinate: CLLocationCoordinate2D? =
+            if let grid = myGrid, grid.count >= 4 {
+                MaidenheadConverter.coordinate(from: grid)
+            } else {
+                nil
+            }
+
+        // Generate map snapshot if we have coordinates
+        let mapImage: UIImage? =
+            if !qsoCoordinates.isEmpty {
+                await generateMapSnapshot(
+                    qsoCoordinates: qsoCoordinates,
+                    myCoordinate: myCoordinate
+                )
+            } else {
+                nil
+            }
+
+        // Render the card with the map image (must be on main thread)
+        return await MainActor.run {
+            let view = ActivationShareCardForExport(
+                activation: activation,
+                parkName: parkName,
+                mapImage: mapImage
+            )
+            return renderToImage(view)
+        }
+    }
+
     // MARK: Private
 
+    @MainActor
     private static func renderToImage(_ view: some View) -> UIImage? {
-        let controller = UIHostingController(rootView: view)
-        let targetSize = CGSize(width: 400, height: 600)
-
-        controller.view.bounds = CGRect(origin: .zero, size: targetSize)
-        controller.view.backgroundColor = .clear
-
-        // Force layout pass
-        controller.view.layoutIfNeeded()
-
-        let renderer = UIGraphicsImageRenderer(size: targetSize)
-        return renderer.image { _ in
-            controller.view.drawHierarchy(in: controller.view.bounds, afterScreenUpdates: true)
+        // Wrap in ZStack with clear background to ensure transparency
+        let transparentView = ZStack {
+            Color.clear
+            view
         }
+        .frame(width: 400, height: 600)
+
+        let renderer = ImageRenderer(content: transparentView)
+        renderer.scale = 2.0 // Retina scale for crisp edges
+        renderer.isOpaque = false // Preserve transparency for rounded corners
+        return renderer.uiImage
+    }
+
+    private static func generateMapSnapshot(
+        qsoCoordinates: [CLLocationCoordinate2D],
+        myCoordinate: CLLocationCoordinate2D?
+    ) async -> UIImage? {
+        guard
+            let region = ActivationMapHelpers.mapRegion(
+                qsoCoordinates: qsoCoordinates,
+                myCoordinate: myCoordinate
+            )
+        else {
+            return nil
+        }
+
+        let options = MKMapSnapshotter.Options()
+        options.region = region
+        options.size = CGSize(width: 368, height: 200) // Card width minus padding
+        options.mapType = .standard
+        options.showsBuildings = true
+
+        let snapshotter = MKMapSnapshotter(options: options)
+
+        do {
+            let snapshot = try await snapshotter.start()
+
+            // Draw annotations on the snapshot
+            return drawAnnotations(
+                on: snapshot,
+                qsoCoordinates: qsoCoordinates,
+                myCoordinate: myCoordinate
+            )
+        } catch {
+            return nil
+        }
+    }
+
+    private static func drawAnnotations(
+        on snapshot: MKMapSnapshotter.Snapshot,
+        qsoCoordinates: [CLLocationCoordinate2D],
+        myCoordinate: CLLocationCoordinate2D?
+    ) -> UIImage {
+        let image = snapshot.image
+
+        UIGraphicsBeginImageContextWithOptions(image.size, true, image.scale)
+        image.draw(at: .zero)
+
+        guard let context = UIGraphicsGetCurrentContext() else {
+            UIGraphicsEndImageContext()
+            return image
+        }
+
+        // Draw geodesic paths from my location to each QSO
+        if let myCoord = myCoordinate {
+            context.setStrokeColor(UIColor.systemBlue.withAlphaComponent(0.6).cgColor)
+            context.setLineWidth(2.0)
+
+            for qsoCoord in qsoCoordinates {
+                let path = ActivationMapHelpers.geodesicPath(
+                    from: myCoord, to: qsoCoord, segments: 30
+                )
+                guard path.count >= 2 else {
+                    continue
+                }
+
+                let startPoint = snapshot.point(for: path[0])
+                context.move(to: startPoint)
+
+                for i in 1 ..< path.count {
+                    let point = snapshot.point(for: path[i])
+                    context.addLine(to: point)
+                }
+                context.strokePath()
+            }
+        }
+
+        // Draw QSO markers
+        for coord in qsoCoordinates {
+            let point = snapshot.point(for: coord)
+            drawMarker(at: point, in: context, color: .systemGreen)
+        }
+
+        let finalImage = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+
+        return finalImage ?? image
+    }
+
+    private static func drawMarker(at point: CGPoint, in context: CGContext, color: UIColor) {
+        let markerSize: CGFloat = 12
+
+        // White background circle
+        context.setFillColor(UIColor.white.cgColor)
+        context.fillEllipse(
+            in: CGRect(
+                x: point.x - markerSize / 2 - 2,
+                y: point.y - markerSize / 2 - 2,
+                width: markerSize + 4,
+                height: markerSize + 4
+            )
+        )
+
+        // Colored marker
+        context.setFillColor(color.cgColor)
+        context.fillEllipse(
+            in: CGRect(
+                x: point.x - markerSize / 2,
+                y: point.y - markerSize / 2,
+                width: markerSize,
+                height: markerSize
+            )
+        )
     }
 }
 

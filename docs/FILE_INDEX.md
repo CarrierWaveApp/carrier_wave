@@ -220,6 +220,7 @@ This index maps files to their purpose. Use it to locate files by feature instea
 | `POTALogEntryRow.swift` | Individual POTA log entry display (legacy) |
 | `ActivationShareCardView.swift` | Shareable activation card with map and stats |
 | `ActivationShareRenderer.swift` | Render activation card to UIImage for sharing |
+| `ActivationMapHelpers.swift` | Map utilities for activation share cards (region, geodesic paths) |
 
 ## Views - Challenges (`CarrierWave/Views/Challenges/`)
 | File | Purpose |

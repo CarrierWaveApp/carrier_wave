@@ -7,7 +7,7 @@ import SwiftUI
 
 // MARK: - ActivationShareCardView
 
-/// A shareable card showing activation map, stats, and branding
+/// A shareable card showing activation map, stats, and branding (for live preview)
 struct ActivationShareCardView: View {
     // MARK: Internal
 
@@ -26,7 +26,11 @@ struct ActivationShareCardView: View {
         .frame(width: 400, height: 600)
         .background(
             LinearGradient(
-                colors: [Color.accentColor, Color.accentColor.opacity(0.7)],
+                colors: [
+                    Color(red: 0.12, green: 0.10, blue: 0.18),
+                    Color(red: 0.18, green: 0.12, blue: 0.25),
+                    Color(red: 0.12, green: 0.10, blue: 0.18),
+                ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
@@ -94,16 +98,7 @@ struct ActivationShareCardView: View {
     // MARK: - Header
 
     private var header: some View {
-        HStack {
-            Image(systemName: "tree.fill")
-                .font(.title2)
-            Text("CARRIER WAVE")
-                .font(.headline)
-                .fontWeight(.bold)
-        }
-        .foregroundStyle(.white)
-        .padding(.top, 20)
-        .padding(.bottom, 12)
+        ActivationShareCardHeader()
     }
 
     // MARK: - Map Section
@@ -111,7 +106,7 @@ struct ActivationShareCardView: View {
     private var mapSection: some View {
         Group {
             if mappableQSOs.isEmpty {
-                emptyMapPlaceholder
+                ActivationShareCardEmptyMap()
             } else {
                 activationMap
             }
@@ -119,19 +114,6 @@ struct ActivationShareCardView: View {
         .frame(height: 200)
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .padding(.horizontal, 16)
-    }
-
-    private var emptyMapPlaceholder: some View {
-        ZStack {
-            Color.white.opacity(0.2)
-            VStack(spacing: 8) {
-                Image(systemName: "map")
-                    .font(.title)
-                Text("No grid data available")
-                    .font(.caption)
-            }
-            .foregroundStyle(.white.opacity(0.7))
-        }
     }
 
     private var activationMap: some View {
@@ -157,8 +139,12 @@ struct ActivationShareCardView: View {
             // Draw geodesic paths from my location to each QSO
             if let myCoord = myCoordinate {
                 ForEach(mappableQSOs, id: \.qso.id) { item in
-                    MapPolyline(coordinates: geodesicPath(from: myCoord, to: item.coordinate))
-                        .stroke(.blue.opacity(0.6), lineWidth: 1.5)
+                    MapPolyline(
+                        coordinates: ActivationMapHelpers.geodesicPath(
+                            from: myCoord, to: item.coordinate
+                        )
+                    )
+                    .stroke(.blue.opacity(0.6), lineWidth: 1.5)
                 }
             }
         }
@@ -169,8 +155,141 @@ struct ActivationShareCardView: View {
     // MARK: - Park Info Section
 
     private var parkInfoSection: some View {
+        ActivationShareCardParkInfo(
+            parkReference: activation.parkReference,
+            parkName: parkName,
+            displayDate: activation.displayDate
+        )
+    }
+
+    // MARK: - Stats Section
+
+    private var statsSection: some View {
+        ActivationShareCardStats(
+            qsoCount: activation.qsoCount,
+            duration: activation.formattedDuration,
+            bandsCount: activation.uniqueBands.count,
+            modesCount: activation.uniqueModes.count
+        )
+    }
+
+    // MARK: - Footer
+
+    private var footer: some View {
+        ActivationShareCardFooter(callsign: activation.callsign)
+    }
+}
+
+// MARK: - ActivationShareCardForExport
+
+/// A version of the share card that uses a pre-rendered map image (for export)
+struct ActivationShareCardForExport: View {
+    // MARK: Internal
+
+    let activation: POTAActivation
+    let parkName: String?
+    let mapImage: UIImage?
+
+    var body: some View {
+        VStack(spacing: 0) {
+            ActivationShareCardHeader()
+            mapSection
+            ActivationShareCardParkInfo(
+                parkReference: activation.parkReference,
+                parkName: parkName,
+                displayDate: activation.displayDate
+            )
+            ActivationShareCardStats(
+                qsoCount: activation.qsoCount,
+                duration: activation.formattedDuration,
+                bandsCount: activation.uniqueBands.count,
+                modesCount: activation.uniqueModes.count
+            )
+            ActivationShareCardFooter(callsign: activation.callsign)
+        }
+        .frame(width: 400, height: 600)
+        .background(
+            LinearGradient(
+                colors: [
+                    Color(red: 0.12, green: 0.10, blue: 0.18),
+                    Color(red: 0.18, green: 0.12, blue: 0.25),
+                    Color(red: 0.12, green: 0.10, blue: 0.18),
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+        .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+        .overlay(
+            RoundedRectangle(cornerRadius: cornerRadius)
+                .stroke(Color(red: 0.12, green: 0.10, blue: 0.18), lineWidth: 2)
+        )
+    }
+
+    // MARK: Private
+
+    private let cornerRadius: CGFloat = 24
+
+    private var mapSection: some View {
+        Group {
+            if let mapImage {
+                Image(uiImage: mapImage)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+            } else {
+                ActivationShareCardEmptyMap()
+            }
+        }
+        .frame(height: 200)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .padding(.horizontal, 16)
+    }
+}
+
+// MARK: - ActivationShareCardHeader
+
+private struct ActivationShareCardHeader: View {
+    var body: some View {
+        HStack {
+            Image(systemName: "tree.fill")
+                .font(.title2)
+            Text("CARRIER WAVE")
+                .font(.headline)
+                .fontWeight(.bold)
+        }
+        .foregroundStyle(.white)
+        .padding(.top, 24)
+        .padding(.bottom, 12)
+    }
+}
+
+// MARK: - ActivationShareCardEmptyMap
+
+struct ActivationShareCardEmptyMap: View {
+    var body: some View {
+        ZStack {
+            Color.white.opacity(0.2)
+            VStack(spacing: 8) {
+                Image(systemName: "map")
+                    .font(.title)
+                Text("No grid data available")
+                    .font(.caption)
+            }
+            .foregroundStyle(.white.opacity(0.7))
+        }
+    }
+}
+
+// MARK: - ActivationShareCardParkInfo
+
+private struct ActivationShareCardParkInfo: View {
+    let parkReference: String
+    let parkName: String?
+    let displayDate: String
+
+    var body: some View {
         VStack(spacing: 4) {
-            Text(activation.parkReference)
+            Text(parkReference)
                 .font(.title2)
                 .fontWeight(.bold)
                 .foregroundStyle(.white)
@@ -183,83 +302,50 @@ struct ActivationShareCardView: View {
                     .lineLimit(2)
             }
 
-            Text(activation.displayDate)
+            Text(displayDate)
                 .font(.caption)
                 .foregroundStyle(.white.opacity(0.8))
         }
         .padding(.vertical, 16)
         .padding(.horizontal, 24)
     }
+}
 
-    // MARK: - Stats Section
+// MARK: - ActivationShareCardStats
 
-    private var statsSection: some View {
+private struct ActivationShareCardStats: View {
+    let qsoCount: Int
+    let duration: String
+    let bandsCount: Int
+    let modesCount: Int
+
+    var body: some View {
         HStack(spacing: 24) {
-            StatItem(value: "\(activation.qsoCount)", label: "QSOs")
-            StatItem(value: activation.formattedDuration, label: "Duration")
-            StatItem(value: "\(activation.uniqueBands.count)", label: "Bands")
-            StatItem(value: "\(activation.uniqueModes.count)", label: "Modes")
+            StatItem(value: "\(qsoCount)", label: "QSOs")
+            StatItem(value: duration, label: "Duration")
+            StatItem(value: "\(bandsCount)", label: "Bands")
+            StatItem(value: "\(modesCount)", label: "Modes")
         }
         .padding(.vertical, 16)
         .padding(.horizontal, 16)
-        .background(.white.opacity(0.15))
+        .background(Color.purple.opacity(0.2))
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .padding(.horizontal, 16)
     }
+}
 
-    // MARK: - Footer
+// MARK: - ActivationShareCardFooter
 
-    private var footer: some View {
-        Text(activation.callsign)
+private struct ActivationShareCardFooter: View {
+    let callsign: String
+
+    var body: some View {
+        Text(callsign)
             .font(.headline)
             .fontWeight(.semibold)
             .foregroundStyle(.white)
             .padding(.top, 16)
-            .padding(.bottom, 20)
-    }
-
-    /// Generate a geodesic (great circle) path between two coordinates
-    private func geodesicPath(
-        from start: CLLocationCoordinate2D,
-        to end: CLLocationCoordinate2D,
-        segments: Int = 50
-    ) -> [CLLocationCoordinate2D] {
-        var path: [CLLocationCoordinate2D] = []
-
-        let lat1 = start.latitude * .pi / 180
-        let lon1 = start.longitude * .pi / 180
-        let lat2 = end.latitude * .pi / 180
-        let lon2 = end.longitude * .pi / 180
-
-        let angularDistance =
-            2
-                * asin(
-                    sqrt(
-                        pow(sin((lat2 - lat1) / 2), 2) + cos(lat1) * cos(lat2)
-                            * pow(sin((lon2 - lon1) / 2), 2)
-                    )
-                )
-
-        guard angularDistance > 0 else {
-            return [start, end]
-        }
-
-        for i in 0 ... segments {
-            let fraction = Double(i) / Double(segments)
-            let coeffA = sin((1 - fraction) * angularDistance) / sin(angularDistance)
-            let coeffB = sin(fraction * angularDistance) / sin(angularDistance)
-
-            let x = coeffA * cos(lat1) * cos(lon1) + coeffB * cos(lat2) * cos(lon2)
-            let y = coeffA * cos(lat1) * sin(lon1) + coeffB * cos(lat2) * sin(lon2)
-            let z = coeffA * sin(lat1) + coeffB * sin(lat2)
-
-            let lat = atan2(z, sqrt(x * x + y * y)) * 180 / .pi
-            let lon = atan2(y, x) * 180 / .pi
-
-            path.append(CLLocationCoordinate2D(latitude: lat, longitude: lon))
-        }
-
-        return path
+            .padding(.bottom, 24)
     }
 }
 
