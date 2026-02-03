@@ -124,6 +124,26 @@ struct FrequencyWarningBanner: View {
     }
 }
 
+// MARK: - FrequencyWarningBannerContainer
+
+/// Container that conditionally shows a FrequencyWarningBanner
+/// Used to properly handle optional warnings with animations
+struct FrequencyWarningBannerContainer: View {
+    let warning: FrequencyWarning?
+    let onDismiss: (String) -> Void
+
+    var body: some View {
+        if let warning {
+            FrequencyWarningBanner(warning: warning) {
+                onDismiss(warning.message)
+            }
+            .padding(.horizontal)
+            .padding(.top, 8)
+            .transition(.move(edge: .top).combined(with: .opacity))
+        }
+    }
+}
+
 // MARK: - LicenseWarningBanner
 
 /// Displays a warning when the user is operating outside their license privileges.

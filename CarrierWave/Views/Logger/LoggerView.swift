@@ -32,14 +32,16 @@ struct LoggerView: View {
                     }
 
                     // Frequency warning banner (license violations + activity warnings)
-                    if let warning = currentWarning {
-                        FrequencyWarningBanner(warning: warning) {
-                            dismissedWarning = warning.message
+                    // Note: We pass cachedPOTASpots.count and callsignInput to force re-evaluation
+                    FrequencyWarningBannerContainer(
+                        warning: computeCurrentWarning(
+                            spotCount: cachedPOTASpots.count,
+                            inputText: callsignInput
+                        ),
+                        onDismiss: { message in
+                            dismissedWarning = message
                         }
-                        .padding(.horizontal)
-                        .padding(.top, 8)
-                        .transition(.move(edge: .top).combined(with: .opacity))
-                    }
+                    )
 
                     ScrollView {
                         VStack(spacing: 12) {
@@ -170,6 +172,12 @@ struct LoggerView: View {
             }
             .onChange(of: sessionManager?.activeSession?.frequency) { _, _ in
                 dismissedWarning = nil
+                // Refresh spots if we don't have any cached yet
+                if cachedPOTASpots.isEmpty {
+                    Task {
+                        await refreshPOTASpots()
+                    }
+                }
             }
             .onChange(of: sessionManager?.activeSession?.mode) { _, _ in
                 dismissedWarning = nil
@@ -432,28 +440,9 @@ struct LoggerView: View {
         }
     }
 
-    /// Current frequency warning (if any) - includes license violations, activity warnings, and nearby spots
+    /// Current frequency warning (if any) - convenience property
     private var currentWarning: FrequencyWarning? {
-        guard let session = sessionManager?.activeSession,
-              let freq = session.frequency
-        else {
-            return nil
-        }
-
-        var warnings = BandPlanService.validateFrequency(
-            frequencyMHz: freq,
-            mode: session.mode,
-            license: userLicenseClass
-        )
-
-        // Check for nearby POTA spots
-        if let nearbyWarning = checkNearbySpots(frequencyMHz: freq, mode: session.mode) {
-            warnings.append(nearbyWarning)
-            warnings.sort { $0.priority < $1.priority }
-        }
-
-        // Return the highest priority warning not dismissed
-        return warnings.first { $0.message != dismissedWarning }
+        computeCurrentWarning(spotCount: cachedPOTASpots.count, inputText: callsignInput)
     }
 
     /// Deprecated: Use currentWarning instead
@@ -1125,6 +1114,45 @@ struct LoggerView: View {
         .background(Color(.secondarySystemGroupedBackground))
     }
 
+    /// Current frequency warning (if any) - includes license violations, activity warnings, and nearby spots
+    /// The spotCount parameter forces SwiftUI to re-evaluate when cached spots change
+    private func computeCurrentWarning(spotCount: Int, inputText: String) -> FrequencyWarning? {
+        // Reference parameters to silence unused parameter warnings
+        _ = spotCount
+        _ = inputText
+
+        guard let session = sessionManager?.activeSession else {
+            return nil
+        }
+
+        // Check both the session frequency AND any frequency being typed as a command
+        let freq: Double
+        if case let .frequency(typedFreq) = detectedCommand {
+            // User is typing a frequency command - check that frequency
+            freq = typedFreq
+        } else if let sessionFreq = session.frequency {
+            // Use the session's current frequency
+            freq = sessionFreq
+        } else {
+            return nil
+        }
+
+        var warnings = BandPlanService.validateFrequency(
+            frequencyMHz: freq,
+            mode: session.mode,
+            license: userLicenseClass
+        )
+
+        // Check for nearby POTA spots
+        if let nearbyWarning = checkNearbySpots(frequencyMHz: freq, mode: session.mode) {
+            warnings.append(nearbyWarning)
+            warnings.sort { $0.priority < $1.priority }
+        }
+
+        // Return the highest priority warning not dismissed
+        return warnings.first { $0.message != dismissedWarning }
+    }
+
     /// Tolerance for nearby spot detection based on mode
     private func spotToleranceKHz(for mode: String) -> Double {
         let normalizedMode = mode.uppercased()
@@ -1171,24 +1199,64 @@ struct LoggerView: View {
             return nil
         }
 
-        guard let spotFreqKHz = closestSpot.frequencyKHz else {
+        return buildNearbySpotWarning(spot: closestSpot, freqKHz: freqKHz, mode: mode)
+    }
+
+    /// Build a FrequencyWarning with detailed context for a nearby spot
+    private func buildNearbySpotWarning(
+        spot: POTASpot,
+        freqKHz: Double,
+        mode: String
+    ) -> FrequencyWarning? {
+        guard let spotFreqKHz = spot.frequencyKHz else {
             return nil
         }
         let distanceKHz = abs(spotFreqKHz - freqKHz)
         let distanceStr =
             distanceKHz < 0.1 ? "same frequency" : String(format: "%.1f kHz away", distanceKHz)
 
+        // Build context details
+        var details: [String] = [distanceStr]
+
+        // Mode comparison
+        let spotMode = spot.mode.uppercased()
+        let currentMode = mode.uppercased()
+        if spotMode == currentMode {
+            details.append("same mode (\(spot.mode))")
+        } else {
+            details.append("mode: \(spot.mode)")
+        }
+
+        // How fresh is the spot
+        let timeAgo = spot.timeAgo
+        if !timeAgo.isEmpty {
+            details.append("spotted \(timeAgo)")
+        }
+
+        // Spotter info (RBN vs human)
+        if spot.isAutomatedSpot {
+            details.append("via RBN")
+        } else {
+            details.append("by \(spot.spotter)")
+        }
+
+        // Location
+        if let location = spot.locationDesc, !location.isEmpty {
+            details.append(location)
+        }
+
+        // Park info for the message
         let parkInfo =
-            if let parkName = closestSpot.parkName {
-                "\(closestSpot.reference) - \(parkName)"
+            if let parkName = spot.parkName {
+                "\(spot.reference) - \(parkName)"
             } else {
-                closestSpot.reference
+                spot.reference
             }
 
         return FrequencyWarning(
             type: .spotNearby,
-            message: "\(closestSpot.activator) spotted at \(closestSpot.frequency) kHz",
-            suggestion: "\(distanceStr) • \(parkInfo)"
+            message: "\(spot.activator) at \(parkInfo)",
+            suggestion: details.joined(separator: " • ")
         )
     }
 
