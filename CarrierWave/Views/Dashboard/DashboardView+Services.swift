@@ -21,7 +21,7 @@ extension DashboardView {
         let canBypass = debugMode && bypassPOTAMaintenance
         let potaInMaintenance = POTAClient.isInMaintenanceWindow() && !canBypass
 
-        return [
+        let allServices = [
             lofiServiceInfo,
             qrzServiceInfo,
             potaServiceInfo(inMaintenance: potaInMaintenance),
@@ -29,6 +29,9 @@ extension DashboardView {
             lotwServiceInfo,
             icloudServiceInfo,
         ]
+
+        // Only show configured services on the dashboard
+        return allServices.filter { $0.status != .notConfigured }
     }
 
     // MARK: - Individual Service Info Builders
