@@ -67,6 +67,21 @@ struct CallsignTextField: UIViewRepresentable {
             parent.onSubmit()
             return true
         }
+
+        // MARK: - Number Row Actions
+
+        @objc
+        func numberButtonTapped(_ sender: UIButton) {
+            guard let char = sender.titleLabel?.text else {
+                return
+            }
+            parent.text.append(char)
+        }
+
+        @objc
+        func dismissKeyboard(_ sender: UIButton) {
+            parent.isFocused.wrappedValue = false
+        }
     }
 
     @Binding var text: String
@@ -90,6 +105,10 @@ struct CallsignTextField: UIViewRepresentable {
             action: #selector(Coordinator.textFieldDidChange(_:)),
             for: .editingChanged
         )
+
+        // Add input accessory view with number row
+        textField.inputAccessoryView = createInputAccessoryView(coordinator: context.coordinator)
+
         return textField
     }
 
@@ -133,5 +152,76 @@ struct CallsignTextField: UIViewRepresentable {
 
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
+    }
+
+    // MARK: Private
+
+    // MARK: - Input Accessory View
+
+    private func createInputAccessoryView(coordinator: Coordinator) -> UIView {
+        let accessoryView = UIView()
+        accessoryView.backgroundColor = .secondarySystemBackground
+        accessoryView.translatesAutoresizingMaskIntoConstraints = false
+
+        let stackView = UIStackView()
+        stackView.axis = .horizontal
+        stackView.distribution = .fillEqually
+        stackView.spacing = 6
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+
+        // Number buttons 1-9, 0, ., and dismiss
+        let characters = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "."]
+        for char in characters {
+            let button = createNumberButton(title: char, coordinator: coordinator)
+            stackView.addArrangedSubview(button)
+        }
+
+        // Dismiss keyboard button
+        let dismissButton = UIButton(type: .system)
+        dismissButton.setImage(
+            UIImage(systemName: "keyboard.chevron.compact.down"),
+            for: .normal
+        )
+        dismissButton.tintColor = .label
+        dismissButton.backgroundColor = .tertiarySystemBackground
+        dismissButton.layer.cornerRadius = 6
+        dismissButton.addTarget(
+            coordinator,
+            action: #selector(Coordinator.dismissKeyboard(_:)),
+            for: .touchUpInside
+        )
+        stackView.addArrangedSubview(dismissButton)
+
+        accessoryView.addSubview(stackView)
+
+        NSLayoutConstraint.activate([
+            stackView.leadingAnchor.constraint(equalTo: accessoryView.leadingAnchor, constant: 8),
+            stackView.trailingAnchor.constraint(
+                equalTo: accessoryView.trailingAnchor, constant: -8
+            ),
+            stackView.topAnchor.constraint(equalTo: accessoryView.topAnchor, constant: 8),
+            stackView.bottomAnchor.constraint(equalTo: accessoryView.bottomAnchor, constant: -8),
+            stackView.heightAnchor.constraint(equalToConstant: 40),
+        ])
+
+        // Set the frame for the accessory view
+        accessoryView.frame = CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: 56)
+
+        return accessoryView
+    }
+
+    private func createNumberButton(title: String, coordinator: Coordinator) -> UIButton {
+        let button = UIButton(type: .system)
+        button.setTitle(title, for: .normal)
+        button.titleLabel?.font = .monospacedSystemFont(ofSize: 18, weight: .medium)
+        button.setTitleColor(.label, for: .normal)
+        button.backgroundColor = .tertiarySystemBackground
+        button.layer.cornerRadius = 6
+        button.addTarget(
+            coordinator,
+            action: #selector(Coordinator.numberButtonTapped(_:)),
+            for: .touchUpInside
+        )
+        return button
     }
 }

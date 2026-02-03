@@ -211,16 +211,6 @@ struct LoggerView: View {
                 }
             }
             .toastContainer()
-            .safeAreaInset(edge: .bottom) {
-                if callsignFieldFocused {
-                    VStack(spacing: 0) {
-                        compactCallsignLookupDisplay
-                        numberRowAccessory
-                    }
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-                }
-            }
-
             .miniTour(.logger, tourState: tourState)
         }
     }
@@ -463,54 +453,6 @@ struct LoggerView: View {
                     )
                 )
         }
-    }
-
-    /// Compact callsign lookup display for keyboard accessory area
-    @ViewBuilder
-    private var compactCallsignLookupDisplay: some View {
-        if let info = lookupResult {
-            CompactCallsignBar(info: info)
-        } else if let error = lookupError,
-                  !callsignInput.isEmpty,
-                  callsignInput.count >= 3,
-                  detectedCommand == nil
-        {
-            CompactLookupErrorBar(error: error)
-        }
-    }
-
-    // MARK: - Number Row Accessory
-
-    private var numberRowAccessory: some View {
-        HStack(spacing: 8) {
-            ForEach(["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "."], id: \.self) { char in
-                Button {
-                    callsignInput.append(char)
-                } label: {
-                    Text(char)
-                        .font(.system(size: 18, weight: .medium, design: .monospaced))
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 40)
-                        .background(Color(.tertiarySystemBackground))
-                        .clipShape(RoundedRectangle(cornerRadius: 6))
-                }
-                .buttonStyle(.plain)
-            }
-
-            Button {
-                callsignFieldFocused = false
-            } label: {
-                Image(systemName: "keyboard.chevron.compact.down")
-                    .font(.system(size: 18, weight: .medium))
-                    .frame(width: 44, height: 40)
-                    .background(Color(.tertiarySystemBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 6))
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 8)
-        .background(Color(.secondarySystemBackground))
     }
 
     /// Panel overlays for RBN, Solar, Weather
