@@ -4,6 +4,9 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Tap-to-edit callsigns in session log - tap any callsign to bring it back to the input field for quick correction without changing the QSO timestamp
+
 ### Fixed
 - POTA spot timestamps now parse correctly, showing "spotted X ago" in nearby operator warnings
 

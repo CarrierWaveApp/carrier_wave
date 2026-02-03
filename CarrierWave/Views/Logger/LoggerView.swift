@@ -39,7 +39,7 @@ struct LoggerView: View {
                             inputText: callsignInput
                         ),
                         onDismiss: { message in
-                            dismissedWarning = message
+                            dismissedWarnings.insert(message)
                         }
                     )
 
@@ -168,7 +168,7 @@ struct LoggerView: View {
                 }
             }
             .onChange(of: sessionManager?.activeSession?.frequency) { _, _ in
-                dismissedWarning = nil
+                dismissedWarnings.removeAll()
                 // Refresh spots if we don't have any cached yet
                 if cachedPOTASpots.isEmpty {
                     Task {
@@ -177,7 +177,7 @@ struct LoggerView: View {
                 }
             }
             .onChange(of: sessionManager?.activeSession?.mode) { _, _ in
-                dismissedWarning = nil
+                dismissedWarnings.removeAll()
                 // RST fields stay empty - placeholder shows correct default based on mode
             }
             .onChange(of: sessionManager?.activeSession?.id) { _, _ in
@@ -311,6 +311,9 @@ struct LoggerView: View {
     @State private var showEndSessionConfirmation = false
     @State private var showDeleteSessionSheet = false
 
+    /// QSO being edited (for tap-to-edit callsign feature)
+    @State private var editingQSO: QSO?
+
     // QSY spot confirmation
     @State private var showQSYSpotConfirmation = false
     @State private var qsyNewFrequency: Double?
@@ -323,8 +326,8 @@ struct LoggerView: View {
     @State private var spotsLastFetched: Date?
 
     /// License warning
-    /// Dismissed warning message (to avoid re-showing the same warning)
-    @State private var dismissedWarning: String?
+    /// Dismissed warning messages (to avoid re-showing dismissed warnings)
+    @State private var dismissedWarnings: Set<String> = []
 
     /// Tour state for mini-tour
     private let tourState: TourState
@@ -337,10 +340,14 @@ struct LoggerView: View {
     /// Unified field height for consistency
     private let fieldHeight: CGFloat = 36
 
-    /// Deprecated: Use dismissedWarning
+    /// Deprecated: Use dismissedWarnings
     private var dismissedViolation: String? {
-        get { dismissedWarning }
-        set { dismissedWarning = newValue }
+        get { dismissedWarnings.first }
+        set {
+            if let value = newValue {
+                dismissedWarnings.insert(value)
+            }
+        }
     }
 
     private var userLicenseClass: LicenseClass {
@@ -865,14 +872,30 @@ struct LoggerView: View {
                     logQSO()
                 }
             } label: {
-                Text("Log QSO")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
+                HStack {
+                    if editingQSO != nil {
+                        Image(systemName: "pencil")
+                    }
+                    Text(editingQSO != nil ? "Update Callsign" : "Log QSO")
+                }
+                .font(.headline)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
             }
             .buttonStyle(.borderedProminent)
-            .tint(.green)
+            .tint(editingQSO != nil ? .orange : .green)
             .disabled(!canLog)
+
+            // Cancel button when editing
+            if editingQSO != nil {
+                Button {
+                    cancelEditingCallsign()
+                } label: {
+                    Text("Cancel Edit")
+                        .font(.subheadline)
+                }
+                .buttonStyle(.bordered)
+            }
         }
     }
 
@@ -906,7 +929,10 @@ struct LoggerView: View {
                                 sessionQSOs: displayQSOs,
                                 isPOTASession: sessionManager?.activeSession?.activationType
                                     == .pota,
-                                onQSODeleted: refreshSessionQSOs
+                                onQSODeleted: refreshSessionQSOs,
+                                onEditCallsign: { qsoToEdit in
+                                    startEditingCallsign(qsoToEdit)
+                                }
                             )
                         case let .note(note):
                             LoggerNoteRow(note: note)
@@ -1120,7 +1146,7 @@ struct LoggerView: View {
         }
 
         // Return the highest priority warning not dismissed
-        return warnings.first { $0.message != dismissedWarning }
+        return warnings.first { !dismissedWarnings.contains($0.message) }
     }
 
     /// Tolerance for nearby spot detection based on mode
@@ -1296,6 +1322,11 @@ struct LoggerView: View {
 
     /// Compute POTA duplicate status - called only when callsign changes
     private func computePotaDuplicateStatus() -> POTACallsignStatus? {
+        // Don't show duplicate status when editing an existing QSO
+        guard editingQSO == nil else {
+            return nil
+        }
+
         guard let session = sessionManager?.activeSession,
               session.activationType == .pota,
               !callsignInput.isEmpty,
@@ -1614,6 +1645,12 @@ struct LoggerView: View {
             return
         }
 
+        // Check if we're editing an existing QSO
+        if let qsoToUpdate = editingQSO {
+            updateExistingQSOCallsign(qsoToUpdate)
+            return
+        }
+
         // Build field values with fallback: form > lookup
         let gridToUse = theirGrid.nonEmpty ?? lookupResult?.grid
         let stateToUse = theirState.nonEmpty ?? lookupResult?.state
@@ -1636,6 +1673,47 @@ struct LoggerView: View {
         refreshSessionQSOs()
         restorePreSpotFrequency()
         resetFormAfterLog()
+    }
+
+    /// Start editing an existing QSO's callsign
+    private func startEditingCallsign(_ qso: QSO) {
+        editingQSO = qso
+        callsignInput = qso.callsign
+        callsignFieldFocused = true
+        ToastManager.shared.info("Editing callsign - tap Update to save")
+    }
+
+    /// Cancel editing and clear the form
+    private func cancelEditingCallsign() {
+        editingQSO = nil
+        resetFormAfterLog()
+    }
+
+    /// Update only the callsign of an existing QSO (preserves timestamp and other fields)
+    private func updateExistingQSOCallsign(_ qso: QSO) {
+        let newCallsign = callsignInput.trimmingCharacters(in: .whitespaces).uppercased()
+
+        guard !newCallsign.isEmpty else {
+            ToastManager.shared.error("Callsign cannot be empty")
+            return
+        }
+
+        qso.callsign = newCallsign
+
+        // Clear any cached lookup data since the callsign changed
+        qso.name = nil
+        qso.theirGrid = nil
+        qso.state = nil
+        qso.country = nil
+        qso.qth = nil
+        qso.theirLicenseClass = nil
+
+        try? modelContext.save()
+
+        refreshSessionQSOs()
+        resetFormAfterLog()
+        editingQSO = nil
+        ToastManager.shared.success("Callsign updated")
     }
 
     /// Log a QSO using quick entry data
@@ -1696,6 +1774,7 @@ struct LoggerView: View {
             operatorName = ""
             rstSent = ""
             rstReceived = ""
+            editingQSO = nil
         }
         callsignFieldFocused = true
     }
@@ -1762,6 +1841,8 @@ struct LoggerQSORow: View {
     var isPOTASession: Bool = false
     /// Callback when QSO is deleted (hidden)
     var onQSODeleted: (() -> Void)?
+    /// Callback when callsign is tapped for quick edit
+    var onEditCallsign: ((QSO) -> Void)?
 
     var body: some View {
         Button {
@@ -1874,10 +1955,16 @@ struct LoggerQSORow: View {
                 .frame(width: 50, alignment: .leading)
 
             HStack(spacing: 4) {
-                Text(qso.callsign)
-                    .font(.subheadline.weight(.semibold).monospaced())
-                    .foregroundStyle(callsignColor)
-                    .fixedSize(horizontal: true, vertical: false)
+                // Callsign is tappable for quick edit
+                Button {
+                    onEditCallsign?(qso)
+                } label: {
+                    Text(qso.callsign)
+                        .font(.subheadline.weight(.semibold).monospaced())
+                        .foregroundStyle(callsignColor)
+                        .fixedSize(horizontal: true, vertical: false)
+                }
+                .buttonStyle(.plain)
 
                 if let emoji = callsignInfo?.combinedEmoji {
                     Text(emoji)
