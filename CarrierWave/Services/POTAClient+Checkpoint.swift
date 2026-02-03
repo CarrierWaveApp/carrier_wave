@@ -2,11 +2,19 @@ import Foundation
 
 // MARK: - POTADownloadCheckpoint
 
-/// Checkpoint for resumable POTA downloads
+/// Checkpoint for resumable POTA downloads (in-progress state)
 struct POTADownloadCheckpoint: Codable {
     let processedActivationKeys: Set<String>
     let lastBatchDate: Date
     let adaptiveBatchSize: Int?
+}
+
+// MARK: - POTASyncState
+
+/// Persistent state for incremental POTA syncs (persisted between syncs)
+struct POTASyncState: Codable {
+    let processedActivationKeys: Set<String>
+    let lastSyncDate: Date
 }
 
 // MARK: - POTADownloadConfig
@@ -30,6 +38,8 @@ enum POTADownloadConfig {
 // MARK: - POTAClient Checkpoint Methods
 
 extension POTAClient {
+    // MARK: - In-Progress Checkpoint (cleared after successful sync)
+
     func loadDownloadCheckpoint() -> POTADownloadCheckpoint? {
         guard
             let data = try? KeychainHelper.shared.read(
@@ -53,28 +63,86 @@ extension POTAClient {
         try? KeychainHelper.shared.delete(for: KeychainHelper.Keys.potaDownloadProgress)
     }
 
+    // MARK: - Persistent Sync State (persisted between syncs for incremental)
+
+    func loadSyncState() -> POTASyncState? {
+        guard
+            let data = try? KeychainHelper.shared.read(
+                for: KeychainHelper.Keys.potaLastSyncDate
+            ),
+            let state = try? JSONDecoder().decode(POTASyncState.self, from: data)
+        else {
+            return nil
+        }
+        return state
+    }
+
+    func saveSyncState(_ state: POTASyncState) {
+        guard let data = try? JSONEncoder().encode(state) else {
+            return
+        }
+        try? KeychainHelper.shared.save(data, for: KeychainHelper.Keys.potaLastSyncDate)
+    }
+
+    func clearSyncState() {
+        try? KeychainHelper.shared.delete(for: KeychainHelper.Keys.potaLastSyncDate)
+    }
+
     // MARK: - Fetch All QSOs
 
-    /// Fetch all QSOs with adaptive batching
+    /// Fetch all QSOs with adaptive batching and incremental sync
+    /// On first sync: processes all activations
+    /// On subsequent syncs: only processes new activations not in saved state
     /// Adjusts batch size based on timeouts and API responsiveness
     func fetchAllQSOs() async throws -> [POTAFetchedQSO] {
         let debugLog = SyncDebugLog.shared
         let activations = try await fetchActivations()
-        var state = POTADownloadState(checkpoint: loadDownloadCheckpoint())
 
-        logDownloadStart(activations: activations, state: state)
+        let (state, savedState) = initializeDownloadState()
+        var mutableState = state
 
-        let remainingActivations = filterRemainingActivations(activations, state: state)
-        guard !remainingActivations.isEmpty else {
-            debugLog.info("No remaining activations to process", service: .pota)
-            clearDownloadCheckpoint()
-            return state.allFetched
-        }
-
-        debugLog.info(
-            "Processing \(remainingActivations.count) remaining activations", service: .pota
+        logIncrementalDownloadStart(
+            activations: activations, state: mutableState, savedState: savedState
         )
 
+        let remainingActivations = filterRemainingActivations(activations, state: mutableState)
+        guard !remainingActivations.isEmpty else {
+            debugLog.info("No new activations to process (incremental sync)", service: .pota)
+            clearDownloadCheckpoint()
+            return mutableState.allFetched
+        }
+
+        debugLog.info("Processing \(remainingActivations.count) new activations", service: .pota)
+
+        try await processAllBatches(remainingActivations, state: &mutableState)
+        finalizeDownload(state: mutableState, newActivationCount: remainingActivations.count)
+
+        return mutableState.allFetched
+    }
+
+    /// Initialize download state by merging persistent sync state with any in-progress checkpoint
+    private func initializeDownloadState() -> (POTADownloadState, POTASyncState?) {
+        let savedState = loadSyncState()
+        let checkpoint = loadDownloadCheckpoint()
+
+        // Start with previously synced keys from persistent state
+        var initialKeys = savedState?.processedActivationKeys ?? Set<String>()
+        // Add any keys from an interrupted download
+        if let checkpointKeys = checkpoint?.processedActivationKeys {
+            initialKeys.formUnion(checkpointKeys)
+        }
+
+        var state = POTADownloadState(checkpoint: checkpoint)
+        state.processedKeys = initialKeys
+
+        return (state, savedState)
+    }
+
+    /// Process all remaining activations in batches
+    private func processAllBatches(
+        _ remainingActivations: [POTARemoteActivation],
+        state: inout POTADownloadState
+    ) async throws {
         var activationIndex = 0
         while activationIndex < remainingActivations.count {
             let batchEnd = min(activationIndex + state.currentBatchSize, remainingActivations.count)
@@ -99,13 +167,24 @@ extension POTAClient {
                 break
             }
         }
+    }
 
+    /// Finalize download by saving sync state and clearing checkpoint
+    private func finalizeDownload(state: POTADownloadState, newActivationCount: Int) {
+        let debugLog = SyncDebugLog.shared
+
+        saveSyncState(
+            POTASyncState(
+                processedActivationKeys: state.processedKeys,
+                lastSyncDate: Date()
+            )
+        )
         clearDownloadCheckpoint()
+
         debugLog.info(
-            "Download complete: \(state.allFetched.count) total QSOs from \(state.processedKeys.count) activations",
+            "Download complete: \(state.allFetched.count) QSOs from \(newActivationCount) new activations",
             service: .pota
         )
-        return state.allFetched
     }
 
     // MARK: - Batch Processing Helpers
@@ -145,14 +224,34 @@ extension POTAClient {
         }
     }
 
-    private func logDownloadStart(activations: [POTARemoteActivation], state: POTADownloadState) {
+    private func logIncrementalDownloadStart(
+        activations: [POTARemoteActivation],
+        state: POTADownloadState,
+        savedState: POTASyncState?
+    ) {
         let debugLog = SyncDebugLog.shared
         let count = activations.count
         let processed = state.processedKeys.count
-        debugLog.info(
-            "Starting adaptive download: \(count) activations, \(processed) already processed",
-            service: .pota
-        )
+
+        if let savedState {
+            let formatter = DateFormatter()
+            formatter.dateStyle = .medium
+            formatter.timeStyle = .short
+            debugLog.info(
+                "Starting incremental POTA download (last sync: \(formatter.string(from: savedState.lastSyncDate)))",
+                service: .pota
+            )
+            debugLog.info(
+                "Found \(count) total activations, \(processed) already synced",
+                service: .pota
+            )
+        } else {
+            debugLog.info(
+                "Starting full POTA download (no previous sync): \(count) activations",
+                service: .pota
+            )
+        }
+
         let minB = POTADownloadConfig.minimumBatchSize
         let maxB = POTADownloadConfig.maximumBatchSize
         let timeout = POTADownloadConfig.perActivationTimeout

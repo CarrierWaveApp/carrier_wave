@@ -115,7 +115,20 @@ extension SyncService {
     ) {
         await MainActor.run { self.syncPhase = .downloading(service: .pota) }
         let debugLog = SyncDebugLog.shared
-        debugLog.info("Starting POTA download", service: .pota)
+
+        // Log incremental sync status
+        if let syncState = potaClient.loadSyncState() {
+            let formatter = DateFormatter()
+            formatter.dateStyle = .medium
+            formatter.timeStyle = .short
+            debugLog.info(
+                "Starting incremental POTA download (since \(formatter.string(from: syncState.lastSyncDate)))",
+                service: .pota
+            )
+        } else {
+            debugLog.info("Starting full POTA download (no previous sync)", service: .pota)
+        }
+
         do {
             let qsos = try await withTimeout(seconds: timeout, service: .pota) {
                 try await self.potaClient.fetchAllQSOs()
@@ -363,8 +376,9 @@ extension SyncService {
         let debugLog = SyncDebugLog.shared
         debugLog.info("Force re-downloading from POTA", service: .pota)
 
-        // Clear any existing checkpoint to ensure full re-download
+        // Clear both checkpoint and persistent sync state to ensure full re-download
         potaClient.clearDownloadCheckpoint()
+        potaClient.clearSyncState()
 
         let qsos = try await potaClient.fetchAllQSOs()
         let fetched = qsos.map { FetchedQSO.fromPOTA($0) }

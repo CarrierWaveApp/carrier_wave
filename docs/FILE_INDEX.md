@@ -50,11 +50,12 @@ This index maps files to their purpose. Use it to locate files by feature instea
 |------|---------|
 | `QRZClient.swift` | QRZ.com API client (session auth) |
 | `QRZClient+ADIF.swift` | QRZ ADIF upload extension |
+| `QRZClient+Fetch.swift` | QRZ fetch helpers (request building, pagination, decoding) |
 | `POTAClient.swift` | POTA API client (bearer token auth) |
 | `POTAClient+Upload.swift` | POTA multipart ADIF upload |
 | `POTAClient+ADIF.swift` | POTA ADIF formatting |
 | `POTAClient+GridLookup.swift` | POTA grid square lookup |
-| `POTAClient+Checkpoint.swift` | POTA resumable download checkpoints |
+| `POTAClient+Checkpoint.swift` | POTA resumable download checkpoints and incremental sync state |
 | `POTAClient+Adaptive.swift` | POTA adaptive batch processing for rate limiting |
 | `POTAParksCache.swift` | POTA park reference to name lookup cache |
 | `POTAAuthService.swift` | POTA OAuth flow handling (main service) |
