@@ -26,7 +26,8 @@ class SyncService: ObservableObject {
     // MARK: Internal
 
     /// Modes that represent activation metadata, not actual QSOs (from Ham2K PoLo)
-    static let metadataModes: Set<String> = ["WEATHER", "SOLAR"]
+    /// These should never be synced to any service
+    static let metadataModes: Set<String> = ["WEATHER", "SOLAR", "NOTE"]
 
     @Published var isSyncing = false
     @Published var lastSyncDate: Date?
@@ -114,6 +115,9 @@ class SyncService: ObservableObject {
             await repairOrphanedQSOsAsync(for: .qrz)
         }
 
+        // PHASE 2.5d: Clear upload flags on metadata pseudo-modes (WEATHER, SOLAR, NOTE)
+        await clearMetadataUploadFlagsAsync()
+
         // Refresh main context to pick up changes from background actor
         modelContext.rollback()
 
@@ -177,6 +181,9 @@ class SyncService: ObservableObject {
 
         // Repair orphaned QSOs (logged when QRZ wasn't configured)
         await repairOrphanedQSOsAsync(for: .qrz)
+
+        // Clear upload flags on metadata pseudo-modes (WEATHER, SOLAR, NOTE)
+        await clearMetadataUploadFlagsAsync()
 
         // Refresh main context to pick up changes from background actor
         modelContext.rollback()

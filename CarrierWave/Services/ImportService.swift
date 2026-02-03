@@ -24,8 +24,9 @@ class ImportService: ObservableObject {
 
     enum QSOProcessResult { case updated, imported }
 
-    /// Modes that represent activation metadata, not actual QSOs
-    static let metadataModes: Set<String> = ["WEATHER", "SOLAR"]
+    /// Modes that represent activation metadata, not actual QSOs (from Ham2K PoLo)
+    /// These should never be synced to any service
+    static let metadataModes: Set<String> = ["WEATHER", "SOLAR", "NOTE"]
 
     @Published var isImporting = false
     @Published var lastImportResult: ImportResult?
@@ -153,12 +154,20 @@ class ImportService: ObservableObject {
             qsoCallsign.isEmpty || primaryCallsign == nil
                 || qsoCallsign == primaryCallsign
 
+        // Skip upload markers for metadata pseudo-modes (WEATHER, SOLAR, NOTE)
+        // These are activation metadata from Ham2K PoLo, not actual QSOs
+        let isMetadata = Self.metadataModes.contains(qso.mode.uppercased())
+
         for service in ServiceType.allCases {
             if service == importedFrom {
                 let presence = ServicePresence.downloaded(from: service, qso: qso)
                 modelContext.insert(presence)
                 qso.servicePresence.append(presence)
             } else if service.supportsUpload {
+                // Skip upload markers for metadata pseudo-modes
+                guard !isMetadata else {
+                    continue
+                }
                 // Skip upload markers for QSOs not matching primary callsign
                 guard matchesPrimary else {
                     continue

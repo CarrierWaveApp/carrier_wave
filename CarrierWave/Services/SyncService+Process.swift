@@ -91,8 +91,7 @@ extension SyncService {
         )
     }
 
-    /// Detect and repair QSOs that are missing ServicePresence records for a service.
-    /// Creates ServicePresence records with needsUpload=true for orphaned QSOs.
+    /// Detect and repair QSOs missing ServicePresence records for a service.
     func repairOrphanedQSOsAsync(for service: ServiceType) async {
         let debugLog = SyncDebugLog.shared
         let aliasService = CallsignAliasService.shared
@@ -142,10 +141,28 @@ extension SyncService {
         }
     }
 
-    // MARK: - Legacy Synchronous Methods (kept for backwards compatibility)
+    /// Clear needsUpload flags on metadata pseudo-modes (WEATHER, SOLAR, NOTE from Ham2K PoLo).
+    func clearMetadataUploadFlagsAsync() async {
+        let debugLog = SyncDebugLog.shared
 
-    /// Synchronous version - kept for backwards compatibility.
-    /// Prefer processDownloadedQSOsAsync for better UI responsiveness.
+        do {
+            let result = try await Self.processingActor.clearMetadataUploadFlags(
+                container: modelContext.container
+            )
+
+            if result.clearedCount > 0 {
+                debugLog.info(
+                    "Cleared needsUpload flag on \(result.clearedCount) metadata QSO(s) (WEATHER/SOLAR/NOTE)"
+                )
+            }
+        } catch {
+            debugLog.error("Failed to clear metadata upload flags: \(error)")
+        }
+    }
+
+    // MARK: - Legacy Synchronous Methods
+
+    /// Synchronous version - prefer processDownloadedQSOsAsync for better UI responsiveness.
     func processDownloadedQSOs(_ fetched: [FetchedQSO]) throws -> ProcessResult {
         let debugLog = SyncDebugLog.shared
 

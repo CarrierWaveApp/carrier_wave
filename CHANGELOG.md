@@ -10,8 +10,21 @@ All notable changes to Carrier Wave will be documented in this file.
   - Card shows map with QSO locations and geodesic arcs to your location
   - Displays park reference, name, date, and stats (QSOs, duration, bands, modes)
   - Branded Carrier Wave styling for social sharing
+- **Sync Debug Logging** - Detailed logging for diagnosing permanently pending QSOs
+  - Logs which QSOs are pending upload to QRZ and POTA with full details (callsign, timestamp, band, mode, park reference, myCallsign)
+  - Shows ServicePresence state (isPresent, needsUpload, rejected) for each pending QSO
+  - Logs upload results and any errors for each service
+  - Warns about QSOs that need POTA upload but have no park reference
+  - View logs in Settings > Sync Debug
 
 ### Fixed
+- Metadata pseudo-modes (WEATHER, SOLAR, NOTE) are no longer marked for upload
+  - These Ham2K PoLo activation metadata entries were incorrectly showing as "pending" for QRZ and POTA
+  - Now filtered at the source: `ImportService` and `LoggingSessionManager` skip upload markers for metadata modes
+  - Existing metadata QSOs with pending upload flags are automatically repaired during sync
+- Reduced noisy LoFi sync logs when account has cutoff date restriction
+  - "QSO MISMATCH" warnings now only appear when there's no cutoff date (indicating a real issue)
+  - Per-operation mismatch warnings removed entirely (they were expected behavior with cutoff dates)
 - POTA no longer shows "Not configured" when session token expires
   - Now uses stored credentials to determine configuration status
   - Auto-reauthenticates with saved credentials when token expires during sync

@@ -323,9 +323,11 @@ final class LoFiClient {
         }
 
         // Re-register to get fresh account info (including cutoff date)
+        var hasCutoffDate = false
         do {
             let registration = try await register()
             logRegistrationToDebugLog(registration, debugLog: debugLog)
+            hasCutoffDate = registration.account.cutoffDateMillis != nil
         } catch {
             debugLog.warning(
                 "Could not refresh registration: \(error.localizedDescription)", service: .lofi
@@ -402,7 +404,12 @@ final class LoFiClient {
         let allQsos = Array(qsosByUUID.values)
 
         // Log comprehensive summary
-        logSyncSummary(operations: operations, qsos: allQsos, debugLog: debugLog)
+        logSyncSummary(
+            operations: operations,
+            qsos: allQsos,
+            hasCutoffDate: hasCutoffDate,
+            debugLog: debugLog
+        )
 
         return allQsos
     }
@@ -414,9 +421,11 @@ final class LoFiClient {
         debugLog.info("Force re-downloading ALL QSOs", service: .lofi)
 
         // Re-register to get fresh account info (including cutoff date)
+        var hasCutoffDate = false
         do {
             let registration = try await register()
             logRegistrationToDebugLog(registration, debugLog: debugLog)
+            hasCutoffDate = registration.account.cutoffDateMillis != nil
         } catch {
             debugLog.warning(
                 "Could not refresh registration: \(error.localizedDescription)", service: .lofi
@@ -437,7 +446,12 @@ final class LoFiClient {
         let allQsos = Array(qsosByUUID.values)
 
         // Log comprehensive summary
-        logSyncSummary(operations: operations, qsos: allQsos, debugLog: debugLog)
+        logSyncSummary(
+            operations: operations,
+            qsos: allQsos,
+            hasCutoffDate: hasCutoffDate,
+            debugLog: debugLog
+        )
 
         return allQsos
     }
@@ -499,6 +513,7 @@ final class LoFiClient {
     private func logSyncSummary(
         operations: [LoFiOperation],
         qsos: [(LoFiQso, LoFiOperation)],
+        hasCutoffDate: Bool,
         debugLog: SyncDebugLog
     ) {
         debugLog.info("Total operations: \(operations.count)", service: .lofi)
@@ -508,10 +523,18 @@ final class LoFiClient {
 
         if qsos.count != expectedQsoCount {
             let diff = expectedQsoCount - qsos.count
-            debugLog.warning(
-                "⚠️ QSO MISMATCH: expected \(expectedQsoCount), got \(qsos.count) (missing \(diff))",
-                service: .lofi
-            )
+            // Only log as info if cutoff date is causing expected mismatches
+            if hasCutoffDate {
+                debugLog.info(
+                    "QSO count differs by \(diff) (expected due to cutoff date restriction)",
+                    service: .lofi
+                )
+            } else {
+                debugLog.warning(
+                    "⚠️ QSO MISMATCH: expected \(expectedQsoCount), got \(qsos.count) (missing \(diff))",
+                    service: .lofi
+                )
+            }
         }
 
         // Log date range of fetched QSOs
@@ -531,7 +554,7 @@ final class LoFiClient {
             )
         }
 
-        // Count operations with QSO count mismatches
+        // Count operations with QSO count mismatches - only log as warning if no cutoff date
         var mismatchCount = 0
         for op in operations {
             let opQsos = qsos.filter { $0.1.uuid == op.uuid }
@@ -539,7 +562,7 @@ final class LoFiClient {
                 mismatchCount += 1
             }
         }
-        if mismatchCount > 0 {
+        if mismatchCount > 0, !hasCutoffDate {
             debugLog.warning(
                 "\(mismatchCount) operations have QSO count mismatches", service: .lofi
             )
@@ -767,39 +790,8 @@ final class LoFiClient {
             }
         }
 
-        if qsos.count != operation.qsoCount {
-            let opTitle = operation.title ?? "untitled"
-            let diff = operation.qsoCount - qsos.count
-
-            // Calculate operation date range
-            var dateInfo = "unknown dates"
-            if let minMillis = operation.startAtMillisMin,
-               let maxMillis = operation.startAtMillisMax
-            {
-                let minDate = Date(timeIntervalSince1970: minMillis / 1_000.0)
-                let maxDate = Date(timeIntervalSince1970: maxMillis / 1_000.0)
-                let formatter = DateFormatter()
-                formatter.dateFormat = "yyyy-MM-dd"
-                dateInfo =
-                    "\(formatter.string(from: minDate)) to \(formatter.string(from: maxDate))"
-            }
-
-            // Only log to debugLog if significant (>0 missing QSOs)
-            if diff > 0 {
-                debugLog.warning(
-                    "Op mismatch: \(opTitle) (\(dateInfo)) expected \(operation.qsoCount), got \(qsos.count)",
-                    service: .lofi
-                )
-            }
-
-            // If we got 0 QSOs for an operation that should have some, log extra warning
-            if qsos.isEmpty, operation.qsoCount > 0 {
-                debugLog.warning(
-                    "⚠️ ZERO QSOs for op with qsoCount=\(operation.qsoCount) - likely cutoff_date restriction",
-                    service: .lofi
-                )
-            }
-        }
+        // Per-operation mismatch logging removed - these are expected when account has
+        // a cutoff_date restriction. The summary log in logSyncSummary() handles this.
         return (qsos, maxSyncMillis)
     }
 }

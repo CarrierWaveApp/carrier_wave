@@ -509,6 +509,10 @@ final class LoggingSessionManager {
 
     // MARK: Private
 
+    /// Modes that represent activation metadata, not actual QSOs (from Ham2K PoLo)
+    /// These should never be synced to any service
+    private static let metadataModes: Set<String> = ["WEATHER", "SOLAR", "NOTE"]
+
     private let modelContext: ModelContext
 
     /// Cached service configuration (checked once at session start to avoid Keychain reads per-QSO)
@@ -854,6 +858,12 @@ final class LoggingSessionManager {
     }
 
     private func markForUpload(_ qso: QSO) {
+        // Skip upload markers for metadata pseudo-modes (WEATHER, SOLAR, NOTE)
+        // These are activation metadata from Ham2K PoLo, not actual QSOs
+        guard !Self.metadataModes.contains(qso.mode.uppercased()) else {
+            return
+        }
+
         // Use cached service configuration (checked at session start)
         if qrzConfigured {
             qso.markNeedsUpload(to: .qrz, context: modelContext)

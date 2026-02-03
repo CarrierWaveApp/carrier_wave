@@ -71,6 +71,28 @@ Carrier Wave is a SwiftUI/SwiftData iOS app for amateur radio QSO (contact) logg
 - **Follow [Callsign Filtering Guidelines](docs/features/callsign-filtering.md)** — only operate on primary callsign for syncs
 - **Follow [Design Language](docs/design-language.md)** — colors, typography, spacing, and component patterns
 
+## Metadata Pseudo-Modes (IMPORTANT)
+
+Ham2K PoLo uses special "modes" to store activation metadata that are NOT actual QSOs:
+- `WEATHER` - Weather conditions during activation
+- `SOLAR` - Solar conditions (K-index, SFI, etc.)
+- `NOTE` - Activation notes
+
+**These must NEVER be:**
+- Synced to QRZ, POTA, LoFi, or any other service
+- Marked with `needsUpload` in ServicePresence
+- Counted in QSO statistics
+- Displayed on the map
+
+**Where this is enforced:**
+- `ImportService.createServicePresenceRecords` - Skips upload markers for metadata modes
+- `LoggingSessionManager.markForUpload` - Skips upload markers for metadata modes  
+- `SyncService+Upload.uploadToPOTA` - Filters out metadata before upload
+- `POTAClient+Upload.buildUploadRequest` - Filters out metadata before ADIF generation
+- `QSOStatistics`, `StatsComputationActor`, `MapDataLoadingActor` - Filter out metadata from calculations
+
+**Constant locations:** Each file defines its own `metadataModes: Set<String>` constant. Keep them in sync.
+
 ## Performance Rules (MANDATORY)
 
 **These rules are non-negotiable. Violating them causes multi-second UI freezes for users with large datasets.**

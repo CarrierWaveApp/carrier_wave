@@ -4,6 +4,60 @@ import SwiftData
 // MARK: - QSOProcessingActor Orphan Repair
 
 extension QSOProcessingActor {
+    /// Modes that represent activation metadata, not actual QSOs (from Ham2K PoLo)
+    /// These should never be synced to any service
+    private static let metadataModes: Set<String> = ["WEATHER", "SOLAR", "NOTE"]
+
+    /// Result of clearing upload flags on metadata QSOs
+    struct MetadataRepairResult: Sendable {
+        let clearedCount: Int
+    }
+
+    /// Clear needsUpload flags on metadata pseudo-modes (WEATHER, SOLAR, NOTE).
+    /// These are activation metadata from Ham2K PoLo that should never be synced.
+    func clearMetadataUploadFlags(container: ModelContainer) async throws -> MetadataRepairResult {
+        let context = ModelContext(container)
+        context.autosaveEnabled = false
+
+        // Fetch all ServicePresence records that need upload
+        let presenceDescriptor = FetchDescriptor<ServicePresence>(
+            predicate: #Predicate<ServicePresence> { $0.needsUpload }
+        )
+        let presenceRecords = try context.fetch(presenceDescriptor)
+
+        var clearedCount = 0
+        var unsavedCount = 0
+
+        for presence in presenceRecords {
+            try Task.checkCancellation()
+
+            guard let qso = presence.qso else {
+                continue
+            }
+
+            // Check if this QSO has a metadata mode
+            let mode = qso.mode.uppercased()
+            if Self.metadataModes.contains(mode) {
+                presence.needsUpload = false
+                clearedCount += 1
+                unsavedCount += 1
+
+                // Save periodically
+                if unsavedCount >= 100 {
+                    try context.save()
+                    unsavedCount = 0
+                }
+            }
+        }
+
+        // Save any remaining changes
+        if unsavedCount > 0 {
+            try context.save()
+        }
+
+        return MetadataRepairResult(clearedCount: clearedCount)
+    }
+
     /// Snapshot of an orphaned QSO for logging purposes.
     struct OrphanedQSOInfo: Sendable {
         let callsign: String
