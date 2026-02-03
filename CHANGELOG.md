@@ -11,6 +11,10 @@ All notable changes to Carrier Wave will be documented in this file.
   - Displays park reference, name, date, and stats (QSOs, duration, bands, modes)
   - Branded Carrier Wave styling for social sharing
 
+### Fixed
+- LoTW sync no longer triggers "Page Request Limit!" (503) errors
+  - Increased delay between requests from 0.5s to 3s to respect LoTW rate limits
+
 ## [1.18.0] - 2026-02-02
 
 ### Fixed

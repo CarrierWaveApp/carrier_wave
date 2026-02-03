@@ -17,7 +17,8 @@ extension LoTWClient {
             endDate: endDate
         )
 
-        let totalDays = Calendar.current.dateComponents([.day], from: startDate, to: endDate).day ?? 0
+        let totalDays =
+            Calendar.current.dateComponents([.day], from: startDate, to: endDate).day ?? 0
         debugLog.info(
             "Starting adaptive download: \(formatDate(startDate)) to \(formatDate(endDate)) (\(totalDays) days)",
             service: .lotw
@@ -29,7 +30,9 @@ extension LoTWClient {
 
         while state.currentStart < endDate {
             let windowEnd = min(
-                Calendar.current.date(byAdding: .day, value: state.windowDays, to: state.currentStart)!,
+                Calendar.current.date(
+                    byAdding: .day, value: state.windowDays, to: state.currentStart
+                )!,
                 endDate
             )
 
@@ -44,7 +47,9 @@ extension LoTWClient {
             }
         }
 
-        debugLog.info("Adaptive download complete: \(state.allQSOs.count) total QSOs", service: .lotw)
+        debugLog.info(
+            "Adaptive download complete: \(state.allQSOs.count) total QSOs", service: .lotw
+        )
 
         return LoTWResponse(
             qsos: state.allQSOs,
@@ -63,7 +68,8 @@ extension LoTWClient {
     ) async throws -> WindowResult {
         let debugLog = SyncDebugLog.shared
         let windowStartTime = Date()
-        let windowInfo = "\(formatDate(state.currentStart)) to \(formatDate(windowEnd)) (\(state.windowDays)d)"
+        let windowInfo =
+            "\(formatDate(state.currentStart)) to \(formatDate(windowEnd)) (\(state.windowDays)d)"
         debugLog.debug(
             "Window: \(windowInfo), ok=\(state.consecutiveSuccesses), fail=\(state.consecutiveFailures)",
             service: .lotw
@@ -76,7 +82,9 @@ extension LoTWClient {
 
             handleWindowSuccess(response: response, windowStartTime: windowStartTime, state: &state)
             advanceWindow(to: windowEnd, state: &state)
-            try await Task.sleep(nanoseconds: 500_000_000)
+            // LoTW enforces strict rate limits - use 3 second delay between requests
+            // to avoid "Page Request Limit!" 503 errors
+            try await Task.sleep(nanoseconds: 3_000_000_000)
             return .continue
         } catch let error as LoTWError {
             if case let .serviceError(message) = error, isRateLimitError(message) {
