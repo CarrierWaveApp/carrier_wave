@@ -3,12 +3,13 @@ import SwiftUI
 
 // MARK: - FriendProfileView
 
-/// Displays a friend's profile with their recent activity
+/// Displays a friend's profile or the user's own profile with recent activity
 struct FriendProfileView: View {
     // MARK: Internal
 
     let callsign: String
     let friendship: Friendship?
+    var isOwnProfile: Bool = false
 
     var body: some View {
         ScrollView {
@@ -19,7 +20,7 @@ struct FriendProfileView: View {
             }
             .padding()
         }
-        .navigationTitle(callsign)
+        .navigationTitle(isOwnProfile ? "My Profile" : callsign)
         .navigationBarTitleDisplayMode(.large)
         .task {
             await loadActivity()
@@ -51,7 +52,11 @@ struct FriendProfileView: View {
                 .font(.title2)
                 .fontWeight(.bold)
 
-            if let friendship, friendship.isAccepted {
+            if isOwnProfile {
+                Text("Your Activity Profile")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else if let friendship, friendship.isAccepted {
                 Label("Friends since \(friendship.acceptedAt?.formatted(date: .abbreviated, time: .omitted) ?? "recently")", systemImage: "person.2.fill")
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -102,8 +107,10 @@ struct FriendProfileView: View {
             } else if friendActivity.isEmpty {
                 ContentUnavailableView(
                     "No Recent Activity",
-                    systemImage: "person.crop.circle.badge.questionmark",
-                    description: Text("Activity from \(callsign) will appear here.")
+                    systemImage: isOwnProfile ? "sparkles" : "person.crop.circle.badge.questionmark",
+                    description: Text(isOwnProfile
+                        ? "Your notable activities will appear here as you make QSOs."
+                        : "Activity from \(callsign) will appear here.")
                 )
             } else {
                 LazyVStack(spacing: 12) {
@@ -172,7 +179,7 @@ private struct StatCard: View {
 
 // MARK: - Preview
 
-#Preview {
+#Preview("Friend Profile") {
     NavigationStack {
         FriendProfileView(
             callsign: "W1ABC",
@@ -183,6 +190,17 @@ private struct StatCard: View {
                 acceptedAt: Date().addingTimeInterval(-86400 * 30),
                 isOutgoing: false
             )
+        )
+    }
+    .modelContainer(for: [ActivityItem.self, Friendship.self], inMemory: true)
+}
+
+#Preview("Own Profile") {
+    NavigationStack {
+        FriendProfileView(
+            callsign: "N0CALL",
+            friendship: nil,
+            isOwnProfile: true
         )
     }
     .modelContainer(for: [ActivityItem.self, Friendship.self], inMemory: true)

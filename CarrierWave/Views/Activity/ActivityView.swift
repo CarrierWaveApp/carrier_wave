@@ -61,6 +61,7 @@ struct ActivityView: View {
     // Friend profile navigation
     @State private var selectedCallsign: String?
     @State private var showingFriendProfile = false
+    @State private var showingOwnProfile = false
 
     // Friend invite handling
     @State private var pendingFriendInviteToken: String?
@@ -155,11 +156,25 @@ struct ActivityView: View {
             }
             ToolbarItem(placement: .secondaryAction) {
                 Button {
+                    showingOwnProfile = true
+                } label: {
+                    Label("My Profile", systemImage: "person.circle")
+                }
+            }
+            ToolbarItem(placement: .secondaryAction) {
+                Button {
                     showingSummarySheet = true
                 } label: {
                     Label("Share Summary", systemImage: "square.and.arrow.up")
                 }
             }
+        }
+        .navigationDestination(isPresented: $showingOwnProfile) {
+            FriendProfileView(
+                callsign: currentCallsign,
+                friendship: nil,
+                isOwnProfile: true
+            )
         }
         .onAppear {
             if syncService == nil {
