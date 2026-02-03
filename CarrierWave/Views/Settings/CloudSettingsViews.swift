@@ -167,9 +167,12 @@ struct LoFiSettingsView: View {
     @ViewBuilder
     private var setupSection: some View {
         Section {
-            TextField("Callsign", text: $callsign)
-                .textContentType(.username)
-                .textInputAutocapitalization(.characters)
+            HStack {
+                Text("Callsign")
+                Spacer()
+                Text(callsign)
+                    .foregroundStyle(.secondary)
+            }
 
             TextField("Email", text: $email)
                 .textContentType(.emailAddress)
@@ -195,7 +198,7 @@ struct LoFiSettingsView: View {
                         .frame(maxWidth: .infinity)
                 }
             }
-            .disabled(callsign.isEmpty || email.isEmpty || isLoading)
+            .disabled(email.isEmpty || isLoading)
         }
 
         Section {
@@ -218,8 +221,9 @@ struct LoFiSettingsView: View {
         isConfigured = lofiClient.isConfigured
         isLinked = lofiClient.isLinked
 
-        if let existingCallsign = lofiClient.getCallsign() {
-            callsign = existingCallsign
+        // Always use profile callsign (non-editable)
+        if let profile = UserProfileService.shared.getProfile() {
+            callsign = profile.callsign
         }
         if let existingEmail = lofiClient.getEmail() {
             email = existingEmail

@@ -161,10 +161,12 @@ struct LoTWLoginSheet: View {
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
 
-                    TextField("Username", text: $username)
-                        .textContentType(.username)
-                        .autocapitalization(.none)
-                        .autocorrectionDisabled()
+                    HStack {
+                        Text("Username")
+                        Spacer()
+                        Text(username)
+                            .foregroundStyle(.secondary)
+                    }
 
                     SecureField("Password", text: $password)
                         .textContentType(.password)
@@ -182,7 +184,7 @@ struct LoTWLoginSheet: View {
                                 .frame(maxWidth: .infinity)
                         }
                     }
-                    .disabled(username.isEmpty || password.isEmpty || isValidating)
+                    .disabled(password.isEmpty || isValidating)
                 }
             }
             .navigationTitle("LoTW Login")
@@ -191,6 +193,9 @@ struct LoTWLoginSheet: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
                 }
+            }
+            .onAppear {
+                loadProfileCallsign()
             }
         }
     }
@@ -204,6 +209,12 @@ struct LoTWLoginSheet: View {
     @State private var isValidating = false
 
     private let lotwClient = LoTWClient()
+
+    private func loadProfileCallsign() {
+        if let profile = UserProfileService.shared.getProfile() {
+            username = profile.callsign
+        }
+    }
 
     private func validateAndSave() async {
         isValidating = true
