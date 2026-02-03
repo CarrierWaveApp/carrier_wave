@@ -648,14 +648,18 @@ struct LoggerView: View {
                 CallsignTextField(
                     "Callsign or command...",
                     text: $callsignInput,
-                    isFocused: $callsignFieldFocused
-                ) {
-                    // Defer to next run loop to avoid UICollectionView crash
-                    // when keyboard dismiss triggers List updates simultaneously
-                    DispatchQueue.main.async {
-                        handleInputSubmit()
+                    isFocused: $callsignFieldFocused,
+                    onSubmit: {
+                        // Defer to next run loop to avoid UICollectionView crash
+                        // when keyboard dismiss triggers List updates simultaneously
+                        DispatchQueue.main.async {
+                            handleInputSubmit()
+                        }
+                    },
+                    onCommand: { command in
+                        executeCommand(command)
                     }
-                }
+                )
                 .foregroundStyle(detectedCommand != nil ? .purple : .primary)
                 .onChange(of: callsignInput) { _, newValue in
                     onCallsignChanged(newValue)

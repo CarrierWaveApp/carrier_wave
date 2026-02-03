@@ -70,6 +70,11 @@ struct SettingsMainView: View {
     @AppStorage("keyboardRowShowNumbers") private var keyboardRowShowNumbers = true
     @AppStorage("keyboardRowSymbols") private var keyboardRowSymbols = "/"
 
+    // Command row settings
+    @AppStorage("commandRowEnabled") private var commandRowEnabled = false
+    @AppStorage("commandRowCommands") private var commandRowCommands =
+        "rbn,solar,weather,spot,pota,p2p"
+
     // Logger visible fields
     @AppStorage("loggerShowTheirGrid") private var showTheirGrid = false
     @AppStorage("loggerShowTheirPark") private var showTheirPark = false
@@ -104,6 +109,18 @@ struct SettingsMainView: View {
             parts.append(symbols.joined())
         }
         return parts.isEmpty ? "None" : parts.joined(separator: " ")
+    }
+
+    /// Summary text for command row settings
+    private var commandRowSummary: String {
+        guard commandRowEnabled else {
+            return "Off"
+        }
+        let commands = commandRowCommands.components(separatedBy: ",").filter { !$0.isEmpty }
+        if commands.isEmpty {
+            return "None"
+        }
+        return "\(commands.count) commands"
     }
 
     private var settingsContent: some View {
@@ -290,6 +307,17 @@ struct SettingsMainView: View {
                     Text("Keyboard Row")
                     Spacer()
                     Text(keyboardRowSummary)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            NavigationLink {
+                CommandRowSettingsView()
+            } label: {
+                HStack {
+                    Text("Command Row")
+                    Spacer()
+                    Text(commandRowSummary)
                         .foregroundStyle(.secondary)
                 }
             }

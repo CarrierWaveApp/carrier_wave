@@ -166,6 +166,7 @@ This index maps files to their purpose. Use it to locate files by feature instea
 | `FrequencyWarningBanner.swift` | Unified frequency warning banner (license violations + activity warnings) |
 | `LoggerToastView.swift` | Toast notification system for logger |
 | `LoggerKeyboardAccessory.swift` | Number row and command buttons above keyboard |
+| `KeyboardAccessoryBuilder.swift` | UIKit builder for keyboard accessory view |
 | `POTASpotRow.swift` | Individual POTA spot row component |
 | `POTASpotsView.swift` | POTA activator spots panel with filtering |
 | `POTASpotsHelperViews.swift` | Helper views for POTA spots (filter sheet, loading, empty, error states) |
@@ -279,6 +280,7 @@ This index maps files to their purpose. Use it to locate files by feature instea
 | `SettingsSections.swift` | Sync Sources section with service navigation links |
 | `CallsignNotesSettingsView.swift` | Manage callsign notes file sources (URL + title) |
 | `KeyboardRowSettingsView.swift` | Configure number row symbols above keyboard |
+| `CommandRowSettingsView.swift` | Configure command row buttons above keyboard |
 
 ## Documentation (`docs/`)
 | File | Purpose |

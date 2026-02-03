@@ -17,12 +17,14 @@ struct CallsignTextField: UIViewRepresentable {
         _ placeholder: String,
         text: Binding<String>,
         isFocused: FocusState<Bool>.Binding,
-        onSubmit: @escaping () -> Void
+        onSubmit: @escaping () -> Void,
+        onCommand: @escaping (LoggerCommand) -> Void = { _ in }
     ) {
         self.placeholder = placeholder
         _text = text
         self.isFocused = isFocused
         self.onSubmit = onSubmit
+        self.onCommand = onCommand
     }
 
     // MARK: Internal
@@ -86,6 +88,16 @@ struct CallsignTextField: UIViewRepresentable {
         }
 
         @objc
+        func commandButtonTapped(_ sender: UIButton) {
+            guard let commandKey = sender.accessibilityIdentifier,
+                  let item = CommandRowItem(rawValue: commandKey)
+            else {
+                return
+            }
+            parent.onCommand(item.command)
+        }
+
+        @objc
         func dismissKeyboard(_ sender: UIButton) {
             // Explicitly resign first responder, then update SwiftUI state
             textField?.resignFirstResponder()
@@ -93,8 +105,15 @@ struct CallsignTextField: UIViewRepresentable {
         }
 
         func startObservingConfigurationChanges() {
-            configurationObserver = NotificationCenter.default.addObserver(
+            keyboardConfigObserver = NotificationCenter.default.addObserver(
                 forName: .keyboardRowConfigurationChanged,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                self?.rebuildAccessoryView()
+            }
+            commandConfigObserver = NotificationCenter.default.addObserver(
+                forName: .commandRowConfigurationChanged,
                 object: nil,
                 queue: .main
             ) { [weak self] _ in
@@ -103,16 +122,22 @@ struct CallsignTextField: UIViewRepresentable {
         }
 
         func stopObservingConfigurationChanges() {
-            if let observer = configurationObserver {
+            if let observer = keyboardConfigObserver {
                 NotificationCenter.default.removeObserver(observer)
-                configurationObserver = nil
+                keyboardConfigObserver = nil
+            }
+            if let observer = commandConfigObserver {
+                NotificationCenter.default.removeObserver(observer)
+                commandConfigObserver = nil
             }
         }
 
         // MARK: Private
 
-        /// Observer for keyboard configuration changes
-        private var configurationObserver: NSObjectProtocol?
+        /// Observer for keyboard row configuration changes
+        private var keyboardConfigObserver: NSObjectProtocol?
+        /// Observer for command row configuration changes
+        private var commandConfigObserver: NSObjectProtocol?
 
         private func rebuildAccessoryView() {
             guard let textField else {
@@ -124,32 +149,12 @@ struct CallsignTextField: UIViewRepresentable {
         }
     }
 
-    /// Default symbols for the keyboard row
-    static let defaultSymbols = "/"
-
     @Binding var text: String
 
     let placeholder: String
     var isFocused: FocusState<Bool>.Binding
     let onSubmit: () -> Void
-
-    /// Returns the configured characters for the keyboard row based on user settings
-    static func configuredCharacters() -> [String] {
-        // Use object(forKey:) to detect if key exists, since bool(forKey:) returns false for missing keys
-        let showNumbers =
-            UserDefaults.standard.object(forKey: "keyboardRowShowNumbers") as? Bool ?? true
-        let symbolsString =
-            UserDefaults.standard.string(forKey: "keyboardRowSymbols") ?? defaultSymbols
-
-        var characters: [String] = []
-        if showNumbers {
-            characters += ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"]
-        }
-        if !symbolsString.isEmpty {
-            characters += symbolsString.components(separatedBy: ",")
-        }
-        return characters
-    }
+    let onCommand: (LoggerCommand) -> Void
 
     func makeUIView(context: Context) -> UITextField {
         let textField = UITextField()
@@ -222,69 +227,11 @@ struct CallsignTextField: UIViewRepresentable {
     // MARK: - Input Accessory View
 
     func createInputAccessoryView(coordinator: Coordinator) -> UIView {
-        let accessoryView = UIView()
-        accessoryView.backgroundColor = .secondarySystemBackground
-        accessoryView.translatesAutoresizingMaskIntoConstraints = false
-
-        let stackView = UIStackView()
-        stackView.axis = .horizontal
-        stackView.distribution = .fillEqually
-        stackView.spacing = 6
-        stackView.translatesAutoresizingMaskIntoConstraints = false
-
-        // Read configuration from UserDefaults
-        let characters = Self.configuredCharacters()
-        for char in characters {
-            let button = createNumberButton(title: char, coordinator: coordinator)
-            stackView.addArrangedSubview(button)
-        }
-
-        // Dismiss keyboard button
-        let dismissButton = UIButton(type: .system)
-        dismissButton.setImage(
-            UIImage(systemName: "keyboard.chevron.compact.down"),
-            for: .normal
+        KeyboardAccessoryBuilder.createAccessoryView(
+            numberButtonAction: #selector(Coordinator.numberButtonTapped(_:)),
+            commandButtonAction: #selector(Coordinator.commandButtonTapped(_:)),
+            dismissAction: #selector(Coordinator.dismissKeyboard(_:)),
+            target: coordinator
         )
-        dismissButton.tintColor = .label
-        dismissButton.backgroundColor = .tertiarySystemBackground
-        dismissButton.layer.cornerRadius = 6
-        dismissButton.addTarget(
-            coordinator,
-            action: #selector(Coordinator.dismissKeyboard(_:)),
-            for: .touchUpInside
-        )
-        stackView.addArrangedSubview(dismissButton)
-
-        accessoryView.addSubview(stackView)
-
-        NSLayoutConstraint.activate([
-            stackView.leadingAnchor.constraint(equalTo: accessoryView.leadingAnchor, constant: 8),
-            stackView.trailingAnchor.constraint(
-                equalTo: accessoryView.trailingAnchor, constant: -8
-            ),
-            stackView.topAnchor.constraint(equalTo: accessoryView.topAnchor, constant: 8),
-            stackView.bottomAnchor.constraint(equalTo: accessoryView.bottomAnchor, constant: -8),
-            stackView.heightAnchor.constraint(equalToConstant: 40),
-        ])
-
-        // Set the frame for the accessory view
-        accessoryView.frame = CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: 56)
-
-        return accessoryView
-    }
-
-    func createNumberButton(title: String, coordinator: Coordinator) -> UIButton {
-        let button = UIButton(type: .system)
-        button.setTitle(title, for: .normal)
-        button.titleLabel?.font = .monospacedSystemFont(ofSize: 18, weight: .medium)
-        button.setTitleColor(.label, for: .normal)
-        button.backgroundColor = .tertiarySystemBackground
-        button.layer.cornerRadius = 6
-        button.addTarget(
-            coordinator,
-            action: #selector(Coordinator.numberButtonTapped(_:)),
-            for: .touchUpInside
-        )
-        return button
     }
 }
