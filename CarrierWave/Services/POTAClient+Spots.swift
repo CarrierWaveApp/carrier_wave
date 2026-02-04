@@ -35,14 +35,32 @@ struct POTASpot: Decodable, Identifiable, Sendable {
     }
 
     /// Parse spot time to Date
+    /// Note: POTA API returns timestamps without timezone suffix (e.g., "2026-02-03T20:43:36")
+    /// These are UTC times, so we parse them as such.
     nonisolated var timestamp: Date? {
         let formatter = ISO8601DateFormatter()
+
+        // First try with full internet datetime (includes Z suffix)
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         if let date = formatter.date(from: spotTime) {
             return date
         }
-        // Try without fractional seconds
         formatter.formatOptions = [.withInternetDateTime]
+        if let date = formatter.date(from: spotTime) {
+            return date
+        }
+
+        // POTA API returns timestamps without Z suffix - parse as UTC
+        formatter.formatOptions = [.withFullDate, .withTime, .withColonSeparatorInTime]
+        formatter.timeZone = TimeZone(identifier: "UTC")
+        if let date = formatter.date(from: spotTime) {
+            return date
+        }
+
+        // Try with fractional seconds but no Z
+        formatter.formatOptions = [
+            .withFullDate, .withTime, .withColonSeparatorInTime, .withFractionalSeconds,
+        ]
         return formatter.date(from: spotTime)
     }
 
@@ -128,13 +146,32 @@ struct POTASpotComment: Codable, Identifiable, Sendable {
     }
 
     /// Parse spot time to Date
+    /// Note: POTA API returns timestamps without timezone suffix (e.g., "2026-02-03T20:43:36")
+    /// These are UTC times, so we parse them as such.
     nonisolated var timestamp: Date? {
         let formatter = ISO8601DateFormatter()
+
+        // First try with full internet datetime (includes Z suffix)
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         if let date = formatter.date(from: spotTime) {
             return date
         }
         formatter.formatOptions = [.withInternetDateTime]
+        if let date = formatter.date(from: spotTime) {
+            return date
+        }
+
+        // POTA API returns timestamps without Z suffix - parse as UTC
+        formatter.formatOptions = [.withFullDate, .withTime, .withColonSeparatorInTime]
+        formatter.timeZone = TimeZone(identifier: "UTC")
+        if let date = formatter.date(from: spotTime) {
+            return date
+        }
+
+        // Try with fractional seconds but no Z
+        formatter.formatOptions = [
+            .withFullDate, .withTime, .withColonSeparatorInTime, .withFractionalSeconds,
+        ]
         return formatter.date(from: spotTime)
     }
 

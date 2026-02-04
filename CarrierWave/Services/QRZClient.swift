@@ -75,6 +75,7 @@ struct QRZFetchedQSO {
     let qrzLogId: String?
     let qrzConfirmed: Bool
     let lotwConfirmedDate: Date?
+    let dxcc: Int?
     let rawADIF: String
 }
 

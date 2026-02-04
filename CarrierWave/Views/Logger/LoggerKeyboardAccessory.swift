@@ -1,6 +1,6 @@
 // Logger Keyboard Accessory
 //
-// Provides a number row and quick command buttons above the keyboard.
+// Provides a number row and optional command buttons above the keyboard.
 
 import SwiftUI
 
@@ -18,47 +18,66 @@ struct LoggerKeyboardAccessory: View {
             Divider()
 
             // Number row
-            HStack(spacing: 4) {
-                ForEach(1 ... 9, id: \.self) { num in
-                    numberButton(String(num))
+            if showNumbers || !enabledSymbols.isEmpty {
+                HStack(spacing: 4) {
+                    if showNumbers {
+                        ForEach(1 ... 9, id: \.self) { num in
+                            numberButton(String(num))
+                        }
+                        numberButton("0")
+                    }
+                    ForEach(enabledSymbols, id: \.self) { symbol in
+                        numberButton(symbol)
+                    }
                 }
-                numberButton("0")
-                numberButton(".")
-                numberButton("/")
+                .padding(.horizontal, 4)
+                .padding(.vertical, 6)
             }
-            .padding(.horizontal, 4)
-            .padding(.vertical, 6)
 
-            Divider()
+            // Command row (optional)
+            if commandRowEnabled, !enabledCommands.isEmpty {
+                Divider()
 
-            // Quick command buttons
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    commandButton(
-                        "RBN", icon: "dot.radiowaves.up.forward", command: .rbn(callsign: nil)
-                    )
-                    commandButton("SOLAR", icon: "sun.max", command: .solar)
-                    commandButton("WX", icon: "cloud.sun", command: .weather)
-                    commandButton("SPOT", icon: "mappin.and.ellipse", command: .spot(comment: nil))
-                    commandButton("HELP", icon: "questionmark.circle", command: .help)
-
-                    Divider()
-                        .frame(height: 24)
-
-                    // Common frequencies
-                    freqButton("7.030", label: "40m CW")
-                    freqButton("14.060", label: "20m CW")
-                    freqButton("7.185", label: "40m SSB")
-                    freqButton("14.285", label: "20m SSB")
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(enabledCommands, id: \.self) { item in
+                            commandButton(item)
+                        }
+                    }
+                    .padding(.horizontal, 8)
                 }
-                .padding(.horizontal, 8)
+                .padding(.vertical, 6)
             }
-            .padding(.vertical, 6)
         }
         .background(Color(.secondarySystemBackground))
+        .onReceive(
+            NotificationCenter.default.publisher(for: .keyboardRowConfigurationChanged)
+        ) { _ in
+            refreshNumberRowConfig()
+        }
+        .onReceive(
+            NotificationCenter.default.publisher(for: .commandRowConfigurationChanged)
+        ) { _ in
+            refreshCommandRowConfig()
+        }
+        .onAppear {
+            refreshNumberRowConfig()
+            refreshCommandRowConfig()
+        }
     }
 
     // MARK: Private
+
+    // Number row configuration
+    @AppStorage("keyboardRowShowNumbers") private var showNumbers = true
+    @AppStorage("keyboardRowSymbols") private var symbolsString = "./"
+
+    // Command row configuration
+    @AppStorage("commandRowEnabled") private var commandRowEnabled = false
+    @AppStorage("commandRowCommands") private var commandsString = "rbn,solar,weather,spot,pota,p2p"
+
+    @State private var enabledSymbols: [String] = []
+    @State private var enabledCommands: [CommandRowItem] = []
 
     // MARK: - Button Builders
 
@@ -76,14 +95,14 @@ struct LoggerKeyboardAccessory: View {
         .buttonStyle(.plain)
     }
 
-    private func commandButton(_ label: String, icon: String, command: LoggerCommand) -> some View {
+    private func commandButton(_ item: CommandRowItem) -> some View {
         Button {
-            onCommand(command)
+            onCommand(item.command)
         } label: {
             HStack(spacing: 4) {
-                Image(systemName: icon)
+                Image(systemName: item.icon)
                     .font(.system(size: 12))
-                Text(label)
+                Text(item.label)
                     .font(.system(size: 12, weight: .medium))
             }
             .padding(.horizontal, 10)
@@ -95,23 +114,13 @@ struct LoggerKeyboardAccessory: View {
         .buttonStyle(.plain)
     }
 
-    private func freqButton(_ freq: String, label: String) -> some View {
-        Button {
-            text = freq
-        } label: {
-            VStack(spacing: 2) {
-                Text(freq)
-                    .font(.system(size: 12, weight: .medium, design: .monospaced))
-                Text(label)
-                    .font(.system(size: 9))
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(Color(.tertiarySystemBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 6))
-        }
-        .buttonStyle(.plain)
+    private func refreshNumberRowConfig() {
+        enabledSymbols = symbolsString.isEmpty ? [] : symbolsString.components(separatedBy: ",")
+    }
+
+    private func refreshCommandRowConfig() {
+        let keys = commandsString.isEmpty ? [] : commandsString.components(separatedBy: ",")
+        enabledCommands = keys.compactMap { CommandRowItem(rawValue: $0) }
     }
 }
 

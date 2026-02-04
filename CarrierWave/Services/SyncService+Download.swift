@@ -331,9 +331,28 @@ extension SyncService {
         let debugLog = SyncDebugLog.shared
         let rxSince = lotwClient.getLastQSORxDate()
         debugLog.info("Starting LoTW download", service: .lotw)
+
+        // Get all user callsigns (current + previous) to fetch QSOs for all of them
+        let userCallsigns = await MainActor.run {
+            Array(CallsignAliasService.shared.getAllUserCallsigns())
+        }
+
+        if userCallsigns.isEmpty {
+            debugLog.warning(
+                "No callsigns configured - fetching all QSOs for LoTW account", service: .lotw
+            )
+        } else {
+            debugLog.info(
+                "Fetching QSOs for callsigns: \(userCallsigns.joined(separator: ", "))",
+                service: .lotw
+            )
+        }
+
         do {
             let response = try await withTimeout(seconds: timeout, service: .lotw) {
-                try await self.lotwClient.fetchQSOs(qsoRxSince: rxSince)
+                try await self.lotwClient.fetchQSOs(
+                    forCallsigns: userCallsigns, qsoRxSince: rxSince
+                )
             }
             debugLog.info("Downloaded \(response.qsos.count) QSOs from LoTW", service: .lotw)
 
@@ -448,8 +467,22 @@ extension SyncService {
         let debugLog = SyncDebugLog.shared
         debugLog.info("Force re-downloading from LoTW", service: .lotw)
 
+        // Get all user callsigns (current + previous) to fetch QSOs for all of them
+        let userCallsigns = await MainActor.run {
+            Array(CallsignAliasService.shared.getAllUserCallsigns())
+        }
+
+        if !userCallsigns.isEmpty {
+            debugLog.info(
+                "Fetching QSOs for callsigns: \(userCallsigns.joined(separator: ", "))",
+                service: .lotw
+            )
+        }
+
         // Fetch ALL QSOs (no qsoRxSince filter)
-        let response = try await lotwClient.fetchQSOs(qsoRxSince: nil)
+        let response = try await lotwClient.fetchQSOs(
+            forCallsigns: userCallsigns, qsoRxSince: nil
+        )
         let fetched = response.qsos.map { FetchedQSO.fromLoTW($0) }
 
         debugLog.info("Fetched \(fetched.count) QSOs from LoTW", service: .lotw)

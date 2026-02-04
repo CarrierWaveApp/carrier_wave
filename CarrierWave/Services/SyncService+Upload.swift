@@ -26,9 +26,15 @@ extension SyncService {
         if qrzClient.hasApiKey() {
             let qrzQSOs = qsosNeedingUpload?.filter { $0.needsUpload(to: .qrz) } ?? []
             if !qrzQSOs.isEmpty {
-                await logPendingQSOs(qrzQSOs, service: .qrz)
-                let (service, result) = await uploadQRZBatch(qsos: qrzQSOs, timeout: timeout)
-                results[service] = result
+                // Separate valid QSOs from those with missing required fields
+                let (validQSOs, invalidQSOs) = partitionQSOsByValidity(qrzQSOs)
+                await logQSOsWithMissingFields(invalidQSOs, service: .qrz)
+
+                if !validQSOs.isEmpty {
+                    await logPendingQSOs(validQSOs, service: .qrz)
+                    let (service, result) = await uploadQRZBatch(qsos: validQSOs, timeout: timeout)
+                    results[service] = result
+                }
             }
         }
 
@@ -81,6 +87,56 @@ extension SyncService {
                 SyncDebugLog.shared.debug(
                     "  ... and \(qsos.count - 10) more",
                     service: .pota
+                )
+            }
+        }
+    }
+
+    /// Partition QSOs into valid (uploadable) and invalid (missing required fields)
+    private func partitionQSOsByValidity(_ qsos: [QSO]) -> (valid: [QSO], invalid: [QSO]) {
+        var valid: [QSO] = []
+        var invalid: [QSO] = []
+
+        for qso in qsos {
+            if qso.hasRequiredFieldsForUpload {
+                valid.append(qso)
+            } else {
+                invalid.append(qso)
+            }
+        }
+
+        return (valid, invalid)
+    }
+
+    /// Log QSOs that can't be uploaded due to missing required fields
+    private func logQSOsWithMissingFields(_ qsos: [QSO], service: ServiceType) async {
+        guard !qsos.isEmpty else {
+            return
+        }
+        await MainActor.run {
+            let msg =
+                "\(qsos.count) QSO(s) cannot upload to \(service.displayName) "
+                    + "- edit in Logs to add missing band/frequency"
+            SyncDebugLog.shared.actionRequired(msg, service: service)
+            for qso in qsos.prefix(10) {
+                let dateStr = Self.debugDateFormatter.string(from: qso.timestamp)
+                var issues: [String] = []
+                if qso.band.isEmpty || qso.band == "Unknown" {
+                    issues.append("no band")
+                }
+                if qso.frequency == nil {
+                    issues.append("no frequency")
+                }
+                let issueStr = issues.joined(separator: ", ")
+                SyncDebugLog.shared.actionRequired(
+                    "  \(qso.callsign) @ \(dateStr) (\(issueStr))",
+                    service: service
+                )
+            }
+            if qsos.count > 10 {
+                SyncDebugLog.shared.actionRequired(
+                    "  ... and \(qsos.count - 10) more with missing fields",
+                    service: service
                 )
             }
         }

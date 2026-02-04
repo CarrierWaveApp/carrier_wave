@@ -39,7 +39,7 @@ struct LoggerView: View {
                             inputText: callsignInput
                         ),
                         onDismiss: { message in
-                            dismissedWarning = message
+                            dismissedWarnings.insert(message)
                         }
                     )
 
@@ -76,6 +76,8 @@ struct LoggerView: View {
                             qsoListSection
                         }
                         .padding()
+                        // Add bottom padding when a panel is open so Log QSO button remains accessible
+                        .padding(.bottom, isAnyPanelOpen ? 280 : 0)
                     }
                 }
             }
@@ -115,6 +117,33 @@ struct LoggerView: View {
                 )
                 .presentationDetents([.height(280)])
             }
+            .sheet(isPresented: $showBandEditSheet) {
+                SessionBandEditSheet(
+                    currentFrequency: sessionManager?.activeSession?.frequency,
+                    currentMode: sessionManager?.activeSession?.mode ?? "CW",
+                    onSelectFrequency: { freq in
+                        _ = sessionManager?.updateFrequency(freq)
+                        showBandEditSheet = false
+                    },
+                    onCancel: {
+                        showBandEditSheet = false
+                    }
+                )
+                .presentationDetents([.medium])
+            }
+            .sheet(isPresented: $showModeEditSheet) {
+                SessionModeEditSheet(
+                    currentMode: sessionManager?.activeSession?.mode ?? "CW",
+                    onSelectMode: { newMode in
+                        _ = sessionManager?.updateMode(newMode)
+                        showModeEditSheet = false
+                    },
+                    onCancel: {
+                        showModeEditSheet = false
+                    }
+                )
+                .presentationDetents([.height(280)])
+            }
             .sheet(isPresented: $showHiddenQSOsSheet) {
                 HiddenQSOsSheet(sessionId: sessionManager?.activeSession?.id)
             }
@@ -141,7 +170,7 @@ struct LoggerView: View {
                 }
             }
             .onChange(of: sessionManager?.activeSession?.frequency) { _, _ in
-                dismissedWarning = nil
+                dismissedWarnings.removeAll()
                 // Refresh spots if we don't have any cached yet
                 if cachedPOTASpots.isEmpty {
                     Task {
@@ -150,7 +179,7 @@ struct LoggerView: View {
                 }
             }
             .onChange(of: sessionManager?.activeSession?.mode) { _, _ in
-                dismissedWarning = nil
+                dismissedWarnings.removeAll()
                 // RST fields stay empty - placeholder shows correct default based on mode
             }
             .onChange(of: sessionManager?.activeSession?.id) { _, _ in
@@ -211,16 +240,6 @@ struct LoggerView: View {
                 }
             }
             .toastContainer()
-            .safeAreaInset(edge: .bottom) {
-                if callsignFieldFocused {
-                    VStack(spacing: 0) {
-                        compactCallsignLookupDisplay
-                        numberRowAccessory
-                    }
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-                }
-            }
-
             .miniTour(.logger, tourState: tourState)
         }
     }
@@ -286,9 +305,16 @@ struct LoggerView: View {
     @State private var showParkEditSheet = false
     @State private var editingParkReference = ""
 
+    // Session band/mode editing
+    @State private var showBandEditSheet = false
+    @State private var showModeEditSheet = false
+
     /// Session end/delete confirmation
     @State private var showEndSessionConfirmation = false
     @State private var showDeleteSessionSheet = false
+
+    /// QSO being edited (for tap-to-edit callsign feature)
+    @State private var editingQSO: QSO?
 
     // QSY spot confirmation
     @State private var showQSYSpotConfirmation = false
@@ -302,8 +328,8 @@ struct LoggerView: View {
     @State private var spotsLastFetched: Date?
 
     /// License warning
-    /// Dismissed warning message (to avoid re-showing the same warning)
-    @State private var dismissedWarning: String?
+    /// Dismissed warning messages (to avoid re-showing dismissed warnings)
+    @State private var dismissedWarnings: Set<String> = []
 
     /// Tour state for mini-tour
     private let tourState: TourState
@@ -316,10 +342,14 @@ struct LoggerView: View {
     /// Unified field height for consistency
     private let fieldHeight: CGFloat = 36
 
-    /// Deprecated: Use dismissedWarning
+    /// Deprecated: Use dismissedWarnings
     private var dismissedViolation: String? {
-        get { dismissedWarning }
-        set { dismissedWarning = newValue }
+        get { dismissedWarnings.first }
+        set {
+            if let value = newValue {
+                dismissedWarnings.insert(value)
+            }
+        }
     }
 
     private var userLicenseClass: LicenseClass {
@@ -415,6 +445,12 @@ struct LoggerView: View {
         computeCurrentWarning(spotCount: cachedPOTASpots.count, inputText: callsignInput)
     }
 
+    /// Whether any bottom panel is currently open
+    private var isAnyPanelOpen: Bool {
+        showRBNPanel || showSolarPanel || showWeatherPanel || showMapPanel || showPOTAPanel
+            || showP2PPanel
+    }
+
     /// Deprecated: Use currentWarning instead
     private var currentViolation: BandPlanViolation? {
         guard let warning = currentWarning else {
@@ -463,54 +499,6 @@ struct LoggerView: View {
                     )
                 )
         }
-    }
-
-    /// Compact callsign lookup display for keyboard accessory area
-    @ViewBuilder
-    private var compactCallsignLookupDisplay: some View {
-        if let info = lookupResult {
-            CompactCallsignBar(info: info)
-        } else if let error = lookupError,
-                  !callsignInput.isEmpty,
-                  callsignInput.count >= 3,
-                  detectedCommand == nil
-        {
-            CompactLookupErrorBar(error: error)
-        }
-    }
-
-    // MARK: - Number Row Accessory
-
-    private var numberRowAccessory: some View {
-        HStack(spacing: 8) {
-            ForEach(["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "."], id: \.self) { char in
-                Button {
-                    callsignInput.append(char)
-                } label: {
-                    Text(char)
-                        .font(.system(size: 18, weight: .medium, design: .monospaced))
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 40)
-                        .background(Color(.tertiarySystemBackground))
-                        .clipShape(RoundedRectangle(cornerRadius: 6))
-                }
-                .buttonStyle(.plain)
-            }
-
-            Button {
-                callsignFieldFocused = false
-            } label: {
-                Image(systemName: "keyboard.chevron.compact.down")
-                    .font(.system(size: 18, weight: .medium))
-                    .frame(width: 44, height: 40)
-                    .background(Color(.tertiarySystemBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 6))
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 8)
-        .background(Color(.secondarySystemBackground))
     }
 
     /// Panel overlays for RBN, Solar, Weather
@@ -706,14 +694,18 @@ struct LoggerView: View {
                 CallsignTextField(
                     "Callsign or command...",
                     text: $callsignInput,
-                    isFocused: $callsignFieldFocused
-                ) {
-                    // Defer to next run loop to avoid UICollectionView crash
-                    // when keyboard dismiss triggers List updates simultaneously
-                    DispatchQueue.main.async {
-                        handleInputSubmit()
+                    isFocused: $callsignFieldFocused,
+                    onSubmit: {
+                        // Defer to next run loop to avoid UICollectionView crash
+                        // when keyboard dismiss triggers List updates simultaneously
+                        DispatchQueue.main.async {
+                            handleInputSubmit()
+                        }
+                    },
+                    onCommand: { command in
+                        executeCommand(command)
                     }
-                }
+                )
                 .foregroundStyle(detectedCommand != nil ? .purple : .primary)
                 .onChange(of: callsignInput) { _, newValue in
                     onCallsignChanged(newValue)
@@ -888,14 +880,30 @@ struct LoggerView: View {
                     logQSO()
                 }
             } label: {
-                Text("Log QSO")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
+                HStack {
+                    if editingQSO != nil {
+                        Image(systemName: "pencil")
+                    }
+                    Text(editingQSO != nil ? "Update Callsign" : "Log QSO")
+                }
+                .font(.headline)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
             }
             .buttonStyle(.borderedProminent)
-            .tint(.green)
+            .tint(editingQSO != nil ? .orange : .green)
             .disabled(!canLog)
+
+            // Cancel button when editing
+            if editingQSO != nil {
+                Button {
+                    cancelEditingCallsign()
+                } label: {
+                    Text("Cancel Edit")
+                        .font(.subheadline)
+                }
+                .buttonStyle(.bordered)
+            }
         }
     }
 
@@ -929,7 +937,10 @@ struct LoggerView: View {
                                 sessionQSOs: displayQSOs,
                                 isPOTASession: sessionManager?.activeSession?.activationType
                                     == .pota,
-                                onQSODeleted: refreshSessionQSOs
+                                onQSODeleted: refreshSessionQSOs,
+                                onEditCallsign: { qsoToEdit in
+                                    startEditingCallsign(qsoToEdit)
+                                }
                             )
                         case let .note(note):
                             LoggerNoteRow(note: note)
@@ -1041,21 +1052,44 @@ struct LoggerView: View {
                         .font(.caption.monospaced())
                 }
 
-                if let band = session.band {
-                    Text(band)
-                        .font(.caption.weight(.medium))
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(Color.blue.opacity(0.2))
-                        .clipShape(Capsule())
-                }
-
-                Text(session.mode)
+                Button {
+                    showBandEditSheet = true
+                } label: {
+                    HStack(spacing: 2) {
+                        if let band = session.band {
+                            Text(band)
+                        } else {
+                            Text("Band")
+                                .foregroundStyle(.secondary)
+                        }
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(.system(size: 8))
+                            .foregroundStyle(.secondary)
+                    }
                     .font(.caption.weight(.medium))
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
                     .background(Color.blue.opacity(0.2))
                     .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+
+                Button {
+                    showModeEditSheet = true
+                } label: {
+                    HStack(spacing: 2) {
+                        Text(session.mode)
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(.system(size: 8))
+                            .foregroundStyle(.secondary)
+                    }
+                    .font(.caption.weight(.medium))
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Color.blue.opacity(0.2))
+                    .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
 
                 Text(session.formattedDuration)
                     .font(.caption.weight(.medium))
@@ -1120,7 +1154,7 @@ struct LoggerView: View {
         }
 
         // Return the highest priority warning not dismissed
-        return warnings.first { $0.message != dismissedWarning }
+        return warnings.first { !dismissedWarnings.contains($0.message) }
     }
 
     /// Tolerance for nearby spot detection based on mode
@@ -1296,6 +1330,11 @@ struct LoggerView: View {
 
     /// Compute POTA duplicate status - called only when callsign changes
     private func computePotaDuplicateStatus() -> POTACallsignStatus? {
+        // Don't show duplicate status when editing an existing QSO
+        guard editingQSO == nil else {
+            return nil
+        }
+
         guard let session = sessionManager?.activeSession,
               session.activationType == .pota,
               !callsignInput.isEmpty,
@@ -1614,6 +1653,12 @@ struct LoggerView: View {
             return
         }
 
+        // Check if we're editing an existing QSO
+        if let qsoToUpdate = editingQSO {
+            updateExistingQSOCallsign(qsoToUpdate)
+            return
+        }
+
         // Build field values with fallback: form > lookup
         let gridToUse = theirGrid.nonEmpty ?? lookupResult?.grid
         let stateToUse = theirState.nonEmpty ?? lookupResult?.state
@@ -1636,6 +1681,81 @@ struct LoggerView: View {
         refreshSessionQSOs()
         restorePreSpotFrequency()
         resetFormAfterLog()
+    }
+
+    /// Start editing an existing QSO's callsign
+    private func startEditingCallsign(_ qso: QSO) {
+        editingQSO = qso
+        callsignInput = qso.callsign
+        callsignFieldFocused = true
+        ToastManager.shared.info("Editing callsign - tap Update to save")
+    }
+
+    /// Cancel editing and clear the form
+    private func cancelEditingCallsign() {
+        editingQSO = nil
+        resetFormAfterLog()
+    }
+
+    /// Update only the callsign of an existing QSO (preserves timestamp and notes)
+    private func updateExistingQSOCallsign(_ qso: QSO) {
+        let newCallsign = callsignInput.trimmingCharacters(in: .whitespaces).uppercased()
+
+        guard !newCallsign.isEmpty else {
+            ToastManager.shared.error("Callsign cannot be empty")
+            return
+        }
+
+        qso.callsign = newCallsign
+
+        // Update with new callsign's metadata from lookup (if available)
+        if let info = lookupResult {
+            qso.name = info.name
+            qso.theirGrid = info.grid
+            qso.state = info.state
+            qso.country = info.country
+            qso.qth = info.qth
+            qso.theirLicenseClass = info.licenseClass
+        } else {
+            // No lookup result yet - clear metadata and fetch async
+            qso.name = nil
+            qso.theirGrid = nil
+            qso.state = nil
+            qso.country = nil
+            qso.qth = nil
+            qso.theirLicenseClass = nil
+
+            // Trigger async lookup to populate metadata
+            Task {
+                await fetchAndUpdateQSOMetadata(qso, callsign: newCallsign)
+            }
+        }
+
+        try? modelContext.save()
+
+        refreshSessionQSOs()
+        resetFormAfterLog()
+        editingQSO = nil
+        ToastManager.shared.success("Callsign updated")
+    }
+
+    /// Fetch callsign metadata and update QSO (called when editing without existing lookup)
+    private func fetchAndUpdateQSOMetadata(_ qso: QSO, callsign: String) async {
+        let service = CallsignLookupService(modelContext: modelContext)
+        guard let info = await service.lookup(callsign) else {
+            return
+        }
+
+        await MainActor.run {
+            qso.name = info.name
+            qso.theirGrid = info.grid
+            qso.state = info.state
+            qso.country = info.country
+            qso.qth = info.qth
+            qso.theirLicenseClass = info.licenseClass
+            try? modelContext.save()
+            refreshSessionQSOs()
+        }
     }
 
     /// Log a QSO using quick entry data
@@ -1696,6 +1816,7 @@ struct LoggerView: View {
             operatorName = ""
             rstSent = ""
             rstReceived = ""
+            editingQSO = nil
         }
         callsignFieldFocused = true
     }
@@ -1762,6 +1883,8 @@ struct LoggerQSORow: View {
     var isPOTASession: Bool = false
     /// Callback when QSO is deleted (hidden)
     var onQSODeleted: (() -> Void)?
+    /// Callback when callsign is tapped for quick edit
+    var onEditCallsign: ((QSO) -> Void)?
 
     var body: some View {
         Button {
@@ -1874,10 +1997,16 @@ struct LoggerQSORow: View {
                 .frame(width: 50, alignment: .leading)
 
             HStack(spacing: 4) {
-                Text(qso.callsign)
-                    .font(.subheadline.weight(.semibold).monospaced())
-                    .foregroundStyle(callsignColor)
-                    .fixedSize(horizontal: true, vertical: false)
+                // Callsign is tappable for quick edit
+                Button {
+                    onEditCallsign?(qso)
+                } label: {
+                    Text(qso.callsign)
+                        .font(.subheadline.weight(.semibold).monospaced())
+                        .foregroundStyle(callsignColor)
+                        .fixedSize(horizontal: true, vertical: false)
+                }
+                .buttonStyle(.plain)
 
                 if let emoji = callsignInfo?.combinedEmoji {
                     Text(emoji)
@@ -2608,6 +2737,136 @@ struct DeleteSessionConfirmationSheet: View {
     private var isConfirmationValid: Bool {
         confirmationText.lowercased() == "delete"
     }
+}
+
+// MARK: - SessionBandEditSheet
+
+/// Sheet for selecting a new band/frequency during an active session
+struct SessionBandEditSheet: View {
+    // MARK: Internal
+
+    let currentFrequency: Double?
+    let currentMode: String
+    let onSelectFrequency: (Double) -> Void
+    let onCancel: () -> Void
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    ForEach(bandOptions, id: \.band) { option in
+                        Button {
+                            onSelectFrequency(option.frequency)
+                        } label: {
+                            HStack {
+                                Text(option.band)
+                                    .font(.headline.monospaced())
+                                    .frame(width: 50, alignment: .leading)
+
+                                Text(FrequencyFormatter.formatWithUnit(option.frequency))
+                                    .font(.subheadline.monospaced())
+                                    .foregroundStyle(.secondary)
+
+                                Spacer()
+
+                                if currentBand == option.band {
+                                    Image(systemName: "checkmark")
+                                        .foregroundStyle(.blue)
+                                }
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                } header: {
+                    Text("Select Band")
+                } footer: {
+                    Text("Frequency will be set to a common \(currentMode) frequency for the band")
+                }
+            }
+            .navigationTitle("Change Band")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        onCancel()
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: Private
+
+    private var currentBand: String? {
+        guard let freq = currentFrequency else {
+            return nil
+        }
+        return LoggingSession.bandForFrequency(freq)
+    }
+
+    private var bandOptions: [(band: String, frequency: Double)] {
+        let frequencies = LoggingSession.suggestedFrequencies(for: currentMode)
+        let bands = ["160m", "80m", "60m", "40m", "30m", "20m", "17m", "15m", "12m", "10m"]
+        return bands.compactMap { band in
+            if let freq = frequencies[band] {
+                return (band, freq)
+            }
+            return nil
+        }
+    }
+}
+
+// MARK: - SessionModeEditSheet
+
+/// Sheet for selecting a new mode during an active session
+struct SessionModeEditSheet: View {
+    // MARK: Internal
+
+    let currentMode: String
+    let onSelectMode: (String) -> Void
+    let onCancel: () -> Void
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    ForEach(modeOptions, id: \.self) { mode in
+                        Button {
+                            onSelectMode(mode)
+                        } label: {
+                            HStack {
+                                Text(mode)
+                                    .font(.headline)
+
+                                Spacer()
+
+                                if currentMode.uppercased() == mode {
+                                    Image(systemName: "checkmark")
+                                        .foregroundStyle(.blue)
+                                }
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                } header: {
+                    Text("Select Mode")
+                }
+            }
+            .navigationTitle("Change Mode")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        onCancel()
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: Private
+
+    private let modeOptions = ["CW", "SSB", "FT8", "FT4", "RTTY", "AM", "FM"]
 }
 
 // MARK: - Preview

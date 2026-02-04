@@ -14,6 +14,38 @@ All notable changes to Carrier Wave will be documented in this file.
   - Share link via iOS share sheet or copy to clipboard
   - Recipients can tap the link to send you a friend request
 
+## [1.19.3] - 2026-02-03
+
+### Added
+- LoTW sync now fetches QSOs for all configured callsigns (current + previous), ensuring complete stats and confirmation tracking across callsign changes
+
+### Fixed
+- DXCC entity now populated from QRZ sync (previously only came from LoTW confirmations)
+
+## [1.19.2] - 2026-02-03
+
+### Added
+- Tap-to-edit callsigns in session log - tap any callsign to bring it back to the input field for quick correction without changing the QSO timestamp
+
+### Fixed
+- POTA spot timestamps now parse correctly, showing "spotted X ago" in nearby operator warnings
+- Log QSO button now remains accessible when RBN/POTA/Solar/Weather/Map panels are open - scroll content adds padding to keep the button visible above panels
+
+## [1.19.1] - 2026-02-03
+
+### Added
+- Action Required log level in Sync Debug with purple highlighting for issues needing user attention
+
+### Fixed
+- QSOs logged under previous callsigns no longer show as permanently pending
+  - Upload counts now only include QSOs matching the current primary callsign
+  - New fixer automatically clears needsUpload flags on QSOs that would never upload
+  - Logs which callsigns had pending uploads cleared during sync
+- QSOs with missing band/frequency are now skipped during upload with a warning
+  - Sync log shows which QSOs need manual correction (edit in Logs to add band)
+  - Prevents silent upload failures for incomplete QSOs
+  - Uses new "ACTION" log level with purple highlighting to stand out
+
 ## [1.19.0] - 2026-02-03
 
 ### Added

@@ -17,12 +17,14 @@ struct CallsignTextField: UIViewRepresentable {
         _ placeholder: String,
         text: Binding<String>,
         isFocused: FocusState<Bool>.Binding,
-        onSubmit: @escaping () -> Void
+        onSubmit: @escaping () -> Void,
+        onCommand: @escaping (LoggerCommand) -> Void = { _ in }
     ) {
         self.placeholder = placeholder
         _text = text
         self.isFocused = isFocused
         self.onSubmit = onSubmit
+        self.onCommand = onCommand
     }
 
     // MARK: Internal
@@ -36,6 +38,10 @@ struct CallsignTextField: UIViewRepresentable {
             self.parent = parent
         }
 
+        deinit {
+            stopObservingConfigurationChanges()
+        }
+
         // MARK: Internal
 
         var parent: CallsignTextField
@@ -43,6 +49,9 @@ struct CallsignTextField: UIViewRepresentable {
         /// Track whether we're currently processing a user edit
         /// to avoid re-entrant updates from SwiftUI
         var isUpdatingFromUIKit = false
+
+        /// Reference to the text field for explicit dismiss
+        weak var textField: UITextField?
 
         @objc
         func textFieldDidChange(_ textField: UITextField) {
@@ -67,6 +76,77 @@ struct CallsignTextField: UIViewRepresentable {
             parent.onSubmit()
             return true
         }
+
+        // MARK: - Number Row Actions
+
+        @objc
+        func numberButtonTapped(_ sender: UIButton) {
+            guard let char = sender.titleLabel?.text else {
+                return
+            }
+            parent.text.append(char)
+        }
+
+        @objc
+        func commandButtonTapped(_ sender: UIButton) {
+            guard let commandKey = sender.accessibilityIdentifier,
+                  let item = CommandRowItem(rawValue: commandKey)
+            else {
+                return
+            }
+            parent.onCommand(item.command)
+        }
+
+        @objc
+        func dismissKeyboard(_ sender: UIButton) {
+            // Explicitly resign first responder, then update SwiftUI state
+            textField?.resignFirstResponder()
+            parent.isFocused.wrappedValue = false
+        }
+
+        func startObservingConfigurationChanges() {
+            keyboardConfigObserver = NotificationCenter.default.addObserver(
+                forName: .keyboardRowConfigurationChanged,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                self?.rebuildAccessoryView()
+            }
+            commandConfigObserver = NotificationCenter.default.addObserver(
+                forName: .commandRowConfigurationChanged,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                self?.rebuildAccessoryView()
+            }
+        }
+
+        func stopObservingConfigurationChanges() {
+            if let observer = keyboardConfigObserver {
+                NotificationCenter.default.removeObserver(observer)
+                keyboardConfigObserver = nil
+            }
+            if let observer = commandConfigObserver {
+                NotificationCenter.default.removeObserver(observer)
+                commandConfigObserver = nil
+            }
+        }
+
+        // MARK: Private
+
+        /// Observer for keyboard row configuration changes
+        private var keyboardConfigObserver: NSObjectProtocol?
+        /// Observer for command row configuration changes
+        private var commandConfigObserver: NSObjectProtocol?
+
+        private func rebuildAccessoryView() {
+            guard let textField else {
+                return
+            }
+            textField.inputAccessoryView = parent.createInputAccessoryView(coordinator: self)
+            // Force layout update if keyboard is visible
+            textField.reloadInputViews()
+        }
     }
 
     @Binding var text: String
@@ -74,6 +154,7 @@ struct CallsignTextField: UIViewRepresentable {
     let placeholder: String
     var isFocused: FocusState<Bool>.Binding
     let onSubmit: () -> Void
+    let onCommand: (LoggerCommand) -> Void
 
     func makeUIView(context: Context) -> UITextField {
         let textField = UITextField()
@@ -90,6 +171,14 @@ struct CallsignTextField: UIViewRepresentable {
             action: #selector(Coordinator.textFieldDidChange(_:)),
             for: .editingChanged
         )
+
+        // Store reference for explicit dismiss and start observing config changes
+        context.coordinator.textField = textField
+        context.coordinator.startObservingConfigurationChanges()
+
+        // Add input accessory view with number row
+        textField.inputAccessoryView = createInputAccessoryView(coordinator: context.coordinator)
+
         return textField
     }
 
@@ -133,5 +222,16 @@ struct CallsignTextField: UIViewRepresentable {
 
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
+    }
+
+    // MARK: - Input Accessory View
+
+    func createInputAccessoryView(coordinator: Coordinator) -> UIView {
+        KeyboardAccessoryBuilder.createAccessoryView(
+            numberButtonAction: #selector(Coordinator.numberButtonTapped(_:)),
+            commandButtonAction: #selector(Coordinator.commandButtonTapped(_:)),
+            dismissAction: #selector(Coordinator.dismissKeyboard(_:)),
+            target: coordinator
+        )
     }
 }

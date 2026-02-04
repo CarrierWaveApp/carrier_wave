@@ -163,6 +163,17 @@ final class QSO {
         !isHidden
     }
 
+    /// Whether this QSO has the required fields for upload to external services.
+    /// QSOs missing band (or with "Unknown" band) and no frequency cannot be uploaded.
+    var hasRequiredFieldsForUpload: Bool {
+        // Must have a valid band, or a frequency we can derive band from
+        let hasValidBand = !band.isEmpty && band.uppercased() != "UNKNOWN"
+        let hasFrequency = frequency != nil
+
+        // At minimum we need either a valid band or a frequency
+        return hasValidBand || hasFrequency
+    }
+
     /// Count of populated optional fields (for deduplication tiebreaker)
     var fieldRichnessScore: Int {
         var score = 0

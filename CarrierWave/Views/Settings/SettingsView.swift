@@ -66,6 +66,15 @@ struct SettingsMainView: View {
     @AppStorage("callsignNotesDisplayMode") private var notesDisplayMode = "emoji"
     @AppStorage("useMetricDistance") private var useMetricDistance = false
 
+    // Keyboard row settings
+    @AppStorage("keyboardRowShowNumbers") private var keyboardRowShowNumbers = true
+    @AppStorage("keyboardRowSymbols") private var keyboardRowSymbols = "/"
+
+    // Command row settings
+    @AppStorage("commandRowEnabled") private var commandRowEnabled = false
+    @AppStorage("commandRowCommands") private var commandRowCommands =
+        "rbn,solar,weather,spot,pota,p2p"
+
     // Logger visible fields
     @AppStorage("loggerShowTheirGrid") private var showTheirGrid = false
     @AppStorage("loggerShowTheirPark") private var showTheirPark = false
@@ -88,6 +97,31 @@ struct SettingsMainView: View {
     private let qrzClient = QRZClient()
     private let hamrsClient = HAMRSClient()
     private let lotwClient = LoTWClient()
+
+    /// Summary text for keyboard row settings
+    private var keyboardRowSummary: String {
+        var parts: [String] = []
+        if keyboardRowShowNumbers {
+            parts.append("0-9")
+        }
+        let symbols = keyboardRowSymbols.components(separatedBy: ",").filter { !$0.isEmpty }
+        if !symbols.isEmpty {
+            parts.append(symbols.joined())
+        }
+        return parts.isEmpty ? "None" : parts.joined(separator: " ")
+    }
+
+    /// Summary text for command row settings
+    private var commandRowSummary: String {
+        guard commandRowEnabled else {
+            return "Off"
+        }
+        let commands = commandRowCommands.components(separatedBy: ",").filter { !$0.isEmpty }
+        if commands.isEmpty {
+            return "None"
+        }
+        return "\(commands.count) commands"
+    }
 
     private var settingsContent: some View {
         List {
@@ -263,6 +297,28 @@ struct SettingsMainView: View {
             Picker("Default Mode", selection: $defaultMode) {
                 ForEach(["CW", "SSB", "FT8", "FT4", "RTTY"], id: \.self) { mode in
                     Text(mode).tag(mode)
+                }
+            }
+
+            NavigationLink {
+                KeyboardRowSettingsView()
+            } label: {
+                HStack {
+                    Text("Keyboard Row")
+                    Spacer()
+                    Text(keyboardRowSummary)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            NavigationLink {
+                CommandRowSettingsView()
+            } label: {
+                HStack {
+                    Text("Command Row")
+                    Spacer()
+                    Text(commandRowSummary)
+                        .foregroundStyle(.secondary)
                 }
             }
 
@@ -454,7 +510,7 @@ struct SettingsMainView: View {
             HStack {
                 Text("Version")
                 Spacer()
-                Text("1.19.0")
+                Text("1.19.3")
                     .foregroundStyle(.secondary)
             }
 

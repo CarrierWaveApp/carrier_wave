@@ -6,15 +6,18 @@ import Foundation
 extension LoTWClient {
     /// Fetch QSOs using adaptive date windowing
     /// Starts with large windows, shrinks on rate limit errors
+    /// - Parameter ownCall: If provided, filters to QSOs where the user operated as this callsign
     func fetchQSOsWithAdaptiveWindowing(
         credentials: (username: String, password: String),
         startDate: Date,
-        endDate: Date
+        endDate: Date,
+        ownCall: String? = nil
     ) async throws -> LoTWResponse {
         let debugLog = SyncDebugLog.shared
         var state = AdaptiveWindowState(
             startDate: startDate,
-            endDate: endDate
+            endDate: endDate,
+            ownCall: ownCall
         )
 
         let totalDays =
@@ -77,7 +80,8 @@ extension LoTWClient {
 
         do {
             let response = try await fetchQSOsForDateRange(
-                credentials: credentials, startDate: state.currentStart, endDate: windowEnd
+                credentials: credentials, startDate: state.currentStart, endDate: windowEnd,
+                ownCall: state.ownCall
             )
 
             handleWindowSuccess(response: response, windowStartTime: windowStartTime, state: &state)
@@ -185,15 +189,17 @@ extension LoTWClient {
 struct AdaptiveWindowState {
     // MARK: Lifecycle
 
-    init(startDate: Date, endDate: Date) {
+    init(startDate: Date, endDate: Date, ownCall: String? = nil) {
         currentStart = startDate
         self.endDate = endDate
+        self.ownCall = ownCall
     }
 
     // MARK: Internal
 
     var currentStart: Date
     let endDate: Date
+    let ownCall: String?
     var windowDays = 365
     var consecutiveSuccesses = 0
     var consecutiveFailures = 0

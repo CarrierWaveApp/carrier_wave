@@ -24,6 +24,7 @@ class SyncDebugLog: ObservableObject {
             case warning = "WARN"
             case error = "ERROR"
             case debug = "DEBUG"
+            case actionRequired = "ACTION"
         }
 
         let id = UUID()
@@ -99,6 +100,11 @@ class SyncDebugLog: ObservableObject {
 
     func debug(_ message: String, service: ServiceType? = nil) {
         log(message, level: .debug, service: service)
+    }
+
+    /// Log an issue that requires user action to fix (e.g., missing fields, invalid data)
+    func actionRequired(_ message: String, service: ServiceType? = nil) {
+        log(message, level: .actionRequired, service: service)
     }
 
     // MARK: Private
