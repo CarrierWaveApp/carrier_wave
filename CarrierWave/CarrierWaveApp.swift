@@ -72,10 +72,60 @@ struct CarrierWaveApp: App {
             return
         }
 
+        // Check if it's a friend invite link (carrierwave://invite/{token})
+        if url.scheme == "carrierwave", url.host == "invite" {
+            handleFriendInviteURL(url)
+            return
+        }
+
+        // Check for HTTPS friend invite link (https://carrierwave.app/invite/{token})
+        if url.host == "carrierwave.app", url.pathComponents.count >= 2,
+           url.pathComponents[1] == "invite"
+        {
+            handleFriendInviteURL(url)
+            return
+        }
+
         // Otherwise treat as ADIF file
         NotificationCenter.default.post(
             name: .didReceiveADIFFile,
             object: url
+        )
+    }
+
+    private func handleFriendInviteURL(_ url: URL) {
+        // Parse invite token from URL
+        // Formats:
+        // - carrierwave://invite/{token}
+        // - https://carrierwave.app/invite/{token}
+        let pathComponents = url.pathComponents.filter { $0 != "/" }
+
+        var token: String?
+
+        if url.scheme == "carrierwave" {
+            // carrierwave://invite/{token} - token is in host or first path component
+            if let host = url.host, host != "invite" {
+                token = host
+            } else if let first = pathComponents.first {
+                token = first
+            }
+        } else {
+            // https://carrierwave.app/invite/{token}
+            if let inviteIndex = pathComponents.firstIndex(of: "invite"),
+               inviteIndex + 1 < pathComponents.count
+            {
+                token = pathComponents[inviteIndex + 1]
+            }
+        }
+
+        guard let inviteToken = token, !inviteToken.isEmpty else {
+            return
+        }
+
+        NotificationCenter.default.post(
+            name: .didReceiveFriendInvite,
+            object: nil,
+            userInfo: ["token": inviteToken]
         )
     }
 
@@ -119,6 +169,7 @@ struct CarrierWaveApp: App {
 extension Notification.Name {
     static let didReceiveADIFFile = Notification.Name("didReceiveADIFFile")
     static let didReceiveChallengeInvite = Notification.Name("didReceiveChallengeInvite")
+    static let didReceiveFriendInvite = Notification.Name("didReceiveFriendInvite")
     static let didSyncQSOs = Notification.Name("didSyncQSOs")
     static let didDetectActivities = Notification.Name("didDetectActivities")
     static let didClearQSOs = Notification.Name("didClearQSOs")

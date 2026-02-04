@@ -4,6 +4,16 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **Friend Profile View** - Tap any callsign in the activity feed to view their profile
+  - Shows recent activity from that friend
+  - Displays activity stats (total activities, activities this week)
+  - Shows friendship start date for connected friends
+- **Friend Invite Links** - Generate shareable links to invite friends
+  - Access via Friends list menu (three dots) > "Invite Friend"
+  - Share link via iOS share sheet or copy to clipboard
+  - Recipients can tap the link to send you a friend request
+
 ## [1.19.3] - 2026-02-03
 
 ### Added

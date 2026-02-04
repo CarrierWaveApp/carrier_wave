@@ -243,8 +243,9 @@ This index maps files to their purpose. Use it to locate files by feature instea
 | `ActivityView.swift` | Main activity tab with challenges section and activity feed |
 | `ActivityItemRow.swift` | Individual activity feed item display |
 | `FilterBar.swift` | Feed filter chips (All/Friends/Clubs) |
-| `FriendsListView.swift` | Friends list with pending requests |
+| `FriendsListView.swift` | Friends list with pending requests and invite links |
 | `FriendSearchView.swift` | Search and add friends |
+| `FriendProfileView.swift` | Friend profile with activity and stats |
 | `ClubsListView.swift` | List of clubs user belongs to |
 | `ClubDetailView.swift` | Club details and member list |
 | `ShareCardView.swift` | Branded share card templates |
