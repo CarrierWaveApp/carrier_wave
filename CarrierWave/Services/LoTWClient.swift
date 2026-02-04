@@ -103,9 +103,12 @@ final class LoTWClient {
 
     // MARK: - API Methods
 
-    /// Fetch QSOs with adaptive date windowing to handle rate limits
-    /// If a request fails with rate limit, progressively shrinks the date window
-    func fetchQSOs(qsoRxSince: Date? = nil) async throws -> LoTWResponse {
+    /// Fetch QSOs for all specified callsigns with adaptive date windowing
+    /// - Parameter callsigns: Callsigns to fetch QSOs for. If empty, fetches all QSOs for the account.
+    /// - Parameter qsoRxSince: Only fetch QSOs uploaded after this date
+    func fetchQSOs(forCallsigns callsigns: [String] = [], qsoRxSince: Date? = nil) async throws
+        -> LoTWResponse
+    {
         let credentials = try getCredentials()
 
         // Use provided date or default to 2000-01-01 for first sync
@@ -117,18 +120,16 @@ final class LoTWClient {
 
         let endDate = Date()
 
-        // If date range is small (< 30 days), just do a single request
-        let daysBetween =
-            Calendar.current.dateComponents([.day], from: startDate, to: endDate).day ?? 0
-        if daysBetween <= 30 {
-            return try await fetchQSOsForDateRange(
-                credentials: credentials, startDate: startDate, endDate: nil
+        // If no callsigns specified, fetch all (original behavior)
+        if callsigns.isEmpty {
+            return try await fetchQSOsForCallsign(
+                nil, credentials: credentials, startDate: startDate, endDate: endDate
             )
         }
 
-        // For larger ranges, use adaptive windowing
-        return try await fetchQSOsWithAdaptiveWindowing(
-            credentials: credentials, startDate: startDate, endDate: endDate
+        // Fetch QSOs for each callsign and combine results
+        return try await fetchQSOsForMultipleCallsigns(
+            callsigns, credentials: credentials, startDate: startDate, endDate: endDate
         )
     }
 
@@ -167,14 +168,16 @@ final class LoTWClient {
         }
     }
 
-    /// Fetch QSOs for a specific date range
+    /// Fetch QSOs for a specific date range and optional callsign filter
     /// Note: Only uses qso_qsorxsince for filtering. The API's qso_enddate filters by QSO date
     /// (when contact occurred), not by upload/receipt date, so we don't use it for windowing.
     /// Progress is tracked by advancing qso_qsorxsince based on APP_LoTW_LASTQSORX from responses.
+    /// - Parameter ownCall: If provided, filters to QSOs where the user operated as this callsign
     func fetchQSOsForDateRange(
         credentials: (username: String, password: String),
         startDate: Date,
-        endDate _: Date?
+        endDate _: Date?,
+        ownCall: String? = nil
     ) async throws -> LoTWResponse {
         var components = URLComponents(string: baseURL)!
 
@@ -186,7 +189,7 @@ final class LoTWClient {
         // (when the contact occurred), but qso_qsorxsince filters by upload/receipt date (when
         // LoTW received the QSO). These are different fields and mixing them causes issues.
         // Instead, we rely solely on qso_qsorxsince and track progress via APP_LoTW_LASTQSORX.
-        let queryItems: [URLQueryItem] = [
+        var queryItems: [URLQueryItem] = [
             URLQueryItem(name: "login", value: credentials.username),
             URLQueryItem(name: "password", value: credentials.password),
             URLQueryItem(name: "qso_query", value: "1"),
@@ -196,6 +199,11 @@ final class LoTWClient {
             URLQueryItem(name: "qso_qsldetail", value: "yes"),
             URLQueryItem(name: "qso_withown", value: "yes"),
         ]
+
+        // Filter by station callsign if provided (for multi-callsign sync)
+        if let ownCall, !ownCall.isEmpty {
+            queryItems.append(URLQueryItem(name: "qso_owncall", value: ownCall))
+        }
 
         components.queryItems = queryItems
 
@@ -238,6 +246,78 @@ final class LoTWClient {
     }
 
     // MARK: Private
+
+    /// Fetch QSOs for multiple callsigns and combine results
+    private func fetchQSOsForMultipleCallsigns(
+        _ callsigns: [String],
+        credentials: (username: String, password: String),
+        startDate: Date,
+        endDate: Date
+    ) async throws -> LoTWResponse {
+        let debugLog = SyncDebugLog.shared
+        var allQSOs: [LoTWFetchedQSO] = []
+        var latestQSL: Date?
+        var latestQSORx: Date?
+
+        debugLog.info(
+            "Fetching LoTW QSOs for \(callsigns.count) callsign(s): \(callsigns.joined(separator: ", "))",
+            service: .lotw
+        )
+
+        for callsign in callsigns {
+            debugLog.info("Fetching QSOs for callsign: \(callsign)", service: .lotw)
+
+            let response = try await fetchQSOsForCallsign(
+                callsign, credentials: credentials, startDate: startDate, endDate: endDate
+            )
+
+            debugLog.info("Fetched \(response.qsos.count) QSOs for \(callsign)", service: .lotw)
+            allQSOs.append(contentsOf: response.qsos)
+
+            // Track the latest timestamps across all callsigns
+            if let qsl = response.lastQSL, latestQSL == nil || qsl > latestQSL! {
+                latestQSL = qsl
+            }
+            if let rx = response.lastQSORx, latestQSORx == nil || rx > latestQSORx! {
+                latestQSORx = rx
+            }
+
+            // Rate limit protection between callsigns
+            if callsign != callsigns.last {
+                try await Task.sleep(nanoseconds: 3_000_000_000)
+            }
+        }
+
+        debugLog.info(
+            "Total: \(allQSOs.count) QSOs across \(callsigns.count) callsign(s)", service: .lotw
+        )
+
+        return LoTWResponse(
+            qsos: allQSOs, lastQSL: latestQSL, lastQSORx: latestQSORx, recordCount: allQSOs.count
+        )
+    }
+
+    /// Fetch QSOs for a single callsign (or all if nil)
+    private func fetchQSOsForCallsign(
+        _ callsign: String?,
+        credentials: (username: String, password: String),
+        startDate: Date,
+        endDate: Date
+    ) async throws -> LoTWResponse {
+        // If date range is small (< 30 days), just do a single request
+        let daysBetween =
+            Calendar.current.dateComponents([.day], from: startDate, to: endDate).day ?? 0
+        if daysBetween <= 30 {
+            return try await fetchQSOsForDateRange(
+                credentials: credentials, startDate: startDate, endDate: nil, ownCall: callsign
+            )
+        }
+
+        // For larger ranges, use adaptive windowing
+        return try await fetchQSOsWithAdaptiveWindowing(
+            credentials: credentials, startDate: startDate, endDate: endDate, ownCall: callsign
+        )
+    }
 
     /// Check if response indicates authentication failure
     /// LoTW returns HTML error pages, so we check for various auth-related error strings

@@ -40,7 +40,10 @@ Carrier Wave syncs QSO logs to multiple cloud services.
 - **Download**: ADIF via `lotwreport.adi` endpoint
 - **Upload**: Not supported (requires TQSL application)
 - **Keychain keys**: `lotw_username`, `lotw_password`, `lotw_last_qsl`, `lotw_last_qso_rx`
-- **Special handling**: Provides QSL confirmation status (`lotwConfirmed`, `lotwConfirmedDate`)
+- **Special handling**: 
+  - Provides QSL confirmation status (`lotwConfirmed`, `lotwConfirmedDate`)
+  - Fetches QSOs for **all configured callsigns** (current + previous) using `qso_owncall` filter
+  - QSOs from all callsigns are included in local stats but never uploaded (download-only service)
 
 ## Data Flow
 
