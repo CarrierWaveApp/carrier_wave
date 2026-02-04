@@ -76,6 +76,8 @@ struct LoggerView: View {
                             qsoListSection
                         }
                         .padding()
+                        // Add bottom padding when a panel is open so Log QSO button remains accessible
+                        .padding(.bottom, isAnyPanelOpen ? 280 : 0)
                     }
                 }
             }
@@ -441,6 +443,12 @@ struct LoggerView: View {
     /// Current frequency warning (if any) - convenience property
     private var currentWarning: FrequencyWarning? {
         computeCurrentWarning(spotCount: cachedPOTASpots.count, inputText: callsignInput)
+    }
+
+    /// Whether any bottom panel is currently open
+    private var isAnyPanelOpen: Bool {
+        showRBNPanel || showSolarPanel || showWeatherPanel || showMapPanel || showPOTAPanel
+            || showP2PPanel
     }
 
     /// Deprecated: Use currentWarning instead
