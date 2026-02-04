@@ -130,7 +130,7 @@ extension FetchedQSO {
             qrzConfirmed: qrz.qrzConfirmed,
             lotwConfirmedDate: qrz.lotwConfirmedDate,
             lotwConfirmed: false,
-            dxcc: nil,
+            dxcc: qrz.dxcc,
             source: .qrz
         )
     }

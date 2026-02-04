@@ -152,7 +152,6 @@ class SyncService: ObservableObject {
         var downloaded = 0
         var uploaded = 0
         var skipped = 0
-
         // Use incremental sync unless forced full
         let lastDownload = forceFullSync ? nil : qrzClient.getLastDownloadDate()
         let syncStartTime = Date()

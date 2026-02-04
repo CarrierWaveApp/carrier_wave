@@ -21,68 +21,70 @@ extension QRZClient {
 
     /// Parse ADIF string into QRZFetchedQSO records
     func parseADIFRecords(_ adif: String) -> [QRZFetchedQSO] {
-        var qsos: [QRZFetchedQSO] = []
-
         let records =
             adif.lowercased().contains("<eor>")
                 ? adif.components(separatedBy: "<eor>").compactMap { $0.isEmpty ? nil : $0 }
                 : adif.components(separatedBy: "<EOR>").compactMap { $0.isEmpty ? nil : $0 }
 
-        for record in records {
+        return records.compactMap { record in
             let trimmed = record.trimmingCharacters(in: .whitespacesAndNewlines)
-            if trimmed.isEmpty {
-                continue
+            guard !trimmed.isEmpty else {
+                return nil
             }
+            return parseADIFRecord(record)
+        }
+    }
 
-            let fields = parseADIFFields(record)
+    /// Parse a single ADIF record into a QRZFetchedQSO
+    private func parseADIFRecord(_ record: String) -> QRZFetchedQSO? {
+        let fields = parseADIFFields(record)
 
-            guard let callsign = fields["CALL"] ?? fields["call"],
-                  let band = fields["BAND"] ?? fields["band"],
-                  let mode = fields["MODE"] ?? fields["mode"]
-            else {
-                continue
-            }
-
-            let timestamp =
-                parseTimestamp(
-                    date: fields["QSO_DATE"] ?? fields["qso_date"],
-                    time: fields["TIME_ON"] ?? fields["time_on"]
-                ) ?? Date()
-
-            var frequency: Double?
-            if let freqStr = fields["FREQ"] ?? fields["freq"], let freq = Double(freqStr) {
-                frequency = freq
-            }
-
-            let qrzStatus = fields["APP_QRZLOG_STATUS"] ?? fields["app_qrzlog_status"]
-            let qrzConfirmed = qrzStatus?.uppercased() == "C"
-            let lotwDate = parseLotwDate(fields["LOTW_QSL_RCVD"] ?? fields["lotw_qsl_rcvd"])
-
-            // My park reference: MY_SIG_INFO or MY_POTA_REF (activator's park)
-            let myParkRef =
-                fields["MY_SIG_INFO"] ?? fields["my_sig_info"]
-                    ?? fields["MY_POTA_REF"] ?? fields["my_pota_ref"]
-            // Their park reference: SIG_INFO (contacted station's park)
-            let theirParkRef = fields["SIG_INFO"] ?? fields["sig_info"]
-
-            let qso = QRZFetchedQSO(
-                callsign: callsign.uppercased(), band: band.uppercased(), mode: mode.uppercased(),
-                frequency: frequency, timestamp: timestamp,
-                rstSent: fields["RST_SENT"] ?? fields["rst_sent"],
-                rstReceived: fields["RST_RCVD"] ?? fields["rst_rcvd"],
-                myCallsign: fields["STATION_CALLSIGN"] ?? fields["station_callsign"],
-                myGrid: fields["MY_GRIDSQUARE"] ?? fields["my_gridsquare"],
-                theirGrid: fields["GRIDSQUARE"] ?? fields["gridsquare"],
-                parkReference: myParkRef,
-                theirParkReference: theirParkRef,
-                notes: fields["COMMENT"] ?? fields["comment"],
-                qrzLogId: fields["APP_QRZLOG_LOGID"] ?? fields["app_qrzlog_logid"],
-                qrzConfirmed: qrzConfirmed, lotwConfirmedDate: lotwDate, rawADIF: record
-            )
-            qsos.append(qso)
+        guard let callsign = fields["CALL"] ?? fields["call"],
+              let band = fields["BAND"] ?? fields["band"],
+              let mode = fields["MODE"] ?? fields["mode"]
+        else {
+            return nil
         }
 
-        return qsos
+        let timestamp =
+            parseTimestamp(
+                date: fields["QSO_DATE"] ?? fields["qso_date"],
+                time: fields["TIME_ON"] ?? fields["time_on"]
+            ) ?? Date()
+
+        var frequency: Double?
+        if let freqStr = fields["FREQ"] ?? fields["freq"], let freq = Double(freqStr) {
+            frequency = freq
+        }
+
+        let qrzStatus = fields["APP_QRZLOG_STATUS"] ?? fields["app_qrzlog_status"]
+        let qrzConfirmed = qrzStatus?.uppercased() == "C"
+        let lotwDate = parseLotwDate(fields["LOTW_QSL_RCVD"] ?? fields["lotw_qsl_rcvd"])
+
+        // DXCC entity number
+        let dxcc = (fields["DXCC"] ?? fields["dxcc"]).flatMap { Int($0) }
+
+        // My park reference: MY_SIG_INFO or MY_POTA_REF (activator's park)
+        let myParkRef =
+            fields["MY_SIG_INFO"] ?? fields["my_sig_info"]
+                ?? fields["MY_POTA_REF"] ?? fields["my_pota_ref"]
+        // Their park reference: SIG_INFO (contacted station's park)
+        let theirParkRef = fields["SIG_INFO"] ?? fields["sig_info"]
+
+        return QRZFetchedQSO(
+            callsign: callsign.uppercased(), band: band.uppercased(), mode: mode.uppercased(),
+            frequency: frequency, timestamp: timestamp,
+            rstSent: fields["RST_SENT"] ?? fields["rst_sent"],
+            rstReceived: fields["RST_RCVD"] ?? fields["rst_rcvd"],
+            myCallsign: fields["STATION_CALLSIGN"] ?? fields["station_callsign"],
+            myGrid: fields["MY_GRIDSQUARE"] ?? fields["my_gridsquare"],
+            theirGrid: fields["GRIDSQUARE"] ?? fields["gridsquare"],
+            parkReference: myParkRef,
+            theirParkReference: theirParkRef,
+            notes: fields["COMMENT"] ?? fields["comment"],
+            qrzLogId: fields["APP_QRZLOG_LOGID"] ?? fields["app_qrzlog_logid"],
+            qrzConfirmed: qrzConfirmed, lotwConfirmedDate: lotwDate, dxcc: dxcc, rawADIF: record
+        )
     }
 
     /// Parse ADIF fields from a record string

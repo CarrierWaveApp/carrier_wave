@@ -323,6 +323,8 @@ extension SyncService {
             existing.qrzLogId = existing.qrzLogId ?? fetched.qrzLogId
             existing.qrzConfirmed = existing.qrzConfirmed || fetched.qrzConfirmed
             existing.lotwConfirmedDate = existing.lotwConfirmedDate ?? fetched.lotwConfirmedDate
+            // DXCC from QRZ if we don't have one yet
+            existing.dxcc = existing.dxcc ?? fetched.dxcc
         }
 
         // LoTW-specific: update confirmation status and DXCC
@@ -362,6 +364,7 @@ extension SyncService {
             existing.qrzLogId = fetched.qrzLogId
             existing.qrzConfirmed = fetched.qrzConfirmed
             existing.lotwConfirmedDate = fetched.lotwConfirmedDate
+            existing.dxcc = existing.dxcc ?? fetched.dxcc
         }
 
         // LoTW-specific

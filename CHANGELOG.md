@@ -4,8 +4,13 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.19.3] - 2026-02-03
+
 ### Added
 - LoTW sync now fetches QSOs for all configured callsigns (current + previous), ensuring complete stats and confirmation tracking across callsign changes
+
+### Fixed
+- DXCC entity now populated from QRZ sync (previously only came from LoTW confirmations)
 
 ## [1.19.2] - 2026-02-03
 
