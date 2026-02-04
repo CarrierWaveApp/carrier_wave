@@ -4,8 +4,6 @@ import SwiftUI
 // MARK: - ActivityView
 
 struct ActivityView: View {
-    // MARK: Internal
-
     let tourState: TourState
 
     /// When true, the view is already inside a navigation context
@@ -14,69 +12,59 @@ struct ActivityView: View {
     @Environment(\.modelContext) var modelContext
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
 
-    var body: some View {
-        if isInNavigationContext {
-            activityContent
-        } else {
-            NavigationStack {
-                activityContent
-            }
-        }
-    }
+    // MARK: - State (internal for extension access)
 
-    // MARK: Private
-
-    @State private var isRefreshing = false
+    @State var isRefreshing = false
 
     @Query(sort: \ChallengeParticipation.joinedAt, order: .reverse)
-    private var allParticipations: [ChallengeParticipation]
+    var allParticipations: [ChallengeParticipation]
 
     @Query(sort: \ActivityItem.timestamp, order: .reverse)
-    private var allActivityItems: [ActivityItem]
+    var allActivityItems: [ActivityItem]
 
-    @Query private var clubs: [Club]
+    @Query var clubs: [Club]
 
     @Query(filter: #Predicate<Friendship> { $0.statusRawValue == "accepted" })
-    private var acceptedFriends: [Friendship]
+    var acceptedFriends: [Friendship]
 
-    @State private var selectedFilter: FeedFilter = .all
+    @State var selectedFilter: FeedFilter = .all
 
-    @State private var syncService: ChallengesSyncService?
-    @State private var friendsSyncService: FriendsSyncService?
-    @State private var clubsSyncService: ClubsSyncService?
-    @State private var feedSyncService: ActivityFeedSyncService?
-    @State private var errorMessage: String?
-    @State private var showingError = false
+    @State var syncService: ChallengesSyncService?
+    @State var friendsSyncService: FriendsSyncService?
+    @State var clubsSyncService: ClubsSyncService?
+    @State var feedSyncService: ActivityFeedSyncService?
+    @State var errorMessage: String?
+    @State var showingError = false
 
     // Invite handling
-    @State private var pendingInvite: PendingChallengeInvite?
-    @State private var showingInviteSheet = false
-    @State private var isJoiningFromInvite = false
+    @State var pendingInvite: PendingChallengeInvite?
+    @State var showingInviteSheet = false
+    @State var isJoiningFromInvite = false
 
     // Sharing
-    @State private var itemToShare: ActivityItem?
-    @State private var showingShareSheet = false
-    @State private var showingSummarySheet = false
+    @State var itemToShare: ActivityItem?
+    @State var showingShareSheet = false
+    @State var showingSummarySheet = false
 
     // Friend profile navigation
-    @State private var selectedCallsign: String?
-    @State private var showingFriendProfile = false
-    @State private var showingOwnProfile = false
+    @State var selectedCallsign: String?
+    @State var showingFriendProfile = false
+    @State var showingOwnProfile = false
 
     // Friend invite handling
-    @State private var pendingFriendInviteToken: String?
-    @State private var showingFriendInviteSheet = false
-    @State private var isProcessingFriendInvite = false
+    @State var pendingFriendInviteToken: String?
+    @State var showingFriendInviteSheet = false
+    @State var isProcessingFriendInvite = false
 
-    private var activeParticipations: [ChallengeParticipation] {
+    var activeParticipations: [ChallengeParticipation] {
         allParticipations.filter { $0.status == .active }
     }
 
-    private var completedParticipations: [ChallengeParticipation] {
+    var completedParticipations: [ChallengeParticipation] {
         allParticipations.filter { $0.status == .completed }
     }
 
-    private var currentCallsign: String {
+    var currentCallsign: String {
         // Try to get from keychain first
         if let callsign = try? KeychainHelper.shared.readString(
             for: KeychainHelper.Keys.currentCallsign
@@ -89,7 +77,7 @@ struct ActivityView: View {
         return "Me"
     }
 
-    private var filteredActivityItems: [ActivityItem] {
+    var filteredActivityItems: [ActivityItem] {
         switch selectedFilter {
         case .all:
             return allActivityItems
@@ -104,7 +92,17 @@ struct ActivityView: View {
         }
     }
 
-    private var activityContent: some View {
+    var body: some View {
+        if isInNavigationContext {
+            activityContent
+        } else {
+            NavigationStack {
+                activityContent
+            }
+        }
+    }
+
+    var activityContent: some View {
         ScrollView {
             if horizontalSizeClass == .regular {
                 // iPad: Side-by-side layout
@@ -248,129 +246,6 @@ struct ActivityView: View {
         }
         .miniTour(.challenges, tourState: tourState)
     }
-
-    // MARK: - Challenges Section
-
-    private var challengesSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("Your Challenges")
-                    .font(.headline)
-                Spacer()
-                NavigationLink {
-                    BrowseChallengesView()
-                } label: {
-                    Text("Browse")
-                        .font(.subheadline)
-                }
-            }
-
-            if activeParticipations.isEmpty, completedParticipations.isEmpty {
-                challengesEmptyState
-            } else {
-                if !activeParticipations.isEmpty {
-                    ForEach(activeParticipations) { participation in
-                        NavigationLink {
-                            ChallengeDetailView(participation: participation)
-                        } label: {
-                            ChallengeProgressCard(participation: participation)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-
-                if !completedParticipations.isEmpty {
-                    DisclosureGroup("Completed (\(completedParticipations.count))") {
-                        ForEach(completedParticipations) { participation in
-                            NavigationLink {
-                                ChallengeDetailView(participation: participation)
-                            } label: {
-                                CompletedChallengeCard(participation: participation)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                    .foregroundStyle(.primary)
-                }
-            }
-        }
-    }
-
-    private var challengesEmptyState: some View {
-        VStack(spacing: 8) {
-            Text("No active challenges")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-
-            NavigationLink {
-                BrowseChallengesView()
-            } label: {
-                Text("Browse Challenges")
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-            }
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 12)
-    }
-
-    // MARK: - Activity Feed Section
-
-    private var activityFeedSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Recent Activity")
-                .font(.headline)
-
-            FilterBar(selectedFilter: $selectedFilter, clubs: clubs)
-
-            if filteredActivityItems.isEmpty {
-                activityEmptyState
-            } else {
-                LazyVStack(spacing: 12) {
-                    ForEach(filteredActivityItems) { item in
-                        ActivityItemRow(
-                            item: item,
-                            onShare: { shareActivity(item) },
-                            onCallsignTap: { callsign in
-                                navigateToProfile(callsign: callsign)
-                            }
-                        )
-                    }
-                }
-            }
-        }
-        .navigationDestination(isPresented: $showingFriendProfile) {
-            if let callsign = selectedCallsign {
-                FriendProfileView(
-                    callsign: callsign,
-                    friendship: friendshipFor(callsign: callsign)
-                )
-            }
-        }
-    }
-
-    private func navigateToProfile(callsign: String) {
-        selectedCallsign = callsign
-        showingFriendProfile = true
-    }
-
-    private func friendshipFor(callsign: String) -> Friendship? {
-        acceptedFriends.first { $0.friendCallsign.uppercased() == callsign.uppercased() }
-    }
-
-    private var activityEmptyState: some View {
-        ContentUnavailableView(
-            "No Activity Yet",
-            systemImage: "person.2",
-            description: Text("Activity from friends and clubs will appear here.")
-        )
-        .padding(.vertical, 24)
-    }
-
-    private func shareActivity(_ item: ActivityItem) {
-        itemToShare = item
-        showingShareSheet = true
-    }
 }
 
 // MARK: - ActivityView+Actions
@@ -474,82 +349,4 @@ extension ActivityView {
             isProcessingFriendInvite = false
         }
     }
-}
-
-// MARK: - FriendInviteConfirmSheet
-
-private struct FriendInviteConfirmSheet: View {
-    let token: String
-    @Binding var isProcessing: Bool
-    let onAccept: () -> Void
-    let onDismiss: () -> Void
-
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: 24) {
-                Spacer()
-
-                Image(systemName: "person.badge.plus")
-                    .font(.system(size: 60))
-                    .foregroundStyle(.accent)
-
-                Text("Friend Invite")
-                    .font(.title)
-                    .fontWeight(.bold)
-
-                Text("Someone has invited you to connect on Carrier Wave. Accept to send them a friend request.")
-                    .font(.body)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal)
-
-                Spacer()
-
-                VStack(spacing: 12) {
-                    Button {
-                        onAccept()
-                    } label: {
-                        if isProcessing {
-                            ProgressView()
-                                .frame(maxWidth: .infinity)
-                        } else {
-                            Text("Accept Invite")
-                                .frame(maxWidth: .infinity)
-                        }
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
-                    .disabled(isProcessing)
-
-                    Button("Cancel", role: .cancel) {
-                        onDismiss()
-                    }
-                    .disabled(isProcessing)
-                }
-                .padding()
-            }
-            .navigationTitle("Friend Invite")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { onDismiss() }
-                        .disabled(isProcessing)
-                }
-            }
-        }
-        .presentationDetents([.medium])
-    }
-
-#Preview {
-    ActivityView(tourState: TourState())
-        .modelContainer(
-            for: [
-                ChallengeSource.self,
-                ChallengeDefinition.self,
-                ChallengeParticipation.self,
-                ActivityItem.self,
-                Club.self,
-                Friendship.self,
-            ], inMemory: true
-        )
 }

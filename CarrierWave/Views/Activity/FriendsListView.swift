@@ -12,7 +12,9 @@ struct FriendsListView: View {
                 ContentUnavailableView(
                     "No Friends Yet",
                     systemImage: "person.2",
-                    description: Text("Search for friends by their callsign to connect and see their activity")
+                    description: Text(
+                        "Search for friends by their callsign to connect and see their activity"
+                    )
                 )
             } else {
                 friendsList
@@ -114,7 +116,9 @@ struct FriendsListView: View {
                 Section("Friends") {
                     ForEach(acceptedFriends) { friendship in
                         NavigationLink {
-                            FriendProfileView(callsign: friendship.friendCallsign, friendship: friendship)
+                            FriendProfileView(
+                                callsign: friendship.friendCallsign, friendship: friendship
+                            )
                         } label: {
                             FriendRow(friendship: friendship)
                         }
@@ -264,6 +268,8 @@ private struct FriendRow: View {
 // MARK: - InviteLinkSheet
 
 private struct InviteLinkSheet: View {
+    // MARK: Internal
+
     let inviteLink: InviteLinkDTO?
     let isGenerating: Bool
     let onDismiss: () -> Void
@@ -296,20 +302,23 @@ private struct InviteLinkSheet: View {
         .presentationDetents([.medium])
     }
 
-    @ViewBuilder
+    // MARK: Private
+
     private func inviteContent(_ invite: InviteLinkDTO) -> some View {
         VStack(spacing: 20) {
             Image(systemName: "link.circle.fill")
                 .font(.system(size: 60))
-                .foregroundStyle(.accent)
+                .foregroundStyle(.tint)
 
             Text("Share this link with a friend")
                 .font(.headline)
 
-            Text("When they tap the link, they'll be able to send you a friend request in Carrier Wave.")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
+            Text(
+                "When they tap the link, they'll be able to send you a friend request in Carrier Wave."
+            )
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+            .multilineTextAlignment(.center)
 
             Text(invite.url)
                 .font(.caption)

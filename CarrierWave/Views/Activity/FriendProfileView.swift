@@ -34,6 +34,11 @@ struct FriendProfileView: View {
     @State private var friendActivity: [ActivityItem] = []
     @State private var isLoading = true
 
+    private var activitiesThisWeek: Int {
+        let weekAgo = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
+        return friendActivity.filter { $0.timestamp >= weekAgo }.count
+    }
+
     private var profileHeader: some View {
         VStack(spacing: 12) {
             // Avatar placeholder
@@ -57,7 +62,10 @@ struct FriendProfileView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             } else if let friendship, friendship.isAccepted {
-                Label("Friends since \(friendship.acceptedAt?.formatted(date: .abbreviated, time: .omitted) ?? "recently")", systemImage: "person.2.fill")
+                let dateText =
+                    friendship.acceptedAt?
+                        .formatted(date: .abbreviated, time: .omitted) ?? "recently"
+                Label("Friends since \(dateText)", systemImage: "person.2.fill")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -107,10 +115,13 @@ struct FriendProfileView: View {
             } else if friendActivity.isEmpty {
                 ContentUnavailableView(
                     "No Recent Activity",
-                    systemImage: isOwnProfile ? "sparkles" : "person.crop.circle.badge.questionmark",
-                    description: Text(isOwnProfile
-                        ? "Your notable activities will appear here as you make QSOs."
-                        : "Activity from \(callsign) will appear here.")
+                    systemImage: isOwnProfile
+                        ? "sparkles" : "person.crop.circle.badge.questionmark",
+                    description: Text(
+                        isOwnProfile
+                            ? "Your notable activities will appear here as you make QSOs."
+                            : "Activity from \(callsign) will appear here."
+                    )
                 )
             } else {
                 LazyVStack(spacing: 12) {
@@ -120,11 +131,6 @@ struct FriendProfileView: View {
                 }
             }
         }
-    }
-
-    private var activitiesThisWeek: Int {
-        let weekAgo = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
-        return friendActivity.filter { $0.timestamp >= weekAgo }.count
     }
 
     private func loadActivity() async {
@@ -187,7 +193,7 @@ private struct StatCard: View {
                 friendCallsign: "W1ABC",
                 friendUserId: "usr_123",
                 status: .accepted,
-                acceptedAt: Date().addingTimeInterval(-86400 * 30),
+                acceptedAt: Date().addingTimeInterval(-86_400 * 30),
                 isOutgoing: false
             )
         )
