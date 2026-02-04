@@ -81,6 +81,7 @@ This index maps files to their purpose. Use it to locate files by feature instea
 | `ImportService.swift` | ADIF parsing, deduplication, QSO creation |
 | `ImportService+External.swift` | External file import handling |
 | `ADIFParser.swift` | ADIF format parser |
+| `ADIFExportService.swift` | Background ADIF generation for activation exports |
 | `DeduplicationService.swift` | QSO deduplication logic |
 | `ICloudMonitor.swift` | iCloud sync status monitoring |
 | `DescriptionLookup.swift` | Human-readable descriptions for codes |
@@ -224,6 +225,7 @@ This index maps files to their purpose. Use it to locate files by feature instea
 | `POTALogEntryRow.swift` | Individual POTA log entry display (legacy) |
 | `ActivationShareCardView.swift` | Shareable activation card with map and stats |
 | `ActivationShareRenderer.swift` | Render activation card to UIImage for sharing |
+| `ADIFExportSheet.swift` | ADIF export sheet with share, save, copy options |
 | `ActivationMapHelpers.swift` | Map utilities for activation share cards (region, geodesic paths) |
 
 ## Views - Challenges (`CarrierWave/Views/Challenges/`)

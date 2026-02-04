@@ -105,10 +105,11 @@ enum KeyboardAccessoryBuilder {
             mainStack.bottomAnchor.constraint(equalTo: accessoryView.bottomAnchor),
         ])
 
+        // Use a large width - the system will constrain it to the keyboard width
         accessoryView.frame = CGRect(
             x: 0,
             y: 0,
-            width: UIScreen.main.bounds.width,
+            width: 10_000,
             height: calculateHeight(characters: characters, commands: commands)
         )
 
@@ -127,7 +128,9 @@ enum KeyboardAccessoryBuilder {
         if !commands.isEmpty {
             totalHeight += 40
             if !characters.isEmpty {
-                totalHeight += 1.0 / UIScreen.main.scale
+                // Use trait collection scale, fallback to 3.0 (common retina scale)
+                let scale = UITraitCollection.current.displayScale
+                totalHeight += 1.0 / (scale > 0 ? scale : 3.0)
             }
         }
         return max(totalHeight, 56)
@@ -137,8 +140,10 @@ enum KeyboardAccessoryBuilder {
         let separator = UIView()
         separator.backgroundColor = .separator
         separator.translatesAutoresizingMaskIntoConstraints = false
-        separator.heightAnchor.constraint(equalToConstant: 1.0 / UIScreen.main.scale).isActive =
-            true
+        // Use trait collection scale, fallback to 3.0 (common retina scale)
+        let scale = UITraitCollection.current.displayScale
+        separator.heightAnchor.constraint(equalToConstant: 1.0 / (scale > 0 ? scale : 3.0))
+            .isActive = true
         return separator
     }
 

@@ -1,7 +1,4 @@
-// POTA Activations view
-//
-// Displays activations grouped by park, with upload status per activation
-// and ability to upload pending QSOs to POTA.
+// POTA Activations view - displays activations grouped by park with upload status
 
 import SwiftData
 import SwiftUI
@@ -104,6 +101,12 @@ struct POTAActivationsContentView: View {
                 }
             }
         }
+        .sheet(item: $activationToExport) { activation in
+            ADIFExportSheet(
+                activation: activation,
+                parkName: parkName(for: activation.parkReference)
+            )
+        }
         .task {
             await loadParkQSOs()
             if isAuthenticated, potaClient != nil, jobs.isEmpty {
@@ -138,6 +141,7 @@ struct POTAActivationsContentView: View {
     @State private var activationToUpload: POTAActivation?
     @State private var activationToReject: POTAActivation?
     @State private var activationToShare: POTAActivation?
+    @State private var activationToExport: POTAActivation?
     @State private var isGeneratingShareImage = false
     @State private var maintenanceTimeRemaining: String?
     @State private var maintenanceTimer: Timer?
@@ -237,6 +241,7 @@ struct POTAActivationsContentView: View {
                             onUploadTapped: { activationToUpload = activation },
                             onRejectTapped: { activationToReject = activation },
                             onShareTapped: { activationToShare = activation },
+                            onExportTapped: { activationToExport = activation },
                             showParkReference: true
                         )
                     }
@@ -255,7 +260,8 @@ struct POTAActivationsContentView: View {
                             showUploadButton: isAuthenticated,
                             onUploadTapped: { activationToUpload = activation },
                             onRejectTapped: { activationToReject = activation },
-                            onShareTapped: { activationToShare = activation }
+                            onShareTapped: { activationToShare = activation },
+                            onExportTapped: { activationToExport = activation }
                         )
                     }
                 } header: {
@@ -490,5 +496,3 @@ extension POTAActivationsContentView {
         topVC.present(activityVC, animated: true)
     }
 }
-
-// Helper views are in POTAActivationsHelperViews.swift

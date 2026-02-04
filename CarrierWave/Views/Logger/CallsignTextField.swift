@@ -39,7 +39,8 @@ struct CallsignTextField: UIViewRepresentable {
         }
 
         deinit {
-            stopObservingConfigurationChanges()
+            // Remove all observers for this object
+            NotificationCenter.default.removeObserver(self)
         }
 
         // MARK: Internal
@@ -110,14 +111,18 @@ struct CallsignTextField: UIViewRepresentable {
                 object: nil,
                 queue: .main
             ) { [weak self] _ in
-                self?.rebuildAccessoryView()
+                Task { @MainActor in
+                    self?.rebuildAccessoryView()
+                }
             }
             commandConfigObserver = NotificationCenter.default.addObserver(
                 forName: .commandRowConfigurationChanged,
                 object: nil,
                 queue: .main
             ) { [weak self] _ in
-                self?.rebuildAccessoryView()
+                Task { @MainActor in
+                    self?.rebuildAccessoryView()
+                }
             }
         }
 

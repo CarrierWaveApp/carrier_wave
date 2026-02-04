@@ -17,6 +17,7 @@ struct ActivationRow: View {
     let onUploadTapped: () -> Void
     let onRejectTapped: () -> Void
     let onShareTapped: () -> Void
+    let onExportTapped: () -> Void
     var showParkReference: Bool = false
 
     var body: some View {
@@ -50,6 +51,16 @@ struct ActivationRow: View {
 
                 Spacer()
 
+                // Export ADIF button
+                Button {
+                    onExportTapped()
+                } label: {
+                    Image(systemName: "doc.text")
+                        .font(.body)
+                }
+                .buttonStyle(.borderless)
+                .foregroundStyle(.orange)
+
                 // Share button
                 Button {
                     onShareTapped()
@@ -82,6 +93,13 @@ struct ActivationRow: View {
             }
         }
         .swipeActions(edge: .leading, allowsFullSwipe: false) {
+            Button {
+                onExportTapped()
+            } label: {
+                Label("Export ADIF", systemImage: "doc.text")
+            }
+            .tint(.orange)
+
             Button {
                 onShareTapped()
             } label: {
