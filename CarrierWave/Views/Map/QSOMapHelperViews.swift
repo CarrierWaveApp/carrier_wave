@@ -156,10 +156,14 @@ struct MapFilterSheet: View {
                     Text("Performance")
                 } footer: {
                     if filterState.showAllQSOs {
-                        Text("Warning: Showing all QSOs may cause the app to become unresponsive with large datasets.")
-                            .foregroundStyle(.orange)
+                        Text(
+                            "Warning: Showing all QSOs may cause the app to become unresponsive with large datasets."
+                        )
+                        .foregroundStyle(.orange)
                     } else {
-                        Text("Limited to \(MapFilterState.maxQSOsDefault) QSOs for performance. Enable to show all.")
+                        Text(
+                            "Limited to \(MapFilterState.maxQSOsDefault) QSOs for performance. Enable to show all."
+                        )
                     }
                 }
 
@@ -232,7 +236,7 @@ struct MapStatsOverlay: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 8))
+        .background(.thickMaterial, in: RoundedRectangle(cornerRadius: 8))
     }
 
     // MARK: Private
@@ -279,7 +283,7 @@ struct ActiveFiltersView: View {
             }
         }
         .padding(8)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 8))
+        .background(.thickMaterial, in: RoundedRectangle(cornerRadius: 8))
     }
 
     // MARK: Private

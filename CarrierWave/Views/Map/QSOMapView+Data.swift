@@ -22,13 +22,17 @@ extension QSOMapView {
                 return false
             }
 
-            // Band filter
-            if let band = filterState.selectedBand, snapshot.band != band {
+            // Band filter (case-insensitive)
+            if let band = filterState.selectedBand,
+               snapshot.band.uppercased() != band.uppercased()
+            {
                 return false
             }
 
-            // Mode filter
-            if let mode = filterState.selectedMode, snapshot.mode != mode {
+            // Mode filter (case-insensitive)
+            if let mode = filterState.selectedMode,
+               snapshot.mode.uppercased() != mode.uppercased()
+            {
                 return false
             }
 

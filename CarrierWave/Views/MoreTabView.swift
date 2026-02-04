@@ -31,6 +31,7 @@ struct MoreTabView: View {
     @ObservedObject var potaAuthService: POTAAuthService
     @Binding var settingsDestination: SettingsDestination?
     @Binding var navigationPath: NavigationPath
+    @Bindable var mapFilterState: MapFilterState
 
     let tourState: TourState
     let syncService: SyncService?
@@ -90,7 +91,7 @@ struct MoreTabView: View {
     private func tabContent(for tab: AppTab) -> some View {
         switch tab {
         case .map:
-            QSOMapView()
+            QSOMapView(filterState: mapFilterState)
         case .activity:
             ActivityView(tourState: tourState, isInNavigationContext: true)
         case .dashboard:

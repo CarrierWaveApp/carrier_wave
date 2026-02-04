@@ -7,15 +7,21 @@ import SwiftUI
 struct QSOMapView: View {
     // MARK: Internal
 
+    /// Filter state passed from parent to preserve across view recreations
+    @Bindable var filterState: MapFilterState
+
     var body: some View {
         ZStack {
-            if isLoadingQSOs {
-                loadingView
-            } else {
-                mapContentView
+            Group {
+                if isLoadingQSOs {
+                    loadingView
+                } else {
+                    mapContentView
+                }
             }
+            .ignoresSafeArea(edges: .bottom) // Allow map to extend under tab bar
 
-            // Overlays shown regardless of loading state
+            // Overlays respect safe area
             overlayView
         }
         .navigationTitle("Map")
@@ -96,7 +102,6 @@ struct QSOMapView: View {
     /// Total count of QSOs (for stats display)
     @State private var totalQSOCount: Int = 0
 
-    @State private var filterState = MapFilterState()
     @State private var showingFilterSheet = false
     @State private var selectedAnnotation: QSOAnnotation?
     @State private var cameraPosition: MapCameraPosition = .automatic
@@ -209,6 +214,9 @@ struct QSOMapView: View {
                         earliestDate: cachedEarliestQSODate,
                         latestDate: Date()
                     )
+                    .onTapGesture {
+                        showingFilterSheet = true
+                    }
 
                     Spacer()
 
@@ -227,7 +235,7 @@ struct QSOMapView: View {
                                 .foregroundStyle(.orange)
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 4)
-                                .background(.ultraThinMaterial, in: Capsule())
+                                .background(.thickMaterial, in: Capsule())
                         }
                     }
                 }

@@ -103,6 +103,9 @@ actor MapDataLoadingActor {
     /// Modes that represent activation metadata, not actual QSOs
     private static let metadataModes: Set<String> = ["WEATHER", "SOLAR", "NOTE"]
 
+    /// Bands to exclude from filter list (metadata or invalid values)
+    private static let excludedBands: Set<String> = ["EVENT", "UNKNOWN"]
+
     /// Batch size for fetching
     private static let fetchBatchSize = 500
 
@@ -119,7 +122,8 @@ actor MapDataLoadingActor {
         onProgress: @escaping @Sendable (MapLoadingProgress) -> Void
     ) async throws -> FetchResult {
         var result = FetchResult(snapshots: [], bands: [], modes: [], parks: [], earliestDate: nil)
-        result.snapshots.reserveCapacity(min(targetCount, totalCount))
+        let effectiveTarget = min(targetCount, totalCount)
+        result.snapshots.reserveCapacity(effectiveTarget)
 
         var offset = 0
 
@@ -134,10 +138,11 @@ actor MapDataLoadingActor {
             processBatch(batch, into: &result)
             offset += Self.fetchBatchSize
 
+            // Report progress against effective target, not total database count
             onProgress(
                 MapLoadingProgress(
                     loaded: result.snapshots.count,
-                    total: totalCount,
+                    total: effectiveTarget,
                     phase: "Loading QSOs..."
                 )
             )
@@ -174,8 +179,8 @@ actor MapDataLoadingActor {
             )
             result.snapshots.append(snapshot)
 
-            result.bands.insert(qso.band)
-            result.modes.insert(qso.mode)
+            result.bands.insert(qso.band.uppercased())
+            result.modes.insert(qso.mode.uppercased())
             if let park = qso.parkReference {
                 result.parks.insert(park)
             }
@@ -187,11 +192,13 @@ actor MapDataLoadingActor {
 
     /// Build final MapLoadedData from fetch result
     private func buildLoadedData(from result: FetchResult, totalCount: Int) -> MapLoadedData {
-        let sortedBands = Array(result.bands).sorted { band1, band2 in
-            let idx1 = Self.bandOrder.firstIndex(of: band1.uppercased()) ?? 999
-            let idx2 = Self.bandOrder.firstIndex(of: band2.uppercased()) ?? 999
-            return idx1 < idx2
-        }
+        let sortedBands = Array(result.bands)
+            .filter { !Self.excludedBands.contains($0.uppercased()) }
+            .sorted { band1, band2 in
+                let idx1 = Self.bandOrder.firstIndex(of: band1.uppercased()) ?? 999
+                let idx2 = Self.bandOrder.firstIndex(of: band2.uppercased()) ?? 999
+                return idx1 < idx2
+            }
 
         let sortedModes = Array(result.modes)
             .filter { !Self.metadataModes.contains($0.uppercased()) }

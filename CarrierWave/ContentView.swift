@@ -307,6 +307,7 @@ struct ContentView: View {
     @State private var moreTabNavigationPath = NavigationPath()
     @State private var visibleTabs: [AppTab] = TabConfiguration.visibleTabs()
     @State private var iPadTabs: [AppTab] = TabConfiguration.tabOrder()
+    @State private var mapFilterState = MapFilterState()
 
     private let lofiClient = LoFiClient()
     private let qrzClient = QRZClient()
@@ -424,7 +425,7 @@ struct ContentView: View {
     private var mapTabContent: some View {
         NavigationStack {
             LazyTabContent {
-                QSOMapView()
+                QSOMapView(filterState: mapFilterState)
             }
         }
     }
@@ -442,6 +443,7 @@ struct ContentView: View {
             potaAuthService: potaAuthService,
             settingsDestination: $settingsDestination,
             navigationPath: $moreTabNavigationPath,
+            mapFilterState: mapFilterState,
             tourState: tourState,
             syncService: syncService
         )
