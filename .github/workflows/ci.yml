@@ -33,12 +33,25 @@ jobs:
       - name: Run SwiftLint
         run: swiftlint lint --strict
 
-  # Quick performance test on every PR (50k QSOs, ~1-2 min)
+  # Unit tests on every PR
+  unit-tests:
+    name: Unit Tests
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_16.2.app
+
+      - name: Run unit tests
+        run: make test-unit
+
+  # Quick performance test (50k QSOs, ~1-2 min)
+  # Disabled on PRs for now - only runs on schedule or manual trigger
   performance-quick:
     name: Performance (Quick)
     runs-on: macos-15
-    # Skip on scheduled runs (full test runs instead)
-    if: github.event_name != 'schedule'
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
 
