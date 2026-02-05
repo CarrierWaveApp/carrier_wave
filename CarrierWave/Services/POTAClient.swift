@@ -210,6 +210,21 @@ final class POTAClient {
         }
     }
 
+    /// Split comma-separated park references (e.g., "US-1044, US-3791" -> ["US-1044", "US-3791"])
+    /// Handles two-fer, three-fer, etc. activations where multiple parks are activated simultaneously.
+    /// Marked nonisolated since it's pure computation with no state access.
+    nonisolated static func splitParkReferences(_ parkRef: String) -> [String] {
+        parkRef.split(separator: ",")
+            .map { $0.trimmingCharacters(in: .whitespaces).uppercased() }
+            .filter { !$0.isEmpty }
+    }
+
+    /// Check if park reference contains multiple parks (two-fer, three-fer, etc.)
+    /// Marked nonisolated since it's pure computation with no state access.
+    nonisolated static func isMultiPark(_ parkRef: String) -> Bool {
+        parkRef.contains(",")
+    }
+
     func uploadActivation(parkReference: String, qsos: [QSO]) async throws -> POTAUploadResult {
         let debugLog = SyncDebugLog.shared
 

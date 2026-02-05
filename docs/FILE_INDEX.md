@@ -14,6 +14,7 @@ This index maps files to their purpose. Use it to locate files by feature instea
 | File | Purpose |
 |------|---------|
 | `QSO.swift` | Core contact record (callsign, band, mode, timestamps, grid, park ref) |
+| `QSO+POTAPresence.swift` | Per-park POTA presence tracking for two-fer activations |
 | `UploadDestination.swift` | Sync target configuration (enabled flag, last sync timestamp) |
 | `POTAJob.swift` | POTA activation job tracking |
 | `POTALogEntry.swift` | Individual POTA log entries |
@@ -106,6 +107,7 @@ This index maps files to their purpose. Use it to locate files by feature instea
 | `SyncService+Activity.swift` | Hook activity detection into sync flow |
 | `ActivityFeedSyncService.swift` | Sync activity feed from server |
 | `POTAPresenceRepairService.swift` | Detect and fix incorrectly marked POTA service presence |
+| `TwoferDuplicateRepairService.swift` | Detect and merge duplicate QSOs from two-fer park reference mismatches |
 | `CWError.swift` | CW transcription error types |
 | `CWAudioCapture.swift` | AVAudioEngine microphone capture for CW decoding |
 | `CWSignalProcessorProtocol.swift` | Protocol for signal processors, CWSignalResult struct |

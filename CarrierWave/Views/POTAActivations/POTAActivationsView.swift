@@ -77,34 +77,15 @@ struct POTAActivationsContentView: View {
                 Text(rejectMessage(for: parkDisplay, pendingCount: activation.pendingCount))
             }
         }
-        .overlay {
-            if isGeneratingShareImage {
-                Color.black.opacity(0.4)
-                    .ignoresSafeArea()
-                    .overlay {
-                        VStack(spacing: 16) {
-                            ProgressView()
-                                .scaleEffect(1.5)
-                                .tint(.white)
-                            Text("Generating share image...")
-                                .foregroundStyle(.white)
-                        }
-                        .padding(24)
-                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
-                    }
-            }
-        }
+        .overlay { shareImageOverlay }
         .onChange(of: activationToShare) { _, newValue in
             if let activation = newValue {
-                Task {
-                    await generateAndShare(activation: activation)
-                }
+                Task { await generateAndShare(activation: activation) }
             }
         }
         .sheet(item: $activationToExport) { activation in
             ADIFExportSheet(
-                activation: activation,
-                parkName: parkName(for: activation.parkReference)
+                activation: activation, parkName: parkName(for: activation.parkReference)
             )
         }
         .task {
@@ -114,9 +95,7 @@ struct POTAActivationsContentView: View {
             }
             await loadCachedParkNames()
         }
-        .onAppear {
-            startMaintenanceTimer()
-        }
+        .onAppear { startMaintenanceTimer() }
         .onDisappear {
             stopMaintenanceTimer()
         }
@@ -146,6 +125,8 @@ struct POTAActivationsContentView: View {
     @State private var maintenanceTimeRemaining: String?
     @State private var maintenanceTimer: Timer?
     @State private var cachedParkNames: [String: String] = [:]
+    /// Upload errors by activation ID -> (park -> error message) for two-fer error display
+    @State private var uploadErrorsByActivation: [String: [String: String]] = [:]
 
     private var isInMaintenance: Bool {
         if debugMode, bypassMaintenance {
@@ -183,23 +164,27 @@ struct POTAActivationsContentView: View {
         }
     }
 
+    @ViewBuilder private var shareImageOverlay: some View {
+        if isGeneratingShareImage {
+            Color.black.opacity(0.4).ignoresSafeArea().overlay {
+                VStack(spacing: 16) {
+                    ProgressView().scaleEffect(1.5).tint(.white)
+                    Text("Generating share image...").foregroundStyle(.white)
+                }.padding(24).background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+            }
+        }
+    }
+
     private var maintenanceBanner: some View {
         HStack {
-            Image(systemName: "wrench.and.screwdriver")
-                .foregroundStyle(.orange)
+            Image(systemName: "wrench.and.screwdriver").foregroundStyle(.orange)
             VStack(alignment: .leading, spacing: 2) {
-                Text("POTA Maintenance Window")
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                if let remaining = maintenanceTimeRemaining {
-                    Text("Uploads disabled. Resumes in \(remaining)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                } else {
-                    Text("Uploads temporarily disabled (2330-0400 UTC)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+                Text("POTA Maintenance Window").font(.subheadline).fontWeight(.medium)
+                Text(
+                    maintenanceTimeRemaining.map { "Uploads disabled. Resumes in \($0)" }
+                        ?? "Uploads temporarily disabled (2330-0400 UTC)"
+                )
+                .font(.caption).foregroundStyle(.secondary)
             }
             Spacer()
         }
@@ -234,16 +219,7 @@ struct POTAActivationsContentView: View {
             if !pendingActivations.isEmpty, isAuthenticated {
                 Section {
                     ForEach(pendingActivations) { activation in
-                        ActivationRow(
-                            activation: activation,
-                            isUploadDisabled: isInMaintenance || potaClient == nil,
-                            showUploadButton: isAuthenticated,
-                            onUploadTapped: { activationToUpload = activation },
-                            onRejectTapped: { activationToReject = activation },
-                            onShareTapped: { activationToShare = activation },
-                            onExportTapped: { activationToExport = activation },
-                            showParkReference: true
-                        )
+                        activationRow(activation, showParkReference: true)
                     }
                 } header: {
                     Label("Ready to Upload", systemImage: "arrow.up.circle")
@@ -253,23 +229,12 @@ struct POTAActivationsContentView: View {
             // All activations grouped by park
             ForEach(activationsByPark, id: \.park) { parkGroup in
                 Section {
-                    ForEach(parkGroup.activations) { activation in
-                        ActivationRow(
-                            activation: activation,
-                            isUploadDisabled: isInMaintenance || potaClient == nil,
-                            showUploadButton: isAuthenticated,
-                            onUploadTapped: { activationToUpload = activation },
-                            onRejectTapped: { activationToReject = activation },
-                            onShareTapped: { activationToShare = activation },
-                            onExportTapped: { activationToExport = activation }
-                        )
-                    }
+                    ForEach(parkGroup.activations) { activation in activationRow(activation) }
                 } header: {
                     HStack {
                         Text(parkGroup.park)
                         if let name = parkName(for: parkGroup.park) {
-                            Text("- \(name)")
-                                .foregroundStyle(.secondary)
+                            Text("- \(name)").foregroundStyle(.secondary)
                         }
                     }
                 }
@@ -278,6 +243,22 @@ struct POTAActivationsContentView: View {
         .refreshable {
             await refreshJobs()
         }
+    }
+
+    private func activationRow(_ activation: POTAActivation, showParkReference: Bool = false)
+        -> some View
+    {
+        ActivationRow(
+            activation: activation,
+            isUploadDisabled: isInMaintenance || potaClient == nil,
+            showUploadButton: isAuthenticated,
+            onUploadTapped: { activationToUpload = activation },
+            onRejectTapped: { activationToReject = activation },
+            onShareTapped: { activationToShare = activation },
+            onExportTapped: { activationToExport = activation },
+            showParkReference: showParkReference,
+            uploadErrors: uploadErrorsByActivation[activation.id] ?? [:]
+        )
     }
 
     private func startMaintenanceTimer() {
@@ -407,35 +388,56 @@ extension POTAActivationsContentView {
         activationToUpload = nil
 
         guard let potaClient else {
-            await MainActor.run {
-                errorMessage = "POTA client not available. Please sign in to POTA in Settings."
-            }
+            await MainActor.run { errorMessage = "POTA client not available." }
             return
         }
 
-        let pendingQSOs = activation.pendingQSOs()
-        guard !pendingQSOs.isEmpty else {
+        let parksToUpload = activation.parksNeedingUpload
+        guard !parksToUpload.isEmpty else {
             return
+        }
+
+        var errors: [String: String] = [:]
+        for park in parksToUpload {
+            if let error = await uploadPark(park, activation: activation, client: potaClient) {
+                errors[park] = error
+            }
+        }
+
+        await MainActor.run {
+            if errors.isEmpty {
+                uploadErrorsByActivation.removeValue(forKey: activation.id)
+            } else {
+                uploadErrorsByActivation[activation.id] = errors
+                let msg =
+                    errors.count == parksToUpload.count
+                        ? "all" : "\(errors.count) of \(parksToUpload.count)"
+                errorMessage = "Upload failed for \(msg) parks"
+            }
+        }
+    }
+
+    private func uploadPark(_ park: String, activation: POTAActivation, client: POTAClient) async
+        -> String?
+    {
+        let pendingQSOs = activation.pendingQSOs(forPark: park)
+        guard !pendingQSOs.isEmpty else {
+            return nil
         }
 
         do {
-            let result = try await potaClient.uploadActivationWithRecording(
-                parkReference: activation.parkReference,
-                qsos: pendingQSOs,
-                modelContext: modelContext
+            let result = try await client.uploadActivationWithRecording(
+                parkReference: park, qsos: pendingQSOs, modelContext: modelContext
             )
-
             if result.success {
                 await MainActor.run {
-                    for qso in pendingQSOs {
-                        qso.markPresent(in: .pota, context: modelContext)
-                    }
+                    pendingQSOs.forEach { $0.markUploadedToPark(park, context: modelContext) }
                 }
+                return nil
             }
+            return "Upload returned success=false"
         } catch {
-            await MainActor.run {
-                errorMessage = "Upload failed: \(error.localizedDescription)"
-            }
+            return error.localizedDescription
         }
     }
 

@@ -394,4 +394,47 @@ extension View {
             )
         )
     }
+
+    func twoferDuplicateRepairAlert(
+        duplicateCount: Binding<Int>,
+        showingAlert: Binding<Bool>,
+        onRepair: @escaping () async -> Void
+    ) -> some View {
+        modifier(
+            TwoferDuplicateRepairAlert(
+                duplicateCount: duplicateCount,
+                showingAlert: showingAlert,
+                onRepair: onRepair
+            )
+        )
+    }
+}
+
+// MARK: - TwoferDuplicateRepairAlert
+
+struct TwoferDuplicateRepairAlert: ViewModifier {
+    @Binding var duplicateCount: Int
+    @Binding var showingAlert: Bool
+
+    let onRepair: () async -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .alert("Duplicate QSOs Found", isPresented: $showingAlert) {
+                Button("Merge Duplicates") {
+                    Task { await onRepair() }
+                }
+                Button("Not Now", role: .cancel) {}
+            } message: {
+                Text(
+                    """
+                    Found \(duplicateCount) duplicate QSO group(s) from two-fer activations. \
+                    These appear to be the same contacts imported from different sources \
+                    with different park reference formats.
+
+                    Tap "Merge Duplicates" to combine them and preserve all sync status.
+                    """
+                )
+            }
+    }
 }

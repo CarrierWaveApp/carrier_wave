@@ -137,6 +137,60 @@ struct POTAActivation: Identifiable, Equatable {
         return notUploaded.allSatisfy { $0.isUploadRejected(for: .pota) }
     }
 
+    // MARK: - Two-fer Support
+
+    /// Individual parks in this activation (splits comma-separated refs like "US-1044, US-3791")
+    var parks: [String] {
+        POTAClient.splitParkReferences(parkReference)
+    }
+
+    /// Whether this is a multi-park activation (two-fer, three-fer, etc.)
+    var isMultiPark: Bool {
+        parks.count > 1
+    }
+
+    /// Upload status for each park in this activation
+    /// Returns dict of park reference -> (uploaded count, total count)
+    var uploadStatusByPark: [String: (uploaded: Int, total: Int)] {
+        var status: [String: (uploaded: Int, total: Int)] = [:]
+        for park in parks {
+            let uploaded = qsos.filter { $0.isUploadedToPark(park) }.count
+            status[park] = (uploaded: uploaded, total: qsos.count)
+        }
+        return status
+    }
+
+    /// Parks that have failed uploads (have QSOs but none uploaded)
+    /// Used to show error indicators in the UI
+    var failedParks: [String] {
+        parks.filter { park in
+            let uploaded = qsos.filter { $0.isUploadedToPark(park) }.count
+            return uploaded == 0
+        }
+    }
+
+    /// Parks that still need upload (not all QSOs uploaded)
+    var parksNeedingUpload: [String] {
+        parks.filter { park in
+            let uploaded = qsos.filter { $0.isUploadedToPark(park) }.count
+            return uploaded < qsos.count
+        }
+    }
+
+    /// Whether all parks have been fully uploaded
+    var isFullyUploaded: Bool {
+        parksNeedingUpload.isEmpty
+    }
+
+    /// Summary string for upload status (e.g., "2/2 parks" or "1/2 parks")
+    var uploadStatusSummary: String? {
+        guard isMultiPark else {
+            return nil
+        }
+        let uploadedParks = parks.count - failedParks.count
+        return "\(uploadedParks)/\(parks.count) parks"
+    }
+
     static func == (lhs: POTAActivation, rhs: POTAActivation) -> Bool {
         lhs.id == rhs.id
     }
@@ -192,9 +246,16 @@ struct POTAActivation: Identifiable, Equatable {
                 .sorted { $0.park < $1.park }
     }
 
-    /// QSOs that are present in POTA (uploaded or downloaded from POTA)
+    /// QSOs that are fully uploaded to all parks in this activation
     func uploadedQSOs() -> [QSO] {
-        qsos.filter { $0.isPresentInPOTA() }
+        if isMultiPark {
+            // For two-fers, a QSO is "uploaded" only if uploaded to ALL parks
+            qsos.filter { qso in
+                parks.allSatisfy { qso.isUploadedToPark($0) }
+            }
+        } else {
+            qsos.filter { $0.isPresentInPOTA() }
+        }
     }
 
     /// QSOs where upload was rejected by the user
@@ -202,9 +263,23 @@ struct POTAActivation: Identifiable, Equatable {
         qsos.filter { $0.isUploadRejected(for: .pota) }
     }
 
-    /// QSOs that need to be uploaded to POTA (not uploaded and not rejected)
+    /// QSOs that need to be uploaded to POTA (not fully uploaded and not rejected)
     func pendingQSOs() -> [QSO] {
-        qsos.filter { !$0.isPresentInPOTA() && !$0.isUploadRejected(for: .pota) }
+        if isMultiPark {
+            // For two-fers, a QSO is "pending" if ANY park hasn't been uploaded
+            qsos.filter { qso in
+                !qso.isUploadRejected(for: .pota) && parks.contains { !qso.isUploadedToPark($0) }
+            }
+        } else {
+            qsos.filter { !$0.isPresentInPOTA() && !$0.isUploadRejected(for: .pota) }
+        }
+    }
+
+    /// QSOs that need upload to a specific park
+    func pendingQSOs(forPark park: String) -> [QSO] {
+        qsos.filter { qso in
+            !qso.isUploadRejected(for: .pota) && !qso.isUploadedToPark(park)
+        }
     }
 
     // MARK: Private

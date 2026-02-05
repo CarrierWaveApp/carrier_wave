@@ -310,4 +310,36 @@ extension DashboardView {
             print("Failed to repair mismarked POTA presence: \(error)")
         }
     }
+
+    // MARK: - Two-fer Duplicate Repair
+
+    /// Check for duplicate QSOs from two-fer park reference mismatches
+    /// Runs on background thread via actor.
+    func checkForTwoferDuplicates() async {
+        let repairService = TwoferDuplicateRepairService(container: modelContext.container)
+        do {
+            let count = try await repairService.countDuplicates()
+            if count > 0 {
+                twoferDuplicateCount = count
+                showingTwoferRepairAlert = true
+            }
+        } catch {
+            print("Failed to check for two-fer duplicates: \(error)")
+        }
+    }
+
+    /// Repair duplicate QSOs by merging truncated versions into complete versions
+    /// Runs on background thread via actor.
+    func repairTwoferDuplicates() async {
+        let repairService = TwoferDuplicateRepairService(container: modelContext.container)
+        do {
+            let result = try await repairService.repairDuplicates()
+            print(
+                "Repaired \(result.qsosMerged) duplicate groups, removed \(result.qsosRemoved) QSOs"
+            )
+            twoferDuplicateCount = 0
+        } catch {
+            print("Failed to repair two-fer duplicates: \(error)")
+        }
+    }
 }

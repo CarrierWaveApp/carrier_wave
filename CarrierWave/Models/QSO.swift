@@ -330,4 +330,11 @@ final class QSO {
         }
         return false
     }
+
+    // MARK: - Per-Park POTA Presence (Two-fer Support)
+
+    /// Get all POTA presence records for this QSO (may have multiple for two-fers)
+    func potaPresenceRecords() -> [ServicePresence] {
+        servicePresence.filter { $0.serviceType == .pota }
+    }
 }

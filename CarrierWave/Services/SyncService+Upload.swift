@@ -310,15 +310,29 @@ extension SyncService {
     }
 
     func uploadToPOTA(qsos: [QSO]) async throws -> Int {
-        // Filter out metadata pseudo-modes before grouping
+        // Filter out metadata pseudo-modes before processing
         let realQsos = qsos.filter { !Self.metadataModes.contains($0.mode.uppercased()) }
-        let byPark = POTAClient.groupQSOsByPark(realQsos)
+
+        // Expand multi-park QSOs: each QSO with "US-1044, US-3791" becomes entries for both parks
+        // This handles two-fer, three-fer, etc. activations
+        var expandedByPark: [String: [QSO]] = [:]
+        for qso in realQsos {
+            guard let parkRef = qso.parkReference, !parkRef.isEmpty else {
+                continue
+            }
+
+            let parks = POTAClient.splitParkReferences(parkRef)
+            for park in parks {
+                expandedByPark[park, default: []].append(qso)
+            }
+        }
+
         var totalUploaded = 0
         var totalFailed = 0
 
-        await logPOTAUploadStart(qsos: qsos, realQsos: realQsos, parkCount: byPark.count)
+        await logPOTAUploadStart(qsos: qsos, realQsos: realQsos, parkCount: expandedByPark.count)
 
-        for (parkRef, parkQSOs) in byPark {
+        for (parkRef, parkQSOs) in expandedByPark {
             let result = await uploadParkToPOTA(parkRef: parkRef, parkQSOs: parkQSOs)
             totalUploaded += result.uploaded
             totalFailed += result.failed
@@ -352,7 +366,7 @@ extension SyncService {
         }
     }
 
-    /// Upload QSOs for a single park to POTA
+    /// Upload QSOs for a single park to POTA (handles both single-park and two-fer QSOs)
     private func uploadParkToPOTA(parkRef: String, parkQSOs: [QSO]) async -> (
         uploaded: Int, failed: Int
     ) {
@@ -373,7 +387,9 @@ extension SyncService {
             if result.success {
                 await MainActor.run {
                     for qso in parkQSOs {
-                        qso.markPresent(in: .pota, context: modelContext)
+                        // Use per-park tracking for two-fer support
+                        // This marks just this specific park as uploaded
+                        qso.markUploadedToPark(parkRef, context: modelContext)
                     }
                     SyncDebugLog.shared.debug(
                         "Park \(parkRef): \(result.qsosAccepted) QSO(s) accepted",

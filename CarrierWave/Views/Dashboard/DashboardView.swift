@@ -58,6 +58,10 @@ struct DashboardView: View {
     @State var mismarkedPOTACount = 0
     @State var showingPOTARepairAlert = false
 
+    /// Two-fer duplicate QSO repair state
+    @State var twoferDuplicateCount = 0
+    @State var showingTwoferRepairAlert = false
+
     /// Progressive statistics - computes expensive stats in background for large datasets
     @State var asyncStats = AsyncQSOStatistics()
 
@@ -122,6 +126,7 @@ struct DashboardView: View {
                 try? await Task.sleep(for: .milliseconds(500))
                 await checkForUnconfiguredCallsigns()
                 await checkForMismarkedPOTAPresence()
+                await checkForTwoferDuplicates()
             }
             .onChange(of: syncService.lastSyncDate) { _, _ in
                 // Recompute stats after sync completes
@@ -157,6 +162,11 @@ struct DashboardView: View {
                 mismarkedCount: $mismarkedPOTACount,
                 showingAlert: $showingPOTARepairAlert,
                 onRepair: { await repairMismarkedPOTAPresence() }
+            )
+            .twoferDuplicateRepairAlert(
+                duplicateCount: $twoferDuplicateCount,
+                showingAlert: $showingTwoferRepairAlert,
+                onRepair: { await repairTwoferDuplicates() }
             )
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {

@@ -19,11 +19,13 @@ struct ActivationRow: View {
     let onShareTapped: () -> Void
     let onExportTapped: () -> Void
     var showParkReference: Bool = false
+    /// Upload errors by park (for two-fer error display)
+    var uploadErrors: [String: String] = [:]
 
     var body: some View {
         DisclosureGroup(isExpanded: $isExpanded) {
             ForEach(activation.qsos.sorted { $0.timestamp > $1.timestamp }) { qso in
-                POTAQSORow(qso: qso)
+                POTAQSORow(qso: qso, parks: activation.parks)
             }
         } label: {
             HStack {
@@ -50,6 +52,17 @@ struct ActivationRow: View {
                 }
 
                 Spacer()
+
+                // Error indicator for failed park uploads (two-fer support)
+                if !uploadErrors.isEmpty {
+                    Button {
+                        showingErrorSheet = true
+                    } label: {
+                        Image(systemName: "exclamationmark.circle.fill")
+                            .foregroundStyle(.red)
+                    }
+                    .buttonStyle(.borderless)
+                }
 
                 // Export ADIF button
                 Button {
@@ -107,11 +120,18 @@ struct ActivationRow: View {
             }
             .tint(.blue)
         }
+        .sheet(isPresented: $showingErrorSheet) {
+            UploadErrorSheet(
+                parkReference: activation.parkReference,
+                errors: uploadErrors
+            )
+        }
     }
 
     // MARK: Private
 
     @State private var isExpanded = false
+    @State private var showingErrorSheet = false
 
     private var statusIconName: String {
         if activation.isRejected {
@@ -133,6 +153,19 @@ struct ActivationRow: View {
 
     private var statusText: String {
         let rejectedCount = activation.rejectedQSOs().count
+
+        // For two-fers, show park upload status
+        if activation.isMultiPark {
+            if let summary = activation.uploadStatusSummary {
+                if activation.isRejected {
+                    return "\(summary), \(rejectedCount) rejected"
+                } else if rejectedCount > 0 {
+                    return "\(summary), \(rejectedCount) rejected"
+                }
+                return "\(summary) uploaded"
+            }
+        }
+
         if activation.isRejected {
             return
                 "\(activation.uploadedCount)/\(activation.qsoCount) uploaded, \(rejectedCount) rejected"
@@ -150,44 +183,20 @@ struct POTAQSORow: View {
     // MARK: Internal
 
     let qso: QSO
+    var parks: [String] = [] // For two-fer per-park status display
 
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
-                Text(qso.callsign)
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                Text(timeString)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                Text(qso.callsign).font(.subheadline).fontWeight(.medium)
+                Text(timeString).font(.caption).foregroundStyle(.secondary)
             }
-
             Spacer()
-
             HStack(spacing: 8) {
-                Text(qso.band)
-                    .font(.caption)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Color.blue.opacity(0.15))
-                    .cornerRadius(4)
-                Text(qso.mode)
-                    .font(.caption)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Color.green.opacity(0.15))
-                    .cornerRadius(4)
+                badgeView(qso.band, color: .blue)
+                badgeView(qso.mode, color: .green)
             }
-
-            if qso.isPresentInPOTA() {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(.green)
-                    .font(.caption)
-            } else {
-                Image(systemName: "circle")
-                    .foregroundStyle(.secondary)
-                    .font(.caption)
-            }
+            uploadStatusView
         }
         .padding(.vertical, 2)
     }
@@ -200,6 +209,68 @@ struct POTAQSORow: View {
         formatter.timeZone = TimeZone(identifier: "UTC")
         return formatter.string(from: qso.timestamp) + " UTC"
     }
+
+    @ViewBuilder private var uploadStatusView: some View {
+        if parks.count > 1 {
+            HStack(spacing: 2) {
+                ForEach(parks, id: \.self) { park in
+                    Image(
+                        systemName: qso.isUploadedToPark(park) ? "checkmark.circle.fill" : "circle"
+                    )
+                    .foregroundStyle(qso.isUploadedToPark(park) ? .green : .secondary)
+                    .font(.caption2)
+                }
+            }
+        } else {
+            Image(systemName: qso.isPresentInPOTA() ? "checkmark.circle.fill" : "circle")
+                .foregroundStyle(qso.isPresentInPOTA() ? .green : .secondary)
+                .font(.caption)
+        }
+    }
+
+    private func badgeView(_ text: String, color: Color) -> some View {
+        Text(text).font(.caption)
+            .padding(.horizontal, 6).padding(.vertical, 2)
+            .background(color.opacity(0.15)).cornerRadius(4)
+    }
+}
+
+// MARK: - UploadErrorSheet
+
+struct UploadErrorSheet: View {
+    // MARK: Internal
+
+    let parkReference: String
+    let errors: [String: String]
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    ForEach(errors.sorted(by: { $0.key < $1.key }), id: \.key) { park, error in
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(park).font(.headline)
+                            Text(error).font(.subheadline).foregroundStyle(.secondary)
+                        }
+                    }
+                } header: {
+                    Text("Failed Parks")
+                } footer: {
+                    Text("Tap Upload to retry.")
+                }
+            }
+            .navigationTitle("Upload Errors")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
+            }
+        }
+        .presentationDetents([.medium])
+    }
+
+    // MARK: Private
+
+    @Environment(\.dismiss) private var dismiss
 }
 
 // MARK: - UploadConfirmationSheet
@@ -209,6 +280,8 @@ struct UploadConfirmationSheet: View {
 
     let activation: POTAActivation
     let parkName: String?
+    /// Park names by reference (for two-fer display)
+    var parkNames: [String: String] = [:]
     let onUpload: () async -> Void
     let onCancel: () -> Void
 
@@ -216,13 +289,32 @@ struct UploadConfirmationSheet: View {
         NavigationStack {
             VStack(spacing: 24) {
                 VStack(spacing: 8) {
-                    Text(activation.parkReference)
-                        .font(.title)
-                        .fontWeight(.bold)
-                    if let name = parkName {
-                        Text(name)
-                            .font(.subheadline)
+                    if activation.isMultiPark {
+                        // Show all parks for two-fer
+                        Text("Two-fer Activation")
+                            .font(.headline)
                             .foregroundStyle(.secondary)
+                        ForEach(activation.parks, id: \.self) { park in
+                            HStack {
+                                Text(park)
+                                    .font(.title3)
+                                    .fontWeight(.bold)
+                                if let name = parkNames[park] {
+                                    Text("- \(name)")
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                        }
+                    } else {
+                        Text(activation.parkReference)
+                            .font(.title)
+                            .fontWeight(.bold)
+                        if let name = parkName {
+                            Text(name)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
 
@@ -233,6 +325,13 @@ struct UploadConfirmationSheet: View {
                         label: "QSOs to Upload",
                         value: "\(activation.pendingCount) of \(activation.qsoCount)"
                     )
+                    if activation.isMultiPark {
+                        UploadDetailRow(
+                            label: "Parks to Upload",
+                            value:
+                            "\(activation.parksNeedingUpload.count) of \(activation.parks.count)"
+                        )
+                    }
                 }
                 .padding()
                 .background(Color(.secondarySystemBackground))
@@ -250,8 +349,13 @@ struct UploadConfirmationSheet: View {
                                 await onUpload()
                             }
                         } label: {
-                            Text("Upload \(activation.pendingCount) QSOs")
-                                .frame(maxWidth: .infinity)
+                            if activation.isMultiPark {
+                                Text("Upload to \(activation.parksNeedingUpload.count) Parks")
+                                    .frame(maxWidth: .infinity)
+                            } else {
+                                Text("Upload \(activation.pendingCount) QSOs")
+                                    .frame(maxWidth: .infinity)
+                            }
                         }
                         .buttonStyle(.borderedProminent)
                         .controlSize(.large)

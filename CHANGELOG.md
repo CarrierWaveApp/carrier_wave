@@ -5,6 +5,19 @@ All notable changes to Carrier Wave will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- **Two-fer POTA Upload Support** - Activations with multiple park references (e.g., "US-1044, US-3791") now upload correctly
+  - QSOs are automatically split and uploaded to each park separately
+  - Per-park upload status tracking shows which parks succeeded or failed
+  - Combined activation row in POTA Activations view with single upload button
+  - Tappable error icon shows failed parks with error messages
+- **Two-fer Duplicate Repair** - Detect and merge duplicate QSOs from multi-source imports
+  - Automatically detects QSOs with partial/truncated park references alongside complete versions
+  - Dashboard prompts to merge duplicates when detected
+  - Merges preserve the complete park reference and combine service presence records
+
+## [1.20.0] - 2026-02-04
+
+### Added
 - **Friend Profile View** - Tap any callsign in the activity feed to view their profile
   - Shows recent activity from that friend
   - Displays activity stats (total activities, activities this week)
