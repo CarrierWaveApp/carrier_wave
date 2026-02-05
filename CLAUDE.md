@@ -248,6 +248,76 @@ DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...
 - **Section order:** Added → Changed → Fixed → Removed
 - When releasing, rename `[Unreleased]` to `[X.Y.Z] - YYYY-MM-DD`
 
+## Investigation Traces (REQUIRED)
+
+**When debugging or investigating any non-trivial issue, create a markdown artifact to document the investigation.**
+
+**Location:** `docs/investigations/YYYY-MM-DD-<short-description>.md`
+
+**When to create:**
+- Debugging a bug that requires exploring multiple files or hypotheses
+- Investigating user-reported issues
+- Diagnosing build failures, crashes, or unexpected behavior
+- Any investigation taking more than a few minutes
+
+**Format:**
+
+```markdown
+# Investigation: <Short Description>
+
+**Date:** YYYY-MM-DD
+**Status:** In Progress | Resolved | Blocked | Abandoned
+**Outcome:** <One-line summary of resolution, if resolved>
+
+## Problem Statement
+
+<What triggered this investigation? User report, error message, etc.>
+
+## Hypotheses
+
+### Hypothesis 1: <Brief description>
+- **Evidence for:** <What supports this theory>
+- **Evidence against:** <What contradicts it>
+- **Tested:** Yes/No
+- **Result:** <What we learned>
+
+### Hypothesis 2: <Brief description>
+...
+
+## Investigation Log
+
+### <Timestamp or step number>
+<What was checked, what was found, what was tried>
+
+### <Next step>
+...
+
+## Files Examined
+
+| File | Relevance | Finding |
+|------|-----------|---------|
+| `path/to/file.swift` | <Why looked here> | <What was found> |
+
+## Root Cause
+
+<If found: detailed explanation of the root cause>
+
+## Resolution
+
+<If resolved: what fix was applied, or why issue was closed without fix>
+
+## Lessons Learned
+
+<Optional: patterns to watch for, documentation to update, etc.>
+```
+
+**Guidelines:**
+- Create the file at the START of the investigation, not the end
+- Update incrementally as you discover new information
+- Document dead ends too — they prevent re-investigating the same paths
+- Mark the status as **Resolved** and add **Outcome** when done
+- Link to related bugs/plans if applicable
+
 ## Issue and feature ideas
 
 I'll occasionally store human-generated plans/bugs/etc in `docs/plans/human` and `docs/bugs`. Look through these to find new work to do. Mark the documents as done in a way that you can easily find once they're completed.
