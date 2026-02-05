@@ -283,6 +283,21 @@ struct POTAActivation: Identifiable, Equatable {
         }
     }
 
+    // MARK: - Job Matching
+
+    /// Find all POTA jobs that match this activation by (park, UTC date, callsign)
+    /// Returns jobs sorted by submitted date descending (most recent first)
+    func matchingJobs(from jobs: [POTAJob]) -> [POTAJob] {
+        jobs.filter { job in
+            job.matches(parkReference: parkReference, utcDate: utcDateString, callsign: callsign)
+        }.sorted { $0.submitted > $1.submitted }
+    }
+
+    /// Check if any matching job has a failure status
+    func hasFailedJob(in jobs: [POTAJob]) -> Bool {
+        matchingJobs(from: jobs).contains { $0.status.isFailure }
+    }
+
     // MARK: Private
 
     // MARK: - Date Formatters

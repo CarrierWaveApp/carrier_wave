@@ -18,10 +18,29 @@ struct ActivationRow: View {
     var showParkReference: Bool = false
     /// Upload errors by park (for two-fer error display)
     var uploadErrors: [String: String] = [:]
+    /// Pre-computed matching jobs for this activation (computed by parent)
+    var matchingJobs: [POTAJob] = []
+    /// POTA client for fetching job details
+    var potaClient: POTAClient?
 
     var body: some View {
         DisclosureGroup(isExpanded: $isExpanded) {
-            ForEach(activation.qsos.sorted { $0.timestamp > $1.timestamp }) { qso in
+            // Jobs section (shown first when there are matching jobs)
+            if !matchingJobs.isEmpty {
+                Section {
+                    ForEach(matchingJobs) { job in
+                        POTAJobRow(job: job, potaClient: potaClient)
+                    }
+                } header: {
+                    Text("POTA Jobs")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .textCase(nil)
+                }
+            }
+
+            // QSOs section - use activation.qsos directly (already sorted in POTAActivation.groupQSOs)
+            ForEach(sortedQSOs) { qso in
                 POTAQSORow(qso: qso, parks: activation.parks)
             }
         } label: {
@@ -49,6 +68,13 @@ struct ActivationRow: View {
                 }
 
                 Spacer()
+
+                // Warning indicator for failed POTA jobs
+                if hasFailedJob {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                        .font(.body)
+                }
 
                 // Error indicator for failed park uploads (two-fer support)
                 if !uploadErrors.isEmpty {
@@ -146,6 +172,16 @@ struct ActivationRow: View {
 
     @State private var isExpanded = false
     @State private var showingErrorSheet = false
+
+    /// QSOs sorted by timestamp descending (computed once)
+    private var sortedQSOs: [QSO] {
+        activation.qsos.sorted { $0.timestamp > $1.timestamp }
+    }
+
+    /// Check if any matching job has failed status
+    private var hasFailedJob: Bool {
+        matchingJobs.contains { $0.status.isFailure }
+    }
 
     private var statusIconName: String {
         if activation.isRejected {
@@ -406,85 +442,5 @@ struct UploadDetailRow: View {
             Text(value)
                 .fontWeight(.medium)
         }
-    }
-}
-
-// MARK: - ActivationShareSheet
-
-struct ActivationShareSheet: View {
-    // MARK: Internal
-
-    let activation: POTAActivation
-    let parkName: String?
-    let myGrid: String?
-
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: 24) {
-                if let renderedImage {
-                    Image(uiImage: renderedImage)
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 340, height: 510)
-                } else {
-                    RoundedRectangle(cornerRadius: 20)
-                        .fill(Color(red: 0.12, green: 0.10, blue: 0.18))
-                        .frame(width: 340, height: 510)
-                        .overlay(ProgressView().tint(.white))
-                }
-
-                Spacer()
-
-                if let renderedImage {
-                    ShareLink(
-                        item: ShareableImage(uiImage: renderedImage),
-                        preview: SharePreview(
-                            "POTA Activation - \(activation.parkReference)",
-                            image: Image(uiImage: renderedImage)
-                        )
-                    ) {
-                        Label("Share", systemImage: "square.and.arrow.up").frame(
-                            maxWidth: .infinity
-                        )
-                    }
-                    .buttonStyle(.borderedProminent).controlSize(.large)
-                } else {
-                    Button {} label: {
-                        Label("Share", systemImage: "square.and.arrow.up").frame(
-                            maxWidth: .infinity
-                        )
-                    }
-                    .buttonStyle(.borderedProminent).controlSize(.large).disabled(true)
-                }
-            }
-            .padding()
-            .navigationTitle("Share Activation")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        dismiss()
-                    }
-                }
-            }
-        }
-        .presentationDetents([.large])
-        .task {
-            try? await Task.sleep(for: .milliseconds(100))
-            await renderImage()
-        }
-    }
-
-    // MARK: Private
-
-    @Environment(\.dismiss) private var dismiss
-    @State private var renderedImage: UIImage?
-
-    private func renderImage() async {
-        renderedImage = await ActivationShareRenderer.renderWithMap(
-            activation: activation,
-            parkName: parkName,
-            myGrid: myGrid
-        )
     }
 }

@@ -145,6 +145,8 @@ struct POTAActivationsContentView: View {
     @State private var cachedParkNames: [String: String] = [:]
     /// Upload errors by activation ID -> (park -> error message) for two-fer error display
     @State private var uploadErrorsByActivation: [String: [String: String]] = [:]
+    /// Pre-computed job index: activation ID -> matching jobs (rebuilt when jobs change)
+    @State private var jobsByActivationId: [String: [POTAJob]] = [:]
 
     private var isInMaintenance: Bool {
         if debugMode, bypassMaintenance {
@@ -276,7 +278,9 @@ struct POTAActivationsContentView: View {
             onExportTapped: { activationToExport = activation },
             onMapTapped: { activationToMap = activation },
             showParkReference: showParkReference,
-            uploadErrors: uploadErrorsByActivation[activation.id] ?? [:]
+            uploadErrors: uploadErrorsByActivation[activation.id] ?? [:],
+            matchingJobs: jobsByActivationId[activation.id] ?? [],
+            potaClient: potaClient
         )
     }
 
@@ -359,6 +363,8 @@ extension POTAActivationsContentView {
         }
 
         allParkQSOs = loadedQSOs
+        // Rebuild job index since activations changed
+        rebuildJobIndex()
     }
 
     func loadCachedParkNames() async {
@@ -387,6 +393,7 @@ extension POTAActivationsContentView {
             let fetchedJobs = try await potaClient.fetchJobs()
             await MainActor.run {
                 jobs = fetchedJobs
+                rebuildJobIndex()
             }
         } catch POTAError.notAuthenticated {
             await MainActor.run {
@@ -401,6 +408,19 @@ extension POTAActivationsContentView {
         await MainActor.run {
             isLoading = false
         }
+    }
+
+    /// Rebuild the job index mapping activation IDs to their matching jobs
+    /// Called when jobs or activations change
+    private func rebuildJobIndex() {
+        var index: [String: [POTAJob]] = [:]
+        for activation in activations {
+            let matching = activation.matchingJobs(from: jobs)
+            if !matching.isEmpty {
+                index[activation.id] = matching
+            }
+        }
+        jobsByActivationId = index
     }
 
     func uploadActivation(_ activation: POTAActivation) async {

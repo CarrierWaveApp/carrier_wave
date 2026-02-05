@@ -5,6 +5,11 @@ All notable changes to Carrier Wave will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- **POTA Job Status Display** - View POTA upload job statuses directly in the Activations view
+  - Jobs are automatically matched to activations by park, date, and callsign
+  - Warning icon appears on activations with failed jobs
+  - Expand any activation to see all matching POTA jobs with status badges
+  - Tap a job to view full details including errors and warnings from POTA processing
 - **Two-fer POTA Upload Support** - Activations with multiple park references (e.g., "US-1044, US-3791") now upload correctly
   - QSOs are automatically split and uploaded to each park separately
   - Per-park upload status tracking shows which parks succeeded or failed

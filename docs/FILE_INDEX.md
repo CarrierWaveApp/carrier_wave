@@ -46,7 +46,7 @@ Pure logic library that can be tested without iOS Simulator. Run tests with `mak
 | `QSO.swift` | Core contact record (callsign, band, mode, timestamps, grid, park ref) |
 | `QSO+POTAPresence.swift` | Per-park POTA presence tracking for two-fer activations |
 | `UploadDestination.swift` | Sync target configuration (enabled flag, last sync timestamp) |
-| `POTAJob.swift` | POTA activation job tracking |
+| `POTAJob.swift` | POTA job tracking, status, details models (POTAJob, POTAJobDetails, POTAJobStatus) |
 | `POTALogEntry.swift` | Individual POTA log entries |
 | `POTAUploadAttempt.swift` | POTA upload attempt history and status |
 | `ServicePresence.swift` | Service connection status tracking |
@@ -250,7 +250,8 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | File | Purpose |
 |------|---------|
 | `POTAActivationsView.swift` | POTA activations grouped by park with upload |
-| `POTAActivationsHelperViews.swift` | Helper views for POTA activations (rows, sheets, share) |
+| `POTAActivationsHelperViews.swift` | Helper views for POTA activations (ActivationRow, sheets) |
+| `POTAJobViews.swift` | POTA job display components (POTAJobRow, POTAJobDetailSheet) |
 | `POTALogEntryRow.swift` | Individual POTA log entry display (legacy) |
 | `ActivationShareCardView.swift` | Shareable activation card with map and stats |
 | `ActivationShareRenderer.swift` | Render activation card to UIImage for sharing |

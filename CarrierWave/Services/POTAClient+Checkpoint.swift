@@ -357,6 +357,49 @@ extension POTAClient {
         debugLog.info("Fetched \(jobs.count) POTA jobs", service: .pota)
         return jobs
     }
+
+    /// Fetch detailed information for a specific job including errors and warnings
+    func fetchJobDetails(jobId: Int) async throws -> POTAJobDetails {
+        let debugLog = SyncDebugLog.shared
+        let token = try await authService.ensureValidToken()
+
+        guard let url = URL(string: "\(baseURL)/user/jobs/details/\(jobId)") else {
+            debugLog.error("Invalid URL for POTA job details", service: .pota)
+            throw POTAError.fetchFailed("Invalid URL")
+        }
+
+        var request = URLRequest(url: url)
+        request.setValue(token, forHTTPHeaderField: "Authorization")
+
+        debugLog.debug("GET /user/jobs/details/\(jobId)", service: .pota)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            debugLog.error("Invalid response (not HTTP)", service: .pota)
+            throw POTAError.fetchFailed("Invalid response")
+        }
+
+        debugLog.debug("Job details response: \(httpResponse.statusCode)", service: .pota)
+
+        guard httpResponse.statusCode == 200 else {
+            if httpResponse.statusCode == 401 || httpResponse.statusCode == 403 {
+                throw POTAError.notAuthenticated
+            }
+            let body = String(data: data, encoding: .utf8) ?? ""
+            debugLog.error(
+                "Job details fetch failed: \(httpResponse.statusCode) - \(body)", service: .pota
+            )
+            throw POTAError.fetchFailed("HTTP \(httpResponse.statusCode): \(body)")
+        }
+
+        let details = try JSONDecoder().decode(POTAJobDetails.self, from: data)
+        debugLog.info(
+            "Fetched job \(jobId) details: \(details.errors.count) errors, \(details.warnings.count) warnings",
+            service: .pota
+        )
+        return details
+    }
 }
 
 // MARK: - Array Chunking Extension
