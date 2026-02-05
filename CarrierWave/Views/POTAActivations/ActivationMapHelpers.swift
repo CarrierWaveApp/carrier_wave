@@ -1,7 +1,8 @@
 // Activation Map Helpers
 //
-// Utilities for map rendering in activation share cards.
+// Utilities for map rendering in activation share cards and activation map stats.
 
+import Foundation
 import MapKit
 
 // MARK: - ActivationMapHelpers
@@ -85,5 +86,47 @@ enum ActivationMapHelpers {
         }
 
         return path
+    }
+}
+
+// MARK: - ActivationStatsHelper
+
+/// Computes distance/rate statistics for a POTA activation's QSOs
+enum ActivationStatsHelper {
+    static func statistics(for activation: POTAActivation) -> MapStatistics {
+        let snapshots: [MapQSOSnapshot] = activation.qsos.map { qso in
+            MapQSOSnapshot(
+                id: qso.id,
+                callsign: qso.callsign,
+                band: qso.band,
+                mode: qso.mode,
+                timestamp: qso.timestamp,
+                myGrid: qso.myGrid,
+                theirGrid: qso.theirGrid,
+                parkReference: qso.parkReference,
+                state: qso.state,
+                dxccNumber: qso.dxcc,
+                lotwConfirmed: qso.lotwConfirmed,
+                qrzConfirmed: qso.qrzConfirmed,
+                power: qso.power
+            )
+        }
+        return QSOMapView.computeStatistics(from: snapshots)
+    }
+
+    static func formatDuration(_ duration: TimeInterval) -> String {
+        let hours = Int(duration) / 3_600
+        let minutes = (Int(duration) % 3_600) / 60
+        if hours > 0 {
+            return "\(hours)h\(minutes)m"
+        }
+        return "\(minutes)m"
+    }
+
+    static func formatDistance(_ km: Double) -> String {
+        if km >= 1_000 {
+            return String(format: "%.0fk km", km / 1_000)
+        }
+        return String(format: "%.0f km", km)
     }
 }

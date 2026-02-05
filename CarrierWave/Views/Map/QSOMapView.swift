@@ -123,6 +123,7 @@ struct QSOMapView: View {
     // Additional cached values to avoid computed property access in view body
     @State private var cachedFilteredSnapshotCount: Int = 0
     @State private var cachedIsLimited: Bool = false
+    @State private var cachedStatistics: MapStatistics = .empty
 
     /// Filter snapshots based on current filter state
     private var filteredSnapshots: [MapQSOSnapshot] {
@@ -227,7 +228,8 @@ struct QSOMapView: View {
                             visibleQSOs: cachedFilteredSnapshotCount,
                             gridCount: cachedAnnotations.count,
                             stateCount: cachedUniqueStates,
-                            dxccCount: cachedUniqueDXCCEntities
+                            dxccCount: cachedUniqueDXCCEntities,
+                            statistics: cachedStatistics
                         )
 
                         if cachedIsLimited {
@@ -236,7 +238,7 @@ struct QSOMapView: View {
                                 .foregroundStyle(.orange)
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 4)
-                                .background(.thickMaterial, in: Capsule())
+                                .background(.thinMaterial, in: Capsule())
                         }
                     }
                 }
@@ -268,6 +270,7 @@ struct QSOMapView: View {
         // Update stats that depend on filtered snapshots
         cachedUniqueStates = Set(filtered.compactMap(\.state).filter { !$0.isEmpty }).count
         cachedUniqueDXCCEntities = Set(filtered.compactMap(\.dxccNumber)).count
+        cachedStatistics = Self.computeStatistics(from: filtered)
     }
 
     /// Load data using background actor to avoid blocking the main thread

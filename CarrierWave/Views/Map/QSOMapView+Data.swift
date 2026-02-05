@@ -1,7 +1,10 @@
 import CarrierWaveCore
+import CoreLocation
 import Foundation
 
 // MARK: - QSOMapView Data Helpers
+
+private let kmToMiles = 0.621371
 
 extension QSOMapView {
     /// Filter snapshots based on current filter state
@@ -143,4 +146,106 @@ extension QSOMapView {
 
         return result
     }
+
+    // MARK: - Distance & Statistics
+
+    /// Calculate great-circle distance in kilometers between two grid squares
+    static func distanceInKm(fromGrid: String, toGrid: String) -> Double? {
+        guard let fromCoord = MaidenheadConverter.coordinate(from: fromGrid),
+              let toCoord = MaidenheadConverter.coordinate(from: toGrid)
+        else {
+            return nil
+        }
+
+        let fromLocation = CLLocation(latitude: fromCoord.latitude, longitude: fromCoord.longitude)
+        let toLocation = CLLocation(latitude: toCoord.latitude, longitude: toCoord.longitude)
+
+        return fromLocation.distance(from: toLocation) / 1_000.0
+    }
+
+    /// Compute statistics from filtered snapshots
+    static func computeStatistics(from snapshots: [MapQSOSnapshot]) -> MapStatistics {
+        guard !snapshots.isEmpty else {
+            return .empty
+        }
+
+        // Activation duration: first to last QSO
+        let timestamps = snapshots.map(\.timestamp).sorted()
+        let duration: TimeInterval? =
+            timestamps.count > 1
+                ? timestamps.last!.timeIntervalSince(timestamps.first!)
+                : nil
+
+        // QSO rate: only meaningful if duration > 0
+        let rate: Double? =
+            if let duration, duration > 0 {
+                Double(snapshots.count) / (duration / 3_600.0)
+            } else {
+                nil
+            }
+
+        // Distance calculations
+        var distances: [Double] = []
+        var powerValues: [Int] = []
+        var powerDistMiles: [Double] = []
+
+        for snapshot in snapshots {
+            guard let myGrid = snapshot.myGrid,
+                  let theirGrid = snapshot.theirGrid,
+                  let dist = distanceInKm(fromGrid: myGrid, toGrid: theirGrid)
+            else {
+                continue
+            }
+
+            distances.append(dist)
+
+            if let power = snapshot.power {
+                powerValues.append(power)
+                powerDistMiles.append(dist * kmToMiles)
+            }
+        }
+
+        let avgDistance = distances.isEmpty ? nil : distances.reduce(0, +) / Double(distances.count)
+        let maxDistance = distances.max()
+
+        // Watts per mile: average power / average distance in miles
+        let wattsPerMile: Double? = {
+            guard !powerValues.isEmpty else {
+                return nil
+            }
+            let avgPower = Double(powerValues.reduce(0, +)) / Double(powerValues.count)
+            let avgDistMiles = powerDistMiles.reduce(0, +) / Double(powerDistMiles.count)
+            guard avgDistMiles > 0 else {
+                return nil
+            }
+            return avgPower / avgDistMiles
+        }()
+
+        return MapStatistics(
+            activationDuration: duration,
+            qsoRate: rate,
+            averageDistanceKm: avgDistance,
+            longestDistanceKm: maxDistance,
+            wattsPerMile: wattsPerMile
+        )
+    }
+}
+
+// MARK: - MapStatistics
+
+/// Computed distance and rate statistics from a set of map snapshots
+struct MapStatistics {
+    static let empty = MapStatistics(
+        activationDuration: nil,
+        qsoRate: nil,
+        averageDistanceKm: nil,
+        longestDistanceKm: nil,
+        wattsPerMile: nil
+    )
+
+    let activationDuration: TimeInterval? // seconds, nil if ≤1 QSO
+    let qsoRate: Double? // QSOs per hour
+    let averageDistanceKm: Double? // nil if no grid pairs
+    let longestDistanceKm: Double?
+    let wattsPerMile: Double? // nil if no power data
 }

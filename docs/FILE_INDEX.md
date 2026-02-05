@@ -256,7 +256,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `ActivationShareCardView.swift` | Shareable activation card with map and stats |
 | `ActivationShareRenderer.swift` | Render activation card to UIImage for sharing |
 | `ADIFExportSheet.swift` | ADIF export sheet with share, save, copy options |
-| `ActivationMapHelpers.swift` | Map utilities for activation share cards (region, geodesic paths) |
+| `ActivationMapHelpers.swift` | Map utilities for activation share cards (region, geodesic paths) and activation stats helper |
 | `ActivationMapView.swift` | Full-screen activation map with RST-based contact coloring |
 | `ShareableImage.swift` | Transferable wrapper for UIImage sharing |
 

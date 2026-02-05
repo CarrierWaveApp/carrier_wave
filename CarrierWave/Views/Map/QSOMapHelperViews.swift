@@ -226,29 +226,69 @@ struct MapStatsOverlay: View {
     let gridCount: Int
     let stateCount: Int
     let dxccCount: Int
+    let statistics: MapStatistics
 
     var body: some View {
-        HStack(spacing: 12) {
-            statItem(value: visibleQSOs, label: "QSOs")
-            statItem(value: gridCount, label: "Grids")
-            statItem(value: stateCount, label: "States")
-            statItem(value: dxccCount, label: "DXCC")
+        VStack(spacing: 6) {
+            HStack(spacing: 12) {
+                statItem(value: visibleQSOs, label: "QSOs")
+                statItem(value: gridCount, label: "Grids")
+                statItem(value: stateCount, label: "States")
+                statItem(value: dxccCount, label: "DXCC")
+            }
+
+            HStack(spacing: 10) {
+                statItem(
+                    text: statistics.averageDistanceKm.map { formatDistance($0) } ?? "--",
+                    label: "Avg km"
+                )
+                statItem(
+                    text: statistics.longestDistanceKm.map { formatDistance($0) } ?? "--",
+                    label: "Max km"
+                )
+                if statistics.wattsPerMile != nil {
+                    statItem(
+                        text: statistics.wattsPerMile.map { String(format: "%.2f", $0) } ?? "--",
+                        label: "W/mi"
+                    )
+                }
+            }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .background(.thickMaterial, in: RoundedRectangle(cornerRadius: 8))
+        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 8))
     }
 
     // MARK: Private
 
     private func statItem(value: Int, label: String) -> some View {
+        statItem(text: "\(value)", label: label)
+    }
+
+    private func statItem(text: String, label: String) -> some View {
         VStack(spacing: 2) {
-            Text("\(value)")
+            Text(text)
                 .font(.headline)
             Text(label)
                 .font(.caption2)
                 .foregroundStyle(.secondary)
         }
+    }
+
+    private func formatDuration(_ duration: TimeInterval) -> String {
+        let hours = Int(duration) / 3_600
+        let minutes = (Int(duration) % 3_600) / 60
+        if hours > 0 {
+            return "\(hours)h\(minutes)m"
+        }
+        return "\(minutes)m"
+    }
+
+    private func formatDistance(_ km: Double) -> String {
+        if km >= 1_000 {
+            return String(format: "%.0fk", km / 1_000)
+        }
+        return String(format: "%.0f", km)
     }
 }
 
@@ -283,7 +323,7 @@ struct ActiveFiltersView: View {
             }
         }
         .padding(8)
-        .background(.thickMaterial, in: RoundedRectangle(cornerRadius: 8))
+        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 8))
     }
 
     // MARK: Private

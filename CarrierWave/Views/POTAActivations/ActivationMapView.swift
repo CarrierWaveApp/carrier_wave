@@ -22,10 +22,13 @@ struct ActivationMapView: View {
 
             // Stats overlay
             VStack {
-                HStack {
+                HStack(alignment: .top) {
                     statsOverlay
                     Spacer()
-                    legendOverlay
+                    VStack(alignment: .trailing, spacing: 4) {
+                        legendOverlay
+                        activationStatsView
+                    }
                 }
                 .padding()
 
@@ -33,7 +36,7 @@ struct ActivationMapView: View {
 
                 // Selected QSO callout
                 if let selected = selectedQSO {
-                    qsoCallout(for: selected)
+                    ActivationQSOCallout(qso: selected)
                         .padding()
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
@@ -84,6 +87,10 @@ struct ActivationMapView: View {
             return nil
         }
         return MaidenheadConverter.coordinate(from: grid)
+    }
+
+    private var activationStatistics: MapStatistics {
+        ActivationStatsHelper.statistics(for: activation)
     }
 
     private var mapContent: some View {
@@ -149,7 +156,45 @@ struct ActivationMapView: View {
                 .foregroundStyle(.secondary)
         }
         .padding(8)
-        .background(.thickMaterial, in: RoundedRectangle(cornerRadius: 8))
+        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 8))
+    }
+
+    private var activationStatsView: some View {
+        let stats = activationStatistics
+        return VStack(alignment: .trailing, spacing: 1) {
+            if let duration = stats.activationDuration {
+                activationStatRow(
+                    label: "Time",
+                    value: ActivationStatsHelper.formatDuration(duration)
+                )
+            }
+            if let rate = stats.qsoRate {
+                activationStatRow(
+                    label: "Rate",
+                    value: "\(String(format: "%.1f", rate))/hr"
+                )
+            }
+            if let avg = stats.averageDistanceKm {
+                activationStatRow(
+                    label: "Avg",
+                    value: ActivationStatsHelper.formatDistance(avg)
+                )
+            }
+            if let max = stats.longestDistanceKm {
+                activationStatRow(
+                    label: "Max",
+                    value: ActivationStatsHelper.formatDistance(max)
+                )
+            }
+            if let wpm = stats.wattsPerMile {
+                activationStatRow(
+                    label: "W/mi",
+                    value: String(format: "%.2f", wpm)
+                )
+            }
+        }
+        .padding(6)
+        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 6))
     }
 
     private var legendOverlay: some View {
@@ -175,56 +220,17 @@ struct ActivationMapView: View {
             }
         }
         .padding(8)
-        .background(.thickMaterial, in: RoundedRectangle(cornerRadius: 8))
+        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 8))
     }
 
-    private func qsoCallout(for qso: QSO) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Text(qso.callsign)
-                    .font(.headline)
-                Spacer()
-                Text(qso.band)
-                    .font(.caption)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Color.blue.opacity(0.2))
-                    .clipShape(Capsule())
-                Text(qso.mode)
-                    .font(.caption)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Color.green.opacity(0.2))
-                    .clipShape(Capsule())
-            }
-
-            HStack {
-                if let grid = qso.theirGrid {
-                    Text(grid)
-                        .font(.caption.monospaced())
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
-                if let sent = qso.rstSent {
-                    Text("S: \(sent)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                if let rcvd = qso.rstReceived {
-                    Text("R: \(rcvd)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            if let name = qso.name {
-                Text(name)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
+    private func activationStatRow(label: String, value: String) -> some View {
+        HStack(spacing: 4) {
+            Text(label)
+                .font(.system(size: 9))
+                .foregroundStyle(.tertiary)
+            Text(value)
+                .font(.system(size: 9, weight: .medium))
         }
-        .padding(12)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
     }
 
     private func computeMapData() {
@@ -411,6 +417,61 @@ enum RSTColorHelper {
         case (nil, nil):
             return 55 // Default to middle (green) if no RST data
         }
+    }
+}
+
+// MARK: - ActivationQSOCallout
+
+private struct ActivationQSOCallout: View {
+    let qso: QSO
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Text(qso.callsign)
+                    .font(.headline)
+                Spacer()
+                Text(qso.band)
+                    .font(.caption)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Color.blue.opacity(0.2))
+                    .clipShape(Capsule())
+                Text(qso.mode)
+                    .font(.caption)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Color.green.opacity(0.2))
+                    .clipShape(Capsule())
+            }
+
+            HStack {
+                if let grid = qso.theirGrid {
+                    Text(grid)
+                        .font(.caption.monospaced())
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                if let sent = qso.rstSent {
+                    Text("S: \(sent)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                if let rcvd = qso.rstReceived {
+                    Text("R: \(rcvd)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            if let name = qso.name {
+                Text(name)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(12)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
     }
 }
 

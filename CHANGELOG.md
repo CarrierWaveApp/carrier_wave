@@ -4,6 +4,9 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Map stats: activation time span, QSO/hr rate, average/longest distance, watts per mile on both QSO map and POTA activation map
+
 ## [1.21.0] - 2026-02-05
 
 ### Added
