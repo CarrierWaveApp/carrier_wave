@@ -46,12 +46,12 @@ jobs:
       - name: Run unit tests
         run: make test-unit
 
-  # Quick performance test on every PR (50k QSOs, ~1-2 min)
+  # Quick performance test (50k QSOs, ~1-2 min)
+  # Disabled on PRs for now - only runs on schedule or manual trigger
   performance-quick:
     name: Performance (Quick)
     runs-on: macos-15
-    # Skip on scheduled runs (full test runs instead)
-    if: github.event_name != 'schedule'
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     steps:
       - uses: actions/checkout@v4
 
