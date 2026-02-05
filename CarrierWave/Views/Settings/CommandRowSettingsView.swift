@@ -3,6 +3,7 @@
 // Configures which commands appear in the optional second row
 // of the keyboard accessory in the logger.
 
+import CarrierWaveCore
 import SwiftUI
 
 // MARK: - Notification Name Extension

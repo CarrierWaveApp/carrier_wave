@@ -1,3 +1,4 @@
+import CarrierWaveCore
 import MapKit
 import SwiftData
 import SwiftUI

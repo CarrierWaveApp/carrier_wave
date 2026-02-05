@@ -1,3 +1,4 @@
+import CarrierWaveCore
 import CoreLocation
 import Foundation
 import SwiftData
@@ -194,7 +195,11 @@ extension ActivityDetector {
         let oldStreak = StreakCalculator.calculateStreak(from: historical.qsoDates)
 
         // Check if we crossed a milestone
-        guard let milestone = findCrossedMilestone(oldValue: oldStreak.current, newValue: newStreak.current) else {
+        guard
+            let milestone = findCrossedMilestone(
+                oldValue: oldStreak.current, newValue: newStreak.current
+            )
+        else {
             return nil
         }
 
@@ -220,7 +225,11 @@ extension ActivityDetector {
         let oldStreak = StreakCalculator.calculateStreak(from: historical.potaDates, useUTC: true)
 
         // Check if we crossed a milestone
-        guard let milestone = findCrossedMilestone(oldValue: oldStreak.current, newValue: newStreak.current) else {
+        guard
+            let milestone = findCrossedMilestone(
+                oldValue: oldStreak.current, newValue: newStreak.current
+            )
+        else {
             return nil
         }
 
@@ -257,7 +266,9 @@ extension ActivityDetector {
         }
 
         let myLocation = CLLocation(latitude: myCoord.latitude, longitude: myCoord.longitude)
-        let theirLocation = CLLocation(latitude: theirCoord.latitude, longitude: theirCoord.longitude)
+        let theirLocation = CLLocation(
+            latitude: theirCoord.latitude, longitude: theirCoord.longitude
+        )
 
         return myLocation.distance(from: theirLocation) / 1_000.0
     }
@@ -275,7 +286,9 @@ extension ActivityDetector {
         var maxDistanceQSO: QSO?
 
         for qso in qsos {
-            if let distance = calculateDistanceKm(from: qso.myGrid, to: qso.theirGrid), distance > maxNewDistance {
+            if let distance = calculateDistanceKm(from: qso.myGrid, to: qso.theirGrid),
+               distance > maxNewDistance
+            {
                 maxNewDistance = distance
                 maxDistanceQSO = qso
             }

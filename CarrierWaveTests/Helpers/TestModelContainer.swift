@@ -2,6 +2,8 @@ import SwiftData
 import XCTest
 @testable import CarrierWave
 
+// MARK: - TestModelContainer
+
 /// Shared test infrastructure for SwiftData tests
 enum TestModelContainer {
     /// Creates an in-memory SwiftData container suitable for testing

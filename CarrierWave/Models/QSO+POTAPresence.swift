@@ -2,6 +2,7 @@
 //
 // Per-park POTA presence tracking for two-fer activations.
 
+import CarrierWaveCore
 import Foundation
 import SwiftData
 

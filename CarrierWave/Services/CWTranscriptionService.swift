@@ -1,4 +1,5 @@
 // swiftlint:disable file_length
+import CarrierWaveCore
 import Combine
 import Foundation
 import SwiftUI
@@ -6,7 +7,7 @@ import SwiftUI
 // MARK: - CWTranscriptEntry
 
 /// A single entry in the CW transcript
-struct CWTranscriptEntry: Identifiable, Equatable {
+struct CWTranscriptEntry: Identifiable, Equatable, TranscriptEntryProtocol {
     // MARK: Lifecycle
 
     init(

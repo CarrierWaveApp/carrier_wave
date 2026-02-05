@@ -1,3 +1,5 @@
+// swiftlint:disable file_length type_body_length
+
 import SwiftData
 import XCTest
 @testable import CarrierWave
@@ -44,7 +46,7 @@ final class LoggingSessionManagerTests: XCTestCase {
     // MARK: - Session Lifecycle Tests
 
     @MainActor
-    func testStartSession_CreatesActiveSession() throws {
+    func testStartSession_CreatesActiveSession() {
         // When
         sessionManager.startSession(
             myCallsign: "N0TEST",
@@ -64,7 +66,7 @@ final class LoggingSessionManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testStartSession_POTAActivation() throws {
+    func testStartSession_POTAActivation() {
         // When
         sessionManager.startSession(
             myCallsign: "N0TEST",
@@ -123,7 +125,7 @@ final class LoggingSessionManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testPauseAndResumeSession() throws {
+    func testPauseAndResumeSession() {
         // Given
         sessionManager.startSession(myCallsign: "N0TEST", mode: "CW")
 
@@ -163,7 +165,7 @@ final class LoggingSessionManagerTests: XCTestCase {
     // MARK: - QSO Logging Tests
 
     @MainActor
-    func testLogQSO_CreatesQSOWithSessionFields() throws {
+    func testLogQSO_CreatesQSOWithSessionFields() {
         // Given
         sessionManager.startSession(
             myCallsign: "N0TEST",
@@ -197,7 +199,7 @@ final class LoggingSessionManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testLogQSO_UppercasesCallsign() throws {
+    func testLogQSO_UppercasesCallsign() {
         // Given
         sessionManager.startSession(myCallsign: "N0TEST", mode: "CW", frequency: 14.060)
 
@@ -209,7 +211,7 @@ final class LoggingSessionManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testLogQSO_IncrementsSessionQSOCount() throws {
+    func testLogQSO_IncrementsSessionQSOCount() {
         // Given
         sessionManager.startSession(myCallsign: "N0TEST", mode: "CW", frequency: 14.060)
         XCTAssertEqual(sessionManager.activeSession?.qsoCount, 0)
@@ -223,7 +225,7 @@ final class LoggingSessionManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testLogQSO_WithoutActiveSession_ReturnsNil() throws {
+    func testLogQSO_WithoutActiveSession_ReturnsNil() {
         // Given - no active session
         XCTAssertFalse(sessionManager.hasActiveSession)
 
@@ -235,7 +237,7 @@ final class LoggingSessionManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testLogQSO_WithTheirParkReference() throws {
+    func testLogQSO_WithTheirParkReference() {
         // Given - POTA session
         sessionManager.startSession(
             myCallsign: "N0TEST",
@@ -257,7 +259,7 @@ final class LoggingSessionManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testLogQSO_CombinesNotesAndOperatorName() throws {
+    func testLogQSO_CombinesNotesAndOperatorName() {
         // Given
         sessionManager.startSession(myCallsign: "N0TEST", mode: "CW", frequency: 14.060)
 
@@ -275,7 +277,7 @@ final class LoggingSessionManagerTests: XCTestCase {
     // MARK: - Frequency and Mode Updates
 
     @MainActor
-    func testUpdateFrequency_UpdatesSessionFrequency() throws {
+    func testUpdateFrequency_UpdatesSessionFrequency() {
         // Given
         sessionManager.startSession(myCallsign: "N0TEST", mode: "CW", frequency: 14.060)
 
@@ -287,7 +289,7 @@ final class LoggingSessionManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testUpdateMode_UpdatesSessionMode() throws {
+    func testUpdateMode_UpdatesSessionMode() {
         // Given
         sessionManager.startSession(myCallsign: "N0TEST", mode: "CW", frequency: 14.060)
 
@@ -299,7 +301,7 @@ final class LoggingSessionManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testUpdateMode_UppercasesMode() throws {
+    func testUpdateMode_UppercasesMode() {
         // Given
         sessionManager.startSession(myCallsign: "N0TEST", mode: "CW", frequency: 14.060)
 
@@ -313,7 +315,7 @@ final class LoggingSessionManagerTests: XCTestCase {
     // MARK: - Park Reference Updates
 
     @MainActor
-    func testUpdateParkReference_POTASession() throws {
+    func testUpdateParkReference_POTASession() {
         // Given - POTA session
         sessionManager.startSession(
             myCallsign: "N0TEST",
@@ -330,7 +332,7 @@ final class LoggingSessionManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testUpdateParkReference_NonPOTASession_NoEffect() throws {
+    func testUpdateParkReference_NonPOTASession_NoEffect() {
         // Given - casual session
         sessionManager.startSession(
             myCallsign: "N0TEST",
@@ -358,8 +360,8 @@ final class LoggingSessionManagerTests: XCTestCase {
         // Then
         let notes = sessionManager.activeSession?.notes
         XCTAssertNotNil(notes)
-        XCTAssertTrue(notes!.contains("Starting activation"))
-        XCTAssertTrue(notes!.contains("[")) // Has timestamp
+        XCTAssertTrue(try XCTUnwrap(notes?.contains("Starting activation")))
+        XCTAssertTrue(try XCTUnwrap(notes?.contains("["))) // Has timestamp
     }
 
     @MainActor
@@ -374,13 +376,13 @@ final class LoggingSessionManagerTests: XCTestCase {
         // Then
         let notes = sessionManager.activeSession?.notes
         XCTAssertNotNil(notes)
-        XCTAssertTrue(notes!.contains("First note"))
-        XCTAssertTrue(notes!.contains("Second note"))
-        XCTAssertTrue(notes!.contains("\n"))
+        XCTAssertTrue(try XCTUnwrap(notes?.contains("First note")))
+        XCTAssertTrue(try XCTUnwrap(notes?.contains("Second note")))
+        XCTAssertTrue(try XCTUnwrap(notes?.contains("\n")))
     }
 
     @MainActor
-    func testParseSessionNotes_ReturnsEntries() throws {
+    func testParseSessionNotes_ReturnsEntries() {
         // Given
         sessionManager.startSession(myCallsign: "N0TEST", mode: "CW")
         sessionManager.appendNote("Test note 1")
@@ -400,7 +402,7 @@ final class LoggingSessionManagerTests: XCTestCase {
     func testHideQSO_SetsIsHiddenFlag() throws {
         // Given
         sessionManager.startSession(myCallsign: "N0TEST", mode: "CW", frequency: 14.060)
-        let qso = sessionManager.logQSO(callsign: "W1AW")!
+        let qso = try XCTUnwrap(sessionManager.logQSO(callsign: "W1AW"))
 
         // When
         sessionManager.hideQSO(qso)
@@ -413,7 +415,7 @@ final class LoggingSessionManagerTests: XCTestCase {
     func testUnhideQSO_ClearsIsHiddenFlag() throws {
         // Given
         sessionManager.startSession(myCallsign: "N0TEST", mode: "CW", frequency: 14.060)
-        let qso = sessionManager.logQSO(callsign: "W1AW")!
+        let qso = try XCTUnwrap(sessionManager.logQSO(callsign: "W1AW"))
         sessionManager.hideQSO(qso)
 
         // When
@@ -427,8 +429,8 @@ final class LoggingSessionManagerTests: XCTestCase {
     func testGetSessionQSOs_ExcludesHiddenQSOs() throws {
         // Given
         sessionManager.startSession(myCallsign: "N0TEST", mode: "CW", frequency: 14.060)
-        let qso1 = sessionManager.logQSO(callsign: "W1AW")!
-        _ = sessionManager.logQSO(callsign: "K3LR")!
+        let qso1 = try XCTUnwrap(sessionManager.logQSO(callsign: "W1AW"))
+        _ = try XCTUnwrap(sessionManager.logQSO(callsign: "K3LR"))
         sessionManager.hideQSO(qso1)
 
         // When
@@ -442,7 +444,7 @@ final class LoggingSessionManagerTests: XCTestCase {
     // MARK: - Session Query Tests
 
     @MainActor
-    func testGetRecentSessions_ReturnsSessionsInOrder() throws {
+    func testGetRecentSessions_ReturnsSessionsInOrder() {
         // Given - create multiple sessions
         sessionManager.startSession(myCallsign: "N0TEST", mode: "CW")
         sessionManager.endSession()
@@ -465,7 +467,7 @@ final class LoggingSessionManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testGetRecentSessions_RespectsLimit() throws {
+    func testGetRecentSessions_RespectsLimit() {
         // Given - create 5 sessions
         for i in 1 ... 5 {
             sessionManager.startSession(myCallsign: "N\(i)TEST", mode: "CW")
@@ -482,7 +484,7 @@ final class LoggingSessionManagerTests: XCTestCase {
     // MARK: - Session Title Tests
 
     @MainActor
-    func testUpdateTitle_SetsCustomTitle() throws {
+    func testUpdateTitle_SetsCustomTitle() {
         // Given
         sessionManager.startSession(myCallsign: "N0TEST", mode: "CW")
 
@@ -495,7 +497,7 @@ final class LoggingSessionManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testDisplayTitle_FallsBackToDefaultWhenNoCustomTitle() throws {
+    func testDisplayTitle_FallsBackToDefaultWhenNoCustomTitle() {
         // Given
         sessionManager.startSession(
             myCallsign: "N0TEST",

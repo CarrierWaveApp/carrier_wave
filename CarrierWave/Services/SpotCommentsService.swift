@@ -3,6 +3,7 @@
 // Polls POTA for spot comments during an active POTA activation,
 // allowing activators to see hunter feedback in real-time.
 
+import CarrierWaveCore
 import Foundation
 import SwiftUI
 

@@ -1,4 +1,8 @@
+import CarrierWaveCore
 import Foundation
+
+/// Re-export ServiceType from CarrierWaveCore
+public typealias ServiceType = CarrierWaveCore.ServiceType
 
 // MARK: - ImportSource
 
@@ -13,39 +17,9 @@ enum ImportSource: String, Codable, Sendable {
     case logger
 }
 
-// MARK: - ServiceType
+// MARK: - ServiceType Extensions
 
-enum ServiceType: String, Codable, CaseIterable, Sendable {
-    case qrz
-    case pota
-    case lofi
-    case hamrs
-    case lotw
-
-    // MARK: Internal
-
-    nonisolated var displayName: String {
-        switch self {
-        case .qrz: "QRZ"
-        case .pota: "POTA"
-        case .lofi: "LoFi"
-        case .hamrs: "HAMRS"
-        case .lotw: "LoTW"
-        }
-    }
-
-    nonisolated var supportsUpload: Bool {
-        switch self {
-        case .qrz,
-             .pota,
-             .hamrs:
-            true
-        case .lofi,
-             .lotw:
-            false
-        }
-    }
-
+extension ServiceType {
     /// Convert to ImportSource for comparison
     nonisolated var toImportSource: ImportSource {
         switch self {

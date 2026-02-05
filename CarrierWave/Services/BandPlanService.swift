@@ -3,6 +3,7 @@
 //
 // Validates frequency and mode combinations against license class privileges.
 
+import CarrierWaveCore
 import Foundation
 
 // MARK: - FrequencyWarning

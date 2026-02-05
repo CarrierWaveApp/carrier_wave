@@ -4,6 +4,7 @@
 // POTA (Parks on the Air) into a unified format. Enriches spots with
 // spotter grid squares from HamDB for map display.
 
+import CarrierWaveCore
 import Foundation
 import SwiftUI
 

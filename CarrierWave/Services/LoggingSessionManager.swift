@@ -1,4 +1,5 @@
 // swiftlint:disable identifier_name file_length
+import CarrierWaveCore
 import Foundation
 import SwiftData
 import SwiftUI

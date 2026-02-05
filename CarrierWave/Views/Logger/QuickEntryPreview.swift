@@ -3,6 +3,7 @@
 //  CarrierWave
 //
 
+import CarrierWaveCore
 import SwiftUI
 
 // MARK: - TokenType Extension

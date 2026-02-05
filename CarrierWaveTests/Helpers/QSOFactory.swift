@@ -11,19 +11,13 @@ import Foundation
 /// - Edge case scenarios
 @MainActor
 enum QSOFactory {
+    // MARK: Internal
+
     // MARK: - Configuration
 
     static let bands = ["160m", "80m", "40m", "20m", "15m", "10m", "6m", "2m"]
     static let modes = ["SSB", "CW", "FT8", "FT4", "RTTY"]
     static let metadataModes = ["WEATHER", "SOLAR", "NOTE"]
-
-    private static let prefixes = [
-        "W", "K", "N", "AA", "AB", "WA", "KB", "KD", "VE", "G", "DL", "JA", "VK",
-    ]
-    private static let suffixes = ["AW", "LR", "ZZ", "AB", "CD", "EF", "GH", "IJ", "KL", "MN"]
-    private static let grids = [
-        "FN31", "FN42", "EM73", "DM79", "CN87", "IO91", "JN58", "PM95", "EM48", "DN70",
-    ]
 
     // MARK: - Bulk Generation (Performance Testing)
 
@@ -204,16 +198,15 @@ enum QSOFactory {
         parkReference: String = "US-0001",
         notes: String? = nil
     ) -> QSO {
-        let defaultNotes: String
-        switch mode.uppercased() {
+        let defaultNotes = switch mode.uppercased() {
         case "WEATHER":
-            defaultNotes = "Temp: 72F, Wind: 5mph NW, Clear skies"
+            "Temp: 72F, Wind: 5mph NW, Clear skies"
         case "SOLAR":
-            defaultNotes = "SFI: 150, K: 2, A: 5"
+            "SFI: 150, K: 2, A: 5"
         case "NOTE":
-            defaultNotes = "Activation note"
+            "Activation note"
         default:
-            defaultNotes = ""
+            ""
         }
 
         return QSO(
@@ -373,4 +366,14 @@ enum QSOFactory {
     static func randomGrid() -> String {
         grids.randomElement()!
     }
+
+    // MARK: Private
+
+    private static let prefixes = [
+        "W", "K", "N", "AA", "AB", "WA", "KB", "KD", "VE", "G", "DL", "JA", "VK",
+    ]
+    private static let suffixes = ["AW", "LR", "ZZ", "AB", "CD", "EF", "GH", "IJ", "KL", "MN"]
+    private static let grids = [
+        "FN31", "FN42", "EM73", "DM79", "CN87", "IO91", "JN58", "PM95", "EM48", "DN70",
+    ]
 }

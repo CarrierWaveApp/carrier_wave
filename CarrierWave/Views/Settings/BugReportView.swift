@@ -1,3 +1,4 @@
+import CarrierWaveCore
 import PhotosUI
 import SwiftUI
 import UIKit

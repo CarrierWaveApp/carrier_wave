@@ -1,4 +1,5 @@
 // swiftlint:disable cyclomatic_complexity
+import CarrierWaveCore
 import SwiftUI
 
 // MARK: - LoggerCallsignCard

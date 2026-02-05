@@ -1,3 +1,4 @@
+import CarrierWaveCore
 import Foundation
 
 // MARK: - LoTWClient Adaptive Windowing

@@ -3,6 +3,7 @@
 // Generates comprehensive ADIF files for activations in the background.
 // Includes all QSO fields in valid ADIF 3.1.5 format.
 
+import CarrierWaveCore
 import Foundation
 
 // MARK: - QSOExportSnapshot

@@ -1,3 +1,4 @@
+import CarrierWaveCore
 import Foundation
 
 // MARK: - QSOMapView Data Helpers

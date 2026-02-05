@@ -1,20 +1,22 @@
+// swiftlint:disable cyclomatic_complexity function_body_length identifier_name
+
 import Foundation
 
 // MARK: - QueryLexer
 
 /// Tokenizes a query string into a sequence of tokens
-struct QueryLexer {
+public struct QueryLexer {
     // MARK: Lifecycle
 
-    init(_ input: String) {
+    public init(_ input: String) {
         self.input = input
         currentIndex = input.startIndex
     }
 
-    // MARK: Internal
+    // MARK: Public
 
     /// Tokenize the entire input
-    mutating func tokenize() -> Result<[PositionedToken], QueryError> {
+    public mutating func tokenize() -> Result<[PositionedToken], QueryError> {
         var tokens: [PositionedToken] = []
 
         while !isAtEnd {
@@ -363,7 +365,7 @@ struct QueryLexer {
 // MARK: - QueryError
 
 /// Query parsing/analysis errors
-enum QueryError: Error, Equatable {
+public enum QueryError: Error, Equatable, Sendable {
     case unknownField(String, suggestion: String?, position: SourcePosition)
     case unterminatedString(position: SourcePosition)
     case unexpectedToken(expected: String, got: String, position: SourcePosition)
@@ -372,9 +374,9 @@ enum QueryError: Error, Equatable {
     case emptyQuery
     case unmatchedParenthesis(position: SourcePosition)
 
-    // MARK: Internal
+    // MARK: Public
 
-    var message: String {
+    public var message: String {
         switch self {
         case let .unknownField(field, suggestion, _):
             if let suggestion {
@@ -397,7 +399,7 @@ enum QueryError: Error, Equatable {
         }
     }
 
-    var position: SourcePosition {
+    public var position: SourcePosition {
         switch self {
         case let .unknownField(_, _, position),
              let .unterminatedString(position),

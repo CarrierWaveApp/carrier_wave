@@ -2,6 +2,7 @@
 //
 // Aggregates nearby frequency activity from RBN and POTA spots.
 
+import CarrierWaveCore
 import Foundation
 import SwiftUI
 

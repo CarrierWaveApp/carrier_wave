@@ -1,18 +1,20 @@
+// swiftlint:disable file_length type_body_length
+
 import Foundation
 
 /// Parses tokenized query into an AST
-struct QueryParser {
+public struct QueryParser {
     // MARK: Lifecycle
 
-    init(_ tokens: [PositionedToken]) {
+    public init(_ tokens: [PositionedToken]) {
         self.tokens = tokens
         currentIndex = 0
     }
 
-    // MARK: Internal
+    // MARK: Public
 
     /// Convenience: parse a string directly
-    static func parse(_ input: String) -> Result<ParsedQuery, QueryError> {
+    public static func parse(_ input: String) -> Result<ParsedQuery, QueryError> {
         var lexer = QueryLexer(input)
         switch lexer.tokenize() {
         case let .success(tokens):
@@ -24,7 +26,7 @@ struct QueryParser {
     }
 
     /// Parse the token stream into a query AST
-    mutating func parse() -> Result<ParsedQuery, QueryError> {
+    public mutating func parse() -> Result<ParsedQuery, QueryError> {
         if tokens.isEmpty || (tokens.count == 1 && tokens[0].token == .eof) {
             return .success(ParsedQuery(expression: .empty, sourceText: ""))
         }

@@ -1,4 +1,5 @@
 // swiftlint:disable function_body_length
+import CarrierWaveCore
 import Foundation
 import SwiftData
 

@@ -12,15 +12,27 @@ Pure logic library that can be tested without iOS Simulator. Run tests with `mak
 |------|---------|
 | `Sources/CarrierWaveCore/ADIFParser.swift` | ADIF file format parsing |
 | `Sources/CarrierWaveCore/BandUtilities.swift` | Band derivation from frequency |
+| `Sources/CarrierWaveCore/CallsignDetector.swift` | Callsign regex detection, RST/grid/power parsing |
+| `Sources/CarrierWaveCore/CWTextElement.swift` | CW text element types for transcript highlighting |
+| `Sources/CarrierWaveCore/DeduplicationMatcher.swift` | Duplicate detection logic |
+| `Sources/CarrierWaveCore/DetectedCallsign.swift` | Detected callsign with context |
 | `Sources/CarrierWaveCore/FrequencyFormatter.swift` | Frequency formatting and parsing |
 | `Sources/CarrierWaveCore/MaidenheadConverter.swift` | Grid square to coordinate conversion |
-| `Sources/CarrierWaveCore/MorseCode.swift` | Morse code tables and timing utilities |
-| `Sources/CarrierWaveCore/QuickEntryParser.swift` | Quick entry string parsing |
 | `Sources/CarrierWaveCore/ModeEquivalence.swift` | Mode family classification and equivalence |
+| `Sources/CarrierWaveCore/MorseCode.swift` | Morse code tables and timing utilities |
+| `Sources/CarrierWaveCore/MorseEditDistance.swift` | Levenshtein distance on morse patterns |
 | `Sources/CarrierWaveCore/ParkReference.swift` | Park reference parsing and validation |
 | `Sources/CarrierWaveCore/QSOSnapshot.swift` | Lightweight QSO representation for matching |
-| `Sources/CarrierWaveCore/DeduplicationMatcher.swift` | Duplicate detection logic |
+| `Sources/CarrierWaveCore/QuickEntryParser.swift` | Quick entry string parsing |
+| `Sources/CarrierWaveCore/ServiceType.swift` | Sync service type enum (QRZ, POTA, LoFi, etc.) |
+| `Sources/CarrierWaveCore/StreakCalculator.swift` | Streak calculation from date sets |
+| `Sources/CarrierWaveCore/SuggestionCategory.swift` | CW suggestion category enum |
 | `Sources/CarrierWaveCore/TwoferMatcher.swift` | Two-fer duplicate detection |
+| `Sources/CarrierWaveCore/QueryLanguage/QueryToken.swift` | Query token types and field definitions |
+| `Sources/CarrierWaveCore/QueryLanguage/QueryLexer.swift` | Query string tokenization |
+| `Sources/CarrierWaveCore/QueryLanguage/QueryAST.swift` | Query AST types (expression, term, condition) |
+| `Sources/CarrierWaveCore/QueryLanguage/QueryParser.swift` | Token stream to AST parsing |
+| `Sources/CarrierWaveCore/QueryLanguage/QueryAnalyzer.swift` | Query performance analysis and warnings |
 
 ## Entry Points
 | File | Purpose |
@@ -135,12 +147,10 @@ Pure logic library that can be tested without iOS Simulator. Run tests with `mak
 | `MorseCode.swift` | Morse code lookup table, timing constants, QSO abbreviations |
 | `MorseDecoder.swift` | Timing state machine for dit/dah classification, adaptive WPM |
 | `CWTranscriptionService.swift` | Coordinates audio capture, signal processing, and morse decoding |
-| `CallsignDetector.swift` | Callsign regex detection, context analysis, text element parsing |
 | `CWConversationTracker.swift` | Track CW conversation turns via frequency and prosign analysis |
 | `PoloNotesParser.swift` | Parse Ham2K Polo notes list files for callsign info |
 | `CallsignLookupService.swift` | Two-tier callsign lookup (Polo notes cache, then QRZ API) |
 | `CallsignNotesCache.swift` | Persistent cache for Polo notes (loads from disk, refreshes daily) |
-| `MorseEditDistance.swift` | Levenshtein distance on morse patterns for word suggestions |
 | `CWSuggestionEngine.swift` | Word suggestion engine with dictionaries and settings |
 | `LoggingSessionManager.swift` | Session lifecycle management (start, end, log QSO, hide QSO) |
 | `RBNClient.swift` | Vail ReRBN API client for reverse beacon network spots |
@@ -158,13 +168,11 @@ Pure logic library that can be tested without iOS Simulator. Run tests with `mak
 | `QuickEntryParser.swift` | Parses quick entry strings (e.g., "AJ7CM 579 WA US-0189") into structured data |
 
 ## Services - Query Language (`CarrierWave/Services/QueryLanguage/`)
+
+Most Query Language types are now in CarrierWaveCore. Only the compiler remains in the main app.
+
 | File | Purpose |
 |------|---------|
-| `QueryToken.swift` | Token types and field definitions for query lexer |
-| `QueryLexer.swift` | Tokenizes query strings, handles field:value syntax |
-| `QueryAST.swift` | Abstract syntax tree nodes for parsed queries |
-| `QueryParser.swift` | Parses tokens into AST with boolean logic support |
-| `QueryAnalyzer.swift` | Performance analysis and slow query warnings |
 | `QueryCompiler.swift` | Compiles AST to SwiftData predicates and filter closures |
 
 ## Views - Logger (`CarrierWave/Views/Logger/`)

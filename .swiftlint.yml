@@ -2,18 +2,22 @@
 
 included:
   - CarrierWave
+  - CarrierWaveCore
   - CarrierWaveTests
   - CarrierWaveUITests
 
 excluded:
   - CarrierWave.xcodeproj
   - .build
+  - CarrierWaveCore/.build
 
 # Rules configuration
 disabled_rules:
   - trailing_comma # Allow trailing commas
   - opening_brace # Conflicts with SwiftFormat line wrapping
   - blanket_disable_command # Allow file-level swiftlint:disable
+  - pattern_matching_keywords # Conflicts with SwiftFormat patternlet hoist
+  - closure_parameter_position # Conflicts with SwiftFormat line wrapping
 
 opt_in_rules:
   - array_init
@@ -45,7 +49,6 @@ opt_in_rules:
   - operator_usage_whitespace
   - overridden_super_call
   - override_in_extension
-  - pattern_matching_keywords
   - prefer_self_type_over_type_of_self
   - prefer_zero_over_explicit_init
   - private_action

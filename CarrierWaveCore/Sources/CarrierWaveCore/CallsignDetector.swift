@@ -1,82 +1,24 @@
 import Foundation
 
-// MARK: - DetectedCallsign
+// MARK: - TranscriptEntryProtocol
 
-/// A callsign detected in the transcript with context
-struct DetectedCallsign: Identifiable, Equatable {
-    // MARK: Lifecycle
-
-    init(id: UUID = UUID(), callsign: String, context: CallsignContext, timestamp: Date = Date()) {
-        self.id = id
-        self.callsign = callsign
-        self.context = context
-        self.timestamp = timestamp
-    }
-
-    // MARK: Internal
-
-    /// Context in which the callsign was detected
-    enum CallsignContext: Equatable {
-        case cqCall // Station calling CQ
-        case deIdentifier // Station identifying with DE
-        case response // Station responding
-        case unknown // Callsign without clear context
-    }
-
-    let id: UUID
-    let callsign: String
-    let context: CallsignContext
-    let timestamp: Date
-}
-
-// MARK: - CWTextElement
-
-/// A segment of decoded CW text with optional highlighting
-enum CWTextElement: Identifiable, Equatable {
-    case text(String)
-    case callsign(String, role: CallsignRole)
-    case prosign(String)
-    case signalReport(String)
-    case grid(String) // Grid square (e.g., EM74)
-    case power(String) // Power level (e.g., 100W)
-    case name(String) // Operator name
-    case suggestion(original: String, suggested: String, category: SuggestionCategory)
-
-    // MARK: Internal
-
-    /// Role of the callsign in the QSO
-    enum CallsignRole: Equatable {
-        case caller // Station calling (after CQ or before DE)
-        case callee // Station being called (after DE)
-        case unknown
-    }
-
-    var id: String {
-        switch self {
-        case let .text(str): "text-\(str)"
-        case let .callsign(str, _): "call-\(str)"
-        case let .prosign(str): "pro-\(str)"
-        case let .signalReport(str): "rst-\(str)"
-        case let .grid(str): "grid-\(str)"
-        case let .power(str): "pwr-\(str)"
-        case let .name(str): "name-\(str)"
-        case let .suggestion(orig, sugg, _): "sug-\(orig)-\(sugg)"
-        }
-    }
+/// Protocol for transcript entries that can be used with CallsignDetector
+public protocol TranscriptEntryProtocol {
+    var text: String { get }
 }
 
 // MARK: - CallsignDetector
 
 /// Detects and extracts callsigns from decoded CW text
-enum CallsignDetector {
-    // MARK: Internal
+public enum CallsignDetector {
+    // MARK: Public
 
     // MARK: - Public API
 
     /// Extract all callsigns from text
     /// - Parameter text: Decoded CW text
     /// - Returns: Array of unique callsigns found
-    static func extractCallsigns(from text: String) -> [String] {
+    public static func extractCallsigns(from text: String) -> [String] {
         guard let regex = callsignRegex else {
             return []
         }
@@ -103,9 +45,11 @@ enum CallsignDetector {
 
     /// Detect the most likely "other station" callsign from transcript
     /// Uses context clues like CQ, DE, and position to determine
-    /// - Parameter entries: Transcript entries
+    /// - Parameter entries: Transcript entries conforming to TranscriptEntryProtocol
     /// - Returns: Most likely callsign to log, if found
-    static func detectPrimaryCallsign(from entries: [CWTranscriptEntry]) -> DetectedCallsign? {
+    public static func detectPrimaryCallsign(
+        from entries: [some TranscriptEntryProtocol]
+    ) -> DetectedCallsign? {
         let fullText = entries.map(\.text).joined(separator: " ").uppercased()
         let words = fullText.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
 
@@ -136,10 +80,43 @@ enum CallsignDetector {
         return candidates.last
     }
 
+    /// Detect the most likely "other station" callsign from raw text
+    /// Uses context clues like CQ, DE, and position to determine
+    /// - Parameter text: Raw transcript text
+    /// - Returns: Most likely callsign to log, if found
+    public static func detectPrimaryCallsign(from text: String) -> DetectedCallsign? {
+        let fullText = text.uppercased()
+        let words = fullText.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
+
+        var candidates: [DetectedCallsign] = []
+
+        for (index, word) in words.enumerated() {
+            guard isValidCallsign(word) else {
+                continue
+            }
+
+            let context = determineContext(for: word, at: index, in: words)
+            let candidate = DetectedCallsign(callsign: word, context: context)
+            candidates.append(candidate)
+        }
+
+        let priority: [DetectedCallsign.CallsignContext] = [
+            .deIdentifier, .cqCall, .response, .unknown,
+        ]
+
+        for targetContext in priority {
+            if let match = candidates.last(where: { $0.context == targetContext }) {
+                return match
+            }
+        }
+
+        return candidates.last
+    }
+
     /// Parse text into highlighted elements
     /// - Parameter text: Raw decoded CW text
     /// - Returns: Array of text elements with highlighting info
-    static func parseElements(from text: String) -> [CWTextElement] {
+    public static func parseElements(from text: String) -> [CWTextElement] {
         let uppercased = text.uppercased()
         var elements: [CWTextElement] = []
         var currentIndex = uppercased.startIndex

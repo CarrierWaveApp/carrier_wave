@@ -30,7 +30,7 @@ final class MetadataModeTests: XCTestCase {
     // MARK: - QSOFactory Metadata Tests
 
     @MainActor
-    func testQSOFactory_MetadataRecord_HasCorrectMode() throws {
+    func testQSOFactory_MetadataRecord_HasCorrectMode() {
         for mode in metadataModes {
             let record = QSOFactory.metadataRecord(mode: mode)
             XCTAssertEqual(record.mode.uppercased(), mode)
@@ -38,7 +38,7 @@ final class MetadataModeTests: XCTestCase {
     }
 
     @MainActor
-    func testQSOFactory_ActivationMetadata_GeneratesAllModes() throws {
+    func testQSOFactory_ActivationMetadata_GeneratesAllModes() {
         let metadata = QSOFactory.activationMetadata(parkReference: "US-0001")
 
         XCTAssertEqual(metadata.count, 3)
@@ -48,7 +48,7 @@ final class MetadataModeTests: XCTestCase {
     }
 
     @MainActor
-    func testQSOFactory_POTAActivation_IncludesMetadata() throws {
+    func testQSOFactory_POTAActivation_IncludesMetadata() {
         let activation = QSOFactory.potaActivation(
             parkReference: "US-0001",
             qsoCount: 5,
@@ -63,7 +63,7 @@ final class MetadataModeTests: XCTestCase {
     }
 
     @MainActor
-    func testQSOFactory_POTAActivation_ExcludesMetadata() throws {
+    func testQSOFactory_POTAActivation_ExcludesMetadata() {
         let activation = QSOFactory.potaActivation(
             parkReference: "US-0001",
             qsoCount: 5,
@@ -184,7 +184,7 @@ final class MetadataModeTests: XCTestCase {
     // MARK: - Metadata Identification Helper Tests
 
     @MainActor
-    func testIsMetadataMode_ValidModes() throws {
+    func testIsMetadataMode_ValidModes() {
         // Test helper for identifying metadata modes
         let metadataModeSet: Set<String> = ["WEATHER", "SOLAR", "NOTE"]
 
@@ -201,7 +201,7 @@ final class MetadataModeTests: XCTestCase {
     // MARK: - Statistics Filtering Tests
 
     @MainActor
-    func testQSOStatistics_ExcludesMetadataModes() throws {
+    func testQSOStatistics_ExcludesMetadataModes() {
         // Given - mix of real QSOs and metadata
         var qsos: [QSO] = []
 
@@ -223,7 +223,7 @@ final class MetadataModeTests: XCTestCase {
     // MARK: - Edge Cases
 
     @MainActor
-    func testMetadataMode_EmptyBandIsOK() throws {
+    func testMetadataMode_EmptyBandIsOK() {
         // Metadata records typically have empty bands - this is expected
         let weatherRecord = QSOFactory.metadataRecord(mode: "WEATHER")
         XCTAssertEqual(weatherRecord.band, "")
@@ -233,14 +233,14 @@ final class MetadataModeTests: XCTestCase {
     }
 
     @MainActor
-    func testMetadataMode_WithParkReference() throws {
+    func testMetadataMode_WithParkReference() {
         // Metadata records should preserve their park reference for grouping
         let record = QSOFactory.metadataRecord(mode: "WEATHER", parkReference: "US-0001")
         XCTAssertEqual(record.parkReference, "US-0001")
     }
 
     @MainActor
-    func testMetadataMode_NotHidden() throws {
+    func testMetadataMode_NotHidden() {
         // Metadata records are not "hidden" - they're just filtered from syncs
         let record = QSOFactory.metadataRecord(mode: "WEATHER")
         XCTAssertFalse(record.isHidden)

@@ -3,6 +3,7 @@
 // Displays combined RBN and POTA spots for a callsign
 // with optional mini-map showing spotter locations.
 
+import CarrierWaveCore
 import SwiftUI
 
 // MARK: - RBNPanelView

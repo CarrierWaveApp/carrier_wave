@@ -1,7 +1,10 @@
+import CarrierWaveCore
 import Foundation
 import SwiftData
 
 // MARK: - QueryCompiler
+
+// swiftlint:disable file_length type_body_length cyclomatic_complexity
 
 /// Compiles a parsed query into a filter function for QSOs
 ///
@@ -349,9 +352,9 @@ enum QueryCompiler {
         switch condition {
         case let .boolean(value):
             if value {
-                { !$0.servicePresence.filter(\.isPresent).isEmpty }
+                { $0.servicePresence.contains(where: \.isPresent) }
             } else {
-                { $0.servicePresence.filter(\.isPresent).isEmpty }
+                { !$0.servicePresence.contains(where: \.isPresent) }
             }
 
         case let .service(service):
@@ -366,9 +369,9 @@ enum QueryCompiler {
         switch condition {
         case let .boolean(value):
             if value {
-                { !$0.servicePresence.filter(\.needsUpload).isEmpty }
+                { $0.servicePresence.contains(where: \.needsUpload) }
             } else {
-                { $0.servicePresence.filter(\.needsUpload).isEmpty }
+                { !$0.servicePresence.contains(where: \.needsUpload) }
             }
 
         case let .service(service):

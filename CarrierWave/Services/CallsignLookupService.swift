@@ -1,4 +1,5 @@
 // swiftlint:disable file_length
+import CarrierWaveCore
 import Foundation
 import SwiftData
 

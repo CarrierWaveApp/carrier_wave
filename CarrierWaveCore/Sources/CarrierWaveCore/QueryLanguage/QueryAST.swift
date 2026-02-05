@@ -1,14 +1,25 @@
+// swiftlint:disable identifier_name
+
 import Foundation
 
 // MARK: - ParsedQuery
 
 /// Root node of a parsed query
-struct ParsedQuery: Equatable {
-    let expression: QueryExpression
-    let sourceText: String
+public struct ParsedQuery: Equatable, Sendable {
+    // MARK: Lifecycle
+
+    public init(expression: QueryExpression, sourceText: String) {
+        self.expression = expression
+        self.sourceText = sourceText
+    }
+
+    // MARK: Public
+
+    public let expression: QueryExpression
+    public let sourceText: String
 
     /// Check if query is empty (matches everything)
-    var isEmpty: Bool {
+    public var isEmpty: Bool {
         if case .empty = expression {
             return true
         }
@@ -19,7 +30,7 @@ struct ParsedQuery: Equatable {
 // MARK: - QueryExpression
 
 /// Query expression tree
-indirect enum QueryExpression: Equatable {
+indirect public enum QueryExpression: Equatable, Sendable {
     /// Empty query (matches all)
     case empty
 
@@ -35,10 +46,10 @@ indirect enum QueryExpression: Equatable {
     /// Logical NOT of expression
     case not(QueryExpression)
 
-    // MARK: Internal
+    // MARK: Public
 
     /// Flattens nested ANDs and ORs for easier processing
-    var flattened: QueryExpression {
+    public var flattened: QueryExpression {
         switch self {
         case .empty,
              .term:
@@ -80,7 +91,7 @@ indirect enum QueryExpression: Equatable {
     }
 
     /// Extract all terms from the expression
-    var allTerms: [QueryTerm] {
+    public var allTerms: [QueryTerm] {
         switch self {
         case .empty:
             []
@@ -95,7 +106,7 @@ indirect enum QueryExpression: Equatable {
     }
 
     /// Check if any positive (non-negated) term uses an indexed field
-    var hasIndexedPositiveTerm: Bool {
+    public var hasIndexedPositiveTerm: Bool {
         switch self {
         case .empty:
             false
@@ -110,7 +121,7 @@ indirect enum QueryExpression: Equatable {
     }
 
     /// Check if all terms are negated
-    var isNegationOnly: Bool {
+    public var isNegationOnly: Bool {
         switch self {
         case .empty:
             false
@@ -129,21 +140,31 @@ indirect enum QueryExpression: Equatable {
 // MARK: - QueryTerm
 
 /// A single search term
-struct QueryTerm: Equatable {
+public struct QueryTerm: Equatable, Sendable {
+    // MARK: Lifecycle
+
+    public init(field: QueryField?, condition: TermCondition, position: SourcePosition) {
+        self.field = field
+        self.condition = condition
+        self.position = position
+    }
+
+    // MARK: Public
+
     /// The field being searched (nil for bare terms that match multiple fields)
-    let field: QueryField?
+    public let field: QueryField?
 
     /// The match condition
-    let condition: TermCondition
+    public let condition: TermCondition
 
     /// Source position for error reporting
-    let position: SourcePosition
+    public let position: SourcePosition
 }
 
 // MARK: - TermCondition
 
 /// How a term matches values
-enum TermCondition: Equatable {
+public enum TermCondition: Equatable, Sendable {
     /// Exact match (case-insensitive for strings)
     case equals(String)
 
@@ -180,10 +201,10 @@ enum TermCondition: Equatable {
     /// Service type match (for confirmed:lotw, synced:qrz, etc.)
     case service(ServiceType)
 
-    // MARK: Internal
+    // MARK: Public
 
     /// The raw value for display purposes
-    var displayValue: String {
+    public var displayValue: String {
         switch self {
         case let .equals(v),
              let .contains(v),
@@ -213,7 +234,7 @@ enum TermCondition: Equatable {
     }
 
     /// Whether this condition requires a full scan (no index help)
-    var requiresFullScan: Bool {
+    public var requiresFullScan: Bool {
         switch self {
         case .suffix,
              .contains:
@@ -227,7 +248,7 @@ enum TermCondition: Equatable {
 // MARK: - DateMatch
 
 /// Parsed date value
-enum DateMatch: Equatable, CustomStringConvertible {
+public enum DateMatch: Equatable, CustomStringConvertible, Sendable {
     /// Specific date
     case specific(Date)
 
@@ -246,9 +267,9 @@ enum DateMatch: Equatable, CustomStringConvertible {
     /// Year and month (matches entire month)
     case yearMonth(Int, Int)
 
-    // MARK: Internal
+    // MARK: Public
 
-    var description: String {
+    public var description: String {
         switch self {
         case let .specific(date):
             let formatter = DateFormatter()
@@ -268,7 +289,7 @@ enum DateMatch: Equatable, CustomStringConvertible {
     }
 
     /// Resolve to actual date range
-    func resolve() -> (start: Date, end: Date) {
+    public func resolve() -> (start: Date, end: Date) {
         let calendar = Calendar.current
         let now = Date()
 

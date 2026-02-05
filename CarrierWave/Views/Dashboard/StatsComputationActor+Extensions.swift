@@ -1,3 +1,4 @@
+import CarrierWaveCore
 import Foundation
 
 // MARK: - StatsComputationActor Computation Extensions
@@ -5,7 +6,7 @@ import Foundation
 extension StatsComputationActor {
     func computeActivationsAndActivity(
         into stats: inout ComputedStats,
-        from realQSOs: [QSOSnapshot],
+        from realQSOs: [StatsQSOSnapshot],
         onProgress: @escaping @Sendable (Double, String) -> Void
     ) async throws {
         onProgress(0.75, "Computing activations...")
@@ -31,7 +32,7 @@ extension StatsComputationActor {
     }
 
     /// Compute top frequency, friend, and hunter for the favorites card
-    func computeTopFavorites(into stats: inout ComputedStats, from qsos: [QSOSnapshot]) {
+    func computeTopFavorites(into stats: inout ComputedStats, from qsos: [StatsQSOSnapshot]) {
         // Top frequency - group by rounded frequency
         // Note: qso.frequency is stored in MHz
         var frequencyCounts: [Double: Int] = [:]

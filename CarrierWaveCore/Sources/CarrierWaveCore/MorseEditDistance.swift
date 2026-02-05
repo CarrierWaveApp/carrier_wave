@@ -5,7 +5,7 @@ import Foundation
 
 /// Computes edit distance between morse code patterns.
 /// Used to suggest corrections for commonly misheard CW words.
-enum MorseEditDistance {
+public enum MorseEditDistance {
     // MARK: - Pattern Distance
 
     /// Calculate Levenshtein edit distance between two morse patterns.
@@ -14,7 +14,7 @@ enum MorseEditDistance {
     ///   - pattern1: First morse pattern (e.g., "-.-.--.-")
     ///   - pattern2: Second morse pattern
     /// - Returns: Minimum number of insertions, deletions, or substitutions
-    static func patternDistance(_ pattern1: String, _ pattern2: String) -> Int {
+    public static func patternDistance(_ pattern1: String, _ pattern2: String) -> Int {
         let s1 = Array(pattern1)
         let s2 = Array(pattern2)
         let m = s1.count
@@ -67,7 +67,7 @@ enum MorseEditDistance {
     ///   - word1: First word (e.g., "CQ")
     ///   - word2: Second word (e.g., "CZ")
     /// - Returns: Edit distance, or Int.max if either word can't be encoded
-    static func wordDistance(_ word1: String, _ word2: String) -> Int {
+    public static func wordDistance(_ word1: String, _ word2: String) -> Int {
         guard let morse1 = wordToMorse(word1),
               let morse2 = wordToMorse(word2)
         else {
@@ -79,7 +79,7 @@ enum MorseEditDistance {
     /// Convert a word to its morse pattern (concatenated, no gaps).
     /// - Parameter word: Word to convert
     /// - Returns: Concatenated morse pattern, or nil if any character can't be encoded
-    static func wordToMorse(_ word: String) -> String? {
+    public static func wordToMorse(_ word: String) -> String? {
         var result = ""
         for char in word.uppercased() {
             guard let pattern = MorseCode.charToMorse[String(char)] else {
@@ -98,7 +98,7 @@ enum MorseEditDistance {
     ///   - maxDistance: Maximum edit distance to include
     ///   - candidates: Set of candidate words to check
     /// - Returns: Array of (word, distance) tuples, sorted by distance ascending
-    static func findSimilar(
+    public static func findSimilar(
         to word: String,
         maxDistance: Int,
         candidates: Set<String>
@@ -127,7 +127,7 @@ enum MorseEditDistance {
     ///   - maxDistance: Maximum edit distance
     ///   - candidates: Set of candidate words
     /// - Returns: Best matching word, or nil if none within distance
-    static func findBestMatch(
+    public static func findBestMatch(
         for word: String,
         maxDistance: Int,
         candidates: Set<String>

@@ -3,6 +3,7 @@
 // Groups QSOs by park reference, UTC date, and callsign for display
 // in the POTA Activations view. Not persisted - computed from QSOs.
 
+import CarrierWaveCore
 import Foundation
 
 // MARK: - POTAActivationStatus

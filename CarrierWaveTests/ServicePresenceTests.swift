@@ -24,7 +24,7 @@ final class ServicePresenceTests: XCTestCase {
     // MARK: - Factory Method Tests
 
     @MainActor
-    func testDownloaded_CreatesPresenceWithCorrectFlags() throws {
+    func testDownloaded_CreatesPresenceWithCorrectFlags() {
         // Given
         let qso = QSO.testQSO()
         modelContext.insert(qso)
@@ -42,7 +42,7 @@ final class ServicePresenceTests: XCTestCase {
     }
 
     @MainActor
-    func testNeedsUpload_CreatesPresenceWithCorrectFlags() throws {
+    func testNeedsUpload_CreatesPresenceWithCorrectFlags() {
         // Given
         let qso = QSO.testQSO()
         modelContext.insert(qso)
@@ -59,7 +59,7 @@ final class ServicePresenceTests: XCTestCase {
     }
 
     @MainActor
-    func testNeedsUpload_ServiceWithoutUploadSupport_SetsNeedsUploadFalse() throws {
+    func testNeedsUpload_ServiceWithoutUploadSupport_SetsNeedsUploadFalse() {
         // Given
         let qso = QSO.testQSO()
         modelContext.insert(qso)
@@ -75,7 +75,7 @@ final class ServicePresenceTests: XCTestCase {
     // MARK: - QSO Helper Method Tests
 
     @MainActor
-    func testMarkPresent_CreatesNewPresence() throws {
+    func testMarkPresent_CreatesNewPresence() {
         // Given
         let qso = QSO.testQSO()
         modelContext.insert(qso)
@@ -91,7 +91,7 @@ final class ServicePresenceTests: XCTestCase {
     }
 
     @MainActor
-    func testMarkPresent_UpdatesExistingPresence() throws {
+    func testMarkPresent_UpdatesExistingPresence() {
         // Given - QSO with needsUpload presence
         let qso = QSO.testQSO()
         modelContext.insert(qso)
@@ -108,7 +108,7 @@ final class ServicePresenceTests: XCTestCase {
     }
 
     @MainActor
-    func testMarkNeedsUpload_CreatesNewPresence() throws {
+    func testMarkNeedsUpload_CreatesNewPresence() {
         // Given
         let qso = QSO.testQSO()
         modelContext.insert(qso)
@@ -123,7 +123,7 @@ final class ServicePresenceTests: XCTestCase {
     }
 
     @MainActor
-    func testMarkNeedsUpload_DoesNotOverwritePresent() throws {
+    func testMarkNeedsUpload_DoesNotOverwritePresent() {
         // Given - QSO already present in service
         let qso = QSO.testQSO()
         modelContext.insert(qso)
@@ -138,7 +138,7 @@ final class ServicePresenceTests: XCTestCase {
     }
 
     @MainActor
-    func testMarkNeedsUpload_ServiceWithoutUploadSupport_NoEffect() throws {
+    func testMarkNeedsUpload_ServiceWithoutUploadSupport_NoEffect() {
         // Given
         let qso = QSO.testQSO()
         modelContext.insert(qso)
@@ -153,7 +153,7 @@ final class ServicePresenceTests: XCTestCase {
     // MARK: - Upload Rejection Tests
 
     @MainActor
-    func testMarkUploadRejected_NewPresence() throws {
+    func testMarkUploadRejected_NewPresence() {
         // Given
         let qso = QSO.testQSO()
         modelContext.insert(qso)
@@ -168,7 +168,7 @@ final class ServicePresenceTests: XCTestCase {
     }
 
     @MainActor
-    func testMarkUploadRejected_ExistingPresence() throws {
+    func testMarkUploadRejected_ExistingPresence() {
         // Given - QSO marked for upload
         let qso = QSO.testQSO()
         modelContext.insert(qso)
@@ -185,7 +185,7 @@ final class ServicePresenceTests: XCTestCase {
     // MARK: - Multiple Service Tests
 
     @MainActor
-    func testMultipleServices_IndependentTracking() throws {
+    func testMultipleServices_IndependentTracking() {
         // Given
         let qso = QSO.testQSO()
         modelContext.insert(qso)
@@ -212,7 +212,7 @@ final class ServicePresenceTests: XCTestCase {
     }
 
     @MainActor
-    func testSyncedServicesCount() throws {
+    func testSyncedServicesCount() {
         // Given
         let qso = QSO.testQSO()
         modelContext.insert(qso)
@@ -234,7 +234,7 @@ final class ServicePresenceTests: XCTestCase {
     // MARK: - POTA Presence Tests
 
     @MainActor
-    func testIsPresentInPOTA_FromPOTAImport() throws {
+    func testIsPresentInPOTA_FromPOTAImport() {
         // Given - QSO imported from POTA
         let qso = QSO.testQSO(importSource: .pota)
         modelContext.insert(qso)
@@ -244,7 +244,7 @@ final class ServicePresenceTests: XCTestCase {
     }
 
     @MainActor
-    func testIsPresentInPOTA_WithServicePresence() throws {
+    func testIsPresentInPOTA_WithServicePresence() {
         // Given - QSO with POTA presence
         let qso = QSO.testQSO()
         modelContext.insert(qso)
@@ -255,7 +255,7 @@ final class ServicePresenceTests: XCTestCase {
     }
 
     @MainActor
-    func testIsPresentInPOTA_WithNeedsUpload_ReturnsFalse() throws {
+    func testIsPresentInPOTA_WithNeedsUpload_ReturnsFalse() {
         // Given - QSO that needs POTA upload
         let qso = QSO.testQSO()
         modelContext.insert(qso)
@@ -266,7 +266,7 @@ final class ServicePresenceTests: XCTestCase {
     }
 
     @MainActor
-    func testPotaPresenceRecords() throws {
+    func testPotaPresenceRecords() {
         // Given - QSO with POTA presence for two parks (two-fer)
         let qso = QSO.testQSO(parkReference: "US-0001,US-0002")
         modelContext.insert(qso)
@@ -290,7 +290,7 @@ final class ServicePresenceTests: XCTestCase {
     // MARK: - Service Presence with Park Reference Tests
 
     @MainActor
-    func testServicePresence_WithParkReference() throws {
+    func testServicePresence_WithParkReference() {
         // Given
         let qso = QSO.testQSO()
         modelContext.insert(qso)
@@ -310,31 +310,31 @@ final class ServicePresenceTests: XCTestCase {
     // MARK: - QSO hasRequiredFieldsForUpload Tests
 
     @MainActor
-    func testHasRequiredFieldsForUpload_ValidBand() throws {
+    func testHasRequiredFieldsForUpload_ValidBand() {
         let qso = QSO.testQSO(band: "20m")
         XCTAssertTrue(qso.hasRequiredFieldsForUpload)
     }
 
     @MainActor
-    func testHasRequiredFieldsForUpload_EmptyBandWithFrequency() throws {
+    func testHasRequiredFieldsForUpload_EmptyBandWithFrequency() {
         let qso = QSO.testQSO(band: "", frequency: 14.060)
         XCTAssertTrue(qso.hasRequiredFieldsForUpload)
     }
 
     @MainActor
-    func testHasRequiredFieldsForUpload_UnknownBandWithFrequency() throws {
+    func testHasRequiredFieldsForUpload_UnknownBandWithFrequency() {
         let qso = QSO.testQSO(band: "Unknown", frequency: 14.060)
         XCTAssertTrue(qso.hasRequiredFieldsForUpload)
     }
 
     @MainActor
-    func testHasRequiredFieldsForUpload_EmptyBandNoFrequency() throws {
+    func testHasRequiredFieldsForUpload_EmptyBandNoFrequency() {
         let qso = QSO.testQSO(band: "", frequency: nil)
         XCTAssertFalse(qso.hasRequiredFieldsForUpload)
     }
 
     @MainActor
-    func testHasRequiredFieldsForUpload_UnknownBandNoFrequency() throws {
+    func testHasRequiredFieldsForUpload_UnknownBandNoFrequency() {
         let qso = QSO.testQSO(band: "Unknown", frequency: nil)
         XCTAssertFalse(qso.hasRequiredFieldsForUpload)
     }
@@ -342,7 +342,7 @@ final class ServicePresenceTests: XCTestCase {
     // MARK: - Field Richness Score Tests
 
     @MainActor
-    func testFieldRichnessScore_MinimalQSO() throws {
+    func testFieldRichnessScore_MinimalQSO() {
         let qso = QSO(
             callsign: "W1AW",
             band: "20m",
@@ -355,7 +355,7 @@ final class ServicePresenceTests: XCTestCase {
     }
 
     @MainActor
-    func testFieldRichnessScore_RichQSO() throws {
+    func testFieldRichnessScore_RichQSO() {
         let qso = QSO(
             callsign: "W1AW",
             band: "20m",
@@ -380,7 +380,7 @@ final class ServicePresenceTests: XCTestCase {
     // MARK: - Deduplication Key Tests
 
     @MainActor
-    func testDeduplicationKey_Format() throws {
+    func testDeduplicationKey_Format() {
         let timestamp = Date(timeIntervalSince1970: 1_000_000_000) // Fixed time for testing
         let qso = QSO.testQSO(
             callsign: "W1AW",
@@ -394,7 +394,7 @@ final class ServicePresenceTests: XCTestCase {
     }
 
     @MainActor
-    func testDeduplicationKey_CaseInsensitive() throws {
+    func testDeduplicationKey_CaseInsensitive() {
         let timestamp = Date()
 
         let qso1 = QSO.testQSO(callsign: "w1aw", band: "20m", mode: "cw", timestamp: timestamp)
@@ -404,7 +404,7 @@ final class ServicePresenceTests: XCTestCase {
     }
 
     @MainActor
-    func testDeduplicationKey_DifferentWithin2Minutes() throws {
+    func testDeduplicationKey_DifferentWithin2Minutes() {
         let baseTime = Date()
         let qso1 = QSO.testQSO(callsign: "W1AW", timestamp: baseTime)
         let qso2 = QSO.testQSO(callsign: "W1AW", timestamp: baseTime.addingTimeInterval(60))
@@ -414,7 +414,7 @@ final class ServicePresenceTests: XCTestCase {
     }
 
     @MainActor
-    func testDeduplicationKey_DifferentAcross2Minutes() throws {
+    func testDeduplicationKey_DifferentAcross2Minutes() {
         let baseTime = Date()
         let qso1 = QSO.testQSO(callsign: "W1AW", timestamp: baseTime)
         let qso2 = QSO.testQSO(callsign: "W1AW", timestamp: baseTime.addingTimeInterval(180))
@@ -436,7 +436,7 @@ final class ServicePresenceTests: XCTestCase {
 
         // When - fetch from database
         let descriptor = FetchDescriptor<QSO>()
-        let fetched = try modelContext.fetch(descriptor).first!
+        let fetched = try XCTUnwrap(try modelContext.fetch(descriptor).first)
 
         // Then
         XCTAssertEqual(fetched.servicePresence.count, 2)

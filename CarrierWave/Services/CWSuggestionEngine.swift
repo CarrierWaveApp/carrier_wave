@@ -1,15 +1,7 @@
 // swiftlint:disable function_body_length large_tuple
+import CarrierWaveCore
 import Combine
 import Foundation
-
-// MARK: - SuggestionCategory
-
-/// Category of suggested CW word
-enum SuggestionCategory: String, Equatable {
-    case prosign
-    case abbreviation
-    case number
-}
 
 // MARK: - WordSuggestion
 

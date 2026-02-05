@@ -1,3 +1,4 @@
+import CarrierWaveCore
 import Foundation
 
 // MARK: - POTADownloadState
@@ -79,11 +80,13 @@ extension POTAClient {
             service: .pota
         )
 
-        saveDownloadCheckpoint(POTADownloadCheckpoint(
-            processedActivationKeys: state.processedKeys,
-            lastBatchDate: Date(),
-            adaptiveBatchSize: state.currentBatchSize
-        ))
+        saveDownloadCheckpoint(
+            POTADownloadCheckpoint(
+                processedActivationKeys: state.processedKeys,
+                lastBatchDate: Date(),
+                adaptiveBatchSize: state.currentBatchSize
+            )
+        )
 
         let retryDelaySec = Double(POTADownloadConfig.timeoutRetryDelay) / 1_000_000_000
         debugLog.debug("Waiting \(retryDelaySec)s before retry...", service: .pota)
@@ -112,7 +115,9 @@ extension POTAClient {
            state.currentBatchSize < POTADownloadConfig.maximumBatchSize
         {
             let oldBatchSize = state.currentBatchSize
-            state.currentBatchSize = min(state.currentBatchSize + 5, POTADownloadConfig.maximumBatchSize)
+            state.currentBatchSize = min(
+                state.currentBatchSize + 5, POTADownloadConfig.maximumBatchSize
+            )
             state.consecutiveSuccesses = 0
             debugLog.info(
                 "Adaptive: increasing batchSize \(oldBatchSize) → \(state.currentBatchSize) after 3 successes",
@@ -120,11 +125,13 @@ extension POTAClient {
             )
         }
 
-        saveDownloadCheckpoint(POTADownloadCheckpoint(
-            processedActivationKeys: state.processedKeys,
-            lastBatchDate: Date(),
-            adaptiveBatchSize: state.currentBatchSize
-        ))
+        saveDownloadCheckpoint(
+            POTADownloadCheckpoint(
+                processedActivationKeys: state.processedKeys,
+                lastBatchDate: Date(),
+                adaptiveBatchSize: state.currentBatchSize
+            )
+        )
     }
 
     /// Log timeout error with details

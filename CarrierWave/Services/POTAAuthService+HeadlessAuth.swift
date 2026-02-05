@@ -2,6 +2,7 @@
 //
 // Contains headless authentication methods for POTA using stored credentials
 
+import CarrierWaveCore
 import Foundation
 import WebKit
 

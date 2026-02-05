@@ -1,11 +1,13 @@
+import CarrierWaveCore
 import Foundation
 import SwiftData
 
-// MARK: - QSOSnapshot
+// MARK: - StatsQSOSnapshot
 
 /// Lightweight, Sendable snapshot of QSO data for background computation.
 /// Contains only the fields needed for statistics calculation.
-struct QSOSnapshot: Sendable {
+/// Named StatsQSOSnapshot to avoid conflict with CarrierWaveCore.QSOSnapshot.
+struct StatsQSOSnapshot: Sendable {
     let id: UUID
     let callsign: String
     let band: String
@@ -153,7 +155,7 @@ actor StatsComputationActor {
     private func fetchAndConvertToSnapshots(
         context: ModelContext,
         onProgress: @escaping @Sendable (Double, String) -> Void
-    ) async throws -> [QSOSnapshot] {
+    ) async throws -> [StatsQSOSnapshot] {
         onProgress(0.0, "Counting QSOs...")
 
         // Get total count
@@ -164,7 +166,7 @@ actor StatsComputationActor {
             return []
         }
 
-        var snapshots: [QSOSnapshot] = []
+        var snapshots: [StatsQSOSnapshot] = []
         snapshots.reserveCapacity(totalCount)
 
         var offset = 0
@@ -190,7 +192,7 @@ actor StatsComputationActor {
 
             // Convert to snapshots
             for qso in batch {
-                let snapshot = QSOSnapshot(
+                let snapshot = StatsQSOSnapshot(
                     id: qso.id,
                     callsign: qso.callsign,
                     band: qso.band,
@@ -222,7 +224,7 @@ actor StatsComputationActor {
 
     /// Compute all statistics from pre-fetched snapshots.
     private func computeStatsFromSnapshots(
-        _ snapshots: [QSOSnapshot],
+        _ snapshots: [StatsQSOSnapshot],
         onProgress: @escaping @Sendable (Double, String) -> Void
     ) async throws -> ComputedStats {
         onProgress(0.50, "Computing statistics...")
@@ -250,8 +252,8 @@ actor StatsComputationActor {
     // MARK: - Computation Phases
 
     private func computeBasicCounts(
-        from snapshots: [QSOSnapshot],
-        realQSOs: [QSOSnapshot],
+        from snapshots: [StatsQSOSnapshot],
+        realQSOs: [StatsQSOSnapshot],
         onProgress: @escaping @Sendable (Double, String) -> Void
     ) async throws -> ComputedStats {
         var stats = ComputedStats()
@@ -297,7 +299,7 @@ actor StatsComputationActor {
 
     private func computeStreaks(
         into stats: inout ComputedStats,
-        from realQSOs: [QSOSnapshot],
+        from realQSOs: [StatsQSOSnapshot],
         onProgress: @escaping @Sendable (Double, String) -> Void
     ) async throws {
         onProgress(0.85, "Computing daily streak...")
@@ -327,7 +329,7 @@ actor StatsComputationActor {
         stats.potaStreakLastActive = potaResult.lastActive
     }
 
-    private func computeDailyStreak(from qsos: [QSOSnapshot]) -> StreakResult {
+    private func computeDailyStreak(from qsos: [StatsQSOSnapshot]) -> StreakResult {
         guard !qsos.isEmpty else {
             return StreakResult(
                 current: 0, longest: 0, currentStart: nil,
@@ -356,7 +358,9 @@ actor StatsComputationActor {
         )
     }
 
-    private func computePOTAStreak(from activationGroups: [String: [QSOSnapshot]]) -> StreakResult {
+    private func computePOTAStreak(from activationGroups: [String: [StatsQSOSnapshot]])
+        -> StreakResult
+    {
         // Get successful activations (10+ QSOs) and their dates
         let successfulDates = activationGroups.values
             .filter { $0.count >= 10 }

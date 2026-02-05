@@ -4,6 +4,7 @@
 // to navigate the Cognito Hosted UI, then caches the resulting JWT tokens
 // for subsequent direct API calls.
 
+import CarrierWaveCore
 import Combine
 import Foundation
 import SwiftUI

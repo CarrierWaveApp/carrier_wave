@@ -3,6 +3,7 @@
 //
 // Provides functionality for activators to spot themselves on POTA.
 
+import CarrierWaveCore
 import Foundation
 
 // MARK: - POTASpotRequest

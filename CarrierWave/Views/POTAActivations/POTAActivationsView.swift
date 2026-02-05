@@ -1,5 +1,7 @@
 // POTA Activations view - displays activations grouped by park with upload status
+// swiftlint:disable file_length
 
+import CarrierWaveCore
 import SwiftData
 import SwiftUI
 import UIKit

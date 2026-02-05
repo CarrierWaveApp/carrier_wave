@@ -3,7 +3,7 @@ import Foundation
 // MARK: - QueryToken
 
 /// Token types produced by the query lexer
-enum QueryToken: Equatable {
+public enum QueryToken: Equatable, Sendable {
     /// Field qualifier (e.g., "band:", "mode:", "call:")
     case field(QueryField)
 
@@ -38,7 +38,7 @@ enum QueryToken: Equatable {
 // MARK: - QueryField
 
 /// Searchable fields in QSO records
-enum QueryField: String, CaseIterable {
+public enum QueryField: String, CaseIterable, Sendable {
     // Core identification
     case callsign = "call"
     case band
@@ -76,10 +76,10 @@ enum QueryField: String, CaseIterable {
     case pending
     case source
 
-    // MARK: Internal
+    // MARK: Public
 
     /// All recognized aliases for field names
-    static let aliases: [String: QueryField] = [
+    public static let aliases: [String: QueryField] = [
         // Primary names
         "call": .callsign,
         "callsign": .callsign,
@@ -116,7 +116,7 @@ enum QueryField: String, CaseIterable {
     ]
 
     /// Display name for error messages
-    var displayName: String {
+    public var displayName: String {
         switch self {
         case .callsign: "callsign"
         case .band: "band"
@@ -145,7 +145,7 @@ enum QueryField: String, CaseIterable {
     }
 
     /// Whether this field is indexed for fast lookups
-    var isIndexed: Bool {
+    public var isIndexed: Bool {
         switch self {
         case .callsign,
              .band,
@@ -161,7 +161,7 @@ enum QueryField: String, CaseIterable {
     }
 
     /// Whether this field requires text scanning (slow)
-    var requiresTextScan: Bool {
+    public var requiresTextScan: Bool {
         switch self {
         case .notes,
              .name,
@@ -173,7 +173,7 @@ enum QueryField: String, CaseIterable {
     }
 
     /// Parse a field name (case-insensitive)
-    static func parse(_ name: String) -> QueryField? {
+    public static func parse(_ name: String) -> QueryField? {
         aliases[name.lowercased()]
     }
 }
@@ -181,15 +181,24 @@ enum QueryField: String, CaseIterable {
 // MARK: - SourcePosition
 
 /// Position in source string for error reporting
-struct SourcePosition: Sendable {
-    static let unknown = SourcePosition(offset: 0, length: 0)
+public struct SourcePosition: Sendable {
+    // MARK: Lifecycle
 
-    let offset: Int
-    let length: Int
+    public init(offset: Int, length: Int) {
+        self.offset = offset
+        self.length = length
+    }
+
+    // MARK: Public
+
+    public static let unknown = SourcePosition(offset: 0, length: 0)
+
+    public let offset: Int
+    public let length: Int
 
     // swiftformat:disable all
     // Explicit nonisolated Equatable to avoid Swift 6 actor isolation inference
-    nonisolated static func == (lhs: SourcePosition, rhs: SourcePosition) -> Bool {
+    nonisolated public static func == (lhs: SourcePosition, rhs: SourcePosition) -> Bool {
         lhs.offset == rhs.offset && lhs.length == rhs.length
     }
     // swiftformat:enable all
@@ -202,8 +211,18 @@ extension SourcePosition: Equatable {}
 // MARK: - PositionedToken
 
 /// Token with source position for error reporting
-struct PositionedToken: Equatable {
-    let token: QueryToken
-    let position: SourcePosition
-    let rawText: String
+public struct PositionedToken: Equatable, Sendable {
+    // MARK: Lifecycle
+
+    public init(token: QueryToken, position: SourcePosition, rawText: String) {
+        self.token = token
+        self.position = position
+        self.rawText = rawText
+    }
+
+    // MARK: Public
+
+    public let token: QueryToken
+    public let position: SourcePosition
+    public let rawText: String
 }

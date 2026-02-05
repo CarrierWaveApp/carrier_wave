@@ -1,3 +1,4 @@
+import CarrierWaveCore
 import CoreLocation
 import Foundation
 import SwiftData

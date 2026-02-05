@@ -1,3 +1,4 @@
+import CarrierWaveCore
 import SwiftUI
 
 // MARK: - P2PPanelView
