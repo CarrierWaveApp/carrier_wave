@@ -356,6 +356,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `LoggingSessionTests.swift` | LoggingSession model tests (state, band derivation, duration) |
 | `ServicePresenceTests.swift` | Service presence and upload marking edge case tests |
 | `MetadataModeTests.swift` | WEATHER/SOLAR/NOTE metadata mode filtering tests |
+| `DXCCTests.swift` | DXCC extraction, QRZ import, and repair task tests |
 | `QuickEntryParserTests.swift` | Quick entry parser unit tests (callsign, RST, park, grid, state detection) |
 | `QuickEntryParserIntegrationTests.swift` | Quick entry parser integration tests (full parsing, token preview) |
 | `Helpers/QSOFactory.swift` | Synthetic QSO generator for testing (duplicates, metadata, edge cases) |

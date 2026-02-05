@@ -160,6 +160,24 @@ extension SyncService {
         }
     }
 
+    /// Repair QSOs that have DXCC in rawADIF but not in the dxcc column.
+    /// This backfills DXCC data for QSOs imported before the fix was applied.
+    func repairMissingDXCCAsync() async {
+        do {
+            let result = try await Self.processingActor.repairMissingDXCC(
+                container: modelContext.container
+            )
+            if result.repairedCount > 0 {
+                let msg =
+                    "Repaired DXCC on \(result.repairedCount) QSO(s) from rawADIF "
+                        + "(scanned \(result.scannedCount))"
+                SyncDebugLog.shared.info(msg)
+            }
+        } catch {
+            SyncDebugLog.shared.error("Failed to repair missing DXCC: \(error)")
+        }
+    }
+
     // MARK: - Legacy Synchronous Methods
 
     /// Synchronous version - prefer processDownloadedQSOsAsync for better UI responsiveness.

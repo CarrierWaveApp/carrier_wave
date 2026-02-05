@@ -117,4 +117,120 @@ struct ADIFParserTests {
         #expect(records[0].callsign == "W1AW")
         #expect(records[1].callsign == "K3LR")
     }
+
+    // MARK: - DXCC Extraction Tests
+
+    @Test("Parse DXCC field from record")
+    func parseDXCCField() throws {
+        let adif =
+            "<call:4>W1AW <band:3>20m <mode:2>CW <qso_date:8>20240115 <time_on:4>1430 <dxcc:3>291 <eor>"
+
+        let parser = ADIFParser()
+        let records = try parser.parse(adif)
+
+        #expect(records.count == 1)
+        #expect(records[0].dxcc == 291)
+    }
+
+    @Test("Parse country field from record")
+    func parseCountryField() throws {
+        let adif = """
+        <call:4>W1AW <band:3>20m <mode:2>CW <qso_date:8>20240115 <time_on:4>1430 \
+        <country:13>United States <dxcc:3>291 <eor>
+        """
+
+        let parser = ADIFParser()
+        let records = try parser.parse(adif)
+
+        #expect(records.count == 1)
+        #expect(records[0].country == "United States")
+        #expect(records[0].dxcc == 291)
+    }
+
+    @Test("Extract field helper - basic")
+    func extractFieldBasic() {
+        let adif = "<call:4>W1AW <dxcc:3>291 <band:3>20m"
+
+        let dxccValue = ADIFParser.extractField("dxcc", from: adif)
+        let callValue = ADIFParser.extractField("call", from: adif)
+        let bandValue = ADIFParser.extractField("band", from: adif)
+
+        #expect(dxccValue == "291")
+        #expect(callValue == "W1AW")
+        #expect(bandValue == "20m")
+    }
+
+    @Test("Extract field helper - case insensitive")
+    func extractFieldCaseInsensitive() {
+        let adif = "<DXCC:3>291 <Call:4>W1AW"
+
+        let dxccValue = ADIFParser.extractField("dxcc", from: adif)
+        let callValue = ADIFParser.extractField("CALL", from: adif)
+
+        #expect(dxccValue == "291")
+        #expect(callValue == "W1AW")
+    }
+
+    @Test("Extract field helper - missing field returns nil")
+    func extractFieldMissing() {
+        let adif = "<call:4>W1AW <band:3>20m"
+
+        let dxccValue = ADIFParser.extractField("dxcc", from: adif)
+
+        #expect(dxccValue == nil)
+    }
+
+    @Test("Extract DXCC helper - valid integer")
+    func extractDXCCValid() {
+        let adif = "<call:4>W1AW <dxcc:3>291 <band:3>20m"
+
+        let dxcc = ADIFParser.extractDXCC(from: adif)
+
+        #expect(dxcc == 291)
+    }
+
+    @Test("Extract DXCC helper - missing field returns nil")
+    func extractDXCCMissing() {
+        let adif = "<call:4>W1AW <band:3>20m"
+
+        let dxcc = ADIFParser.extractDXCC(from: adif)
+
+        #expect(dxcc == nil)
+    }
+
+    @Test("Extract DXCC helper - non-integer returns nil")
+    func extractDXCCNonInteger() {
+        let adif = "<call:4>W1AW <dxcc:3>abc <band:3>20m"
+
+        let dxcc = ADIFParser.extractDXCC(from: adif)
+
+        #expect(dxcc == nil)
+    }
+
+    @Test("Extract DXCC from real-world QRZ ADIF")
+    func extractDXCCFromQRZAdif() {
+        // Real format from QRZ logbook export
+        let adif = """
+        <call:4>N9HO <band:3>20m <mode:2>CW <qso_date:8>20240115 <time_on:4>1430 \
+        <dxcc:3>291 <country:13>United States <state:2>IL <eor>
+        """
+
+        let dxcc = ADIFParser.extractDXCC(from: adif)
+        let country = ADIFParser.extractField("country", from: adif)
+
+        #expect(dxcc == 291)
+        #expect(country == "United States")
+    }
+
+    @Test("Parse record preserves nil DXCC when not present")
+    func parseRecordNilDXCC() throws {
+        let adif = "<call:4>W1AW <band:3>20m <mode:2>CW <qso_date:8>20240115 <time_on:4>1430 <eor>"
+
+        let parser = ADIFParser()
+        let records = try parser.parse(adif)
+
+        #expect(records.count == 1)
+        #expect(records[0].dxcc == nil)
+        #expect(records[0].country == nil)
+    }
 }

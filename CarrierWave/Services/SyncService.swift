@@ -123,6 +123,10 @@ class SyncService: ObservableObject {
         // These will never upload because services are configured with current callsign
         await clearNonPrimaryCallsignUploadFlagsAsync()
 
+        // PHASE 2.5f: Repair missing DXCC from rawADIF
+        // Backfills DXCC for QSOs imported before the fix was applied
+        await repairMissingDXCCAsync()
+
         // Refresh main context to pick up changes from background actor
         modelContext.rollback()
 
@@ -191,6 +195,9 @@ class SyncService: ObservableObject {
 
         // Clear upload flags on QSOs from non-primary callsigns
         await clearNonPrimaryCallsignUploadFlagsAsync()
+
+        // Repair missing DXCC from rawADIF
+        await repairMissingDXCCAsync()
 
         // Refresh main context to pick up changes from background actor
         modelContext.rollback()

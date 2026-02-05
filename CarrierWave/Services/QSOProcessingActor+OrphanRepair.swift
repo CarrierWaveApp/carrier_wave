@@ -9,6 +9,12 @@ extension QSOProcessingActor {
     /// These should never be synced to any service
     private static let metadataModes: Set<String> = ["WEATHER", "SOLAR", "NOTE"]
 
+    /// Result of DXCC repair operation
+    struct DXCCRepairResult: Sendable {
+        let repairedCount: Int
+        let scannedCount: Int
+    }
+
     /// Result of clearing upload flags on metadata QSOs
     struct MetadataRepairResult: Sendable {
         let clearedCount: Int
@@ -291,5 +297,74 @@ extension QSOProcessingActor {
         )
 
         return (orphanInfo, repairedCount)
+    }
+
+    // MARK: - DXCC Repair
+
+    /// Repair QSOs that have DXCC in rawADIF but not in the dxcc column.
+    /// This backfills DXCC data for QSOs imported before the fix was applied.
+    func repairMissingDXCC(container: ModelContainer) async throws -> DXCCRepairResult {
+        let context = ModelContext(container)
+        context.autosaveEnabled = false
+
+        // Fetch QSOs that have rawADIF but no DXCC
+        // We can't use a predicate for "rawADIF contains dxcc" so we fetch all without DXCC
+        var descriptor = FetchDescriptor<QSO>(
+            predicate: #Predicate<QSO> { $0.dxcc == nil && $0.rawADIF != nil }
+        )
+
+        let totalCount = (try? context.fetchCount(descriptor)) ?? 0
+        if totalCount == 0 {
+            return DXCCRepairResult(repairedCount: 0, scannedCount: 0)
+        }
+
+        var repairedCount = 0
+        var scannedCount = 0
+        var unsavedCount = 0
+        let batchSize = 500
+        var offset = 0
+
+        while offset < totalCount {
+            try Task.checkCancellation()
+
+            descriptor.fetchOffset = offset
+            descriptor.fetchLimit = batchSize
+
+            let batch = (try? context.fetch(descriptor)) ?? []
+            if batch.isEmpty {
+                break
+            }
+
+            for qso in batch {
+                scannedCount += 1
+
+                guard let rawADIF = qso.rawADIF else {
+                    continue
+                }
+
+                // Extract DXCC from rawADIF using CarrierWaveCore helper
+                if let dxcc = ADIFParser.extractDXCC(from: rawADIF) {
+                    qso.dxcc = dxcc
+                    repairedCount += 1
+                    unsavedCount += 1
+                }
+            }
+
+            // Save periodically
+            if unsavedCount >= 100 {
+                try context.save()
+                unsavedCount = 0
+            }
+
+            offset += batchSize
+            await Task.yield()
+        }
+
+        // Save any remaining changes
+        if unsavedCount > 0 {
+            try context.save()
+        }
+
+        return DXCCRepairResult(repairedCount: repairedCount, scannedCount: scannedCount)
     }
 }

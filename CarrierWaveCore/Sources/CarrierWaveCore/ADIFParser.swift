@@ -25,6 +25,8 @@ public struct ADIFRecord: Sendable {
         sigInfo: String? = nil,
         mySigInfo: String? = nil,
         comment: String? = nil,
+        dxcc: Int? = nil,
+        country: String? = nil,
         rawADIF: String
     ) {
         self.callsign = callsign
@@ -41,6 +43,8 @@ public struct ADIFRecord: Sendable {
         self.sigInfo = sigInfo
         self.mySigInfo = mySigInfo
         self.comment = comment
+        self.dxcc = dxcc
+        self.country = country
         self.rawADIF = rawADIF
     }
 
@@ -60,6 +64,8 @@ public struct ADIFRecord: Sendable {
     public var sigInfo: String? // Their park reference (hunter contacts)
     public var mySigInfo: String? // My park reference (activations)
     public var comment: String?
+    public var dxcc: Int? // DXCC entity number
+    public var country: String? // Country name
     public var rawADIF: String
 
     public var timestamp: Date? {
@@ -84,6 +90,61 @@ public struct ADIFParser: Sendable {
     public init() {}
 
     // MARK: Public
+
+    /// Extract a specific ADIF field value from a raw ADIF string.
+    /// Handles case-insensitive field names and standard ADIF format.
+    /// - Parameters:
+    ///   - fieldName: The ADIF field name (e.g., "dxcc", "country")
+    ///   - adif: The raw ADIF string to search
+    /// - Returns: The field value if found, nil otherwise
+    public static func extractField(_ fieldName: String, from adif: String) -> String? {
+        // Pattern: <fieldname:length>value or <fieldname:length:type>value
+        let pattern = "<\(fieldName):(\\d+)(?::\\w)?>"
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive)
+        else {
+            return nil
+        }
+
+        let nsString = adif as NSString
+        guard
+            let match = regex.firstMatch(
+                in: adif,
+                options: [],
+                range: NSRange(location: 0, length: nsString.length)
+            )
+        else {
+            return nil
+        }
+
+        guard match.numberOfRanges >= 2 else {
+            return nil
+        }
+
+        let lengthRange = match.range(at: 1)
+        guard lengthRange.location != NSNotFound,
+              let length = Int(nsString.substring(with: lengthRange))
+        else {
+            return nil
+        }
+
+        let valueStart = match.range.location + match.range.length
+        guard valueStart + length <= nsString.length else {
+            return nil
+        }
+
+        let value = nsString.substring(with: NSRange(location: valueStart, length: length))
+        return value.trimmingCharacters(in: .whitespaces)
+    }
+
+    /// Extract DXCC entity number from a raw ADIF string.
+    /// - Parameter adif: The raw ADIF string to search
+    /// - Returns: The DXCC entity number if found, nil otherwise
+    public static func extractDXCC(from adif: String) -> Int? {
+        guard let value = extractField("dxcc", from: adif) else {
+            return nil
+        }
+        return Int(value)
+    }
 
     public func parse(_ content: String) throws -> [ADIFRecord] {
         var records: [ADIFRecord] = []
@@ -131,6 +192,8 @@ public struct ADIFParser: Sendable {
                 sigInfo: fields["sig_info"] ?? fields["pota_ref"],
                 mySigInfo: fields["my_sig_info"],
                 comment: fields["comment"] ?? fields["notes"],
+                dxcc: fields["dxcc"].flatMap { Int($0) },
+                country: fields["country"],
                 rawADIF: "<" + trimmed + "<eor>"
             )
 

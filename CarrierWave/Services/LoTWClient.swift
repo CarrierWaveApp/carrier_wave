@@ -155,7 +155,17 @@ final class LoTWClient {
         var request = URLRequest(url: components.url!)
         request.setValue(userAgent, forHTTPHeaderField: "User-Agent")
 
-        let (data, _) = try await session.data(for: request)
+        let (data, response) = try await session.data(for: request)
+
+        // Check HTTP status code first - LoTW uses 403/503 for rate limiting
+        if let httpResponse = response as? HTTPURLResponse {
+            let statusCode = httpResponse.statusCode
+            if statusCode == 403 || statusCode == 503 {
+                throw LoTWError.serviceError("HTTP \(statusCode) - rate limited")
+            } else if statusCode != 200 {
+                throw LoTWError.serviceError("HTTP \(statusCode)")
+            }
+        }
 
         guard let responseString = String(data: data, encoding: .utf8) else {
             throw LoTWError.invalidResponse("Cannot decode response as UTF-8")
@@ -211,7 +221,17 @@ final class LoTWClient {
         var request = URLRequest(url: components.url!)
         request.setValue(userAgent, forHTTPHeaderField: "User-Agent")
 
-        let (data, _) = try await session.data(for: request)
+        let (data, response) = try await session.data(for: request)
+
+        // Check HTTP status code first - LoTW uses 403/503 for rate limiting
+        if let httpResponse = response as? HTTPURLResponse {
+            let statusCode = httpResponse.statusCode
+            if statusCode == 403 || statusCode == 503 {
+                throw LoTWError.serviceError("HTTP \(statusCode) - rate limited")
+            } else if statusCode != 200 {
+                throw LoTWError.serviceError("HTTP \(statusCode)")
+            }
+        }
 
         guard let responseString = String(data: data, encoding: .utf8) else {
             throw LoTWError.invalidResponse("Cannot decode response as UTF-8")
@@ -229,6 +249,7 @@ final class LoTWClient {
     }
 
     /// Check if error message indicates rate limiting
+    /// LoTW uses both 403 (Forbidden) and 503 (Service Unavailable) for rate limiting
     func isRateLimitError(_ message: String) -> Bool {
         let lowercased = message.lowercased()
         return lowercased.contains("page request limit")
@@ -236,6 +257,8 @@ final class LoTWClient {
             || lowercased.contains("too many requests")
             || lowercased.contains("503")
             || lowercased.contains("error 503")
+            || lowercased.contains("403")
+            || lowercased.contains("forbidden")
     }
 
     /// Format date for logging

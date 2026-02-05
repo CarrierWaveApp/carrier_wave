@@ -47,6 +47,7 @@ extension ImportService {
         if let qrzLogId = qrzQso.qrzLogId, let existing = byQrzLogId[qrzLogId]?.first {
             existing.qrzConfirmed = qrzQso.qrzConfirmed
             existing.lotwConfirmedDate = qrzQso.lotwConfirmedDate
+            existing.dxcc = existing.dxcc ?? qrzQso.dxcc
             existing.markPresent(in: .qrz, context: modelContext)
             return .updated
         }
@@ -62,6 +63,7 @@ extension ImportService {
             existing.qrzLogId = qrzQso.qrzLogId
             existing.qrzConfirmed = qrzQso.qrzConfirmed
             existing.lotwConfirmedDate = qrzQso.lotwConfirmedDate
+            existing.dxcc = existing.dxcc ?? qrzQso.dxcc
             existing.markPresent(in: .qrz, context: modelContext)
             return .updated
         }
@@ -83,7 +85,8 @@ extension ImportService {
             parkReference: qrzQso.parkReference, theirParkReference: qrzQso.theirParkReference,
             notes: qrzQso.notes, importSource: .qrz,
             rawADIF: qrzQso.rawADIF, qrzLogId: qrzQso.qrzLogId,
-            qrzConfirmed: qrzQso.qrzConfirmed, lotwConfirmedDate: qrzQso.lotwConfirmedDate
+            qrzConfirmed: qrzQso.qrzConfirmed, lotwConfirmedDate: qrzQso.lotwConfirmedDate,
+            dxcc: qrzQso.dxcc
         )
     }
 }
