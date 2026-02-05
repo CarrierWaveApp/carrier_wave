@@ -33,6 +33,19 @@ jobs:
       - name: Run SwiftLint
         run: swiftlint lint --strict
 
+  # Unit tests on every PR
+  unit-tests:
+    name: Unit Tests
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_16.2.app
+
+      - name: Run unit tests
+        run: make test-unit
+
   # Quick performance test on every PR (50k QSOs, ~1-2 min)
   performance-quick:
     name: Performance (Quick)

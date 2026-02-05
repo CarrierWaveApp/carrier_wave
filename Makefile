@@ -1,4 +1,4 @@
-.PHONY: build build-device test test-performance test-performance-quick devices install launch deploy clean lint format format-check setup-hooks release warnings
+.PHONY: build build-device test test-unit test-log-management test-performance test-performance-quick devices install launch deploy clean lint format format-check setup-hooks release warnings
 
 DEVICE_NAME := theseus
 BUNDLE_ID := com.jsvana.FullDuplex
@@ -19,10 +19,29 @@ build-device:
 	xcodebuild -project $(PROJECT) -scheme $(SCHEME) \
 		-destination 'platform=iOS,name=$(DEVICE_NAME)' build
 
-# Run tests
+# Run all tests
 test:
 	xcodebuild -project $(PROJECT) -scheme $(SCHEME) \
 		-destination 'platform=iOS Simulator,name=$(SIMULATOR)' test
+
+# Run unit tests only (excludes performance tests)
+test-unit:
+	xcodebuild -project $(PROJECT) -scheme $(SCHEME) \
+		-destination 'platform=iOS Simulator,name=$(SIMULATOR)' \
+		-skip-testing:CarrierWaveTests/QSOStatisticsPerformanceTests \
+		test
+
+# Run log management tests only
+test-log-management:
+	xcodebuild -project $(PROJECT) -scheme $(SCHEME) \
+		-destination 'platform=iOS Simulator,name=$(SIMULATOR)' \
+		-only-testing:CarrierWaveTests/LoggingSessionManagerTests \
+		-only-testing:CarrierWaveTests/LoggingSessionTests \
+		-only-testing:CarrierWaveTests/ServicePresenceTests \
+		-only-testing:CarrierWaveTests/MetadataModeTests \
+		-only-testing:CarrierWaveTests/DeduplicationServiceTests \
+		-only-testing:CarrierWaveTests/ImportServiceTests \
+		test
 
 # Run quick performance tests (for CI - 50k QSOs, ~1-2 min)
 test-performance-quick:

@@ -322,7 +322,12 @@ This index maps files to their purpose. Use it to locate files by feature instea
 | `ImportServiceTests.swift` | Import service tests |
 | `LoFiClientTests.swift` | LoFi client tests |
 | `QRZClientTests.swift` | QRZ client tests |
-| `Helpers/QSOFactory.swift` | Synthetic QSO generator for performance testing |
-| `PerformanceTests/QSOStatisticsPerformanceTests.swift` | Performance regression tests (50k/500k QSOs) |
+| `LoggingSessionManagerTests.swift` | Session lifecycle, QSO logging, notes management tests |
+| `LoggingSessionTests.swift` | LoggingSession model tests (state, band derivation, duration) |
+| `ServicePresenceTests.swift` | Service presence and upload marking edge case tests |
+| `MetadataModeTests.swift` | WEATHER/SOLAR/NOTE metadata mode filtering tests |
 | `QuickEntryParserTests.swift` | Quick entry parser unit tests (callsign, RST, park, grid, state detection) |
 | `QuickEntryParserIntegrationTests.swift` | Quick entry parser integration tests (full parsing, token preview) |
+| `Helpers/QSOFactory.swift` | Synthetic QSO generator for testing (duplicates, metadata, edge cases) |
+| `Helpers/TestModelContainer.swift` | Shared test infrastructure for SwiftData tests |
+| `PerformanceTests/QSOStatisticsPerformanceTests.swift` | Performance regression tests (50k/500k QSOs) |
