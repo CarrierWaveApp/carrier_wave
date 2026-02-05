@@ -1,3 +1,4 @@
+import CarrierWaveCore
 import Foundation
 import SwiftData
 
@@ -31,59 +32,46 @@ final class DeduplicationService {
             return DeduplicationResult(duplicateGroupsFound: 0, qsosMerged: 0, qsosRemoved: 0)
         }
 
-        let timeWindow = TimeInterval(timeWindowMinutes * 60)
-        var duplicateGroups: [[QSO]] = []
-        var processed = Set<UUID>()
+        // Convert to snapshots for pure logic matching
+        let snapshots = allQSOs.map { $0.toSnapshot() }
 
-        // Find duplicate groups
-        for i in 0 ..< allQSOs.count {
-            let qso = allQSOs[i]
-            if processed.contains(qso.id) {
-                continue
-            }
-
-            var group = [qso]
-            processed.insert(qso.id)
-
-            // Check subsequent QSOs within time window
-            for j in (i + 1) ..< allQSOs.count {
-                let candidate = allQSOs[j]
-                if processed.contains(candidate.id) {
-                    continue
-                }
-
-                // Stop if beyond time window
-                let timeDelta = candidate.timestamp.timeIntervalSince(qso.timestamp)
-                if timeDelta > timeWindow {
-                    break
-                }
-
-                // Check if duplicate (same call/band/mode within window)
-                if isDuplicate(qso, candidate) {
-                    group.append(candidate)
-                    processed.insert(candidate.id)
-                }
-            }
-
-            if group.count > 1 {
-                duplicateGroups.append(group)
-            }
-        }
+        // Use CarrierWaveCore's deduplication matcher
+        let config = DeduplicationConfig(
+            timeWindowSeconds: TimeInterval(timeWindowMinutes * 60),
+            requireBandMatch: true,
+            requireParkMatch: true
+        )
+        let groups = DeduplicationMatcher.findDuplicateGroups(snapshots, config: config)
 
         // Merge each group
         var totalMerged = 0
         var totalRemoved = 0
 
-        for group in duplicateGroups {
-            let (merged, removed) = mergeGroup(group)
-            totalMerged += merged
-            totalRemoved += removed
+        // Build lookup for QSOs by ID
+        let qsoById = Dictionary(uniqueKeysWithValues: allQSOs.map { ($0.id, $0) })
+
+        for group in groups {
+            guard let winner = qsoById[group.winnerId] else {
+                continue
+            }
+
+            for loserId in group.loserIds {
+                guard let loser = qsoById[loserId] else {
+                    continue
+                }
+
+                absorbFields(from: loser, into: winner)
+                absorbServicePresence(from: loser, into: winner)
+                modelContext.delete(loser)
+                totalRemoved += 1
+            }
+            totalMerged += 1
         }
 
         try modelContext.save()
 
         return DeduplicationResult(
-            duplicateGroupsFound: duplicateGroups.count,
+            duplicateGroupsFound: groups.count,
             qsosMerged: totalMerged,
             qsosRemoved: totalRemoved
         )
@@ -91,87 +79,7 @@ final class DeduplicationService {
 
     // MARK: Private
 
-    // MARK: - Mode Equivalence
-
-    /// Generic mode names that should be replaced by specific modes when merging
-    private static let genericModes: Set<String> = ["PHONE", "DATA"]
-
-    /// Phone mode family - all considered equivalent for deduplication
-    private static let phoneModes: Set<String> = ["PHONE", "SSB", "USB", "LSB", "AM", "FM", "DV"]
-
-    /// Digital mode family - all considered equivalent for deduplication
-    private static let digitalModes: Set<String> = [
-        "DATA", "FT8", "FT4", "PSK31", "PSK", "RTTY", "JT65", "JT9", "MFSK", "OLIVIA",
-    ]
-
     private let modelContext: ModelContext
-
-    /// Check if two QSOs are duplicates (same callsign, mode, park reference, and optionally band)
-    /// When either QSO has no band (empty string), matches on callsign+mode+time only.
-    /// This handles POTA.app QSOs which don't include frequency/band info.
-    /// Park reference (your activation park) must match - different activations are not duplicates.
-    private func isDuplicate(_ qso1: QSO, _ qso2: QSO) -> Bool {
-        let callsignMatch = qso1.callsign.uppercased() == qso2.callsign.uppercased()
-        let modeMatch = modesAreEquivalent(qso1.mode, qso2.mode)
-
-        guard callsignMatch && modeMatch else {
-            return false
-        }
-
-        // Park reference (your activation park) must match
-        // nil/nil = match, value/value = must match, nil/value = no match
-        let park1 = qso1.parkReference?.trimmingCharacters(in: .whitespaces).uppercased()
-        let park2 = qso2.parkReference?.trimmingCharacters(in: .whitespaces).uppercased()
-
-        // Normalize empty strings to nil for comparison
-        let normalizedPark1 = (park1?.isEmpty ?? true) ? nil : park1
-        let normalizedPark2 = (park2?.isEmpty ?? true) ? nil : park2
-
-        if normalizedPark1 != normalizedPark2 {
-            return false
-        }
-
-        // If either QSO has no band, consider it a match (band-agnostic)
-        let band1 = qso1.band.trimmingCharacters(in: .whitespaces)
-        let band2 = qso2.band.trimmingCharacters(in: .whitespaces)
-
-        if band1.isEmpty || band2.isEmpty {
-            return true
-        }
-
-        // Both have bands - require match
-        return band1.uppercased() == band2.uppercased()
-    }
-
-    /// Merge a group of duplicates, keeping the best one
-    /// Returns (merged count, removed count)
-    private func mergeGroup(_ group: [QSO]) -> (Int, Int) {
-        guard group.count > 1 else {
-            return (0, 0)
-        }
-
-        // Sort to find winner:
-        // 1. Most synced services
-        // 2. Highest field richness score
-        let sorted = group.sorted { first, second in
-            if first.syncedServicesCount != second.syncedServicesCount {
-                return first.syncedServicesCount > second.syncedServicesCount
-            }
-            return first.fieldRichnessScore > second.fieldRichnessScore
-        }
-
-        let winner = sorted[0]
-        let losers = Array(sorted.dropFirst())
-
-        // Absorb data from losers into winner
-        for loser in losers {
-            absorbFields(from: loser, into: winner)
-            absorbServicePresence(from: loser, into: winner)
-            modelContext.delete(loser)
-        }
-
-        return (1, losers.count)
-    }
 
     /// Fill nil/empty fields in winner from loser
     private func absorbFields(from loser: QSO, into winner: QSO) {
@@ -209,7 +117,7 @@ final class DeduplicationService {
             winner.band = loser.band
         }
         // Prefer specific mode over generic (e.g., SSB over PHONE)
-        winner.mode = moreSpecificMode(winner.mode, loser.mode)
+        winner.mode = ModeEquivalence.moreSpecific(winner.mode, loser.mode)
     }
 
     /// Transfer service presence records from loser to winner
@@ -230,45 +138,34 @@ final class DeduplicationService {
             }
         }
     }
+}
 
-    /// Check if two modes are equivalent (handles PHONE/SSB/USB/LSB aliases and digital modes)
-    private func modesAreEquivalent(_ mode1: String, _ mode2: String) -> Bool {
-        let m1 = mode1.uppercased()
-        let m2 = mode2.uppercased()
+// MARK: - QSO Extension for Snapshot Conversion
 
-        // Direct match
-        if m1 == m2 {
-            return true
-        }
-
-        // Check if both are in the same mode family
-        if Self.phoneModes.contains(m1), Self.phoneModes.contains(m2) {
-            return true
-        }
-        if Self.digitalModes.contains(m1), Self.digitalModes.contains(m2) {
-            return true
-        }
-
-        return false
-    }
-
-    /// Returns the more specific of two equivalent modes (prefers SSB over PHONE, FT8 over DATA)
-    private func moreSpecificMode(_ mode1: String, _ mode2: String) -> String {
-        let m1 = mode1.uppercased()
-        let m2 = mode2.uppercased()
-
-        // If one is generic and the other isn't, prefer the specific one
-        let m1IsGeneric = Self.genericModes.contains(m1)
-        let m2IsGeneric = Self.genericModes.contains(m2)
-
-        if m1IsGeneric, !m2IsGeneric {
-            return mode2
-        }
-        if m2IsGeneric, !m1IsGeneric {
-            return mode1
-        }
-
-        // Both specific or both generic - keep the first one
-        return mode1
+extension QSO {
+    /// Convert QSO to a CarrierWaveCore QSOSnapshot for deduplication
+    func toSnapshot() -> QSOSnapshot {
+        QSOSnapshot(
+            id: id,
+            callsign: callsign,
+            timestamp: timestamp,
+            band: band,
+            mode: mode,
+            parkReference: parkReference,
+            frequency: frequency,
+            rstSent: rstSent,
+            rstReceived: rstReceived,
+            myGrid: myGrid,
+            theirGrid: theirGrid,
+            notes: notes,
+            rawADIF: rawADIF,
+            name: name,
+            qth: qth,
+            state: state,
+            country: country,
+            power: power,
+            theirLicenseClass: theirLicenseClass,
+            syncedServicesCount: syncedServicesCount
+        )
     }
 }

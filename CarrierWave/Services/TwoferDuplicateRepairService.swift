@@ -1,3 +1,4 @@
+import CarrierWaveCore
 import Foundation
 import SwiftData
 
@@ -31,11 +32,6 @@ actor TwoferDuplicateRepairService {
         let duplicateGroupsFound: Int
         let qsosMerged: Int
         let qsosRemoved: Int
-    }
-
-    struct DuplicateGroup: Sendable {
-        let winnerId: UUID
-        let loserIds: [UUID]
     }
 
     let container: ModelContainer
@@ -91,177 +87,23 @@ actor TwoferDuplicateRepairService {
 
     // MARK: Private
 
-    /// Sendable snapshot of QSO data needed for duplicate detection
-    private struct QSOSnapshot: Sendable {
-        let id: UUID
-        let callsign: String
-        let timestamp: Date
-        let band: String
-        let mode: String
-        let parkReference: String?
-    }
-
-    /// Phone mode family - all considered equivalent for deduplication
-    private static let phoneModes: Set<String> = ["PHONE", "SSB", "USB", "LSB", "AM", "FM", "DV"]
-
-    /// Digital mode family - all considered equivalent for deduplication
-    private static let digitalModes: Set<String> = [
-        "DATA", "FT8", "FT4", "PSK31", "PSK", "RTTY", "JT65", "JT9", "MFSK", "OLIVIA",
-    ]
-
-    /// Time window for considering QSOs as duplicates (60 seconds)
-    private static let timeWindowSeconds: TimeInterval = 60
-
     /// Find all duplicate groups by scanning QSOs with multi-park references
+    /// Uses CarrierWaveCore's TwoferMatcher for the pure matching logic
     private func findDuplicateGroups() throws -> [DuplicateGroup] {
         let context = ModelContext(container)
         context.autosaveEnabled = false
 
-        // Fetch all QSOs with park references containing commas (two-fers)
+        // Fetch all QSOs with park references
         let descriptor = FetchDescriptor<QSO>(
             sortBy: [SortDescriptor(\.timestamp)]
         )
         let allQSOs = try context.fetch(descriptor)
 
-        // Convert to sendable snapshots immediately
-        let allSnapshots = allQSOs.map { qso in
-            QSOSnapshot(
-                id: qso.id,
-                callsign: qso.callsign,
-                timestamp: qso.timestamp,
-                band: qso.band,
-                mode: qso.mode,
-                parkReference: qso.parkReference
-            )
-        }
+        // Convert to sendable snapshots
+        let allSnapshots = allQSOs.map { $0.toSnapshot() }
 
-        // Find QSOs with multi-park references
-        let multiParkSnapshots = allSnapshots.filter { snapshot in
-            guard let parkRef = snapshot.parkReference, !parkRef.isEmpty else {
-                return false
-            }
-            return POTAClient.isMultiPark(parkRef)
-        }
-
-        var groups: [DuplicateGroup] = []
-        var processedIds = Set<UUID>()
-
-        for multiParkSnapshot in multiParkSnapshots {
-            if processedIds.contains(multiParkSnapshot.id) {
-                continue
-            }
-
-            // Find potential duplicates for this multi-park QSO
-            let duplicateIds = findDuplicatesFor(multiParkSnapshot, in: allSnapshots)
-
-            if !duplicateIds.isEmpty {
-                // Winner is the multi-park QSO (most complete)
-                groups.append(
-                    DuplicateGroup(
-                        winnerId: multiParkSnapshot.id,
-                        loserIds: duplicateIds
-                    )
-                )
-
-                processedIds.insert(multiParkSnapshot.id)
-                for id in duplicateIds {
-                    processedIds.insert(id)
-                }
-            }
-        }
-
-        return groups
-    }
-
-    /// Find duplicates for a multi-park QSO snapshot
-    private func findDuplicatesFor(_ multiParkSnapshot: QSOSnapshot, in allSnapshots: [QSOSnapshot])
-        -> [UUID]
-    {
-        guard let multiParkRef = multiParkSnapshot.parkReference else {
-            return []
-        }
-
-        let multiParks = POTAClient.splitParkReferences(multiParkRef)
-
-        return allSnapshots.compactMap { candidate -> UUID? in
-            // Not the same QSO
-            guard candidate.id != multiParkSnapshot.id else {
-                return nil
-            }
-
-            // Must have a park reference
-            guard let candidateParkRef = candidate.parkReference, !candidateParkRef.isEmpty else {
-                return nil
-            }
-
-            // Candidate should NOT be a multi-park (we want to merge singles into multi)
-            // OR it should be a truncated version (shorter)
-            let candidateParks = POTAClient.splitParkReferences(candidateParkRef)
-            guard
-                candidateParks.count < multiParks.count
-                || candidateParkRef.count < multiParkRef.count
-            else {
-                return nil
-            }
-
-            // Check if candidate's park(s) are a subset of multi-park's parks
-            // or if candidate looks like a truncated version
-            let isSubset = candidateParks.allSatisfy { park in
-                multiParks.contains { multiPark in
-                    multiPark == park || multiPark.hasPrefix(park)
-                }
-            }
-
-            guard isSubset else {
-                return nil
-            }
-
-            // Same callsign
-            guard multiParkSnapshot.callsign.uppercased() == candidate.callsign.uppercased() else {
-                return nil
-            }
-
-            // Timestamps within window
-            let timeDiff = abs(
-                multiParkSnapshot.timestamp.timeIntervalSince(candidate.timestamp)
-            )
-            guard timeDiff <= Self.timeWindowSeconds else {
-                return nil
-            }
-
-            // Same band (or one is empty)
-            let band1 = multiParkSnapshot.band.trimmingCharacters(in: .whitespaces).uppercased()
-            let band2 = candidate.band.trimmingCharacters(in: .whitespaces).uppercased()
-            if !band1.isEmpty, !band2.isEmpty, band1 != band2 {
-                return nil
-            }
-
-            // Same mode family
-            guard modesAreEquivalent(multiParkSnapshot.mode, candidate.mode) else {
-                return nil
-            }
-
-            return candidate.id
-        }
-    }
-
-    /// Check if two modes are equivalent
-    private func modesAreEquivalent(_ mode1: String, _ mode2: String) -> Bool {
-        let m1 = mode1.uppercased()
-        let m2 = mode2.uppercased()
-
-        if m1 == m2 {
-            return true
-        }
-
-        if Self.phoneModes.contains(m1), Self.phoneModes.contains(m2) {
-            return true
-        }
-        if Self.digitalModes.contains(m1), Self.digitalModes.contains(m2) {
-            return true
-        }
-
-        return false
+        // Use CarrierWaveCore's two-fer matcher
+        return TwoferMatcher.findTwoferDuplicateGroups(allSnapshots)
     }
 
     /// Fetch a QSO by ID

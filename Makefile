@@ -1,4 +1,4 @@
-.PHONY: build build-device test test-unit test-log-management test-performance test-performance-quick devices install launch deploy clean lint format format-check setup-hooks release warnings
+.PHONY: build build-device test test-unit test-unit-core test-log-management test-performance test-performance-quick devices install launch deploy clean lint format format-check setup-hooks release warnings
 
 DEVICE_NAME := theseus
 BUNDLE_ID := com.jsvana.FullDuplex
@@ -30,6 +30,10 @@ test-unit:
 		-destination 'platform=iOS Simulator,name=$(SIMULATOR)' \
 		-skip-testing:CarrierWaveTests/QSOStatisticsPerformanceTests \
 		test
+
+# Run core library tests (no simulator required)
+test-unit-core:
+	cd CarrierWaveCore && swift test
 
 # Run log management tests only
 test-log-management:

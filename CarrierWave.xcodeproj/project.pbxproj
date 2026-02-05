@@ -27,6 +27,7 @@
 		CF8DD1AD2F2098940021A936 /* CarrierWave.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CarrierWave.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CF8DD1BC2F2098950021A936 /* CarrierWaveTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CarrierWaveTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		CF8DD1C62F2098950021A936 /* CarrierWaveUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CarrierWaveUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		CFCORE0012F4B00000021A936 /* CarrierWaveCore */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = CarrierWaveCore; path = CarrierWaveCore; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -65,6 +66,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CFCORE0032F4B00000021A936 /* CarrierWaveCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -88,6 +90,7 @@
 		CF8DD1A42F2098940021A936 = {
 			isa = PBXGroup;
 			children = (
+				CFCORE0012F4B00000021A936 /* CarrierWaveCore */,
 				CF8DD1AF2F2098940021A936 /* CarrierWave */,
 				CF8DD1BF2F2098950021A936 /* CarrierWaveTests */,
 				CF8DD1C92F2098950021A936 /* CarrierWaveUITests */,
@@ -125,6 +128,7 @@
 			);
 			name = CarrierWave;
 			packageProductDependencies = (
+				CFCORE0022F4B00000021A936 /* CarrierWaveCore */,
 			);
 			productName = CarrierWave;
 			productReference = CF8DD1AD2F2098940021A936 /* CarrierWave.app */;
@@ -208,6 +212,9 @@
 			);
 			mainGroup = CF8DD1A42F2098940021A936;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				CFCORE0042F4B00000021A936 /* XCLocalSwiftPackageReference "CarrierWaveCore" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = CF8DD1AE2F2098940021A936 /* Products */;
 			projectDirPath = "";
@@ -595,6 +602,20 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		CFCORE0042F4B00000021A936 /* XCLocalSwiftPackageReference "CarrierWaveCore" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = CarrierWaveCore;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		CFCORE0022F4B00000021A936 /* CarrierWaveCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = CarrierWaveCore;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = CF8DD1A52F2098940021A936 /* Project object */;
 }

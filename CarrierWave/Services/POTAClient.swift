@@ -3,6 +3,7 @@
 // Groups QSOs by UTC date and park reference, generating separate
 // ADIF files suitable for upload to pota.app.
 
+import CarrierWaveCore
 import Foundation
 import SwiftData
 
@@ -212,17 +213,15 @@ final class POTAClient {
 
     /// Split comma-separated park references (e.g., "US-1044, US-3791" -> ["US-1044", "US-3791"])
     /// Handles two-fer, three-fer, etc. activations where multiple parks are activated simultaneously.
-    /// Marked nonisolated since it's pure computation with no state access.
+    /// Delegates to CarrierWaveCore's ParkReference for the actual implementation.
     nonisolated static func splitParkReferences(_ parkRef: String) -> [String] {
-        parkRef.split(separator: ",")
-            .map { $0.trimmingCharacters(in: .whitespaces).uppercased() }
-            .filter { !$0.isEmpty }
+        ParkReference.split(parkRef)
     }
 
     /// Check if park reference contains multiple parks (two-fer, three-fer, etc.)
-    /// Marked nonisolated since it's pure computation with no state access.
+    /// Delegates to CarrierWaveCore's ParkReference for the actual implementation.
     nonisolated static func isMultiPark(_ parkRef: String) -> Bool {
-        parkRef.contains(",")
+        ParkReference.isMultiPark(parkRef)
     }
 
     func uploadActivation(parkReference: String, qsos: [QSO]) async throws -> POTAUploadResult {

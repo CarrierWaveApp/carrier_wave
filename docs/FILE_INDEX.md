@@ -4,6 +4,24 @@ This index maps files to their purpose. Use it to locate files by feature instea
 
 **Maintenance:** When adding, removing, or renaming files, update this index.
 
+## CarrierWaveCore Package (`CarrierWaveCore/`)
+
+Pure logic library that can be tested without iOS Simulator. Run tests with `make test-unit-core`.
+
+| File | Purpose |
+|------|---------|
+| `Sources/CarrierWaveCore/ADIFParser.swift` | ADIF file format parsing |
+| `Sources/CarrierWaveCore/BandUtilities.swift` | Band derivation from frequency |
+| `Sources/CarrierWaveCore/FrequencyFormatter.swift` | Frequency formatting and parsing |
+| `Sources/CarrierWaveCore/MaidenheadConverter.swift` | Grid square to coordinate conversion |
+| `Sources/CarrierWaveCore/MorseCode.swift` | Morse code tables and timing utilities |
+| `Sources/CarrierWaveCore/QuickEntryParser.swift` | Quick entry string parsing |
+| `Sources/CarrierWaveCore/ModeEquivalence.swift` | Mode family classification and equivalence |
+| `Sources/CarrierWaveCore/ParkReference.swift` | Park reference parsing and validation |
+| `Sources/CarrierWaveCore/QSOSnapshot.swift` | Lightweight QSO representation for matching |
+| `Sources/CarrierWaveCore/DeduplicationMatcher.swift` | Duplicate detection logic |
+| `Sources/CarrierWaveCore/TwoferMatcher.swift` | Two-fer duplicate detection |
+
 ## Entry Points
 | File | Purpose |
 |------|---------|
