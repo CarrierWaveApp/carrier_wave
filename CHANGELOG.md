@@ -4,6 +4,8 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.21.0] - 2026-02-05
+
 ### Added
 - **POTA Job Status Display** - View POTA upload job statuses directly in the Activations view
   - Jobs are automatically matched to activations by park, date, and callsign
@@ -19,6 +21,11 @@ All notable changes to Carrier Wave will be documented in this file.
   - Automatically detects QSOs with partial/truncated park references alongside complete versions
   - Dashboard prompts to merge duplicates when detected
   - Merges preserve the complete park reference and combine service presence records
+- **DXCC Repair** - Background task repairs missing DXCC entities from raw ADIF data during sync
+
+### Fixed
+- DXCC entity now populated correctly during QRZ import (was missing in import path)
+- LoTW sync now properly handles HTTP 403/503 errors instead of silently failing
 
 ## [1.20.0] - 2026-02-04
 
