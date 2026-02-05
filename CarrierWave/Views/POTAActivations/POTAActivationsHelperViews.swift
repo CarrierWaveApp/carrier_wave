@@ -1,10 +1,6 @@
 // POTA Activations Helper Views
-//
-// Supporting views for the POTA Activations screen including
-// row views, upload confirmation sheet, and detail components.
 
 import SwiftUI
-import UniformTypeIdentifiers
 
 // MARK: - ActivationRow
 
@@ -18,6 +14,7 @@ struct ActivationRow: View {
     let onRejectTapped: () -> Void
     let onShareTapped: () -> Void
     let onExportTapped: () -> Void
+    let onMapTapped: () -> Void
     var showParkReference: Bool = false
     /// Upload errors by park (for two-fer error display)
     var uploadErrors: [String: String] = [:]
@@ -64,6 +61,16 @@ struct ActivationRow: View {
                     .buttonStyle(.borderless)
                 }
 
+                // Map button
+                Button {
+                    onMapTapped()
+                } label: {
+                    Image(systemName: "map")
+                        .font(.body)
+                }
+                .buttonStyle(.borderless)
+                .foregroundStyle(.green)
+
                 // Export ADIF button
                 Button {
                     onExportTapped()
@@ -106,6 +113,13 @@ struct ActivationRow: View {
             }
         }
         .swipeActions(edge: .leading, allowsFullSwipe: false) {
+            Button {
+                onMapTapped()
+            } label: {
+                Label("Map", systemImage: "map")
+            }
+            .tint(.green)
+
             Button {
                 onExportTapped()
             } label: {
@@ -407,26 +421,20 @@ struct ActivationShareSheet: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 24) {
-                // Preview of the share card - show rendered image if available, otherwise placeholder
                 if let renderedImage {
                     Image(uiImage: renderedImage)
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 340, height: 510)
                 } else {
-                    // Placeholder while loading
                     RoundedRectangle(cornerRadius: 20)
                         .fill(Color(red: 0.12, green: 0.10, blue: 0.18))
                         .frame(width: 340, height: 510)
-                        .overlay(
-                            ProgressView()
-                                .tint(.white)
-                        )
+                        .overlay(ProgressView().tint(.white))
                 }
 
                 Spacer()
 
-                // Share button - uses pre-rendered image
                 if let renderedImage {
                     ShareLink(
                         item: ShareableImage(uiImage: renderedImage),
@@ -435,19 +443,18 @@ struct ActivationShareSheet: View {
                             image: Image(uiImage: renderedImage)
                         )
                     ) {
-                        Label("Share", systemImage: "square.and.arrow.up")
-                            .frame(maxWidth: .infinity)
+                        Label("Share", systemImage: "square.and.arrow.up").frame(
+                            maxWidth: .infinity
+                        )
                     }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
+                    .buttonStyle(.borderedProminent).controlSize(.large)
                 } else {
                     Button {} label: {
-                        Label("Share", systemImage: "square.and.arrow.up")
-                            .frame(maxWidth: .infinity)
+                        Label("Share", systemImage: "square.and.arrow.up").frame(
+                            maxWidth: .infinity
+                        )
                     }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
-                    .disabled(true)
+                    .buttonStyle(.borderedProminent).controlSize(.large).disabled(true)
                 }
             }
             .padding()
@@ -463,7 +470,6 @@ struct ActivationShareSheet: View {
         }
         .presentationDetents([.large])
         .task {
-            // Small delay to let sheet animation complete before heavy rendering
             try? await Task.sleep(for: .milliseconds(100))
             await renderImage()
         }
@@ -481,18 +487,4 @@ struct ActivationShareSheet: View {
             myGrid: myGrid
         )
     }
-}
-
-// MARK: - ShareableImage
-
-/// A transferable wrapper for sharing images that supports "Save Image"
-struct ShareableImage: Transferable {
-    static var transferRepresentation: some TransferRepresentation {
-        // Export as PNG to preserve transparency
-        DataRepresentation(exportedContentType: .png) { item in
-            item.uiImage.pngData() ?? Data()
-        }
-    }
-
-    let uiImage: UIImage
 }

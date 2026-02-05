@@ -198,11 +198,7 @@ struct LoggerView: View {
                 titleVisibility: .visible
             ) {
                 Button("End Session") {
-                    let hadQSOs = !displayQSOs.isEmpty
-                    sessionManager?.endSession()
-                    if hadQSOs {
-                        onSessionEnd?()
-                    }
+                    handleEndSession()
                 }
                 Button("Delete Session", role: .destructive) {
                     showDeleteSessionSheet = true
@@ -212,6 +208,25 @@ struct LoggerView: View {
                 Text(
                     "End keeps your \(displayQSOs.count) QSOs for sync. "
                         + "Delete hides them permanently."
+                )
+            }
+            .sheet(isPresented: $showPOTAUploadPrompt) {
+                POTAUploadPromptSheet(
+                    parkReference: pendingSessionEndParkRef ?? "",
+                    parkName: pendingSessionEndParkName,
+                    qsoCount: pendingSessionEndQSOCount,
+                    onUpload: {
+                        await uploadPendingPOTAQSOs()
+                    },
+                    onLater: {
+                        showPOTAUploadPrompt = false
+                        completeSessionEnd()
+                    },
+                    onDontAskAgain: {
+                        potaUploadPromptDisabled = true
+                        showPOTAUploadPrompt = false
+                        completeSessionEnd()
+                    }
                 )
             }
             .sheet(isPresented: $showDeleteSessionSheet) {
@@ -313,6 +328,16 @@ struct LoggerView: View {
     /// Session end/delete confirmation
     @State private var showEndSessionConfirmation = false
     @State private var showDeleteSessionSheet = false
+
+    /// POTA upload prompt after session end
+    @State private var showPOTAUploadPrompt = false
+    @State private var pendingSessionEndParkRef: String?
+    @State private var pendingSessionEndParkName: String?
+    @State private var pendingSessionEndQSOCount = 0
+    @State private var pendingSessionEndQSOs: [QSO] = []
+
+    /// User preference to disable POTA upload prompt
+    @AppStorage("potaUploadPromptDisabled") private var potaUploadPromptDisabled = false
 
     /// QSO being edited (for tap-to-edit callsign feature)
     @State private var editingQSO: QSO?
@@ -1828,6 +1853,87 @@ struct LoggerView: View {
         }
         // Use the POTA parks cache if available
         return POTAParksCache.shared.nameSync(for: ref)
+    }
+
+    // MARK: - Session End Handling
+
+    /// Handle end session action - checks for POTA upload prompt first
+    private func handleEndSession() {
+        guard let session = sessionManager?.activeSession else {
+            completeSessionEnd()
+            return
+        }
+
+        // Check if this is a POTA session with unuploaded QSOs
+        if session.activationType == .pota,
+           !potaUploadPromptDisabled,
+           let parkRef = session.parkReference
+        {
+            // Find QSOs that need upload to POTA
+            let qsosNeedingUpload = displayQSOs.filter { $0.needsUpload(to: .pota) }
+
+            if !qsosNeedingUpload.isEmpty {
+                // Store data for the prompt sheet
+                pendingSessionEndParkRef = parkRef
+                pendingSessionEndParkName = lookupParkName(parkRef)
+                pendingSessionEndQSOCount = qsosNeedingUpload.count
+                pendingSessionEndQSOs = qsosNeedingUpload
+
+                // Show the upload prompt
+                showPOTAUploadPrompt = true
+                return
+            }
+        }
+
+        // No POTA upload needed, end session directly
+        completeSessionEnd()
+    }
+
+    /// Complete the session end after any POTA upload prompt handling
+    private func completeSessionEnd() {
+        let hadQSOs = !displayQSOs.isEmpty
+        sessionManager?.endSession()
+        if hadQSOs {
+            onSessionEnd?()
+        }
+
+        // Clear pending state
+        pendingSessionEndParkRef = nil
+        pendingSessionEndParkName = nil
+        pendingSessionEndQSOCount = 0
+        pendingSessionEndQSOs = []
+    }
+
+    /// Upload pending POTA QSOs from the upload prompt
+    private func uploadPendingPOTAQSOs() async -> Bool {
+        guard let parkRef = pendingSessionEndParkRef,
+              !pendingSessionEndQSOs.isEmpty
+        else {
+            return false
+        }
+
+        do {
+            let potaClient = POTAClient(authService: POTAAuthService())
+            let result = try await potaClient.uploadActivationWithRecording(
+                parkReference: parkRef,
+                qsos: pendingSessionEndQSOs,
+                modelContext: modelContext
+            )
+
+            if result.success {
+                await MainActor.run {
+                    // Mark QSOs as uploaded
+                    for qso in pendingSessionEndQSOs {
+                        qso.markUploadedToPark(parkRef, context: modelContext)
+                    }
+                    try? modelContext.save()
+                }
+                return true
+            }
+            return false
+        } catch {
+            return false
+        }
     }
 }
 

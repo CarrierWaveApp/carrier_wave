@@ -90,6 +90,21 @@ struct POTAActivationsContentView: View {
                 activation: activation, parkName: parkName(for: activation.parkReference)
             )
         }
+        .sheet(item: $activationToMap) { activation in
+            NavigationStack {
+                ActivationMapView(
+                    activation: activation,
+                    parkName: parkName(for: activation.parkReference)
+                )
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Done") {
+                            activationToMap = nil
+                        }
+                    }
+                }
+            }
+        }
         .task {
             await loadParkQSOs()
             if isAuthenticated, potaClient != nil, jobs.isEmpty {
@@ -123,6 +138,7 @@ struct POTAActivationsContentView: View {
     @State private var activationToReject: POTAActivation?
     @State private var activationToShare: POTAActivation?
     @State private var activationToExport: POTAActivation?
+    @State private var activationToMap: POTAActivation?
     @State private var isGeneratingShareImage = false
     @State private var maintenanceTimeRemaining: String?
     @State private var maintenanceTimer: Timer?
@@ -258,6 +274,7 @@ struct POTAActivationsContentView: View {
             onRejectTapped: { activationToReject = activation },
             onShareTapped: { activationToShare = activation },
             onExportTapped: { activationToExport = activation },
+            onMapTapped: { activationToMap = activation },
             showParkReference: showParkReference,
             uploadErrors: uploadErrorsByActivation[activation.id] ?? [:]
         )

@@ -34,7 +34,9 @@
       "Bash(bd --no-daemon list:*)",
       "Bash(bd close:*)",
       "Bash(make format:*)",
-      "Bash(swiftformat:*)"
+      "Bash(swiftformat:*)",
+      "Skill(planning-with-files:planning-with-files)",
+      "Skill(planning-with-files:planning-with-files:*)"
     ]
   }
 }

@@ -201,6 +201,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `POTASpotsHelperViews.swift` | Helper views for POTA spots (filter sheet, loading, empty, error states) |
 | `P2PPanelView.swift` | Park-to-park opportunities panel with SNR display |
 | `SessionMapPanelView.swift` | Map panel showing session QSOs for MAP command |
+| `POTAUploadPromptSheet.swift` | Post-session modal prompting POTA upload |
 | `SpotFilters.swift` | Band and mode filter enums for spots |
 | `QuickEntryPreview.swift` | Quick entry token display with color-coded badges |
 | `SpotSummaryView.swift` | Compact spot monitoring summary with region breakdown |
@@ -255,6 +256,8 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `ActivationShareRenderer.swift` | Render activation card to UIImage for sharing |
 | `ADIFExportSheet.swift` | ADIF export sheet with share, save, copy options |
 | `ActivationMapHelpers.swift` | Map utilities for activation share cards (region, geodesic paths) |
+| `ActivationMapView.swift` | Full-screen activation map with RST-based contact coloring |
+| `ShareableImage.swift` | Transferable wrapper for UIImage sharing |
 
 ## Views - Challenges (`CarrierWave/Views/Challenges/`)
 | File | Purpose |
