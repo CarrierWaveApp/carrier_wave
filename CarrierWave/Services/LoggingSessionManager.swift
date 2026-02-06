@@ -518,6 +518,7 @@ final class LoggingSessionManager {
 
     /// Cached service configuration (checked once at session start to avoid Keychain reads per-QSO)
     private var qrzConfigured = false
+    private var potaConfigured = false
     private var lofiConfigured = false
 
     /// Key for storing active session ID in UserDefaults
@@ -855,6 +856,9 @@ final class LoggingSessionManager {
     /// Cache service configuration to avoid Keychain reads per-QSO
     private func cacheServiceConfiguration() {
         qrzConfigured = (try? KeychainHelper.shared.read(for: KeychainHelper.Keys.qrzApiKey)) != nil
+        potaConfigured =
+            (try? KeychainHelper.shared.readString(for: KeychainHelper.Keys.potaUsername)) != nil
+                && (try? KeychainHelper.shared.readString(for: KeychainHelper.Keys.potaPassword)) != nil
         lofiConfigured = UserDefaults.standard.bool(forKey: "lofi.deviceLinked")
     }
 
@@ -870,9 +874,9 @@ final class LoggingSessionManager {
             qso.markNeedsUpload(to: .qrz, context: modelContext)
         }
 
-        // POTA (only if this is a POTA activation)
+        // POTA (only if this is a POTA activation, use cached value)
         if activeSession?.activationType == .pota,
-           UserDefaults.standard.bool(forKey: "pota.authenticated")
+           potaConfigured
         {
             qso.markNeedsUpload(to: .pota, context: modelContext)
         }
