@@ -176,6 +176,9 @@ struct FriendsListView: View {
     }
 
     private func generateInviteLink() {
+        if friendsSyncService == nil {
+            friendsSyncService = FriendsSyncService(modelContext: modelContext)
+        }
         guard let service = friendsSyncService else {
             return
         }
