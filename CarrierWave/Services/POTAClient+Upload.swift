@@ -43,8 +43,10 @@ extension POTAClient {
         let normalizedParkRef = parkReference.uppercased()
 
         // Filter QSOs for this park, excluding metadata modes (WEATHER, SOLAR, NOTE)
+        // Uses hasOverlap to support multi-park/two-fer references (e.g., "US-1044, US-3791")
         let parkQSOs = qsos.filter {
-            $0.parkReference?.uppercased() == normalizedParkRef
+            guard let ref = $0.parkReference else { return false }
+            return ParkReference.hasOverlap(ref, normalizedParkRef)
                 && !Self.metadataModes.contains($0.mode.uppercased())
         }
         guard !parkQSOs.isEmpty else {
