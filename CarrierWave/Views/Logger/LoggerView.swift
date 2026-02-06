@@ -299,6 +299,9 @@ struct LoggerView: View {
     @State private var lookupError: CallsignLookupError?
     @State private var lookupTask: Task<Void, Never>?
 
+    /// All-time QSO count with the current callsign
+    @State private var previousQSOCount: Int = 0
+
     /// Cached POTA duplicate status (computed on callsign change, not every render)
     @State private var cachedPotaDuplicateStatus: POTACallsignStatus?
 
@@ -509,7 +512,7 @@ struct LoggerView: View {
     @ViewBuilder
     private var callsignLookupDisplay: some View {
         if let info = lookupResult, !callsignFieldFocused {
-            LoggerCallsignCard(info: info)
+            LoggerCallsignCard(info: info, previousQSOCount: previousQSOCount)
                 .transition(
                     .asymmetric(
                         insertion: .move(edge: .top).combined(with: .opacity),
@@ -1638,6 +1641,7 @@ struct LoggerView: View {
         else {
             lookupResult = nil
             lookupError = nil
+            previousQSOCount = 0
             return
         }
 
@@ -1648,6 +1652,7 @@ struct LoggerView: View {
         guard primaryCallsign.count >= 3 else {
             lookupResult = nil
             lookupError = nil
+            previousQSOCount = 0
             return
         }
 
@@ -1661,9 +1666,11 @@ struct LoggerView: View {
             }
 
             let result = await service.lookupWithResult(primaryCallsign)
+            let count = fetchPreviousQSOCount(for: primaryCallsign)
 
             await MainActor.run {
                 lookupResult = result.info
+                previousQSOCount = count
                 // Only show actionable errors (not "not found" which is normal)
                 if result.error == .notFound {
                     lookupError = nil
@@ -1672,6 +1679,23 @@ struct LoggerView: View {
                 }
             }
         }
+    }
+
+    /// Count all-time QSOs with a callsign (excludes hidden and metadata modes)
+    private func fetchPreviousQSOCount(for callsign: String) -> Int {
+        let upper = callsign.uppercased()
+        return
+            (try? modelContext.fetchCount(
+                FetchDescriptor<QSO>(
+                    predicate: #Predicate<QSO> { qso in
+                        qso.callsign == upper
+                            && !qso.isHidden
+                            && qso.mode != "WEATHER"
+                            && qso.mode != "SOLAR"
+                            && qso.mode != "NOTE"
+                    }
+                )
+            )) ?? 0
     }
 
     private func logQSO() {
@@ -1832,6 +1856,7 @@ struct LoggerView: View {
             callsignInput = ""
             lookupResult = nil
             lookupError = nil
+            previousQSOCount = 0
             cachedPotaDuplicateStatus = nil
             quickEntryResult = nil
             quickEntryTokens = []

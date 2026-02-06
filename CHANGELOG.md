@@ -7,6 +7,7 @@ All notable changes to Carrier Wave will be documented in this file.
 ### Added
 - Edit activation metadata after completion — title, park reference, and watts via edit button or swipe action on activation rows
 - Display activation metadata (title, watts, weather, solar) in activation rows and share cards
+- Show all-time previous QSO count for each callsign entered in the logger
 
 ### Fixed
 - Fix activation duration counting gaps between sessions — now sums individual session durations instead of spanning first-to-last QSO across all sessions

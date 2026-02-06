@@ -9,6 +9,7 @@ struct LoggerCallsignCard: View {
     // MARK: Internal
 
     let info: CallsignInfo
+    var previousQSOCount: Int = 0
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -56,7 +57,7 @@ struct LoggerCallsignCard: View {
     @AppStorage("callsignNotesDisplayMode") private var notesDisplayMode = "emoji"
 
     private var hasDetails: Bool {
-        info.grid != nil || info.state != nil || info.country != nil
+        info.grid != nil || info.state != nil || info.country != nil || previousQSOCount > 0
     }
 
     private var sourceLabel: String {
@@ -107,6 +108,12 @@ struct LoggerCallsignCard: View {
 
             if let country = info.country {
                 DetailChip(text: country)
+            }
+
+            if previousQSOCount > 0 {
+                DetailChip(
+                    text: "\(previousQSOCount) prev QSO\(previousQSOCount == 1 ? "" : "s")"
+                )
             }
         }
     }
