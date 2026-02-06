@@ -4,9 +4,14 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.22.0] - 2026-02-05
+
 ### Added
 - Map stats: activation time span, QSO/hr rate, average/longest distance, watts per mile on both QSO map and POTA activation map
 - **Force Re-download** button on service detail sheets - tap any service on the dashboard to access full re-download without needing debug mode
+
+### Fixed
+- Number row buttons in logger now insert at cursor position instead of always appending to end of callsign
 
 ## [1.21.0] - 2026-02-05
 

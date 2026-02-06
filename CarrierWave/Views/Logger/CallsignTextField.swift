@@ -82,10 +82,19 @@ struct CallsignTextField: UIViewRepresentable {
 
         @objc
         func numberButtonTapped(_ sender: UIButton) {
-            guard let char = sender.titleLabel?.text else {
+            guard let char = sender.titleLabel?.text,
+                  let textField
+            else {
                 return
             }
-            parent.text.append(char)
+
+            // Insert at cursor position instead of appending to end
+            if let selectedRange = textField.selectedTextRange {
+                textField.replace(selectedRange, withText: char)
+            } else {
+                // Fallback: append if no cursor position available
+                parent.text.append(char)
+            }
         }
 
         @objc
