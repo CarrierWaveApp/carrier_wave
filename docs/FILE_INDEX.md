@@ -253,6 +253,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `POTAActivationsHelperViews.swift` | Helper views for POTA activations (ActivationRow, sheets) |
 | `POTAJobViews.swift` | POTA job display components (POTAJobRow, POTAJobDetailSheet) |
 | `POTALogEntryRow.swift` | Individual POTA log entry display (legacy) |
+| `ActivationMetadataEditSheet.swift` | Edit activation metadata (title, park, watts) after completion |
 | `ActivationShareCardView.swift` | Shareable activation card with map and stats |
 | `ActivationShareRenderer.swift` | Render activation card to UIImage for sharing |
 | `ADIFExportSheet.swift` | ADIF export sheet with share, save, copy options |

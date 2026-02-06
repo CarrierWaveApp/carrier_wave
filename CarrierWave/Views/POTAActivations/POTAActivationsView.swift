@@ -105,6 +105,18 @@ struct POTAActivationsContentView: View {
                 }
             }
         }
+        .sheet(item: $activationToEdit) { activation in
+            ActivationMetadataEditSheet(
+                activation: activation,
+                metadata: metadata(for: activation),
+                userGrid: activation.qsos.first?.myGrid,
+                onSave: { result in
+                    saveMetadataEdit(result, for: activation)
+                    activationToEdit = nil
+                },
+                onCancel: { activationToEdit = nil }
+            )
+        }
         .task {
             await loadParkQSOs()
             if isAuthenticated, potaClient != nil, jobs.isEmpty {
@@ -139,6 +151,7 @@ struct POTAActivationsContentView: View {
     @State private var activationToShare: POTAActivation?
     @State private var activationToExport: POTAActivation?
     @State private var activationToMap: POTAActivation?
+    @State private var activationToEdit: POTAActivation?
     @State private var isGeneratingShareImage = false
     @State private var maintenanceTimeRemaining: String?
     @State private var maintenanceTimer: Timer?
@@ -147,6 +160,8 @@ struct POTAActivationsContentView: View {
     @State private var uploadErrorsByActivation: [String: [String: String]] = [:]
     /// Pre-computed job index: activation ID -> matching jobs (rebuilt when jobs change)
     @State private var jobsByActivationId: [String: [POTAJob]] = [:]
+    /// Activation metadata keyed by "parkReference|yyyy-MM-dd"
+    @State private var metadataByKey: [String: ActivationMetadata] = [:]
 
     private var isInMaintenance: Bool {
         if debugMode, bypassMaintenance {
@@ -267,6 +282,7 @@ struct POTAActivationsContentView: View {
     {
         ActivationRow(
             activation: activation,
+            metadata: metadata(for: activation),
             isUploadDisabled: isInMaintenance || potaClient == nil,
             showUploadButton: isAuthenticated,
             onUploadTapped: { activationToUpload = activation },
@@ -274,6 +290,7 @@ struct POTAActivationsContentView: View {
             onShareTapped: { activationToShare = activation },
             onExportTapped: { activationToExport = activation },
             onMapTapped: { activationToMap = activation },
+            onEditTapped: { activationToEdit = activation },
             showParkReference: showParkReference,
             parkName: parkName(for: activation.parkReference),
             uploadErrors: uploadErrorsByActivation[activation.id] ?? [:],
@@ -309,6 +326,10 @@ struct POTAActivationsContentView: View {
         }
         // Fall back to cached park names
         return cachedParkNames[reference.uppercased()]
+    }
+
+    private func metadata(for activation: POTAActivation) -> ActivationMetadata? {
+        metadataByKey["\(activation.parkReference)|\(activation.utcDateString)"]
     }
 
     private func rejectMessage(for parkDisplay: String, pendingCount: Int) -> String {
@@ -363,6 +384,25 @@ extension POTAActivationsContentView {
         allParkQSOs = loadedQSOs
         // Rebuild job index since activations changed
         rebuildJobIndex()
+        // Load activation metadata
+        loadMetadata()
+    }
+
+    /// Load all activation metadata into a lookup dictionary
+    func loadMetadata() {
+        let descriptor = FetchDescriptor<ActivationMetadata>()
+        let allMetadata = (try? modelContext.fetch(descriptor)) ?? []
+
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.timeZone = TimeZone(identifier: "UTC")
+
+        var dict: [String: ActivationMetadata] = [:]
+        for item in allMetadata {
+            let dateStr = formatter.string(from: item.date)
+            dict["\(item.parkReference)|\(dateStr)"] = item
+        }
+        metadataByKey = dict
     }
 
     func loadCachedParkNames() async {
@@ -486,6 +526,48 @@ extension POTAActivationsContentView {
         activationToReject = nil
     }
 
+    /// Save metadata edits for an activation
+    func saveMetadataEdit(_ result: ActivationMetadataEditResult, for activation: POTAActivation) {
+        let parkRef = result.newParkReference ?? activation.parkReference
+
+        // Handle park reference change
+        if let newPark = result.newParkReference {
+            for qso in activation.qsos {
+                qso.parkReference = newPark
+                // Remove POTA service presence (clears upload status)
+                let potaPresence = qso.potaPresenceRecords()
+                for presence in potaPresence {
+                    modelContext.delete(presence)
+                }
+            }
+        }
+
+        // Find or create metadata record
+        let existingMetadata = metadata(for: activation)
+        let meta: ActivationMetadata
+        if let existing = existingMetadata {
+            meta = existing
+            // If park changed, update the metadata key
+            if result.newParkReference != nil {
+                meta.parkReference = parkRef
+            }
+        } else {
+            meta = ActivationMetadata(parkReference: parkRef, date: activation.utcDate)
+            modelContext.insert(meta)
+        }
+
+        meta.title = result.title
+        meta.watts = result.watts
+
+        try? modelContext.save()
+
+        // Reload data to reflect changes
+        Task {
+            await loadParkQSOs()
+            await loadCachedParkNames()
+        }
+    }
+
     func generateAndShare(activation: POTAActivation) async {
         isGeneratingShareImage = true
         activationToShare = nil
@@ -494,7 +576,8 @@ extension POTAActivationsContentView {
         let image = await ActivationShareRenderer.renderWithMap(
             activation: activation,
             parkName: parkName(for: activation.parkReference),
-            myGrid: activation.qsos.first?.myGrid
+            myGrid: activation.qsos.first?.myGrid,
+            metadata: metadata(for: activation)
         )
 
         isGeneratingShareImage = false

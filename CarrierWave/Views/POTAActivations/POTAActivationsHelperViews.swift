@@ -8,6 +8,7 @@ struct ActivationRow: View {
     // MARK: Internal
 
     let activation: POTAActivation
+    var metadata: ActivationMetadata?
     var isUploadDisabled: Bool = false
     var showUploadButton: Bool = true
     let onUploadTapped: () -> Void
@@ -15,6 +16,7 @@ struct ActivationRow: View {
     let onShareTapped: () -> Void
     let onExportTapped: () -> Void
     let onMapTapped: () -> Void
+    let onEditTapped: () -> Void
     var showParkReference: Bool = false
     var parkName: String?
     /// Upload errors by park (for two-fer error display)
@@ -65,12 +67,40 @@ struct ActivationRow: View {
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
-                    HStack {
-                        Image(systemName: statusIconName)
-                            .foregroundStyle(statusColor)
-                        Text(statusText)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                    if let title = metadata?.title, !title.isEmpty {
+                        Text(title)
+                            .font(.subheadline)
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+                    }
+                    HStack(spacing: 8) {
+                        HStack(spacing: 4) {
+                            Image(systemName: statusIconName)
+                                .foregroundStyle(statusColor)
+                            Text(statusText)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        if let watts = metadata?.watts {
+                            Text("\(watts)W")
+                                .font(.caption)
+                                .padding(.horizontal, 5)
+                                .padding(.vertical, 1)
+                                .background(Color.purple.opacity(0.15))
+                                .cornerRadius(4)
+                        }
+                        if let weather = metadata?.weather, !weather.isEmpty {
+                            Label(weather, systemImage: "cloud")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                        }
+                        if let solar = metadata?.solarConditions, !solar.isEmpty {
+                            Label(solar, systemImage: "sun.max")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                        }
                     }
                 }
 
@@ -93,6 +123,16 @@ struct ActivationRow: View {
                     }
                     .buttonStyle(.borderless)
                 }
+
+                // Edit button
+                Button {
+                    onEditTapped()
+                } label: {
+                    Image(systemName: "pencil")
+                        .font(.body)
+                }
+                .buttonStyle(.borderless)
+                .foregroundStyle(.secondary)
 
                 // Map button
                 Button {
@@ -146,6 +186,13 @@ struct ActivationRow: View {
             }
         }
         .swipeActions(edge: .leading, allowsFullSwipe: false) {
+            Button {
+                onEditTapped()
+            } label: {
+                Label("Edit", systemImage: "pencil")
+            }
+            .tint(.purple)
+
             Button {
                 onMapTapped()
             } label: {

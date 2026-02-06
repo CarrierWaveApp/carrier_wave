@@ -17,13 +17,15 @@ enum ActivationShareRenderer {
     static func render(
         activation: POTAActivation,
         parkName: String?,
-        myGrid: String?
+        myGrid: String?,
+        metadata: ActivationMetadata? = nil
     ) -> UIImage? {
         // For synchronous rendering, use nil map (will show placeholder)
         let view = ActivationShareCardForExport(
             activation: activation,
             parkName: parkName,
-            mapImage: nil
+            mapImage: nil,
+            metadata: metadata
         )
         return renderToImage(view)
     }
@@ -32,7 +34,8 @@ enum ActivationShareRenderer {
     static func renderWithMap(
         activation: POTAActivation,
         parkName: String?,
-        myGrid: String?
+        myGrid: String?,
+        metadata: ActivationMetadata? = nil
     ) async -> UIImage? {
         // Capture minimal data on main thread, then yield immediately
         let qsoGrids: [(id: UUID, grid: String)] = activation.mappableQSOs.compactMap { qso in
@@ -78,7 +81,8 @@ enum ActivationShareRenderer {
             let view = ActivationShareCardForExport(
                 activation: activation,
                 parkName: parkName,
-                mapImage: mapImage
+                mapImage: mapImage,
+                metadata: metadata
             )
             return renderToImage(view)
         }

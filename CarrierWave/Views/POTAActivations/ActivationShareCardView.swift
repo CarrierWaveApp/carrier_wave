@@ -14,6 +14,7 @@ struct ActivationShareCardView: View {
     let activation: POTAActivation
     let parkName: String?
     let myGrid: String?
+    var metadata: ActivationMetadata?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -158,7 +159,8 @@ struct ActivationShareCardView: View {
         ActivationShareCardParkInfo(
             parkReference: activation.parkReference,
             parkName: parkName,
-            displayDate: activation.displayDate
+            displayDate: activation.displayDate,
+            title: metadata?.title
         )
     }
 
@@ -169,7 +171,8 @@ struct ActivationShareCardView: View {
             qsoCount: activation.qsoCount,
             duration: activation.formattedDuration,
             bandsCount: activation.uniqueBands.count,
-            modesCount: activation.uniqueModes.count
+            modesCount: activation.uniqueModes.count,
+            watts: metadata?.watts
         )
     }
 
@@ -189,6 +192,7 @@ struct ActivationShareCardForExport: View {
     let activation: POTAActivation
     let parkName: String?
     let mapImage: UIImage?
+    var metadata: ActivationMetadata?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -197,13 +201,15 @@ struct ActivationShareCardForExport: View {
             ActivationShareCardParkInfo(
                 parkReference: activation.parkReference,
                 parkName: parkName,
-                displayDate: activation.displayDate
+                displayDate: activation.displayDate,
+                title: metadata?.title
             )
             ActivationShareCardStats(
                 qsoCount: activation.qsoCount,
                 duration: activation.formattedDuration,
                 bandsCount: activation.uniqueBands.count,
-                modesCount: activation.uniqueModes.count
+                modesCount: activation.uniqueModes.count,
+                watts: metadata?.watts
             )
             ActivationShareCardFooter(callsign: activation.callsign)
         }
@@ -286,6 +292,7 @@ private struct ActivationShareCardParkInfo: View {
     let parkReference: String
     let parkName: String?
     let displayDate: String
+    var title: String?
 
     var body: some View {
         VStack(spacing: 4) {
@@ -300,6 +307,13 @@ private struct ActivationShareCardParkInfo: View {
                     .foregroundStyle(.white.opacity(0.9))
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
+            }
+
+            if let title, !title.isEmpty {
+                Text(title)
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.9))
+                    .italic()
             }
 
             Text(displayDate)
@@ -318,6 +332,7 @@ private struct ActivationShareCardStats: View {
     let duration: String
     let bandsCount: Int
     let modesCount: Int
+    var watts: Int?
 
     var body: some View {
         HStack(spacing: 24) {
@@ -325,6 +340,9 @@ private struct ActivationShareCardStats: View {
             StatItem(value: duration, label: "Duration")
             StatItem(value: "\(bandsCount)", label: "Bands")
             StatItem(value: "\(modesCount)", label: "Modes")
+            if let watts {
+                StatItem(value: "\(watts)W", label: "Power")
+            }
         }
         .padding(.vertical, 16)
         .padding(.horizontal, 16)

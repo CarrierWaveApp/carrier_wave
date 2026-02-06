@@ -4,6 +4,10 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Edit activation metadata after completion — title, park reference, and watts via edit button or swipe action on activation rows
+- Display activation metadata (title, watts, weather, solar) in activation rows and share cards
+
 ### Fixed
 - Fix POTA uploads silently succeeding without sending data for two-fer (multi-park) activations. Park reference matching now correctly handles comma-separated references like "US-1044, US-3791"
 - Fix legacy POTA needsUpload flag not being cleared after per-park uploads complete, causing repeated upload attempts
