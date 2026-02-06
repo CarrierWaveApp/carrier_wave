@@ -15,6 +15,7 @@ All notable changes to Carrier Wave will be documented in this file.
 - Fix 2-3 second UI hang when opening Activities tab (replaced @Query with bounded fetch)
 - Fix duplicate activities appearing in feed (e.g., "Made first CW contact" shown twice) — add dedup on creation and one-time cleanup of existing duplicates
 - Fix evaluateNewQSOs loading entire QSO table instead of using fetchLimit
+- Fix "Invite Friend" failing to generate a link when tapped before view fully appeared
 
 ## [1.22.2] - 2026-02-06
 
