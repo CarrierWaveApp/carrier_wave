@@ -4,6 +4,11 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.22.1] - 2026-02-05
+
+### Fixed
+- POTA upload prompt not appearing when ending an activation (was checking a UserDefaults key that was never set instead of Keychain credentials)
+
 ## [1.22.0] - 2026-02-05
 
 ### Added
