@@ -154,6 +154,85 @@ extension DashboardView {
         }
     }
 
+    // MARK: - Force Re-download Methods
+
+    func performQRZForceRedownload() async -> (updated: Int, created: Int) {
+        isSyncing = true
+        defer {
+            isSyncing = false
+            asyncStats.recompute(from: modelContext)
+            presenceCounts.recompute(from: modelContext)
+        }
+        do {
+            return try await syncService.forceRedownloadFromQRZ()
+        } catch {
+            qrzSyncResult = "Error: \(error.localizedDescription)"
+            return (updated: 0, created: 0)
+        }
+    }
+
+    func performPOTAForceRedownload() async -> (updated: Int, created: Int) {
+        isSyncing = true
+        defer {
+            isSyncing = false
+            asyncStats.recompute(from: modelContext)
+            presenceCounts.recompute(from: modelContext)
+        }
+        do {
+            return try await syncService.forceRedownloadFromPOTA()
+        } catch {
+            potaSyncResult = "Error: \(error.localizedDescription)"
+            return (updated: 0, created: 0)
+        }
+    }
+
+    func performLoFiForceRedownload() async -> (updated: Int, created: Int) {
+        isSyncing = true
+        defer {
+            isSyncing = false
+            asyncStats.recompute(from: modelContext)
+            presenceCounts.recompute(from: modelContext)
+        }
+        do {
+            return try await syncService.forceRedownloadFromLoFi()
+        } catch {
+            lofiSyncResult = "Error: \(error.localizedDescription)"
+            return (updated: 0, created: 0)
+        }
+    }
+
+    func performHAMRSForceRedownload() async -> (updated: Int, created: Int) {
+        isSyncing = true
+        defer {
+            isSyncing = false
+            asyncStats.recompute(from: modelContext)
+            presenceCounts.recompute(from: modelContext)
+        }
+        do {
+            return try await syncService.forceRedownloadFromHAMRS()
+        } catch {
+            hamrsSyncResult = "Error: \(error.localizedDescription)"
+            return (updated: 0, created: 0)
+        }
+    }
+
+    func performLoTWForceRedownload() async -> (updated: Int, created: Int) {
+        isSyncing = true
+        defer {
+            isSyncing = false
+            asyncStats.recompute(from: modelContext)
+            presenceCounts.recompute(from: modelContext)
+        }
+        do {
+            return try await syncService.forceRedownloadFromLoTW()
+        } catch {
+            lotwSyncResult = "Error: \(error.localizedDescription)"
+            return (updated: 0, created: 0)
+        }
+    }
+
+    // MARK: - Clear Data Methods
+
     func clearQRZData() async {
         isSyncing = true
         qrzSyncResult = "Clearing..."

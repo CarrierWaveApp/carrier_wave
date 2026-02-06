@@ -191,6 +191,7 @@ extension DashboardView {
             pendingFiles: nil,
             isMonitoring: nil,
             onSync: { await syncFromLoFi() },
+            onForceRedownload: { await performLoFiForceRedownload() },
             onClearData: { await clearLoFiData() },
             onConfigure: {
                 selectedService = nil
@@ -218,6 +219,7 @@ extension DashboardView {
             pendingFiles: nil,
             isMonitoring: nil,
             onSync: { await performQRZSync() },
+            onForceRedownload: { await performQRZForceRedownload() },
             onClearData: { await clearQRZData() },
             onConfigure: {
                 selectedService = nil
@@ -248,6 +250,7 @@ extension DashboardView {
             pendingFiles: nil,
             isMonitoring: nil,
             onSync: { await performPOTASync() },
+            onForceRedownload: { await performPOTAForceRedownload() },
             onClearData: nil,
             onConfigure: {
                 selectedService = nil
@@ -275,6 +278,7 @@ extension DashboardView {
             pendingFiles: nil,
             isMonitoring: nil,
             onSync: { await syncFromHAMRS() },
+            onForceRedownload: { await performHAMRSForceRedownload() },
             onClearData: nil,
             onConfigure: {
                 selectedService = nil
@@ -302,6 +306,7 @@ extension DashboardView {
             pendingFiles: nil,
             isMonitoring: nil,
             onSync: { await syncFromLoTW() },
+            onForceRedownload: { await performLoTWForceRedownload() },
             onClearData: { clearLoTWData() },
             onConfigure: {
                 selectedService = nil
@@ -329,6 +334,7 @@ extension DashboardView {
             pendingFiles: iCloudMonitor.pendingFiles.count,
             isMonitoring: iCloudMonitor.isMonitoring,
             onSync: nil,
+            onForceRedownload: nil,
             onClearData: nil,
             onConfigure: {
                 selectedService = nil

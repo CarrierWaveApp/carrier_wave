@@ -32,6 +32,7 @@ struct ServiceDetailSheet: View {
 
     // Actions
     let onSync: (() async -> Void)?
+    let onForceRedownload: (() async -> (updated: Int, created: Int))?
     let onClearData: (() async -> Void)?
     let onConfigure: (() -> Void)?
 
@@ -135,7 +136,38 @@ struct ServiceDetailSheet: View {
                                     }
                                 }
                             }
-                            .disabled(isSyncing || isInMaintenance)
+                            .disabled(isSyncing || isForceRedownloading || isInMaintenance)
+                        }
+
+                        if let onForceRedownload {
+                            Button {
+                                Task {
+                                    isForceRedownloading = true
+                                    forceRedownloadResult = nil
+                                    let result = await onForceRedownload()
+                                    forceRedownloadResult =
+                                        "Updated \(result.updated), Created \(result.created)"
+                                    isForceRedownloading = false
+                                }
+                            } label: {
+                                HStack {
+                                    Label(
+                                        "Force Re-download All QSOs",
+                                        systemImage: "arrow.down.circle"
+                                    )
+                                    if isForceRedownloading {
+                                        Spacer()
+                                        ProgressView()
+                                    }
+                                }
+                            }
+                            .disabled(isSyncing || isForceRedownloading || isInMaintenance)
+
+                            if let result = forceRedownloadResult {
+                                Text(result)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
                         }
 
                         if debugMode, let onClearData {
@@ -184,6 +216,8 @@ struct ServiceDetailSheet: View {
     // MARK: Private
 
     @Environment(\.dismiss) private var dismiss
+    @State private var isForceRedownloading = false
+    @State private var forceRedownloadResult: String?
 
     private var statusRow: some View {
         HStack {
@@ -233,6 +267,7 @@ struct ServiceDetailSheet: View {
         pendingFiles: nil,
         isMonitoring: nil,
         onSync: {},
+        onForceRedownload: { (updated: 5, created: 3) },
         onClearData: {},
         onConfigure: nil
     )
