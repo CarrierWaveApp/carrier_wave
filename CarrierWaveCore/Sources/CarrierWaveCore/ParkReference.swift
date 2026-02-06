@@ -43,6 +43,47 @@ public enum ParkReference: Sendable {
         parkRef.trimmingCharacters(in: .whitespaces).uppercased()
     }
 
+    /// Sanitize a park reference by fixing common malformations from upstream APIs.
+    /// - "US1849" -> "US-1849" (missing dash)
+    /// - "3687" -> nil (bare number with no country prefix — ambiguous)
+    /// Returns nil if the input can't be salvaged into a valid ref.
+    public static func sanitize(_ parkRef: String) -> String? {
+        let trimmed = parkRef.trimmingCharacters(in: .whitespaces).uppercased()
+        guard !trimmed.isEmpty else {
+            return nil
+        }
+
+        // Already valid
+        if isValid(trimmed) {
+            return trimmed
+        }
+
+        // Missing dash: "US1849" -> "US-1849"
+        let missingDash = #"^([A-Z]{1,2})(\d{4,5})$"#
+        if let regex = try? NSRegularExpression(pattern: missingDash),
+           let match = regex.firstMatch(
+               in: trimmed, range: NSRange(trimmed.startIndex..., in: trimmed)
+           )
+        {
+            let prefix = Range(match.range(at: 1), in: trimmed).map { String(trimmed[$0]) }
+            let digits = Range(match.range(at: 2), in: trimmed).map { String(trimmed[$0]) }
+            if let prefix, let digits {
+                let fixed = "\(prefix)-\(digits)"
+                return isValid(fixed) ? fixed : nil
+            }
+        }
+
+        // Bare number "3687" — can't determine country prefix, return nil
+        return nil
+    }
+
+    /// Sanitize a potentially multi-park reference, fixing each individual park.
+    /// Drops parks that can't be sanitized.
+    public static func sanitizeMulti(_ parkRef: String) -> String? {
+        let sanitized = split(parkRef).compactMap { sanitize($0) }
+        return sanitized.isEmpty ? nil : sanitized.joined(separator: ", ")
+    }
+
     /// Normalize a potentially multi-park reference (sorts parks for consistent comparison)
     public static func normalizeMulti(_ parkRef: String) -> String {
         split(parkRef).sorted().joined(separator: ", ")

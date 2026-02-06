@@ -241,7 +241,9 @@ final class POTAClient {
         // Filter to QSOs that contain this park (supports multi-park/two-fer references
         // like "US-1044, US-3791" when uploading to just "US-1044")
         let parkQSOs = qsos.filter {
-            guard let ref = $0.parkReference else { return false }
+            guard let ref = $0.parkReference else {
+                return false
+            }
             return ParkReference.hasOverlap(ref, normalizedParkRef)
         }
         guard !parkQSOs.isEmpty else {
@@ -301,7 +303,9 @@ final class POTAClient {
         // Filter to QSOs that contain this park (supports multi-park/two-fer references
         // like "US-1044, US-3791" when uploading to just "US-1044")
         let parkQSOs = qsos.filter {
-            guard let ref = $0.parkReference else { return false }
+            guard let ref = $0.parkReference else {
+                return false
+            }
             return ParkReference.hasOverlap(ref, normalizedParkRef)
         }
         guard !parkQSOs.isEmpty else {

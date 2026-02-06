@@ -121,4 +121,57 @@ struct ParkReferenceTests {
         #expect(!ParkReference.hasOverlap("US-9999", "US-1044, US-3791"))
         #expect(!ParkReference.hasOverlap("K-0001", "US-1044"))
     }
+
+    // MARK: - Sanitize Tests
+
+    @Test("Sanitize valid park reference passes through unchanged")
+    func sanitizeValidPassthrough() {
+        #expect(ParkReference.sanitize("US-0189") == "US-0189")
+        #expect(ParkReference.sanitize("K-1234") == "K-1234")
+        #expect(ParkReference.sanitize("JA-12345") == "JA-12345")
+    }
+
+    @Test("Sanitize fixes missing dash")
+    func sanitizeFixesMissingDash() {
+        #expect(ParkReference.sanitize("US1849") == "US-1849")
+        #expect(ParkReference.sanitize("K0001") == "K-0001")
+        #expect(ParkReference.sanitize("VE12345") == "VE-12345")
+    }
+
+    @Test("Sanitize returns nil for bare numbers")
+    func sanitizeBareNumbersNil() {
+        #expect(ParkReference.sanitize("3687") == nil)
+        #expect(ParkReference.sanitize("11027") == nil)
+    }
+
+    @Test("Sanitize returns nil for empty or invalid input")
+    func sanitizeInvalidNil() {
+        #expect(ParkReference.sanitize("") == nil)
+        #expect(ParkReference.sanitize("W1AW") == nil)
+        #expect(ParkReference.sanitize("US-01") == nil)
+        #expect(ParkReference.sanitize("USA-0189") == nil)
+    }
+
+    @Test("Sanitize normalizes to uppercase")
+    func sanitizeUppercases() {
+        #expect(ParkReference.sanitize("us-0189") == "US-0189")
+        #expect(ParkReference.sanitize("k1234") == "K-1234")
+    }
+
+    @Test("SanitizeMulti handles mixed valid and invalid parks")
+    func sanitizeMultiMixed() {
+        #expect(ParkReference.sanitizeMulti("US-1037, 3687") == "US-1037")
+        #expect(ParkReference.sanitizeMulti("US-1044, US-3791") == "US-1044, US-3791")
+    }
+
+    @Test("SanitizeMulti fixes missing dashes in multi-park")
+    func sanitizeMultiFixesDashes() {
+        #expect(ParkReference.sanitizeMulti("US1849, US3687") == "US-1849, US-3687")
+    }
+
+    @Test("SanitizeMulti returns nil when all parks invalid")
+    func sanitizeMultiAllInvalid() {
+        #expect(ParkReference.sanitizeMulti("3687, 11027") == nil)
+        #expect(ParkReference.sanitizeMulti("") == nil)
+    }
 }

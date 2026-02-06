@@ -266,7 +266,8 @@ class ImportService: ObservableObject {
             callsign: callsign, band: band, mode: mode, frequency: lofiQso.freqMHz,
             timestamp: qsoTimestamp, rstSent: lofiQso.rstSent, rstReceived: lofiQso.rstRcvd,
             myCallsign: myCallsign, myGrid: operation.grid, theirGrid: lofiQso.theirGrid,
-            parkReference: parkRef, notes: lofiQso.notes, importSource: .lofi
+            parkReference: parkRef.flatMap { ParkReference.sanitizeMulti($0) },
+            notes: lofiQso.notes, importSource: .lofi
         )
     }
 }

@@ -36,7 +36,11 @@
       "Bash(make format:*)",
       "Bash(swiftformat:*)",
       "Skill(planning-with-files:planning-with-files)",
-      "Skill(planning-with-files:planning-with-files:*)"
+      "Skill(planning-with-files:planning-with-files:*)",
+      "Bash(N9HO=\"/Users/jsvana/Downloads/CarrierWave_QSO_Export_2026-02-03_102149.sqlite\")",
+      "Bash(__NEW_LINE_667014a1defa5c3a__ echo \"=== N9HO top parks ===\")",
+      "Bash(__NEW_LINE_667014a1defa5c3a__ echo \"\")",
+      "Bash(__NEW_LINE_984bcd023716cf17__ echo \"\")"
     ]
   }
 }

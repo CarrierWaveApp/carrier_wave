@@ -159,7 +159,77 @@ final class LoFiClientTests: XCTestCase {
         let operation = try JSONDecoder().decode(LoFiOperation.self, from: data)
 
         XCTAssertEqual(operation.potaRef?.reference, "US-1234")
+        XCTAssertEqual(operation.potaParkReference, "US-1234")
         XCTAssertEqual(operation.sotaRef?.reference, "W1/MB-001")
+    }
+
+    func testLoFiOperationTwoFerPotaRefs() throws {
+        let json = """
+        {
+            "uuid": "op-uuid",
+            "stationCall": "W1AW",
+            "account": "account-uuid",
+            "createdAtMillis": 1704067200000,
+            "updatedAtMillis": 1704067200000,
+            "refs": [
+                {
+                    "type": "potaActivation",
+                    "ref": "US-0189",
+                    "program": "POTA"
+                },
+                {
+                    "type": "potaActivation",
+                    "ref": "US-12740",
+                    "program": "POTA"
+                }
+            ],
+            "qsoCount": 10
+        }
+        """
+
+        let data = try XCTUnwrap(json.data(using: .utf8))
+        let operation = try JSONDecoder().decode(LoFiOperation.self, from: data)
+
+        // potaRef returns first for backward compat
+        XCTAssertEqual(operation.potaRef?.reference, "US-0189")
+        // potaParkReference returns all parks comma-separated
+        XCTAssertEqual(operation.potaParkReference, "US-0189, US-12740")
+        XCTAssertEqual(operation.potaRefs.count, 2)
+    }
+
+    func testMyPotaRefReturnsTwoFerParks() throws {
+        let refs = [
+            LoFiOperationRef(
+                refType: "potaActivation",
+                reference: "US-0189",
+                name: nil,
+                location: nil,
+                label: nil,
+                shortLabel: nil,
+                program: "POTA"
+            ),
+            LoFiOperationRef(
+                refType: "potaActivation",
+                reference: "US-12740",
+                name: nil,
+                location: nil,
+                label: nil,
+                shortLabel: nil,
+                program: "POTA"
+            ),
+        ]
+
+        let qsoJSON = """
+        {
+            "uuid": "qso-uuid",
+            "startAtMillis": 1704067200000
+        }
+        """
+        let data = try XCTUnwrap(qsoJSON.data(using: .utf8))
+        let qso = try JSONDecoder().decode(LoFiQso.self, from: data)
+
+        let parkRef = qso.myPotaRef(from: refs)
+        XCTAssertEqual(parkRef, "US-0189, US-12740")
     }
 }
 
