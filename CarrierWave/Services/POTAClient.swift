@@ -238,7 +238,12 @@ final class POTAClient {
         let normalizedParkRef = parkReference.uppercased()
         let token = try await authService.ensureValidToken()
 
-        let parkQSOs = qsos.filter { $0.parkReference?.uppercased() == normalizedParkRef }
+        // Filter to QSOs that contain this park (supports multi-park/two-fer references
+        // like "US-1044, US-3791" when uploading to just "US-1044")
+        let parkQSOs = qsos.filter {
+            guard let ref = $0.parkReference else { return false }
+            return ParkReference.hasOverlap(ref, normalizedParkRef)
+        }
         guard !parkQSOs.isEmpty else {
             debugLog.info("No QSOs to upload for park \(normalizedParkRef)", service: .pota)
             return POTAUploadResult(
@@ -248,7 +253,7 @@ final class POTAClient {
 
         guard
             let requestData = buildUploadRequest(
-                parkReference: normalizedParkRef, qsos: qsos, token: token
+                parkReference: normalizedParkRef, qsos: parkQSOs, token: token
             )
         else {
             throw POTAError.uploadFailed("Failed to build request")
@@ -293,7 +298,12 @@ final class POTAClient {
         let normalizedParkRef = parkReference.uppercased()
         let token = try await authService.ensureValidToken()
 
-        let parkQSOs = qsos.filter { $0.parkReference?.uppercased() == normalizedParkRef }
+        // Filter to QSOs that contain this park (supports multi-park/two-fer references
+        // like "US-1044, US-3791" when uploading to just "US-1044")
+        let parkQSOs = qsos.filter {
+            guard let ref = $0.parkReference else { return false }
+            return ParkReference.hasOverlap(ref, normalizedParkRef)
+        }
         guard !parkQSOs.isEmpty else {
             debugLog.info("No QSOs to upload for park \(normalizedParkRef)", service: .pota)
             return POTAUploadResult(
@@ -303,7 +313,7 @@ final class POTAClient {
 
         guard
             let requestData = buildUploadRequest(
-                parkReference: normalizedParkRef, qsos: qsos, token: token
+                parkReference: normalizedParkRef, qsos: parkQSOs, token: token
             )
         else {
             throw POTAError.uploadFailed("Failed to build request")
