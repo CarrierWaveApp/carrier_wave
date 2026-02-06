@@ -16,6 +16,7 @@ struct ActivationRow: View {
     let onExportTapped: () -> Void
     let onMapTapped: () -> Void
     var showParkReference: Bool = false
+    var parkName: String?
     /// Upload errors by park (for two-fer error display)
     var uploadErrors: [String: String] = [:]
     /// Pre-computed matching jobs for this activation (computed by parent)
@@ -53,6 +54,12 @@ struct ActivationRow: View {
                             Text(activation.parkReference)
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
+                            if let parkName {
+                                Text("- \(parkName)")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                            }
                         }
                         Text(activation.callsign)
                             .font(.subheadline)

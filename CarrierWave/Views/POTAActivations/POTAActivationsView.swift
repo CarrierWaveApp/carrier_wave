@@ -165,8 +165,8 @@ struct POTAActivationsContentView: View {
         POTAActivation.groupQSOs(allParkQSOs)
     }
 
-    private var activationsByPark: [(park: String, activations: [POTAActivation])] {
-        POTAActivation.groupByPark(activations)
+    private var activationsByDate: [(date: String, activations: [POTAActivation])] {
+        POTAActivation.groupByDate(activations)
     }
 
     /// Activations with pending uploads (not fully uploaded and not rejected), sorted by date descending
@@ -246,17 +246,14 @@ struct POTAActivationsContentView: View {
                 }
             }
 
-            // All activations grouped by park
-            ForEach(activationsByPark, id: \.park) { parkGroup in
+            // All activations grouped by date
+            ForEach(activationsByDate, id: \.date) { dateGroup in
                 Section {
-                    ForEach(parkGroup.activations) { activation in activationRow(activation) }
-                } header: {
-                    HStack {
-                        Text(parkGroup.park)
-                        if let name = parkName(for: parkGroup.park) {
-                            Text("- \(name)").foregroundStyle(.secondary)
-                        }
+                    ForEach(dateGroup.activations) { activation in
+                        activationRow(activation, showParkReference: true)
                     }
+                } header: {
+                    Text(dateGroup.date)
                 }
             }
         }
@@ -278,6 +275,7 @@ struct POTAActivationsContentView: View {
             onExportTapped: { activationToExport = activation },
             onMapTapped: { activationToMap = activation },
             showParkReference: showParkReference,
+            parkName: parkName(for: activation.parkReference),
             uploadErrors: uploadErrorsByActivation[activation.id] ?? [:],
             matchingJobs: jobsByActivationId[activation.id] ?? [],
             potaClient: potaClient

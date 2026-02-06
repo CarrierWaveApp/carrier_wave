@@ -247,6 +247,19 @@ struct POTAActivation: Identifiable, Equatable {
                 .sorted { $0.park < $1.park }
     }
 
+    /// Group activations by UTC date for sectioning
+    static func groupByDate(_ activations: [POTAActivation]) -> [(
+        date: String, activations: [POTAActivation]
+    )] {
+        let grouped = Dictionary(grouping: activations) { $0.utcDateString }
+        return
+            grouped
+                .map {
+                    (date: $0.key, activations: $0.value.sorted { $0.parkReference < $1.parkReference })
+                }
+                .sorted { $0.date > $1.date }
+    }
+
     /// QSOs that are fully uploaded to all parks in this activation
     func uploadedQSOs() -> [QSO] {
         if isMultiPark {
