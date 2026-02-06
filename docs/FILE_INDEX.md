@@ -149,6 +149,7 @@ Pure logic library that can be tested without iOS Simulator. Run tests with `mak
 | `CWTranscriptionService.swift` | Coordinates audio capture, signal processing, and morse decoding |
 | `CWConversationTracker.swift` | Track CW conversation turns via frequency and prosign analysis |
 | `PoloNotesParser.swift` | Parse Ham2K Polo notes list files for callsign info |
+| `CallsignContactCache.swift` | Background cache of per-callsign contact counts for fast logger display |
 | `CallsignLookupService.swift` | Two-tier callsign lookup (Polo notes cache, then QRZ API) |
 | `CallsignNotesCache.swift` | Persistent cache for Polo notes (loads from disk, refreshes daily) |
 | `CWSuggestionEngine.swift` | Word suggestion engine with dictionaries and settings |

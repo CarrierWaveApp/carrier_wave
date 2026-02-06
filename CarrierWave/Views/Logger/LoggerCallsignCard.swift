@@ -9,6 +9,7 @@ struct LoggerCallsignCard: View {
     // MARK: Internal
 
     let info: CallsignInfo
+    var contactCount: Int?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -30,9 +31,15 @@ struct LoggerCallsignCard: View {
 
                 Spacer()
 
-                if let flag = countryFlag(for: info) {
-                    Text(flag)
-                        .font(.largeTitle)
+                VStack(alignment: .trailing, spacing: 4) {
+                    if let flag = countryFlag(for: info) {
+                        Text(flag)
+                            .font(.largeTitle)
+                    }
+
+                    if let count = contactCount, count > 0 {
+                        contactCountBadge(count)
+                    }
                 }
             }
 
@@ -54,6 +61,17 @@ struct LoggerCallsignCard: View {
     // MARK: Private
 
     @AppStorage("callsignNotesDisplayMode") private var notesDisplayMode = "emoji"
+
+    private func contactCountBadge(_ count: Int) -> some View {
+        let label = count == 1 ? "1 QSO" : "\(count) QSOs"
+        return Text(label)
+            .font(.caption2.weight(.semibold))
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(Color.green.opacity(0.2))
+            .foregroundStyle(.green)
+            .clipShape(Capsule())
+    }
 
     private var hasDetails: Bool {
         info.grid != nil || info.state != nil || info.country != nil
@@ -203,6 +221,7 @@ struct CompactCallsignBar: View {
     // MARK: Internal
 
     let info: CallsignInfo
+    var contactCount: Int?
 
     var body: some View {
         HStack(spacing: 8) {
@@ -232,6 +251,16 @@ struct CompactCallsignBar: View {
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
                     .background(Color.blue.opacity(0.2))
+                    .clipShape(Capsule())
+            }
+
+            if let count = contactCount, count > 0 {
+                Text(count == 1 ? "1 QSO" : "\(count) QSOs")
+                    .font(.caption2.weight(.semibold))
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Color.green.opacity(0.2))
+                    .foregroundStyle(.green)
                     .clipShape(Capsule())
             }
 

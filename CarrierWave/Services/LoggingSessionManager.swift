@@ -38,6 +38,9 @@ final class LoggingSessionManager {
     /// Service for monitoring RBN/POTA spots during session
     let spotMonitoringService = SpotMonitoringService()
 
+    /// Cache of callsign contact counts for fast lookup
+    let callsignContactCache = CallsignContactCache()
+
     /// Whether there's an active session
     var hasActiveSession: Bool {
         activeSession != nil
@@ -51,7 +54,8 @@ final class LoggingSessionManager {
         activationType: ActivationType = .casual,
         parkReference: String? = nil,
         sotaReference: String? = nil,
-        myGrid: String? = nil
+        myGrid: String? = nil,
+        power: Int? = nil
     ) {
         // End any existing session first
         if let existing = activeSession {
@@ -66,7 +70,8 @@ final class LoggingSessionManager {
             activationType: activationType,
             parkReference: parkReference,
             sotaReference: sotaReference,
-            myGrid: myGrid
+            myGrid: myGrid,
+            power: power
         )
 
         modelContext.insert(session)
@@ -75,6 +80,9 @@ final class LoggingSessionManager {
 
         // Cache service configuration to avoid Keychain reads per-QSO
         cacheServiceConfiguration()
+
+        // Load callsign contact counts cache in background
+        loadContactCache()
 
         // Prevent screen timeout during active session
         if keepScreenOn {
@@ -396,6 +404,7 @@ final class LoggingSessionManager {
             qth: qth,
             state: state,
             country: country,
+            power: session.power,
             theirLicenseClass: theirLicenseClass
         )
 
@@ -407,6 +416,11 @@ final class LoggingSessionManager {
 
         // Mark for upload to configured services
         markForUpload(qso)
+
+        // Update contact count cache
+        Task {
+            await callsignContactCache.increment(callsign: callsign)
+        }
 
         try? modelContext.save()
 
@@ -808,6 +822,8 @@ final class LoggingSessionManager {
                 activeSession = session
                 // Cache service configuration for restored session
                 cacheServiceConfiguration()
+                // Load callsign contact counts cache in background
+                loadContactCache()
                 // Prevent screen timeout for restored active session
                 if keepScreenOn {
                     UIApplication.shared.isIdleTimerDisabled = true
@@ -860,6 +876,14 @@ final class LoggingSessionManager {
             (try? KeychainHelper.shared.readString(for: KeychainHelper.Keys.potaUsername)) != nil
                 && (try? KeychainHelper.shared.readString(for: KeychainHelper.Keys.potaPassword)) != nil
         lofiConfigured = UserDefaults.standard.bool(forKey: "lofi.deviceLinked")
+    }
+
+    /// Load the callsign contact counts cache in the background
+    private func loadContactCache() {
+        let container = modelContext.container
+        Task {
+            await callsignContactCache.load(container: container)
+        }
     }
 
     private func markForUpload(_ qso: QSO) {

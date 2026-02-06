@@ -298,6 +298,7 @@ struct LoggerView: View {
     @State private var lookupResult: CallsignInfo?
     @State private var lookupError: CallsignLookupError?
     @State private var lookupTask: Task<Void, Never>?
+    @State private var callsignContactCount: Int?
 
     /// Cached POTA duplicate status (computed on callsign change, not every render)
     @State private var cachedPotaDuplicateStatus: POTACallsignStatus?
@@ -509,7 +510,7 @@ struct LoggerView: View {
     @ViewBuilder
     private var callsignLookupDisplay: some View {
         if let info = lookupResult, !callsignFieldFocused {
-            LoggerCallsignCard(info: info)
+            LoggerCallsignCard(info: info, contactCount: callsignContactCount)
                 .transition(
                     .asymmetric(
                         insertion: .move(edge: .top).combined(with: .opacity),
@@ -1644,6 +1645,9 @@ struct LoggerView: View {
         // Extract the primary callsign for lookup (strip prefix/suffix)
         let primaryCallsign = extractPrimaryCallsign(callsignForLookup)
 
+        // Auto-populate park from POTA spots if the callsign is an active activator
+        autoPopulateParkFromSpots(callsign: callsignForLookup)
+
         // Don't lookup if primary is too short
         guard primaryCallsign.count >= 3 else {
             lookupResult = nil
@@ -1652,6 +1656,8 @@ struct LoggerView: View {
         }
 
         let service = CallsignLookupService(modelContext: modelContext)
+        let contactCache = sessionManager?.callsignContactCache
+        let callsignToLookup = primaryCallsign
         lookupTask = Task {
             // Small delay to avoid excessive lookups while typing
             try? await Task.sleep(for: .milliseconds(300))
@@ -1660,10 +1666,17 @@ struct LoggerView: View {
                 return
             }
 
-            let result = await service.lookupWithResult(primaryCallsign)
+            let result = await service.lookupWithResult(callsignToLookup)
+
+            // Fetch contact count from cache (flatten optional chain)
+            var count: Int?
+            if let cache = contactCache {
+                count = await cache.count(for: callsignToLookup)
+            }
 
             await MainActor.run {
                 lookupResult = result.info
+                callsignContactCount = count
                 // Only show actionable errors (not "not found" which is normal)
                 if result.error == .notFound {
                     lookupError = nil
@@ -1832,6 +1845,7 @@ struct LoggerView: View {
             callsignInput = ""
             lookupResult = nil
             lookupError = nil
+            callsignContactCount = nil
             cachedPotaDuplicateStatus = nil
             quickEntryResult = nil
             quickEntryTokens = []
@@ -1845,6 +1859,32 @@ struct LoggerView: View {
             editingQSO = nil
         }
         callsignFieldFocused = true
+    }
+
+    /// Auto-populate theirPark from POTA spots if the callsign is an active activator
+    private func autoPopulateParkFromSpots(callsign: String) {
+        let upper = callsign.uppercased()
+        guard upper.count >= 3 else {
+            return
+        }
+
+        // Only auto-populate if the user hasn't manually entered a park
+        guard theirPark.isEmpty else {
+            return
+        }
+
+        // Normalize for matching: strip portable suffixes
+        let normalized = extractPrimaryCallsign(upper)
+
+        // Check cached POTA spots for a matching activator
+        let matchingSpot = cachedPOTASpots.first { spot in
+            let spotCallsign = extractPrimaryCallsign(spot.activator.uppercased())
+            return spotCallsign == normalized
+        }
+
+        if let spot = matchingSpot {
+            theirPark = spot.reference
+        }
     }
 
     private func lookupParkName(_ reference: String?) -> String? {

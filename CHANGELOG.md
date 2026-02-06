@@ -4,6 +4,14 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **Park-to-Park auto-populate** - Logger automatically fills "Their Park" field when the entered callsign is an active POTA activator from cached spots
+- **Callsign contact stats** - Callsign preview card shows how many previous QSOs you have with the station, loaded from a background cache for instant display
+- **Watts/Power field** - Session setup wizard now includes a power (watts) field, applied to all QSOs in the session and saveable as a default
+
+### Fixed
+- Session setup wizard "Save as Defaults" now saves frequency (was previously omitted, so frequency had to be re-entered each session)
+
 ## [1.22.1] - 2026-02-05
 
 ### Fixed

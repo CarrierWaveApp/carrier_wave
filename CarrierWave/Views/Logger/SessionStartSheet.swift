@@ -16,6 +16,7 @@ struct SessionStartSheet: View {
                 callsignSection
                 modeSection
                 frequencySection
+                wattsSection
                 activationSection
                 optionsSection
             }
@@ -57,9 +58,12 @@ struct SessionStartSheet: View {
     @AppStorage("loggerDefaultGrid") private var defaultGrid = ""
     @AppStorage("loggerDefaultActivationType") private var defaultActivationType = "casual"
     @AppStorage("loggerDefaultParkReference") private var defaultParkReference = ""
+    @AppStorage("loggerDefaultFrequency") private var defaultFrequency = ""
+    @AppStorage("loggerDefaultWatts") private var defaultWatts = ""
 
     @State private var selectedMode = "CW"
     @State private var frequency = ""
+    @State private var watts = ""
     @State private var activationType: ActivationType = .casual
     @State private var parkReference = ""
     @State private var sotaReference = ""
@@ -134,6 +138,10 @@ struct SessionStartSheet: View {
         FrequencyFormatter.parse(frequency)
     }
 
+    private var parsedWatts: Int? {
+        Int(watts.trimmingCharacters(in: .whitespaces))
+    }
+
     // MARK: - Sections
 
     private var callsignSection: some View {
@@ -153,6 +161,12 @@ struct SessionStartSheet: View {
                 myGrid = defaultGrid
             }
             selectedMode = defaultMode
+            if frequency.isEmpty, !defaultFrequency.isEmpty {
+                frequency = defaultFrequency
+            }
+            if watts.isEmpty, !defaultWatts.isEmpty {
+                watts = defaultWatts
+            }
             if let savedActivationType = ActivationType(rawValue: defaultActivationType) {
                 activationType = savedActivationType
             }
@@ -284,6 +298,23 @@ struct SessionStartSheet: View {
         }
     }
 
+    private var wattsSection: some View {
+        Section {
+            HStack {
+                TextField("e.g. 5", text: $watts)
+                    .keyboardType(.numberPad)
+                    .font(.title3.monospaced())
+
+                Text("watts")
+                    .foregroundStyle(.secondary)
+            }
+        } header: {
+            Text("Power")
+        } footer: {
+            Text("Transmit power in watts. Applied to all QSOs in this session.")
+        }
+    }
+
     private var activationSection: some View {
         ActivationSectionView(
             activationType: $activationType,
@@ -325,7 +356,8 @@ struct SessionStartSheet: View {
             activationType: activationType,
             parkReference: activationType == .pota ? parkReference.uppercased() : nil,
             sotaReference: activationType == .sota ? sotaReference.uppercased() : nil,
-            myGrid: myGrid.isEmpty ? nil : myGrid.uppercased()
+            myGrid: myGrid.isEmpty ? nil : myGrid.uppercased(),
+            power: parsedWatts
         )
 
         onDismiss()
@@ -333,6 +365,8 @@ struct SessionStartSheet: View {
 
     private func saveDefaults() {
         defaultMode = selectedMode
+        defaultFrequency = frequency
+        defaultWatts = watts
         if !myGrid.isEmpty {
             defaultGrid = myGrid.uppercased()
         }

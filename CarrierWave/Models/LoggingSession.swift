@@ -55,7 +55,8 @@ final class LoggingSession {
         parkReference: String? = nil,
         sotaReference: String? = nil,
         myGrid: String? = nil,
-        notes: String? = nil
+        notes: String? = nil,
+        power: Int? = nil
     ) {
         self.id = id
         self.myCallsign = myCallsign
@@ -67,6 +68,7 @@ final class LoggingSession {
         self.sotaReference = sotaReference
         self.myGrid = myGrid
         self.notes = notes
+        self.power = power
     }
 
     // MARK: Internal
@@ -125,6 +127,9 @@ final class LoggingSession {
 
     /// Session notes
     var notes: String?
+
+    /// Transmit power in watts
+    var power: Int?
 
     /// Custom title set by user (overrides displayTitle)
     var customTitle: String?
