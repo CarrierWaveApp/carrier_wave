@@ -14,13 +14,13 @@ struct ActivityView: View {
 
     // MARK: - State (internal for extension access)
 
+    @AppStorage("activityDedupCompleted") var dedupCompleted = false
     @State var isRefreshing = false
 
     @Query(sort: \ChallengeParticipation.joinedAt, order: .reverse)
     var allParticipations: [ChallengeParticipation]
 
-    @Query(sort: \ActivityItem.timestamp, order: .reverse)
-    var allActivityItems: [ActivityItem]
+    @State var allActivityItems: [ActivityItem] = []
 
     @Query var clubs: [Club]
 
@@ -244,6 +244,11 @@ struct ActivityView: View {
                 }
             )
         }
+        .task {
+            loadActivityItems()
+            // One-time cleanup of duplicate activities (after UI is shown)
+            await deduplicateActivitiesIfNeeded()
+        }
         .miniTour(.challenges, tourState: tourState)
     }
 }
@@ -251,6 +256,58 @@ struct ActivityView: View {
 // MARK: - ActivityView+Actions
 
 extension ActivityView {
+    func loadActivityItems() {
+        var descriptor = FetchDescriptor<ActivityItem>(
+            sortBy: [SortDescriptor(\ActivityItem.timestamp, order: .reverse)]
+        )
+        descriptor.fetchLimit = 200
+        allActivityItems = (try? modelContext.fetch(descriptor)) ?? []
+    }
+
+    func deduplicateActivitiesIfNeeded() async {
+        guard !dedupCompleted else {
+            return
+        }
+
+        let container = modelContext.container
+        let callsign = currentCallsign
+
+        // Run dedup on background thread with its own ModelContext
+        await Task.detached {
+            let context = ModelContext(container)
+            context.autosaveEnabled = false
+
+            let descriptor = FetchDescriptor<ActivityItem>(
+                predicate: #Predicate { $0.isOwn && $0.callsign == callsign },
+                sortBy: [SortDescriptor(\ActivityItem.timestamp, order: .forward)]
+            )
+            guard let items = try? context.fetch(descriptor), items.count > 1 else {
+                return
+            }
+
+            var seen: [String: Bool] = [:]
+            var deletedAny = false
+
+            for item in items {
+                let key = ActivityDetector.dedupKeyForItem(item)
+                if seen[key] != nil {
+                    context.delete(item)
+                    deletedAny = true
+                } else {
+                    seen[key] = true
+                }
+            }
+
+            if deletedAny {
+                try? context.save()
+            }
+        }.value
+
+        dedupCompleted = true
+        // Reload to reflect any deletions
+        loadActivityItems()
+    }
+
     func refresh() async {
         guard let syncService else {
             return
@@ -270,6 +327,9 @@ extension ActivityView {
             if let feedService = feedSyncService {
                 try await feedService.syncFeed(sourceURL: "https://activities.carrierwave.app")
             }
+
+            // Reload activity items to pick up new feed items
+            loadActivityItems()
         } catch {
             errorMessage = error.localizedDescription
             showingError = true
@@ -299,13 +359,14 @@ extension ActivityView {
             return
         }
 
-        let descriptor = FetchDescriptor<QSO>(
+        var descriptor = FetchDescriptor<QSO>(
             sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
         )
+        descriptor.fetchLimit = 100
 
         do {
             let recentQSOs = try modelContext.fetch(descriptor)
-            for qso in recentQSOs.prefix(100) {
+            for qso in recentQSOs {
                 syncService.progressEngine.evaluateQSO(qso, notificationsEnabled: false)
             }
             try modelContext.save()

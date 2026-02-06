@@ -31,6 +31,43 @@ final class ActivityDetector {
     /// Minimum QSOs for a SOTA activation
     let sotaActivationThreshold = 4
 
+    // MARK: Internal Static
+
+    /// Build a dedup key for an existing ActivityItem (callable from background threads)
+    nonisolated static func dedupKeyForItem(_ item: ActivityItem) -> String {
+        let type = item.activityType.rawValue
+        let details = item.details
+        switch item.activityType {
+        case .newDXCCEntity:
+            return "\(type):\(details?.entityCode ?? "")"
+        case .newBand:
+            return "\(type):\(details?.band ?? "")"
+        case .newMode:
+            return "\(type):\(details?.mode ?? "")"
+        case .dxContact:
+            let day = dayStringFrom(item.timestamp)
+            return "\(type):\(details?.workedCallsign ?? ""):\(day)"
+        case .potaActivation,
+             .sotaActivation:
+            let day = dayStringFrom(item.timestamp)
+            return "\(type):\(details?.parkReference ?? ""):\(day)"
+        case .dailyStreak,
+             .potaDailyStreak:
+            return "\(type):\(details?.streakDays ?? 0)"
+        case .personalBest:
+            return "\(type):\(details?.recordType ?? "")"
+        case .challengeTierUnlock,
+             .challengeCompletion:
+            return "\(type):\(item.challengeId?.uuidString ?? "challenge")"
+        }
+    }
+
+    nonisolated static func dayStringFrom(_ date: Date) -> String {
+        let calendar = Calendar.current
+        let components = calendar.dateComponents([.year, .month, .day], from: date)
+        return "\(components.year ?? 0)-\(components.month ?? 0)-\(components.day ?? 0)"
+    }
+
     /// Analyze a batch of new QSOs and return detected activities
     func detectActivities(for qsos: [QSO]) -> [DetectedActivity] {
         var activities: [DetectedActivity] = []
@@ -81,9 +118,16 @@ final class ActivityDetector {
         return activities
     }
 
-    /// Create ActivityItem records from detected activities
+    /// Create ActivityItem records from detected activities, skipping duplicates
     func createActivityItems(from detected: [DetectedActivity]) {
+        // Load existing own activities for dedup
+        let existingItems = loadExistingOwnActivities()
+
         for activity in detected {
+            if isDuplicate(activity, existingItems: existingItems) {
+                continue
+            }
+
             let item = ActivityItem(
                 callsign: userCallsign,
                 activityType: activity.type,
@@ -102,6 +146,50 @@ final class ActivityDetector {
     }
 
     // MARK: Private
+
+    private static func dedupKeyForDetected(_ activity: DetectedActivity) -> String {
+        let type = activity.type.rawValue
+        switch activity.type {
+        case .newDXCCEntity:
+            return "\(type):\(activity.entityCode ?? "")"
+        case .newBand:
+            return "\(type):\(activity.band ?? "")"
+        case .newMode:
+            return "\(type):\(activity.mode ?? "")"
+        case .dxContact:
+            let day = dayStringFrom(activity.timestamp)
+            return "\(type):\(activity.workedCallsign ?? ""):\(day)"
+        case .potaActivation,
+             .sotaActivation:
+            let day = dayStringFrom(activity.timestamp)
+            return "\(type):\(activity.parkReference ?? ""):\(day)"
+        case .dailyStreak,
+             .potaDailyStreak:
+            return "\(type):\(activity.streakDays ?? 0)"
+        case .personalBest:
+            return "\(type):\(activity.recordType ?? "")"
+        case .challengeTierUnlock,
+             .challengeCompletion:
+            return "\(type):challenge"
+        }
+    }
+
+    private func loadExistingOwnActivities() -> [ActivityItem] {
+        let callsign = userCallsign
+        let descriptor = FetchDescriptor<ActivityItem>(
+            predicate: #Predicate { $0.isOwn && $0.callsign == callsign },
+            sortBy: [SortDescriptor(\ActivityItem.timestamp, order: .forward)]
+        )
+        return (try? modelContext.fetch(descriptor)) ?? []
+    }
+
+    private func isDuplicate(
+        _ activity: DetectedActivity,
+        existingItems: [ActivityItem]
+    ) -> Bool {
+        let newKey = Self.dedupKeyForDetected(activity)
+        return existingItems.contains { Self.dedupKeyForItem($0) == newKey }
+    }
 
     private func populateDetails(_ details: inout ActivityDetails, from activity: DetectedActivity) {
         switch activity.type {

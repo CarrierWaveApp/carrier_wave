@@ -7,6 +7,9 @@ All notable changes to Carrier Wave will be documented in this file.
 ### Fixed
 - Fix POTA uploads silently succeeding without sending data for two-fer (multi-park) activations. Park reference matching now correctly handles comma-separated references like "US-1044, US-3791"
 - Fix legacy POTA needsUpload flag not being cleared after per-park uploads complete, causing repeated upload attempts
+- Fix 2-3 second UI hang when opening Activities tab (replaced @Query with bounded fetch)
+- Fix duplicate activities appearing in feed (e.g., "Made first CW contact" shown twice) — add dedup on creation and one-time cleanup of existing duplicates
+- Fix evaluateNewQSOs loading entire QSO table instead of using fetchLimit
 
 ## [1.22.2] - 2026-02-06
 
