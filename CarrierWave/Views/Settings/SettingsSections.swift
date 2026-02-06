@@ -132,12 +132,12 @@ struct SyncSourcesSection: View {
                 }
             }
 
-            // Challenges
+            // Activities
             NavigationLink {
                 ChallengesSettingsView()
             } label: {
                 HStack {
-                    Label("Challenges", systemImage: "flag.2.crossed")
+                    Label("Activities", systemImage: "flag.2.crossed")
                     Spacer()
                     if challengeSources.contains(where: { $0.lastFetched != nil }) {
                         Image(systemName: "checkmark.circle.fill")

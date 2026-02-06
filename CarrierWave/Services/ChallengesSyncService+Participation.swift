@@ -12,7 +12,7 @@ extension ChallengesSyncService {
             throw ChallengesError.invalidServerURL
         }
 
-        let callsign = UserDefaults.standard.string(forKey: "userCallsign") ?? ""
+        let callsign = UserDefaults.standard.string(forKey: "loggerDefaultCallsign") ?? ""
         guard !callsign.isEmpty else {
             throw ChallengesError.notAuthenticated
         }

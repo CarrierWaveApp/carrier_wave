@@ -268,7 +268,7 @@ extension ActivityView {
 
             // Sync activity feed from server
             if let feedService = feedSyncService {
-                try await feedService.syncFeed(sourceURL: "https://challenges.example.com")
+                try await feedService.syncFeed(sourceURL: "https://activities.carrierwave.app")
             }
         } catch {
             errorMessage = error.localizedDescription
@@ -338,7 +338,7 @@ extension ActivityView {
             do {
                 try await service.sendFriendRequestWithInvite(
                     inviteToken: token,
-                    sourceURL: "https://challenges.example.com"
+                    sourceURL: "https://activities.carrierwave.app"
                 )
                 showingFriendInviteSheet = false
                 pendingFriendInviteToken = nil

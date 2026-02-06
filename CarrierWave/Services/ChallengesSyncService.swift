@@ -41,12 +41,27 @@ final class ChallengesSyncService: ObservableObject {
         )
 
         if let existing = try modelContext.fetch(descriptor).first {
+            var needsSave = false
+            // Update URL if it changed (e.g., migrated from placeholder)
+            if existing.url != "https://activities.carrierwave.app" {
+                existing.url = "https://activities.carrierwave.app"
+                existing.lastError = nil
+                needsSave = true
+            }
+            // Clear stale errors from old URL
+            if existing.lastError != nil, existing.url == "https://activities.carrierwave.app" {
+                existing.lastError = nil
+                needsSave = true
+            }
+            if needsSave {
+                try modelContext.save()
+            }
             return existing
         }
 
         let official = ChallengeSource(
             type: .official,
-            url: "https://challenges.example.com",
+            url: "https://activities.carrierwave.app",
             name: "Carrier Wave Official"
         )
         modelContext.insert(official)
@@ -124,7 +139,7 @@ final class ChallengesSyncService: ObservableObject {
     /// Refresh challenges that the user is participating in from the server
     /// - Parameter forceUpdate: If true, updates all challenges regardless of version
     func refreshParticipatingChallenges(forceUpdate: Bool = false) async throws {
-        let callsign = UserDefaults.standard.string(forKey: "userCallsign") ?? ""
+        let callsign = UserDefaults.standard.string(forKey: "loggerDefaultCallsign") ?? ""
         guard !callsign.isEmpty else {
             return
         }

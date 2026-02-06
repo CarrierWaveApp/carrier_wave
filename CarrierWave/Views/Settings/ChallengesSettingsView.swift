@@ -9,20 +9,38 @@ struct ChallengesSettingsView: View {
     var body: some View {
         List {
             Section {
-                TextField("Callsign", text: $userCallsign)
-                    .textInputAutocapitalization(.characters)
-                    .autocorrectionDisabled()
+                HStack {
+                    Text("Callsign")
+                    Spacer()
+                    Text(stationCallsign.isEmpty ? "Not Set" : stationCallsign)
+                        .foregroundStyle(stationCallsign.isEmpty ? .secondary : .primary)
+                }
             } header: {
                 Text("Your Station")
             } footer: {
-                Text("Your callsign is sent to challenge servers when you join.")
+                Text("Uses your station callsign from Logger settings.")
             }
 
             Section {
                 ForEach(sources) { source in
-                    sourceRow(source)
+                    if source.isOfficial {
+                        sourceRow(source)
+                    } else {
+                        Button {
+                            editingSource = source
+                        } label: {
+                            sourceRow(source)
+                        }
+                        .tint(.primary)
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            Button(role: .destructive) {
+                                deleteSource(source)
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        }
+                    }
                 }
-                .onDelete(perform: deleteSources)
 
                 Button {
                     showingAddSource = true
@@ -30,12 +48,12 @@ struct ChallengesSettingsView: View {
                     Label("Add Server", systemImage: "plus")
                 }
             } header: {
-                Text("Challenge Servers")
+                Text("Activity Servers")
             } footer: {
-                Text("Challenge servers host competitions and track leaderboards.")
+                Text("Activity servers host competitions and track leaderboards.")
             }
         }
-        .navigationTitle("Challenges")
+        .navigationTitle("Activities")
         .onAppear {
             if syncService == nil {
                 syncService = ChallengesSyncService(modelContext: modelContext)
@@ -46,6 +64,9 @@ struct ChallengesSettingsView: View {
         }
         .sheet(isPresented: $showingAddSource) {
             AddChallengeServerSheet(syncService: syncService)
+        }
+        .sheet(item: $editingSource) { source in
+            EditChallengeServerSheet(source: source)
         }
         .alert("Error", isPresented: $showingError) {
             Button("OK") {}
@@ -58,12 +79,13 @@ struct ChallengesSettingsView: View {
 
     @Environment(\.modelContext) private var modelContext
 
-    @AppStorage("userCallsign") private var userCallsign = ""
+    @AppStorage("loggerDefaultCallsign") private var stationCallsign = ""
 
     @Query(sort: \ChallengeSource.name) private var sources: [ChallengeSource]
 
     @State private var syncService: ChallengesSyncService?
     @State private var showingAddSource = false
+    @State private var editingSource: ChallengeSource?
     @State private var showingError = false
     @State private var errorMessage = ""
 
@@ -100,17 +122,13 @@ struct ChallengesSettingsView: View {
         }
     }
 
-    private func deleteSources(at offsets: IndexSet) {
-        for index in offsets {
-            let source = sources[index]
-            // Don't allow deleting official source
-            if source.isOfficial {
-                errorMessage = "Cannot remove the official challenge server"
-                showingError = true
-                continue
-            }
-            modelContext.delete(source)
+    private func deleteSource(_ source: ChallengeSource) {
+        guard !source.isOfficial else {
+            errorMessage = "Cannot remove the official activity server"
+            showingError = true
+            return
         }
+        modelContext.delete(source)
         try? modelContext.save()
     }
 
@@ -148,7 +166,7 @@ struct AddChallengeServerSheet: View {
 
                     TextField("Display Name", text: $name)
                 } footer: {
-                    Text("Enter the URL of a community challenge server.")
+                    Text("Enter the URL of a community activity server.")
                 }
 
                 if let errorMessage {
@@ -201,6 +219,90 @@ struct AddChallengeServerSheet: View {
             errorMessage = error.localizedDescription
             isAdding = false
         }
+    }
+}
+
+// MARK: - EditChallengeServerSheet
+
+struct EditChallengeServerSheet: View {
+    // MARK: Internal
+
+    let source: ChallengeSource
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    TextField("Server URL", text: $url)
+                        .textContentType(.URL)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .keyboardType(.URL)
+
+                    TextField("Display Name", text: $name)
+                } footer: {
+                    Text("Update the server URL or display name.")
+                }
+
+                Section {
+                    Button(role: .destructive) {
+                        showingDeleteConfirmation = true
+                    } label: {
+                        HStack {
+                            Spacer()
+                            Text("Delete Server")
+                            Spacer()
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Edit Server")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        saveChanges()
+                    }
+                    .disabled(url.isEmpty || name.isEmpty)
+                }
+            }
+            .onAppear {
+                url = source.url
+                name = source.name
+            }
+            .alert("Delete Server", isPresented: $showingDeleteConfirmation) {
+                Button("Delete", role: .destructive) {
+                    modelContext.delete(source)
+                    try? modelContext.save()
+                    dismiss()
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Are you sure you want to delete \"\(source.name)\"? This cannot be undone.")
+            }
+        }
+    }
+
+    // MARK: Private
+
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
+
+    @State private var url = ""
+    @State private var name = ""
+    @State private var showingDeleteConfirmation = false
+
+    private func saveChanges() {
+        source.url = url
+        source.name = name
+        try? modelContext.save()
+        dismiss()
     }
 }
 

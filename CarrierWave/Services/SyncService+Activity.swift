@@ -36,10 +36,8 @@ extension SyncService {
         // Create local activity items
         detector.createActivityItems(from: detected)
 
-        // Report to server (fire and forget) - skip if using placeholder URL
-        if !activitySourceURL.contains("example.com") {
-            await reporter.reportActivities(detected, sourceURL: activitySourceURL)
-        }
+        // Report to server (fire and forget)
+        await reporter.reportActivities(detected, sourceURL: activitySourceURL)
 
         // Post notification for UI updates
         NotificationCenter.default.post(

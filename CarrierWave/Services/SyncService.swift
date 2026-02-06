@@ -46,7 +46,7 @@ class SyncService: ObservableObject {
     // Activity detection (internal for extension access)
     var activityDetector: ActivityDetector?
     var activityReporter: ActivityReporter?
-    let activitySourceURL = "https://challenges.example.com"
+    let activitySourceURL = "https://activities.carrierwave.app"
 
     /// Timeout for individual service sync operations (in seconds)
     let syncTimeoutSeconds: TimeInterval = 180

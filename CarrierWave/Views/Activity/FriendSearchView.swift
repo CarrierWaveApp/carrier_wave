@@ -81,7 +81,7 @@ struct FriendSearchView: View {
     @State private var sentRequests: Set<String> = []
     @State private var searchTask: Task<Void, Never>?
 
-    private let sourceURL = "https://challenges.example.com"
+    private let sourceURL = "https://activities.carrierwave.app"
 
     private var searchResultsList: some View {
         ForEach(searchResults, id: \.userId) { user in

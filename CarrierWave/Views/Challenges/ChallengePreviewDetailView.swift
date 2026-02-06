@@ -252,7 +252,7 @@ struct ChallengePreviewDetailView: View {
         }
 
         // Create local participation since server says we're joined
-        let callsign = UserDefaults.standard.string(forKey: "userCallsign") ?? ""
+        let callsign = UserDefaults.standard.string(forKey: "loggerDefaultCallsign") ?? ""
         let participation = ChallengeParticipation.join(
             challenge: challenge,
             userId: callsign,

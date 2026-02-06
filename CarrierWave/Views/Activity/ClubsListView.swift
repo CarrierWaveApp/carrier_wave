@@ -13,8 +13,8 @@ struct ClubsListView: View {
                     "No Clubs",
                     systemImage: "person.3",
                     description: Text(
-                        "Club membership is based on Ham2K Polo callsign notes lists. " +
-                            "Ask a club admin to add your callsign."
+                        "Club membership is based on Ham2K Polo callsign notes lists. "
+                            + "Ask a club admin to add your callsign."
                     )
                 )
             } else {
@@ -66,7 +66,7 @@ struct ClubsListView: View {
     @State private var errorMessage: String?
     @State private var showingError = false
 
-    private let sourceURL = "https://challenges.example.com"
+    private let sourceURL = "https://activities.carrierwave.app"
 
     private func refresh() async {
         guard let service = clubsSyncService else {

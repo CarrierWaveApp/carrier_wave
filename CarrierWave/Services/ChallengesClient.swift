@@ -10,7 +10,7 @@ import Foundation
 final class ChallengesClient {
     // MARK: Lifecycle
 
-    init(baseURL: String = "https://challenges.example.com") {
+    init(baseURL: String = "https://activities.carrierwave.app") {
         self.baseURL = baseURL
     }
 

@@ -76,7 +76,7 @@ struct FriendsListView: View {
     @State private var inviteLink: InviteLinkDTO?
 
     /// For now, hardcode the source URL (will come from settings later)
-    private let sourceURL = "https://challenges.example.com"
+    private let sourceURL = "https://activities.carrierwave.app"
 
     private var acceptedFriends: [Friendship] {
         friendships.filter(\.isAccepted)

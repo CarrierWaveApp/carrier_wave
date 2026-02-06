@@ -63,7 +63,7 @@ struct ClubDetailView: View {
     @State private var errorMessage: String?
     @State private var showingError = false
 
-    private let sourceURL = "https://challenges.example.com"
+    private let sourceURL = "https://activities.carrierwave.app"
 
     private func refresh() async {
         guard let service = clubsSyncService else {
@@ -101,11 +101,13 @@ struct MemberRow: View {
 
 #Preview {
     NavigationStack {
-        ClubDetailView(club: Club(
-            name: "Pacific Northwest DX Club",
-            poloNotesListURL: "https://example.com",
-            descriptionText: "A club for DXers in the Pacific Northwest"
-        ))
+        ClubDetailView(
+            club: Club(
+                name: "Pacific Northwest DX Club",
+                poloNotesListURL: "https://example.com",
+                descriptionText: "A club for DXers in the Pacific Northwest"
+            )
+        )
     }
     .modelContainer(for: [Club.self], inMemory: true)
 }
