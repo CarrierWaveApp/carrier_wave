@@ -108,7 +108,8 @@ enum ActivationStatsHelper {
                 dxccNumber: qso.dxcc,
                 lotwConfirmed: qso.lotwConfirmed,
                 qrzConfirmed: qso.qrzConfirmed,
-                power: qso.power
+                power: qso.power,
+                loggingSessionId: qso.loggingSessionId
             )
         }
         return QSOMapView.computeStatistics(from: snapshots)

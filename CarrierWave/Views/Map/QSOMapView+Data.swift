@@ -163,18 +163,33 @@ extension QSOMapView {
         return fromLocation.distance(from: toLocation) / 1_000.0
     }
 
+    /// Sum per-session durations (first to last QSO within each session).
+    /// Avoids counting gaps between separate logging sessions.
+    private static func sessionDuration(from snapshots: [MapQSOSnapshot]) -> TimeInterval? {
+        guard snapshots.count > 1 else {
+            return nil
+        }
+        var sessionGroups: [UUID?: [Date]] = [:]
+        for snapshot in snapshots {
+            sessionGroups[snapshot.loggingSessionId, default: []].append(snapshot.timestamp)
+        }
+        var total: TimeInterval = 0
+        for (_, timestamps) in sessionGroups {
+            let sorted = timestamps.sorted()
+            if let first = sorted.first, let last = sorted.last {
+                total += last.timeIntervalSince(first)
+            }
+        }
+        return total > 0 ? total : nil
+    }
+
     /// Compute statistics from filtered snapshots
     static func computeStatistics(from snapshots: [MapQSOSnapshot]) -> MapStatistics {
         guard !snapshots.isEmpty else {
             return .empty
         }
 
-        // Activation duration: first to last QSO
-        let timestamps = snapshots.map(\.timestamp).sorted()
-        let duration: TimeInterval? =
-            timestamps.count > 1
-                ? timestamps.last!.timeIntervalSince(timestamps.first!)
-                : nil
+        let duration = sessionDuration(from: snapshots)
 
         // QSO rate: only meaningful if duration > 0
         let rate: Double? =

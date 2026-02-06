@@ -21,6 +21,7 @@ struct MapQSOSnapshot: Sendable, Identifiable {
     let lotwConfirmed: Bool
     let qrzConfirmed: Bool
     let power: Int?
+    let loggingSessionId: UUID?
 }
 
 // MARK: - MapLoadingProgress
@@ -178,7 +179,8 @@ actor MapDataLoadingActor {
                 dxccNumber: qso.dxccEntity?.number,
                 lotwConfirmed: qso.lotwConfirmed,
                 qrzConfirmed: qso.qrzConfirmed,
-                power: qso.power
+                power: qso.power,
+                loggingSessionId: qso.loggingSessionId
             )
             result.snapshots.append(snapshot)
 

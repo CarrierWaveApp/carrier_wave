@@ -88,14 +88,32 @@ struct POTAActivation: Identifiable, Equatable {
 
     // MARK: - Stats for Sharing
 
-    /// Duration of the activation (first QSO to last QSO)
+    /// Duration of the activation, summing individual session durations
+    /// Groups QSOs by logging session and sums each session's span (first to last QSO),
+    /// so gaps between sessions don't inflate the total.
     var duration: TimeInterval {
-        guard let first = qsos.min(by: { $0.timestamp < $1.timestamp }),
-              let last = qsos.max(by: { $0.timestamp < $1.timestamp })
-        else {
+        guard !qsos.isEmpty else {
             return 0
         }
-        return last.timestamp.timeIntervalSince(first.timestamp)
+
+        // Group QSOs by logging session ID (nil = no session)
+        var sessionGroups: [UUID?: [QSO]] = [:]
+        for qso in qsos {
+            sessionGroups[qso.loggingSessionId, default: []].append(qso)
+        }
+
+        // Sum the duration of each session group
+        var total: TimeInterval = 0
+        for (_, groupQSOs) in sessionGroups {
+            guard let first = groupQSOs.min(by: { $0.timestamp < $1.timestamp }),
+                  let last = groupQSOs.max(by: { $0.timestamp < $1.timestamp })
+            else {
+                continue
+            }
+            total += last.timestamp.timeIntervalSince(first.timestamp)
+        }
+
+        return total
     }
 
     /// Formatted duration string (e.g., "2h 15m" or "45m")
