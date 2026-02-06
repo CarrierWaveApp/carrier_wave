@@ -406,7 +406,7 @@ struct SettingsMainView: View {
                 Toggle("Bypass POTA Maintenance", isOn: $bypassPOTAMaintenance)
 
                 NavigationLink {
-                    SyncDebugView()
+                    SyncDebugView(potaAuth: potaAuth)
                 } label: {
                     Label("Sync Debug Log", systemImage: "doc.text.magnifyingglass")
                 }
@@ -511,7 +511,7 @@ struct SettingsMainView: View {
             HStack {
                 Text("Version")
                 Spacer()
-                Text("1.22.1")
+                Text("1.22.2")
                     .foregroundStyle(.secondary)
             }
 

@@ -8,6 +8,15 @@ All notable changes to Carrier Wave will be documented in this file.
 - Fix POTA uploads silently succeeding without sending data for two-fer (multi-park) activations. Park reference matching now correctly handles comma-separated references like "US-1044, US-3791"
 - Fix legacy POTA needsUpload flag not being cleared after per-park uploads complete, causing repeated upload attempts
 
+## [1.22.2] - 2026-02-06
+
+### Added
+- POTA Jobs tab in Sync Debug view — centralized view of all POTA upload jobs sorted by date
+
+### Fixed
+- LoFi import now returns all park references for two-fer activations instead of only the first park
+- Malformed park references from upstream APIs are now sanitized on import (e.g., "US1849" → "US-1849", bare numbers like "3687" dropped)
+
 ## [1.22.1] - 2026-02-05
 
 ### Fixed

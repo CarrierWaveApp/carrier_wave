@@ -9,12 +9,15 @@ struct SyncDebugView: View {
 
     @ObservedObject var debugLog = SyncDebugLog.shared
 
+    var potaAuth: POTAAuthService?
+
     var body: some View {
         VStack(spacing: 0) {
             Picker("View", selection: $selectedTab) {
                 Text("Raw QSOs").tag(0)
                 Text("Sync Log").tag(1)
                 Text("Stats").tag(2)
+                Text("POTA Jobs").tag(3)
             }
             .pickerStyle(.segmented)
             .padding()
@@ -23,8 +26,10 @@ struct SyncDebugView: View {
                 rawQSOsView
             } else if selectedTab == 1 {
                 syncLogView
-            } else {
+            } else if selectedTab == 2 {
                 serviceStatsView
+            } else {
+                potaJobsView
             }
         }
         .navigationTitle("Sync Debug")
@@ -49,6 +54,16 @@ struct SyncDebugView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var selectedTab = 0
     @State private var serviceCounts: [ServiceType: Int] = [:]
+    @State private var potaJobs: [POTAJob] = []
+    @State private var isLoadingJobs = false
+    @State private var jobsError: String?
+
+    private var potaClient: POTAClient? {
+        guard let potaAuth else {
+            return nil
+        }
+        return POTAClient(authService: potaAuth)
+    }
 
     private var rawQSOsView: some View {
         List {
@@ -114,6 +129,59 @@ struct SyncDebugView: View {
         }
     }
 
+    private var potaJobsView: some View {
+        List {
+            if let potaAuth, potaAuth.isConfigured {
+                if let error = jobsError {
+                    Section {
+                        HStack {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundStyle(.orange)
+                            Text(error)
+                                .font(.caption)
+                            Spacer()
+                            Button("Retry") {
+                                Task { await loadJobs() }
+                            }
+                            .font(.caption)
+                        }
+                    }
+                }
+
+                ForEach(potaJobs) { job in
+                    POTAJobRow(job: job, potaClient: potaClient)
+                }
+
+                if potaJobs.isEmpty, !isLoadingJobs {
+                    ContentUnavailableView(
+                        "No Jobs",
+                        systemImage: "tray",
+                        description: Text("No POTA upload jobs found.")
+                    )
+                }
+            } else {
+                ContentUnavailableView(
+                    "Not Authenticated",
+                    systemImage: "person.crop.circle.badge.xmark",
+                    description: Text("Sign in to POTA in Settings to view upload jobs.")
+                )
+            }
+        }
+        .overlay {
+            if isLoadingJobs {
+                ProgressView()
+            }
+        }
+        .refreshable {
+            await loadJobs()
+        }
+        .task {
+            if potaJobs.isEmpty {
+                await loadJobs()
+            }
+        }
+    }
+
     private func loadServiceCounts() {
         var counts: [ServiceType: Int] = [:]
         do {
@@ -129,6 +197,23 @@ struct SyncDebugView: View {
             }
         }
         serviceCounts = counts
+    }
+
+    private func loadJobs() async {
+        guard let potaClient else {
+            return
+        }
+        isLoadingJobs = true
+        jobsError = nil
+
+        do {
+            let fetchedJobs = try await potaClient.fetchJobs()
+            potaJobs = fetchedJobs.sorted { $0.submitted > $1.submitted }
+        } catch {
+            jobsError = error.localizedDescription
+        }
+
+        isLoadingJobs = false
     }
 }
 
