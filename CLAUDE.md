@@ -328,6 +328,11 @@ I'll occasionally store human-generated plans/bugs/etc in `docs/plans/human` and
 
 **NEVER use beads.** Do not invoke any `beads:*` skills. This project does not use beads.
 
+**Workflow:**
+- At the start of a task, ask the user if there is a relevant Linear issue to associate with
+- Include the issue ID (e.g., `CAR-45`) in commit messages so Linear links them automatically
+- After committing, post a summarized description of the changes as a comment on the Linear issue using `linear issue comment add <ID> -b "<summary>"`
+
 ## Git Workflow
 
 **Do NOT use git worktrees.** All work should be done on the main branch or feature branches in the primary working directory.
