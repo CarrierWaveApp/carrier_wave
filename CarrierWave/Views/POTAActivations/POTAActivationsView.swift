@@ -287,6 +287,7 @@ struct POTAActivationsContentView: View {
             onExportTapped: { activationToExport = activation },
             onMapTapped: { activationToMap = activation },
             onEditTapped: { activationToEdit = activation },
+            onForceReuploadTapped: { forceReupload(activation) },
             showParkReference: showParkReference,
             parkName: parkName(for: activation.parkReference),
             uploadErrors: uploadErrorsByActivation[activation.id] ?? [:],
@@ -508,15 +509,28 @@ extension POTAActivationsContentView {
 
     /// Upload an activation to POTA. Called from ActivationRow's upload button.
     func performUpload(for activation: POTAActivation) async {
+        let debugLog = SyncDebugLog.shared
         guard let potaClient else {
+            debugLog.error("performUpload: POTA client not available", service: .pota)
             errorMessage = "POTA client not available."
             return
         }
 
         let parksToUpload = activation.parksNeedingUpload
         guard !parksToUpload.isEmpty else {
+            debugLog.debug(
+                "performUpload: no parks need upload for \(activation.parkReference)",
+                service: .pota
+            )
             return
         }
+
+        debugLog.info(
+            "performUpload: \(activation.parkReference) - "
+                + "\(parksToUpload.count) park(s) to upload: \(parksToUpload.joined(separator: ", ")), "
+                + "\(activation.qsoCount) total QSOs, \(activation.pendingCount) pending",
+            service: .pota
+        )
 
         var errors: [String: String] = [:]
         for park in parksToUpload {
@@ -527,35 +541,95 @@ extension POTAActivationsContentView {
 
         if errors.isEmpty {
             uploadErrorsByActivation.removeValue(forKey: activation.id)
+            debugLog.info(
+                "performUpload: all parks uploaded successfully for \(activation.parkReference)",
+                service: .pota
+            )
         } else {
             uploadErrorsByActivation[activation.id] = errors
             let msg =
                 errors.count == parksToUpload.count
                     ? "all" : "\(errors.count) of \(parksToUpload.count)"
             errorMessage = "Upload failed for \(msg) parks"
+            debugLog.error(
+                "performUpload: \(errors.count) park(s) failed for \(activation.parkReference): "
+                    + errors.map { "\($0.key): \($0.value)" }.joined(separator: "; "),
+                service: .pota
+            )
         }
     }
 
     private func uploadPark(_ park: String, activation: POTAActivation, client: POTAClient) async
         -> String?
     {
+        let debugLog = SyncDebugLog.shared
         let pendingQSOs = activation.pendingQSOs(forPark: park)
         guard !pendingQSOs.isEmpty else {
+            debugLog.debug("uploadPark: no pending QSOs for park \(park)", service: .pota)
             return nil
+        }
+
+        debugLog.info(
+            "uploadPark: uploading \(pendingQSOs.count) QSO(s) to park \(park)",
+            service: .pota
+        )
+        for qso in pendingQSOs.prefix(20) {
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "yyyy-MM-dd HH:mm"
+            dateFormatter.timeZone = TimeZone(identifier: "UTC")
+            let dateStr = dateFormatter.string(from: qso.timestamp)
+            let presenceState = qso.potaPresence(forPark: park).map {
+                "isPresent=\($0.isPresent), isSubmitted=\($0.isSubmitted), "
+                    + "needsUpload=\($0.needsUpload), rejected=\($0.uploadRejected)"
+            } ?? "no presence"
+            debugLog.debug(
+                "  - \(qso.callsign) @ \(dateStr) | band=\(qso.band) mode=\(qso.mode) "
+                    + "| park=\(qso.parkReference ?? "nil") | [\(presenceState)]",
+                service: .pota
+            )
+        }
+        if pendingQSOs.count > 20 {
+            debugLog.debug("  ... and \(pendingQSOs.count - 20) more", service: .pota)
         }
 
         do {
             let result = try await client.uploadActivationWithRecording(
                 parkReference: park, qsos: pendingQSOs, modelContext: modelContext
             )
+            debugLog.info(
+                "uploadPark: result for \(park) - success=\(result.success), "
+                    + "qsosAccepted=\(result.qsosAccepted), "
+                    + "message=\(result.message ?? "nil")",
+                service: .pota
+            )
             if result.success {
                 await MainActor.run {
-                    pendingQSOs.forEach { $0.markSubmittedToPark(park, context: modelContext) }
+                    for qso in pendingQSOs {
+                        let beforeState = qso.potaPresence(forPark: park).map {
+                            "isPresent=\($0.isPresent), isSubmitted=\($0.isSubmitted)"
+                        } ?? "no presence"
+                        qso.markSubmittedToPark(park, context: modelContext)
+                        let afterState = qso.potaPresence(forPark: park).map {
+                            "isPresent=\($0.isPresent), isSubmitted=\($0.isSubmitted)"
+                        } ?? "no presence"
+                        debugLog.debug(
+                            "markSubmittedToPark \(park): \(qso.callsign) "
+                                + "[\(beforeState)] -> [\(afterState)]",
+                            service: .pota
+                        )
+                    }
                 }
                 return nil
             }
+            debugLog.warning(
+                "uploadPark: upload returned success=false for \(park)", service: .pota
+            )
             return "Upload returned success=false"
         } catch {
+            debugLog.error(
+                "uploadPark: exception for \(park): \(error.localizedDescription)",
+                service: .pota
+            )
             return error.localizedDescription
         }
     }
@@ -566,6 +640,31 @@ extension POTAActivationsContentView {
             qso.markUploadRejected(for: .pota, context: modelContext)
         }
         activationToReject = nil
+    }
+
+    /// Force reset all QSOs in an activation back to needing upload (debug feature)
+    func forceReupload(_ activation: POTAActivation) {
+        let debugLog = SyncDebugLog.shared
+        debugLog.info(
+            "forceReupload: resetting \(activation.qsoCount) QSO(s) for "
+                + "\(activation.parkReference) parks=\(activation.parks.joined(separator: ", "))",
+            service: .pota
+        )
+
+        for qso in activation.qsos {
+            for park in activation.parks {
+                qso.forceResetParkUpload(park, context: modelContext)
+            }
+        }
+
+        try? modelContext.save()
+        debugLog.info(
+            "forceReupload: reset complete for \(activation.parkReference)",
+            service: .pota
+        )
+
+        // Reload QSOs so the UI reflects the changes
+        Task { await loadParkQSOs() }
     }
 
     /// Save metadata edits for an activation

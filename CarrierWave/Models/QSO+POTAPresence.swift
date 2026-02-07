@@ -62,6 +62,9 @@ extension QSO {
             if !existing.isPresent {
                 existing.isSubmitted = true
                 existing.needsUpload = false
+            } else {
+                print("[POTA] markSubmittedToPark: skipped \(callsign) for \(normalizedPark) "
+                    + "- already confirmed (isPresent=true)")
             }
         } else {
             let newPresence = ServicePresence.submitted(
@@ -71,6 +74,8 @@ extension QSO {
             )
             context.insert(newPresence)
             servicePresence.append(newPresence)
+            print("[POTA] markSubmittedToPark: created new submitted presence for "
+                + "\(callsign) park=\(normalizedPark)")
         }
 
         // Clear the legacy needsUpload flag since we've submitted
@@ -93,6 +98,7 @@ extension QSO {
 
     /// Confirm a submitted upload after POTA job completed successfully
     func confirmUploadedToPark(_ park: String, context: ModelContext) {
+        print("[POTA] confirmUploadedToPark: \(callsign) park=\(park.uppercased())")
         markUploadedToPark(park, context: context)
     }
 
@@ -101,9 +107,41 @@ extension QSO {
         let normalizedPark = park.uppercased()
 
         if let existing = potaPresence(forPark: normalizedPark) {
+            print("[POTA] resetSubmittedToPark: \(callsign) park=\(normalizedPark) "
+                + "- was isPresent=\(existing.isPresent), isSubmitted=\(existing.isSubmitted)")
             existing.isSubmitted = false
             existing.needsUpload = true
             existing.isPresent = false
+        } else {
+            print("[POTA] resetSubmittedToPark: \(callsign) park=\(normalizedPark) "
+                + "- no presence record found")
+        }
+    }
+
+    /// Force reset all POTA presence for a specific park back to needing upload.
+    /// Used by the debug "Force Reupload" feature.
+    func forceResetParkUpload(_ park: String, context: ModelContext) {
+        let normalizedPark = park.uppercased()
+
+        if let existing = potaPresence(forPark: normalizedPark) {
+            print("[POTA] forceResetParkUpload: \(callsign) park=\(normalizedPark) "
+                + "- was isPresent=\(existing.isPresent), isSubmitted=\(existing.isSubmitted), "
+                + "needsUpload=\(existing.needsUpload)")
+            existing.isPresent = false
+            existing.isSubmitted = false
+            existing.needsUpload = true
+            existing.uploadRejected = false
+            existing.lastConfirmedAt = nil
+        }
+
+        // Also reset legacy presence if it exists
+        if let legacyPresence = servicePresence.first(where: {
+            $0.serviceType == .pota && $0.parkReference == nil
+        }) {
+            legacyPresence.isPresent = false
+            legacyPresence.isSubmitted = false
+            legacyPresence.needsUpload = true
+            legacyPresence.uploadRejected = false
         }
     }
 

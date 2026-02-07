@@ -18,6 +18,7 @@ struct ActivationRow: View {
         onExportTapped: @escaping () -> Void,
         onMapTapped: @escaping () -> Void,
         onEditTapped: @escaping () -> Void,
+        onForceReuploadTapped: @escaping () -> Void = {},
         showParkReference: Bool = false,
         parkName: String? = nil,
         uploadErrors: [String: String] = [:],
@@ -34,6 +35,7 @@ struct ActivationRow: View {
         self.onExportTapped = onExportTapped
         self.onMapTapped = onMapTapped
         self.onEditTapped = onEditTapped
+        self.onForceReuploadTapped = onForceReuploadTapped
         self.showParkReference = showParkReference
         self.parkName = parkName
         self.uploadErrors = uploadErrors
@@ -58,6 +60,7 @@ struct ActivationRow: View {
     let onExportTapped: () -> Void
     let onMapTapped: () -> Void
     let onEditTapped: () -> Void
+    let onForceReuploadTapped: () -> Void
     var showParkReference: Bool = false
     var parkName: String?
     /// Upload errors by park (for two-fer error display)
@@ -220,6 +223,14 @@ struct ActivationRow: View {
                             Label("Reject Upload", systemImage: "xmark.circle")
                         }
                     }
+                    if debugMode {
+                        Divider()
+                        Button {
+                            onForceReuploadTapped()
+                        } label: {
+                            Label("Force Reupload", systemImage: "arrow.counterclockwise.circle")
+                        }
+                    }
                 } label: {
                     Image(systemName: "ellipsis.circle")
                         .font(.body)
@@ -248,6 +259,8 @@ struct ActivationRow: View {
     }
 
     // MARK: Private
+
+    @AppStorage("debugMode") private var debugMode = false
 
     /// Auto-expand when there are QSOs to upload so the upload button is visible
     @State private var isExpanded: Bool
