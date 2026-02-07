@@ -322,6 +322,12 @@ DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...
 
 I'll occasionally store human-generated plans/bugs/etc in `docs/plans/human` and `docs/bugs`. Look through these to find new work to do. Mark the documents as done in a way that you can easily find once they're completed.
 
+## Issue Tracking
+
+**Use Linear for all issue tracking.** Issue references like CAR-45 are Linear issues. Use the `linear-cli` skill to interact with them.
+
+**NEVER use beads.** Do not invoke any `beads:*` skills. This project does not use beads.
+
 ## Git Workflow
 
 **Do NOT use git worktrees.** All work should be done on the main branch or feature branches in the primary working directory.

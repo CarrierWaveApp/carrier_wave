@@ -84,6 +84,97 @@ extension SyncService {
         )
     }
 
+    /// Reconcile POTA presence records against upload job log.
+    /// Fetches jobs from POTA API, then checks every POTA ServicePresence record:
+    /// - isPresent=true with no completed job → reset to needsUpload=true
+    /// - isSubmitted=true with completed job → confirm as uploaded
+    /// - isSubmitted=true with failed job → reset to needsUpload=true
+    func reconcilePOTAPresenceAsync() async {
+        let debugLog = SyncDebugLog.shared
+
+        guard potaAuthService.isConfigured else {
+            debugLog.debug("POTA reconciliation skipped: not configured", service: .pota)
+            return
+        }
+
+        do {
+            let jobs = try await potaClient.fetchJobs()
+            let (confirmedKeys, failedKeys) = buildPOTAActivationKeys(from: jobs)
+
+            debugLog.debug(
+                "POTA reconciliation: \(jobs.count) jobs, "
+                    + "\(confirmedKeys.count) confirmed, \(failedKeys.count) failed",
+                service: .pota
+            )
+
+            let result = try await Self.processingActor.reconcilePOTAPresence(
+                confirmedActivationKeys: confirmedKeys,
+                failedActivationKeys: failedKeys,
+                container: modelContext.container
+            )
+
+            logPOTAReconcileResult(result)
+        } catch {
+            debugLog.error(
+                "POTA reconciliation failed: \(error.localizedDescription)", service: .pota
+            )
+        }
+    }
+
+    /// Build confirmed and failed activation key sets from POTA jobs.
+    /// Key format: "PARKREF|CALLSIGN|YYYY-MM-DD"
+    private func buildPOTAActivationKeys(
+        from jobs: [POTAJob]
+    ) -> (confirmed: Set<String>, failed: Set<String>) {
+        var confirmedKeys = Set<String>()
+        var failedKeys = Set<String>()
+
+        for job in jobs {
+            guard let callsign = job.callsignUsed, let utcDate = job.utcDateString else {
+                continue
+            }
+            let key = "\(job.reference.uppercased())|\(callsign.uppercased())|\(utcDate)"
+
+            if job.status == .completed {
+                confirmedKeys.insert(key)
+            } else if job.status.isFailure {
+                failedKeys.insert(key)
+            }
+        }
+
+        // Remove failed keys that also have a completed job
+        failedKeys.subtract(confirmedKeys)
+        return (confirmedKeys, failedKeys)
+    }
+
+    /// Log the results of POTA presence reconciliation.
+    private func logPOTAReconcileResult(_ result: QSOProcessingActor.POTAReconcileResult) {
+        let debugLog = SyncDebugLog.shared
+        if result.resetCount > 0 {
+            debugLog.warning(
+                "POTA reconciliation: reset \(result.resetCount) presence record(s) "
+                    + "(DB said uploaded but no completed job found)",
+                service: .pota
+            )
+        }
+        if result.confirmedCount > 0 {
+            debugLog.info(
+                "POTA reconciliation: confirmed \(result.confirmedCount) submitted upload(s)",
+                service: .pota
+            )
+        }
+        if result.failedResetCount > 0 {
+            debugLog.warning(
+                "POTA reconciliation: reset \(result.failedResetCount) submitted upload(s) "
+                    + "(job failed)",
+                service: .pota
+            )
+        }
+        if result.resetCount == 0, result.confirmedCount == 0, result.failedResetCount == 0 {
+            debugLog.debug("POTA reconciliation: no changes needed", service: .pota)
+        }
+    }
+
     /// Detect and repair QSOs missing ServicePresence records for a service.
     func repairOrphanedQSOsAsync(for service: ServiceType) async {
         let debugLog = SyncDebugLog.shared

@@ -465,6 +465,8 @@ extension QSOProcessingActor {
         return false
     }
 
+    // POTA Presence Reconciliation is in QSOProcessingActor+POTAReconcile.swift
+
     /// Compute deduplication key from QSO fields.
     /// Duplicates the logic from QSO.deduplicationKey to avoid actor isolation issues.
     static func computeDeduplicationKey(

@@ -100,8 +100,7 @@ class SyncService: ObservableObject {
             await processActivities(newQSOs: createdQSOs)
         }
 
-        // PHASE 2.5b: Reconcile QRZ presence - only on full sync (not incremental)
-        // Incremental sync doesn't have the complete picture, so reconciliation would be inaccurate
+        // PHASE 2.5b: Reconcile QRZ presence (full sync only — incremental is incomplete)
         if !qrzWasIncremental {
             let qrzDownloadedKeys = Set(
                 allFetched.filter { $0.source == .qrz }.map(\.deduplicationKey)
@@ -111,20 +110,21 @@ class SyncService: ObservableObject {
             }
         }
 
-        // PHASE 2.5c: Repair orphaned QSOs (logged when services weren't configured)
+        // PHASE 2.5c: Reconcile POTA presence against job log
+        await reconcilePOTAPresenceAsync()
+
+        // PHASE 2.5d: Repair orphaned QSOs (logged when services weren't configured)
         if qrzClient.hasApiKey() {
             await repairOrphanedQSOsAsync(for: .qrz)
         }
 
-        // PHASE 2.5d: Clear upload flags on metadata pseudo-modes (WEATHER, SOLAR, NOTE)
+        // PHASE 2.5e: Clear upload flags on metadata pseudo-modes (WEATHER, SOLAR, NOTE)
         await clearMetadataUploadFlagsAsync()
 
-        // PHASE 2.5e: Clear upload flags on QSOs from non-primary callsigns
-        // These will never upload because services are configured with current callsign
+        // PHASE 2.5f: Clear upload flags on QSOs from non-primary callsigns
         await clearNonPrimaryCallsignUploadFlagsAsync()
 
-        // PHASE 2.5f: Repair missing DXCC from rawADIF
-        // Backfills DXCC for QSOs imported before the fix was applied
+        // PHASE 2.5g: Repair missing DXCC from rawADIF
         await repairMissingDXCCAsync()
 
         // Refresh main context to pick up changes from background actor
@@ -133,8 +133,7 @@ class SyncService: ObservableObject {
         // PHASE 3: Upload to all destinations in parallel (unless read-only mode)
         await performUploadsIfEnabled(into: &result, debugLog: debugLog)
 
-        // Only save if uploads made changes (presence records modified)
-        // Background processing actor already saved QSO/presence changes
+        // Only save if uploads made changes (background actor already saved QSO changes)
         if modelContext.hasChanges {
             try modelContext.save()
         }
@@ -252,6 +251,9 @@ class SyncService: ObservableObject {
         if !createdQSOs.isEmpty {
             await processActivities(newQSOs: createdQSOs)
         }
+
+        // Reconcile POTA presence against job log
+        await reconcilePOTAPresenceAsync()
 
         // Refresh main context to pick up changes from background actor
         modelContext.rollback()
