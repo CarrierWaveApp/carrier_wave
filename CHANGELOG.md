@@ -4,6 +4,8 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.25.0] - 2026-02-07
+
 ### Added
 - Add friend request notifications: badge on Activity tab and Friends toolbar button showing pending incoming request count, plus a banner card in the Activity feed that links to the Friends list
 - Add detailed logging throughout POTA upload flow — upload request/response at INFO level (HTTP status codes, response bodies, ADIF content, request URLs), per-park timing, content summaries (bands/modes/date range), and per-job status/QSO count breakdowns during reconciliation
