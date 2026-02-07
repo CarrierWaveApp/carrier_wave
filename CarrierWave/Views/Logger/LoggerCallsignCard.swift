@@ -133,10 +133,16 @@ struct LoggerCallsignCard: View {
                 .foregroundStyle(.secondary)
                 .font(.caption)
 
-            Text(note)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(2)
+            Group {
+                if let attributed = try? AttributedString(markdown: note) {
+                    Text(attributed)
+                } else {
+                    Text(note)
+                }
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .lineLimit(2)
         }
         .padding(.top, 4)
     }
