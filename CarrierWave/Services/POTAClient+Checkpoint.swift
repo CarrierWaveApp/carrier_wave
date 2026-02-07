@@ -321,6 +321,7 @@ extension POTAClient {
 
     func fetchJobs() async throws -> [POTAJob] {
         let debugLog = SyncDebugLog.shared
+        let fetchStart = Date()
         let token = try await authService.ensureValidToken()
 
         guard let url = URL(string: "\(baseURL)/user/jobs") else {
@@ -334,13 +335,20 @@ extension POTAClient {
         debugLog.debug("GET /user/jobs", service: .pota)
 
         let (data, response) = try await URLSession.shared.data(for: request)
+        let fetchDurationMs = Int(Date().timeIntervalSince(fetchStart) * 1_000)
 
         guard let httpResponse = response as? HTTPURLResponse else {
-            debugLog.error("Invalid response (not HTTP)", service: .pota)
+            debugLog.error(
+                "Invalid response (not HTTP) (\(fetchDurationMs)ms)", service: .pota
+            )
             throw POTAError.fetchFailed("Invalid response")
         }
 
-        debugLog.debug("Jobs response: \(httpResponse.statusCode)", service: .pota)
+        debugLog.debug(
+            "Jobs response: HTTP \(httpResponse.statusCode), "
+                + "\(data.count) bytes (\(fetchDurationMs)ms)",
+            service: .pota
+        )
 
         guard httpResponse.statusCode == 200 else {
             if httpResponse.statusCode == 401 || httpResponse.statusCode == 403 {
@@ -354,13 +362,28 @@ extension POTAClient {
         }
 
         let jobs = try JSONDecoder().decode([POTAJob].self, from: data)
-        debugLog.info("Fetched \(jobs.count) POTA jobs", service: .pota)
+
+        // Log job status breakdown
+        let statusCounts = Dictionary(grouping: jobs, by: \.status)
+            .mapValues(\.count)
+            .sorted { $0.key.rawValue < $1.key.rawValue }
+            .map { "\($0.key.displayName)=\($0.value)" }
+            .joined(separator: ", ")
+        let totalQSOs = jobs.reduce(0) { $0 + $1.totalQsos }
+        let totalInserted = jobs.reduce(0) { $0 + $1.insertedQsos }
+        debugLog.info(
+            "Fetched \(jobs.count) POTA jobs (\(fetchDurationMs)ms): "
+                + "\(statusCounts). totalQSOs=\(totalQSOs), inserted=\(totalInserted)",
+            service: .pota
+        )
+
         return jobs
     }
 
     /// Fetch detailed information for a specific job including errors and warnings
     func fetchJobDetails(jobId: Int) async throws -> POTAJobDetails {
         let debugLog = SyncDebugLog.shared
+        let fetchStart = Date()
         let token = try await authService.ensureValidToken()
 
         guard let url = URL(string: "\(baseURL)/user/jobs/details/\(jobId)") else {
@@ -374,13 +397,20 @@ extension POTAClient {
         debugLog.debug("GET /user/jobs/details/\(jobId)", service: .pota)
 
         let (data, response) = try await URLSession.shared.data(for: request)
+        let fetchDurationMs = Int(Date().timeIntervalSince(fetchStart) * 1_000)
 
         guard let httpResponse = response as? HTTPURLResponse else {
-            debugLog.error("Invalid response (not HTTP)", service: .pota)
+            debugLog.error(
+                "Invalid response (not HTTP) (\(fetchDurationMs)ms)", service: .pota
+            )
             throw POTAError.fetchFailed("Invalid response")
         }
 
-        debugLog.debug("Job details response: \(httpResponse.statusCode)", service: .pota)
+        debugLog.debug(
+            "Job details response: HTTP \(httpResponse.statusCode), "
+                + "\(data.count) bytes (\(fetchDurationMs)ms)",
+            service: .pota
+        )
 
         guard httpResponse.statusCode == 200 else {
             if httpResponse.statusCode == 401 || httpResponse.statusCode == 403 {
@@ -394,11 +424,40 @@ extension POTAClient {
         }
 
         let details = try JSONDecoder().decode(POTAJobDetails.self, from: data)
+        logJobDetails(jobId: jobId, details: details, durationMs: fetchDurationMs)
+        return details
+    }
+
+    /// Log detailed job information for debugging
+    private func logJobDetails(jobId: Int, details: POTAJobDetails, durationMs: Int) {
+        let debugLog = SyncDebugLog.shared
         debugLog.info(
-            "Fetched job \(jobId) details: \(details.errors.count) errors, \(details.warnings.count) warnings",
+            "Fetched job \(jobId) details (\(durationMs)ms): "
+                + "\(details.errors.count) errors, \(details.warnings.count) warnings"
+                + (details.filename.map { ", file=\($0)" } ?? "")
+                + (details.stationCallsign.map { ", callsign=\($0)" } ?? ""),
             service: .pota
         )
-        return details
+
+        for error in details.errors {
+            debugLog.debug("  Job \(jobId) error: \(error)", service: .pota)
+        }
+        for warning in details.warnings {
+            debugLog.debug("  Job \(jobId) warning: \(warning)", service: .pota)
+        }
+
+        if let totals = details.totals {
+            for (key, breakdown) in totals {
+                debugLog.debug(
+                    "  Job \(jobId) totals[\(key)]: "
+                        + "park=\(breakdown.activationPark ?? "n/a") "
+                        + "date=\(breakdown.activationDate ?? "n/a") "
+                        + "CW=\(breakdown.cw) DATA=\(breakdown.data) "
+                        + "PHONE=\(breakdown.phone) TOTAL=\(breakdown.total)",
+                    service: .pota
+                )
+            }
+        }
     }
 }
 

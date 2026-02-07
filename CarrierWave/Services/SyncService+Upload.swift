@@ -98,7 +98,7 @@ extension SyncService {
 
         await MainActor.run {
             let totalNeeding = qsosNeedingUpload?.filter { $0.needsUpload(to: .pota) }.count ?? 0
-            SyncDebugLog.shared.debug(
+            SyncDebugLog.shared.info(
                 "POTA upload candidates: \(totalNeeding) need upload, "
                     + "\(potaQSOs.count) have park ref",
                 service: .pota
@@ -122,18 +122,6 @@ extension SyncService {
 
         await logPendingQSOs(potaQSOs, service: .pota)
         let (_, result) = await uploadPOTABatch(qsos: potaQSOs, timeout: timeout)
-        await MainActor.run {
-            switch result {
-            case let .success(count):
-                SyncDebugLog.shared.debug(
-                    "POTA batch result: success, \(count) uploaded", service: .pota
-                )
-            case let .failure(error):
-                SyncDebugLog.shared.error(
-                    "POTA batch result: failed - \(error.localizedDescription)", service: .pota
-                )
-            }
-        }
         await logPOTAQSOsWithoutPark(noPark)
 
         return (result: result, maintenanceSkipped: false)
@@ -145,40 +133,20 @@ extension SyncService {
             return
         }
         await MainActor.run {
+            let callsigns = qsos.prefix(5).map(\.callsign).joined(separator: ", ")
+            let more = qsos.count > 5 ? " (+\(qsos.count - 5) more)" : ""
             SyncDebugLog.shared.warning(
-                "\(qsos.count) QSO(s) need POTA upload but have no park reference",
+                "\(qsos.count) QSO(s) need POTA upload but have no park reference: "
+                    + "\(callsigns)\(more)",
                 service: .pota
             )
-            for qso in qsos.prefix(10) {
-                let dateStr = Self.debugDateFormatter.string(from: qso.timestamp)
-                SyncDebugLog.shared.debug(
-                    "  - \(qso.callsign) @ \(dateStr) (no park ref)",
-                    service: .pota
-                )
-            }
-            if qsos.count > 10 {
-                SyncDebugLog.shared.debug(
-                    "  ... and \(qsos.count - 10) more",
-                    service: .pota
-                )
-            }
         }
     }
 
     /// Partition QSOs into valid (uploadable) and invalid (missing required fields)
     private func partitionQSOsByValidity(_ qsos: [QSO]) -> (valid: [QSO], invalid: [QSO]) {
-        var valid: [QSO] = []
-        var invalid: [QSO] = []
-
-        for qso in qsos {
-            if qso.hasRequiredFieldsForUpload {
-                valid.append(qso)
-            } else {
-                invalid.append(qso)
-            }
-        }
-
-        return (valid, invalid)
+        let grouped = Dictionary(grouping: qsos) { $0.hasRequiredFieldsForUpload }
+        return (valid: grouped[true] ?? [], invalid: grouped[false] ?? [])
     }
 
     /// Log QSOs that can't be uploaded due to missing required fields
@@ -187,11 +155,12 @@ extension SyncService {
             return
         }
         await MainActor.run {
-            let msg =
+            SyncDebugLog.shared.actionRequired(
                 "\(qsos.count) QSO(s) cannot upload to \(service.displayName) "
-                    + "- edit in Logs to add missing band/frequency"
-            SyncDebugLog.shared.actionRequired(msg, service: service)
-            for qso in qsos.prefix(10) {
+                    + "- edit in Logs to add missing band/frequency",
+                service: service
+            )
+            for qso in qsos.prefix(5) {
                 let dateStr = Self.debugDateFormatter.string(from: qso.timestamp)
                 var issues: [String] = []
                 if qso.band.isEmpty || qso.band == "Unknown" {
@@ -200,16 +169,14 @@ extension SyncService {
                 if qso.frequency == nil {
                     issues.append("no frequency")
                 }
-                let issueStr = issues.joined(separator: ", ")
                 SyncDebugLog.shared.actionRequired(
-                    "  \(qso.callsign) @ \(dateStr) (\(issueStr))",
+                    "  \(qso.callsign) @ \(dateStr) (\(issues.joined(separator: ", ")))",
                     service: service
                 )
             }
-            if qsos.count > 10 {
+            if qsos.count > 5 {
                 SyncDebugLog.shared.actionRequired(
-                    "  ... and \(qsos.count - 10) more with missing fields",
-                    service: service
+                    "  ... and \(qsos.count - 5) more", service: service
                 )
             }
         }
@@ -222,31 +189,17 @@ extension SyncService {
                 "Pending \(service.displayName) uploads: \(qsos.count) QSO(s)",
                 service: service
             )
-
-            // Log details for each pending QSO (up to 20)
-            for qso in qsos.prefix(20) {
+            for qso in qsos.prefix(10) {
                 let dateStr = Self.debugDateFormatter.string(from: qso.timestamp)
-                let presence = qso.presence(for: service)
-                let presenceInfo =
-                    presence.map {
-                        "isPresent=\($0.isPresent), needsUpload=\($0.needsUpload), rejected=\($0.uploadRejected)"
-                    } ?? "no presence record"
-
-                var details = "\(qso.callsign) @ \(dateStr)"
-                details += " | band=\(qso.band), mode=\(qso.mode)"
-                if let park = qso.parkReference, !park.isEmpty {
-                    details += " | park=\(park)"
-                }
-                details += " | myCall=\(qso.myCallsign)"
-                details += " | [\(presenceInfo)]"
-
-                SyncDebugLog.shared.debug("  - \(details)", service: service)
-            }
-
-            if qsos.count > 20 {
+                let park = qso.parkReference.map { " park=\($0)" } ?? ""
                 SyncDebugLog.shared.debug(
-                    "  ... and \(qsos.count - 20) more pending",
+                    "  - \(qso.callsign) @ \(dateStr) | \(qso.band) \(qso.mode)\(park)",
                     service: service
+                )
+            }
+            if qsos.count > 10 {
+                SyncDebugLog.shared.debug(
+                    "  ... and \(qsos.count - 10) more pending", service: service
                 )
             }
         }
@@ -263,19 +216,11 @@ extension SyncService {
     /// Log failed QSOs for debugging (call from MainActor)
     @MainActor
     private func logFailedQSOs(_ qsos: [QSO], reason: String) {
-        for qso in qsos.prefix(5) {
-            let dateStr = Self.debugDateFormatter.string(from: qso.timestamp)
-            SyncDebugLog.shared.debug(
-                "  - \(qso.callsign) @ \(dateStr) (\(reason))",
-                service: .pota
-            )
-        }
-        if qsos.count > 5 {
-            SyncDebugLog.shared.debug(
-                "  ... and \(qsos.count - 5) more",
-                service: .pota
-            )
-        }
+        let callsigns = qsos.prefix(5).map(\.callsign).joined(separator: ", ")
+        let more = qsos.count > 5 ? " (+\(qsos.count - 5) more)" : ""
+        SyncDebugLog.shared.debug(
+            "  Failed: \(callsigns)\(more) (\(reason))", service: .pota
+        )
     }
 
     private func uploadQRZBatch(qsos: [QSO], timeout: TimeInterval) async -> (
@@ -383,6 +328,8 @@ extension SyncService {
     }
 
     func uploadToPOTA(qsos: [QSO]) async throws -> Int {
+        let uploadStartTime = Date()
+
         // Filter out metadata pseudo-modes before processing
         let realQsos = qsos.filter { !Self.metadataModes.contains($0.mode.uppercased()) }
 
@@ -411,10 +358,12 @@ extension SyncService {
             totalFailed += result.failed
         }
 
-        // Log final state
+        // Log final state with total timing
+        let totalDurationMs = Int(Date().timeIntervalSince(uploadStartTime) * 1_000)
         await MainActor.run {
             SyncDebugLog.shared.info(
-                "POTA upload complete: \(totalUploaded) uploaded, \(totalFailed) failed",
+                "POTA upload complete: \(totalUploaded) uploaded, \(totalFailed) failed "
+                    + "across \(expandedByPark.count) park(s) in \(totalDurationMs)ms",
                 service: .pota
             )
         }
@@ -422,7 +371,7 @@ extension SyncService {
         return totalUploaded
     }
 
-    /// Log POTA upload start with metadata filtering info
+    /// Log POTA upload start with metadata filtering info and content summary
     private func logPOTAUploadStart(qsos: [QSO], realQsos: [QSO], parkCount: Int) async {
         let metadataCount = qsos.count - realQsos.count
         await MainActor.run {
@@ -436,6 +385,31 @@ extension SyncService {
                 "POTA upload: \(realQsos.count) QSO(s) across \(parkCount) park(s)",
                 service: .pota
             )
+
+            // Log content summary: bands, modes, date range, parks
+            guard !realQsos.isEmpty else {
+                return
+            }
+
+            let bands = Set(realQsos.map(\.band)).sorted()
+            let modes = Set(realQsos.map(\.mode)).sorted()
+            let parks = Set(realQsos.compactMap(\.parkReference)).sorted()
+            SyncDebugLog.shared.debug(
+                "Content summary: bands=[\(bands.joined(separator: ", "))] "
+                    + "modes=[\(modes.joined(separator: ", "))] "
+                    + "parks=[\(parks.joined(separator: ", "))]",
+                service: .pota
+            )
+
+            let timestamps = realQsos.map(\.timestamp)
+            if let earliest = timestamps.min(), let latest = timestamps.max() {
+                let dateStr = Self.debugDateFormatter.string(from: earliest)
+                let endStr = Self.debugDateFormatter.string(from: latest)
+                SyncDebugLog.shared.debug(
+                    "Date range: \(dateStr) to \(endStr) UTC",
+                    service: .pota
+                )
+            }
         }
     }
 
@@ -443,9 +417,10 @@ extension SyncService {
     private func uploadParkToPOTA(parkRef: String, parkQSOs: [QSO]) async -> (
         uploaded: Int, failed: Int
     ) {
+        let parkStartTime = Date()
         await MainActor.run {
-            SyncDebugLog.shared.debug(
-                "Uploading \(parkQSOs.count) QSO(s) to park \(parkRef)",
+            SyncDebugLog.shared.info(
+                "Starting upload of \(parkQSOs.count) QSO(s) to park \(parkRef)",
                 service: .pota
             )
         }
@@ -456,41 +431,18 @@ extension SyncService {
                 qsos: parkQSOs,
                 modelContext: modelContext
             )
+            let parkDurationMs = Int(Date().timeIntervalSince(parkStartTime) * 1_000)
 
             if result.success {
-                await MainActor.run {
-                    for qso in parkQSOs {
-                        let beforeState = qso.potaPresence(forPark: parkRef).map {
-                            "isPresent=\($0.isPresent), isSubmitted=\($0.isSubmitted), "
-                                + "needsUpload=\($0.needsUpload)"
-                        } ?? "no presence"
-                        // Mark as submitted (pending POTA job confirmation)
-                        // Will be confirmed when job log shows status == .completed
-                        qso.markSubmittedToPark(parkRef, context: modelContext)
-                        let afterState = qso.potaPresence(forPark: parkRef).map {
-                            "isPresent=\($0.isPresent), isSubmitted=\($0.isSubmitted), "
-                                + "needsUpload=\($0.needsUpload)"
-                        } ?? "no presence"
-
-                        let dateStr = Self.debugDateFormatter.string(from: qso.timestamp)
-                        SyncDebugLog.shared.debug(
-                            "markSubmittedToPark \(parkRef): \(qso.callsign) @ \(dateStr) "
-                                + "[\(beforeState)] -> [\(afterState)]",
-                            service: .pota
-                        )
-                    }
-                    SyncDebugLog.shared.info(
-                        "Park \(parkRef): \(result.qsosAccepted) QSO(s) accepted, "
-                            + "\(parkQSOs.count) marked submitted. "
-                            + "message=\(result.message ?? "nil")",
-                        service: .pota
-                    )
-                }
+                await markParkQSOsSubmitted(
+                    parkRef: parkRef, parkQSOs: parkQSOs,
+                    result: result, durationMs: parkDurationMs
+                )
                 return (uploaded: result.qsosAccepted, failed: 0)
             } else {
                 await MainActor.run {
                     SyncDebugLog.shared.warning(
-                        "Park \(parkRef): upload returned success=false",
+                        "Park \(parkRef): upload returned success=false (\(parkDurationMs)ms)",
                         service: .pota
                     )
                     logFailedQSOs(parkQSOs, reason: "upload returned success=false")
@@ -498,14 +450,49 @@ extension SyncService {
                 return (uploaded: 0, failed: parkQSOs.count)
             }
         } catch {
+            let parkDurationMs = Int(Date().timeIntervalSince(parkStartTime) * 1_000)
             await MainActor.run {
                 SyncDebugLog.shared.error(
-                    "Park \(parkRef): \(error.localizedDescription)",
+                    "Park \(parkRef): \(error.localizedDescription) (\(parkDurationMs)ms)",
                     service: .pota
                 )
                 logFailedQSOs(parkQSOs, reason: error.localizedDescription)
             }
             return (uploaded: 0, failed: parkQSOs.count)
         }
+    }
+
+    /// Mark QSOs as submitted after successful park upload and log state transitions
+    @MainActor
+    private func markParkQSOsSubmitted(
+        parkRef: String, parkQSOs: [QSO],
+        result: POTAUploadResult, durationMs: Int
+    ) {
+        for qso in parkQSOs {
+            let beforeState =
+                qso.potaPresence(forPark: parkRef).map {
+                    "isPresent=\($0.isPresent), isSubmitted=\($0.isSubmitted), "
+                        + "needsUpload=\($0.needsUpload)"
+                } ?? "no presence"
+            qso.markSubmittedToPark(parkRef, context: modelContext)
+            let afterState =
+                qso.potaPresence(forPark: parkRef).map {
+                    "isPresent=\($0.isPresent), isSubmitted=\($0.isSubmitted), "
+                        + "needsUpload=\($0.needsUpload)"
+                } ?? "no presence"
+
+            let dateStr = Self.debugDateFormatter.string(from: qso.timestamp)
+            SyncDebugLog.shared.debug(
+                "markSubmittedToPark \(parkRef): \(qso.callsign) @ \(dateStr) "
+                    + "[\(beforeState)] -> [\(afterState)]",
+                service: .pota
+            )
+        }
+        SyncDebugLog.shared.info(
+            "Park \(parkRef): \(result.qsosAccepted) QSO(s) accepted, "
+                + "\(parkQSOs.count) marked submitted in \(durationMs)ms. "
+                + "message=\(result.message ?? "nil")",
+            service: .pota
+        )
     }
 }

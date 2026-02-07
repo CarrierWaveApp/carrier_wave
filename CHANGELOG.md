@@ -6,8 +6,8 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ### Added
 - Add friend request notifications: badge on Activity tab and Friends toolbar button showing pending incoming request count, plus a banner card in the Activity feed that links to the Friends list
-- Add detailed debug logging throughout POTA upload flow — logs QSO presence state transitions, upload request/response details, and per-park submission status
-- Add "Force Reupload" button to POTA activation rows when debug mode is enabled — resets all QSOs back to pending for re-upload
+- Add detailed logging throughout POTA upload flow — upload request/response at INFO level (HTTP status codes, response bodies, ADIF content, request URLs), per-park timing, content summaries (bands/modes/date range), and per-job status/QSO count breakdowns during reconciliation
+- Add "Force Reupload" button to POTA activation rows when debug mode is enabled — resets all QSOs back to pending and immediately triggers the upload
 
 ### Fixed
 - Fix invite link deep links not matching when URL uses `activities.carrierwave.app` subdomain

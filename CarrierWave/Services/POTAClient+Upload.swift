@@ -65,7 +65,7 @@ extension POTAClient {
             parkReference: normalizedParkRef, location: location, callsign: callsign
         )
 
-        debugLog.debug(
+        debugLog.info(
             "ADIF for \(normalizedParkRef): \(adifContent.count) chars, "
                 + "\(parkQSOs.count) QSOs, callsign=\(callsign), "
                 + "location=\(location), filename=\(filename)",
@@ -163,12 +163,11 @@ extension POTAClient {
     /// Log request details before sending
     func logUploadRequestDetails(_ data: POTAUploadRequestData, parkRef: String) {
         let debugLog = SyncDebugLog.shared
-        debugLog.info("Uploading \(data.qsoCount) QSOs to park \(parkRef)", service: .pota)
-        debugLog.debug(
-            "POST \(data.request.url?.absoluteString ?? "nil") "
-                + "- location=\(data.location), ref=\(parkRef), "
-                + "file=\(data.filename), callsign=\(data.callsign), "
-                + "bodySize=\(data.request.httpBody?.count ?? 0) bytes",
+        debugLog.info(
+            "Uploading \(data.qsoCount) QSOs to park \(parkRef): "
+                + "POST \(data.request.url?.absoluteString ?? "nil") "
+                + "callsign=\(data.callsign), location=\(data.location), "
+                + "file=\(data.filename), bodySize=\(data.request.httpBody?.count ?? 0) bytes",
             service: .pota
         )
     }
@@ -261,7 +260,7 @@ extension POTAClient {
         qsoCount: Int
     ) async throws -> POTAUploadResult {
         let debugLog = SyncDebugLog.shared
-        debugLog.debug("Sending POTA upload request for \(parkReference)...", service: .pota)
+        debugLog.info("Sending POTA upload request for \(parkReference)...", service: .pota)
 
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
@@ -316,13 +315,17 @@ extension POTAClient {
         parkReference: String, durationMs: Int
     ) {
         let debugLog = SyncDebugLog.shared
-        debugLog.debug(
+        let statusCode = httpResponse.statusCode
+        let level: SyncDebugLog.LogEntry.Level =
+            (200 ... 299).contains(statusCode) ? .info : .error
+        debugLog.log(
             "POTA upload response for \(parkReference): "
-                + "HTTP \(httpResponse.statusCode) (\(durationMs)ms), "
+                + "HTTP \(statusCode) (\(durationMs)ms), "
                 + "body=\(data.count) bytes",
+            level: level,
             service: .pota
         )
-        debugLog.debug("Response body: \(body.prefix(1_000))", service: .pota)
+        debugLog.info("Response body: \(body.prefix(1_000))", service: .pota)
 
         let interestingHeaders = [
             "content-type", "x-request-id", "x-amzn-requestid",

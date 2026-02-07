@@ -573,24 +573,7 @@ extension POTAActivationsContentView {
             "uploadPark: uploading \(pendingQSOs.count) QSO(s) to park \(park)",
             service: .pota
         )
-        for qso in pendingQSOs.prefix(20) {
-            let dateFormatter = DateFormatter()
-            dateFormatter.dateFormat = "yyyy-MM-dd HH:mm"
-            dateFormatter.timeZone = TimeZone(identifier: "UTC")
-            let dateStr = dateFormatter.string(from: qso.timestamp)
-            let presenceState = qso.potaPresence(forPark: park).map {
-                "isPresent=\($0.isPresent), isSubmitted=\($0.isSubmitted), "
-                    + "needsUpload=\($0.needsUpload), rejected=\($0.uploadRejected)"
-            } ?? "no presence"
-            debugLog.debug(
-                "  - \(qso.callsign) @ \(dateStr) | band=\(qso.band) mode=\(qso.mode) "
-                    + "| park=\(qso.parkReference ?? "nil") | [\(presenceState)]",
-                service: .pota
-            )
-        }
-        if pendingQSOs.count > 20 {
-            debugLog.debug("  ... and \(pendingQSOs.count - 20) more", service: .pota)
-        }
+        logPendingParkQSOs(pendingQSOs, park: park)
 
         do {
             let result = try await client.uploadActivationWithRecording(
@@ -603,22 +586,7 @@ extension POTAActivationsContentView {
                 service: .pota
             )
             if result.success {
-                await MainActor.run {
-                    for qso in pendingQSOs {
-                        let beforeState = qso.potaPresence(forPark: park).map {
-                            "isPresent=\($0.isPresent), isSubmitted=\($0.isSubmitted)"
-                        } ?? "no presence"
-                        qso.markSubmittedToPark(park, context: modelContext)
-                        let afterState = qso.potaPresence(forPark: park).map {
-                            "isPresent=\($0.isPresent), isSubmitted=\($0.isSubmitted)"
-                        } ?? "no presence"
-                        debugLog.debug(
-                            "markSubmittedToPark \(park): \(qso.callsign) "
-                                + "[\(beforeState)] -> [\(afterState)]",
-                            service: .pota
-                        )
-                    }
-                }
+                await markQSOsSubmitted(pendingQSOs, park: park)
                 return nil
             }
             debugLog.warning(
@@ -634,6 +602,52 @@ extension POTAActivationsContentView {
         }
     }
 
+    /// Log details of pending QSOs before upload
+    private func logPendingParkQSOs(_ qsos: [QSO], park: String) {
+        let debugLog = SyncDebugLog.shared
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm"
+        dateFormatter.timeZone = TimeZone(identifier: "UTC")
+        for qso in qsos.prefix(20) {
+            let dateStr = dateFormatter.string(from: qso.timestamp)
+            let presenceState =
+                qso.potaPresence(forPark: park).map {
+                    "isPresent=\($0.isPresent), isSubmitted=\($0.isSubmitted), "
+                        + "needsUpload=\($0.needsUpload), rejected=\($0.uploadRejected)"
+                } ?? "no presence"
+            debugLog.debug(
+                "  - \(qso.callsign) @ \(dateStr) | band=\(qso.band) mode=\(qso.mode) "
+                    + "| park=\(qso.parkReference ?? "nil") | [\(presenceState)]",
+                service: .pota
+            )
+        }
+        if qsos.count > 20 {
+            debugLog.debug("  ... and \(qsos.count - 20) more", service: .pota)
+        }
+    }
+
+    /// Mark QSOs as submitted and log state transitions
+    @MainActor
+    private func markQSOsSubmitted(_ qsos: [QSO], park: String) {
+        let debugLog = SyncDebugLog.shared
+        for qso in qsos {
+            let beforeState =
+                qso.potaPresence(forPark: park).map {
+                    "isPresent=\($0.isPresent), isSubmitted=\($0.isSubmitted)"
+                } ?? "no presence"
+            qso.markSubmittedToPark(park, context: modelContext)
+            let afterState =
+                qso.potaPresence(forPark: park).map {
+                    "isPresent=\($0.isPresent), isSubmitted=\($0.isSubmitted)"
+                } ?? "no presence"
+            debugLog.debug(
+                "markSubmittedToPark \(park): \(qso.callsign) "
+                    + "[\(beforeState)] -> [\(afterState)]",
+                service: .pota
+            )
+        }
+    }
+
     func rejectActivation(_ activation: POTAActivation) {
         let pendingQSOs = activation.pendingQSOs()
         for qso in pendingQSOs {
@@ -642,7 +656,7 @@ extension POTAActivationsContentView {
         activationToReject = nil
     }
 
-    /// Force reset all QSOs in an activation back to needing upload (debug feature)
+    /// Force reset all QSOs in an activation back to needing upload, then upload (debug feature)
     func forceReupload(_ activation: POTAActivation) {
         let debugLog = SyncDebugLog.shared
         debugLog.info(
@@ -659,12 +673,37 @@ extension POTAActivationsContentView {
 
         try? modelContext.save()
         debugLog.info(
-            "forceReupload: reset complete for \(activation.parkReference)",
+            "forceReupload: reset complete for \(activation.parkReference), triggering upload",
             service: .pota
         )
 
-        // Reload QSOs so the UI reflects the changes
-        Task { await loadParkQSOs() }
+        // Reload QSOs then trigger the actual upload
+        Task {
+            await loadParkQSOs()
+            // Re-derive the activation with fresh QSO state
+            let freshActivation = rebuildActivation(matching: activation)
+            await performUpload(for: freshActivation ?? activation)
+            await loadParkQSOs()
+        }
+    }
+
+    /// Rebuild an activation from the current allParkQSOs to pick up fresh presence state
+    private func rebuildActivation(matching original: POTAActivation) -> POTAActivation? {
+        let matchingQSOs = allParkQSOs.filter { qso in
+            guard let ref = qso.parkReference else {
+                return false
+            }
+            return original.parks.contains(where: { ParkReference.hasOverlap(ref, $0) })
+        }
+        guard !matchingQSOs.isEmpty else {
+            return nil
+        }
+        return POTAActivation(
+            parkReference: original.parkReference,
+            utcDate: original.utcDate,
+            callsign: original.callsign,
+            qsos: matchingQSOs
+        )
     }
 
     /// Save metadata edits for an activation

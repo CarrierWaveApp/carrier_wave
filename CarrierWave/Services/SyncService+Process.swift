@@ -98,14 +98,34 @@ extension SyncService {
         }
 
         do {
+            let fetchStart = Date()
             let jobs = try await potaClient.fetchJobs()
+            let fetchDurationMs = Int(Date().timeIntervalSince(fetchStart) * 1_000)
             let (confirmedKeys, failedKeys) = buildPOTAActivationKeys(from: jobs)
 
             debugLog.debug(
-                "POTA reconciliation: \(jobs.count) jobs, "
+                "POTA reconciliation: fetched \(jobs.count) jobs in \(fetchDurationMs)ms, "
                     + "\(confirmedKeys.count) confirmed, \(failedKeys.count) failed",
                 service: .pota
             )
+
+            // Log each job's details for debugging
+            let jobDateFormatter = DateFormatter()
+            jobDateFormatter.dateFormat = "yyyy-MM-dd HH:mm"
+            jobDateFormatter.timeZone = TimeZone(identifier: "UTC")
+            for job in jobs {
+                let submittedStr = jobDateFormatter.string(from: job.submitted)
+                let processedStr = job.processed.map { jobDateFormatter.string(from: $0) } ?? "n/a"
+                let firstQSOStr = job.firstQSO.map { jobDateFormatter.string(from: $0) } ?? "n/a"
+                debugLog.debug(
+                    "  Job #\(job.jobId): \(job.reference) status=\(job.status.displayName) "
+                        + "callsign=\(job.callsignUsed ?? "nil") "
+                        + "total=\(job.totalQsos) inserted=\(job.insertedQsos) "
+                        + "submitted=\(submittedStr) processed=\(processedStr) "
+                        + "firstQSO=\(firstQSOStr)",
+                    service: .pota
+                )
+            }
 
             let result = try await Self.processingActor.reconcilePOTAPresence(
                 confirmedActivationKeys: confirmedKeys,
