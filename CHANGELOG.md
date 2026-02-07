@@ -4,6 +4,8 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.24.1] - 2026-02-07
+
 ### Fixed
 - Reconcile POTA upload presence against job log during sync — if the DB says a QSO is uploaded to POTA but no completed upload job exists, reset it to needs-upload so it gets re-uploaded
 
