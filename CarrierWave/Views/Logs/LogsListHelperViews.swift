@@ -288,12 +288,18 @@ struct ServicePresenceBadge: View {
             return "checkmark"
         }
 
+        if presence.isSubmitted {
+            return "clock.arrow.circlepath"
+        }
+
         return "clock"
     }
 
     private var backgroundColor: Color {
         if presence.isPresent {
             .green
+        } else if presence.isSubmitted {
+            .blue
         } else if isServiceConfigured {
             .orange
         } else {

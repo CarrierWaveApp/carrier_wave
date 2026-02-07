@@ -4,6 +4,17 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- POTA uploads now show as "submitted" (blue clock icon) until accepted by POTA job log, instead of immediately showing as complete — refresh jobs to see accepted status or retry failed uploads
+- Consolidate POTA activation row actions (Edit, Map, Export, Share, Reject) into a single ellipsis menu button
+- Show park reference and name inside expanded activation rows instead of cramming into the label
+- Auto-expand activation rows that have pending uploads
+
+### Fixed
+- Fix POTA upload button not responding to taps — move upload action inside disclosure content where button taps work reliably instead of in the DisclosureGroup label where SwiftUI swallows taps
+- Fix completed POTA jobs not reconciling QSO upload status — now auto-reconciles on view load, not just on manual refresh
+- Fix QSO status circles staying gray after POTA job completes — single-park activations now use park-aware presence checks consistently, matching how confirmUploadsFromJobs writes per-park records
+
 ## [1.23.0] - 2026-02-06
 
 ### Added

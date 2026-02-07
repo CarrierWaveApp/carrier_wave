@@ -40,14 +40,6 @@ struct POTAActivationsContentView: View {
                 }
             }
         }
-        .sheet(item: $activationToUpload) { activation in
-            UploadConfirmationSheet(
-                activation: activation,
-                parkName: parkName(for: activation.parkReference),
-                onUpload: { await uploadActivation(activation) },
-                onCancel: { activationToUpload = nil }
-            )
-        }
         .confirmationDialog(
             "Reject Upload",
             isPresented: Binding(
@@ -146,7 +138,6 @@ struct POTAActivationsContentView: View {
     @State private var isLoading = false
     @State private var isLoadingQSOs = false
     @State private var errorMessage: String?
-    @State private var activationToUpload: POTAActivation?
     @State private var activationToReject: POTAActivation?
     @State private var activationToShare: POTAActivation?
     @State private var activationToExport: POTAActivation?
@@ -184,10 +175,15 @@ struct POTAActivationsContentView: View {
         POTAActivation.groupByDate(activations)
     }
 
-    /// Activations with pending uploads (not fully uploaded and not rejected), sorted by date descending
+    /// Activations with pending uploads (not fully uploaded, not rejected, no completed job),
+    /// sorted by date descending
     private var pendingActivations: [POTAActivation] {
         activations
-            .filter { $0.hasQSOsToUpload && !$0.isRejected }
+            .filter { activation in
+                activation.hasQSOsToUpload && !activation.isRejected
+                    && !(jobsByActivationId[activation.id]?.contains { $0.status == .completed }
+                        ?? false)
+            }
             .sorted { $0.utcDate > $1.utcDate }
     }
 
@@ -285,7 +281,7 @@ struct POTAActivationsContentView: View {
             metadata: metadata(for: activation),
             isUploadDisabled: isInMaintenance || potaClient == nil,
             showUploadButton: isAuthenticated,
-            onUploadTapped: { activationToUpload = activation },
+            onUploadTapped: { await performUpload(for: activation) },
             onRejectTapped: { activationToReject = activation },
             onShareTapped: { activationToShare = activation },
             onExportTapped: { activationToExport = activation },
@@ -432,6 +428,11 @@ extension POTAActivationsContentView {
             await MainActor.run {
                 jobs = fetchedJobs
                 rebuildJobIndex()
+                let didReconcile = confirmUploadsFromJobs()
+                if didReconcile {
+                    // Reload QSOs from DB so SwiftUI picks up relationship changes
+                    Task { await loadParkQSOs() }
+                }
             }
         } catch POTAError.notAuthenticated {
             await MainActor.run {
@@ -448,6 +449,50 @@ extension POTAActivationsContentView {
         }
     }
 
+    /// Confirm or reset submitted uploads based on POTA job statuses.
+    /// Called after jobs are refreshed to reconcile local state with remote job log.
+    /// Returns true if any changes were made.
+    @discardableResult
+    private func confirmUploadsFromJobs() -> Bool {
+        var confirmedCount = 0
+        var resetCount = 0
+
+        for activation in activations {
+            let matching = jobsByActivationId[activation.id] ?? []
+            guard !matching.isEmpty else {
+                continue
+            }
+
+            // Check for completed jobs — confirm submitted QSOs
+            let hasCompletedJob = matching.contains { $0.status == .completed }
+            // Check for failed jobs (only if no completed job exists)
+            let hasFailedJob = !hasCompletedJob && matching.contains { $0.status.isFailure }
+
+            for park in activation.parks {
+                if hasCompletedJob {
+                    // Confirm all non-uploaded QSOs for this park
+                    // (covers both submitted QSOs and QSOs uploaded before the submitted state existed)
+                    for qso in activation.qsos where !qso.isUploadedToPark(park) {
+                        qso.confirmUploadedToPark(park, context: modelContext)
+                        confirmedCount += 1
+                    }
+                } else if hasFailedJob {
+                    // Reset submitted QSOs back to needing upload
+                    for qso in activation.qsos where qso.isSubmittedToPark(park) {
+                        qso.resetSubmittedToPark(park, context: modelContext)
+                        resetCount += 1
+                    }
+                }
+            }
+        }
+
+        if confirmedCount > 0 || resetCount > 0 {
+            try? modelContext.save()
+            return true
+        }
+        return false
+    }
+
     /// Rebuild the job index mapping activation IDs to their matching jobs
     /// Called when jobs or activations change
     private func rebuildJobIndex() {
@@ -461,11 +506,10 @@ extension POTAActivationsContentView {
         jobsByActivationId = index
     }
 
-    func uploadActivation(_ activation: POTAActivation) async {
-        activationToUpload = nil
-
+    /// Upload an activation to POTA. Called from ActivationRow's upload button.
+    func performUpload(for activation: POTAActivation) async {
         guard let potaClient else {
-            await MainActor.run { errorMessage = "POTA client not available." }
+            errorMessage = "POTA client not available."
             return
         }
 
@@ -481,16 +525,14 @@ extension POTAActivationsContentView {
             }
         }
 
-        await MainActor.run {
-            if errors.isEmpty {
-                uploadErrorsByActivation.removeValue(forKey: activation.id)
-            } else {
-                uploadErrorsByActivation[activation.id] = errors
-                let msg =
-                    errors.count == parksToUpload.count
-                        ? "all" : "\(errors.count) of \(parksToUpload.count)"
-                errorMessage = "Upload failed for \(msg) parks"
-            }
+        if errors.isEmpty {
+            uploadErrorsByActivation.removeValue(forKey: activation.id)
+        } else {
+            uploadErrorsByActivation[activation.id] = errors
+            let msg =
+                errors.count == parksToUpload.count
+                    ? "all" : "\(errors.count) of \(parksToUpload.count)"
+            errorMessage = "Upload failed for \(msg) parks"
         }
     }
 
@@ -508,7 +550,7 @@ extension POTAActivationsContentView {
             )
             if result.success {
                 await MainActor.run {
-                    pendingQSOs.forEach { $0.markUploadedToPark(park, context: modelContext) }
+                    pendingQSOs.forEach { $0.markSubmittedToPark(park, context: modelContext) }
                 }
                 return nil
             }

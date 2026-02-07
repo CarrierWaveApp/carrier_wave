@@ -5,13 +5,54 @@ import SwiftUI
 // MARK: - ActivationRow
 
 struct ActivationRow: View {
+    // MARK: Lifecycle
+
+    init(
+        activation: POTAActivation,
+        metadata: ActivationMetadata? = nil,
+        isUploadDisabled: Bool = false,
+        showUploadButton: Bool = true,
+        onUploadTapped: @escaping () async -> Void,
+        onRejectTapped: @escaping () -> Void,
+        onShareTapped: @escaping () -> Void,
+        onExportTapped: @escaping () -> Void,
+        onMapTapped: @escaping () -> Void,
+        onEditTapped: @escaping () -> Void,
+        showParkReference: Bool = false,
+        parkName: String? = nil,
+        uploadErrors: [String: String] = [:],
+        matchingJobs: [POTAJob] = [],
+        potaClient: POTAClient? = nil
+    ) {
+        self.activation = activation
+        self.metadata = metadata
+        self.isUploadDisabled = isUploadDisabled
+        self.showUploadButton = showUploadButton
+        self.onUploadTapped = onUploadTapped
+        self.onRejectTapped = onRejectTapped
+        self.onShareTapped = onShareTapped
+        self.onExportTapped = onExportTapped
+        self.onMapTapped = onMapTapped
+        self.onEditTapped = onEditTapped
+        self.showParkReference = showParkReference
+        self.parkName = parkName
+        self.uploadErrors = uploadErrors
+        self.matchingJobs = matchingJobs
+        self.potaClient = potaClient
+        // Auto-expand rows that have pending uploads
+        let hasCompletedJob = matchingJobs.contains { $0.status == .completed }
+        _isExpanded = State(
+            initialValue: showUploadButton && activation.hasQSOsToUpload && !hasCompletedJob
+        )
+    }
+
     // MARK: Internal
 
     let activation: POTAActivation
     var metadata: ActivationMetadata?
     var isUploadDisabled: Bool = false
     var showUploadButton: Bool = true
-    let onUploadTapped: () -> Void
+    let onUploadTapped: () async -> Void
     let onRejectTapped: () -> Void
     let onShareTapped: () -> Void
     let onExportTapped: () -> Void
@@ -28,6 +69,25 @@ struct ActivationRow: View {
 
     var body: some View {
         DisclosureGroup(isExpanded: $isExpanded) {
+            // Park info header
+            if showParkReference {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(activation.parkReference)
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                    if let parkName {
+                        Text(parkName)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+
+            // Upload row inside disclosure content where button taps work reliably
+            if shouldShowUpload {
+                uploadRow
+            }
+
             // Jobs section (shown first when there are matching jobs)
             if !matchingJobs.isEmpty {
                 Section {
@@ -52,20 +112,18 @@ struct ActivationRow: View {
                     HStack {
                         Text(activation.displayDate)
                             .font(.headline)
+                            .lineLimit(1)
+                            .layoutPriority(1)
                         if showParkReference {
                             Text(activation.parkReference)
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
-                            if let parkName {
-                                Text("- \(parkName)")
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                                    .lineLimit(1)
-                            }
+                                .lineLimit(1)
                         }
                         Text(activation.callsign)
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
+                            .lineLimit(1)
                     }
                     if let title = metadata?.title, !title.isEmpty {
                         Text(title)
@@ -75,9 +133,9 @@ struct ActivationRow: View {
                     }
                     HStack(spacing: 8) {
                         HStack(spacing: 4) {
-                            Image(systemName: statusIconName)
-                                .foregroundStyle(statusColor)
-                            Text(statusText)
+                            Image(systemName: activation.displayIconName)
+                                .foregroundStyle(activation.displayColor)
+                            Text(activation.statusText)
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -113,70 +171,65 @@ struct ActivationRow: View {
                         .font(.body)
                 }
 
-                // Error indicator for failed park uploads (two-fer support)
-                if !uploadErrors.isEmpty {
+                // Upload pending indicator
+                if shouldShowUpload {
+                    if isUploading {
+                        ProgressView()
+                            .controlSize(.small)
+                    } else {
+                        Image(systemName: "arrow.up.circle.fill")
+                            .foregroundStyle(Color.accentColor)
+                            .font(.body)
+                    }
+                }
+
+                // Actions menu
+                Menu {
                     Button {
-                        showingErrorSheet = true
+                        onEditTapped()
                     } label: {
-                        Image(systemName: "exclamationmark.circle.fill")
-                            .foregroundStyle(.red)
+                        Label("Edit Metadata", systemImage: "pencil")
                     }
-                    .buttonStyle(.borderless)
-                }
-
-                // Edit button
-                Button {
-                    onEditTapped()
-                } label: {
-                    Image(systemName: "pencil")
-                        .font(.body)
-                }
-                .buttonStyle(.borderless)
-                .foregroundStyle(.secondary)
-
-                // Map button
-                Button {
-                    onMapTapped()
-                } label: {
-                    Image(systemName: "map")
-                        .font(.body)
-                }
-                .buttonStyle(.borderless)
-                .foregroundStyle(.green)
-
-                // Export ADIF button
-                Button {
-                    onExportTapped()
-                } label: {
-                    Image(systemName: "doc.text")
-                        .font(.body)
-                }
-                .buttonStyle(.borderless)
-                .foregroundStyle(.orange)
-
-                // Share button
-                Button {
-                    onShareTapped()
-                } label: {
-                    Image(systemName: "square.and.arrow.up")
-                        .font(.body)
-                }
-                .buttonStyle(.borderless)
-                .foregroundStyle(.blue)
-
-                if activation.hasQSOsToUpload, showUploadButton {
-                    Button("Upload") {
-                        onUploadTapped()
+                    Button {
+                        onMapTapped()
+                    } label: {
+                        Label("View Map", systemImage: "map")
                     }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.small)
-                    .disabled(isUploadDisabled)
+                    Button {
+                        onExportTapped()
+                    } label: {
+                        Label("Export ADIF", systemImage: "doc.text")
+                    }
+                    Button {
+                        onShareTapped()
+                    } label: {
+                        Label("Share Card", systemImage: "square.and.arrow.up")
+                    }
+                    if !uploadErrors.isEmpty {
+                        Button {
+                            showingErrorSheet = true
+                        } label: {
+                            Label("Upload Errors", systemImage: "exclamationmark.circle")
+                        }
+                    }
+                    if shouldShowUpload {
+                        Divider()
+                        Button(role: .destructive) {
+                            onRejectTapped()
+                        } label: {
+                            Label("Reject Upload", systemImage: "xmark.circle")
+                        }
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                        .font(.body)
+                        .foregroundStyle(.secondary)
                 }
             }
             .padding(.vertical, 4)
         }
         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-            if activation.hasQSOsToUpload {
+            if shouldShowUpload {
                 Button {
                     onRejectTapped()
                 } label: {
@@ -185,35 +238,7 @@ struct ActivationRow: View {
                 .tint(.red)
             }
         }
-        .swipeActions(edge: .leading, allowsFullSwipe: false) {
-            Button {
-                onEditTapped()
-            } label: {
-                Label("Edit", systemImage: "pencil")
-            }
-            .tint(.purple)
 
-            Button {
-                onMapTapped()
-            } label: {
-                Label("Map", systemImage: "map")
-            }
-            .tint(.green)
-
-            Button {
-                onExportTapped()
-            } label: {
-                Label("Export ADIF", systemImage: "doc.text")
-            }
-            .tint(.orange)
-
-            Button {
-                onShareTapped()
-            } label: {
-                Label("Share", systemImage: "square.and.arrow.up")
-            }
-            .tint(.blue)
-        }
         .sheet(isPresented: $showingErrorSheet) {
             UploadErrorSheet(
                 parkReference: activation.parkReference,
@@ -224,7 +249,9 @@ struct ActivationRow: View {
 
     // MARK: Private
 
-    @State private var isExpanded = false
+    /// Auto-expand when there are QSOs to upload so the upload button is visible
+    @State private var isExpanded: Bool
+    @State private var isUploading = false
     @State private var showingErrorSheet = false
 
     /// QSOs sorted by timestamp descending (computed once)
@@ -232,52 +259,91 @@ struct ActivationRow: View {
         activation.qsos.sorted { $0.timestamp > $1.timestamp }
     }
 
+    /// Check if any matching job has completed status
+    private var hasCompletedJob: Bool {
+        matchingJobs.contains { $0.status == .completed }
+    }
+
     /// Check if any matching job has failed status
     private var hasFailedJob: Bool {
         matchingJobs.contains { $0.status.isFailure }
     }
 
-    private var statusIconName: String {
-        if activation.isRejected {
-            return "xmark.circle.fill"
-        }
-        return activation.status.iconName
+    /// Whether upload controls should be shown — hide if a completed job exists
+    private var shouldShowUpload: Bool {
+        activation.hasQSOsToUpload && showUploadButton && !hasCompletedJob
     }
 
-    private var statusColor: Color {
-        if activation.isRejected {
+    private var uploadRow: some View {
+        HStack {
+            if isUploading {
+                ProgressView()
+                    .controlSize(.small)
+                Text("Uploading...")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            } else {
+                Button {
+                    isUploading = true
+                    Task {
+                        await onUploadTapped()
+                        isUploading = false
+                    }
+                } label: {
+                    Label(
+                        "Upload \(activation.pendingCount) QSO(s) to POTA",
+                        systemImage: "arrow.up.circle.fill"
+                    )
+                    .font(.subheadline)
+                }
+                .disabled(isUploadDisabled)
+            }
+            Spacer()
+        }
+    }
+}
+
+// MARK: - POTAActivation Display Helpers
+
+extension POTAActivation {
+    var displayIconName: String {
+        isRejected ? "xmark.circle.fill" : status.iconName
+    }
+
+    var displayColor: Color {
+        if isRejected {
             return .secondary
         }
-        switch activation.status {
+        switch status {
         case .uploaded: return .green
         case .partial: return .orange
+        case .submitted: return .blue
         case .pending: return .gray
         }
     }
 
-    private var statusText: String {
-        let rejectedCount = activation.rejectedQSOs().count
+    var statusText: String {
+        let rejectedCount = rejectedQSOs().count
+        let accepted = uploadedCount
+        let submitted = submittedCount
+        let total = qsoCount
 
-        // For two-fers, show park upload status
-        if activation.isMultiPark {
-            if let summary = activation.uploadStatusSummary {
-                if activation.isRejected {
-                    return "\(summary), \(rejectedCount) rejected"
-                } else if rejectedCount > 0 {
-                    return "\(summary), \(rejectedCount) rejected"
-                }
-                return "\(summary) uploaded"
-            }
+        if isMultiPark, let summary = uploadStatusSummary {
+            return rejectedCount > 0 ? "\(summary), \(rejectedCount) rejected" : summary
         }
 
-        if activation.isRejected {
-            return
-                "\(activation.uploadedCount)/\(activation.qsoCount) uploaded, \(rejectedCount) rejected"
-        } else if rejectedCount > 0 {
-            return
-                "\(activation.uploadedCount)/\(activation.qsoCount) uploaded, \(rejectedCount) rejected"
+        if isRejected || rejectedCount > 0 {
+            return "\(accepted)/\(total) accepted, \(rejectedCount) rejected"
+        } else if accepted == total {
+            return "\(total) QSOs accepted"
+        } else if accepted > 0, submitted > 0 {
+            return "\(accepted) accepted, \(submitted) submitted"
+        } else if submitted > 0 {
+            return "\(submitted)/\(total) QSOs submitted"
+        } else if accepted > 0 {
+            return "\(accepted)/\(total) QSOs accepted"
         }
-        return "\(activation.uploadedCount)/\(activation.qsoCount) QSOs uploaded"
+        return "\(total) QSOs"
     }
 }
 
@@ -314,20 +380,44 @@ struct POTAQSORow: View {
         return formatter.string(from: qso.timestamp) + " UTC"
     }
 
+    private var singleParkStatusIcon: String {
+        // Use park-aware check so per-park presence records are found
+        if parks.count == 1, let park = parks.first {
+            return parkStatusIcon(for: park)
+        }
+        if qso.isPresentInPOTA() {
+            return "checkmark.circle.fill"
+        } else if qso.isSubmittedToAnyPark() {
+            return "clock.arrow.circlepath"
+        }
+        return "circle"
+    }
+
+    private var singleParkStatusColor: Color {
+        // Use park-aware check so per-park presence records are found
+        if parks.count == 1, let park = parks.first {
+            return parkStatusColor(for: park)
+        }
+        if qso.isPresentInPOTA() {
+            return .green
+        } else if qso.isSubmittedToAnyPark() {
+            return .blue
+        }
+        return .secondary
+    }
+
     @ViewBuilder private var uploadStatusView: some View {
         if parks.count > 1 {
             HStack(spacing: 2) {
                 ForEach(parks, id: \.self) { park in
-                    Image(
-                        systemName: qso.isUploadedToPark(park) ? "checkmark.circle.fill" : "circle"
-                    )
-                    .foregroundStyle(qso.isUploadedToPark(park) ? .green : .secondary)
-                    .font(.caption2)
+                    Image(systemName: parkStatusIcon(for: park))
+                        .foregroundStyle(parkStatusColor(for: park))
+                        .font(.caption2)
                 }
             }
         } else {
-            Image(systemName: qso.isPresentInPOTA() ? "checkmark.circle.fill" : "circle")
-                .foregroundStyle(qso.isPresentInPOTA() ? .green : .secondary)
+            Image(systemName: singleParkStatusIcon)
+                .foregroundStyle(singleParkStatusColor)
                 .font(.caption)
         }
     }
@@ -336,6 +426,24 @@ struct POTAQSORow: View {
         Text(text).font(.caption)
             .padding(.horizontal, 6).padding(.vertical, 2)
             .background(color.opacity(0.15)).cornerRadius(4)
+    }
+
+    private func parkStatusIcon(for park: String) -> String {
+        if qso.isUploadedToPark(park) {
+            return "checkmark.circle.fill"
+        } else if qso.isSubmittedToPark(park) {
+            return "clock.arrow.circlepath"
+        }
+        return "circle"
+    }
+
+    private func parkStatusColor(for park: String) -> Color {
+        if qso.isUploadedToPark(park) {
+            return .green
+        } else if qso.isSubmittedToPark(park) {
+            return .blue
+        }
+        return .secondary
     }
 }
 
@@ -375,126 +483,4 @@ struct UploadErrorSheet: View {
     // MARK: Private
 
     @Environment(\.dismiss) private var dismiss
-}
-
-// MARK: - UploadConfirmationSheet
-
-struct UploadConfirmationSheet: View {
-    // MARK: Internal
-
-    let activation: POTAActivation
-    let parkName: String?
-    /// Park names by reference (for two-fer display)
-    var parkNames: [String: String] = [:]
-    let onUpload: () async -> Void
-    let onCancel: () -> Void
-
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: 24) {
-                VStack(spacing: 8) {
-                    if activation.isMultiPark {
-                        // Show all parks for two-fer
-                        Text("Two-fer Activation")
-                            .font(.headline)
-                            .foregroundStyle(.secondary)
-                        ForEach(activation.parks, id: \.self) { park in
-                            HStack {
-                                Text(park)
-                                    .font(.title3)
-                                    .fontWeight(.bold)
-                                if let name = parkNames[park] {
-                                    Text("- \(name)")
-                                        .font(.subheadline)
-                                        .foregroundStyle(.secondary)
-                                }
-                            }
-                        }
-                    } else {
-                        Text(activation.parkReference)
-                            .font(.title)
-                            .fontWeight(.bold)
-                        if let name = parkName {
-                            Text(name)
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
-
-                VStack(spacing: 12) {
-                    UploadDetailRow(label: "Date", value: activation.displayDate)
-                    UploadDetailRow(label: "Callsign", value: activation.callsign)
-                    UploadDetailRow(
-                        label: "QSOs to Upload",
-                        value: "\(activation.pendingCount) of \(activation.qsoCount)"
-                    )
-                    if activation.isMultiPark {
-                        UploadDetailRow(
-                            label: "Parks to Upload",
-                            value:
-                            "\(activation.parksNeedingUpload.count) of \(activation.parks.count)"
-                        )
-                    }
-                }
-                .padding()
-                .background(Color(.secondarySystemBackground))
-                .cornerRadius(12)
-
-                Spacer()
-
-                if isUploading {
-                    ProgressView("Uploading...")
-                } else {
-                    VStack(spacing: 12) {
-                        Button {
-                            isUploading = true
-                            Task {
-                                await onUpload()
-                            }
-                        } label: {
-                            if activation.isMultiPark {
-                                Text("Upload to \(activation.parksNeedingUpload.count) Parks")
-                                    .frame(maxWidth: .infinity)
-                            } else {
-                                Text("Upload \(activation.pendingCount) QSOs")
-                                    .frame(maxWidth: .infinity)
-                            }
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .controlSize(.large)
-
-                        Button("Cancel", role: .cancel) {
-                            onCancel()
-                        }
-                    }
-                }
-            }
-            .padding()
-            .navigationTitle("Upload Activation")
-            .navigationBarTitleDisplayMode(.inline)
-        }
-        .presentationDetents([.medium])
-    }
-
-    // MARK: Private
-
-    @State private var isUploading = false
-}
-
-// MARK: - UploadDetailRow
-
-struct UploadDetailRow: View {
-    let label: String
-    let value: String
-
-    var body: some View {
-        HStack {
-            Text(label)
-                .foregroundStyle(.secondary)
-            Spacer()
-            Text(value)
-                .fontWeight(.medium)
-        }
-    }
 }

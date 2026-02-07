@@ -36,6 +36,7 @@ extension QSO {
 
         if let existing = potaPresence(forPark: normalizedPark) {
             existing.isPresent = true
+            existing.isSubmitted = false
             existing.needsUpload = false
             existing.lastConfirmedAt = Date()
         } else {
@@ -52,13 +53,69 @@ extension QSO {
         clearLegacyNeedsUploadIfFullyUploaded()
     }
 
+    /// Mark QSO as submitted (HTTP accepted) to a specific park, pending job confirmation
+    func markSubmittedToPark(_ park: String, context: ModelContext) {
+        let normalizedPark = park.uppercased()
+
+        if let existing = potaPresence(forPark: normalizedPark) {
+            // Don't downgrade from confirmed to submitted
+            if !existing.isPresent {
+                existing.isSubmitted = true
+                existing.needsUpload = false
+            }
+        } else {
+            let newPresence = ServicePresence.submitted(
+                to: .pota,
+                qso: self,
+                parkReference: normalizedPark
+            )
+            context.insert(newPresence)
+            servicePresence.append(newPresence)
+        }
+
+        // Clear the legacy needsUpload flag since we've submitted
+        clearLegacyNeedsUploadIfSubmitted()
+    }
+
+    /// Check if QSO has been submitted (but not yet confirmed) to a specific park
+    func isSubmittedToPark(_ park: String) -> Bool {
+        if let parkPresence = potaPresence(forPark: park) {
+            return parkPresence.isSubmitted && !parkPresence.isPresent
+        }
+        // Fall back to legacy presence for backward compatibility
+        if let legacyPresence = servicePresence.first(where: {
+            $0.serviceType == .pota && $0.parkReference == nil
+        }) {
+            return legacyPresence.isSubmitted && !legacyPresence.isPresent
+        }
+        return false
+    }
+
+    /// Confirm a submitted upload after POTA job completed successfully
+    func confirmUploadedToPark(_ park: String, context: ModelContext) {
+        markUploadedToPark(park, context: context)
+    }
+
+    /// Reset a submitted upload back to needing upload (e.g., POTA job failed)
+    func resetSubmittedToPark(_ park: String, context: ModelContext) {
+        let normalizedPark = park.uppercased()
+
+        if let existing = potaPresence(forPark: normalizedPark) {
+            existing.isSubmitted = false
+            existing.needsUpload = true
+            existing.isPresent = false
+        }
+    }
+
     /// Clear the legacy POTA needsUpload flag when all parks have been uploaded.
     /// The legacy record (parkReference == nil) is created by markNeedsUpload(to:) and
     /// must be cleared to prevent repeated upload attempts after per-park uploads complete.
     private func clearLegacyNeedsUploadIfFullyUploaded() {
-        guard let legacyPresence = servicePresence.first(where: {
-            $0.serviceType == .pota && $0.parkReference == nil && $0.needsUpload
-        }) else {
+        guard
+            let legacyPresence = servicePresence.first(where: {
+                $0.serviceType == .pota && $0.parkReference == nil && $0.needsUpload
+            })
+        else {
             return
         }
 
@@ -79,6 +136,33 @@ extension QSO {
             legacyPresence.needsUpload = false
             legacyPresence.isPresent = true
             legacyPresence.lastConfirmedAt = Date()
+        }
+    }
+
+    /// Clear the legacy POTA needsUpload flag when all parks have been submitted.
+    private func clearLegacyNeedsUploadIfSubmitted() {
+        guard
+            let legacyPresence = servicePresence.first(where: {
+                $0.serviceType == .pota && $0.parkReference == nil && $0.needsUpload
+            })
+        else {
+            return
+        }
+
+        guard let parkRef = parkReference, !parkRef.isEmpty else {
+            legacyPresence.needsUpload = false
+            legacyPresence.isSubmitted = true
+            return
+        }
+
+        let parks = POTAClient.splitParkReferences(parkRef)
+        let allSubmittedOrUploaded = parks.allSatisfy { park in
+            let presence = potaPresence(forPark: park)
+            return presence?.isPresent == true || presence?.isSubmitted == true
+        }
+        if allSubmittedOrUploaded {
+            legacyPresence.needsUpload = false
+            legacyPresence.isSubmitted = true
         }
     }
 
@@ -106,6 +190,17 @@ extension QSO {
         }
         let parks = POTAClient.splitParkReferences(parkRef)
         return Dictionary(uniqueKeysWithValues: parks.map { ($0, isUploadedToPark($0)) })
+    }
+
+    /// Check if QSO has been submitted (but not confirmed) to any park
+    func isSubmittedToAnyPark() -> Bool {
+        guard let parkRef = parkReference, !parkRef.isEmpty else {
+            return servicePresence.contains {
+                $0.serviceType == .pota && $0.isSubmitted && !$0.isPresent
+            }
+        }
+        let parks = POTAClient.splitParkReferences(parkRef)
+        return parks.contains { isSubmittedToPark($0) }
     }
 
     /// Check if QSO needs upload to any park (for two-fer activations)

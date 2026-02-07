@@ -460,12 +460,12 @@ extension SyncService {
             if result.success {
                 await MainActor.run {
                     for qso in parkQSOs {
-                        // Use per-park tracking for two-fer support
-                        // This marks just this specific park as uploaded
-                        qso.markUploadedToPark(parkRef, context: modelContext)
+                        // Mark as submitted (pending POTA job confirmation)
+                        // Will be confirmed when job log shows status == .completed
+                        qso.markSubmittedToPark(parkRef, context: modelContext)
                     }
                     SyncDebugLog.shared.debug(
-                        "Park \(parkRef): \(result.qsosAccepted) QSO(s) accepted",
+                        "Park \(parkRef): \(result.qsosAccepted) QSO(s) submitted",
                         service: .pota
                     )
                 }

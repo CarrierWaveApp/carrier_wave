@@ -54,12 +54,15 @@ struct POTAUploadPromptSheet: View {
                 // Success state
                 if uploadState == .success {
                     VStack(spacing: 12) {
-                        Image(systemName: "checkmark.circle.fill")
+                        Image(systemName: "clock.arrow.circlepath")
                             .font(.system(size: 64))
-                            .foregroundStyle(.green)
-                        Text("Uploaded!")
+                            .foregroundStyle(.blue)
+                        Text("Submitted!")
                             .font(.title2)
                             .fontWeight(.semibold)
+                        Text("Awaiting POTA confirmation")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                     }
                     .transition(.scale.combined(with: .opacity))
                 } else if uploadState == .uploading {

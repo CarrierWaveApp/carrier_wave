@@ -12,6 +12,7 @@ final class ServicePresence {
         isPresent: Bool = false,
         needsUpload: Bool = false,
         uploadRejected: Bool = false,
+        isSubmitted: Bool = false,
         lastConfirmedAt: Date? = nil,
         qso: QSO? = nil,
         parkReference: String? = nil
@@ -21,6 +22,7 @@ final class ServicePresence {
         self.isPresent = isPresent
         self.needsUpload = needsUpload
         self.uploadRejected = uploadRejected
+        self.isSubmitted = isSubmitted
         self.lastConfirmedAt = lastConfirmedAt
         self.qso = qso
         self.parkReference = parkReference
@@ -34,6 +36,9 @@ final class ServicePresence {
     var needsUpload: Bool
     /// User explicitly rejected uploading this QSO to this service
     var uploadRejected: Bool = false
+    /// Upload HTTP request succeeded but POTA job completion is unconfirmed.
+    /// Only used for POTA — other services confirm synchronously.
+    var isSubmitted: Bool = false
     var lastConfirmedAt: Date?
     /// For POTA two-fer activations: the specific park this presence record applies to.
     /// When nil, applies to all parks in the QSO's parkReference (legacy behavior).
@@ -53,6 +58,22 @@ final class ServicePresence {
             isPresent: true,
             needsUpload: false,
             lastConfirmedAt: Date(),
+            qso: qso,
+            parkReference: parkReference
+        )
+    }
+
+    /// Create a presence record for a QSO that was submitted to POTA but not yet job-confirmed
+    static func submitted(
+        to service: ServiceType,
+        qso: QSO? = nil,
+        parkReference: String? = nil
+    ) -> ServicePresence {
+        ServicePresence(
+            serviceType: service,
+            isPresent: false,
+            needsUpload: false,
+            isSubmitted: true,
             qso: qso,
             parkReference: parkReference
         )

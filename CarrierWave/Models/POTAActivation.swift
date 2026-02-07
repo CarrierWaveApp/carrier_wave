@@ -9,9 +9,10 @@ import Foundation
 // MARK: - POTAActivationStatus
 
 enum POTAActivationStatus {
-    case uploaded // All QSOs present in POTA
-    case partial // Some QSOs present
-    case pending // No QSOs present
+    case uploaded // All QSOs confirmed in POTA job log
+    case partial // Some QSOs confirmed
+    case submitted // All QSOs submitted, awaiting POTA job confirmation
+    case pending // No QSOs submitted or confirmed
 
     // MARK: Internal
 
@@ -19,6 +20,7 @@ enum POTAActivationStatus {
         switch self {
         case .uploaded: "checkmark.circle.fill"
         case .partial: "circle.lefthalf.filled"
+        case .submitted: "clock.arrow.circlepath"
         case .pending: "arrow.up.circle"
         }
     }
@@ -27,6 +29,7 @@ enum POTAActivationStatus {
         switch self {
         case .uploaded: "green"
         case .partial: "orange"
+        case .submitted: "blue"
         case .pending: "gray"
         }
     }
@@ -67,6 +70,10 @@ struct POTAActivation: Identifiable, Equatable {
         uploadedQSOs().count
     }
 
+    var submittedCount: Int {
+        submittedQSOs().count
+    }
+
     var pendingCount: Int {
         pendingQSOs().count
     }
@@ -77,11 +84,16 @@ struct POTAActivation: Identifiable, Equatable {
             return .uploaded
         } else if uploaded > 0 {
             return .partial
-        } else {
-            return .pending
         }
+        // No confirmed uploads — check if submitted
+        let submitted = submittedCount
+        if submitted > 0 {
+            return .submitted
+        }
+        return .pending
     }
 
+    /// Whether there are QSOs that haven't been submitted or confirmed yet
     var hasQSOsToUpload: Bool {
         pendingCount > 0
     }
@@ -179,35 +191,53 @@ struct POTAActivation: Identifiable, Equatable {
         return status
     }
 
-    /// Parks that have failed uploads (have QSOs but none uploaded)
+    /// Parks that have no uploads or submissions at all
     /// Used to show error indicators in the UI
     var failedParks: [String] {
         parks.filter { park in
             let uploaded = qsos.filter { $0.isUploadedToPark(park) }.count
-            return uploaded == 0
+            let submitted = qsos.filter { $0.isSubmittedToPark(park) }.count
+            return uploaded == 0 && submitted == 0
         }
     }
 
-    /// Parks that still need upload (not all QSOs uploaded)
+    /// Parks that still need upload (not all QSOs uploaded or submitted)
     var parksNeedingUpload: [String] {
         parks.filter { park in
-            let uploaded = qsos.filter { $0.isUploadedToPark(park) }.count
-            return uploaded < qsos.count
+            // A park needs upload if any QSO is neither uploaded nor submitted to it
+            qsos.contains { qso in
+                !qso.isUploadedToPark(park) && !qso.isSubmittedToPark(park)
+                    && !qso.isUploadRejected(for: .pota)
+            }
         }
     }
 
-    /// Whether all parks have been fully uploaded
+    /// Whether all parks have been fully confirmed by POTA job log
     var isFullyUploaded: Bool {
-        parksNeedingUpload.isEmpty
+        parks.allSatisfy { park in
+            qsos.allSatisfy { $0.isUploadedToPark(park) || $0.isUploadRejected(for: .pota) }
+        }
     }
 
-    /// Summary string for upload status (e.g., "2/2 parks" or "1/2 parks")
+    /// Summary string for upload status (e.g., "2/2 parks accepted" or "1/2 parks submitted")
     var uploadStatusSummary: String? {
         guard isMultiPark else {
             return nil
         }
-        let uploadedParks = parks.count - failedParks.count
-        return "\(uploadedParks)/\(parks.count) parks"
+        let acceptedParks = parks.filter { park in
+            qsos.allSatisfy { $0.isUploadedToPark(park) || $0.isUploadRejected(for: .pota) }
+        }.count
+        let submittedParks = parks.filter { park in
+            qsos.contains { $0.isSubmittedToPark(park) }
+        }.count
+        if acceptedParks == parks.count {
+            return "\(acceptedParks)/\(parks.count) parks accepted"
+        } else if submittedParks > 0, acceptedParks > 0 {
+            return "\(acceptedParks) accepted, \(submittedParks) submitted"
+        } else if submittedParks > 0 {
+            return "\(submittedParks)/\(parks.count) parks submitted"
+        }
+        return "\(acceptedParks)/\(parks.count) parks accepted"
     }
 
     static func == (lhs: POTAActivation, rhs: POTAActivation) -> Bool {
@@ -278,15 +308,20 @@ struct POTAActivation: Identifiable, Equatable {
                 .sorted { $0.date > $1.date }
     }
 
-    /// QSOs that are fully uploaded to all parks in this activation
+    /// QSOs that are fully confirmed in POTA job log for all parks
     func uploadedQSOs() -> [QSO] {
-        if isMultiPark {
-            // For two-fers, a QSO is "uploaded" only if uploaded to ALL parks
-            qsos.filter { qso in
-                parks.allSatisfy { qso.isUploadedToPark($0) }
-            }
-        } else {
-            qsos.filter { $0.isPresentInPOTA() }
+        // A QSO is "uploaded" only if confirmed for ALL parks
+        qsos.filter { qso in
+            parks.allSatisfy { qso.isUploadedToPark($0) }
+        }
+    }
+
+    /// QSOs that have been submitted but not yet confirmed by POTA job log
+    func submittedQSOs() -> [QSO] {
+        qsos.filter { qso in
+            !qso.isUploadRejected(for: .pota)
+                && !parks.allSatisfy { qso.isUploadedToPark($0) }
+                && parks.contains { qso.isSubmittedToPark($0) }
         }
     }
 
@@ -295,22 +330,20 @@ struct POTAActivation: Identifiable, Equatable {
         qsos.filter { $0.isUploadRejected(for: .pota) }
     }
 
-    /// QSOs that need to be uploaded to POTA (not fully uploaded and not rejected)
+    /// QSOs that need to be uploaded to POTA (not submitted, not confirmed, not rejected)
     func pendingQSOs() -> [QSO] {
-        if isMultiPark {
-            // For two-fers, a QSO is "pending" if ANY park hasn't been uploaded
-            qsos.filter { qso in
-                !qso.isUploadRejected(for: .pota) && parks.contains { !qso.isUploadedToPark($0) }
-            }
-        } else {
-            qsos.filter { !$0.isPresentInPOTA() && !$0.isUploadRejected(for: .pota) }
+        // A QSO is "pending" if ANY park hasn't been uploaded or submitted
+        qsos.filter { qso in
+            !qso.isUploadRejected(for: .pota)
+                && parks.contains { !qso.isUploadedToPark($0) && !qso.isSubmittedToPark($0) }
         }
     }
 
-    /// QSOs that need upload to a specific park
+    /// QSOs that need upload to a specific park (not submitted or confirmed)
     func pendingQSOs(forPark park: String) -> [QSO] {
         qsos.filter { qso in
             !qso.isUploadRejected(for: .pota) && !qso.isUploadedToPark(park)
+                && !qso.isSubmittedToPark(park)
         }
     }
 

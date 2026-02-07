@@ -287,3 +287,20 @@ struct ADIFDocument: FileDocument {
         return FileWrapper(regularFileWithContents: data)
     }
 }
+
+// MARK: - UploadDetailRow
+
+struct UploadDetailRow: View {
+    let label: String
+    let value: String
+
+    var body: some View {
+        HStack {
+            Text(label)
+                .foregroundStyle(.secondary)
+            Spacer()
+            Text(value)
+                .fontWeight(.medium)
+        }
+    }
+}
