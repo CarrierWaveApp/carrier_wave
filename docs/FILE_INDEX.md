@@ -109,6 +109,7 @@ Pure logic library that can be tested without iOS Simulator. Run tests with `mak
 | `SyncService+Process.swift` | QSO processing during sync |
 | `QSOProcessingActor.swift` | Background actor for QSO processing without blocking UI |
 | `QSOProcessingActor+OrphanRepair.swift` | Repair QSOs missing ServicePresence records |
+| `QSOProcessingActor+POTAReconcile.swift` | Reconcile POTA ServicePresence against upload job log |
 | `SyncDebugLog.swift` | Sync debugging utilities |
 | `ImportService.swift` | ADIF parsing, deduplication, QSO creation |
 | `ImportService+External.swift` | External file import handling |
