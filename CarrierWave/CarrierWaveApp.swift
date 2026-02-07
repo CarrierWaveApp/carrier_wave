@@ -79,9 +79,9 @@ struct CarrierWaveApp: App {
             return
         }
 
-        // Check for HTTPS friend invite link (https://carrierwave.app/invite/{token})
-        if url.host == "carrierwave.app", url.pathComponents.count >= 2,
-           url.pathComponents[1] == "invite"
+        // Check for HTTPS friend invite link (https://*.carrierwave.app/invite/{token})
+        if let host = url.host, host.hasSuffix("carrierwave.app"),
+           url.pathComponents.count >= 2, url.pathComponents[1] == "invite"
         {
             handleFriendInviteURL(url)
             return
@@ -98,7 +98,7 @@ struct CarrierWaveApp: App {
         // Parse invite token from URL
         // Formats:
         // - carrierwave://invite/{token}
-        // - https://carrierwave.app/invite/{token}
+        // - https://*.carrierwave.app/invite/{token}
         let pathComponents = url.pathComponents.filter { $0 != "/" }
 
         var token: String?
@@ -111,7 +111,7 @@ struct CarrierWaveApp: App {
                 token = first
             }
         } else {
-            // https://carrierwave.app/invite/{token}
+            // https://*.carrierwave.app/invite/{token}
             if let inviteIndex = pathComponents.firstIndex(of: "invite"),
                inviteIndex + 1 < pathComponents.count
             {

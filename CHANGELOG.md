@@ -4,6 +4,9 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- Fix invite link deep links not matching when URL uses `activities.carrierwave.app` subdomain
+
 ## [1.24.2] - 2026-02-07
 
 ### Added
