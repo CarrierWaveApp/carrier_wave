@@ -56,6 +56,9 @@ final class ActivityDetector {
             return "\(type):\(details?.streakDays ?? 0)"
         case .personalBest:
             return "\(type):\(details?.recordType ?? "")"
+        case .workedFriend:
+            let day = dayStringFrom(item.timestamp)
+            return "\(type):\(details?.workedCallsign ?? ""):\(day)"
         case .challengeTierUnlock,
              .challengeCompletion:
             return "\(type):\(item.challengeId?.uuidString ?? "challenge")"
@@ -115,6 +118,9 @@ final class ActivityDetector {
         // Check for personal bests
         activities.append(contentsOf: detectPersonalBests(qsos: qsos, historical: historicalData))
 
+        // Check for QSOs with friends
+        activities.append(contentsOf: detectWorkedFriends(qsos: qsos))
+
         return activities
     }
 
@@ -168,6 +174,9 @@ final class ActivityDetector {
             return "\(type):\(activity.streakDays ?? 0)"
         case .personalBest:
             return "\(type):\(activity.recordType ?? "")"
+        case .workedFriend:
+            let day = dayStringFrom(activity.timestamp)
+            return "\(type):\(activity.workedCallsign ?? ""):\(day)"
         case .challengeTierUnlock,
              .challengeCompletion:
             return "\(type):challenge"
@@ -220,6 +229,10 @@ final class ActivityDetector {
         case .personalBest:
             details.recordType = activity.recordType
             details.recordValue = activity.recordValue
+        case .workedFriend:
+            details.workedCallsign = activity.workedCallsign
+            details.band = activity.band
+            details.mode = activity.mode
         case .challengeTierUnlock,
              .challengeCompletion:
             // These are handled by challenge system, not detector

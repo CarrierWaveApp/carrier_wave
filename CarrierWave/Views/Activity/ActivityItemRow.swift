@@ -113,6 +113,8 @@ struct ActivityItemRow: View {
             .orange
         case .personalBest:
             .red
+        case .workedFriend:
+            .cyan
         }
     }
 
@@ -186,6 +188,12 @@ struct ActivityItemRow: View {
                 return "New \(recordType) record: \(value)"
             }
             return "Set a new personal best"
+
+        case .workedFriend:
+            if let callsign = details?.workedCallsign {
+                return "Worked friend \(callsign)"
+            }
+            return "Worked a friend"
         }
     }
 

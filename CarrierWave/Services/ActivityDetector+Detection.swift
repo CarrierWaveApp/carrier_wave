@@ -330,4 +330,48 @@ extension ActivityDetector {
 
         return nil
     }
+
+    /// Detect QSOs with accepted friends
+    func detectWorkedFriends(qsos: [QSO]) -> [DetectedActivity] {
+        // Load accepted friends
+        let acceptedStatus = "accepted"
+        let descriptor = FetchDescriptor<Friendship>(
+            predicate: #Predicate { $0.statusRawValue == acceptedStatus }
+        )
+        let friends = (try? modelContext.fetch(descriptor)) ?? []
+
+        guard !friends.isEmpty else {
+            return []
+        }
+
+        let friendCallsigns = Set(friends.map { $0.friendCallsign.uppercased() })
+        let ownCallsign = userCallsign.uppercased()
+
+        var activities: [DetectedActivity] = []
+
+        for qso in qsos {
+            let callsign = qso.callsign.uppercased()
+
+            // Skip self-QSOs
+            guard callsign != ownCallsign else {
+                continue
+            }
+
+            guard friendCallsigns.contains(callsign) else {
+                continue
+            }
+
+            activities.append(
+                DetectedActivity(
+                    type: .workedFriend,
+                    timestamp: qso.timestamp,
+                    band: qso.band,
+                    mode: qso.mode,
+                    workedCallsign: qso.callsign
+                )
+            )
+        }
+
+        return activities
+    }
 }

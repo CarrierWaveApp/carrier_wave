@@ -124,7 +124,8 @@ extension ShareCardContent {
         case .newDXCCEntity,
              .dxContact,
              .newBand,
-             .newMode:
+             .newMode,
+             .workedFriend:
             forContactActivity(item)
         case .potaActivation,
              .sotaActivation:
@@ -148,8 +149,10 @@ extension ShareCardContent {
             return ShareCardContent(
                 iconName: "globe", headline: "Worked \(det?.entityName ?? "a new country")",
                 subheadline: "for the first time!",
-                stats: [ShareCardStat(label: "Band", value: det?.band ?? ""),
-                        ShareCardStat(label: "Mode", value: det?.mode ?? "")],
+                stats: [
+                    ShareCardStat(label: "Band", value: det?.band ?? ""),
+                    ShareCardStat(label: "Mode", value: det?.mode ?? ""),
+                ],
                 callsign: item.callsign, dateRange: date
             )
         case .dxContact:
@@ -157,8 +160,10 @@ extension ShareCardContent {
             return ShareCardContent(
                 iconName: "antenna.radiowaves.left.and.right", headline: "Long Distance QSO!",
                 subheadline: det?.workedCallsign,
-                stats: [ShareCardStat(label: "Distance", value: "\(dist.formatted()) km"),
-                        ShareCardStat(label: "Band", value: det?.band ?? "")],
+                stats: [
+                    ShareCardStat(label: "Distance", value: "\(dist.formatted()) km"),
+                    ShareCardStat(label: "Band", value: det?.band ?? ""),
+                ],
                 callsign: item.callsign, dateRange: date
             )
         case .newBand:
@@ -334,15 +339,17 @@ struct SummaryCardData {
 
 #Preview("Summary Card") {
     ShareCardView(
-        content: .forSummary(SummaryCardData(
-            callsign: "W1ABC",
-            title: "My Week in Radio",
-            dateRange: "Jan 21-28, 2026",
-            qsoCount: 47,
-            countriesWorked: 12,
-            furthestDistance: 14_231,
-            streakDays: 7
-        ))
+        content: .forSummary(
+            SummaryCardData(
+                callsign: "W1ABC",
+                title: "My Week in Radio",
+                dateRange: "Jan 21-28, 2026",
+                qsoCount: 47,
+                countriesWorked: 12,
+                furthestDistance: 14_231,
+                streakDays: 7
+            )
+        )
     )
     .padding()
     .background(Color(.systemBackground))

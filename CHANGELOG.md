@@ -4,6 +4,9 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Add "Worked Friend" activity event — detect and surface QSOs with accepted friends in the activity feed
+
 ## [1.25.0] - 2026-02-07
 
 ### Added
