@@ -4,6 +4,8 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.24.2] - 2026-02-07
+
 ### Added
 - Add community features opt-in during onboarding — users can choose to register with the activities server for friend discovery, challenges, and activity feeds
 - Add "Enable community features" toggle in Activities settings to control discoverability in friend search
