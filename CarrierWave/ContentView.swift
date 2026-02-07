@@ -309,6 +309,9 @@ struct ContentView: View {
     @State private var iPadTabs: [AppTab] = TabConfiguration.tabOrder()
     @State private var mapFilterState = MapFilterState()
 
+    @Query(filter: #Predicate<Friendship> { $0.statusRawValue == "pending" && $0.isOutgoing == false })
+    private var incomingFriendRequests: [Friendship]
+
     private let lofiClient = LoFiClient()
     private let qrzClient = QRZClient()
     private let hamrsClient = HAMRSClient()
@@ -330,6 +333,7 @@ struct ContentView: View {
             // iPad shows all tabs in sidebar (plenty of room)
             List(iPadTabs, id: \.self, selection: $selectedTab) { tab in
                 Label(tab.title, systemImage: tab.icon)
+                    .badge(tab == .activity ? incomingFriendRequests.count : 0)
             }
             .navigationTitle("Carrier Wave")
         } detail: {
@@ -349,6 +353,7 @@ struct ContentView: View {
                         Label(tab.title, systemImage: tab.icon)
                     }
                     .tag(tab)
+                    .badge(tab == .activity ? incomingFriendRequests.count : 0)
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .tabConfigurationChanged)) { _ in

@@ -4,6 +4,9 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Add friend request notifications: badge on Activity tab and Friends toolbar button showing pending incoming request count, plus a banner card in the Activity feed that links to the Friends list
+
 ### Fixed
 - Fix invite link deep links not matching when URL uses `activities.carrierwave.app` subdomain
 
