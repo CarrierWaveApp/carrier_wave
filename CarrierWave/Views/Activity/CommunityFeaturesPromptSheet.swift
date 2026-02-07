@@ -110,10 +110,12 @@ struct CommunityFeaturesPromptSheet: View {
                     deviceName: UIDevice.current.name,
                     sourceURL: activitiesSourceURL
                 )
-                onComplete()
             } catch {
-                registrationError = "Registration failed: \(error.localizedDescription)"
-                isRegistering = false
+                // Non-fatal — auto-register on next sync will retry
+                print("[CommunityPrompt] Registration failed: \(error)")
+            }
+            await MainActor.run {
+                onComplete()
             }
         }
     }
