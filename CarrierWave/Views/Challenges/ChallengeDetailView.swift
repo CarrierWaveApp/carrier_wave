@@ -34,7 +34,7 @@ struct ChallengeDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             if syncService == nil {
-                syncService = ChallengesSyncService(modelContext: modelContext)
+                syncService = ActivitiesSyncService(modelContext: modelContext)
             }
             startPolling()
         }
@@ -61,7 +61,7 @@ struct ChallengeDetailView: View {
 
     // MARK: Private
 
-    @State private var syncService: ChallengesSyncService?
+    @State private var syncService: ActivitiesSyncService?
     @State private var leaderboardEntries: [LeaderboardEntry] = []
     @State private var isLoadingLeaderboard = false
     @State private var showingLeaveConfirmation = false

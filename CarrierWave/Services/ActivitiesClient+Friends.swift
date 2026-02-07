@@ -1,20 +1,20 @@
 import Foundation
 
-// MARK: - ChallengesClient Friends Extension
+// MARK: - ActivitiesClient Friends Extension
 
-extension ChallengesClient {
+extension ActivitiesClient {
     // MARK: - User Search
 
     /// Search for users by callsign or display name
     func searchUsers(query: String, sourceURL: String) async throws -> [UserSearchResult] {
         guard var components = URLComponents(string: sourceURL + "/v1/users/search") else {
-            throw ChallengesError.invalidServerURL
+            throw ActivitiesError.invalidServerURL
         }
 
         components.queryItems = [URLQueryItem(name: "q", value: query)]
 
         guard let url = components.url else {
-            throw ChallengesError.invalidServerURL
+            throw ActivitiesError.invalidServerURL
         }
 
         var request = URLRequest(url: url)
@@ -25,7 +25,7 @@ extension ChallengesClient {
         let (data, response) = try await performFriendRequest(request)
         try validateFriendResponse(response, data: data)
 
-        let apiResponse = try JSONDecoder.challengesDecoder.decode(
+        let apiResponse = try JSONDecoder.activitiesDecoder.decode(
             APIResponse<[UserSearchResult]>.self,
             from: data
         )
@@ -41,7 +41,7 @@ extension ChallengesClient {
         authToken: String
     ) async throws -> FriendRequestDTO {
         guard let url = URL(string: sourceURL + "/v1/friends/requests") else {
-            throw ChallengesError.invalidServerURL
+            throw ActivitiesError.invalidServerURL
         }
 
         var request = URLRequest(url: url)
@@ -51,12 +51,12 @@ extension ChallengesClient {
         request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
 
         let body = SendFriendRequestBody(toUserId: toUserId)
-        request.httpBody = try JSONEncoder.challengesEncoder.encode(body)
+        request.httpBody = try JSONEncoder.activitiesEncoder.encode(body)
 
         let (data, response) = try await performFriendRequest(request)
         try validateFriendResponse(response, data: data)
 
-        let apiResponse = try JSONDecoder.challengesDecoder.decode(
+        let apiResponse = try JSONDecoder.activitiesDecoder.decode(
             APIResponse<FriendRequestDTO>.self,
             from: data
         )
@@ -71,7 +71,7 @@ extension ChallengesClient {
     ) async throws {
         guard let url = URL(string: sourceURL + "/v1/friends/requests/\(requestId.uuidString)/accept")
         else {
-            throw ChallengesError.invalidServerURL
+            throw ActivitiesError.invalidServerURL
         }
 
         var request = URLRequest(url: url)
@@ -101,7 +101,7 @@ extension ChallengesClient {
     ) async throws {
         guard let url = URL(string: sourceURL + "/v1/friends/requests/\(requestId.uuidString)/decline")
         else {
-            throw ChallengesError.invalidServerURL
+            throw ActivitiesError.invalidServerURL
         }
 
         var request = URLRequest(url: url)
@@ -132,7 +132,7 @@ extension ChallengesClient {
         authToken: String
     ) async throws {
         guard let url = URL(string: sourceURL + "/v1/friends/\(friendshipId.uuidString)") else {
-            throw ChallengesError.invalidServerURL
+            throw ActivitiesError.invalidServerURL
         }
 
         var request = URLRequest(url: url)
@@ -157,7 +157,7 @@ extension ChallengesClient {
     /// Get list of current friends
     func getFriends(sourceURL: String, authToken: String) async throws -> [FriendDTO] {
         guard let url = URL(string: sourceURL + "/v1/friends") else {
-            throw ChallengesError.invalidServerURL
+            throw ActivitiesError.invalidServerURL
         }
 
         var request = URLRequest(url: url)
@@ -169,7 +169,7 @@ extension ChallengesClient {
         let (data, response) = try await performFriendRequest(request)
         try validateFriendResponse(response, data: data)
 
-        let apiResponse = try JSONDecoder.challengesDecoder.decode(
+        let apiResponse = try JSONDecoder.activitiesDecoder.decode(
             APIResponse<[FriendDTO]>.self,
             from: data
         )
@@ -182,7 +182,7 @@ extension ChallengesClient {
         authToken: String
     ) async throws -> PendingRequestsDTO {
         guard let url = URL(string: sourceURL + "/v1/friends/requests/pending") else {
-            throw ChallengesError.invalidServerURL
+            throw ActivitiesError.invalidServerURL
         }
 
         var request = URLRequest(url: url)
@@ -194,7 +194,7 @@ extension ChallengesClient {
         let (data, response) = try await performFriendRequest(request)
         try validateFriendResponse(response, data: data)
 
-        let apiResponse = try JSONDecoder.challengesDecoder.decode(
+        let apiResponse = try JSONDecoder.activitiesDecoder.decode(
             APIResponse<PendingRequestsDTO>.self,
             from: data
         )
@@ -209,7 +209,7 @@ extension ChallengesClient {
         authToken: String
     ) async throws -> InviteLinkDTO {
         guard let url = URL(string: sourceURL + "/v1/friends/invite-link") else {
-            throw ChallengesError.invalidServerURL
+            throw ActivitiesError.invalidServerURL
         }
 
         var request = URLRequest(url: url)
@@ -221,7 +221,7 @@ extension ChallengesClient {
         let (data, response) = try await performFriendRequest(request)
         try validateFriendResponse(response, data: data)
 
-        let apiResponse = try JSONDecoder.challengesDecoder.decode(
+        let apiResponse = try JSONDecoder.activitiesDecoder.decode(
             APIResponse<InviteLinkDTO>.self,
             from: data
         )
@@ -235,7 +235,7 @@ extension ChallengesClient {
         authToken: String
     ) async throws -> FriendRequestDTO {
         guard let url = URL(string: sourceURL + "/v1/friends/requests") else {
-            throw ChallengesError.invalidServerURL
+            throw ActivitiesError.invalidServerURL
         }
 
         var request = URLRequest(url: url)
@@ -245,12 +245,12 @@ extension ChallengesClient {
         request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
 
         let body = SendFriendRequestWithInviteBody(inviteToken: inviteToken)
-        request.httpBody = try JSONEncoder.challengesEncoder.encode(body)
+        request.httpBody = try JSONEncoder.activitiesEncoder.encode(body)
 
         let (data, response) = try await performFriendRequest(request)
         try validateFriendResponse(response, data: data)
 
-        let apiResponse = try JSONDecoder.challengesDecoder.decode(
+        let apiResponse = try JSONDecoder.activitiesDecoder.decode(
             APIResponse<FriendRequestDTO>.self,
             from: data
         )
@@ -263,28 +263,28 @@ extension ChallengesClient {
         do {
             return try await URLSession.shared.data(for: request)
         } catch {
-            throw ChallengesError.networkError(error)
+            throw ActivitiesError.networkError(error)
         }
     }
 
     private func validateFriendResponse(_ response: URLResponse, data: Data) throws {
         guard let httpResponse = response as? HTTPURLResponse else {
-            throw ChallengesError.invalidResponse("Not an HTTP response")
+            throw ActivitiesError.invalidResponse("Not an HTTP response")
         }
 
         guard (200 ... 299).contains(httpResponse.statusCode) else {
-            if let errorResponse = try? JSONDecoder.challengesDecoder.decode(
+            if let errorResponse = try? JSONDecoder.activitiesDecoder.decode(
                 APIErrorResponse.self,
                 from: data
             ) {
-                throw ChallengesError.from(
+                throw ActivitiesError.from(
                     apiCode: errorResponse.error.code,
                     message: errorResponse.error.message
                 )
             }
 
             let message = String(data: data, encoding: .utf8)
-            throw ChallengesError.serverError(httpResponse.statusCode, message)
+            throw ActivitiesError.serverError(httpResponse.statusCode, message)
         }
     }
 }

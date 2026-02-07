@@ -1,14 +1,14 @@
 import Foundation
 
-// MARK: - ChallengesClient Clubs Extension
+// MARK: - ActivitiesClient Clubs Extension
 
-extension ChallengesClient {
+extension ActivitiesClient {
     // MARK: - Club Endpoints
 
     /// Get list of clubs the user belongs to
     func getMyClubs(sourceURL: String, authToken: String) async throws -> [ClubDTO] {
         guard let url = URL(string: sourceURL + "/v1/clubs") else {
-            throw ChallengesError.invalidServerURL
+            throw ActivitiesError.invalidServerURL
         }
 
         var request = URLRequest(url: url)
@@ -20,7 +20,7 @@ extension ChallengesClient {
         let (data, response) = try await performClubRequest(request)
         try validateClubResponse(response, data: data)
 
-        let apiResponse = try JSONDecoder.challengesDecoder.decode(
+        let apiResponse = try JSONDecoder.activitiesDecoder.decode(
             APIResponse<[ClubDTO]>.self,
             from: data
         )
@@ -35,13 +35,13 @@ extension ChallengesClient {
         includeMembers: Bool = true
     ) async throws -> ClubDetailDTO {
         guard var components = URLComponents(string: sourceURL + "/v1/clubs/\(clubId.uuidString)") else {
-            throw ChallengesError.invalidServerURL
+            throw ActivitiesError.invalidServerURL
         }
 
         components.queryItems = [URLQueryItem(name: "includeMembers", value: String(includeMembers))]
 
         guard let url = components.url else {
-            throw ChallengesError.invalidServerURL
+            throw ActivitiesError.invalidServerURL
         }
 
         var request = URLRequest(url: url)
@@ -53,7 +53,7 @@ extension ChallengesClient {
         let (data, response) = try await performClubRequest(request)
         try validateClubResponse(response, data: data)
 
-        let apiResponse = try JSONDecoder.challengesDecoder.decode(
+        let apiResponse = try JSONDecoder.activitiesDecoder.decode(
             APIResponse<ClubDetailDTO>.self,
             from: data
         )
@@ -66,28 +66,28 @@ extension ChallengesClient {
         do {
             return try await URLSession.shared.data(for: request)
         } catch {
-            throw ChallengesError.networkError(error)
+            throw ActivitiesError.networkError(error)
         }
     }
 
     private func validateClubResponse(_ response: URLResponse, data: Data) throws {
         guard let httpResponse = response as? HTTPURLResponse else {
-            throw ChallengesError.invalidResponse("Not an HTTP response")
+            throw ActivitiesError.invalidResponse("Not an HTTP response")
         }
 
         guard (200 ... 299).contains(httpResponse.statusCode) else {
-            if let errorResponse = try? JSONDecoder.challengesDecoder.decode(
+            if let errorResponse = try? JSONDecoder.activitiesDecoder.decode(
                 APIErrorResponse.self,
                 from: data
             ) {
-                throw ChallengesError.from(
+                throw ActivitiesError.from(
                     apiCode: errorResponse.error.code,
                     message: errorResponse.error.message
                 )
             }
 
             let message = String(data: data, encoding: .utf8)
-            throw ChallengesError.serverError(httpResponse.statusCode, message)
+            throw ActivitiesError.serverError(httpResponse.statusCode, message)
         }
     }
 }

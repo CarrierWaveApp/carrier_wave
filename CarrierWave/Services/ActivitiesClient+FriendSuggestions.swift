@@ -1,8 +1,8 @@
 import Foundation
 
-// MARK: - ChallengesClient Friend Suggestions Extension
+// MARK: - ActivitiesClient Friend Suggestions Extension
 
-extension ChallengesClient {
+extension ActivitiesClient {
     /// Validate callsigns against server to find registered app users.
     /// Falls back to individual search if batch endpoint is unavailable.
     func getSuggestions(
@@ -21,9 +21,9 @@ extension ChallengesClient {
             // Server returns JSON 404 which decodes as .serverError(0, "NOT_FOUND")
             // or raw HTTP 404 as .serverError(404, _).
             let isMissingEndpoint = switch error {
-            case ChallengesError.serverError(404, _):
+            case ActivitiesError.serverError(404, _):
                 true
-            case let ChallengesError.serverError(0, msg) where msg?.contains("NOT_FOUND") == true:
+            case let ActivitiesError.serverError(0, msg) where msg?.contains("NOT_FOUND") == true:
                 true
             default:
                 false
@@ -48,7 +48,7 @@ extension ChallengesClient {
         authToken: String
     ) async throws -> [FriendSuggestionDTO] {
         guard let url = URL(string: sourceURL + "/v1/friends/suggestions") else {
-            throw ChallengesError.invalidServerURL
+            throw ActivitiesError.invalidServerURL
         }
 
         var request = URLRequest(url: url)
@@ -58,12 +58,12 @@ extension ChallengesClient {
         request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
 
         let body = SuggestionsRequestBody(callsigns: callsigns)
-        request.httpBody = try JSONEncoder.challengesEncoder.encode(body)
+        request.httpBody = try JSONEncoder.activitiesEncoder.encode(body)
 
         let (data, response) = try await performSuggestionRequest(request)
         try validateSuggestionResponse(response, data: data)
 
-        let apiResponse = try JSONDecoder.challengesDecoder.decode(
+        let apiResponse = try JSONDecoder.activitiesDecoder.decode(
             APIResponse<[FriendSuggestionDTO]>.self,
             from: data
         )
@@ -106,28 +106,28 @@ extension ChallengesClient {
         do {
             return try await URLSession.shared.data(for: request)
         } catch {
-            throw ChallengesError.networkError(error)
+            throw ActivitiesError.networkError(error)
         }
     }
 
     private func validateSuggestionResponse(_ response: URLResponse, data: Data) throws {
         guard let httpResponse = response as? HTTPURLResponse else {
-            throw ChallengesError.invalidResponse("Not an HTTP response")
+            throw ActivitiesError.invalidResponse("Not an HTTP response")
         }
 
         guard (200 ... 299).contains(httpResponse.statusCode) else {
-            if let errorResponse = try? JSONDecoder.challengesDecoder.decode(
+            if let errorResponse = try? JSONDecoder.activitiesDecoder.decode(
                 APIErrorResponse.self,
                 from: data
             ) {
-                throw ChallengesError.from(
+                throw ActivitiesError.from(
                     apiCode: errorResponse.error.code,
                     message: errorResponse.error.message
                 )
             }
 
             let message = String(data: data, encoding: .utf8)
-            throw ChallengesError.serverError(httpResponse.statusCode, message)
+            throw ActivitiesError.serverError(httpResponse.statusCode, message)
         }
     }
 }

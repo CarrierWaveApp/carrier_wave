@@ -134,7 +134,7 @@ struct SyncSourcesSection: View {
 
             // Activities
             NavigationLink {
-                ChallengesSettingsView()
+                ActivitiesSettingsView()
             } label: {
                 HStack {
                     Label("Activities", systemImage: "flag.2.crossed")

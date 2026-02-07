@@ -4,10 +4,10 @@ import Foundation
     import UIKit
 #endif
 
-// MARK: - ChallengesClient
+// MARK: - ActivitiesClient
 
 @MainActor
-final class ChallengesClient {
+final class ActivitiesClient {
     // MARK: Lifecycle
 
     init(baseURL: String = "https://activities.carrierwave.app") {
@@ -21,16 +21,16 @@ final class ChallengesClient {
     // MARK: - Authentication
 
     func saveAuthToken(_ token: String) throws {
-        try keychain.save(token, for: KeychainHelper.Keys.challengesAuthToken)
+        try keychain.save(token, for: KeychainHelper.Keys.activitiesAuthToken)
     }
 
     func getAuthToken() throws -> String {
-        try keychain.readString(for: KeychainHelper.Keys.challengesAuthToken)
+        try keychain.readString(for: KeychainHelper.Keys.activitiesAuthToken)
     }
 
     func hasAuthToken() -> Bool {
         do {
-            _ = try keychain.readString(for: KeychainHelper.Keys.challengesAuthToken)
+            _ = try keychain.readString(for: KeychainHelper.Keys.activitiesAuthToken)
             return true
         } catch {
             return false
@@ -38,11 +38,40 @@ final class ChallengesClient {
     }
 
     func clearAuthToken() {
-        try? keychain.delete(for: KeychainHelper.Keys.challengesAuthToken)
+        try? keychain.delete(for: KeychainHelper.Keys.activitiesAuthToken)
     }
 
     func logout() {
         clearAuthToken()
+    }
+
+    // MARK: - Registration
+
+    /// Register with the activities server so the user appears in friend search.
+    /// Creates both a user record (for search) and a participant record (for auth token).
+    func register(
+        callsign: String,
+        deviceName: String?,
+        sourceURL: String
+    ) async throws -> RegisterResponseDTO {
+        let url = try buildURL(sourceURL, path: "/v1/register")
+        var request = try buildRequest(url: url, method: "POST")
+
+        let body = RegisterRequestBody(callsign: callsign, deviceName: deviceName)
+        request.httpBody = try JSONEncoder.activitiesEncoder.encode(body)
+
+        let (data, response) = try await performRequest(request)
+        try validateResponse(response, data: data)
+
+        let apiResponse = try JSONDecoder.activitiesDecoder.decode(
+            APIResponse<RegisterResponseDTO>.self,
+            from: data
+        )
+
+        // Store the device token for authenticated requests
+        try saveAuthToken(apiResponse.data.deviceToken)
+
+        return apiResponse.data
     }
 
     // MARK: - Challenge Sources
@@ -80,14 +109,14 @@ final class ChallengesClient {
         }
 
         guard let url = components?.url else {
-            throw ChallengesError.invalidServerURL
+            throw ActivitiesError.invalidServerURL
         }
 
         let request = try buildRequest(url: url, method: "GET")
         let (data, response) = try await performRequest(request)
         try validateResponse(response, data: data)
 
-        let apiResponse = try JSONDecoder.challengesDecoder.decode(
+        let apiResponse = try JSONDecoder.activitiesDecoder.decode(
             APIResponse<ChallengeListData>.self,
             from: data
         )
@@ -102,7 +131,7 @@ final class ChallengesClient {
         let (data, response) = try await performRequest(request)
         try validateResponse(response, data: data)
 
-        let apiResponse = try JSONDecoder.challengesDecoder.decode(
+        let apiResponse = try JSONDecoder.activitiesDecoder.decode(
             APIResponse<ChallengeDefinitionDTO>.self,
             from: data
         )
@@ -131,7 +160,7 @@ final class ChallengesClient {
         let (data, response) = try await performRequest(request)
         try validateResponse(response, data: data)
 
-        let apiResponse = try JSONDecoder.challengesDecoder.decode(
+        let apiResponse = try JSONDecoder.activitiesDecoder.decode(
             APIResponse<JoinChallengeData>.self,
             from: data
         )
@@ -166,12 +195,12 @@ final class ChallengesClient {
     ) async throws -> ProgressReportData {
         let url = try buildURL(sourceURL, path: "/v1/challenges/\(challengeId.uuidString)/progress")
         var request = try buildRequest(url: url, method: "POST", authToken: authToken)
-        request.httpBody = try JSONEncoder.challengesEncoder.encode(report)
+        request.httpBody = try JSONEncoder.activitiesEncoder.encode(report)
 
         let (data, response) = try await performRequest(request)
         try validateResponse(response, data: data)
 
-        let apiResponse = try JSONDecoder.challengesDecoder.decode(
+        let apiResponse = try JSONDecoder.activitiesDecoder.decode(
             APIResponse<ProgressReportData>.self,
             from: data
         )
@@ -190,7 +219,7 @@ final class ChallengesClient {
         let (data, response) = try await performRequest(request)
         try validateResponse(response, data: data)
 
-        let apiResponse = try JSONDecoder.challengesDecoder.decode(
+        let apiResponse = try JSONDecoder.activitiesDecoder.decode(
             APIResponse<ServerProgress>.self,
             from: data
         )
@@ -227,14 +256,14 @@ final class ChallengesClient {
         }
 
         guard let url = components?.url else {
-            throw ChallengesError.invalidServerURL
+            throw ActivitiesError.invalidServerURL
         }
 
         let request = try buildRequest(url: url, method: "GET")
         let (data, response) = try await performRequest(request)
         try validateResponse(response, data: data)
 
-        let apiResponse = try JSONDecoder.challengesDecoder.decode(
+        let apiResponse = try JSONDecoder.activitiesDecoder.decode(
             APIResponse<LeaderboardData>.self,
             from: data
         )
@@ -259,7 +288,7 @@ final class ChallengesClient {
         let (data, response) = try await performRequest(request)
         try validateResponse(response, data: data)
 
-        let apiResponse = try JSONDecoder.challengesDecoder.decode(
+        let apiResponse = try JSONDecoder.activitiesDecoder.decode(
             APIResponse<[ParticipatingChallengeDTO]>.self,
             from: data
         )
@@ -281,7 +310,7 @@ final class ChallengesClient {
             var version: String
         }
 
-        let healthResponse = try JSONDecoder.challengesDecoder.decode(
+        let healthResponse = try JSONDecoder.activitiesDecoder.decode(
             HealthResponse.self,
             from: data
         )
@@ -305,7 +334,7 @@ final class ChallengesClient {
 
     private func buildURL(_ base: String, path: String) throws -> URL {
         guard let url = URL(string: base + path) else {
-            throw ChallengesError.invalidServerURL
+            throw ActivitiesError.invalidServerURL
         }
         return url
     }
@@ -332,29 +361,29 @@ final class ChallengesClient {
         do {
             return try await URLSession.shared.data(for: request)
         } catch {
-            throw ChallengesError.networkError(error)
+            throw ActivitiesError.networkError(error)
         }
     }
 
     private func validateResponse(_ response: URLResponse, data: Data) throws {
         guard let httpResponse = response as? HTTPURLResponse else {
-            throw ChallengesError.invalidResponse("Not an HTTP response")
+            throw ActivitiesError.invalidResponse("Not an HTTP response")
         }
 
         guard (200 ... 299).contains(httpResponse.statusCode) else {
             // Try to parse API error response
-            if let errorResponse = try? JSONDecoder.challengesDecoder.decode(
+            if let errorResponse = try? JSONDecoder.activitiesDecoder.decode(
                 APIErrorResponse.self,
                 from: data
             ) {
-                throw ChallengesError.from(
+                throw ActivitiesError.from(
                     apiCode: errorResponse.error.code,
                     message: errorResponse.error.message
                 )
             }
 
             let message = String(data: data, encoding: .utf8)
-            throw ChallengesError.serverError(httpResponse.statusCode, message)
+            throw ActivitiesError.serverError(httpResponse.statusCode, message)
         }
     }
 }
@@ -362,7 +391,7 @@ final class ChallengesClient {
 // MARK: - JSON Encoder Extension
 
 extension JSONEncoder {
-    static let challengesEncoder: JSONEncoder = {
+    static let activitiesEncoder: JSONEncoder = {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
         return encoder
@@ -372,7 +401,7 @@ extension JSONEncoder {
 // MARK: - JSON Decoder Extension
 
 extension JSONDecoder {
-    static let challengesDecoder: JSONDecoder = {
+    static let activitiesDecoder: JSONDecoder = {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         return decoder

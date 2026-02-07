@@ -1,8 +1,8 @@
 import Foundation
 
-// MARK: - ChallengesClient Activities Extension
+// MARK: - ActivitiesClient Activities Extension
 
-extension ChallengesClient {
+extension ActivitiesClient {
     // MARK: - Report Activity
 
     /// Report a notable activity to the server
@@ -12,7 +12,7 @@ extension ChallengesClient {
         authToken: String
     ) async throws -> ReportedActivityDTO {
         guard let url = URL(string: sourceURL + "/v1/activities") else {
-            throw ChallengesError.invalidServerURL
+            throw ActivitiesError.invalidServerURL
         }
 
         var request = URLRequest(url: url)
@@ -20,12 +20,12 @@ extension ChallengesClient {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
-        request.httpBody = try JSONEncoder.challengesEncoder.encode(activity)
+        request.httpBody = try JSONEncoder.activitiesEncoder.encode(activity)
 
         let (data, response) = try await performActivityRequest(request)
         try validateActivityResponse(response, data: data)
 
-        let apiResponse = try JSONDecoder.challengesDecoder.decode(
+        let apiResponse = try JSONDecoder.activitiesDecoder.decode(
             APIResponse<ReportedActivityDTO>.self,
             from: data
         )
@@ -43,7 +43,7 @@ extension ChallengesClient {
         before: String? = nil
     ) async throws -> FeedResponseDTO {
         guard var components = URLComponents(string: sourceURL + "/v1/feed") else {
-            throw ChallengesError.invalidServerURL
+            throw ActivitiesError.invalidServerURL
         }
 
         var queryItems: [URLQueryItem] = []
@@ -59,7 +59,7 @@ extension ChallengesClient {
         components.queryItems = queryItems
 
         guard let url = components.url else {
-            throw ChallengesError.invalidServerURL
+            throw ActivitiesError.invalidServerURL
         }
 
         var request = URLRequest(url: url)
@@ -71,7 +71,7 @@ extension ChallengesClient {
         let (data, response) = try await performActivityRequest(request)
         try validateActivityResponse(response, data: data)
 
-        let apiResponse = try JSONDecoder.challengesDecoder.decode(
+        let apiResponse = try JSONDecoder.activitiesDecoder.decode(
             APIResponse<FeedResponseDTO>.self,
             from: data
         )
@@ -84,28 +84,28 @@ extension ChallengesClient {
         do {
             return try await URLSession.shared.data(for: request)
         } catch {
-            throw ChallengesError.networkError(error)
+            throw ActivitiesError.networkError(error)
         }
     }
 
     private func validateActivityResponse(_ response: URLResponse, data: Data) throws {
         guard let httpResponse = response as? HTTPURLResponse else {
-            throw ChallengesError.invalidResponse("Not an HTTP response")
+            throw ActivitiesError.invalidResponse("Not an HTTP response")
         }
 
         guard (200 ... 299).contains(httpResponse.statusCode) else {
-            if let errorResponse = try? JSONDecoder.challengesDecoder.decode(
+            if let errorResponse = try? JSONDecoder.activitiesDecoder.decode(
                 APIErrorResponse.self,
                 from: data
             ) {
-                throw ChallengesError.from(
+                throw ActivitiesError.from(
                     apiCode: errorResponse.error.code,
                     message: errorResponse.error.message
                 )
             }
 
             let message = String(data: data, encoding: .utf8)
-            throw ChallengesError.serverError(httpResponse.statusCode, message)
+            throw ActivitiesError.serverError(httpResponse.statusCode, message)
         }
     }
 }

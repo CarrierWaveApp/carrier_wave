@@ -150,8 +150,8 @@ extension KeychainHelper {
         /// HAMRS
         nonisolated static let hamrsApiKey = "hamrs.api.key"
 
-        /// Challenges
-        nonisolated static let challengesAuthToken = "challenges.auth.token"
+        /// Activities
+        nonisolated static let activitiesAuthToken = "challenges.auth.token"
 
         /// LoTW
         nonisolated static let lotwUsername = "lotw.username"

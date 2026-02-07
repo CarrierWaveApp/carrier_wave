@@ -1,5 +1,6 @@
 import SwiftData
 import SwiftUI
+import UIKit
 
 // MARK: - ActivityView
 
@@ -29,7 +30,7 @@ struct ActivityView: View {
 
     @State var selectedFilter: FeedFilter = .all
 
-    @State var syncService: ChallengesSyncService?
+    @State var syncService: ActivitiesSyncService?
     @State var friendsSyncService: FriendsSyncService?
     @State var clubsSyncService: ClubsSyncService?
     @State var feedSyncService: ActivityFeedSyncService?
@@ -55,6 +56,10 @@ struct ActivityView: View {
     @State var pendingFriendInviteToken: String?
     @State var showingFriendInviteSheet = false
     @State var isProcessingFriendInvite = false
+
+    // Community features prompt for existing users
+    @AppStorage("activitiesServerPromptShown") var communityPromptShown = false
+    @State var showingCommunityPrompt = false
 
     var activeParticipations: [ChallengeParticipation] {
         allParticipations.filter { $0.status == .active }
@@ -176,7 +181,7 @@ struct ActivityView: View {
         }
         .onAppear {
             if syncService == nil {
-                syncService = ChallengesSyncService(modelContext: modelContext)
+                syncService = ActivitiesSyncService(modelContext: modelContext)
             }
             if friendsSyncService == nil {
                 friendsSyncService = FriendsSyncService(modelContext: modelContext)
@@ -244,10 +249,24 @@ struct ActivityView: View {
                 }
             )
         }
+        .sheet(isPresented: $showingCommunityPrompt) {
+            CommunityFeaturesPromptSheet(
+                callsign: currentCallsign,
+                onComplete: {
+                    communityPromptShown = true
+                    showingCommunityPrompt = false
+                }
+            )
+        }
         .task {
             loadActivityItems()
             // One-time cleanup of duplicate activities (after UI is shown)
             await deduplicateActivitiesIfNeeded()
+            // Show community features prompt for existing users who haven't been asked
+            if !communityPromptShown {
+                communityPromptShown = true
+                showingCommunityPrompt = true
+            }
         }
         .miniTour(.challenges, tourState: tourState)
     }

@@ -40,7 +40,7 @@ struct LeaderboardView: View {
         }
         .onAppear {
             if syncService == nil {
-                syncService = ChallengesSyncService(modelContext: modelContext)
+                syncService = ActivitiesSyncService(modelContext: modelContext)
             }
             liveEntries = entries
             startPolling()
@@ -55,7 +55,7 @@ struct LeaderboardView: View {
 
     // MARK: Private
 
-    @State private var syncService: ChallengesSyncService?
+    @State private var syncService: ActivitiesSyncService?
     @State private var liveEntries: [LeaderboardEntry] = []
     @State private var isRefreshing = false
     @State private var pollingTask: Task<Void, Never>?

@@ -9,7 +9,7 @@ struct ChallengePreviewDetailView: View {
     @Environment(\.modelContext) var modelContext
 
     let challenge: ChallengeDefinition
-    let syncService: ChallengesSyncService?
+    let syncService: ActivitiesSyncService?
 
     @Query var participations: [ChallengeParticipation]
 
@@ -37,7 +37,7 @@ struct ChallengePreviewDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             if localSyncService == nil {
-                localSyncService = syncService ?? ChallengesSyncService(modelContext: modelContext)
+                localSyncService = syncService ?? ActivitiesSyncService(modelContext: modelContext)
             }
         }
         .alert("Error", isPresented: $showingError) {
@@ -49,7 +49,7 @@ struct ChallengePreviewDetailView: View {
 
     // MARK: Private
 
-    @State private var localSyncService: ChallengesSyncService?
+    @State private var localSyncService: ActivitiesSyncService?
     @State private var isJoining = false
     @State private var errorMessage: String?
     @State private var showingError = false
@@ -220,7 +220,7 @@ struct ChallengePreviewDetailView: View {
     }
 
     private func joinChallenge() {
-        let service = localSyncService ?? ChallengesSyncService(modelContext: modelContext)
+        let service = localSyncService ?? ActivitiesSyncService(modelContext: modelContext)
         if localSyncService == nil {
             localSyncService = service
         }
@@ -230,7 +230,7 @@ struct ChallengePreviewDetailView: View {
         Task { @MainActor in
             do {
                 try await service.joinChallenge(challenge)
-            } catch ChallengesError.alreadyJoined {
+            } catch ActivitiesError.alreadyJoined {
                 // Server says already joined - create local participation if missing
                 createLocalParticipationIfNeeded()
             } catch {

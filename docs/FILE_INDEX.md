@@ -120,23 +120,23 @@ Pure logic library that can be tested without iOS Simulator. Run tests with `mak
 | `DescriptionLookup.swift` | Human-readable descriptions for codes |
 | `DescriptionLookup+DXCC.swift` | DXCC entity descriptions |
 | `FetchedQSO.swift` | Intermediate QSO representation during fetch |
-| `ChallengesClient.swift` | Challenges API client |
-| `ChallengesError.swift` | Challenges-specific errors |
-| `ChallengesSyncService.swift` | Challenge data synchronization (sources, fetching) |
-| `ChallengesSyncService+Participation.swift` | Challenge participation, progress sync, leaderboards |
+| `ActivitiesClient.swift` | Activities API client |
+| `ActivitiesError.swift` | Activities-specific errors |
+| `ActivitiesSyncService.swift` | Activities data synchronization (sources, fetching) |
+| `ActivitiesSyncService+Participation.swift` | Activities participation, progress sync, leaderboards |
 | `ChallengeProgressEngine.swift` | Challenge progress calculation |
 | `ChallengeQSOMatcher.swift` | Match QSOs to challenge criteria |
 | `BugReportService.swift` | Collects device/app info for bug reports |
 | `CallsignAliasService.swift` | Manage current and previous callsigns for alias matching |
-| `ChallengesClient+Friends.swift` | Friend API endpoints extension |
-| `ChallengesClient+FriendSuggestions.swift` | Friend suggestion validation API (batch + fallback) |
+| `ActivitiesClient+Friends.swift` | Friend API endpoints extension |
+| `ActivitiesClient+FriendSuggestions.swift` | Friend suggestion validation API (batch + fallback) |
 | `FriendsSyncService.swift` | Friend data synchronization and actions |
 | `FriendSuggestionActor.swift` | Background actor for counting QSOs per callsign |
-| `ChallengesClient+Clubs.swift` | Club API endpoints extension |
+| `ActivitiesClient+Clubs.swift` | Club API endpoints extension |
 | `ClubsSyncService.swift` | Club data synchronization |
 | `ActivityDetector.swift` | Detect notable activities from QSOs |
 | `ActivityDetector+Detection.swift` | Activity detection methods (DXCC, bands, modes, DX, streaks) |
-| `ChallengesClient+Activities.swift` | Activity API endpoints (report, feed) |
+| `ActivitiesClient+Activities.swift` | Activity API endpoints (report, feed) |
 | `ActivityReporter.swift` | Report detected activities to server |
 | `SyncService+Activity.swift` | Hook activity detection into sync flow |
 | `ActivityFeedSyncService.swift` | Sync activity feed from server |
@@ -288,6 +288,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `FriendProfileView.swift` | Friend profile with activity and stats |
 | `ClubsListView.swift` | List of clubs user belongs to |
 | `ClubDetailView.swift` | Club details and member list |
+| `CommunityFeaturesPromptSheet.swift` | One-time prompt for existing users to opt into community features |
 | `ShareCardView.swift` | Branded share card templates |
 | `ShareCardRenderer.swift` | Render share cards to UIImage |
 | `SummaryCardSheet.swift` | Configure and generate summary cards |
@@ -311,7 +312,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `CloudSettingsViews.swift` | iCloud sync settings |
 | `HAMRSSettingsView.swift` | HAMRS connection settings |
 | `LoTWSettingsView.swift` | LoTW login configuration |
-| `ChallengesSettingsView.swift` | Challenges feature settings |
+| `ActivitiesSettingsView.swift` | Activities feature settings |
 | `POTAAuthWebView.swift` | POTA OAuth WebView |
 | `SyncDebugView.swift` | Sync debugging interface |
 | `AttributionsView.swift` | Third-party attributions |

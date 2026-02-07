@@ -8,9 +8,9 @@ import SwiftData
 final class ActivityFeedSyncService: ObservableObject {
     // MARK: Lifecycle
 
-    init(modelContext: ModelContext, client: ChallengesClient? = nil) {
+    init(modelContext: ModelContext, client: ActivitiesClient? = nil) {
         self.modelContext = modelContext
-        self.client = client ?? ChallengesClient()
+        self.client = client ?? ActivitiesClient()
     }
 
     // MARK: Internal
@@ -19,7 +19,7 @@ final class ActivityFeedSyncService: ObservableObject {
     @Published var syncError: String?
 
     let modelContext: ModelContext
-    let client: ChallengesClient
+    let client: ActivitiesClient
 
     /// Sync activity feed from server
     func syncFeed(sourceURL: String, filter: FeedFilterType? = nil) async throws {

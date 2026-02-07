@@ -3,18 +3,18 @@ import SwiftData
 
 // MARK: - Participation & Progress
 
-extension ChallengesSyncService {
+extension ActivitiesSyncService {
     // MARK: - Participation
 
     /// Join a challenge
     func joinChallenge(_ definition: ChallengeDefinition, inviteToken: String? = nil) async throws {
         guard let sourceURL = definition.source?.url else {
-            throw ChallengesError.invalidServerURL
+            throw ActivitiesError.invalidServerURL
         }
 
         let callsign = UserDefaults.standard.string(forKey: "loggerDefaultCallsign") ?? ""
         guard !callsign.isEmpty else {
-            throw ChallengesError.notAuthenticated
+            throw ActivitiesError.notAuthenticated
         }
 
         let response = try await client.joinChallenge(
@@ -49,11 +49,11 @@ extension ChallengesSyncService {
         guard let definition = participation.challengeDefinition,
               let sourceURL = definition.source?.url
         else {
-            throw ChallengesError.invalidServerURL
+            throw ActivitiesError.invalidServerURL
         }
 
         guard let deviceToken = participation.deviceToken else {
-            throw ChallengesError.notParticipating
+            throw ActivitiesError.notParticipating
         }
 
         try await client.leaveChallenge(
@@ -137,7 +137,7 @@ extension ChallengesSyncService {
     /// Fetch and cache leaderboard for a challenge
     func fetchLeaderboard(for definition: ChallengeDefinition) async throws -> [LeaderboardEntry] {
         guard let sourceURL = definition.source?.url else {
-            throw ChallengesError.invalidServerURL
+            throw ActivitiesError.invalidServerURL
         }
 
         let leaderboardData = try await client.fetchLeaderboard(

@@ -303,6 +303,20 @@ extension ChallengeConfiguration: Codable {
     }
 }
 
+// MARK: - RegisterRequestBody
+
+struct RegisterRequestBody: Codable {
+    var callsign: String
+    var deviceName: String?
+}
+
+// MARK: - RegisterResponseDTO
+
+struct RegisterResponseDTO: Codable {
+    var userId: String
+    var deviceToken: String
+}
+
 // MARK: - APIResponse
 
 struct APIResponse<T: Codable>: Codable, @unchecked Sendable {

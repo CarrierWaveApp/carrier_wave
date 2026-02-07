@@ -5,13 +5,13 @@ import SwiftData
 final class ActivityReporter {
     // MARK: Lifecycle
 
-    init(client: ChallengesClient? = nil) {
-        self.client = client ?? ChallengesClient()
+    init(client: ActivitiesClient? = nil) {
+        self.client = client ?? ActivitiesClient()
     }
 
     // MARK: Internal
 
-    let client: ChallengesClient
+    let client: ActivitiesClient
 
     /// Report detected activities to the server
     func reportActivities(_ activities: [DetectedActivity], sourceURL: String) async {

@@ -45,7 +45,7 @@ struct ChallengesView: View {
             }
             .onAppear {
                 if syncService == nil {
-                    syncService = ChallengesSyncService(modelContext: modelContext)
+                    syncService = ActivitiesSyncService(modelContext: modelContext)
                 }
             }
             .alert("Error", isPresented: $showingError) {
@@ -89,7 +89,7 @@ struct ChallengesView: View {
     @Query(sort: \ChallengeParticipation.joinedAt, order: .reverse)
     private var allParticipations: [ChallengeParticipation]
 
-    @State private var syncService: ChallengesSyncService?
+    @State private var syncService: ActivitiesSyncService?
     @State private var isRefreshing = false
     @State private var errorMessage: String?
     @State private var showingError = false
@@ -309,7 +309,7 @@ struct InviteJoinSheet: View {
     @Environment(\.modelContext) var modelContext
 
     let invite: PendingChallengeInvite
-    let syncService: ChallengesSyncService?
+    let syncService: ActivitiesSyncService?
     @Binding var isJoining: Bool
 
     let onComplete: (Bool) -> Void

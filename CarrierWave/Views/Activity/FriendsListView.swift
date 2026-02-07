@@ -53,6 +53,7 @@ struct FriendsListView: View {
             InviteLinkSheet(
                 inviteLink: inviteLink,
                 isGenerating: isGeneratingInvite,
+                errorMessage: inviteLinkError,
                 onDismiss: { showingInviteSheet = false }
             )
         }
@@ -77,6 +78,7 @@ struct FriendsListView: View {
     @State private var showingInviteSheet = false
     @State private var isGeneratingInvite = false
     @State private var inviteLink: InviteLinkDTO?
+    @State private var inviteLinkError: String?
 
     // Friend suggestions state
     @State private var suggestions: [FriendSuggestion] = []
@@ -251,6 +253,7 @@ struct FriendsListView: View {
         }
 
         inviteLink = nil
+        inviteLinkError = nil
         isGeneratingInvite = true
         showingInviteSheet = true
 
@@ -258,9 +261,7 @@ struct FriendsListView: View {
             do {
                 inviteLink = try await service.generateInviteLink(sourceURL: sourceURL)
             } catch {
-                errorMessage = error.localizedDescription
-                showingError = true
-                showingInviteSheet = false
+                inviteLinkError = error.localizedDescription
             }
             isGeneratingInvite = false
         }
@@ -342,6 +343,7 @@ private struct InviteLinkSheet: View {
 
     let inviteLink: InviteLinkDTO?
     let isGenerating: Bool
+    let errorMessage: String?
     let onDismiss: () -> Void
 
     var body: some View {
@@ -352,6 +354,12 @@ private struct InviteLinkSheet: View {
                         .frame(maxHeight: .infinity)
                 } else if let invite = inviteLink {
                     inviteContent(invite)
+                } else if let errorMessage {
+                    ContentUnavailableView(
+                        "Unable to Generate Link",
+                        systemImage: "exclamationmark.triangle",
+                        description: Text(errorMessage)
+                    )
                 } else {
                     ContentUnavailableView(
                         "Unable to Generate Link",

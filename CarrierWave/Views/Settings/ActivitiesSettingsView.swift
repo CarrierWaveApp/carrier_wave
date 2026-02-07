@@ -1,13 +1,27 @@
 import SwiftData
 import SwiftUI
 
-// MARK: - ChallengesSettingsView
+// MARK: - ActivitiesSettingsView
 
-struct ChallengesSettingsView: View {
+struct ActivitiesSettingsView: View {
     // MARK: Internal
 
     var body: some View {
         List {
+            Section {
+                Toggle("Enable community features", isOn: $activitiesEnabled)
+                    .onChange(of: activitiesEnabled) { _, enabled in
+                        handleActivitiesToggle(enabled: enabled)
+                    }
+            } header: {
+                Text("Community")
+            } footer: {
+                Text(
+                    "When enabled, your callsign is discoverable in friend search "
+                        + "and you can participate in challenges and clubs."
+                )
+            }
+
             Section {
                 HStack {
                     Text("Callsign")
@@ -56,7 +70,7 @@ struct ChallengesSettingsView: View {
         .navigationTitle("Activities")
         .onAppear {
             if syncService == nil {
-                syncService = ChallengesSyncService(modelContext: modelContext)
+                syncService = ActivitiesSyncService(modelContext: modelContext)
             }
             Task {
                 await ensureOfficialSource()
@@ -80,14 +94,17 @@ struct ChallengesSettingsView: View {
     @Environment(\.modelContext) private var modelContext
 
     @AppStorage("loggerDefaultCallsign") private var stationCallsign = ""
+    @AppStorage("activitiesServerEnabled") private var activitiesEnabled = false
 
     @Query(sort: \ChallengeSource.name) private var sources: [ChallengeSource]
 
-    @State private var syncService: ChallengesSyncService?
+    @State private var syncService: ActivitiesSyncService?
     @State private var showingAddSource = false
     @State private var editingSource: ChallengeSource?
     @State private var showingError = false
     @State private var errorMessage = ""
+
+    private let activitiesSourceURL = "https://activities.carrierwave.app"
 
     private func sourceRow(_ source: ChallengeSource) -> some View {
         HStack {
@@ -145,6 +162,29 @@ struct ChallengesSettingsView: View {
             showingError = true
         }
     }
+
+    private func handleActivitiesToggle(enabled: Bool) {
+        if enabled {
+            let client = ActivitiesClient()
+            guard !client.hasAuthToken(), !stationCallsign.isEmpty else {
+                return
+            }
+            Task {
+                do {
+                    _ = try await client.register(
+                        callsign: stationCallsign.uppercased(),
+                        deviceName: UIDevice.current.name,
+                        sourceURL: activitiesSourceURL
+                    )
+                } catch {
+                    errorMessage = "Registration failed: \(error.localizedDescription)"
+                    showingError = true
+                }
+            }
+        } else {
+            ActivitiesClient().clearAuthToken()
+        }
+    }
 }
 
 // MARK: - AddChallengeServerSheet
@@ -152,7 +192,7 @@ struct ChallengesSettingsView: View {
 struct AddChallengeServerSheet: View {
     // MARK: Internal
 
-    let syncService: ChallengesSyncService?
+    let syncService: ActivitiesSyncService?
 
     var body: some View {
         NavigationStack {
@@ -308,7 +348,7 @@ struct EditChallengeServerSheet: View {
 
 #Preview {
     NavigationStack {
-        ChallengesSettingsView()
+        ActivitiesSettingsView()
     }
     .modelContainer(for: ChallengeSource.self, inMemory: true)
 }

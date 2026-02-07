@@ -1,14 +1,15 @@
 import Combine
 import Foundation
 import SwiftData
+import UIKit
 
 @MainActor
-final class ChallengesSyncService: ObservableObject {
+final class ActivitiesSyncService: ObservableObject {
     // MARK: Lifecycle
 
-    init(modelContext: ModelContext, client: ChallengesClient? = nil) {
+    init(modelContext: ModelContext, client: ActivitiesClient? = nil) {
         self.modelContext = modelContext
-        self.client = client ?? ChallengesClient()
+        self.client = client ?? ActivitiesClient()
         progressEngine = ChallengeProgressEngine(modelContext: modelContext)
     }
 
@@ -19,7 +20,7 @@ final class ChallengesSyncService: ObservableObject {
     @Published var syncError: String?
 
     let modelContext: ModelContext
-    let client: ChallengesClient
+    let client: ActivitiesClient
     let progressEngine: ChallengeProgressEngine
 
     /// Default polling interval for leaderboards (30 seconds)
@@ -27,8 +28,8 @@ final class ChallengesSyncService: ObservableObject {
 
     /// Check if challenges sync is enabled
     var isEnabled: Bool {
-        get { UserDefaults.standard.bool(forKey: "challengesSyncEnabled") }
-        set { UserDefaults.standard.set(newValue, forKey: "challengesSyncEnabled") }
+        get { UserDefaults.standard.bool(forKey: "activitiesSyncEnabled") }
+        set { UserDefaults.standard.set(newValue, forKey: "activitiesSyncEnabled") }
     }
 
     // MARK: - Source Management
@@ -108,6 +109,9 @@ final class ChallengesSyncService: ObservableObject {
             lastSyncDate = Date()
         }
 
+        // Auto-register if opted in but missing auth token
+        await ensureRegisteredIfEnabled()
+
         // Clean up any duplicate challenge definitions first
         try deduplicateChallengeDefinitions()
 
@@ -130,7 +134,7 @@ final class ChallengesSyncService: ObservableObject {
             try await refreshParticipatingChallenges(forceUpdate: forceUpdate)
         } catch {
             // Log but don't fail the whole refresh
-            print("[ChallengesSyncService] Failed to refresh participating challenges: \(error)")
+            print("[ActivitiesSyncService] Failed to refresh participating challenges: \(error)")
         }
 
         try modelContext.save()
@@ -155,7 +159,7 @@ final class ChallengesSyncService: ObservableObject {
 
         for source in sources {
             print(
-                "[ChallengesSyncService] curl '\(source.url)/v1/participants/\(callsign)/challenges'"
+                "[ActivitiesSyncService] curl '\(source.url)/v1/participants/\(callsign)/challenges'"
             )
 
             do {
@@ -176,7 +180,7 @@ final class ChallengesSyncService: ObservableObject {
                     if try modelContext.fetch(descriptor).first == nil {
                         // Fetch the full challenge definition
                         print(
-                            "[ChallengesSyncService] curl '\(source.url)/v1/challenges/\(challengeId)'"
+                            "[ActivitiesSyncService] curl '\(source.url)/v1/challenges/\(challengeId)'"
                         )
                         let dto = try await client.fetchChallenge(
                             id: challengeId,
@@ -188,7 +192,7 @@ final class ChallengesSyncService: ObservableObject {
                 }
             } catch {
                 print(
-                    "[ChallengesSyncService] Failed to fetch participating challenges from \(source.name): \(error)"
+                    "[ActivitiesSyncService] Failed to fetch participating challenges from \(source.name): \(error)"
                 )
             }
         }
@@ -197,13 +201,13 @@ final class ChallengesSyncService: ObservableObject {
     /// Refresh challenges from a specific source
     /// - Parameter forceUpdate: If true, updates all challenges regardless of version
     func refreshChallenges(from source: ChallengeSource, forceUpdate: Bool = false) async throws {
-        print("[ChallengesSyncService] curl '\(source.url)/v1/challenges?active=true'")
+        print("[ActivitiesSyncService] curl '\(source.url)/v1/challenges?active=true'")
 
         let listData = try await client.fetchChallenges(from: source.url, active: true)
 
         // Fetch full details for each challenge in the list
         for listItem in listData.challenges {
-            print("[ChallengesSyncService] curl '\(source.url)/v1/challenges/\(listItem.id)'")
+            print("[ActivitiesSyncService] curl '\(source.url)/v1/challenges/\(listItem.id)'")
 
             let dto = try await client.fetchChallenge(id: listItem.id, from: source.url)
 
@@ -235,6 +239,29 @@ final class ChallengesSyncService: ObservableObject {
 
     // MARK: Private
 
+    /// If user opted in to community features but has no auth token, register now.
+    private func ensureRegisteredIfEnabled() async {
+        let enabled = UserDefaults.standard.bool(forKey: "activitiesServerEnabled")
+        guard enabled, !client.hasAuthToken() else {
+            return
+        }
+
+        let callsign = UserDefaults.standard.string(forKey: "loggerDefaultCallsign") ?? ""
+        guard !callsign.isEmpty else {
+            return
+        }
+
+        do {
+            _ = try await client.register(
+                callsign: callsign.uppercased(),
+                deviceName: UIDevice.current.name,
+                sourceURL: "https://activities.carrierwave.app"
+            )
+        } catch {
+            print("[ActivitiesSyncService] Auto-registration failed: \(error)")
+        }
+    }
+
     /// Remove duplicate ChallengeDefinition records, merging participations to the surviving record
     private func deduplicateChallengeDefinitions() throws {
         let descriptor = FetchDescriptor<ChallengeDefinition>()
@@ -249,7 +276,7 @@ final class ChallengesSyncService: ObservableObject {
         // For each group with duplicates, keep the first and merge participations
         for (challengeId, definitions) in definitionsById where definitions.count > 1 {
             print(
-                "[ChallengesSyncService] Found \(definitions.count) duplicates for challenge \(challengeId)"
+                "[ActivitiesSyncService] Found \(definitions.count) duplicates for challenge \(challengeId)"
             )
 
             let keeper = definitions[0]
@@ -287,7 +314,7 @@ final class ChallengesSyncService: ObservableObject {
         // For each group with duplicates, keep the one with most progress
         for (key, participations) in participationsByKey where participations.count > 1 {
             print(
-                "[ChallengesSyncService] Found \(participations.count) duplicate participations for \(key)"
+                "[ActivitiesSyncService] Found \(participations.count) duplicate participations for \(key)"
             )
 
             // Sort by progress (descending) to keep the one with most progress
@@ -303,7 +330,7 @@ final class ChallengesSyncService: ObservableObject {
             }
 
             print(
-                "[ChallengesSyncService] Kept participation with \(keeper.progress.completedGoals.count) goals"
+                "[ActivitiesSyncService] Kept participation with \(keeper.progress.completedGoals.count) goals"
             )
         }
     }

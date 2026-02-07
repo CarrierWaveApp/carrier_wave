@@ -1,6 +1,6 @@
 import Foundation
 
-enum ChallengesError: Error, LocalizedError {
+enum ActivitiesError: Error, LocalizedError {
     case notAuthenticated
     case invalidServerURL
     case networkError(Error)
@@ -82,7 +82,7 @@ enum ChallengesError: Error, LocalizedError {
     }
 
     /// Create error from API error code
-    static func from(apiCode: String, message: String?) -> ChallengesError {
+    static func from(apiCode: String, message: String?) -> ActivitiesError {
         switch apiCode {
         case "CHALLENGE_NOT_FOUND": .challengeNotFound
         case "ALREADY_JOINED": .alreadyJoined

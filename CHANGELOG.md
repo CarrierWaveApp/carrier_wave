@@ -4,6 +4,18 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Add community features opt-in during onboarding — users can choose to register with the activities server for friend discovery, challenges, and activity feeds
+- Add "Enable community features" toggle in Activities settings to control discoverability in friend search
+- Auto-register with activities server during sync if opted in but token is missing
+- Add one-time community features prompt for existing users on Activity tab
+
+### Changed
+- Rename Challenges* files and types to Activities* (ChallengesClient, ChallengesError, ChallengesSyncService, ChallengesSettingsView)
+
+### Fixed
+- Fix friend invite link sheet dismissing on error instead of showing error message inline
+
 ## [1.24.1] - 2026-02-07
 
 ### Fixed

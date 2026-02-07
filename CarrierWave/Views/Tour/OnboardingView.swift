@@ -7,6 +7,7 @@ enum OnboardingStep: Int, CaseIterable {
     case callsign = 0
     case lookupResult
     case connectServices
+    case activities
     case complete
 
     // MARK: Internal
@@ -16,6 +17,7 @@ enum OnboardingStep: Int, CaseIterable {
         case .callsign: "What's Your Callsign?"
         case .lookupResult: "Welcome!"
         case .connectServices: "Connect Your Services"
+        case .activities: "Community Features"
         case .complete: "You're All Set!"
         }
     }
@@ -77,7 +79,12 @@ struct OnboardingView: View {
     @State private var isConnectingService = false
     @State private var connectedServices: Set<String> = []
 
+    // Activities opt-in state
+    @State private var activitiesOptIn = true
+    @State private var isRegistering = false
+
     private let profileService = UserProfileService.shared
+    private let activitiesSourceURL = "https://activities.carrierwave.app"
 
     private var stepContent: some View {
         ScrollView {
@@ -89,6 +96,8 @@ struct OnboardingView: View {
                     lookupResultStep
                 case .connectServices:
                     connectServicesStep
+                case .activities:
+                    activitiesStep
                 case .complete:
                     completeStep
                 }
@@ -268,6 +277,51 @@ struct OnboardingView: View {
         }
     }
 
+    private var activitiesStep: some View {
+        VStack(spacing: 20) {
+            Image(systemName: "person.3.fill")
+                .font(.system(size: 60))
+                .foregroundStyle(Color.accentColor)
+
+            Text("Join the community")
+                .font(.title2)
+                .fontWeight(.semibold)
+
+            Text(
+                "Register with Carrier Wave's community server to discover friends, "
+                    + "join challenges, and share activity with other operators."
+            )
+            .font(.body)
+            .foregroundStyle(.secondary)
+            .multilineTextAlignment(.center)
+
+            VStack(alignment: .leading, spacing: 12) {
+                featureRow(icon: "magnifyingglass", text: "Find friends by callsign")
+                featureRow(icon: "trophy", text: "Join challenges and leaderboards")
+                featureRow(icon: "bell", text: "See activity from friends and clubs")
+            }
+            .padding()
+            .background(Color(.secondarySystemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+
+            Toggle("Enable community features", isOn: $activitiesOptIn)
+                .padding(.horizontal)
+
+            Text("You can change this later in Settings.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+
+            if isRegistering {
+                HStack {
+                    ProgressView()
+                    Text("Registering...")
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+    }
+
     private var completeStep: some View {
         VStack(spacing: 20) {
             Image(systemName: "checkmark.circle.fill")
@@ -364,16 +418,33 @@ struct OnboardingView: View {
         case .connectServices:
             Button(connectedServices.isEmpty ? "Skip" : "Next") {
                 withAnimation {
-                    currentStep = .complete
+                    currentStep = .activities
                 }
             }
             .buttonStyle(.borderedProminent)
+
+        case .activities:
+            Button("Next") {
+                registerAndContinue()
+            }
+            .buttonStyle(.borderedProminent)
+            .disabled(isRegistering)
 
         case .complete:
             Button("Get Started") {
                 completeOnboarding()
             }
             .buttonStyle(.borderedProminent)
+        }
+    }
+
+    private func featureRow(icon: String, text: String) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .foregroundStyle(Color.accentColor)
+                .frame(width: 24)
+            Text(text)
+                .font(.subheadline)
         }
     }
 
@@ -582,6 +653,35 @@ struct OnboardingView: View {
             await MainActor.run {
                 errorMessage = "POTA connection failed: \(error.localizedDescription)"
                 showingError = true
+            }
+        }
+    }
+
+    private func registerAndContinue() {
+        // Save preference
+        UserDefaults.standard.set(activitiesOptIn, forKey: "activitiesServerEnabled")
+
+        guard activitiesOptIn, !callsign.isEmpty else {
+            withAnimation { currentStep = .complete }
+            return
+        }
+
+        isRegistering = true
+        Task {
+            defer {
+                isRegistering = false
+                withAnimation { currentStep = .complete }
+            }
+            do {
+                let client = ActivitiesClient()
+                _ = try await client.register(
+                    callsign: callsign.uppercased(),
+                    deviceName: UIDevice.current.name,
+                    sourceURL: activitiesSourceURL
+                )
+            } catch {
+                // Non-fatal — user can register later via sync
+                print("[Onboarding] Activities registration failed: \(error)")
             }
         }
     }

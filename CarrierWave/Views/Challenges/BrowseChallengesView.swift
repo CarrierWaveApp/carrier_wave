@@ -48,7 +48,7 @@ struct BrowseChallengesView: View {
         }
         .onAppear {
             if syncService == nil {
-                syncService = ChallengesSyncService(modelContext: modelContext)
+                syncService = ActivitiesSyncService(modelContext: modelContext)
             }
             Task {
                 await ensureOfficialSource()
@@ -66,7 +66,7 @@ struct BrowseChallengesView: View {
 
     // MARK: Private
 
-    @State private var syncService: ChallengesSyncService?
+    @State private var syncService: ActivitiesSyncService?
     @State private var selectedSource: ChallengeSource?
     @State private var isRefreshing = false
     @State private var showingAddSource = false
@@ -323,7 +323,7 @@ struct AddSourceSheet: View {
 
     @Environment(\.dismiss) var dismiss
 
-    let syncService: ChallengesSyncService?
+    let syncService: ActivitiesSyncService?
 
     var body: some View {
         NavigationStack {
