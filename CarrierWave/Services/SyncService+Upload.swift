@@ -460,12 +460,29 @@ extension SyncService {
             if result.success {
                 await MainActor.run {
                     for qso in parkQSOs {
+                        let beforeState = qso.potaPresence(forPark: parkRef).map {
+                            "isPresent=\($0.isPresent), isSubmitted=\($0.isSubmitted), "
+                                + "needsUpload=\($0.needsUpload)"
+                        } ?? "no presence"
                         // Mark as submitted (pending POTA job confirmation)
                         // Will be confirmed when job log shows status == .completed
                         qso.markSubmittedToPark(parkRef, context: modelContext)
+                        let afterState = qso.potaPresence(forPark: parkRef).map {
+                            "isPresent=\($0.isPresent), isSubmitted=\($0.isSubmitted), "
+                                + "needsUpload=\($0.needsUpload)"
+                        } ?? "no presence"
+
+                        let dateStr = Self.debugDateFormatter.string(from: qso.timestamp)
+                        SyncDebugLog.shared.debug(
+                            "markSubmittedToPark \(parkRef): \(qso.callsign) @ \(dateStr) "
+                                + "[\(beforeState)] -> [\(afterState)]",
+                            service: .pota
+                        )
                     }
-                    SyncDebugLog.shared.debug(
-                        "Park \(parkRef): \(result.qsosAccepted) QSO(s) submitted",
+                    SyncDebugLog.shared.info(
+                        "Park \(parkRef): \(result.qsosAccepted) QSO(s) accepted, "
+                            + "\(parkQSOs.count) marked submitted. "
+                            + "message=\(result.message ?? "nil")",
                         service: .pota
                     )
                 }
