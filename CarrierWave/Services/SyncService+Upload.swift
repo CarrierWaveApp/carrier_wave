@@ -434,7 +434,7 @@ extension SyncService {
             let parkDurationMs = Int(Date().timeIntervalSince(parkStartTime) * 1_000)
 
             if result.success {
-                await markParkQSOsSubmitted(
+                markParkQSOsSubmitted(
                     parkRef: parkRef, parkQSOs: parkQSOs,
                     result: result, durationMs: parkDurationMs
                 )

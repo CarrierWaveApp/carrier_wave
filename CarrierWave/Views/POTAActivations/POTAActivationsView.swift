@@ -586,7 +586,7 @@ extension POTAActivationsContentView {
                 service: .pota
             )
             if result.success {
-                await markQSOsSubmitted(pendingQSOs, park: park)
+                markQSOsSubmitted(pendingQSOs, park: park)
                 return nil
             }
             debugLog.warning(

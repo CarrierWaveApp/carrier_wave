@@ -10,6 +10,7 @@ All notable changes to Carrier Wave will be documented in this file.
 - Add "Force Reupload" button to POTA activation rows when debug mode is enabled — resets all QSOs back to pending and immediately triggers the upload
 
 ### Fixed
+- Fix friend requests not appearing by syncing friends from server on Activity tab load and refresh
 - Fix invite link deep links not matching when URL uses `activities.carrierwave.app` subdomain
 
 ## [1.24.2] - 2026-02-07

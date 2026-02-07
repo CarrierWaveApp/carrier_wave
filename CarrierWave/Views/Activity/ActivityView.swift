@@ -28,7 +28,9 @@ struct ActivityView: View {
     @Query(filter: #Predicate<Friendship> { $0.statusRawValue == "accepted" })
     var acceptedFriends: [Friendship]
 
-    @Query(filter: #Predicate<Friendship> { $0.statusRawValue == "pending" && $0.isOutgoing == false })
+    @Query(
+        filter: #Predicate<Friendship> { $0.statusRawValue == "pending" && $0.isOutgoing == false }
+    )
     var incomingRequests: [Friendship]
 
     @State var selectedFilter: FeedFilter = .all
@@ -283,6 +285,8 @@ struct ActivityView: View {
         }
         .task {
             loadActivityItems()
+            // Sync friends and pending requests from server
+            await syncFriendsQuietly()
             // One-time cleanup of duplicate activities (after UI is shown)
             await deduplicateActivitiesIfNeeded()
             // Show community features prompt for existing users who haven't been asked
@@ -365,6 +369,9 @@ extension ActivityView {
             }
             try modelContext.save()
 
+            // Sync friends and pending requests from server
+            await syncFriendsQuietly()
+
             // Sync activity feed from server
             if let feedService = feedSyncService {
                 try await feedService.syncFeed(sourceURL: "https://activities.carrierwave.app")
@@ -414,6 +421,20 @@ extension ActivityView {
             try modelContext.save()
         } catch {
             // Silently fail - background operation
+        }
+    }
+
+    func syncFriendsQuietly() async {
+        if friendsSyncService == nil {
+            friendsSyncService = FriendsSyncService(modelContext: modelContext)
+        }
+        guard let service = friendsSyncService else {
+            return
+        }
+        do {
+            try await service.syncFriends(sourceURL: "https://activities.carrierwave.app")
+        } catch {
+            // Non-critical — don't show error for background friend sync
         }
     }
 
