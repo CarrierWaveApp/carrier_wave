@@ -3,6 +3,60 @@ import SwiftUI
 // MARK: - ActivityView+Sections
 
 extension ActivityView {
+    // MARK: - Friend Requests Banner
+
+    @ViewBuilder
+    var friendRequestsBanner: some View {
+        if !incomingRequests.isEmpty {
+            NavigationLink {
+                FriendsListView()
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "person.badge.plus")
+                        .font(.title3)
+                        .foregroundStyle(.blue)
+                        .frame(width: 32)
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(
+                            incomingRequests.count == 1
+                                ? "1 Friend Request"
+                                : "\(incomingRequests.count) Friend Requests"
+                        )
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+
+                        Text(friendRequestSubtitle)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                }
+                .padding()
+                .background(Color.blue.opacity(0.15))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private var friendRequestSubtitle: String {
+        let callsigns = incomingRequests.map(\.friendCallsign)
+        if callsigns.count == 1 {
+            return "\(callsigns[0]) wants to connect"
+        } else if callsigns.count == 2 {
+            return "\(callsigns[0]) and \(callsigns[1]) want to connect"
+        } else {
+            return "\(callsigns[0]) and \(callsigns.count - 1) others want to connect"
+        }
+    }
+
     // MARK: - Challenges Section
 
     var challengesSection: some View {

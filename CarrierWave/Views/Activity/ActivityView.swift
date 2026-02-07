@@ -28,6 +28,9 @@ struct ActivityView: View {
     @Query(filter: #Predicate<Friendship> { $0.statusRawValue == "accepted" })
     var acceptedFriends: [Friendship]
 
+    @Query(filter: #Predicate<Friendship> { $0.statusRawValue == "pending" && $0.isOutgoing == false })
+    var incomingRequests: [Friendship]
+
     @State var selectedFilter: FeedFilter = .all
 
     @State var syncService: ActivitiesSyncService?
@@ -111,16 +114,20 @@ struct ActivityView: View {
         ScrollView {
             if horizontalSizeClass == .regular {
                 // iPad: Side-by-side layout
-                HStack(alignment: .top, spacing: 24) {
-                    challengesSection
-                        .frame(minWidth: 300, idealWidth: 350, maxWidth: 400)
-                    activityFeedSection
-                        .frame(maxWidth: .infinity)
+                VStack(spacing: 16) {
+                    friendRequestsBanner
+                    HStack(alignment: .top, spacing: 24) {
+                        challengesSection
+                            .frame(minWidth: 300, idealWidth: 350, maxWidth: 400)
+                        activityFeedSection
+                            .frame(maxWidth: .infinity)
+                    }
                 }
                 .padding()
             } else {
                 // iPhone: Vertical stack
                 VStack(spacing: 24) {
+                    friendRequestsBanner
                     challengesSection
                     activityFeedSection
                 }
@@ -134,8 +141,24 @@ struct ActivityView: View {
                     FriendsListView()
                 } label: {
                     Image(systemName: "person.2")
+                        .overlay(alignment: .topTrailing) {
+                            if !incomingRequests.isEmpty {
+                                Text("\(incomingRequests.count)")
+                                    .font(.caption2.weight(.bold))
+                                    .foregroundStyle(.white)
+                                    .padding(.horizontal, 4)
+                                    .padding(.vertical, 1)
+                                    .background(Color.red)
+                                    .clipShape(Capsule())
+                                    .offset(x: 8, y: -8)
+                            }
+                        }
                 }
-                .accessibilityLabel("Friends")
+                .accessibilityLabel(
+                    incomingRequests.isEmpty
+                        ? "Friends"
+                        : "Friends, \(incomingRequests.count) pending requests"
+                )
 
                 NavigationLink {
                     ClubsListView()
