@@ -35,7 +35,9 @@ final class FriendsSyncService: ObservableObject {
 
         // Fetch friends from server
         let friends = try await client.getFriends(sourceURL: sourceURL, authToken: authToken)
-        let pending = try await client.getPendingRequests(sourceURL: sourceURL, authToken: authToken)
+        let pending = try await client.getPendingRequests(
+            sourceURL: sourceURL, authToken: authToken
+        )
 
         // Update local models
         try updateLocalFriendships(friends: friends, pending: pending)
@@ -160,21 +162,126 @@ final class FriendsSyncService: ObservableObject {
         try modelContext.save()
     }
 
+    // MARK: - Friend Suggestions
+
+    /// Compute friend suggestions: callsigns with 3+ QSOs that are registered app users.
+    func computeSuggestions(
+        container: ModelContainer,
+        sourceURL: String
+    ) async throws -> [FriendSuggestion] {
+        guard let authToken = try? client.getAuthToken() else {
+            return []
+        }
+
+        // 1. Count QSOs per callsign on background actor
+        let ownCallsigns = collectOwnCallsigns()
+        let actor = FriendSuggestionActor()
+        let callsignCounts = try await actor.computeCallsignCounts(
+            container: container,
+            ownCallsigns: ownCallsigns
+        )
+
+        if callsignCounts.isEmpty {
+            return []
+        }
+
+        // 2. Filter out dismissed and existing friends/pending
+        let excludedCallsigns = try collectExcludedCallsigns()
+        let candidates = callsignCounts.filter {
+            !excludedCallsigns.contains($0.callsign.uppercased())
+        }
+
+        if candidates.isEmpty {
+            return []
+        }
+
+        // 3. Validate against server (which are registered users?)
+        let candidateCallsigns = candidates.map(\.callsign)
+        let validatedUsers = try await client.getSuggestions(
+            callsigns: candidateCallsigns,
+            sourceURL: sourceURL,
+            authToken: authToken
+        )
+
+        // 4. Merge server user IDs with local QSO counts
+        let countsByCallsign = Dictionary(
+            uniqueKeysWithValues: candidates.map { ($0.callsign.uppercased(), $0.count) }
+        )
+
+        return validatedUsers.compactMap { dto in
+            guard let count = countsByCallsign[dto.callsign.uppercased()] else {
+                return nil
+            }
+            return FriendSuggestion(
+                userId: dto.userId,
+                callsign: dto.callsign,
+                qsoCount: count
+            )
+        }.sorted { $0.qsoCount > $1.qsoCount }
+    }
+
+    /// Dismiss a friend suggestion so it doesn't reappear.
+    func dismissSuggestion(callsign: String) throws {
+        let dismissed = DismissedSuggestion(callsign: callsign)
+        modelContext.insert(dismissed)
+        try modelContext.save()
+    }
+
     // MARK: Private
+
+    /// Collect user's own callsigns to exclude from suggestions.
+    private func collectOwnCallsigns() -> Set<String> {
+        var callsigns = Set<String>()
+
+        if let current = try? KeychainHelper.shared.readString(
+            for: KeychainHelper.Keys.currentCallsign
+        ), !current.isEmpty {
+            callsigns.insert(current.uppercased())
+        }
+
+        return callsigns
+    }
+
+    /// Collect callsigns to exclude: dismissed, already friends, and pending requests.
+    private func collectExcludedCallsigns() throws -> Set<String> {
+        var excluded = Set<String>()
+
+        // Dismissed suggestions
+        let dismissedDescriptor = FetchDescriptor<DismissedSuggestion>()
+        let dismissed = (try? modelContext.fetch(dismissedDescriptor)) ?? []
+        for item in dismissed {
+            excluded.insert(item.callsign.uppercased())
+        }
+
+        // Existing friendships (accepted + pending)
+        let friendDescriptor = FetchDescriptor<Friendship>()
+        let friendships = (try? modelContext.fetch(friendDescriptor)) ?? []
+        for item in friendships {
+            excluded.insert(item.friendCallsign.uppercased())
+        }
+
+        return excluded
+    }
 
     private func updateLocalFriendships(friends: [FriendDTO], pending: PendingRequestsDTO) throws {
         // Fetch existing local friendships
         let descriptor = FetchDescriptor<Friendship>()
         let existing = try modelContext.fetch(descriptor)
-        let existingByUserId = Dictionary(uniqueKeysWithValues: existing.map { ($0.friendUserId, $0) })
+        let existingByUserId = Dictionary(
+            uniqueKeysWithValues: existing.map { ($0.friendUserId, $0) }
+        )
 
         var seenUserIds = Set<String>()
 
         // Update/create accepted friends
-        updateAcceptedFriends(friends: friends, existingByUserId: existingByUserId, seenUserIds: &seenUserIds)
+        updateAcceptedFriends(
+            friends: friends, existingByUserId: existingByUserId, seenUserIds: &seenUserIds
+        )
 
         // Update/create pending requests
-        updatePendingRequests(pending: pending, existingByUserId: existingByUserId, seenUserIds: &seenUserIds)
+        updatePendingRequests(
+            pending: pending, existingByUserId: existingByUserId, seenUserIds: &seenUserIds
+        )
 
         // Remove friendships no longer on server
         for local in existing where !seenUserIds.contains(local.friendUserId) {

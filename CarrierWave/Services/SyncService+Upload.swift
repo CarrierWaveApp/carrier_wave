@@ -39,32 +39,104 @@ extension SyncService {
             }
         }
 
-        // POTA upload (skip during maintenance window)
-        // Use isConfigured to allow upload even if token expired - ensureValidToken will re-auth
-        if potaAuthService.isConfigured {
-            if POTAClient.isInMaintenanceWindow() {
-                potaMaintenanceSkipped = true
-            } else {
-                let potaQSOs =
-                    qsosNeedingUpload?.filter {
-                        $0.needsUpload(to: .pota) && $0.parkReference?.isEmpty == false
-                    } ?? []
-                if !potaQSOs.isEmpty {
-                    await logPendingQSOs(potaQSOs, service: .pota)
-                    let (service, result) = await uploadPOTABatch(qsos: potaQSOs, timeout: timeout)
-                    results[service] = result
-                }
-
-                // Log QSOs that need POTA upload but have no park reference
-                let potaQSOsNoPark =
-                    qsosNeedingUpload?.filter {
-                        $0.needsUpload(to: .pota) && ($0.parkReference?.isEmpty ?? true)
-                    } ?? []
-                await logPOTAQSOsWithoutPark(potaQSOsNoPark)
-            }
+        // POTA upload
+        let potaResult = await uploadPOTAIfConfigured(
+            qsosNeedingUpload: qsosNeedingUpload, timeout: timeout
+        )
+        if let result = potaResult.result {
+            results[.pota] = result
         }
+        potaMaintenanceSkipped = potaResult.maintenanceSkipped
 
         return (results: results, potaMaintenanceSkipped: potaMaintenanceSkipped)
+    }
+
+    /// Upload to POTA if configured, with detailed debug logging
+    private func uploadPOTAIfConfigured(
+        qsosNeedingUpload: [QSO]?, timeout: TimeInterval
+    ) async -> (result: Result<Int, Error>?, maintenanceSkipped: Bool) {
+        // Use isConfigured to allow upload even if token expired - ensureValidToken will re-auth
+        guard potaAuthService.isConfigured else {
+            await MainActor.run {
+                SyncDebugLog.shared.debug(
+                    "POTA upload skipped: not configured (no stored credentials)",
+                    service: .pota
+                )
+            }
+            return (result: nil, maintenanceSkipped: false)
+        }
+
+        await MainActor.run {
+            let isAuthed = potaAuthService.isAuthenticated
+            let hasToken = potaAuthService.currentToken != nil
+            let expired = potaAuthService.currentToken?.isExpired ?? false
+            SyncDebugLog.shared.debug(
+                "POTA auth state: configured=true, authenticated=\(isAuthed), "
+                    + "hasToken=\(hasToken), tokenExpired=\(expired)",
+                service: .pota
+            )
+        }
+
+        if POTAClient.isInMaintenanceWindow() {
+            await MainActor.run {
+                SyncDebugLog.shared.info("POTA upload skipped: maintenance window", service: .pota)
+            }
+            return (result: nil, maintenanceSkipped: true)
+        }
+
+        return await executePOTAUpload(qsosNeedingUpload: qsosNeedingUpload, timeout: timeout)
+    }
+
+    /// Execute POTA upload after preconditions are met
+    private func executePOTAUpload(
+        qsosNeedingUpload: [QSO]?, timeout: TimeInterval
+    ) async -> (result: Result<Int, Error>?, maintenanceSkipped: Bool) {
+        let potaQSOs =
+            qsosNeedingUpload?.filter {
+                $0.needsUpload(to: .pota) && $0.parkReference?.isEmpty == false
+            } ?? []
+
+        await MainActor.run {
+            let totalNeeding = qsosNeedingUpload?.filter { $0.needsUpload(to: .pota) }.count ?? 0
+            SyncDebugLog.shared.debug(
+                "POTA upload candidates: \(totalNeeding) need upload, "
+                    + "\(potaQSOs.count) have park ref",
+                service: .pota
+            )
+        }
+
+        let noPark =
+            qsosNeedingUpload?.filter {
+                $0.needsUpload(to: .pota) && ($0.parkReference?.isEmpty ?? true)
+            } ?? []
+
+        guard !potaQSOs.isEmpty else {
+            await MainActor.run {
+                SyncDebugLog.shared.debug(
+                    "No POTA QSOs with park references to upload", service: .pota
+                )
+            }
+            await logPOTAQSOsWithoutPark(noPark)
+            return (result: nil, maintenanceSkipped: false)
+        }
+
+        await logPendingQSOs(potaQSOs, service: .pota)
+        let (_, result) = await uploadPOTABatch(qsos: potaQSOs, timeout: timeout)
+        await MainActor.run {
+            switch result {
+            case let .success(count):
+                SyncDebugLog.shared.debug(
+                    "POTA batch result: success, \(count) uploaded", service: .pota
+                )
+            case let .failure(error):
+                SyncDebugLog.shared.error(
+                    "POTA batch result: failed - \(error.localizedDescription)", service: .pota
+                )
+            }
+        }
+        await logPOTAQSOsWithoutPark(noPark)
+
+        return (result: result, maintenanceSkipped: false)
     }
 
     /// Log QSOs that need POTA upload but have no park reference

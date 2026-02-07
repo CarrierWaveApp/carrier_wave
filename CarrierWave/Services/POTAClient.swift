@@ -288,26 +288,10 @@ final class POTAClient {
     ) async throws -> POTAUploadResult {
         let debugLog = SyncDebugLog.shared
         let startTime = Date()
+        let normalizedParkRef = try validateAndNormalizePark(parkReference)
+        let token = try await acquireTokenWithLogging(for: normalizedParkRef)
 
-        guard validateParkReference(parkReference) else {
-            debugLog.error(
-                "Invalid park reference format: '\(parkReference)' (expected format like K-1234)",
-                service: .pota
-            )
-            throw POTAError.invalidParkReference
-        }
-
-        let normalizedParkRef = parkReference.uppercased()
-        let token = try await authService.ensureValidToken()
-
-        // Filter to QSOs that contain this park (supports multi-park/two-fer references
-        // like "US-1044, US-3791" when uploading to just "US-1044")
-        let parkQSOs = qsos.filter {
-            guard let ref = $0.parkReference else {
-                return false
-            }
-            return ParkReference.hasOverlap(ref, normalizedParkRef)
-        }
+        let parkQSOs = filterQSOsForParkRef(qsos, parkRef: normalizedParkRef)
         guard !parkQSOs.isEmpty else {
             debugLog.info("No QSOs to upload for park \(normalizedParkRef)", service: .pota)
             return POTAUploadResult(
@@ -320,6 +304,9 @@ final class POTAClient {
                 parkReference: normalizedParkRef, qsos: parkQSOs, token: token
             )
         else {
+            debugLog.error(
+                "buildUploadRequest returned nil for park \(normalizedParkRef)", service: .pota
+            )
             throw POTAError.uploadFailed("Failed to build request")
         }
 
@@ -327,14 +314,7 @@ final class POTAClient {
             startTime: startTime, parkReference: normalizedParkRef,
             requestData: requestData, modelContext: modelContext
         )
-
-        debugLog.info(
-            "Uploading \(requestData.qsoCount) QSOs to park \(normalizedParkRef)", service: .pota
-        )
-        debugLog.debug(
-            "POST /adif - location=\(requestData.location), ref=\(normalizedParkRef), file=\(requestData.filename)",
-            service: .pota
-        )
+        logUploadRequestDetails(requestData, parkRef: normalizedParkRef)
 
         return try await executeUploadWithRecording(
             request: requestData.request, attempt: attempt, startTime: startTime,

@@ -24,6 +24,7 @@ struct CarrierWaveApp: App {
             ActivityItem.self,
             LoggingSession.self,
             CallsignNotesSource.self,
+            DismissedSuggestion.self,
         ])
         let modelConfiguration = ModelConfiguration(
             schema: schema,

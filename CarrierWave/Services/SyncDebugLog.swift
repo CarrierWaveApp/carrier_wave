@@ -111,5 +111,5 @@ class SyncDebugLog: ObservableObject {
     // MARK: Private
 
     private let maxQSOsPerService = 5
-    private let maxLogEntries = 100
+    private let maxLogEntries = 500
 }

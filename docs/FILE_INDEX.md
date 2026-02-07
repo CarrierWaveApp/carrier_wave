@@ -64,6 +64,7 @@ Pure logic library that can be tested without iOS Simulator. Run tests with `mak
 | `StreakInfo.swift` | Streak data model and calculation utilities |
 | `ActivityType.swift` | Activity type enum with icons and display names |
 | `Friendship.swift` | Friend connection model with status tracking |
+| `FriendSuggestion.swift` | Friend suggestion models (DismissedSuggestion, FriendSuggestion, DTO) |
 | `Club.swift` | Club model with Polo notes list membership |
 | `ActivityItem.swift` | Activity feed item model |
 | `CWConversation.swift` | CW conversation and message models for chat display |
@@ -127,7 +128,9 @@ Pure logic library that can be tested without iOS Simulator. Run tests with `mak
 | `BugReportService.swift` | Collects device/app info for bug reports |
 | `CallsignAliasService.swift` | Manage current and previous callsigns for alias matching |
 | `ChallengesClient+Friends.swift` | Friend API endpoints extension |
+| `ChallengesClient+FriendSuggestions.swift` | Friend suggestion validation API (batch + fallback) |
 | `FriendsSyncService.swift` | Friend data synchronization and actions |
+| `FriendSuggestionActor.swift` | Background actor for counting QSOs per callsign |
 | `ChallengesClient+Clubs.swift` | Club API endpoints extension |
 | `ClubsSyncService.swift` | Club data synchronization |
 | `ActivityDetector.swift` | Detect notable activities from QSOs |
@@ -278,7 +281,8 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `ActivityView.swift` | Main activity tab with challenges section and activity feed |
 | `ActivityItemRow.swift` | Individual activity feed item display |
 | `FilterBar.swift` | Feed filter chips (All/Friends/Clubs) |
-| `FriendsListView.swift` | Friends list with pending requests and invite links |
+| `FriendsListView.swift` | Friends list with pending requests, suggestions, and invite links |
+| `FriendSuggestionsSection.swift` | Friend suggestion rows with Add/Dismiss actions |
 | `FriendSearchView.swift` | Search and add friends |
 | `FriendProfileView.swift` | Friend profile with activity and stats |
 | `ClubsListView.swift` | List of clubs user belongs to |

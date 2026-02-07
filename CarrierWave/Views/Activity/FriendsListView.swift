@@ -8,7 +8,7 @@ struct FriendsListView: View {
 
     var body: some View {
         Group {
-            if friendships.isEmpty {
+            if friendships.isEmpty, suggestions.isEmpty {
                 ContentUnavailableView(
                     "No Friends Yet",
                     systemImage: "person.2",
@@ -56,6 +56,9 @@ struct FriendsListView: View {
                 onDismiss: { showingInviteSheet = false }
             )
         }
+        .task {
+            await loadSuggestions()
+        }
     }
 
     // MARK: Private
@@ -75,6 +78,10 @@ struct FriendsListView: View {
     @State private var isGeneratingInvite = false
     @State private var inviteLink: InviteLinkDTO?
 
+    // Friend suggestions state
+    @State private var suggestions: [FriendSuggestion] = []
+    @State private var isLoadingSuggestions = false
+
     /// For now, hardcode the source URL (will come from settings later)
     private let sourceURL = "https://activities.carrierwave.app"
 
@@ -92,6 +99,14 @@ struct FriendsListView: View {
 
     private var friendsList: some View {
         List {
+            if !suggestions.isEmpty {
+                FriendSuggestionsSection(
+                    suggestions: suggestions,
+                    onAdd: { addSuggestedFriend($0) },
+                    onDismiss: { dismissSuggestion($0) }
+                )
+            }
+
             if !incomingRequests.isEmpty {
                 Section("Pending Requests") {
                     ForEach(incomingRequests) { friendship in
@@ -172,6 +187,58 @@ struct FriendsListView: View {
                 errorMessage = error.localizedDescription
                 showingError = true
             }
+        }
+    }
+
+    private func loadSuggestions() async {
+        if friendsSyncService == nil {
+            friendsSyncService = FriendsSyncService(modelContext: modelContext)
+        }
+        guard let service = friendsSyncService else {
+            return
+        }
+
+        isLoadingSuggestions = true
+        defer { isLoadingSuggestions = false }
+
+        do {
+            suggestions = try await service.computeSuggestions(
+                container: modelContext.container,
+                sourceURL: sourceURL
+            )
+        } catch {
+            // Silently fail — suggestions are non-critical
+        }
+    }
+
+    private func addSuggestedFriend(_ suggestion: FriendSuggestion) {
+        guard let service = friendsSyncService else {
+            return
+        }
+        Task {
+            do {
+                try await service.sendFriendRequest(
+                    toUserId: suggestion.userId,
+                    sourceURL: sourceURL
+                )
+                suggestions.removeAll { $0.callsign == suggestion.callsign }
+            } catch {
+                errorMessage = error.localizedDescription
+                showingError = true
+            }
+        }
+    }
+
+    private func dismissSuggestion(_ suggestion: FriendSuggestion) {
+        guard let service = friendsSyncService else {
+            return
+        }
+        do {
+            try service.dismissSuggestion(callsign: suggestion.callsign)
+            suggestions.removeAll { $0.callsign == suggestion.callsign }
+        } catch {
+            errorMessage = error.localizedDescription
+            showingError = true
         }
     }
 
@@ -363,5 +430,5 @@ private struct InviteLinkSheet: View {
     NavigationStack {
         FriendsListView()
     }
-    .modelContainer(for: [Friendship.self], inMemory: true)
+    .modelContainer(for: [Friendship.self, DismissedSuggestion.self], inMemory: true)
 }

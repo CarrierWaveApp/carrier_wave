@@ -4,10 +4,14 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.23.0] - 2026-02-06
+
 ### Added
 - Edit activation metadata after completion — title, park reference, and watts via edit button or swipe action on activation rows
 - Display activation metadata (title, watts, weather, solar) in activation rows and share cards
 - Show all-time previous QSO count for each callsign entered in the logger
+- Suggest friends based on QSO history — callsigns with 3+ contacts who are Carrier Wave users appear in the Friends list with Add/Dismiss actions
+- Add detailed POTA upload debug logging — auth state, token metadata, ADIF preview, request/response details, and response headers in sync debug log
 
 ### Fixed
 - Fix activation duration counting gaps between sessions — now sums individual session durations instead of spanning first-to-last QSO across all sessions

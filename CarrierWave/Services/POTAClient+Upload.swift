@@ -42,15 +42,12 @@ extension POTAClient {
         let debugLog = SyncDebugLog.shared
         let normalizedParkRef = parkReference.uppercased()
 
-        // Filter QSOs for this park, excluding metadata modes (WEATHER, SOLAR, NOTE)
-        // Uses hasOverlap to support multi-park/two-fer references (e.g., "US-1044, US-3791")
-        let parkQSOs = qsos.filter {
-            guard let ref = $0.parkReference else {
-                return false
-            }
-            return ParkReference.hasOverlap(ref, normalizedParkRef)
-                && !Self.metadataModes.contains($0.mode.uppercased())
-        }
+        debugLog.debug(
+            "buildUploadRequest: park=\(normalizedParkRef), input QSOs=\(qsos.count)",
+            service: .pota
+        )
+
+        let parkQSOs = filterQSOsForPark(qsos, parkRef: normalizedParkRef)
         guard !parkQSOs.isEmpty else {
             debugLog.info("No QSOs to upload for park \(normalizedParkRef)", service: .pota)
             return nil
@@ -68,6 +65,16 @@ extension POTAClient {
             parkReference: normalizedParkRef, location: location, callsign: callsign
         )
 
+        debugLog.debug(
+            "ADIF for \(normalizedParkRef): \(adifContent.count) chars, "
+                + "\(parkQSOs.count) QSOs, callsign=\(callsign), "
+                + "location=\(location), filename=\(filename)",
+            service: .pota
+        )
+        let adifPreview = adifContent.components(separatedBy: "\n").prefix(8)
+            .joined(separator: "\n")
+        debugLog.debug("ADIF preview:\n\(adifPreview)", service: .pota)
+
         guard
             let request = buildMultipartRequest(
                 token: token, filename: filename, adifContent: adifContent, formFields: formFields
@@ -77,9 +84,92 @@ extension POTAClient {
             return nil
         }
 
+        debugLog.debug(
+            "Built multipart request: url=\(request.url?.absoluteString ?? "nil"), "
+                + "method=\(request.httpMethod ?? "nil"), "
+                + "bodySize=\(request.httpBody?.count ?? 0) bytes",
+            service: .pota
+        )
+
         return POTAUploadRequestData(
             request: request, filename: filename, adifContent: adifContent,
             location: location, callsign: callsign, qsoCount: parkQSOs.count
+        )
+    }
+
+    /// Filter QSOs for a specific park, excluding metadata modes
+    private func filterQSOsForPark(_ qsos: [QSO], parkRef: String) -> [QSO] {
+        // Uses hasOverlap to support multi-park/two-fer references (e.g., "US-1044, US-3791")
+        qsos.filter {
+            guard let ref = $0.parkReference else {
+                return false
+            }
+            return ParkReference.hasOverlap(ref, parkRef)
+                && !Self.metadataModes.contains($0.mode.uppercased())
+        }
+    }
+
+    // MARK: - Upload Helpers (used by uploadActivationWithRecording)
+
+    /// Validate park reference and return normalized (uppercased) version
+    func validateAndNormalizePark(_ parkReference: String) throws -> String {
+        guard validateParkReference(parkReference) else {
+            SyncDebugLog.shared.error(
+                "Invalid park reference format: '\(parkReference)' (expected format like K-1234)",
+                service: .pota
+            )
+            throw POTAError.invalidParkReference
+        }
+        return parkReference.uppercased()
+    }
+
+    /// Acquire auth token with debug logging
+    func acquireTokenWithLogging(for parkRef: String) async throws -> String {
+        let debugLog = SyncDebugLog.shared
+        debugLog.debug("Requesting auth token for POTA upload (park \(parkRef))", service: .pota)
+
+        let token: String
+        do {
+            token = try await authService.ensureValidToken()
+        } catch {
+            debugLog.error(
+                "Failed to get POTA auth token: \(error.localizedDescription)", service: .pota
+            )
+            throw error
+        }
+
+        let tokenPrefix = String(token.prefix(20))
+        debugLog.debug(
+            "Got POTA token: len=\(token.count), prefix=\(tokenPrefix)...", service: .pota
+        )
+        return token
+    }
+
+    /// Filter QSOs that match a specific park reference (without metadata mode exclusion)
+    func filterQSOsForParkRef(_ qsos: [QSO], parkRef: String) -> [QSO] {
+        let parkQSOs = qsos.filter {
+            guard let ref = $0.parkReference else {
+                return false
+            }
+            return ParkReference.hasOverlap(ref, parkRef)
+        }
+        SyncDebugLog.shared.debug(
+            "Filtered \(qsos.count) input QSOs to \(parkQSOs.count) for park \(parkRef)",
+            service: .pota
+        )
+        return parkQSOs
+    }
+
+    /// Log request details before sending
+    func logUploadRequestDetails(_ data: POTAUploadRequestData, parkRef: String) {
+        let debugLog = SyncDebugLog.shared
+        debugLog.info("Uploading \(data.qsoCount) QSOs to park \(parkRef)", service: .pota)
+        debugLog.debug(
+            "POST \(data.request.url?.absoluteString ?? "nil") "
+                + "- location=\(data.location), ref=\(parkRef), "
+                + "file=\(data.filename), callsign=\(data.callsign), "
+                + "bodySize=\(data.request.httpBody?.count ?? 0) bytes",
+            service: .pota
         )
     }
 
@@ -170,11 +260,18 @@ extension POTAClient {
         parkReference: String,
         qsoCount: Int
     ) async throws -> POTAUploadResult {
+        let debugLog = SyncDebugLog.shared
+        debugLog.debug("Sending POTA upload request for \(parkReference)...", service: .pota)
+
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
             let durationMs = Int(Date().timeIntervalSince(startTime) * 1_000)
 
             guard let httpResponse = response as? HTTPURLResponse else {
+                debugLog.error(
+                    "POTA upload response is not HTTP for \(parkReference) (\(durationMs)ms)",
+                    service: .pota
+                )
                 await recordAttemptFailure(
                     attempt, statusCode: nil, body: nil,
                     message: "Invalid response (not HTTP)", durationMs: durationMs
@@ -183,20 +280,14 @@ extension POTAClient {
             }
 
             let responseBody = String(data: data, encoding: .utf8) ?? "(binary data)"
-
-            if httpResponse.statusCode >= 200, httpResponse.statusCode < 300 {
-                await MainActor.run {
-                    attempt.markCompleted(
-                        httpStatusCode: httpResponse.statusCode,
-                        responseBody: responseBody, durationMs: durationMs
-                    )
-                }
-            } else {
-                await recordAttemptFailure(
-                    attempt, statusCode: httpResponse.statusCode,
-                    body: responseBody, message: nil, durationMs: durationMs
-                )
-            }
+            logUploadResponse(
+                httpResponse, body: responseBody, data: data,
+                parkReference: parkReference, durationMs: durationMs
+            )
+            await recordAttemptResult(
+                attempt, httpResponse: httpResponse,
+                responseBody: responseBody, durationMs: durationMs
+            )
 
             return try handleUploadResponse(
                 data: data, httpResponse: httpResponse,
@@ -206,11 +297,65 @@ extension POTAClient {
             throw error
         } catch {
             let durationMs = Int(Date().timeIntervalSince(startTime) * 1_000)
+            debugLog.error(
+                "POTA upload network error for \(parkReference) (\(durationMs)ms): "
+                    + "\(error.localizedDescription)",
+                service: .pota
+            )
             await recordAttemptFailure(
                 attempt, statusCode: nil, body: nil,
                 message: error.localizedDescription, durationMs: durationMs
             )
             throw POTAError.networkError(error)
+        }
+    }
+
+    /// Log response details for debugging
+    private func logUploadResponse(
+        _ httpResponse: HTTPURLResponse, body: String, data: Data,
+        parkReference: String, durationMs: Int
+    ) {
+        let debugLog = SyncDebugLog.shared
+        debugLog.debug(
+            "POTA upload response for \(parkReference): "
+                + "HTTP \(httpResponse.statusCode) (\(durationMs)ms), "
+                + "body=\(data.count) bytes",
+            service: .pota
+        )
+        debugLog.debug("Response body: \(body.prefix(1_000))", service: .pota)
+
+        let interestingHeaders = [
+            "content-type", "x-request-id", "x-amzn-requestid",
+            "x-amz-apigw-id", "x-amzn-trace-id",
+        ]
+        let headerStr = interestingHeaders.compactMap { key -> String? in
+            guard let value = httpResponse.value(forHTTPHeaderField: key) else {
+                return nil
+            }
+            return "\(key)=\(value)"
+        }.joined(separator: ", ")
+        if !headerStr.isEmpty {
+            debugLog.debug("Response headers: \(headerStr)", service: .pota)
+        }
+    }
+
+    /// Record attempt as completed or failed based on status code
+    private func recordAttemptResult(
+        _ attempt: POTAUploadAttempt, httpResponse: HTTPURLResponse,
+        responseBody: String, durationMs: Int
+    ) async {
+        if httpResponse.statusCode >= 200, httpResponse.statusCode < 300 {
+            await MainActor.run {
+                attempt.markCompleted(
+                    httpStatusCode: httpResponse.statusCode,
+                    responseBody: responseBody, durationMs: durationMs
+                )
+            }
+        } else {
+            await recordAttemptFailure(
+                attempt, statusCode: httpResponse.statusCode,
+                body: responseBody, message: nil, durationMs: durationMs
+            )
         }
     }
 
@@ -234,10 +379,6 @@ extension POTAClient {
         qsoCount: Int
     ) throws -> POTAUploadResult {
         let debugLog = SyncDebugLog.shared
-        let responseBody = String(data: data, encoding: .utf8) ?? "(binary data)"
-        debugLog.debug(
-            "Response \(httpResponse.statusCode): \(responseBody.prefix(500))", service: .pota
-        )
 
         switch httpResponse.statusCode {
         case 200 ... 299:
@@ -270,16 +411,54 @@ extension POTAClient {
         -> POTAUploadResult
     {
         let debugLog = SyncDebugLog.shared
+
+        // Log raw JSON parsing attempt
         if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
-            let count = json["qsosAccepted"] as? Int ?? qsoCount
-            let message = json["message"] as? String
-            debugLog.info(
-                "Upload success: \(count) QSOs accepted for \(parkReference)", service: .pota
+            debugLog.debug(
+                "POTA response JSON keys for \(parkReference): \(json.keys.sorted())",
+                service: .pota
             )
-            return POTAUploadResult(success: true, qsosAccepted: count, message: message)
+
+            let count = json["qsosAccepted"] as? Int
+            let message = json["message"] as? String
+            let accepted = count ?? qsoCount
+
+            if count == nil {
+                debugLog.warning(
+                    "POTA response for \(parkReference) has no 'qsosAccepted' key "
+                        + "- assuming all \(qsoCount) accepted. JSON: \(json)",
+                    service: .pota
+                )
+            }
+
+            if let message {
+                debugLog.debug(
+                    "POTA response message for \(parkReference): \(message)",
+                    service: .pota
+                )
+            }
+
+            if accepted == 0, qsoCount > 0 {
+                debugLog.warning(
+                    "POTA reports 0 QSOs accepted for \(parkReference) "
+                        + "but we sent \(qsoCount). JSON: \(json)",
+                    service: .pota
+                )
+            }
+
+            debugLog.info(
+                "Upload success: \(accepted) QSOs accepted for \(parkReference)"
+                    + (count == nil ? " (assumed)" : ""),
+                service: .pota
+            )
+            return POTAUploadResult(success: true, qsosAccepted: accepted, message: message)
         }
-        debugLog.info(
-            "Upload success: \(qsoCount) QSOs for \(parkReference) (no count in response)",
+
+        // Response isn't JSON
+        let responseStr = String(data: data, encoding: .utf8) ?? "(binary \(data.count) bytes)"
+        debugLog.warning(
+            "POTA response for \(parkReference) is not JSON "
+                + "- assuming \(qsoCount) accepted. Body: \(responseStr.prefix(500))",
             service: .pota
         )
         return POTAUploadResult(success: true, qsosAccepted: qsoCount, message: nil)
