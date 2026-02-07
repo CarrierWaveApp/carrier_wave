@@ -4,6 +4,8 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.24.0] - 2026-02-07
+
 ### Changed
 - POTA uploads now show as "submitted" (blue clock icon) until accepted by POTA job log, instead of immediately showing as complete — refresh jobs to see accepted status or retry failed uploads
 - Consolidate POTA activation row actions (Edit, Map, Export, Share, Reject) into a single ellipsis menu button
