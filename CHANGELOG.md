@@ -4,6 +4,9 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- Suppress "operator nearby" frequency warning when the nearby spot is the station being worked (e.g., tapping a POTA spot to hunt)
+
 ## [1.25.4] - 2026-02-08
 
 ### Added

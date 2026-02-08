@@ -1232,6 +1232,13 @@ struct LoggerView: View {
             return nil
         }
 
+        // Don't warn about the spot we're actively trying to work
+        if !callsignInput.isEmpty,
+           closestSpot.activator.uppercased() == callsignInput.uppercased()
+        {
+            return nil
+        }
+
         return buildNearbySpotWarning(spot: closestSpot, freqKHz: freqKHz, mode: mode)
     }
 
