@@ -6,6 +6,7 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ### Fixed
 - Suppress "operator nearby" frequency warning when the nearby spot is the station being worked (e.g., tapping a POTA spot to hunt)
+- Fix activation type resetting to Casual when scrolling the session start sheet (CAR-46)
 
 ## [1.25.4] - 2026-02-08
 

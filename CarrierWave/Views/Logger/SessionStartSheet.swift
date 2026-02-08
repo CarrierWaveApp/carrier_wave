@@ -19,6 +19,22 @@ struct SessionStartSheet: View {
                 activationSection
                 optionsSection
             }
+            .task {
+                guard !hasLoadedDefaults else {
+                    return
+                }
+                hasLoadedDefaults = true
+                if myGrid.isEmpty, !defaultGrid.isEmpty {
+                    myGrid = defaultGrid
+                }
+                selectedMode = defaultMode
+                if let savedActivationType = ActivationType(rawValue: defaultActivationType) {
+                    activationType = savedActivationType
+                }
+                if !defaultParkReference.isEmpty {
+                    parkReference = defaultParkReference
+                }
+            }
             .safeAreaInset(edge: .bottom) {
                 if let reason = startDisabledReason {
                     HStack(spacing: 8) {
@@ -72,23 +88,13 @@ struct SessionStartSheet: View {
 
     /// UI state
     @State private var showSavedConfirmation = false
+    @State private var hasLoadedDefaults = false
 
     /// The full constructed callsign (prefix/base/suffix)
     private var fullCallsign: String {
-        var parts: [String] = []
-
         let prefix = callsignPrefix.trimmingCharacters(in: .whitespaces).uppercased()
-        if !prefix.isEmpty {
-            parts.append(prefix)
-        }
-
-        parts.append(defaultCallsign.uppercased())
-
         let suffix = effectiveSuffix
-        if !suffix.isEmpty {
-            parts.append(suffix)
-        }
-
+        let parts = [prefix, defaultCallsign.uppercased(), suffix].filter { !$0.isEmpty }
         return parts.joined(separator: "/")
     }
 
@@ -148,18 +154,6 @@ struct SessionStartSheet: View {
         } footer: {
             callsignFooter
         }
-        .onAppear {
-            if myGrid.isEmpty, !defaultGrid.isEmpty {
-                myGrid = defaultGrid
-            }
-            selectedMode = defaultMode
-            if let savedActivationType = ActivationType(rawValue: defaultActivationType) {
-                activationType = savedActivationType
-            }
-            if !defaultParkReference.isEmpty {
-                parkReference = defaultParkReference
-            }
-        }
     }
 
     @ViewBuilder
@@ -173,18 +167,14 @@ struct SessionStartSheet: View {
                     .padding(.vertical, 8)
 
                 if !callsignPrefix.isEmpty || selectedSuffix != .none {
-                    callsignBreakdownView
+                    CallsignBreakdownView(
+                        prefix: callsignPrefix,
+                        baseCallsign: defaultCallsign,
+                        suffix: effectiveSuffix
+                    )
                 }
             }
         }
-    }
-
-    private var callsignBreakdownView: some View {
-        CallsignBreakdownView(
-            prefix: callsignPrefix,
-            baseCallsign: defaultCallsign,
-            suffix: effectiveSuffix
-        )
     }
 
     private var callsignPrefixRow: some View {
