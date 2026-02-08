@@ -101,11 +101,13 @@ extension SyncService {
             let fetchStart = Date()
             let jobs = try await potaClient.fetchJobs()
             let fetchDurationMs = Int(Date().timeIntervalSince(fetchStart) * 1_000)
-            let (confirmedKeys, failedKeys) = buildPOTAActivationKeys(from: jobs)
+            let activationKeys = buildPOTAActivationKeys(from: jobs)
 
             debugLog.debug(
                 "POTA reconciliation: fetched \(jobs.count) jobs in \(fetchDurationMs)ms, "
-                    + "\(confirmedKeys.count) confirmed, \(failedKeys.count) failed",
+                    + "\(activationKeys.confirmed.count) confirmed, "
+                    + "\(activationKeys.failed.count) failed, "
+                    + "\(activationKeys.inProgress.count) in-progress",
                 service: .pota
             )
 
@@ -128,8 +130,7 @@ extension SyncService {
             }
 
             let result = try await Self.processingActor.reconcilePOTAPresence(
-                confirmedActivationKeys: confirmedKeys,
-                failedActivationKeys: failedKeys,
+                activationKeys: activationKeys,
                 container: modelContext.container
             )
 
@@ -141,13 +142,21 @@ extension SyncService {
         }
     }
 
-    /// Build confirmed and failed activation key sets from POTA jobs.
+    /// Classified POTA activation keys from the job log.
     /// Key format: "PARKREF|CALLSIGN|YYYY-MM-DD"
-    private func buildPOTAActivationKeys(
-        from jobs: [POTAJob]
-    ) -> (confirmed: Set<String>, failed: Set<String>) {
-        var confirmedKeys = Set<String>()
-        var failedKeys = Set<String>()
+    struct POTAActivationKeys {
+        /// Activations with completed or duplicate jobs — POTA has the QSOs
+        var confirmed = Set<String>()
+        /// Activations with failed jobs — need re-upload
+        var failed = Set<String>()
+        /// Activations with pending/processing jobs — maps key to submitted timestamp
+        var inProgress = [String: Date]()
+    }
+
+    /// Build classified activation key sets from POTA jobs.
+    /// In-progress keys map to the job's submitted timestamp for staleness checking.
+    func buildPOTAActivationKeys(from jobs: [POTAJob]) -> POTAActivationKeys {
+        var keys = POTAActivationKeys()
 
         for job in jobs {
             guard let callsign = job.callsignUsed, let utcDate = job.utcDateString else {
@@ -155,16 +164,24 @@ extension SyncService {
             }
             let key = "\(job.reference.uppercased())|\(callsign.uppercased())|\(utcDate)"
 
-            if job.status == .completed {
-                confirmedKeys.insert(key)
+            if job.status == .completed || job.status == .duplicate {
+                // Completed or duplicate: POTA has this activation's QSOs
+                keys.confirmed.insert(key)
             } else if job.status.isFailure {
-                failedKeys.insert(key)
+                keys.failed.insert(key)
+            } else {
+                // Pending or processing: track with submitted timestamp for staleness
+                keys.inProgress[key] = job.submitted
             }
         }
 
-        // Remove failed keys that also have a completed job
-        failedKeys.subtract(confirmedKeys)
-        return (confirmedKeys, failedKeys)
+        // Remove failed keys that also have a completed/duplicate job
+        keys.failed.subtract(keys.confirmed)
+        // Remove in-progress keys that also have a completed/duplicate job
+        for key in keys.confirmed {
+            keys.inProgress.removeValue(forKey: key)
+        }
+        return keys
     }
 
     /// Log the results of POTA presence reconciliation.
@@ -197,10 +214,25 @@ extension SyncService {
                 service: .pota
             )
         }
+        if result.inProgressCount > 0 {
+            debugLog.info(
+                "POTA reconciliation: \(result.inProgressCount) upload(s) still in-progress "
+                    + "(pending/processing - waiting for POTA to finish)",
+                service: .pota
+            )
+        }
+        if result.staleResetCount > 0 {
+            debugLog.warning(
+                "POTA reconciliation: reset \(result.staleResetCount) submitted upload(s) "
+                    + "(job pending/processing >30 min - considered stale)",
+                service: .pota
+            )
+        }
         let totalChanges =
             result.resetCount + result.confirmedCount
                 + result.failedResetCount + result.orphanResetCount
-        if totalChanges == 0 {
+                + result.staleResetCount
+        if totalChanges == 0, result.inProgressCount == 0 {
             debugLog.debug("POTA reconciliation: no changes needed", service: .pota)
         }
     }

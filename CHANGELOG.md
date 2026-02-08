@@ -4,6 +4,15 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.25.3] - 2026-02-07
+
+### Fixed
+- Fix POTA reconciliation treating duplicate jobs (status 7) as unmatched, causing infinite re-upload loops for already-accepted activations
+- Fix POTA reconciliation resetting in-progress jobs (pending/processing) back to needsUpload, causing duplicate uploads while POTA is still processing — now waits up to 30 minutes before considering a job stale
+
+### Changed
+- Document canonical sync flow ordering and invariants in sync architecture docs
+
 ## [1.25.2] - 2026-02-07
 
 ### Fixed

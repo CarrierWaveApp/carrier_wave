@@ -5,21 +5,27 @@ import SwiftData
 // MARK: - POTA Presence Reconciliation
 
 extension QSOProcessingActor {
+    /// Maximum age for a pending/processing job before it's considered stale.
+    /// Jobs older than this are reset to needsUpload so they get re-uploaded.
+    static let staleJobThreshold: TimeInterval = 30 * 60 // 30 minutes
+
     struct POTAReconcileResult: Sendable {
         let resetCount: Int
         let confirmedCount: Int
         let failedResetCount: Int
         let orphanResetCount: Int
+        let inProgressCount: Int
+        let staleResetCount: Int
     }
 
     /// Reconcile POTA ServicePresence records against completed upload jobs.
     /// If a QSO's POTA presence says isPresent=true but no completed job covers
     /// that activation (park + callsign + UTC date), reset it to needsUpload=true.
-    /// Also confirms submitted QSOs that have a completed job and resets submitted
-    /// QSOs whose jobs failed.
+    /// Also confirms submitted QSOs that have a completed job, resets submitted
+    /// QSOs whose jobs failed, leaves recent in-progress jobs alone, and resets
+    /// stale in-progress jobs (pending/processing >30 min).
     func reconcilePOTAPresence(
-        confirmedActivationKeys: Set<String>,
-        failedActivationKeys: Set<String>,
+        activationKeys: SyncService.POTAActivationKeys,
         container: ModelContainer
     ) async throws -> POTAReconcileResult {
         let context = ModelContext(container)
@@ -31,12 +37,7 @@ extension QSOProcessingActor {
 
         for (index, presence) in potaPresence.enumerated() {
             try Task.checkCancellation()
-            reconcilePresenceRecord(
-                presence,
-                confirmedKeys: confirmedActivationKeys,
-                failedKeys: failedActivationKeys,
-                counts: &counts
-            )
+            reconcilePresenceRecord(presence, keys: activationKeys, counts: &counts)
             if index.isMultiple(of: 500) {
                 await Task.yield()
             }
@@ -48,7 +49,8 @@ extension QSOProcessingActor {
 
         return POTAReconcileResult(
             resetCount: counts.reset, confirmedCount: counts.confirmed,
-            failedResetCount: counts.failedReset, orphanResetCount: counts.orphanReset
+            failedResetCount: counts.failedReset, orphanResetCount: counts.orphanReset,
+            inProgressCount: counts.inProgress, staleResetCount: counts.staleReset
         )
     }
 }
@@ -61,9 +63,12 @@ extension QSOProcessingActor {
         var confirmed = 0
         var failedReset = 0
         var orphanReset = 0
+        var inProgress = 0
+        var staleReset = 0
 
         var hasChanges: Bool {
             reset > 0 || confirmed > 0 || failedReset > 0 || orphanReset > 0
+                || staleReset > 0
         }
     }
 
@@ -75,8 +80,7 @@ extension QSOProcessingActor {
 
     private func reconcilePresenceRecord(
         _ presence: ServicePresence,
-        confirmedKeys: Set<String>,
-        failedKeys: Set<String>,
+        keys: SyncService.POTAActivationKeys,
         counts: inout ReconcileCounts
     ) {
         guard let qso = presence.qso else {
@@ -98,11 +102,7 @@ extension QSOProcessingActor {
             let key = buildActivationKey(
                 parkRef: park, callsign: qso.myCallsign, timestamp: qso.timestamp
             )
-            if applyReconciliation(
-                presence: presence, key: key,
-                confirmedKeys: confirmedKeys, failedKeys: failedKeys,
-                counts: &counts
-            ) {
+            if applyReconciliation(presence: presence, key: key, keys: keys, counts: &counts) {
                 return
             }
         }
@@ -120,36 +120,47 @@ extension QSOProcessingActor {
     }
 
     /// Apply reconciliation logic for a single (presence, key) pair.
-    /// Returns true if the presence was modified and no further parks need checking.
+    /// Returns true if the presence was handled and no further parks need checking.
     @discardableResult
     private func applyReconciliation(
         presence: ServicePresence,
         key: String,
-        confirmedKeys: Set<String>,
-        failedKeys: Set<String>,
+        keys: SyncService.POTAActivationKeys,
         counts: inout ReconcileCounts
     ) -> Bool {
         if presence.isPresent {
-            if !confirmedKeys.contains(key) {
+            if !keys.confirmed.contains(key) {
                 presence.isPresent = false
                 presence.needsUpload = true
                 counts.reset += 1
                 return true
             }
         } else if presence.isSubmitted {
-            if confirmedKeys.contains(key) {
+            if keys.confirmed.contains(key) {
                 presence.isPresent = true
                 presence.isSubmitted = false
                 presence.lastConfirmedAt = Date()
                 counts.confirmed += 1
                 return true
-            } else if failedKeys.contains(key) {
+            } else if keys.failed.contains(key) {
                 presence.isSubmitted = false
                 presence.needsUpload = true
                 counts.failedReset += 1
                 return true
+            } else if let submittedAt = keys.inProgress[key] {
+                let age = Date().timeIntervalSince(submittedAt)
+                if age >= Self.staleJobThreshold {
+                    // Job has been pending/processing too long — reset to retry.
+                    presence.isSubmitted = false
+                    presence.needsUpload = true
+                    counts.staleReset += 1
+                } else {
+                    // Job is recent — leave isSubmitted alone, wait for POTA.
+                    counts.inProgress += 1
+                }
+                return true
             } else {
-                // Submitted but no matching job at all (confirmed or failed).
+                // Submitted but no matching job at all (confirmed, failed, or in-progress).
                 // POTA likely silently dropped the upload — reset to retry.
                 presence.isSubmitted = false
                 presence.needsUpload = true
