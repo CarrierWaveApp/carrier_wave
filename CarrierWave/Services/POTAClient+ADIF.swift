@@ -3,7 +3,9 @@ import Foundation
 // MARK: - POTAClient ADIF Generation
 
 extension POTAClient {
-    func generateADIF(for qsos: [QSO], parkReference: String) -> String {
+    func generateADIF(for qsos: [QSO], parkReference: String, activatorCallsign: String? = nil)
+        -> String
+    {
         var lines: [String] = []
 
         // Header
@@ -13,7 +15,11 @@ extension POTAClient {
 
         // QSO Records
         for qso in qsos {
-            lines.append(buildQSORecord(qso, parkReference: parkReference))
+            lines.append(
+                buildQSORecord(
+                    qso, parkReference: parkReference, activatorCallsign: activatorCallsign
+                )
+            )
         }
 
         return lines.joined(separator: "\n")
@@ -43,7 +49,9 @@ extension POTAClient {
         return lines
     }
 
-    private func buildQSORecord(_ qso: QSO, parkReference: String) -> String {
+    private func buildQSORecord(_ qso: QSO, parkReference: String, activatorCallsign: String? = nil)
+        -> String
+    {
         var fields: [String] = []
 
         // Core QSO fields
@@ -71,9 +79,12 @@ extension POTAClient {
             fields.append(formatField("RST_SENT", rstSent))
         }
 
-        // Station info
-        if !qso.myCallsign.isEmpty {
-            fields.append(formatField("STATION_CALLSIGN", qso.myCallsign))
+        // Station info — use QSO's myCallsign, falling back to the activator callsign
+        // (needed for HAMRS imports that may lack STATION_CALLSIGN in their ADIF)
+        let stationCallsign = qso.myCallsign.isEmpty ? activatorCallsign : qso.myCallsign
+        if let stationCallsign, !stationCallsign.isEmpty {
+            fields.append(formatField("STATION_CALLSIGN", stationCallsign))
+            fields.append(formatField("OPERATOR", stationCallsign))
         }
 
         // Grid squares

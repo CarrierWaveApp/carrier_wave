@@ -43,6 +43,8 @@ struct POTAActivationsContentView: View {
     @State var bulkUploadProgress: BulkUploadProgress?
     @State var bulkExportActivations: [POTAActivation]?
 
+    @Environment(\.modelContext) var modelContext
+
     var isInMaintenance: Bool {
         if debugMode, bypassMaintenance {
             return false
@@ -269,7 +271,6 @@ struct POTAActivationsContentView: View {
     /// Batch size for loading QSOs
     private static let batchSize = 500
 
-    @Environment(\.modelContext) private var modelContext
     @AppStorage("debugMode") private var debugMode = false
     @AppStorage("bypassPOTAMaintenance") private var bypassMaintenance = false
 

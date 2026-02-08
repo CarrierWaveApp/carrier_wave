@@ -4,8 +4,14 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.25.4] - 2026-02-08
+
 ### Added
 - Add bulk actions for POTA activations with multi-select (upload, reject, export)
+
+### Fixed
+- Fix POTA upload error "No valid operator or station_callsign" for QSOs imported from HAMRS with empty myCallsign — fall back to user's primary callsign and emit both STATION_CALLSIGN and OPERATOR fields
+- Fix bulk reject build error from missing CarrierWaveCore import and private modelContext access
 
 ## [1.25.3] - 2026-02-07
 

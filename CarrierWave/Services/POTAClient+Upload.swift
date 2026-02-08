@@ -21,8 +21,6 @@ struct POTAFormFields {
     let callsign: String
 }
 
-// MARK: - POTAClient Upload Methods
-
 extension POTAClient {
     /// Modes that represent activation metadata, not actual QSOs (from Ham2K PoLo)
     static let metadataModes: Set<String> = ["WEATHER", "SOLAR", "NOTE"]
@@ -53,13 +51,17 @@ extension POTAClient {
             return nil
         }
 
-        let callsign = parkQSOs.first?.myCallsign ?? "UNKNOWN"
+        let callsign =
+            parkQSOs.first(where: { !$0.myCallsign.isEmpty })?.myCallsign
+                ?? CallsignAliasService.shared.getCurrentCallsign() ?? "UNKNOWN"
         let grid = parkQSOs.first?.myGrid
         let location = deriveLocation(parkReference: normalizedParkRef, grid: grid)
         warnIfLocationMismatch(
             parkReference: normalizedParkRef, derivedLocation: location, grid: grid
         )
-        let adifContent = generateADIF(for: parkQSOs, parkReference: normalizedParkRef)
+        let adifContent = generateADIF(
+            for: parkQSOs, parkReference: normalizedParkRef, activatorCallsign: callsign
+        )
         let filename = buildFilename(
             callsign: callsign, parkReference: normalizedParkRef, qsos: parkQSOs
         )
@@ -98,8 +100,6 @@ extension POTAClient {
                 && !Self.metadataModes.contains($0.mode.uppercased())
         }
     }
-
-    // MARK: - Upload Helpers (used by uploadActivationWithRecording)
 
     /// Validate park reference and return normalized (uppercased) version
     func validateAndNormalizePark(_ parkReference: String) throws -> String {
