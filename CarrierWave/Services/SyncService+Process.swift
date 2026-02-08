@@ -190,7 +190,17 @@ extension SyncService {
                 service: .pota
             )
         }
-        if result.resetCount == 0, result.confirmedCount == 0, result.failedResetCount == 0 {
+        if result.orphanResetCount > 0 {
+            debugLog.warning(
+                "POTA reconciliation: reset \(result.orphanResetCount) submitted upload(s) "
+                    + "(no matching job found - upload was likely silently dropped)",
+                service: .pota
+            )
+        }
+        let totalChanges =
+            result.resetCount + result.confirmedCount
+                + result.failedResetCount + result.orphanResetCount
+        if totalChanges == 0 {
             debugLog.debug("POTA reconciliation: no changes needed", service: .pota)
         }
     }

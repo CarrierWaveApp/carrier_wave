@@ -415,55 +415,72 @@ extension POTAClient {
     {
         let debugLog = SyncDebugLog.shared
 
-        // Log raw JSON parsing attempt
-        if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
-            debugLog.debug(
-                "POTA response JSON keys for \(parkReference): \(json.keys.sorted())",
+        guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            let responseStr = String(data: data, encoding: .utf8) ?? "(binary \(data.count) bytes)"
+            debugLog.warning(
+                "POTA response for \(parkReference) is not JSON "
+                    + "- assuming \(qsoCount) accepted. Body: \(responseStr.prefix(500))",
                 service: .pota
             )
-
-            let count = json["qsosAccepted"] as? Int
-            let message = json["message"] as? String
-            let accepted = count ?? qsoCount
-
-            if count == nil {
-                debugLog.warning(
-                    "POTA response for \(parkReference) has no 'qsosAccepted' key "
-                        + "- assuming all \(qsoCount) accepted. JSON: \(json)",
-                    service: .pota
-                )
-            }
-
-            if let message {
-                debugLog.debug(
-                    "POTA response message for \(parkReference): \(message)",
-                    service: .pota
-                )
-            }
-
-            if accepted == 0, qsoCount > 0 {
-                debugLog.warning(
-                    "POTA reports 0 QSOs accepted for \(parkReference) "
-                        + "but we sent \(qsoCount). JSON: \(json)",
-                    service: .pota
-                )
-            }
-
-            debugLog.info(
-                "Upload success: \(accepted) QSOs accepted for \(parkReference)"
-                    + (count == nil ? " (assumed)" : ""),
-                service: .pota
-            )
-            return POTAUploadResult(success: true, qsosAccepted: accepted, message: message)
+            return POTAUploadResult(success: true, qsosAccepted: qsoCount, message: nil)
         }
 
-        // Response isn't JSON
-        let responseStr = String(data: data, encoding: .utf8) ?? "(binary \(data.count) bytes)"
-        debugLog.warning(
-            "POTA response for \(parkReference) is not JSON "
-                + "- assuming \(qsoCount) accepted. Body: \(responseStr.prefix(500))",
+        debugLog.debug(
+            "POTA response JSON keys for \(parkReference): \(json.keys.sorted())",
             service: .pota
         )
-        return POTAUploadResult(success: true, qsosAccepted: qsoCount, message: nil)
+
+        // Empty adif_files = POTA silently rejected the ADIF (no job will be created)
+        if let adifFiles = json["adif_files"] as? [Any], adifFiles.isEmpty,
+           json["qsosAccepted"] == nil
+        {
+            debugLog.error(
+                "POTA returned empty adif_files for \(parkReference) "
+                    + "- upload was silently rejected. JSON: \(json)",
+                service: .pota
+            )
+            return POTAUploadResult(
+                success: false, qsosAccepted: 0,
+                message: "Upload rejected: POTA returned empty adif_files"
+            )
+        }
+
+        return parseAcceptedResponse(json: json, parkReference: parkReference, qsoCount: qsoCount)
+    }
+
+    private func parseAcceptedResponse(
+        json: [String: Any], parkReference: String, qsoCount: Int
+    ) -> POTAUploadResult {
+        let debugLog = SyncDebugLog.shared
+        let count = json["qsosAccepted"] as? Int
+        let message = json["message"] as? String
+        let accepted = count ?? qsoCount
+
+        if count == nil {
+            debugLog.warning(
+                "POTA response for \(parkReference) has no 'qsosAccepted' key "
+                    + "- assuming all \(qsoCount) accepted. JSON: \(json)",
+                service: .pota
+            )
+        }
+        if let message {
+            debugLog.debug(
+                "POTA response message for \(parkReference): \(message)", service: .pota
+            )
+        }
+        if accepted == 0, qsoCount > 0 {
+            debugLog.warning(
+                "POTA reports 0 QSOs accepted for \(parkReference) "
+                    + "but we sent \(qsoCount). JSON: \(json)",
+                service: .pota
+            )
+        }
+
+        debugLog.info(
+            "Upload success: \(accepted) QSOs accepted for \(parkReference)"
+                + (count == nil ? " (assumed)" : ""),
+            service: .pota
+        )
+        return POTAUploadResult(success: true, qsosAccepted: accepted, message: message)
     }
 }

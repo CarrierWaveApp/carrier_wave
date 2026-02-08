@@ -111,11 +111,6 @@ extension SyncService {
             } ?? []
 
         guard !potaQSOs.isEmpty else {
-            await MainActor.run {
-                SyncDebugLog.shared.debug(
-                    "No POTA QSOs with park references to upload", service: .pota
-                )
-            }
             await logPOTAQSOsWithoutPark(noPark)
             return (result: nil, maintenanceSkipped: false)
         }
@@ -132,9 +127,9 @@ extension SyncService {
         guard !qsos.isEmpty else {
             return
         }
+        let callsigns = qsos.prefix(5).map(\.callsign).joined(separator: ", ")
+        let more = qsos.count > 5 ? " (+\(qsos.count - 5) more)" : ""
         await MainActor.run {
-            let callsigns = qsos.prefix(5).map(\.callsign).joined(separator: ", ")
-            let more = qsos.count > 5 ? " (+\(qsos.count - 5) more)" : ""
             SyncDebugLog.shared.warning(
                 "\(qsos.count) QSO(s) need POTA upload but have no park reference: "
                     + "\(callsigns)\(more)",
@@ -221,6 +216,29 @@ extension SyncService {
         SyncDebugLog.shared.debug(
             "  Failed: \(callsigns)\(more) (\(reason))", service: .pota
         )
+    }
+
+    /// Mark QSOs with invalid park references as permanently rejected
+    private func rejectInvalidParkQSOs(parkRef: String, parkQSOs: [QSO], durationMs: Int) async {
+        await MainActor.run {
+            SyncDebugLog.shared.error(
+                "Park \(parkRef): invalid park reference - marking \(parkQSOs.count) "
+                    + "QSO(s) as rejected (\(durationMs)ms)",
+                service: .pota
+            )
+            for qso in parkQSOs {
+                if let presence = qso.potaPresence(forPark: parkRef) {
+                    presence.needsUpload = false
+                    presence.uploadRejected = true
+                } else if let legacyPresence = qso.servicePresence.first(where: {
+                    $0.serviceType == .pota && $0.parkReference == nil
+                }) {
+                    legacyPresence.needsUpload = false
+                    legacyPresence.uploadRejected = true
+                }
+            }
+            logFailedQSOs(parkQSOs, reason: "Invalid park reference format")
+        }
     }
 
     private func uploadQRZBatch(qsos: [QSO], timeout: TimeInterval) async -> (
@@ -381,35 +399,13 @@ extension SyncService {
                     service: .pota
                 )
             }
+            let bands = Set(realQsos.map(\.band)).sorted().joined(separator: ", ")
+            let modes = Set(realQsos.map(\.mode)).sorted().joined(separator: ", ")
             SyncDebugLog.shared.debug(
-                "POTA upload: \(realQsos.count) QSO(s) across \(parkCount) park(s)",
+                "POTA upload: \(realQsos.count) QSO(s) across \(parkCount) park(s) "
+                    + "bands=[\(bands)] modes=[\(modes)]",
                 service: .pota
             )
-
-            // Log content summary: bands, modes, date range, parks
-            guard !realQsos.isEmpty else {
-                return
-            }
-
-            let bands = Set(realQsos.map(\.band)).sorted()
-            let modes = Set(realQsos.map(\.mode)).sorted()
-            let parks = Set(realQsos.compactMap(\.parkReference)).sorted()
-            SyncDebugLog.shared.debug(
-                "Content summary: bands=[\(bands.joined(separator: ", "))] "
-                    + "modes=[\(modes.joined(separator: ", "))] "
-                    + "parks=[\(parks.joined(separator: ", "))]",
-                service: .pota
-            )
-
-            let timestamps = realQsos.map(\.timestamp)
-            if let earliest = timestamps.min(), let latest = timestamps.max() {
-                let dateStr = Self.debugDateFormatter.string(from: earliest)
-                let endStr = Self.debugDateFormatter.string(from: latest)
-                SyncDebugLog.shared.debug(
-                    "Date range: \(dateStr) to \(endStr) UTC",
-                    service: .pota
-                )
-            }
         }
     }
 
@@ -449,6 +445,12 @@ extension SyncService {
                 }
                 return (uploaded: 0, failed: parkQSOs.count)
             }
+        } catch POTAError.invalidParkReference {
+            let parkDurationMs = Int(Date().timeIntervalSince(parkStartTime) * 1_000)
+            await rejectInvalidParkQSOs(
+                parkRef: parkRef, parkQSOs: parkQSOs, durationMs: parkDurationMs
+            )
+            return (uploaded: 0, failed: parkQSOs.count)
         } catch {
             let parkDurationMs = Int(Date().timeIntervalSince(parkStartTime) * 1_000)
             await MainActor.run {

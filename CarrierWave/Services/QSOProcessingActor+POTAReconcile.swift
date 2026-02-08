@@ -9,6 +9,7 @@ extension QSOProcessingActor {
         let resetCount: Int
         let confirmedCount: Int
         let failedResetCount: Int
+        let orphanResetCount: Int
     }
 
     /// Reconcile POTA ServicePresence records against completed upload jobs.
@@ -47,7 +48,7 @@ extension QSOProcessingActor {
 
         return POTAReconcileResult(
             resetCount: counts.reset, confirmedCount: counts.confirmed,
-            failedResetCount: counts.failedReset
+            failedResetCount: counts.failedReset, orphanResetCount: counts.orphanReset
         )
     }
 }
@@ -59,9 +60,10 @@ extension QSOProcessingActor {
         var reset = 0
         var confirmed = 0
         var failedReset = 0
+        var orphanReset = 0
 
         var hasChanges: Bool {
-            reset > 0 || confirmed > 0 || failedReset > 0
+            reset > 0 || confirmed > 0 || failedReset > 0 || orphanReset > 0
         }
     }
 
@@ -145,6 +147,13 @@ extension QSOProcessingActor {
                 presence.isSubmitted = false
                 presence.needsUpload = true
                 counts.failedReset += 1
+                return true
+            } else {
+                // Submitted but no matching job at all (confirmed or failed).
+                // POTA likely silently dropped the upload — reset to retry.
+                presence.isSubmitted = false
+                presence.needsUpload = true
+                counts.orphanReset += 1
                 return true
             }
         }

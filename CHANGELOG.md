@@ -4,8 +4,15 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.25.1] - 2026-02-07
+
 ### Added
 - Add "Worked Friend" activity event — detect and surface QSOs with accepted friends in the activity feed
+
+### Fixed
+- Fix POTA uploads silently failing — detect empty `adif_files` response as rejection instead of assuming success
+- Fix POTA submitted QSOs getting stuck permanently when POTA silently drops the upload (no job created) — reconciliation now resets orphaned submitted QSOs back to pending
+- Mark QSOs with invalid park references (e.g., bare "US") as rejected to stop infinite retry loops
 
 ## [1.25.0] - 2026-02-07
 
