@@ -2,7 +2,7 @@
 
 **Date:** 2026-02-07
 **Status:** Resolved
-**Outcome:** Three fixes applied — detect empty adif_files as rejection, reset orphaned submitted QSOs, and mark invalid park references as rejected
+**Outcome:** Root cause was wrong `location` form field — `deriveLocation` mapped EM63 (Alabama) to Texas via coarse grid fallback. Fixed to use POTAParksCache for accurate park location lookup. Also: detect empty adif_files, reset orphaned submitted QSOs, mark invalid park references as rejected.
 
 ## Problem Statement
 
@@ -52,8 +52,24 @@ Three fixes applied:
 
 3. **`SyncService+Upload.swift` — `uploadParkToPOTA`**: Catch `POTAError.invalidParkReference` specifically and mark affected QSOs' service presence as `uploadRejected=true` to stop infinite retry loops for QSOs with corrupted park references like bare "US".
 
+### Issue 4 (ROOT CAUSE): Wrong `location` form field — grid-to-state derivation error
+
+After v1.25.1 deployment confirmed the empty `adif_files` detection was working but uploads were STILL being rejected, investigated the actual upload data from N9HO's SQLite export.
+
+**Key discovery:** Every single upload for N9HO returns `{"adif_files": []}` — for ALL parks, ALL dates. This is account/request-level, not data-level.
+
+**N9HO's QSOs imported from POTA (source=pota) have `isPresent=1`** — meaning they were never uploaded by Carrier Wave, just downloaded. N9HO has NEVER successfully uploaded via Carrier Wave.
+
+**Root cause:** `deriveLocation()` in `POTAClient+Upload.swift` maps N9HO's grid `EM63XW` to `US-TX` (Texas). But N9HO is in **Alabama** — EM63 is central Alabama. The `fieldToState` fallback maps ALL `EM` grids to Texas, which is wildly wrong for the eastern half of the EM field.
+
+Every upload sends `location=US-TX` for parks that are actually in Alabama, California, etc. POTA silently rejects uploads where the `location` form field doesn't match the park's actual state.
+
+**Fix:** `deriveLocation` now consults `POTAParksCache.shared.parkSync(for:)` first to get the park's real `locationDesc`. Falls back to grid derivation only if the cache misses.
+
 ## Lessons Learned
 
 - POTA API returns HTTP 200 for queued uploads, not for successful processing. Must treat `{"adif_files": []}` as a rejection signal.
 - Reconciliation must handle the "no matching job" case for submitted QSOs, not just confirmed/failed matches.
 - Invalid park references should be permanently rejected rather than retried on every sync.
+- **Grid-to-state derivation is unreliable** — Maidenhead grid fields span many states. Always use authoritative park data (POTAParksCache) instead of approximating from the operator's grid square.
+- When ALL uploads fail for a user, suspect account-level or request-level issues (auth, callsign, location), not data quality.

@@ -54,8 +54,10 @@ extension POTAClient {
         }
 
         let callsign = parkQSOs.first?.myCallsign ?? "UNKNOWN"
-        let location = deriveLocation(
-            parkReference: normalizedParkRef, grid: parkQSOs.first?.myGrid
+        let grid = parkQSOs.first?.myGrid
+        let location = deriveLocation(parkReference: normalizedParkRef, grid: grid)
+        warnIfLocationMismatch(
+            parkReference: normalizedParkRef, derivedLocation: location, grid: grid
         )
         let adifContent = generateADIF(for: parkQSOs, parkReference: normalizedParkRef)
         let filename = buildFilename(
@@ -64,16 +66,11 @@ extension POTAClient {
         let formFields = POTAFormFields(
             parkReference: normalizedParkRef, location: location, callsign: callsign
         )
-
-        debugLog.info(
-            "ADIF for \(normalizedParkRef): \(adifContent.count) chars, "
-                + "\(parkQSOs.count) QSOs, callsign=\(callsign), "
-                + "location=\(location), filename=\(filename)",
+        SyncDebugLog.shared.info(
+            "ADIF for \(normalizedParkRef): \(adifContent.count) chars, \(parkQSOs.count) QSOs, "
+                + "callsign=\(callsign), location=\(location), filename=\(filename)",
             service: .pota
         )
-        let adifPreview = adifContent.components(separatedBy: "\n").prefix(8)
-            .joined(separator: "\n")
-        debugLog.debug("ADIF preview:\n\(adifPreview)", service: .pota)
 
         guard
             let request = buildMultipartRequest(
@@ -83,13 +80,6 @@ extension POTAClient {
             debugLog.error("Invalid URL for POTA upload", service: .pota)
             return nil
         }
-
-        debugLog.debug(
-            "Built multipart request: url=\(request.url?.absoluteString ?? "nil"), "
-                + "method=\(request.httpMethod ?? "nil"), "
-                + "bodySize=\(request.httpBody?.count ?? 0) bytes",
-            service: .pota
-        )
 
         return POTAUploadRequestData(
             request: request, filename: filename, adifContent: adifContent,
@@ -173,12 +163,52 @@ extension POTAClient {
     }
 
     func deriveLocation(parkReference: String, grid: String?) -> String {
+        // Use parks cache for accurate location (grid derivation is unreliable near state borders)
+        if let cachedPark = POTAParksCache.shared.parkSync(for: parkReference),
+           !cachedPark.locationDesc.isEmpty
+        {
+            // For multi-state parks (e.g., "US-AZ,US-CA"), use the first location
+            let location = cachedPark.locationDesc.split(separator: ",").first
+                .map { String($0).trimmingCharacters(in: .whitespaces) }
+            if let location, !location.isEmpty {
+                return location
+            }
+        }
+
+        // Fallback: derive from grid square (kept for offline/cache-miss scenarios)
         let parkPrefix = parkReference.split(separator: "-").first.map(String.init) ?? "US"
         let derivedState = grid.flatMap { Self.gridToUSState($0) }
         if parkPrefix == "US" || parkPrefix == "K", let state = derivedState {
             return "US-\(state)"
         }
         return parkPrefix
+    }
+
+    /// Warn if the grid-derived state doesn't match the park's known location(s).
+    /// This catches cases where the operator's grid is wrong or in a different state than the park.
+    private func warnIfLocationMismatch(
+        parkReference: String, derivedLocation: String, grid: String?
+    ) {
+        guard let cachedPark = POTAParksCache.shared.parkSync(for: parkReference) else {
+            return
+        }
+        let parkLocations = cachedPark.locationDesc
+            .split(separator: ",")
+            .map { String($0).trimmingCharacters(in: .whitespaces) }
+        guard !parkLocations.isEmpty else {
+            return
+        }
+
+        // Compare the grid-derived state against the park's known states
+        let gridState = grid.flatMap { Self.gridToUSState($0) }.map { "US-\($0)" }
+        if let gridState, !parkLocations.contains(gridState) {
+            SyncDebugLog.shared.warning(
+                "Location mismatch for \(parkReference): operator grid \(grid ?? "?") "
+                    + "maps to \(gridState), but park is in \(parkLocations.joined(separator: ", ")). "
+                    + "Using park location \(derivedLocation) for upload.",
+                service: .pota
+            )
+        }
     }
 
     private func buildFilename(callsign: String, parkReference: String, qsos: [QSO]) -> String {
@@ -319,27 +349,10 @@ extension POTAClient {
         let level: SyncDebugLog.LogEntry.Level =
             (200 ... 299).contains(statusCode) ? .info : .error
         debugLog.log(
-            "POTA upload response for \(parkReference): "
-                + "HTTP \(statusCode) (\(durationMs)ms), "
-                + "body=\(data.count) bytes",
-            level: level,
-            service: .pota
+            "POTA response for \(parkReference): HTTP \(statusCode) (\(durationMs)ms) "
+                + "\(body.prefix(500))",
+            level: level, service: .pota
         )
-        debugLog.info("Response body: \(body.prefix(1_000))", service: .pota)
-
-        let interestingHeaders = [
-            "content-type", "x-request-id", "x-amzn-requestid",
-            "x-amz-apigw-id", "x-amzn-trace-id",
-        ]
-        let headerStr = interestingHeaders.compactMap { key -> String? in
-            guard let value = httpResponse.value(forHTTPHeaderField: key) else {
-                return nil
-            }
-            return "\(key)=\(value)"
-        }.joined(separator: ", ")
-        if !headerStr.isEmpty {
-            debugLog.debug("Response headers: \(headerStr)", service: .pota)
-        }
     }
 
     /// Record attempt as completed or failed based on status code

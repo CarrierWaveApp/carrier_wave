@@ -4,6 +4,12 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.25.2] - 2026-02-07
+
+### Fixed
+- Fix POTA uploads silently rejected due to wrong location in upload request — use park's actual location from POTA parks cache instead of unreliable grid-to-state derivation
+- Add warning log when operator grid square maps to a different state than the park's known location
+
 ## [1.25.1] - 2026-02-07
 
 ### Added
