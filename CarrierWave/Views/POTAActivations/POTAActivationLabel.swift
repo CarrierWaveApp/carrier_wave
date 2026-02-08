@@ -1,0 +1,67 @@
+// Shared label content for activation rows (used in both normal and selection modes)
+
+import SwiftUI
+
+// MARK: - ActivationLabel
+
+struct ActivationLabel: View {
+    let activation: POTAActivation
+    let metadata: ActivationMetadata?
+    let showParkReference: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Text(activation.displayDate)
+                    .font(.headline)
+                    .lineLimit(1)
+                    .layoutPriority(1)
+                if showParkReference {
+                    Text(activation.parkReference)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+                Text(activation.callsign)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+            if let title = metadata?.title, !title.isEmpty {
+                Text(title)
+                    .font(.subheadline)
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+            }
+            HStack(spacing: 8) {
+                HStack(spacing: 4) {
+                    Image(systemName: activation.displayIconName)
+                        .foregroundStyle(activation.displayColor)
+                    Text(activation.statusText)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                if let watts = metadata?.watts {
+                    Text("\(watts)W")
+                        .font(.caption)
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 1)
+                        .background(Color.purple.opacity(0.15))
+                        .cornerRadius(4)
+                }
+                if let weather = metadata?.weather, !weather.isEmpty {
+                    Label(weather, systemImage: "cloud")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+                if let solar = metadata?.solarConditions, !solar.isEmpty {
+                    Label(solar, systemImage: "sun.max")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+            }
+        }
+    }
+}

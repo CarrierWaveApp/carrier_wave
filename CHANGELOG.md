@@ -4,6 +4,9 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Add bulk actions for POTA activations with multi-select (upload, reject, export)
+
 ## [1.25.3] - 2026-02-07
 
 ### Fixed

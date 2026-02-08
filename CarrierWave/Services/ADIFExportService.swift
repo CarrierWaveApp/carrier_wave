@@ -103,6 +103,52 @@ actor ADIFExportService {
         return lines.joined(separator: "\n")
     }
 
+    /// Generate combined ADIF content for multiple activations
+    func generateBulkADIF(for activations: [BulkADIFActivation]) async -> String {
+        var lines: [String] = []
+
+        // Header
+        let parkList = activations.map(\.parkReference).joined(separator: ", ")
+        lines.append("ADIF export for \(activations.count) activations: \(parkList)")
+        lines.append("")
+        lines.append(formatField("ADIF_VER", "3.1.5"))
+        lines.append(formatField("PROGRAMID", "CarrierWave"))
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
+        lines.append(formatField("PROGRAMVERSION", version))
+        let timestampFormatter = DateFormatter()
+        timestampFormatter.dateFormat = "yyyyMMdd HHmmss"
+        timestampFormatter.timeZone = TimeZone(identifier: "UTC")
+        lines.append(formatField("CREATED_TIMESTAMP", timestampFormatter.string(from: Date())))
+        lines.append("<EOH>")
+        lines.append("")
+
+        // QSO records grouped by activation
+        for activation in activations {
+            lines.append("// Activation: \(activation.parkReference)")
+            if let name = activation.parkName {
+                lines.append("// Park: \(name)")
+            }
+            lines.append("")
+
+            for snapshot in activation.snapshots.sorted(by: { $0.timestamp < $1.timestamp }) {
+                lines.append(buildQSORecord(snapshot, parkReference: activation.parkReference))
+                lines.append("")
+                await Task.yield()
+            }
+        }
+
+        return lines.joined(separator: "\n")
+    }
+
+    /// Generate a filename for a bulk ADIF export
+    func generateBulkFilename(activationCount: Int, date: Date) -> String {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        dateFormatter.timeZone = TimeZone(identifier: "UTC")
+        let dateStr = dateFormatter.string(from: date)
+        return "pota_bulk_\(activationCount)_activations_\(dateStr).adi"
+    }
+
     /// Generate a filename for the ADIF export
     func generateFilename(
         parkReference: String,
@@ -300,4 +346,13 @@ struct ADIFExportResult: Sendable {
     let content: String
     let filename: String
     let qsoCount: Int
+}
+
+// MARK: - BulkADIFActivation
+
+/// Data for a single activation in a bulk ADIF export
+struct BulkADIFActivation: Sendable {
+    let snapshots: [QSOExportSnapshot]
+    let parkReference: String
+    let parkName: String?
 }

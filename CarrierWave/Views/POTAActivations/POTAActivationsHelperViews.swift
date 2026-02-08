@@ -23,7 +23,10 @@ struct ActivationRow: View {
         parkName: String? = nil,
         uploadErrors: [String: String] = [:],
         matchingJobs: [POTAJob] = [],
-        potaClient: POTAClient? = nil
+        potaClient: POTAClient? = nil,
+        isSelecting: Bool = false,
+        isSelected: Bool = false,
+        onSelectionToggled: (() -> Void)? = nil
     ) {
         self.activation = activation
         self.metadata = metadata
@@ -41,6 +44,9 @@ struct ActivationRow: View {
         self.uploadErrors = uploadErrors
         self.matchingJobs = matchingJobs
         self.potaClient = potaClient
+        self.isSelecting = isSelecting
+        self.isSelected = isSelected
+        self.onSelectionToggled = onSelectionToggled
         // Auto-expand rows that have pending uploads
         let hasCompletedJob = matchingJobs.contains { $0.status == .completed }
         _isExpanded = State(
@@ -69,8 +75,72 @@ struct ActivationRow: View {
     var matchingJobs: [POTAJob] = []
     /// POTA client for fetching job details
     var potaClient: POTAClient?
+    /// Whether multi-select mode is active
+    var isSelecting: Bool = false
+    /// Whether this row is selected in multi-select mode
+    var isSelected: Bool = false
+    /// Callback when selection is toggled
+    var onSelectionToggled: (() -> Void)?
 
     var body: some View {
+        if isSelecting {
+            selectionModeRow
+        } else {
+            normalModeRow
+        }
+    }
+
+    // MARK: Private
+
+    @AppStorage("debugMode") private var debugMode = false
+
+    /// Auto-expand when there are QSOs to upload so the upload button is visible
+    @State private var isExpanded: Bool
+    @State private var isUploading = false
+    @State private var showingErrorSheet = false
+
+    /// QSOs sorted by timestamp descending (computed once)
+    private var sortedQSOs: [QSO] {
+        activation.qsos.sorted { $0.timestamp > $1.timestamp }
+    }
+
+    /// Check if any matching job has completed status
+    private var hasCompletedJob: Bool {
+        matchingJobs.contains { $0.status == .completed }
+    }
+
+    /// Check if any matching job has failed status
+    private var hasFailedJob: Bool {
+        matchingJobs.contains { $0.status.isFailure }
+    }
+
+    /// Whether upload controls should be shown — hide if a completed job exists
+    private var shouldShowUpload: Bool {
+        activation.hasQSOsToUpload && showUploadButton && !hasCompletedJob
+    }
+
+    // MARK: - Selection Mode Row
+
+    private var selectionModeRow: some View {
+        Button {
+            onSelectionToggled?()
+        } label: {
+            HStack(spacing: 12) {
+                SelectionCircleView(isSelected: isSelected)
+                activationLabel
+            }
+            .padding(.vertical, 4)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(
+            "\(activation.parkReference) activation, \(isSelected ? "selected" : "not selected")"
+        )
+        .accessibilityAddTraits(.isButton)
+    }
+
+    // MARK: - Normal Mode Row
+
+    private var normalModeRow: some View {
         DisclosureGroup(isExpanded: $isExpanded) {
             // Park info header
             if showParkReference {
@@ -105,65 +175,13 @@ struct ActivationRow: View {
                 }
             }
 
-            // QSOs section - use activation.qsos directly (already sorted in POTAActivation.groupQSOs)
+            // QSOs section
             ForEach(sortedQSOs) { qso in
                 POTAQSORow(qso: qso, parks: activation.parks)
             }
         } label: {
             HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack {
-                        Text(activation.displayDate)
-                            .font(.headline)
-                            .lineLimit(1)
-                            .layoutPriority(1)
-                        if showParkReference {
-                            Text(activation.parkReference)
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                        }
-                        Text(activation.callsign)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                    }
-                    if let title = metadata?.title, !title.isEmpty {
-                        Text(title)
-                            .font(.subheadline)
-                            .foregroundStyle(.primary)
-                            .lineLimit(1)
-                    }
-                    HStack(spacing: 8) {
-                        HStack(spacing: 4) {
-                            Image(systemName: activation.displayIconName)
-                                .foregroundStyle(activation.displayColor)
-                            Text(activation.statusText)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        if let watts = metadata?.watts {
-                            Text("\(watts)W")
-                                .font(.caption)
-                                .padding(.horizontal, 5)
-                                .padding(.vertical, 1)
-                                .background(Color.purple.opacity(0.15))
-                                .cornerRadius(4)
-                        }
-                        if let weather = metadata?.weather, !weather.isEmpty {
-                            Label(weather, systemImage: "cloud")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                        }
-                        if let solar = metadata?.solarConditions, !solar.isEmpty {
-                            Label(solar, systemImage: "sun.max")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                        }
-                    }
-                }
+                activationLabel
 
                 Spacer()
 
@@ -249,7 +267,6 @@ struct ActivationRow: View {
                 .tint(.red)
             }
         }
-
         .sheet(isPresented: $showingErrorSheet) {
             UploadErrorSheet(
                 parkReference: activation.parkReference,
@@ -258,33 +275,12 @@ struct ActivationRow: View {
         }
     }
 
-    // MARK: Private
-
-    @AppStorage("debugMode") private var debugMode = false
-
-    /// Auto-expand when there are QSOs to upload so the upload button is visible
-    @State private var isExpanded: Bool
-    @State private var isUploading = false
-    @State private var showingErrorSheet = false
-
-    /// QSOs sorted by timestamp descending (computed once)
-    private var sortedQSOs: [QSO] {
-        activation.qsos.sorted { $0.timestamp > $1.timestamp }
-    }
-
-    /// Check if any matching job has completed status
-    private var hasCompletedJob: Bool {
-        matchingJobs.contains { $0.status == .completed }
-    }
-
-    /// Check if any matching job has failed status
-    private var hasFailedJob: Bool {
-        matchingJobs.contains { $0.status.isFailure }
-    }
-
-    /// Whether upload controls should be shown — hide if a completed job exists
-    private var shouldShowUpload: Bool {
-        activation.hasQSOsToUpload && showUploadButton && !hasCompletedJob
+    private var activationLabel: some View {
+        ActivationLabel(
+            activation: activation,
+            metadata: metadata,
+            showParkReference: showParkReference
+        )
     }
 
     private var uploadRow: some View {

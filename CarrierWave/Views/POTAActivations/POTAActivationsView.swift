@@ -1,5 +1,4 @@
 // POTA Activations view - displays activations grouped by park with upload status
-// swiftlint:disable file_length
 
 import CarrierWaveCore
 import SwiftData
@@ -15,6 +14,68 @@ struct POTAActivationsContentView: View {
     let potaAuth: POTAAuthService
     let tourState: TourState
 
+    /// Park QSOs loaded on demand (not using @Query to avoid full table scan)
+    @State var allParkQSOs: [QSO] = []
+
+    @State var jobs: [POTAJob] = []
+    @State var isLoading = false
+    @State var errorMessage: String?
+    @State var activationToReject: POTAActivation?
+    @State var activationToShare: POTAActivation?
+    @State var activationToExport: POTAActivation?
+    @State var activationToMap: POTAActivation?
+    @State var activationToEdit: POTAActivation?
+    @State var isGeneratingShareImage = false
+    @State var maintenanceTimeRemaining: String?
+    @State var maintenanceTimer: Timer?
+    @State var cachedParkNames: [String: String] = [:]
+    /// Upload errors by activation ID -> (park -> error message) for two-fer error display
+    @State var uploadErrorsByActivation: [String: [String: String]] = [:]
+    /// Pre-computed job index: activation ID -> matching jobs (rebuilt when jobs change)
+    @State var jobsByActivationId: [String: [POTAJob]] = [:]
+    /// Activation metadata keyed by "parkReference|yyyy-MM-dd"
+    @State var metadataByKey: [String: ActivationMetadata] = [:]
+
+    // MARK: - Bulk Selection State
+
+    @State var isSelecting = false
+    @State var selectedActivationIds: Set<String> = []
+    @State var bulkUploadProgress: BulkUploadProgress?
+    @State var bulkExportActivations: [POTAActivation]?
+
+    var isInMaintenance: Bool {
+        if debugMode, bypassMaintenance {
+            return false
+        }
+        return POTAClient.isInMaintenanceWindow()
+    }
+
+    var isAuthenticated: Bool {
+        // Use isConfigured to show upload buttons even if token expired
+        // Will re-authenticate automatically when user taps upload
+        potaAuth.isConfigured
+    }
+
+    var activations: [POTAActivation] {
+        POTAActivation.groupQSOs(allParkQSOs)
+    }
+
+    var activationsByDate: [(date: String, activations: [POTAActivation])] {
+        POTAActivation.groupByDate(activations)
+    }
+
+    /// Activations with pending uploads (not fully uploaded, not rejected, no completed job),
+    /// sorted by date descending
+    var pendingActivations: [POTAActivation] {
+        activations
+            .filter { activation in
+                activation.hasQSOsToUpload && !activation.isRejected
+                    && !(jobsByActivationId[activation.id]?.contains { $0.status == .completed }
+                        ?? false)
+            }
+            .sorted { $0.utcDate > $1.utcDate }
+    }
+
     var body: some View {
         Group {
             if activations.isEmpty {
@@ -24,19 +85,51 @@ struct POTAActivationsContentView: View {
             }
         }
         .miniTour(.potaActivations, tourState: tourState)
+        .navigationTitle(
+            isSelecting ? "\(selectedActivationIds.count) Selected" : "POTA Activations"
+        )
         .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                if isAuthenticated, potaClient != nil {
-                    Button {
-                        Task { await refreshJobs() }
-                    } label: {
-                        if isLoading {
-                            ProgressView()
+            if isSelecting {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Done") {
+                        isSelecting = false
+                        selectedActivationIds.removeAll()
+                    }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(
+                        selectedActivationIds.count == activations.count
+                            ? "Deselect All" : "Select All"
+                    ) {
+                        if selectedActivationIds.count == activations.count {
+                            selectedActivationIds.removeAll()
                         } else {
-                            Image(systemName: "arrow.clockwise")
+                            selectedActivationIds = Set(activations.map(\.id))
                         }
                     }
-                    .disabled(isLoading)
+                }
+            } else {
+                ToolbarItem(placement: .primaryAction) {
+                    HStack(spacing: 16) {
+                        if !activations.isEmpty {
+                            Button("Select") {
+                                isSelecting = true
+                                selectedActivationIds.removeAll()
+                            }
+                        }
+                        if isAuthenticated, potaClient != nil {
+                            Button {
+                                Task { await refreshJobs() }
+                            } label: {
+                                if isLoading {
+                                    ProgressView()
+                                } else {
+                                    Image(systemName: "arrow.clockwise")
+                                }
+                            }
+                            .disabled(isLoading)
+                        }
+                    }
                 }
             }
         }
@@ -109,6 +202,55 @@ struct POTAActivationsContentView: View {
                 onCancel: { activationToEdit = nil }
             )
         }
+        .confirmationDialog(
+            "Reject \(selectedActivationsWithPendingCount) Activations?",
+            isPresented: $showBulkRejectConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Reject Uploads", role: .destructive) {
+                performBulkReject()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            let qsoCount = bulkSelectedPendingQSOCount
+            let actCount = selectedActivationsWithPendingCount
+            Text(
+                "This will hide \(qsoCount) QSO(s) from POTA uploads across "
+                    + "\(actCount) activations. They will remain in your log but "
+                    + "won't be prompted for upload again."
+            )
+        }
+        .sheet(
+            isPresented: Binding(
+                get: { bulkExportActivations != nil },
+                set: {
+                    if !$0 {
+                        bulkExportActivations = nil
+                    }
+                }
+            )
+        ) {
+            if let activations = bulkExportActivations {
+                BulkADIFExportSheet(
+                    activations: activations,
+                    parkNames: cachedParkNames
+                )
+            }
+        }
+        .safeAreaInset(edge: .bottom) {
+            if isSelecting {
+                BulkActionToolbar(
+                    pendingQSOCount: bulkSelectedPendingQSOCount,
+                    selectedCount: selectedActivationIds.count,
+                    hasSelectedPending: selectedActivationsWithPendingCount > 0,
+                    isAuthenticated: isAuthenticated,
+                    isInMaintenance: isInMaintenance,
+                    onUpload: { Task { await performBulkUpload() } },
+                    onReject: { showBulkRejectConfirmation = true },
+                    onExport: { performBulkExport() }
+                )
+            }
+        }
         .task {
             await loadParkQSOs()
             if isAuthenticated, potaClient != nil, jobs.isEmpty {
@@ -131,211 +273,20 @@ struct POTAActivationsContentView: View {
     @AppStorage("debugMode") private var debugMode = false
     @AppStorage("bypassPOTAMaintenance") private var bypassMaintenance = false
 
-    /// Park QSOs loaded on demand (not using @Query to avoid full table scan)
-    @State private var allParkQSOs: [QSO] = []
-
-    @State private var jobs: [POTAJob] = []
-    @State private var isLoading = false
     @State private var isLoadingQSOs = false
-    @State private var errorMessage: String?
-    @State private var activationToReject: POTAActivation?
-    @State private var activationToShare: POTAActivation?
-    @State private var activationToExport: POTAActivation?
-    @State private var activationToMap: POTAActivation?
-    @State private var activationToEdit: POTAActivation?
-    @State private var isGeneratingShareImage = false
-    @State private var maintenanceTimeRemaining: String?
-    @State private var maintenanceTimer: Timer?
-    @State private var cachedParkNames: [String: String] = [:]
-    /// Upload errors by activation ID -> (park -> error message) for two-fer error display
-    @State private var uploadErrorsByActivation: [String: [String: String]] = [:]
-    /// Pre-computed job index: activation ID -> matching jobs (rebuilt when jobs change)
-    @State private var jobsByActivationId: [String: [POTAJob]] = [:]
-    /// Activation metadata keyed by "parkReference|yyyy-MM-dd"
-    @State private var metadataByKey: [String: ActivationMetadata] = [:]
 
-    private var isInMaintenance: Bool {
-        if debugMode, bypassMaintenance {
-            return false
-        }
-        return POTAClient.isInMaintenanceWindow()
+    @State private var showBulkRejectConfirmation = false
+
+    // MARK: - Bulk Selection Computed Properties
+
+    private var bulkSelectedPendingQSOCount: Int {
+        selectedPendingQSOCount(activations: activations, selectedIds: selectedActivationIds)
     }
 
-    private var isAuthenticated: Bool {
-        // Use isConfigured to show upload buttons even if token expired
-        // Will re-authenticate automatically when user taps upload
-        potaAuth.isConfigured
-    }
-
-    private var activations: [POTAActivation] {
-        POTAActivation.groupQSOs(allParkQSOs)
-    }
-
-    private var activationsByDate: [(date: String, activations: [POTAActivation])] {
-        POTAActivation.groupByDate(activations)
-    }
-
-    /// Activations with pending uploads (not fully uploaded, not rejected, no completed job),
-    /// sorted by date descending
-    private var pendingActivations: [POTAActivation] {
-        activations
-            .filter { activation in
-                activation.hasQSOsToUpload && !activation.isRejected
-                    && !(jobsByActivationId[activation.id]?.contains { $0.status == .completed }
-                        ?? false)
-            }
-            .sorted { $0.utcDate > $1.utcDate }
-    }
-
-    private var emptyStateView: some View {
-        ContentUnavailableView {
-            Label("No Activations", systemImage: "tree")
-        } description: {
-            Text("QSOs with park references will appear here grouped by activation.")
-        }
-    }
-
-    @ViewBuilder private var shareImageOverlay: some View {
-        if isGeneratingShareImage {
-            Color.black.opacity(0.4).ignoresSafeArea().overlay {
-                VStack(spacing: 16) {
-                    ProgressView().scaleEffect(1.5).tint(.white)
-                    Text("Generating share image...").foregroundStyle(.white)
-                }.padding(24).background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
-            }
-        }
-    }
-
-    private var maintenanceBanner: some View {
-        HStack {
-            Image(systemName: "wrench.and.screwdriver").foregroundStyle(.orange)
-            VStack(alignment: .leading, spacing: 2) {
-                Text("POTA Maintenance Window").font(.subheadline).fontWeight(.medium)
-                Text(
-                    maintenanceTimeRemaining.map { "Uploads disabled. Resumes in \($0)" }
-                        ?? "Uploads temporarily disabled (2330-0400 UTC)"
-                )
-                .font(.caption).foregroundStyle(.secondary)
-            }
-            Spacer()
-        }
-        .padding(.vertical, 4)
-    }
-
-    private var activationsList: some View {
-        List {
-            if isInMaintenance {
-                Section {
-                    maintenanceBanner
-                }
-            }
-
-            if let error = errorMessage {
-                Section {
-                    HStack {
-                        Image(systemName: "exclamationmark.triangle.fill")
-                            .foregroundStyle(.orange)
-                        Text(error)
-                            .font(.caption)
-                        Spacer()
-                        Button("Retry") {
-                            Task { await refreshJobs() }
-                        }
-                        .font(.caption)
-                    }
-                }
-            }
-
-            // Ready to Upload section - pending activations sorted by date
-            if !pendingActivations.isEmpty, isAuthenticated {
-                Section {
-                    ForEach(pendingActivations) { activation in
-                        activationRow(activation, showParkReference: true)
-                    }
-                } header: {
-                    Label("Ready to Upload", systemImage: "arrow.up.circle")
-                }
-            }
-
-            // All activations grouped by date
-            ForEach(activationsByDate, id: \.date) { dateGroup in
-                Section {
-                    ForEach(dateGroup.activations) { activation in
-                        activationRow(activation, showParkReference: true)
-                    }
-                } header: {
-                    Text(dateGroup.date)
-                }
-            }
-        }
-        .refreshable {
-            await refreshJobs()
-        }
-    }
-
-    private func activationRow(_ activation: POTAActivation, showParkReference: Bool = false)
-        -> some View
-    {
-        ActivationRow(
-            activation: activation,
-            metadata: metadata(for: activation),
-            isUploadDisabled: isInMaintenance || potaClient == nil,
-            showUploadButton: isAuthenticated,
-            onUploadTapped: { await performUpload(for: activation) },
-            onRejectTapped: { activationToReject = activation },
-            onShareTapped: { activationToShare = activation },
-            onExportTapped: { activationToExport = activation },
-            onMapTapped: { activationToMap = activation },
-            onEditTapped: { activationToEdit = activation },
-            onForceReuploadTapped: { forceReupload(activation) },
-            showParkReference: showParkReference,
-            parkName: parkName(for: activation.parkReference),
-            uploadErrors: uploadErrorsByActivation[activation.id] ?? [:],
-            matchingJobs: jobsByActivationId[activation.id] ?? [],
-            potaClient: potaClient
-        )
-    }
-
-    private func startMaintenanceTimer() {
-        updateMaintenanceTime()
-        maintenanceTimer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [self] _ in
-            Task { @MainActor in
-                updateMaintenanceTime()
-            }
-        }
-    }
-
-    private func stopMaintenanceTimer() {
-        maintenanceTimer?.invalidate()
-        maintenanceTimer = nil
-    }
-
-    private func updateMaintenanceTime() {
-        maintenanceTimeRemaining = POTAClient.formatMaintenanceTimeRemaining()
-    }
-
-    private func parkName(for reference: String) -> String? {
-        // First try from fetched jobs (most accurate for user's parks)
-        if let name = jobs.first(where: {
-            $0.reference.uppercased() == reference.uppercased()
-        })?.parkName {
-            return name
-        }
-        // Fall back to cached park names
-        return cachedParkNames[reference.uppercased()]
-    }
-
-    private func metadata(for activation: POTAActivation) -> ActivationMetadata? {
-        metadataByKey["\(activation.parkReference)|\(activation.utcDateString)"]
-    }
-
-    private func rejectMessage(for parkDisplay: String, pendingCount: Int) -> String {
-        """
-        Reject upload for \(parkDisplay)?
-
-        This will hide \(pendingCount) QSO(s) from POTA uploads. \
-        They will remain in your log but won't be prompted for upload again.
-        """
+    private var selectedActivationsWithPendingCount: Int {
+        selectedActivationsWithPending(
+            activations: activations, selectedIds: selectedActivationIds
+        ).count
     }
 }
 
@@ -506,295 +457,32 @@ extension POTAActivationsContentView {
         }
         jobsByActivationId = index
     }
+}
 
-    /// Upload an activation to POTA. Called from ActivationRow's upload button.
-    func performUpload(for activation: POTAActivation) async {
-        let debugLog = SyncDebugLog.shared
-        guard let potaClient else {
-            debugLog.error("performUpload: POTA client not available", service: .pota)
-            errorMessage = "POTA client not available."
-            return
-        }
+// MARK: - Bulk Selection Helpers
 
-        let parksToUpload = activation.parksNeedingUpload
-        guard !parksToUpload.isEmpty else {
-            debugLog.debug(
-                "performUpload: no parks need upload for \(activation.parkReference)",
-                service: .pota
-            )
-            return
-        }
+/// Count pending QSOs across selected activations
+func selectedPendingQSOCount(
+    activations: [POTAActivation],
+    selectedIds: Set<String>
+) -> Int {
+    activations
+        .filter { selectedIds.contains($0.id) }
+        .reduce(0) { $0 + $1.pendingCount }
+}
 
-        debugLog.info(
-            "performUpload: \(activation.parkReference) - "
-                + "\(parksToUpload.count) park(s) to upload: \(parksToUpload.joined(separator: ", ")), "
-                + "\(activation.qsoCount) total QSOs, \(activation.pendingCount) pending",
-            service: .pota
-        )
+/// Filter to selected activations that have pending QSOs
+func selectedActivationsWithPending(
+    activations: [POTAActivation],
+    selectedIds: Set<String>
+) -> [POTAActivation] {
+    activations.filter { selectedIds.contains($0.id) && $0.hasQSOsToUpload && !$0.isRejected }
+}
 
-        var errors: [String: String] = [:]
-        for park in parksToUpload {
-            if let error = await uploadPark(park, activation: activation, client: potaClient) {
-                errors[park] = error
-            }
-        }
-
-        if errors.isEmpty {
-            uploadErrorsByActivation.removeValue(forKey: activation.id)
-            debugLog.info(
-                "performUpload: all parks uploaded successfully for \(activation.parkReference)",
-                service: .pota
-            )
-        } else {
-            uploadErrorsByActivation[activation.id] = errors
-            let msg =
-                errors.count == parksToUpload.count
-                    ? "all" : "\(errors.count) of \(parksToUpload.count)"
-            errorMessage = "Upload failed for \(msg) parks"
-            debugLog.error(
-                "performUpload: \(errors.count) park(s) failed for \(activation.parkReference): "
-                    + errors.map { "\($0.key): \($0.value)" }.joined(separator: "; "),
-                service: .pota
-            )
-        }
-    }
-
-    private func uploadPark(_ park: String, activation: POTAActivation, client: POTAClient) async
-        -> String?
-    {
-        let debugLog = SyncDebugLog.shared
-        let pendingQSOs = activation.pendingQSOs(forPark: park)
-        guard !pendingQSOs.isEmpty else {
-            debugLog.debug("uploadPark: no pending QSOs for park \(park)", service: .pota)
-            return nil
-        }
-
-        debugLog.info(
-            "uploadPark: uploading \(pendingQSOs.count) QSO(s) to park \(park)",
-            service: .pota
-        )
-        logPendingParkQSOs(pendingQSOs, park: park)
-
-        do {
-            let result = try await client.uploadActivationWithRecording(
-                parkReference: park, qsos: pendingQSOs, modelContext: modelContext
-            )
-            debugLog.info(
-                "uploadPark: result for \(park) - success=\(result.success), "
-                    + "qsosAccepted=\(result.qsosAccepted), "
-                    + "message=\(result.message ?? "nil")",
-                service: .pota
-            )
-            if result.success {
-                markQSOsSubmitted(pendingQSOs, park: park)
-                return nil
-            }
-            debugLog.warning(
-                "uploadPark: upload returned success=false for \(park)", service: .pota
-            )
-            return "Upload returned success=false"
-        } catch {
-            debugLog.error(
-                "uploadPark: exception for \(park): \(error.localizedDescription)",
-                service: .pota
-            )
-            return error.localizedDescription
-        }
-    }
-
-    /// Log details of pending QSOs before upload
-    private func logPendingParkQSOs(_ qsos: [QSO], park: String) {
-        let debugLog = SyncDebugLog.shared
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm"
-        dateFormatter.timeZone = TimeZone(identifier: "UTC")
-        for qso in qsos.prefix(20) {
-            let dateStr = dateFormatter.string(from: qso.timestamp)
-            let presenceState =
-                qso.potaPresence(forPark: park).map {
-                    "isPresent=\($0.isPresent), isSubmitted=\($0.isSubmitted), "
-                        + "needsUpload=\($0.needsUpload), rejected=\($0.uploadRejected)"
-                } ?? "no presence"
-            debugLog.debug(
-                "  - \(qso.callsign) @ \(dateStr) | band=\(qso.band) mode=\(qso.mode) "
-                    + "| park=\(qso.parkReference ?? "nil") | [\(presenceState)]",
-                service: .pota
-            )
-        }
-        if qsos.count > 20 {
-            debugLog.debug("  ... and \(qsos.count - 20) more", service: .pota)
-        }
-    }
-
-    /// Mark QSOs as submitted and log state transitions
-    @MainActor
-    private func markQSOsSubmitted(_ qsos: [QSO], park: String) {
-        let debugLog = SyncDebugLog.shared
-        for qso in qsos {
-            let beforeState =
-                qso.potaPresence(forPark: park).map {
-                    "isPresent=\($0.isPresent), isSubmitted=\($0.isSubmitted)"
-                } ?? "no presence"
-            qso.markSubmittedToPark(park, context: modelContext)
-            let afterState =
-                qso.potaPresence(forPark: park).map {
-                    "isPresent=\($0.isPresent), isSubmitted=\($0.isSubmitted)"
-                } ?? "no presence"
-            debugLog.debug(
-                "markSubmittedToPark \(park): \(qso.callsign) "
-                    + "[\(beforeState)] -> [\(afterState)]",
-                service: .pota
-            )
-        }
-    }
-
-    func rejectActivation(_ activation: POTAActivation) {
-        let pendingQSOs = activation.pendingQSOs()
-        for qso in pendingQSOs {
-            qso.markUploadRejected(for: .pota, context: modelContext)
-        }
-        activationToReject = nil
-    }
-
-    /// Force reset all QSOs in an activation back to needing upload, then upload (debug feature)
-    func forceReupload(_ activation: POTAActivation) {
-        let debugLog = SyncDebugLog.shared
-        debugLog.info(
-            "forceReupload: resetting \(activation.qsoCount) QSO(s) for "
-                + "\(activation.parkReference) parks=\(activation.parks.joined(separator: ", "))",
-            service: .pota
-        )
-
-        for qso in activation.qsos {
-            for park in activation.parks {
-                qso.forceResetParkUpload(park, context: modelContext)
-            }
-        }
-
-        try? modelContext.save()
-        debugLog.info(
-            "forceReupload: reset complete for \(activation.parkReference), triggering upload",
-            service: .pota
-        )
-
-        // Reload QSOs then trigger the actual upload
-        Task {
-            await loadParkQSOs()
-            // Re-derive the activation with fresh QSO state
-            let freshActivation = rebuildActivation(matching: activation)
-            await performUpload(for: freshActivation ?? activation)
-            await loadParkQSOs()
-        }
-    }
-
-    /// Rebuild an activation from the current allParkQSOs to pick up fresh presence state
-    private func rebuildActivation(matching original: POTAActivation) -> POTAActivation? {
-        let matchingQSOs = allParkQSOs.filter { qso in
-            guard let ref = qso.parkReference else {
-                return false
-            }
-            return original.parks.contains(where: { ParkReference.hasOverlap(ref, $0) })
-        }
-        guard !matchingQSOs.isEmpty else {
-            return nil
-        }
-        return POTAActivation(
-            parkReference: original.parkReference,
-            utcDate: original.utcDate,
-            callsign: original.callsign,
-            qsos: matchingQSOs
-        )
-    }
-
-    /// Save metadata edits for an activation
-    func saveMetadataEdit(_ result: ActivationMetadataEditResult, for activation: POTAActivation) {
-        let parkRef = result.newParkReference ?? activation.parkReference
-
-        // Handle park reference change
-        if let newPark = result.newParkReference {
-            for qso in activation.qsos {
-                qso.parkReference = newPark
-                // Remove POTA service presence (clears upload status)
-                let potaPresence = qso.potaPresenceRecords()
-                for presence in potaPresence {
-                    modelContext.delete(presence)
-                }
-            }
-        }
-
-        // Find or create metadata record
-        let existingMetadata = metadata(for: activation)
-        let meta: ActivationMetadata
-        if let existing = existingMetadata {
-            meta = existing
-            // If park changed, update the metadata key
-            if result.newParkReference != nil {
-                meta.parkReference = parkRef
-            }
-        } else {
-            meta = ActivationMetadata(parkReference: parkRef, date: activation.utcDate)
-            modelContext.insert(meta)
-        }
-
-        meta.title = result.title
-        meta.watts = result.watts
-
-        try? modelContext.save()
-
-        // Reload data to reflect changes
-        Task {
-            await loadParkQSOs()
-            await loadCachedParkNames()
-        }
-    }
-
-    func generateAndShare(activation: POTAActivation) async {
-        isGeneratingShareImage = true
-        activationToShare = nil
-
-        // Render the image in background
-        let image = await ActivationShareRenderer.renderWithMap(
-            activation: activation,
-            parkName: parkName(for: activation.parkReference),
-            myGrid: activation.qsos.first?.myGrid,
-            metadata: metadata(for: activation)
-        )
-
-        isGeneratingShareImage = false
-
-        guard let image else {
-            return
-        }
-
-        // Present share sheet
-        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-              let window = windowScene.windows.first,
-              let rootVC = window.rootViewController
-        else {
-            return
-        }
-
-        var topVC = rootVC
-        while let presented = topVC.presentedViewController {
-            topVC = presented
-        }
-
-        let activityVC = UIActivityViewController(
-            activityItems: [image],
-            applicationActivities: nil
-        )
-
-        if let popover = activityVC.popoverPresentationController {
-            popover.sourceView = topVC.view
-            popover.sourceRect = CGRect(
-                x: topVC.view.bounds.midX,
-                y: topVC.view.bounds.midY,
-                width: 0,
-                height: 0
-            )
-            popover.permittedArrowDirections = []
-        }
-
-        topVC.present(activityVC, animated: true)
-    }
+/// Filter to selected activations
+func selectedActivations(
+    activations: [POTAActivation],
+    selectedIds: Set<String>
+) -> [POTAActivation] {
+    activations.filter { selectedIds.contains($0.id) }
 }
