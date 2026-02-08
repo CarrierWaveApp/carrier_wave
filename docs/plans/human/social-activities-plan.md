@@ -1,6 +1,6 @@
 # Social Activities Plan
 
-> **Status:** Draft — awaiting review
+> **Status:** In Progress — Phase 1a complete
 > **Created:** 2026-02-07
 
 ## Overview
@@ -15,7 +15,7 @@ This plan covers both client (iOS) and server (activities-server) changes, organ
 
 Add event types that make the feed more interesting, especially for friends.
 
-### 1a. "Worked a Friend" Event
+### 1a. "Worked a Friend" Event [DONE — afd58a1]
 
 **Type:** `workedFriend`
 
