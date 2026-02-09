@@ -189,6 +189,31 @@ struct POTASpotComment: Codable, Identifiable, Sendable {
             return "\(Int(seconds / 3_600))h ago"
         }
     }
+
+    /// Check if this is an automated spot (from RBN or similar)
+    nonisolated var isAutomatedSpot: Bool {
+        guard let source = source?.uppercased() else {
+            return false
+        }
+        return source == "RBN"
+    }
+
+    /// Check if this is a human-generated spot
+    nonisolated var isHumanSpot: Bool {
+        !isAutomatedSpot
+    }
+
+    /// Extract WPM from RBN comment text (e.g., "14 dB 22 WPM CQ")
+    nonisolated var wpm: Int? {
+        guard let comments else {
+            return nil
+        }
+        let pattern = /(\d+)\s*WPM/
+        guard let match = comments.firstMatch(of: pattern) else {
+            return nil
+        }
+        return Int(match.1)
+    }
 }
 
 // MARK: - POTAClient Spots Extension
