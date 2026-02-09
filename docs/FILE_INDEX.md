@@ -38,7 +38,8 @@ Pure logic library that can be tested without iOS Simulator. Run tests with `mak
 | File | Purpose |
 |------|---------|
 | `CarrierWave/CarrierWaveApp.swift` | App entry point, SwiftData container setup |
-| `CarrierWave/ContentView.swift` | Root TabView with AppTab enum for programmatic tab switching |
+| `CarrierWave/ContentView.swift` | Root TabView/NavigationSplitView for programmatic tab switching |
+| `CarrierWave/TabConfiguration.swift` | AppTab enum, TabConfiguration manager, SettingsDestination |
 
 ## Models (`CarrierWave/Models/`)
 | File | Purpose |
