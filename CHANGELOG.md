@@ -4,6 +4,18 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.26.1] - 2026-02-09
+
+### Changed
+- Redesign POTA activation cards with navigation-based detail view replacing inline disclosure groups
+- Add prominent upload button directly on activation cards (full-width, borderedProminent style)
+- Move secondary actions (edit, map, export, share, reject) to context menu and detail view toolbar
+- Add dedicated activation detail view showing park info, upload controls, POTA jobs, and QSO list
+
+### Fixed
+- Fix POTA job matching for uploads where API returns nil firstQSO (e.g., all-duplicate uploads) by fuzzy-matching on park + callsign
+- Display actual upload error messages inline on activation cards instead of vague "tap for details" text
+
 ## [1.26.0] - 2026-02-08
 
 ### Added

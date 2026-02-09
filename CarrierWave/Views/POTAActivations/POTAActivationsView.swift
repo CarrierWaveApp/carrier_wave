@@ -447,44 +447,51 @@ extension POTAActivationsContentView {
         return false
     }
 
-    /// Rebuild the job index mapping activation IDs to their matching jobs
-    /// Called when jobs or activations change
+    /// Rebuild the job index mapping activation IDs to their matching jobs.
+    /// Pass 1: exact match (park + callsign + firstQSO date).
+    /// Pass 2: fuzzy match nil-date jobs to unmatched activations (park + callsign only).
     private func rebuildJobIndex() {
         var index: [String: [POTAJob]] = [:]
+        var matchedJobIds = Set<Int>()
+
+        // Pass 1: exact match (park + callsign + firstQSO date)
         for activation in activations {
             let matching = activation.matchingJobs(from: jobs)
             if !matching.isEmpty {
                 index[activation.id] = matching
+                matchedJobIds.formUnion(matching.map(\.jobId))
             }
         }
+
+        // Pass 2: fuzzy match nil-date jobs to unmatched activations.
+        // POTA sometimes returns jobs with firstQSO=nil (e.g., all-duplicate uploads).
+        fuzzyMatchNilDateJobs(into: &index, excluding: matchedJobIds)
+
         jobsByActivationId = index
     }
-}
 
-// MARK: - Bulk Selection Helpers
+    /// Assign nil-date jobs to unmatched activations by park + callsign.
+    /// Safe because confirmUploadsFromJobs only checks whether a completed job exists.
+    private func fuzzyMatchNilDateJobs(
+        into index: inout [String: [POTAJob]], excluding matchedJobIds: Set<Int>
+    ) {
+        let nilDateJobs = jobs.filter { $0.firstQSO == nil && !matchedJobIds.contains($0.jobId) }
+        guard !nilDateJobs.isEmpty else {
+            return
+        }
 
-/// Count pending QSOs across selected activations
-func selectedPendingQSOCount(
-    activations: [POTAActivation],
-    selectedIds: Set<String>
-) -> Int {
-    activations
-        .filter { selectedIds.contains($0.id) }
-        .reduce(0) { $0 + $1.pendingCount }
-}
+        let unmatchedActivations = activations.filter { index[$0.id] == nil }
+        for activation in unmatchedActivations {
+            let fuzzyMatches = nilDateJobs.filter {
+                $0.matchesParkAndCallsign(
+                    parkReference: activation.parkReference,
+                    callsign: activation.callsign
+                )
+            }.sorted { $0.submitted > $1.submitted }
 
-/// Filter to selected activations that have pending QSOs
-func selectedActivationsWithPending(
-    activations: [POTAActivation],
-    selectedIds: Set<String>
-) -> [POTAActivation] {
-    activations.filter { selectedIds.contains($0.id) && $0.hasQSOsToUpload && !$0.isRejected }
-}
-
-/// Filter to selected activations
-func selectedActivations(
-    activations: [POTAActivation],
-    selectedIds: Set<String>
-) -> [POTAActivation] {
-    activations.filter { selectedIds.contains($0.id) }
+            if !fuzzyMatches.isEmpty {
+                index[activation.id] = fuzzyMatches
+            }
+        }
+    }
 }

@@ -261,6 +261,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `POTAActivationsView+Actions.swift` | Actions extension (upload, reject, share, subviews, helpers) |
 | `POTAActivationsHelperViews.swift` | Helper views for POTA activations (ActivationRow, sheets) |
 | `POTAActivationsBulkActions.swift` | Bulk action components (multi-select, upload/reject/export toolbar, progress banner) |
+| `POTAActivationDetailView.swift` | Full activation detail view with upload, jobs, QSO list |
 | `POTAActivationLabel.swift` | Shared activation label view (date, park, status, metadata) |
 | `POTAJobViews.swift` | POTA job display components (POTAJobRow, POTAJobDetailSheet) |
 | `POTALogEntryRow.swift` | Individual POTA log entry display (legacy) |

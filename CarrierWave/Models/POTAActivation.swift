@@ -37,7 +37,7 @@ enum POTAActivationStatus {
 
 // MARK: - POTAActivation
 
-struct POTAActivation: Identifiable, Equatable {
+struct POTAActivation: Identifiable, Equatable, Hashable {
     // MARK: Internal
 
     /// Modes that represent activation metadata, not actual QSOs (from Ham2K PoLo)
@@ -306,6 +306,10 @@ struct POTAActivation: Identifiable, Equatable {
                     (date: $0.key, activations: $0.value.sorted { $0.parkReference < $1.parkReference })
                 }
                 .sorted { $0.date > $1.date }
+    }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
     }
 
     /// QSOs that are fully confirmed in POTA job log for all parks

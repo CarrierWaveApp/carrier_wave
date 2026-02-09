@@ -44,7 +44,8 @@ enum POTAJobStatus: Int, Codable {
     var isFailure: Bool {
         switch self {
         case .failed,
-             .error: true
+             .error:
+            true
         default: false
         }
     }
@@ -214,20 +215,29 @@ struct POTAJob: Identifiable, Codable {
 // MARK: - Job Matching
 
 extension POTAJob {
-    /// Check if this job matches a given activation by (park, UTC date, callsign)
+    /// Check if this job matches a given activation by (park, UTC date, callsign).
+    /// Only matches when firstQSO is available for exact date matching.
+    /// Jobs with nil firstQSO are handled separately via fuzzy matching in rebuildJobIndex.
     func matches(parkReference: String, utcDate: String, callsign: String) -> Bool {
-        // Match park reference (case-insensitive)
+        guard matchesParkAndCallsign(parkReference: parkReference, callsign: callsign) else {
+            return false
+        }
+        // Match UTC date of first QSO (requires firstQSO to be present)
+        guard let jobDate = utcDateString else {
+            return false
+        }
+        return jobDate == utcDate
+    }
+
+    /// Check if this job matches a park + callsign (ignoring date).
+    /// Used for fuzzy matching nil-date jobs to unmatched activations.
+    func matchesParkAndCallsign(parkReference: String, callsign: String) -> Bool {
         guard reference.uppercased() == parkReference.uppercased() else {
             return false
         }
-        // Match callsign (case-insensitive)
         guard let jobCallsign = callsignUsed,
               jobCallsign.uppercased() == callsign.uppercased()
         else {
-            return false
-        }
-        // Match UTC date of first QSO
-        guard utcDateString == utcDate else {
             return false
         }
         return true

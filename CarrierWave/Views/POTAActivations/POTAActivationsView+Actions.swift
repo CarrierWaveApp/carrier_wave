@@ -83,7 +83,7 @@ extension POTAActivationsContentView {
             if !pendingActivations.isEmpty, isAuthenticated, !isSelecting {
                 Section {
                     ForEach(pendingActivations) { activation in
-                        activationRow(activation, showParkReference: true)
+                        activationRow(activation)
                     }
                 } header: {
                     Label("Ready to Upload", systemImage: "arrow.up.circle")
@@ -94,7 +94,7 @@ extension POTAActivationsContentView {
             ForEach(activationsByDate, id: \.date) { dateGroup in
                 Section {
                     ForEach(dateGroup.activations) { activation in
-                        activationRow(activation, showParkReference: true)
+                        activationRow(activation)
                     }
                 } header: {
                     Text(dateGroup.date)
@@ -104,28 +104,44 @@ extension POTAActivationsContentView {
         .refreshable {
             await refreshJobs()
         }
+        .navigationDestination(for: POTAActivation.self) { activation in
+            POTAActivationDetailView(
+                activation: activation,
+                metadata: metadata(for: activation),
+                parkName: parkName(for: activation.parkReference),
+                matchingJobs: jobsByActivationId[activation.id] ?? [],
+                potaClient: potaClient,
+                isAuthenticated: isAuthenticated,
+                isInMaintenance: isInMaintenance,
+                onUpload: { await performUploadReturningErrors(for: activation) },
+                onReject: { activationToReject = activation },
+                onEdit: { activationToEdit = activation },
+                onShare: { activationToShare = activation },
+                onExport: { activationToExport = activation },
+                onMap: { activationToMap = activation },
+                onForceReupload: { forceReupload(activation) }
+            )
+        }
     }
 
-    func activationRow(_ activation: POTAActivation, showParkReference: Bool = false)
-        -> some View
-    {
-        ActivationRow(
+    @ViewBuilder
+    func activationRow(_ activation: POTAActivation) -> some View {
+        let jobs = jobsByActivationId[activation.id] ?? []
+        let row = ActivationRow(
             activation: activation,
             metadata: metadata(for: activation),
             isUploadDisabled: isInMaintenance || potaClient == nil,
             showUploadButton: isAuthenticated,
-            onUploadTapped: { await performUpload(for: activation) },
+            onUploadTapped: { await performUploadReturningErrors(for: activation) },
             onRejectTapped: { activationToReject = activation },
             onShareTapped: { activationToShare = activation },
             onExportTapped: { activationToExport = activation },
             onMapTapped: { activationToMap = activation },
             onEditTapped: { activationToEdit = activation },
             onForceReuploadTapped: { forceReupload(activation) },
-            showParkReference: showParkReference,
             parkName: parkName(for: activation.parkReference),
-            uploadErrors: uploadErrorsByActivation[activation.id] ?? [:],
-            matchingJobs: jobsByActivationId[activation.id] ?? [],
-            potaClient: potaClient,
+            hasFailedJob: jobs.contains { $0.status.isFailure },
+            hasCompletedJob: jobs.contains { $0.status == .completed },
             isSelecting: isSelecting,
             isSelected: selectedActivationIds.contains(activation.id),
             onSelectionToggled: {
@@ -136,6 +152,14 @@ extension POTAActivationsContentView {
                 }
             }
         )
+
+        if isSelecting {
+            row
+        } else {
+            NavigationLink(value: activation) {
+                row
+            }
+        }
     }
 
     func startMaintenanceTimer() {
@@ -184,6 +208,12 @@ extension POTAActivationsContentView {
 // MARK: - Upload & Reject Actions
 
 extension POTAActivationsContentView {
+    /// Upload an activation and return errors for display in the calling view.
+    func performUploadReturningErrors(for activation: POTAActivation) async -> [String: String] {
+        await performUpload(for: activation)
+        return uploadErrorsByActivation[activation.id] ?? [:]
+    }
+
     /// Upload an activation to POTA. Called from ActivationRow's upload button.
     func performUpload(for activation: POTAActivation) async {
         let debugLog = SyncDebugLog.shared
@@ -195,18 +225,12 @@ extension POTAActivationsContentView {
 
         let parksToUpload = activation.parksNeedingUpload
         guard !parksToUpload.isEmpty else {
-            debugLog.debug(
-                "performUpload: no parks need upload for \(activation.parkReference)",
-                service: .pota
-            )
             return
         }
 
         debugLog.info(
             "performUpload: \(activation.parkReference) - "
-                + "\(parksToUpload.count) park(s) to upload: "
-                + "\(parksToUpload.joined(separator: ", ")), "
-                + "\(activation.qsoCount) total QSOs, \(activation.pendingCount) pending",
+                + "\(parksToUpload.count) park(s), \(activation.pendingCount) pending",
             service: .pota
         )
 
@@ -217,18 +241,29 @@ extension POTAActivationsContentView {
             }
         }
 
-        if errors.isEmpty {
+        // Refresh jobs to reconcile — upload API may return success=false for
+        // duplicates even though the job completed.
+        await refreshJobs()
+        reconcileUploadErrors(errors, for: activation)
+    }
+
+    /// After upload + job refresh, check if POTA job log confirms the upload.
+    /// Clears errors if a completed job exists for the activation.
+    private func reconcileUploadErrors(_ errors: [String: String], for activation: POTAActivation) {
+        let debugLog = SyncDebugLog.shared
+        let matchingJobs = jobsByActivationId[activation.id] ?? []
+        if matchingJobs.contains(where: { $0.status == .completed }) {
             uploadErrorsByActivation.removeValue(forKey: activation.id)
             debugLog.info(
-                "performUpload: all parks uploaded successfully for \(activation.parkReference)",
+                "performUpload: job confirmed \(activation.parkReference)"
+                    + " (cleared \(errors.count) error(s))",
                 service: .pota
             )
+        } else if errors.isEmpty {
+            uploadErrorsByActivation.removeValue(forKey: activation.id)
         } else {
             uploadErrorsByActivation[activation.id] = errors
-            let msg =
-                errors.count == parksToUpload.count
-                    ? "all" : "\(errors.count) of \(parksToUpload.count)"
-            errorMessage = "Upload failed for \(msg) parks"
+            errorMessage = "Upload failed for \(errors.count) park(s)"
             debugLog.error(
                 "performUpload: \(errors.count) park(s) failed for "
                     + "\(activation.parkReference): "
@@ -281,49 +316,19 @@ extension POTAActivationsContentView {
         }
     }
 
-    /// Log details of pending QSOs before upload
+    /// Log summary of pending QSOs before upload
     func logPendingParkQSOs(_ qsos: [QSO], park: String) {
         let debugLog = SyncDebugLog.shared
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm"
-        dateFormatter.timeZone = TimeZone(identifier: "UTC")
-        for qso in qsos.prefix(20) {
-            let dateStr = dateFormatter.string(from: qso.timestamp)
-            let presenceState =
-                qso.potaPresence(forPark: park).map {
-                    "isPresent=\($0.isPresent), isSubmitted=\($0.isSubmitted), "
-                        + "needsUpload=\($0.needsUpload), rejected=\($0.uploadRejected)"
-                } ?? "no presence"
-            debugLog.debug(
-                "  - \(qso.callsign) @ \(dateStr) | band=\(qso.band) mode=\(qso.mode) "
-                    + "| park=\(qso.parkReference ?? "nil") | [\(presenceState)]",
-                service: .pota
-            )
-        }
-        if qsos.count > 20 {
-            debugLog.debug("  ... and \(qsos.count - 20) more", service: .pota)
-        }
+        debugLog.debug(
+            "uploadPark: \(qsos.count) QSO(s) pending for \(park)", service: .pota
+        )
     }
 
-    /// Mark QSOs as submitted and log state transitions
+    /// Mark QSOs as submitted to a park
     @MainActor
     func markQSOsSubmitted(_ qsos: [QSO], park: String) {
-        let debugLog = SyncDebugLog.shared
         for qso in qsos {
-            let beforeState =
-                qso.potaPresence(forPark: park).map {
-                    "isPresent=\($0.isPresent), isSubmitted=\($0.isSubmitted)"
-                } ?? "no presence"
             qso.markSubmittedToPark(park, context: modelContext)
-            let afterState =
-                qso.potaPresence(forPark: park).map {
-                    "isPresent=\($0.isPresent), isSubmitted=\($0.isSubmitted)"
-                } ?? "no presence"
-            debugLog.debug(
-                "markSubmittedToPark \(park): \(qso.callsign) "
-                    + "[\(beforeState)] -> [\(afterState)]",
-                service: .pota
-            )
         }
     }
 

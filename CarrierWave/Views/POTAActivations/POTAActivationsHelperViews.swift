@@ -4,77 +4,27 @@ import SwiftUI
 
 // MARK: - ActivationRow
 
+/// Card-style activation row for the list. Tapping navigates to detail view.
+/// The upload button is shown prominently on the card for pending activations.
+/// Secondary actions are in a context menu (long press) and swipe actions.
 struct ActivationRow: View {
-    // MARK: Lifecycle
-
-    init(
-        activation: POTAActivation,
-        metadata: ActivationMetadata? = nil,
-        isUploadDisabled: Bool = false,
-        showUploadButton: Bool = true,
-        onUploadTapped: @escaping () async -> Void,
-        onRejectTapped: @escaping () -> Void,
-        onShareTapped: @escaping () -> Void,
-        onExportTapped: @escaping () -> Void,
-        onMapTapped: @escaping () -> Void,
-        onEditTapped: @escaping () -> Void,
-        onForceReuploadTapped: @escaping () -> Void = {},
-        showParkReference: Bool = false,
-        parkName: String? = nil,
-        uploadErrors: [String: String] = [:],
-        matchingJobs: [POTAJob] = [],
-        potaClient: POTAClient? = nil,
-        isSelecting: Bool = false,
-        isSelected: Bool = false,
-        onSelectionToggled: (() -> Void)? = nil
-    ) {
-        self.activation = activation
-        self.metadata = metadata
-        self.isUploadDisabled = isUploadDisabled
-        self.showUploadButton = showUploadButton
-        self.onUploadTapped = onUploadTapped
-        self.onRejectTapped = onRejectTapped
-        self.onShareTapped = onShareTapped
-        self.onExportTapped = onExportTapped
-        self.onMapTapped = onMapTapped
-        self.onEditTapped = onEditTapped
-        self.onForceReuploadTapped = onForceReuploadTapped
-        self.showParkReference = showParkReference
-        self.parkName = parkName
-        self.uploadErrors = uploadErrors
-        self.matchingJobs = matchingJobs
-        self.potaClient = potaClient
-        self.isSelecting = isSelecting
-        self.isSelected = isSelected
-        self.onSelectionToggled = onSelectionToggled
-        // Auto-expand rows that have pending uploads
-        let hasCompletedJob = matchingJobs.contains { $0.status == .completed }
-        _isExpanded = State(
-            initialValue: showUploadButton && activation.hasQSOsToUpload && !hasCompletedJob
-        )
-    }
-
     // MARK: Internal
 
     let activation: POTAActivation
     var metadata: ActivationMetadata?
     var isUploadDisabled: Bool = false
     var showUploadButton: Bool = true
-    let onUploadTapped: () async -> Void
+    /// Returns upload errors by park reference (empty dict on success)
+    let onUploadTapped: () async -> [String: String]
     let onRejectTapped: () -> Void
     let onShareTapped: () -> Void
     let onExportTapped: () -> Void
     let onMapTapped: () -> Void
     let onEditTapped: () -> Void
-    let onForceReuploadTapped: () -> Void
-    var showParkReference: Bool = false
+    var onForceReuploadTapped: () -> Void = {}
     var parkName: String?
-    /// Upload errors by park (for two-fer error display)
-    var uploadErrors: [String: String] = [:]
-    /// Pre-computed matching jobs for this activation (computed by parent)
-    var matchingJobs: [POTAJob] = []
-    /// POTA client for fetching job details
-    var potaClient: POTAClient?
+    var hasFailedJob: Bool = false
+    var hasCompletedJob: Bool = false
     /// Whether multi-select mode is active
     var isSelecting: Bool = false
     /// Whether this row is selected in multi-select mode
@@ -93,26 +43,8 @@ struct ActivationRow: View {
     // MARK: Private
 
     @AppStorage("debugMode") private var debugMode = false
-
-    /// Auto-expand when there are QSOs to upload so the upload button is visible
-    @State private var isExpanded: Bool
     @State private var isUploading = false
-    @State private var showingErrorSheet = false
-
-    /// QSOs sorted by timestamp descending (computed once)
-    private var sortedQSOs: [QSO] {
-        activation.qsos.sorted { $0.timestamp > $1.timestamp }
-    }
-
-    /// Check if any matching job has completed status
-    private var hasCompletedJob: Bool {
-        matchingJobs.contains { $0.status == .completed }
-    }
-
-    /// Check if any matching job has failed status
-    private var hasFailedJob: Bool {
-        matchingJobs.contains { $0.status.isFailure }
-    }
+    @State private var uploadErrors: [String: String] = [:]
 
     /// Whether upload controls should be shown — hide if a completed job exists
     private var shouldShowUpload: Bool {
@@ -127,7 +59,11 @@ struct ActivationRow: View {
         } label: {
             HStack(spacing: 12) {
                 SelectionCircleView(isSelected: isSelected)
-                activationLabel
+                ActivationLabel(
+                    activation: activation,
+                    metadata: metadata,
+                    showParkReference: true
+                )
             }
             .padding(.vertical, 4)
         }
@@ -141,121 +77,65 @@ struct ActivationRow: View {
     // MARK: - Normal Mode Row
 
     private var normalModeRow: some View {
-        DisclosureGroup(isExpanded: $isExpanded) {
-            // Park info header
-            if showParkReference {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(activation.parkReference)
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-                    if let parkName {
-                        Text(parkName)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            }
+        VStack(alignment: .leading, spacing: 8) {
+            ActivationLabel(
+                activation: activation,
+                metadata: metadata,
+                showParkReference: true
+            )
 
-            // Upload row inside disclosure content where button taps work reliably
-            if shouldShowUpload {
-                uploadRow
-            }
-
-            // Jobs section (shown first when there are matching jobs)
-            if !matchingJobs.isEmpty {
-                Section {
-                    ForEach(matchingJobs) { job in
-                        POTAJobRow(job: job, potaClient: potaClient)
-                    }
-                } header: {
-                    Text("POTA Jobs")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .textCase(nil)
-                }
-            }
-
-            // QSOs section
-            ForEach(sortedQSOs) { qso in
-                POTAQSORow(qso: qso, parks: activation.parks)
-            }
-        } label: {
-            HStack {
-                activationLabel
-
-                Spacer()
-
-                // Warning indicator for failed POTA jobs
-                if hasFailedJob {
+            if hasFailedJob {
+                HStack(spacing: 6) {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundStyle(.orange)
-                        .font(.body)
-                }
-
-                // Upload pending indicator
-                if shouldShowUpload {
-                    if isUploading {
-                        ProgressView()
-                            .controlSize(.small)
-                    } else {
-                        Image(systemName: "arrow.up.circle.fill")
-                            .foregroundStyle(Color.accentColor)
-                            .font(.body)
-                    }
-                }
-
-                // Actions menu
-                Menu {
-                    Button {
-                        onEditTapped()
-                    } label: {
-                        Label("Edit Metadata", systemImage: "pencil")
-                    }
-                    Button {
-                        onMapTapped()
-                    } label: {
-                        Label("View Map", systemImage: "map")
-                    }
-                    Button {
-                        onExportTapped()
-                    } label: {
-                        Label("Export ADIF", systemImage: "doc.text")
-                    }
-                    Button {
-                        onShareTapped()
-                    } label: {
-                        Label("Share Card", systemImage: "square.and.arrow.up")
-                    }
-                    if !uploadErrors.isEmpty {
-                        Button {
-                            showingErrorSheet = true
-                        } label: {
-                            Label("Upload Errors", systemImage: "exclamationmark.circle")
-                        }
-                    }
-                    if shouldShowUpload {
-                        Divider()
-                        Button(role: .destructive) {
-                            onRejectTapped()
-                        } label: {
-                            Label("Reject Upload", systemImage: "xmark.circle")
-                        }
-                    }
-                    if debugMode {
-                        Divider()
-                        Button {
-                            onForceReuploadTapped()
-                        } label: {
-                            Label("Force Reupload", systemImage: "arrow.counterclockwise.circle")
-                        }
-                    }
-                } label: {
-                    Image(systemName: "ellipsis.circle")
-                        .font(.body)
-                        .foregroundStyle(.secondary)
+                    Text("POTA job failed — tap for details")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
                 }
             }
-            .padding(.vertical, 4)
+
+            if shouldShowUpload {
+                uploadButton
+            }
+        }
+        .padding(.vertical, 4)
+        .contextMenu {
+            Button {
+                onEditTapped()
+            } label: {
+                Label("Edit Metadata", systemImage: "pencil")
+            }
+            Button {
+                onMapTapped()
+            } label: {
+                Label("View Map", systemImage: "map")
+            }
+            Button {
+                onExportTapped()
+            } label: {
+                Label("Export ADIF", systemImage: "doc.text")
+            }
+            Button {
+                onShareTapped()
+            } label: {
+                Label("Share Card", systemImage: "square.and.arrow.up")
+            }
+            if shouldShowUpload {
+                Divider()
+                Button(role: .destructive) {
+                    onRejectTapped()
+                } label: {
+                    Label("Reject Upload", systemImage: "xmark.circle")
+                }
+            }
+            if debugMode {
+                Divider()
+                Button {
+                    onForceReuploadTapped()
+                } label: {
+                    Label("Force Reupload", systemImage: "arrow.counterclockwise.circle")
+                }
+            }
         }
         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
             if shouldShowUpload {
@@ -267,47 +147,55 @@ struct ActivationRow: View {
                 .tint(.red)
             }
         }
-        .sheet(isPresented: $showingErrorSheet) {
-            UploadErrorSheet(
-                parkReference: activation.parkReference,
-                errors: uploadErrors
-            )
-        }
     }
 
-    private var activationLabel: some View {
-        ActivationLabel(
-            activation: activation,
-            metadata: metadata,
-            showParkReference: showParkReference
-        )
-    }
-
-    private var uploadRow: some View {
-        HStack {
-            if isUploading {
+    @ViewBuilder private var uploadButton: some View {
+        if isUploading {
+            HStack {
                 ProgressView()
                     .controlSize(.small)
                 Text("Uploading...")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-            } else {
+            }
+        } else {
+            VStack(spacing: 6) {
                 Button {
                     isUploading = true
                     Task {
-                        await onUploadTapped()
+                        let errors = await onUploadTapped()
+                        uploadErrors = errors
                         isUploading = false
                     }
                 } label: {
                     Label(
-                        "Upload \(activation.pendingCount) QSO(s) to POTA",
+                        "Upload \(activation.pendingCount) QSO\(activation.pendingCount == 1 ? "" : "s") to POTA",
                         systemImage: "arrow.up.circle.fill"
                     )
-                    .font(.subheadline)
+                    .frame(maxWidth: .infinity)
                 }
+                .buttonStyle(.borderedProminent)
                 .disabled(isUploadDisabled)
+
+                ForEach(
+                    uploadErrors.sorted(by: { $0.key < $1.key }), id: \.key
+                ) { park, error in
+                    HStack(alignment: .top, spacing: 6) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.orange)
+                        VStack(alignment: .leading, spacing: 2) {
+                            if uploadErrors.count > 1 {
+                                Text(park)
+                                    .font(.subheadline)
+                                    .fontWeight(.medium)
+                            }
+                            Text(error)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
             }
-            Spacer()
         }
     }
 }

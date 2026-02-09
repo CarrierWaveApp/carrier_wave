@@ -440,3 +440,31 @@ extension POTAActivationsContentView {
         bulkExportActivations = selected
     }
 }
+
+// MARK: - Bulk Selection Helpers
+
+/// Count pending QSOs across selected activations
+func selectedPendingQSOCount(
+    activations: [POTAActivation],
+    selectedIds: Set<String>
+) -> Int {
+    activations
+        .filter { selectedIds.contains($0.id) }
+        .reduce(0) { $0 + $1.pendingCount }
+}
+
+/// Filter to selected activations that have pending QSOs
+func selectedActivationsWithPending(
+    activations: [POTAActivation],
+    selectedIds: Set<String>
+) -> [POTAActivation] {
+    activations.filter { selectedIds.contains($0.id) && $0.hasQSOsToUpload && !$0.isRejected }
+}
+
+/// Filter to selected activations
+func selectedActivations(
+    activations: [POTAActivation],
+    selectedIds: Set<String>
+) -> [POTAActivation] {
+    activations.filter { selectedIds.contains($0.id) }
+}
