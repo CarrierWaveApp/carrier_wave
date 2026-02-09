@@ -13,6 +13,13 @@ All notable changes to Carrier Wave will be documented in this file.
 - Collapse consecutive RBN spots in spot comments list into expandable groups to keep human comments visible (CAR-52)
 - Warn when ending a POTA session during maintenance window (2330-0400 UTC) that uploads are unavailable, and suggest uploading later from the POTA Activations tab (CAR-49)
 
+### Changed
+- iPad sidebar now respects tab visibility settings immediately without requiring a restart (CAR-39)
+- Remove 4-tab limit on iPad — all tabs can be shown in the sidebar (CAR-39)
+- iPad shows all tabs by default on first launch instead of hiding Logger and Activity (CAR-39)
+- Replace "More" tab with dedicated Settings entry in iPad sidebar (CAR-39)
+- Rename "Tab Bar" settings to "Sidebar" when running on iPad (CAR-39)
+
 ### Fixed
 - Normalize POTA park references at all import and entry points — fixes malformed refs like "US1234" or bare numbers being stored instead of "US-1234" (CAR-50)
 - Auto-uppercase QRZ Callbook username field since QRZ usernames are always callsigns (CAR-41)

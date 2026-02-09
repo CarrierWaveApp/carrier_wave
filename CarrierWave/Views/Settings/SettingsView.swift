@@ -34,6 +34,7 @@ struct SettingsMainView: View {
     // MARK: Private
 
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     @State private var navigationPath = NavigationPath()
     @State private var showingError = false
@@ -262,22 +263,32 @@ struct SettingsMainView: View {
     }
 
     private var tabsSection: some View {
-        Section {
+        let isIPad = horizontalSizeClass == .regular
+        return Section {
             NavigationLink {
                 TabConfigurationView()
             } label: {
                 HStack {
-                    Label("Tab Bar", systemImage: "square.grid.2x2")
+                    Label(
+                        isIPad ? "Sidebar" : "Tab Bar",
+                        systemImage: isIPad ? "sidebar.left" : "square.grid.2x2"
+                    )
                     Spacer()
                     let visibleCount = TabConfiguration.visibleTabs().filter { $0 != .more }.count
-                    Text("\(visibleCount) in tab bar")
+                    Text(isIPad ? "\(visibleCount) visible" : "\(visibleCount) in tab bar")
                         .foregroundStyle(.secondary)
                 }
             }
         } header: {
             Text("Navigation")
         } footer: {
-            Text("Choose which tabs appear in the tab bar. Hidden tabs are accessible from More.")
+            if isIPad {
+                Text("Choose which tabs appear in the sidebar.")
+            } else {
+                Text(
+                    "Choose which tabs appear in the tab bar. Hidden tabs are accessible from More."
+                )
+            }
         }
     }
 
@@ -701,23 +712,25 @@ struct TabConfigurationView: View {
 
     var body: some View {
         List {
-            // Tab Bar section - shows visible tabs
+            // Visible tabs section
             Section {
                 ForEach(tabBarTabs, id: \.self) { tab in
                     tabRow(tab, inTabBar: true)
                 }
                 .onMove(perform: moveTabBarTab)
             } header: {
-                Text("Tab Bar")
+                Text(isIPad ? "Sidebar" : "Tab Bar")
             } footer: {
-                if tabBarTabs.count >= maxVisibleTabs {
+                if isIPad {
+                    Text("Drag to reorder. Tap to hide.")
+                } else if tabBarTabs.count >= maxVisibleTabs {
                     Text("Maximum \(maxVisibleTabs) tabs. Drag to reorder.")
                 } else {
                     Text("Drag to reorder. Tap to move to More.")
                 }
             }
 
-            // More section - shows hidden tabs
+            // Hidden tabs section
             Section {
                 if moreTabs.isEmpty {
                     Text("No hidden tabs")
@@ -729,14 +742,13 @@ struct TabConfigurationView: View {
                     .onMove(perform: moveMoreTab)
                 }
             } header: {
-                HStack {
-                    Text("More Menu")
-                    Spacer()
-                    Image(systemName: "ellipsis")
-                        .foregroundStyle(.secondary)
-                }
+                Text("Hidden")
             } footer: {
-                Text("These tabs are accessible from the More tab.")
+                if isIPad {
+                    Text("Hidden tabs won't appear in the sidebar.")
+                } else {
+                    Text("These tabs are accessible from the More tab.")
+                }
             }
 
             Section {
@@ -747,7 +759,7 @@ struct TabConfigurationView: View {
                 }
             }
         }
-        .navigationTitle("Tab Bar")
+        .navigationTitle(isIPad ? "Sidebar" : "Tab Bar")
         .environment(\.editMode, .constant(.active))
         .onAppear {
             refreshTabs()
@@ -756,11 +768,20 @@ struct TabConfigurationView: View {
 
     // MARK: Private
 
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+
     @State private var tabBarTabs: [AppTab] = []
     @State private var moreTabs: [AppTab] = []
 
-    /// Maximum tabs visible in tab bar (excluding More)
-    private let maxVisibleTabs = 4
+    private var isIPad: Bool {
+        horizontalSizeClass == .regular
+    }
+
+    /// Maximum tabs visible in tab bar (excluding More).
+    /// iPad has no limit since the sidebar can hold all tabs.
+    private var maxVisibleTabs: Int {
+        isIPad ? AppTab.configurableTabs.count : 4
+    }
 
     private func tabRow(_ tab: AppTab, inTabBar: Bool) -> some View {
         let canMoveToTabBar = !inTabBar && tabBarTabs.count < maxVisibleTabs
