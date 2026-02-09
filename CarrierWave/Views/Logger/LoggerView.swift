@@ -215,6 +215,8 @@ struct LoggerView: View {
                     parkReference: pendingSessionEndParkRef ?? "",
                     parkName: pendingSessionEndParkName,
                     qsoCount: pendingSessionEndQSOCount,
+                    isInMaintenance: pendingSessionEndInMaintenance,
+                    maintenanceTimeRemaining: pendingSessionEndMaintenanceRemaining,
                     onUpload: {
                         await uploadPendingPOTAQSOs()
                     },
@@ -338,6 +340,8 @@ struct LoggerView: View {
     @State private var pendingSessionEndParkName: String?
     @State private var pendingSessionEndQSOCount = 0
     @State private var pendingSessionEndQSOs: [QSO] = []
+    @State private var pendingSessionEndInMaintenance = false
+    @State private var pendingSessionEndMaintenanceRemaining: String?
 
     /// User preference to disable POTA upload prompt
     @AppStorage("potaUploadPromptDisabled") private var potaUploadPromptDisabled = false
@@ -1911,7 +1915,13 @@ struct LoggerView: View {
                 pendingSessionEndQSOCount = qsosNeedingUpload.count
                 pendingSessionEndQSOs = qsosNeedingUpload
 
-                // Show the upload prompt
+                // Check maintenance window status
+                pendingSessionEndInMaintenance = POTAClient.isInMaintenanceWindow()
+                pendingSessionEndMaintenanceRemaining =
+                    pendingSessionEndInMaintenance
+                        ? POTAClient.formatMaintenanceTimeRemaining() : nil
+
+                // Show the upload prompt (with maintenance warning if applicable)
                 showPOTAUploadPrompt = true
                 return
             }
@@ -1934,6 +1944,8 @@ struct LoggerView: View {
         pendingSessionEndParkName = nil
         pendingSessionEndQSOCount = 0
         pendingSessionEndQSOs = []
+        pendingSessionEndInMaintenance = false
+        pendingSessionEndMaintenanceRemaining = nil
     }
 
     /// Upload pending POTA QSOs from the upload prompt

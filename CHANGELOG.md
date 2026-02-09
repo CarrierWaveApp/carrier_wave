@@ -4,6 +4,9 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Warn when ending a POTA session during maintenance window (2330-0400 UTC) that uploads are unavailable, and suggest uploading later from the POTA Activations tab (CAR-49)
+
 ### Fixed
 - Suppress "operator nearby" frequency warning when the nearby spot is the station being worked (e.g., tapping a POTA spot to hunt)
 - Fix activation type resetting to Casual when scrolling the session start sheet (CAR-46)
