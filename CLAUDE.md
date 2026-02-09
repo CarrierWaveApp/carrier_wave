@@ -62,7 +62,6 @@ Carrier Wave is a SwiftUI/SwiftData iOS app for amateur radio QSO (contact) logg
 
 ## Code Standards
 
-- **Maximum file size: 1000 lines.** Refactor when approaching this limit.
 - Use `actor` for API clients (thread safety)
 - Use `@MainActor` for view-bound services
 - Store credentials in Keychain, never in SwiftData
@@ -151,21 +150,22 @@ See [Performance Guidelines](docs/PERFORMANCE.md) for detailed patterns and exam
 
 ## Linting & Formatting
 
-Uses SwiftLint (`.swiftlint.yml`) and SwiftFormat (`.swiftformat`).
+Uses SwiftLint (`.swiftlint.yml`) and SwiftFormat (`.swiftformat`). **Pre-commit hooks block commits on ANY SwiftLint violation (warnings included).** Treat warning thresholds as hard limits.
 
-**Key limits:**
-- Line length: 120 (warning), 200 (error)
-- File length: 500 (warning), 1000 (error)
-- Function body: 50 lines (warning), 100 (error)
-- Type body: 300 lines (warning), 500 (error)
-- Cyclomatic complexity: 15 (warning), 25 (error)
+**Hard limits (treat as maximums when writing code):**
+- **File length: 500 lines** — split into extensions in separate files before hitting this
+- **Function body: 50 lines** (excluding comments/whitespace) — extract helpers proactively
+- **Type body: 300 lines** — split into extensions
+- **Line length: 120 characters**
+- **Cyclomatic complexity: 15**
 
-**Formatting rules:**
+When creating or modifying files, check line count before committing. If a file is near 450 lines and you're adding code, split first. If a function is near 40 lines and you're adding logic, extract a helper.
+
+**Formatting rules (run `make format` before committing):**
 - 4-space indentation, no tabs
 - LF line endings
 - Trailing commas allowed
 - `else` on same line as closing brace
-- Spaces around operators and ranges
 - Remove explicit `self` where possible
 - Imports sorted, testable imports at bottom
 
