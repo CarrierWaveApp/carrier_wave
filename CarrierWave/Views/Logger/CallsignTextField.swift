@@ -48,20 +48,28 @@ struct CallsignTextField: UIViewRepresentable {
         var parent: CallsignTextField
 
         /// Track whether we're currently processing a user edit
-        /// to avoid re-entrant updates from SwiftUI
-        var isUpdatingFromUIKit = false
+        /// to avoid re-entrant updates from SwiftUI.
+        /// Uses a counter instead of a bool to handle rapid typing where
+        /// multiple edits can overlap before the async reset fires.
+        var uiKitEditCounter = 0
+        var lastProcessedEditCounter = 0
 
         /// Reference to the text field for explicit dismiss
         weak var textField: UITextField?
 
+        /// Whether a UIKit-originated edit is still being processed by SwiftUI
+        var isUpdatingFromUIKit: Bool {
+            uiKitEditCounter != lastProcessedEditCounter
+        }
+
         @objc
         func textFieldDidChange(_ textField: UITextField) {
-            isUpdatingFromUIKit = true
+            uiKitEditCounter += 1
+            let editId = uiKitEditCounter
             parent.text = textField.text ?? ""
-            // Delay resetting the flag until after SwiftUI has processed the update
-            // This ensures updateUIView sees isUpdatingFromUIKit = true
+            // Delay resetting until after SwiftUI has processed the update
             DispatchQueue.main.async { [weak self] in
-                self?.isUpdatingFromUIKit = false
+                self?.lastProcessedEditCounter = editId
             }
         }
 

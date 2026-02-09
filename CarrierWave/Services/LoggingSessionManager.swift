@@ -156,6 +156,11 @@ final class LoggingSessionManager {
         }
         session.resume()
 
+        // Re-enable screen timeout prevention
+        if keepScreenOn {
+            UIApplication.shared.isIdleTimerDisabled = true
+        }
+
         // Restart auto-spot timer
         startAutoSpotTimer()
 
