@@ -4,6 +4,13 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Add mode-aware frequency suggestions for all modes in session start wizard — FT8, FT4, RTTY, AM, and FM now show correct frequencies instead of defaulting to CW (CAR-56)
+- Add live "Active Now" section in session start showing POTA spots filtered by mode and license class, with clear-frequency recommendations based on ARRL band plan usage zones
+- Add band plan reference sheet accessible from session start frequency section, showing band segments, license requirements, and activity frequencies
+- Add RTTY activity frequencies to band plan data
+- Add VHF/UHF band support (6m, 2m, 70cm) in frequency suggestions for FM mode
+
 ### Fixed
 - Fix LoTW first sync making 25+ unnecessary API requests by trying single request first, falling back to adaptive windowing only on rate limit (CAR-44)
 - Fix bug report showing "Not configured" for QRZ, LoFi, LoTW, and HAMRS services

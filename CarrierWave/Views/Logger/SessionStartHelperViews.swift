@@ -93,63 +93,6 @@ struct ActivationSectionView: View {
     }
 }
 
-// MARK: - FrequencySuggestionsView
-
-/// Extracted view for frequency band suggestions
-struct FrequencySuggestionsView: View {
-    // MARK: Internal
-
-    let selectedMode: String
-
-    @Binding var frequency: String
-
-    var body: some View {
-        let suggestions = LoggingSession.suggestedFrequencies(for: selectedMode)
-        let availableBands = Self.sortedBands.filter { suggestions[$0] != nil }
-
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(availableBands, id: \.self) { band in
-                    if let freq = suggestions[band] {
-                        bandButton(band: band, freq: freq)
-                    }
-                }
-            }
-        }
-    }
-
-    // MARK: Private
-
-    private static let sortedBands = [
-        "160m", "80m", "40m", "30m", "20m", "17m", "15m", "12m", "10m",
-    ]
-
-    private func bandButton(band: String, freq: Double) -> some View {
-        let freqString = FrequencyFormatter.format(freq)
-        let isSelected = frequency == freqString
-
-        return Button {
-            frequency = freqString
-        } label: {
-            VStack(spacing: 2) {
-                Text(band)
-                    .font(.caption.weight(.medium))
-                Text(freqString)
-                    .font(.caption2.monospaced())
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(
-                isSelected
-                    ? Color.accentColor.opacity(0.2)
-                    : Color(.tertiarySystemGroupedBackground)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 8))
-        }
-        .buttonStyle(.plain)
-    }
-}
-
 // MARK: - SessionStartValidation
 
 /// Validation logic for session start requirements

@@ -10,6 +10,47 @@ struct SessionStartSheet: View {
     var sessionManager: LoggingSessionManager?
     var onDismiss: () -> Void
 
+    @AppStorage("loggerDefaultCallsign") var defaultCallsign = ""
+    @AppStorage("loggerDefaultMode") var defaultMode = "CW"
+    @AppStorage("loggerDefaultGrid") var defaultGrid = ""
+    @State var selectedMode = "CW"
+    @State var frequency = ""
+    @State var activationType: ActivationType = .casual
+    @State var parkReference = ""
+    @State var sotaReference = ""
+    @State var myGrid = ""
+
+    // Callsign prefix/suffix
+    @State var callsignPrefix = ""
+    @State var selectedSuffix: CallsignSuffix = .none
+    @State var customSuffix = ""
+
+    /// The full constructed callsign (prefix/base/suffix)
+    var fullCallsign: String {
+        let prefix = callsignPrefix.trimmingCharacters(in: .whitespaces).uppercased()
+        let suffix = effectiveSuffix
+        let parts = [prefix, defaultCallsign.uppercased(), suffix].filter { !$0.isEmpty }
+        return parts.joined(separator: "/")
+    }
+
+    /// The effective suffix based on selection
+    var effectiveSuffix: String {
+        switch selectedSuffix {
+        case .none:
+            ""
+        case .portable:
+            "P"
+        case .mobile:
+            "M"
+        case .maritime:
+            "MM"
+        case .aeronautical:
+            "AM"
+        case .custom:
+            customSuffix.trimmingCharacters(in: .whitespaces).uppercased()
+        }
+    }
+
     var body: some View {
         NavigationStack {
             Form {
@@ -48,6 +89,18 @@ struct SessionStartSheet: View {
                     .background(.ultraThinMaterial)
                 }
             }
+            .sheet(isPresented: $showBandPlanSheet) {
+                BandPlanSheet(
+                    selectedMode: selectedMode,
+                    frequency: $frequency
+                )
+            }
+            .sheet(item: $bandDetail) { band in
+                BandActivitySheet(
+                    suggestion: band,
+                    frequency: $frequency
+                )
+            }
             .navigationTitle("Start Session")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -68,53 +121,14 @@ struct SessionStartSheet: View {
 
     // MARK: Private
 
-    @AppStorage("loggerDefaultCallsign") private var defaultCallsign = ""
-    @AppStorage("loggerDefaultMode") private var defaultMode = "CW"
-    @AppStorage("loggerDefaultGrid") private var defaultGrid = ""
     @AppStorage("loggerDefaultActivationType") private var defaultActivationType = "casual"
     @AppStorage("loggerDefaultParkReference") private var defaultParkReference = ""
 
-    @State private var selectedMode = "CW"
-    @State private var frequency = ""
-    @State private var activationType: ActivationType = .casual
-    @State private var parkReference = ""
-    @State private var sotaReference = ""
-    @State private var myGrid = ""
-
-    // Callsign prefix/suffix
-    @State private var callsignPrefix = ""
-    @State private var selectedSuffix: CallsignSuffix = .none
-    @State private var customSuffix = ""
-
     /// UI state
     @State private var showSavedConfirmation = false
+    @State private var showBandPlanSheet = false
+    @State private var bandDetail: BandSuggestion?
     @State private var hasLoadedDefaults = false
-
-    /// The full constructed callsign (prefix/base/suffix)
-    private var fullCallsign: String {
-        let prefix = callsignPrefix.trimmingCharacters(in: .whitespaces).uppercased()
-        let suffix = effectiveSuffix
-        let parts = [prefix, defaultCallsign.uppercased(), suffix].filter { !$0.isEmpty }
-        return parts.joined(separator: "/")
-    }
-
-    /// The effective suffix based on selection
-    private var effectiveSuffix: String {
-        switch selectedSuffix {
-        case .none:
-            ""
-        case .portable:
-            "P"
-        case .mobile:
-            "M"
-        case .maritime:
-            "MM"
-        case .aeronautical:
-            "AM"
-        case .custom:
-            customSuffix.trimmingCharacters(in: .whitespaces).uppercased()
-        }
-    }
 
     private var canStart: Bool {
         SessionStartValidation.canStart(
@@ -142,106 +156,6 @@ struct SessionStartSheet: View {
 
     // MARK: - Sections
 
-    private var callsignSection: some View {
-        Section {
-            callsignDisplayView
-            callsignPrefixRow
-            suffixPicker
-            customSuffixRow
-            gridRow
-        } header: {
-            Text("Station")
-        } footer: {
-            callsignFooter
-        }
-    }
-
-    @ViewBuilder
-    private var callsignDisplayView: some View {
-        if !defaultCallsign.isEmpty {
-            VStack(spacing: 8) {
-                Text(fullCallsign)
-                    .font(.title2.monospaced().bold())
-                    .foregroundStyle(.primary)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
-
-                if !callsignPrefix.isEmpty || selectedSuffix != .none {
-                    CallsignBreakdownView(
-                        prefix: callsignPrefix,
-                        baseCallsign: defaultCallsign,
-                        suffix: effectiveSuffix
-                    )
-                }
-            }
-        }
-    }
-
-    private var callsignPrefixRow: some View {
-        HStack {
-            Text("Prefix")
-                .foregroundStyle(.secondary)
-            Spacer()
-            TextField("e.g. I, VE", text: $callsignPrefix)
-                .textInputAutocapitalization(.characters)
-                .autocorrectionDisabled()
-                .multilineTextAlignment(.trailing)
-                .font(.subheadline.monospaced())
-                .frame(width: 80)
-        }
-    }
-
-    private var suffixPicker: some View {
-        Picker("Suffix", selection: $selectedSuffix) {
-            ForEach(CallsignSuffix.allCases) { suffix in
-                Text(suffix.rawValue).tag(suffix)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var customSuffixRow: some View {
-        if selectedSuffix == .custom {
-            HStack {
-                Text("Custom Suffix")
-                    .foregroundStyle(.secondary)
-                Spacer()
-                TextField("e.g. 1, 2, QRP", text: $customSuffix)
-                    .textInputAutocapitalization(.characters)
-                    .autocorrectionDisabled()
-                    .multilineTextAlignment(.trailing)
-                    .font(.subheadline.monospaced())
-                    .frame(width: 100)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var gridRow: some View {
-        if !defaultGrid.isEmpty || !myGrid.isEmpty {
-            HStack {
-                Text("Grid")
-                    .foregroundStyle(.secondary)
-                Spacer()
-                TextField("FN31", text: $myGrid)
-                    .textInputAutocapitalization(.characters)
-                    .multilineTextAlignment(.trailing)
-                    .font(.subheadline.monospaced())
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var callsignFooter: some View {
-        if defaultCallsign.isEmpty {
-            Text("Set your callsign in Settings → About Me")
-        } else if !callsignPrefix.isEmpty {
-            Text(
-                "Prefix indicates operating from another location (e.g., I/W6JSV for W6JSV in Italy)"
-            )
-        }
-    }
-
     private var modeSection: some View {
         Section("Mode") {
             Picker("Mode", selection: $selectedMode) {
@@ -264,9 +178,22 @@ struct SessionStartSheet: View {
                     .foregroundStyle(.secondary)
             }
 
-            FrequencySuggestionsView(selectedMode: selectedMode, frequency: $frequency)
+            FrequencyBandView(
+                selectedMode: selectedMode,
+                frequency: $frequency,
+                detailBand: $bandDetail
+            )
         } header: {
-            Text("Frequency")
+            HStack {
+                Text("Frequency")
+                Spacer()
+                Button {
+                    showBandPlanSheet = true
+                } label: {
+                    Label("Band Plan", systemImage: "info.circle")
+                        .font(.caption)
+                }
+            }
         } footer: {
             Text(
                 "Enter as MHz (14.060), kHz (14060), or dot-separated (14.030.50)."

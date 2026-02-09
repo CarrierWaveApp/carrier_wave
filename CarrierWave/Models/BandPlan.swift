@@ -105,6 +105,7 @@ struct FrequencyActivity: Sendable {
         case sstv = "SSTV"
         case digitalFT = "FT8/FT4"
         case digitalPSK = "PSK31"
+        case rtty = "RTTY"
         case cwtContest = "CWOps CWT"
         case net = "Net"
     }

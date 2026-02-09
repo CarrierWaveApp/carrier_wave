@@ -58,6 +58,7 @@ Pure logic library that can be tested without iOS Simulator. Run tests with `mak
 | `ChallengeDefinition.swift` | Challenge metadata and rules |
 | `ChallengeParticipation.swift` | User's participation in a challenge |
 | `ChallengeSource.swift` | Where challenge definitions come from |
+| `ActiveStation.swift` | Unified on-air station model (POTA spots + RBN) |
 | `ChallengeTypes.swift` | Challenge-related enums and types |
 | `LeaderboardCache.swift` | Cached leaderboard data |
 | `POTAActivation.swift` | POTA activation grouping view model |
@@ -189,7 +190,10 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `CallsignTextField.swift` | UITextField wrapper for callsign entry with proper cursor handling |
 | `LoggerCallsignCard.swift` | Callsign info display card for logger |
 | `SessionStartSheet.swift` | Session wizard for mode, frequency, activation type |
+| `SessionStartSheet+Sections.swift` | Callsign section views extracted from SessionStartSheet |
 | `SessionStartHelperViews.swift` | Helper views and validation for session start (CallsignBreakdown, ActivationSection, FrequencySuggestions) |
+| `LiveActivitySuggestionsView.swift` | Unified FrequencyBandView: static band frequencies + live POTA spots + nestled clear-frequency recommendations |
+| `BandPlanSheet.swift` | Interactive band plan reference with segments, license requirements, and activity frequencies |
 | `ParkPickerSheet.swift` | Park search and nearby selection sheet |
 | `ParkEntryField.swift` | Enhanced park entry with search picker and shorthand |
 | `LoggerSettingsView.swift` | (Deprecated) Logger settings moved to main SettingsView |
