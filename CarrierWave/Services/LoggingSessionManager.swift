@@ -38,6 +38,8 @@ final class LoggingSessionManager {
     /// Service for monitoring RBN/POTA spots during session
     let spotMonitoringService = SpotMonitoringService()
 
+    let modelContext: ModelContext
+
     /// Whether there's an active session
     var hasActiveSession: Bool {
         activeSession != nil
@@ -89,6 +91,9 @@ final class LoggingSessionManager {
 
         // Start spot monitoring
         startSpotMonitoring()
+
+        // Auto-record solar/weather conditions for POTA activations
+        recordConditions()
 
         try? modelContext.save()
     }
@@ -522,8 +527,6 @@ final class LoggingSessionManager {
     /// Modes that represent activation metadata, not actual QSOs (from Ham2K PoLo)
     /// These should never be synced to any service
     private static let metadataModes: Set<String> = ["WEATHER", "SOLAR", "NOTE"]
-
-    private let modelContext: ModelContext
 
     /// Cached service configuration (checked once at session start to avoid Keychain reads per-QSO)
     private var qrzConfigured = false

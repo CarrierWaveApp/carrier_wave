@@ -4,7 +4,10 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.26.0] - 2026-02-08
+
 ### Added
+- Auto-record solar and weather conditions when starting a POTA logging session, stored in activation metadata (CAR-55)
 - Add QSO detail view — tap any QSO in the Logs tab to see all metadata, sync status, notes, and source info (CAR-53)
 - Show activation WPM, solar conditions, and weather in map callouts when tapping pins with POTA activation data (CAR-54)
 - Persist average CW speed (WPM) from RBN spots to activation metadata when ending a POTA session (CAR-54)
@@ -29,6 +32,7 @@ All notable changes to Carrier Wave will be documented in this file.
 - Support dot-separated frequency notation (e.g., 14.030.50) for sub-kHz precision entry (CAR-40)
 - Fix screen going to sleep after pausing and resuming a logging session despite "Keep screen on" being enabled (CAR-43)
 - Fix callsign field cursor jumping to end when inserting numbers at a mid-text position (CAR-42)
+- Fix activity grid in landscape and iPad showing too few columns — now shows a full year of history to fill available width
 
 ## [1.25.4] - 2026-02-08
 

@@ -88,7 +88,7 @@ private struct ActivityGridContent: View {
                     ZStack(alignment: .topLeading) {
                         ForEach(labelPositions, id: \.column) { item in
                             Text(item.label)
-                                .font(.system(size: isCompactVertical ? 8 : 10))
+                                .font(.system(size: 10))
                                 .foregroundStyle(.secondary)
                                 .fixedSize()
                                 .offset(x: CGFloat(item.column) * columnWidth)
@@ -110,9 +110,13 @@ private struct ActivityGridContent: View {
     // MARK: Private
 
     @Environment(\.verticalSizeClass) private var verticalSizeClass
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     private let rows = 7
-    private let minColumns = 26
+    private let spacing: CGFloat = 2
+    private let cellSize: CGFloat = 14
+    private let monthLabelHeight: CGFloat = 14
+    private let gridToLabelSpacing: CGFloat = 4
 
     private let calendar = Calendar.current
 
@@ -122,24 +126,15 @@ private struct ActivityGridContent: View {
         return formatter
     }()
 
-    private var isCompactVertical: Bool {
-        verticalSizeClass == .compact
-    }
-
-    private var cellSize: CGFloat {
-        isCompactVertical ? 8 : 14
-    }
-
-    private var spacing: CGFloat {
-        isCompactVertical ? 1 : 2
-    }
-
-    private var monthLabelHeight: CGFloat {
-        isCompactVertical ? 10 : 14
-    }
-
-    private var gridToLabelSpacing: CGFloat {
-        isCompactVertical ? 2 : 4
+    /// Minimum columns based on available space:
+    /// - iPhone portrait (compact horizontal, regular vertical): 26 weeks (~6 months)
+    /// - iPhone landscape (compact vertical): 52 weeks (~1 year)
+    /// - iPad (regular horizontal): 52 weeks (~1 year)
+    private var minColumns: Int {
+        if verticalSizeClass == .compact || horizontalSizeClass == .regular {
+            return 52
+        }
+        return 26
     }
 
     private var maxCount: Int {

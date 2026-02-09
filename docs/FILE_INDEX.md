@@ -159,6 +159,7 @@ Pure logic library that can be tested without iOS Simulator. Run tests with `mak
 | `CallsignNotesCache.swift` | Persistent cache for Polo notes (loads from disk, refreshes daily) |
 | `CWSuggestionEngine.swift` | Word suggestion engine with dictionaries and settings |
 | `LoggingSessionManager.swift` | Session lifecycle management (start, end, log QSO, hide QSO) |
+| `LoggingSessionManager+Conditions.swift` | Auto-record solar/weather conditions at POTA session start |
 | `RBNClient.swift` | Vail ReRBN API client for reverse beacon network spots |
 | `NOAAClient.swift` | NOAA API client for solar conditions and weather |
 | `POTAClient+Spot.swift` | POTA self-spotting extension |
