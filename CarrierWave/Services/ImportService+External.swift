@@ -82,7 +82,8 @@ extension ImportService {
             rstSent: qrzQso.rstSent, rstReceived: qrzQso.rstReceived,
             myCallsign: qrzQso.myCallsign ?? myCallsign, myGrid: qrzQso.myGrid,
             theirGrid: qrzQso.theirGrid,
-            parkReference: qrzQso.parkReference, theirParkReference: qrzQso.theirParkReference,
+            parkReference: qrzQso.parkReference.flatMap { ParkReference.sanitizeMulti($0) },
+            theirParkReference: qrzQso.theirParkReference.flatMap { ParkReference.sanitize($0) },
             notes: qrzQso.notes, importSource: .qrz,
             rawADIF: qrzQso.rawADIF, qrzLogId: qrzQso.qrzLogId,
             qrzConfirmed: qrzQso.qrzConfirmed, lotwConfirmedDate: qrzQso.lotwConfirmedDate,
@@ -134,7 +135,9 @@ extension ImportService {
             "\(call)|\(potaQso.band.uppercased())|\(potaQso.mode.uppercased())|\(rounded)"
 
         if let existing = byDedupeKey[dedupeKey]?.first {
-            existing.parkReference = existing.parkReference.nonEmpty ?? potaQso.parkReference
+            existing.parkReference =
+                existing.parkReference.nonEmpty
+                    ?? potaQso.parkReference.flatMap { ParkReference.sanitizeMulti($0) }
             existing.rstSent = existing.rstSent.nonEmpty ?? potaQso.rstSent
             existing.rstReceived = existing.rstReceived.nonEmpty ?? potaQso.rstReceived
             existing.markPresent(in: .pota, context: modelContext)
@@ -152,7 +155,8 @@ extension ImportService {
             callsign: pq.callsign, band: pq.band, mode: pq.mode, frequency: nil,
             timestamp: pq.timestamp, rstSent: pq.rstSent, rstReceived: pq.rstReceived,
             myCallsign: pq.myCallsign, myGrid: nil, theirGrid: nil,
-            parkReference: pq.parkReference, notes: nil, importSource: .pota, rawADIF: nil
+            parkReference: pq.parkReference.flatMap { ParkReference.sanitizeMulti($0) },
+            notes: nil, importSource: .pota, rawADIF: nil
         )
     }
 }

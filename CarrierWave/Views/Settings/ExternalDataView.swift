@@ -239,9 +239,9 @@ struct QRZCallbookSettingsView: View {
                 }
             } else {
                 Section {
-                    TextField("Username or Callsign", text: $username)
+                    TextField("Callsign", text: $username)
                         .textContentType(.username)
-                        .autocapitalization(.none)
+                        .textInputAutocapitalization(.characters)
                         .autocorrectionDisabled()
 
                     SecureField("Password", text: $password)
@@ -249,7 +249,7 @@ struct QRZCallbookSettingsView: View {
                 } header: {
                     Text("Credentials")
                 } footer: {
-                    Text("Enter your QRZ.com username and password.")
+                    Text("Enter your QRZ.com callsign and password.")
                 }
 
                 Section {
@@ -328,9 +328,14 @@ struct QRZCallbookSettingsView: View {
         defer { isLoggingIn = false }
 
         do {
-            let sessionKey = try await authenticateWithQRZ(username: username, password: password)
-            try saveCredentials(username: username, password: password, sessionKey: sessionKey)
-            savedUsername = username
+            let normalizedUsername = username.uppercased()
+            let sessionKey = try await authenticateWithQRZ(
+                username: normalizedUsername, password: password
+            )
+            try saveCredentials(
+                username: normalizedUsername, password: password, sessionKey: sessionKey
+            )
+            savedUsername = normalizedUsername
             isAuthenticated = true
         } catch {
             errorMessage = error.localizedDescription

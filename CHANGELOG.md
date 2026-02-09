@@ -8,6 +8,8 @@ All notable changes to Carrier Wave will be documented in this file.
 - Warn when ending a POTA session during maintenance window (2330-0400 UTC) that uploads are unavailable, and suggest uploading later from the POTA Activations tab (CAR-49)
 
 ### Fixed
+- Normalize POTA park references at all import and entry points — fixes malformed refs like "US1234" or bare numbers being stored instead of "US-1234" (CAR-50)
+- Auto-uppercase QRZ Callbook username field since QRZ usernames are always callsigns (CAR-41)
 - Suppress "operator nearby" frequency warning when the nearby spot is the station being worked (e.g., tapping a POTA spot to hunt)
 - Fix activation type resetting to Casual when scrolling the session start sheet (CAR-46)
 - Fix 10m band plan missing CW mode in phone segment (28.300-28.500 MHz) for Technician and General licenses (CAR-38)

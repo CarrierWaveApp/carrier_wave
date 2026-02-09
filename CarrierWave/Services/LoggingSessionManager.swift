@@ -64,7 +64,7 @@ final class LoggingSessionManager {
             frequency: frequency,
             mode: mode,
             activationType: activationType,
-            parkReference: parkReference,
+            parkReference: parkReference.flatMap { ParkReference.sanitizeMulti($0) },
             sotaReference: sotaReference,
             myGrid: myGrid
         )
@@ -298,7 +298,7 @@ final class LoggingSessionManager {
             return
         }
 
-        session.parkReference = parkReference?.uppercased()
+        session.parkReference = parkReference.flatMap { ParkReference.sanitizeMulti($0) }
         try? modelContext.save()
 
         // Restart spot comments polling with new park reference

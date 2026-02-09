@@ -198,8 +198,9 @@ class ImportService: ObservableObject {
             frequency: record.frequency, timestamp: timestamp,
             rstSent: record.rstSent, rstReceived: record.rstReceived,
             myCallsign: record.myCallsign ?? myCallsign, myGrid: record.myGridsquare,
-            theirGrid: record.gridsquare, parkReference: record.mySigInfo,
-            theirParkReference: record.sigInfo,
+            theirGrid: record.gridsquare,
+            parkReference: record.mySigInfo.flatMap { ParkReference.sanitizeMulti($0) },
+            theirParkReference: record.sigInfo.flatMap { ParkReference.sanitize($0) },
             notes: record.comment, importSource: source, rawADIF: record.rawADIF
         )
     }

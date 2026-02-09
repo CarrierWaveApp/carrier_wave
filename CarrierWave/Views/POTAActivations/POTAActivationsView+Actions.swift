@@ -393,10 +393,11 @@ extension POTAActivationsContentView {
     func saveMetadataEdit(
         _ result: ActivationMetadataEditResult, for activation: POTAActivation
     ) {
-        let parkRef = result.newParkReference ?? activation.parkReference
+        let sanitizedNewPark = result.newParkReference.flatMap { ParkReference.sanitizeMulti($0) }
+        let parkRef = sanitizedNewPark ?? activation.parkReference
 
         // Handle park reference change
-        if let newPark = result.newParkReference {
+        if let newPark = sanitizedNewPark {
             for qso in activation.qsos {
                 qso.parkReference = newPark
                 let potaPresence = qso.potaPresenceRecords()

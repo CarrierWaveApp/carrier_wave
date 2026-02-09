@@ -229,9 +229,12 @@ actor QSOProcessingActor {
             existing.rstReceived = existing.rstReceived.nonEmpty ?? fetched.rstReceived
             existing.myGrid = existing.myGrid.nonEmpty ?? fetched.myGrid
             existing.theirGrid = existing.theirGrid.nonEmpty ?? fetched.theirGrid
-            existing.parkReference = existing.parkReference.nonEmpty ?? fetched.parkReference
+            existing.parkReference =
+                existing.parkReference.nonEmpty
+                    ?? fetched.parkReference.flatMap { ParkReference.sanitizeMulti($0) }
             existing.theirParkReference =
-                existing.theirParkReference.nonEmpty ?? fetched.theirParkReference
+                existing.theirParkReference.nonEmpty
+                    ?? fetched.theirParkReference.flatMap { ParkReference.sanitize($0) }
             existing.notes = existing.notes.nonEmpty ?? fetched.notes
             existing.rawADIF = existing.rawADIF.nonEmpty ?? fetched.rawADIF
             existing.name = existing.name.nonEmpty ?? fetched.name
