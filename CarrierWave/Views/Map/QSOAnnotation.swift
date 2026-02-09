@@ -11,6 +11,14 @@ struct QSOAnnotation: Identifiable, Hashable {
     let qsoCount: Int
     let callsigns: [String]
     let mostRecentDate: Date
+    /// Park references associated with QSOs in this cluster
+    let parkReferences: Set<String>
+    /// Activation weather conditions (from ActivationMetadata)
+    let weather: String?
+    /// Activation solar conditions (from ActivationMetadata)
+    let solarConditions: String?
+    /// Average CW speed from RBN spots (from ActivationMetadata)
+    let averageWPM: Int?
 
     /// Display title showing grid and count
     var displayTitle: String {
@@ -64,10 +72,14 @@ struct QSOArc: Identifiable {
         let lon2 = to.longitude * .pi / 180
 
         // Angular distance between points
-        let angularDist = 2 * asin(sqrt(
-            pow(sin((lat1 - lat2) / 2), 2) +
-                cos(lat1) * cos(lat2) * pow(sin((lon1 - lon2) / 2), 2)
-        ))
+        let angularDist =
+            2
+                * asin(
+                    sqrt(
+                        pow(sin((lat1 - lat2) / 2), 2) + cos(lat1) * cos(lat2)
+                            * pow(sin((lon1 - lon2) / 2), 2)
+                    )
+                )
 
         // Skip if points are too close
         guard angularDist > 0.001 else {

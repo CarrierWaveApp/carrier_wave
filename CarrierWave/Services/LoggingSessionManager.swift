@@ -114,7 +114,11 @@ final class LoggingSessionManager {
         stopAutoSpotTimer()
 
         // Save spot comments to session before clearing
-        session.spotComments = spotCommentsService.comments
+        let comments = spotCommentsService.comments
+        session.spotComments = comments
+
+        // Persist average WPM to activation metadata if this is a POTA session with RBN data
+        saveAverageWPM(from: comments, session: session)
 
         // Stop spot comments polling
         spotCommentsService.stopPolling()
@@ -865,6 +869,37 @@ final class LoggingSessionManager {
             (try? KeychainHelper.shared.readString(for: KeychainHelper.Keys.potaUsername)) != nil
                 && (try? KeychainHelper.shared.readString(for: KeychainHelper.Keys.potaPassword)) != nil
         lofiConfigured = UserDefaults.standard.bool(forKey: "lofi.deviceLinked")
+    }
+
+    /// Save average WPM from RBN spot comments to ActivationMetadata
+    private func saveAverageWPM(from comments: [POTASpotComment], session: LoggingSession) {
+        guard let parkRef = session.parkReference, !parkRef.isEmpty else {
+            return
+        }
+
+        let wpms = comments.compactMap(\.wpm)
+        guard !wpms.isEmpty else {
+            return
+        }
+
+        let avgWPM = wpms.reduce(0, +) / wpms.count
+
+        var calendar = Calendar.current
+        calendar.timeZone = TimeZone(identifier: "UTC")!
+        let date = calendar.startOfDay(for: session.startedAt)
+
+        let descriptor = FetchDescriptor<ActivationMetadata>()
+        let allMetadata = (try? modelContext.fetch(descriptor)) ?? []
+        let existing = allMetadata.first { $0.parkReference == parkRef && $0.date == date }
+
+        if let existing {
+            existing.averageWPM = avgWPM
+        } else {
+            let metadata = ActivationMetadata(
+                parkReference: parkRef, date: date, averageWPM: avgWPM
+            )
+            modelContext.insert(metadata)
+        }
     }
 
     private func markForUpload(_ qso: QSO) {

@@ -193,6 +193,8 @@ struct MapFilterSheet: View {
 // MARK: - QSOCalloutView
 
 struct QSOCalloutView: View {
+    // MARK: Internal
+
     let annotation: QSOAnnotation
 
     var body: some View {
@@ -210,9 +212,52 @@ struct QSOCalloutView: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
             }
+
+            if hasActivationMetadata {
+                Divider()
+                activationMetadataSection
+            }
         }
         .padding(8)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8))
+    }
+
+    // MARK: Private
+
+    private var hasActivationMetadata: Bool {
+        !annotation.parkReferences.isEmpty
+            && (annotation.weather != nil || annotation.solarConditions != nil
+                || annotation.averageWPM != nil)
+    }
+
+    private var activationMetadataSection: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            ForEach(Array(annotation.parkReferences.sorted()), id: \.self) { park in
+                Label(park, systemImage: "leaf")
+                    .font(.caption)
+                    .foregroundStyle(.green)
+            }
+
+            if let wpm = annotation.averageWPM {
+                Label("\(wpm) WPM avg", systemImage: "gauge.medium")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            if let weather = annotation.weather, !weather.isEmpty {
+                Label(weather, systemImage: "cloud")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+
+            if let solar = annotation.solarConditions, !solar.isEmpty {
+                Label(solar, systemImage: "sun.max")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+        }
     }
 }
 

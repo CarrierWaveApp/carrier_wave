@@ -15,6 +15,7 @@ struct ActivationMapView: View {
 
     let activation: POTAActivation
     let parkName: String?
+    var metadata: ActivationMetadata?
 
     var body: some View {
         ZStack {
@@ -190,6 +191,12 @@ struct ActivationMapView: View {
                 activationStatRow(
                     label: "W/mi",
                     value: String(format: "%.2f", wpm)
+                )
+            }
+            if let wpm = metadata?.averageWPM {
+                activationStatRow(
+                    label: "WPM",
+                    value: "\(wpm)"
                 )
             }
         }

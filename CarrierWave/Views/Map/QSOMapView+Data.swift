@@ -2,6 +2,16 @@ import CarrierWaveCore
 import CoreLocation
 import Foundation
 
+// MARK: - ResolvedAnnotationMetadata
+
+/// Resolved activation metadata for a map annotation cluster
+struct ResolvedAnnotationMetadata {
+    var parkRefs: Set<String> = []
+    var weather: String?
+    var solar: String?
+    var wpm: Int?
+}
+
 // MARK: - QSOMapView Data Helpers
 
 private let kmToMiles = 0.621371
@@ -57,18 +67,64 @@ extension QSOMapView {
     /// Compute annotations from snapshots
     static func computeAnnotations(
         from snapshots: [MapQSOSnapshot],
-        showIndividual: Bool
+        showIndividual: Bool,
+        metadataByKey: [String: MapActivationMetadata] = [:]
     ) -> [QSOAnnotation] {
         if showIndividual {
-            computeIndividualAnnotations(from: snapshots)
+            computeIndividualAnnotations(from: snapshots, metadataByKey: metadataByKey)
         } else {
-            computeClusteredAnnotations(from: snapshots)
+            computeClusteredAnnotations(from: snapshots, metadataByKey: metadataByKey)
         }
+    }
+
+    /// Look up activation metadata for a set of snapshots, merging results
+    private static func resolveMetadata(
+        for snapshots: [MapQSOSnapshot],
+        metadataByKey: [String: MapActivationMetadata]
+    ) -> ResolvedAnnotationMetadata {
+        guard !metadataByKey.isEmpty else {
+            let parks = Set(snapshots.compactMap(\.parkReference))
+            return ResolvedAnnotationMetadata(parkRefs: parks)
+        }
+
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.timeZone = TimeZone(identifier: "UTC")
+
+        var parkRefs = Set<String>()
+        var weather: String?
+        var solar: String?
+        var wpms: [Int] = []
+
+        for snapshot in snapshots {
+            if let park = snapshot.parkReference {
+                parkRefs.insert(park)
+                let dateStr = formatter.string(from: snapshot.timestamp)
+                let key = "\(park)|\(dateStr)"
+                if let meta = metadataByKey[key] {
+                    if weather == nil, let weatherVal = meta.weather, !weatherVal.isEmpty {
+                        weather = weatherVal
+                    }
+                    if solar == nil, let solarVal = meta.solarConditions, !solarVal.isEmpty {
+                        solar = solarVal
+                    }
+                    if let wpm = meta.averageWPM {
+                        wpms.append(wpm)
+                    }
+                }
+            }
+        }
+
+        let avgWPM = wpms.isEmpty ? nil : wpms.reduce(0, +) / wpms.count
+        return ResolvedAnnotationMetadata(
+            parkRefs: parkRefs, weather: weather, solar: solar, wpm: avgWPM
+        )
     }
 
     /// Create individual annotations for each QSO
     private static func computeIndividualAnnotations(
-        from snapshots: [MapQSOSnapshot]
+        from snapshots: [MapQSOSnapshot],
+        metadataByKey: [String: MapActivationMetadata]
     ) -> [QSOAnnotation] {
         snapshots.compactMap { snapshot -> QSOAnnotation? in
             guard let grid = snapshot.theirGrid, grid.count >= 4,
@@ -77,20 +133,27 @@ extension QSOMapView {
                 return nil
             }
 
+            let meta = resolveMetadata(for: [snapshot], metadataByKey: metadataByKey)
+
             return QSOAnnotation(
                 id: snapshot.id.uuidString,
                 coordinate: coordinate,
                 gridSquare: String(grid.prefix(4)).uppercased(),
                 qsoCount: 1,
                 callsigns: [snapshot.callsign],
-                mostRecentDate: snapshot.timestamp
+                mostRecentDate: snapshot.timestamp,
+                parkReferences: meta.parkRefs,
+                weather: meta.weather,
+                solarConditions: meta.solar,
+                averageWPM: meta.wpm
             )
         }
     }
 
     /// Create clustered annotations grouped by 4-char grid
     private static func computeClusteredAnnotations(
-        from snapshots: [MapQSOSnapshot]
+        from snapshots: [MapQSOSnapshot],
+        metadataByKey: [String: MapActivationMetadata]
     ) -> [QSOAnnotation] {
         var gridGroups: [String: [MapQSOSnapshot]] = [:]
 
@@ -109,6 +172,7 @@ extension QSOMapView {
 
             let callsigns = snapshots.map(\.callsign).sorted()
             let mostRecent = snapshots.map(\.timestamp).max() ?? Date()
+            let meta = resolveMetadata(for: snapshots, metadataByKey: metadataByKey)
 
             return QSOAnnotation(
                 id: gridKey,
@@ -116,7 +180,11 @@ extension QSOMapView {
                 gridSquare: gridKey,
                 qsoCount: snapshots.count,
                 callsigns: callsigns,
-                mostRecentDate: mostRecent
+                mostRecentDate: mostRecent,
+                parkReferences: meta.parkRefs,
+                weather: meta.weather,
+                solarConditions: meta.solar,
+                averageWPM: meta.wpm
             )
         }
     }

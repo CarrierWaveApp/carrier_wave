@@ -49,6 +49,14 @@ struct ActivationLabel: View {
                         .background(Color.purple.opacity(0.15))
                         .cornerRadius(4)
                 }
+                if let wpm = metadata?.averageWPM {
+                    Text("\(wpm) WPM")
+                        .font(.caption)
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 1)
+                        .background(Color.blue.opacity(0.15))
+                        .cornerRadius(4)
+                }
                 if let weather = metadata?.weather, !weather.isEmpty {
                     Label(weather, systemImage: "cloud")
                         .font(.caption)

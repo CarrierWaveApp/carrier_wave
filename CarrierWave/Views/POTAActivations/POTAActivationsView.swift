@@ -181,7 +181,8 @@ struct POTAActivationsContentView: View {
             NavigationStack {
                 ActivationMapView(
                     activation: activation,
-                    parkName: parkName(for: activation.parkReference)
+                    parkName: parkName(for: activation.parkReference),
+                    metadata: metadata(for: activation)
                 )
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {

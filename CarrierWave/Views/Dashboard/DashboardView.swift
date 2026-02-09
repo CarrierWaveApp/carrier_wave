@@ -76,10 +76,6 @@ struct DashboardView: View {
 
     let aliasService = CallsignAliasService.shared
 
-    var importService: ImportService {
-        ImportService(modelContext: modelContext)
-    }
-
     var statsGridColumns: [GridItem] {
         if horizontalSizeClass == .regular {
             // iPad: 6 columns (all stats in one row)
@@ -128,6 +124,7 @@ struct DashboardView: View {
                 await checkForUnconfiguredCallsigns()
                 await checkForMismarkedPOTAPresence()
                 await checkForTwoferDuplicates()
+                await backfillWPMIfNeeded()
             }
             .onChange(of: syncService.lastSyncDate) { _, _ in
                 // Recompute stats after sync completes

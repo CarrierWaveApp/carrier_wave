@@ -422,4 +422,27 @@ extension DashboardView {
             print("Failed to repair two-fer duplicates: \(error)")
         }
     }
+
+    // MARK: - WPM Backfill
+
+    private static let wpmBackfillKey = "wpmBackfillCompleted"
+
+    /// One-time backfill of average WPM from stored spot comments into ActivationMetadata.
+    /// Runs silently on background thread, only once.
+    func backfillWPMIfNeeded() async {
+        guard !UserDefaults.standard.bool(forKey: Self.wpmBackfillKey) else {
+            return
+        }
+
+        let service = WPMBackfillService(container: modelContext.container)
+        do {
+            let result = try await service.backfill()
+            if result.metadataUpdated > 0 {
+                print("WPM backfill: updated \(result.metadataUpdated) activation metadata records")
+            }
+            UserDefaults.standard.set(true, forKey: Self.wpmBackfillKey)
+        } catch {
+            print("WPM backfill failed: \(error)")
+        }
+    }
 }

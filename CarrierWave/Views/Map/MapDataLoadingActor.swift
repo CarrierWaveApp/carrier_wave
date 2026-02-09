@@ -33,6 +33,15 @@ struct MapLoadingProgress: Sendable {
     let phase: String
 }
 
+// MARK: - MapActivationMetadata
+
+/// Sendable snapshot of activation metadata for map display
+struct MapActivationMetadata: Sendable {
+    let weather: String?
+    let solarConditions: String?
+    let averageWPM: Int?
+}
+
 // MARK: - MapLoadedData
 
 /// All data needed for the map view, computed on background thread
@@ -43,6 +52,8 @@ struct MapLoadedData: Sendable {
     let availableModes: [String]
     let availableParks: [String]
     let earliestDate: Date?
+    /// Activation metadata keyed by "parkReference|yyyy-MM-dd"
+    let metadataByKey: [String: MapActivationMetadata]
 }
 
 // MARK: - MapDataLoadingActor
@@ -68,6 +79,9 @@ actor MapDataLoadingActor {
 
         onProgress(MapLoadingProgress(loaded: 0, total: totalCount, phase: "Loading QSOs..."))
 
+        // Fetch activation metadata for map callouts
+        let activationMetadata = fetchActivationMetadata(context: context)
+
         if totalCount == 0 {
             return MapLoadedData(
                 snapshots: [],
@@ -75,7 +89,8 @@ actor MapDataLoadingActor {
                 availableBands: [],
                 availableModes: [],
                 availableParks: [],
-                earliestDate: nil
+                earliestDate: nil,
+                metadataByKey: activationMetadata
             )
         }
 
@@ -89,7 +104,7 @@ actor MapDataLoadingActor {
         )
 
         // Sort and return filter options
-        return buildLoadedData(from: result, totalCount: totalCount)
+        return buildLoadedData(from: result, totalCount: totalCount, metadata: activationMetadata)
     }
 
     // MARK: Private
@@ -196,7 +211,11 @@ actor MapDataLoadingActor {
     }
 
     /// Build final MapLoadedData from fetch result
-    private func buildLoadedData(from result: FetchResult, totalCount: Int) -> MapLoadedData {
+    private func buildLoadedData(
+        from result: FetchResult,
+        totalCount: Int,
+        metadata: [String: MapActivationMetadata]
+    ) -> MapLoadedData {
         let sortedBands = Array(result.bands)
             .filter { !Self.excludedBands.contains($0.uppercased()) }
             .sorted { band1, band2 in
@@ -215,7 +234,38 @@ actor MapDataLoadingActor {
             availableBands: sortedBands,
             availableModes: sortedModes,
             availableParks: Array(result.parks).sorted(),
-            earliestDate: result.earliestDate
+            earliestDate: result.earliestDate,
+            metadataByKey: metadata
         )
+    }
+
+    /// Fetch all ActivationMetadata and convert to Sendable snapshots
+    private func fetchActivationMetadata(
+        context: ModelContext
+    ) -> [String: MapActivationMetadata] {
+        let descriptor = FetchDescriptor<ActivationMetadata>()
+        let allMetadata = (try? context.fetch(descriptor)) ?? []
+
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.timeZone = TimeZone(identifier: "UTC")
+
+        var dict: [String: MapActivationMetadata] = [:]
+        for item in allMetadata {
+            let hasData =
+                item.weather != nil || item.solarConditions != nil
+                    || item.averageWPM != nil
+            guard hasData else {
+                continue
+            }
+            let dateStr = formatter.string(from: item.date)
+            let key = "\(item.parkReference)|\(dateStr)"
+            dict[key] = MapActivationMetadata(
+                weather: item.weather,
+                solarConditions: item.solarConditions,
+                averageWPM: item.averageWPM
+            )
+        }
+        return dict
     }
 }

@@ -141,6 +141,7 @@ Pure logic library that can be tested without iOS Simulator. Run tests with `mak
 | `SyncService+Activity.swift` | Hook activity detection into sync flow |
 | `ActivityFeedSyncService.swift` | Sync activity feed from server |
 | `POTAPresenceRepairService.swift` | Detect and fix incorrectly marked POTA service presence |
+| `WPMBackfillService.swift` | One-time backfill of average WPM from stored spot comments into ActivationMetadata |
 | `TwoferDuplicateRepairService.swift` | Detect and merge duplicate QSOs from two-fer park reference mismatches |
 | `CWError.swift` | CW transcription error types |
 | `CWAudioCapture.swift` | AVAudioEngine microphone capture for CW decoding |

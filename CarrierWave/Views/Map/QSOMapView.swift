@@ -120,6 +120,9 @@ struct QSOMapView: View {
     @State private var cachedAvailableParks: [String] = []
     @State private var cachedEarliestQSODate: Date?
 
+    /// Activation metadata for callout display
+    @State private var cachedMetadataByKey: [String: MapActivationMetadata] = [:]
+
     // Additional cached values to avoid computed property access in view body
     @State private var cachedFilteredSnapshotCount: Int = 0
     @State private var cachedIsLimited: Bool = false
@@ -141,7 +144,9 @@ struct QSOMapView: View {
     /// Compute annotations from displayed snapshots
     private var annotations: [QSOAnnotation] {
         Self.computeAnnotations(
-            from: displayedSnapshots, showIndividual: filterState.showIndividualQSOs
+            from: displayedSnapshots,
+            showIndividual: filterState.showIndividualQSOs,
+            metadataByKey: cachedMetadataByKey
         )
     }
 
@@ -301,6 +306,7 @@ struct QSOMapView: View {
             cachedAvailableModes = data.availableModes
             cachedAvailableParks = data.availableParks
             cachedEarliestQSODate = data.earliestDate
+            cachedMetadataByKey = data.metadataByKey
 
             updateCachedMapData()
             hasLoadedInitialData = true

@@ -18,7 +18,8 @@ final class ActivationMetadata {
         title: String? = nil,
         watts: Int? = nil,
         weather: String? = nil,
-        solarConditions: String? = nil
+        solarConditions: String? = nil,
+        averageWPM: Int? = nil
     ) {
         self.parkReference = parkReference
         // Normalize to start of day in UTC
@@ -29,6 +30,7 @@ final class ActivationMetadata {
         self.watts = watts
         self.weather = weather
         self.solarConditions = solarConditions
+        self.averageWPM = averageWPM
     }
 
     // MARK: Internal
@@ -40,4 +42,6 @@ final class ActivationMetadata {
     var watts: Int?
     var weather: String?
     var solarConditions: String?
+    /// Average CW speed from RBN spots during activation
+    var averageWPM: Int?
 }
