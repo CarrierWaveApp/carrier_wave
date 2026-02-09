@@ -62,7 +62,11 @@ struct LogsListContentView: View {
                     }
                 } else {
                     ForEach(filteredQSOs) { qso in
-                        QSORow(qso: qso, serviceConfig: serviceConfig)
+                        NavigationLink {
+                            QSODetailView(qso: qso, serviceConfig: serviceConfig)
+                        } label: {
+                            QSORow(qso: qso, serviceConfig: serviceConfig)
+                        }
                     }
                     .onDelete(perform: deleteQSOs)
 

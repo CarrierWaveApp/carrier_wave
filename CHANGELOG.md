@@ -5,6 +5,7 @@ All notable changes to Carrier Wave will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Add QSO detail view — tap any QSO in the Logs tab to see all metadata, sync status, notes, and source info (CAR-53)
 - Show average CW speed from RBN spots in spot comments sheet during POTA activations (CAR-51)
 - Collapse consecutive RBN spots in spot comments list into expandable groups to keep human comments visible (CAR-52)
 - Warn when ending a POTA session during maintenance window (2330-0400 UTC) that uploads are unavailable, and suggest uploading later from the POTA Activations tab (CAR-49)

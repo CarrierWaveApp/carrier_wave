@@ -249,6 +249,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `LogsContainerView.swift` | Container with segmented picker for QSOs and POTA Uploads |
 | `LogsListView.swift` | Searchable/filterable QSO list content |
 | `LogsListHelperViews.swift` | Helper views (QueryWarningBanner, QueryHelpSheet, QSORow, ServicePresenceBadge) |
+| `QSODetailView.swift` | Read-only QSO detail view showing all metadata, sync status, and source info |
 
 ## Views - POTA Activations (`CarrierWave/Views/POTAActivations/`)
 | File | Purpose |
