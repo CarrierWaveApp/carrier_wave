@@ -347,12 +347,12 @@ enum BandPlan {
             minimumLicense: .technician, notes: "Tech CW only"
         ),
         BandSegment(
-            band: "10m", startMHz: 28.300, endMHz: 28.500, modes: ["SSB", "PHONE"],
-            minimumLicense: .general, notes: "Phone"
+            band: "10m", startMHz: 28.300, endMHz: 28.500, modes: ["CW", "SSB", "PHONE"],
+            minimumLicense: .general, notes: "CW/Phone"
         ),
         BandSegment(
-            band: "10m", startMHz: 28.300, endMHz: 28.500, modes: ["SSB", "PHONE"],
-            minimumLicense: .technician, notes: "Tech Phone"
+            band: "10m", startMHz: 28.300, endMHz: 28.500, modes: ["CW", "SSB", "PHONE"],
+            minimumLicense: .technician, notes: "Tech CW/Phone"
         ),
 
         // VHF/UHF (Technician+ full privileges)

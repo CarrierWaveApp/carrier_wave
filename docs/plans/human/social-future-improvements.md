@@ -5,7 +5,7 @@
 
 These features were identified during the initial Social Activity Feed implementation but deferred to keep scope manageable.
 
-## 1. Friend Invite Links
+## 1. Friend Invite Links ✅ DONE
 
 **Problem:** API supports invite links (`GET /v1/friends/invite-link`) but no UI to generate or share them.
 
@@ -19,7 +19,7 @@ These features were identified during the initial Social Activity Feed implement
 
 ---
 
-## 2. Friend Profile View
+## 2. Friend Profile View ✅ DONE
 
 **Problem:** Design mentioned FriendProfileView for viewing a friend's stats and activity, but wasn't implemented.
 

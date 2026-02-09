@@ -371,4 +371,5 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `QuickEntryParserIntegrationTests.swift` | Quick entry parser integration tests (full parsing, token preview) |
 | `Helpers/QSOFactory.swift` | Synthetic QSO generator for testing (duplicates, metadata, edge cases) |
 | `Helpers/TestModelContainer.swift` | Shared test infrastructure for SwiftData tests |
+| `BandPlanServiceTests.swift` | Band plan validation tests (license class privileges) |
 | `PerformanceTests/QSOStatisticsPerformanceTests.swift` | Performance regression tests (50k/500k QSOs) |

@@ -328,10 +328,22 @@ I'll occasionally store human-generated plans/bugs/etc in `docs/plans/human` and
 
 **NEVER use beads.** Do not invoke any `beads:*` skills. This project does not use beads.
 
+**Finding issues:**
+When the user asks for the next issue or work to do, query Linear for backlog issues:
+```bash
+linear issue list --state backlog --all-assignees --sort priority --team CAR --no-pager --limit 20
+```
+- Use `--state backlog` for unstarted work (NOT `--status "Todo"` — that flag doesn't exist)
+- Use `--all-states` to see everything including Done
+- `--no-pager` works on `issue list` but NOT on `issue update` or other commands
+- View details with `linear issue view CAR-XX --no-comments --no-pager`
+- Also check `docs/plans/human/` and `docs/bugs/` for human-written plans/bugs not yet in Linear
+
 **Workflow:**
 - At the start of a task, ask the user if there is a relevant Linear issue to associate with
 - Include the issue ID (e.g., `CAR-45`) in commit messages so Linear links them automatically
 - After committing, post a summarized description of the changes as a comment on the Linear issue using `linear issue comment add <ID> -b "<summary>"`
+- When work is done, mark the issue: `linear issue update CAR-XX -s "Done"`
 
 ## Git Workflow
 

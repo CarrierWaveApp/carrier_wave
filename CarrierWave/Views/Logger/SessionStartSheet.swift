@@ -269,7 +269,8 @@ struct SessionStartSheet: View {
             Text("Frequency")
         } footer: {
             Text(
-                "Enter as MHz (14.060) or kHz (14060). You can also type \"14060 kHz\" or \"14.060 MHz\"."
+                "Enter as MHz (14.060), kHz (14060), or dot-separated (14.030.50)."
+                    + " You can also type \"14060 kHz\" or \"14.060 MHz\"."
             )
         }
     }

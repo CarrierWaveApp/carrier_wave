@@ -7,6 +7,8 @@ All notable changes to Carrier Wave will be documented in this file.
 ### Fixed
 - Suppress "operator nearby" frequency warning when the nearby spot is the station being worked (e.g., tapping a POTA spot to hunt)
 - Fix activation type resetting to Casual when scrolling the session start sheet (CAR-46)
+- Fix 10m band plan missing CW mode in phone segment (28.300-28.500 MHz) for Technician and General licenses (CAR-38)
+- Support dot-separated frequency notation (e.g., 14.030.50) for sub-kHz precision entry (CAR-40)
 
 ## [1.25.4] - 2026-02-08
 
