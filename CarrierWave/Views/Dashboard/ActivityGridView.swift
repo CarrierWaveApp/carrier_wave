@@ -88,7 +88,7 @@ private struct ActivityGridContent: View {
                     ZStack(alignment: .topLeading) {
                         ForEach(labelPositions, id: \.column) { item in
                             Text(item.label)
-                                .font(.system(size: 10))
+                                .font(.system(size: isCompactVertical ? 8 : 10))
                                 .foregroundStyle(.secondary)
                                 .fixedSize()
                                 .offset(x: CGFloat(item.column) * columnWidth)
@@ -109,11 +109,9 @@ private struct ActivityGridContent: View {
 
     // MARK: Private
 
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
+
     private let rows = 7
-    private let spacing: CGFloat = 2
-    private let cellSize: CGFloat = 14
-    private let monthLabelHeight: CGFloat = 14
-    private let gridToLabelSpacing: CGFloat = 4
     private let minColumns = 26
 
     private let calendar = Calendar.current
@@ -123,6 +121,26 @@ private struct ActivityGridContent: View {
         formatter.dateFormat = "MMM d, yyyy"
         return formatter
     }()
+
+    private var isCompactVertical: Bool {
+        verticalSizeClass == .compact
+    }
+
+    private var cellSize: CGFloat {
+        isCompactVertical ? 8 : 14
+    }
+
+    private var spacing: CGFloat {
+        isCompactVertical ? 1 : 2
+    }
+
+    private var monthLabelHeight: CGFloat {
+        isCompactVertical ? 10 : 14
+    }
+
+    private var gridToLabelSpacing: CGFloat {
+        isCompactVertical ? 2 : 4
+    }
 
     private var maxCount: Int {
         activityData.values.max() ?? 1
