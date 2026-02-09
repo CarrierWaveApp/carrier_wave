@@ -4,6 +4,10 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- Fix LoTW first sync making 25+ unnecessary API requests by trying single request first, falling back to adaptive windowing only on rate limit (CAR-44)
+- Fix bug report showing "Not configured" for QRZ, LoFi, LoTW, and HAMRS services
+
 ## [1.26.1] - 2026-02-09
 
 ### Changed

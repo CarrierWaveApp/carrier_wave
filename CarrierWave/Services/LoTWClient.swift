@@ -322,25 +322,49 @@ final class LoTWClient {
     }
 
     /// Fetch QSOs for a single callsign (or all if nil)
+    /// Tries a single request first; falls back to adaptive windowing on rate limit.
     private func fetchQSOsForCallsign(
         _ callsign: String?,
         credentials: (username: String, password: String),
         startDate: Date,
         endDate: Date
     ) async throws -> LoTWResponse {
-        // If date range is small (< 30 days), just do a single request
         let daysBetween =
             Calendar.current.dateComponents([.day], from: startDate, to: endDate).day ?? 0
+
+        // Small range — single request is always fine
         if daysBetween <= 30 {
             return try await fetchQSOsForDateRange(
                 credentials: credentials, startDate: startDate, endDate: nil, ownCall: callsign
             )
         }
 
-        // For larger ranges, use adaptive windowing
-        return try await fetchQSOsWithAdaptiveWindowing(
-            credentials: credentials, startDate: startDate, endDate: endDate, ownCall: callsign
+        // Larger range — try single request first, most logs fit in one response
+        let debugLog = SyncDebugLog.shared
+        debugLog.info(
+            "Trying single request for \(daysBetween)-day range before adaptive windowing",
+            service: .lotw
         )
+        do {
+            return try await fetchQSOsForDateRange(
+                credentials: credentials, startDate: startDate, endDate: nil, ownCall: callsign
+            )
+        } catch let error as LoTWError {
+            if case let .serviceError(message) = error, isRateLimitError(message) {
+                debugLog.info(
+                    "Single request rate-limited, falling back to adaptive windowing",
+                    service: .lotw
+                )
+                try await Task.sleep(nanoseconds: 5_000_000_000)
+                return try await fetchQSOsWithAdaptiveWindowing(
+                    credentials: credentials,
+                    startDate: startDate,
+                    endDate: endDate,
+                    ownCall: callsign
+                )
+            }
+            throw error
+        }
     }
 
     /// Check if response indicates authentication failure

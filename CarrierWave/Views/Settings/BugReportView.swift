@@ -6,7 +6,12 @@ import UIKit
 struct BugReportView: View {
     // MARK: Lifecycle
 
-    init(potaAuth: POTAAuthService, iCloudMonitor: ICloudMonitor) {
+    init(
+        syncService: SyncService? = nil,
+        potaAuth: POTAAuthService,
+        iCloudMonitor: ICloudMonitor
+    ) {
+        self.syncService = syncService
         self.potaAuth = potaAuth
         self.iCloudMonitor = iCloudMonitor
     }
@@ -61,11 +66,19 @@ struct BugReportView: View {
         currentCallsign: nil, previousCallsigns: []
     )
 
+    private let syncService: SyncService?
     private let potaAuth: POTAAuthService
     private let iCloudMonitor: ICloudMonitor
 
     private var service: BugReportService {
-        BugReportService(potaAuth: potaAuth, iCloudMonitor: iCloudMonitor)
+        BugReportService(
+            qrzClient: syncService?.qrzClient,
+            lofiClient: syncService?.lofiClient,
+            lotwClient: syncService?.lotwClient,
+            hamrsClient: syncService?.hamrsClient,
+            potaAuth: potaAuth,
+            iCloudMonitor: iCloudMonitor
+        )
     }
 
     private var deviceInfo: BugReportService.DeviceInfo {

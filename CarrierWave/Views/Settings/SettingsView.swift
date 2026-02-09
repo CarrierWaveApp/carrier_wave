@@ -206,7 +206,11 @@ struct SettingsMainView: View {
             content: { file in ShareSheet(activityItems: [file.url]) }
         )
         .sheet(isPresented: $showingBugReport) {
-            BugReportView(potaAuth: potaAuth, iCloudMonitor: iCloudMonitor)
+            BugReportView(
+                syncService: syncService,
+                potaAuth: potaAuth,
+                iCloudMonitor: iCloudMonitor
+            )
         }
         .fullScreenCover(isPresented: $showIntroTour) {
             IntroTourView(tourState: tourState)
