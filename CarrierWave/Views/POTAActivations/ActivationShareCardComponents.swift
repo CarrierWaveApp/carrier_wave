@@ -8,16 +8,12 @@ import SwiftUI
 
 struct ActivationShareCardHeader: View {
     var body: some View {
-        HStack {
-            Image(systemName: "tree.fill")
-                .font(.title2)
-            Text("CARRIER WAVE")
-                .font(.headline)
-                .fontWeight(.bold)
-        }
-        .foregroundStyle(.white)
-        .padding(.top, 24)
-        .padding(.bottom, 12)
+        Text("CARRIER WAVE")
+            .font(.headline)
+            .fontWeight(.bold)
+            .foregroundStyle(.white)
+            .padding(.top, 24)
+            .padding(.bottom, 12)
     }
 }
 
@@ -48,10 +44,14 @@ struct ActivationShareCardParkInfo: View {
 
     var body: some View {
         VStack(spacing: 4) {
-            Text(parkReference)
-                .font(.title2)
-                .fontWeight(.bold)
-                .foregroundStyle(.white)
+            HStack(spacing: 8) {
+                Image(systemName: "tree.fill")
+                    .font(.title3)
+                Text(parkReference)
+                    .font(.title2)
+                    .fontWeight(.bold)
+            }
+            .foregroundStyle(.white)
 
             if let name = parkName {
                 Text(name)

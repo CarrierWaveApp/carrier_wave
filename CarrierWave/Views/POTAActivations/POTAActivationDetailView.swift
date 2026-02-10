@@ -96,6 +96,8 @@ struct POTAActivationDetailView: View {
 
             statsRow
 
+            QSOTimelineView(qsos: activation.qsos)
+
             if hasMetadata {
                 metadataRow
             }

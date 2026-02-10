@@ -33,6 +33,8 @@ struct ActivationLabel: View {
                     .foregroundStyle(.primary)
                     .lineLimit(1)
             }
+            QSOTimelineView(qsos: activation.qsos, compact: true)
+
             HStack(spacing: 8) {
                 HStack(spacing: 4) {
                     Image(systemName: activation.displayIconName)

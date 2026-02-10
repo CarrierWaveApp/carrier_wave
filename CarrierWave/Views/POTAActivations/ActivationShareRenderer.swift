@@ -110,16 +110,11 @@ enum ActivationShareRenderer {
 
     @MainActor
     private static func renderToImage(_ view: some View) -> UIImage? {
-        // Wrap in ZStack with clear background to ensure transparency
-        let transparentView = ZStack {
-            Color.clear
-            view
-        }
-        .frame(width: 400, height: 600)
+        let wrappedView = view.frame(width: 400, height: 640)
 
-        let renderer = ImageRenderer(content: transparentView)
+        let renderer = ImageRenderer(content: wrappedView)
         renderer.scale = 2.0 // Retina scale for crisp edges
-        renderer.isOpaque = false // Preserve transparency for rounded corners
+        renderer.isOpaque = true // Square corners, no transparency needed
         return renderer.uiImage
     }
 

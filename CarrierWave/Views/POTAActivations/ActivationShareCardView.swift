@@ -22,9 +22,11 @@ struct ActivationShareCardView: View {
             mapSection
             parkInfoSection
             statsSection
+            ShareCardTimelineView(qsos: activation.qsos)
+                .padding(.top, 8)
             footer
         }
-        .frame(width: 400, height: 600)
+        .frame(width: 400, height: 640)
         .background(
             LinearGradient(
                 colors: [
@@ -36,7 +38,7 @@ struct ActivationShareCardView: View {
                 endPoint: .bottomTrailing
             )
         )
-        .clipShape(RoundedRectangle(cornerRadius: 24))
+        .clipShape(Rectangle())
     }
 
     // MARK: Private
@@ -228,9 +230,11 @@ struct ActivationShareCardForExport: View {
                 title: metadata?.title
             )
             exportStatsSection
+            ShareCardTimelineView(qsos: activation.qsos)
+                .padding(.top, 8)
             ActivationShareCardFooter(callsign: activation.callsign)
         }
-        .frame(width: 400, height: 600)
+        .frame(width: 400, height: 640)
         .background(
             LinearGradient(
                 colors: [
@@ -242,16 +246,14 @@ struct ActivationShareCardForExport: View {
                 endPoint: .bottomTrailing
             )
         )
-        .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+        .clipShape(Rectangle())
         .overlay(
-            RoundedRectangle(cornerRadius: cornerRadius)
+            Rectangle()
                 .stroke(Color(red: 0.12, green: 0.10, blue: 0.18), lineWidth: 2)
         )
     }
 
     // MARK: Private
-
-    private let cornerRadius: CGFloat = 24
 
     private var exportStatsSection: some View {
         let stats = ActivationStatsHelper.statistics(for: activation)

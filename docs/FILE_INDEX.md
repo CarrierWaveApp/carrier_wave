@@ -269,6 +269,8 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `POTAActivationDetailView.swift` | Full activation detail view with upload, jobs, QSO list |
 | `POTAActivationLabel.swift` | Shared activation label view (date, park, status, metadata) |
 | `POTAJobViews.swift` | POTA job display components (POTAJobRow, POTAJobDetailSheet) |
+| `QSOTimelineView.swift` | Horizontal timeline bar showing QSO timing during activations (compact + share card variants) |
+| `QSOTimelineLayout.swift` | Timeline layout engine: segments, gap detection, x-position computation, band colors |
 | `POTALogEntryRow.swift` | Individual POTA log entry display (legacy) |
 | `ActivationMetadataEditSheet.swift` | Edit activation metadata (title, park, watts, radio) after completion |
 | `ActivationShareCardView.swift` | Shareable activation card with map and stats |
