@@ -53,7 +53,9 @@ final class LoggingSessionManager {
         activationType: ActivationType = .casual,
         parkReference: String? = nil,
         sotaReference: String? = nil,
-        myGrid: String? = nil
+        myGrid: String? = nil,
+        power: Int? = nil,
+        myRig: String? = nil
     ) {
         // End any existing session first
         if let existing = activeSession {
@@ -68,7 +70,9 @@ final class LoggingSessionManager {
             activationType: activationType,
             parkReference: parkReference.flatMap { ParkReference.sanitizeMulti($0) },
             sotaReference: sotaReference,
-            myGrid: myGrid
+            myGrid: myGrid,
+            power: power,
+            myRig: myRig
         )
 
         modelContext.insert(session)
@@ -410,6 +414,8 @@ final class LoggingSessionManager {
             qth: qth,
             state: state,
             country: country,
+            power: session.power,
+            myRig: session.myRig,
             theirLicenseClass: theirLicenseClass
         )
 

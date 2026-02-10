@@ -26,6 +26,7 @@ struct FetchedQSO: Sendable {
     let state: String?
     let country: String?
     let power: Int?
+    let myRig: String?
     let sotaRef: String?
 
     // QRZ-specific
@@ -126,6 +127,7 @@ extension FetchedQSO {
             state: nil,
             country: nil,
             power: nil,
+            myRig: nil,
             sotaRef: nil,
             qrzLogId: qrz.qrzLogId,
             qrzConfirmed: qrz.qrzConfirmed,
@@ -158,6 +160,7 @@ extension FetchedQSO {
             state: nil,
             country: nil,
             power: nil,
+            myRig: nil,
             sotaRef: nil,
             qrzLogId: nil,
             qrzConfirmed: false,
@@ -200,6 +203,7 @@ extension FetchedQSO {
             state: lofi.their?.guess?.state,
             country: lofi.their?.guess?.country,
             power: nil,
+            myRig: nil,
             sotaRef: nil,
             qrzLogId: nil,
             qrzConfirmed: false,
@@ -240,6 +244,7 @@ extension FetchedQSO {
             state: qso.state,
             country: qso.country,
             power: qso.txPwr?.intValue,
+            myRig: nil,
             sotaRef: qso.sotaRef,
             qrzLogId: nil,
             qrzConfirmed: false,
@@ -272,6 +277,7 @@ extension FetchedQSO {
             state: lotw.state,
             country: lotw.country,
             power: nil,
+            myRig: nil,
             sotaRef: nil,
             qrzLogId: nil,
             qrzConfirmed: false,

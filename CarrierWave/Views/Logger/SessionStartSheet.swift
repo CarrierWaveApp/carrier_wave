@@ -19,11 +19,15 @@ struct SessionStartSheet: View {
     @State var parkReference = ""
     @State var sotaReference = ""
     @State var myGrid = ""
+    @State var powerText = ""
+    @State var selectedRadio: String?
 
     // Callsign prefix/suffix
     @State var callsignPrefix = ""
     @State var selectedSuffix: CallsignSuffix = .none
     @State var customSuffix = ""
+
+    @State var showRadioPicker = false
 
     /// The full constructed callsign (prefix/base/suffix)
     var fullCallsign: String {
@@ -51,12 +55,30 @@ struct SessionStartSheet: View {
         }
     }
 
+    var powerWarning: String? {
+        guard !powerText.isEmpty else {
+            return nil
+        }
+        guard let watts = Int(powerText) else {
+            return "Enter a whole number"
+        }
+        if watts <= 0 {
+            return "Power must be greater than 0"
+        }
+        if watts > 1_500 {
+            return "US maximum is 1,500W"
+        }
+        return nil
+    }
+
     var body: some View {
         NavigationStack {
             Form {
                 callsignSection
                 modeSection
                 frequencySection
+                powerSection
+                radioSection
                 activationSection
                 optionsSection
             }
@@ -69,6 +91,12 @@ struct SessionStartSheet: View {
                     myGrid = defaultGrid
                 }
                 selectedMode = defaultMode
+                if powerText.isEmpty, !defaultPower.isEmpty {
+                    powerText = defaultPower
+                }
+                if selectedRadio == nil, !defaultRadio.isEmpty {
+                    selectedRadio = defaultRadio
+                }
                 if let savedActivationType = ActivationType(rawValue: defaultActivationType) {
                     activationType = savedActivationType
                 }
@@ -101,6 +129,10 @@ struct SessionStartSheet: View {
                     frequency: $frequency
                 )
             }
+            .sheet(isPresented: $showRadioPicker) {
+                RadioPickerSheet(selection: $selectedRadio)
+                    .presentationDetents([.medium, .large])
+            }
             .navigationTitle("Start Session")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -123,6 +155,8 @@ struct SessionStartSheet: View {
 
     @AppStorage("loggerDefaultActivationType") private var defaultActivationType = "casual"
     @AppStorage("loggerDefaultParkReference") private var defaultParkReference = ""
+    @AppStorage("loggerDefaultPower") private var defaultPower = ""
+    @AppStorage("loggerDefaultRadio") private var defaultRadio = ""
 
     /// UI state
     @State private var showSavedConfirmation = false
@@ -152,6 +186,16 @@ struct SessionStartSheet: View {
 
     private var parsedFrequency: Double? {
         FrequencyFormatter.parse(frequency)
+    }
+
+    private var parsedPower: Int? {
+        guard !powerText.isEmpty else {
+            return nil
+        }
+        guard let watts = Int(powerText), watts > 0, watts <= 1_500 else {
+            return nil
+        }
+        return watts
     }
 
     // MARK: - Sections
@@ -202,16 +246,6 @@ struct SessionStartSheet: View {
         }
     }
 
-    private var activationSection: some View {
-        ActivationSectionView(
-            activationType: $activationType,
-            parkReference: $parkReference,
-            sotaReference: $sotaReference,
-            userGrid: myGrid.isEmpty ? defaultGrid : myGrid,
-            defaultCountry: "US"
-        )
-    }
-
     private var optionsSection: some View {
         Section {
             Button {
@@ -243,7 +277,9 @@ struct SessionStartSheet: View {
             activationType: activationType,
             parkReference: activationType == .pota ? parkReference.uppercased() : nil,
             sotaReference: activationType == .sota ? sotaReference.uppercased() : nil,
-            myGrid: myGrid.isEmpty ? nil : myGrid.uppercased()
+            myGrid: myGrid.isEmpty ? nil : myGrid.uppercased(),
+            power: parsedPower,
+            myRig: selectedRadio
         )
 
         onDismiss()
@@ -251,6 +287,8 @@ struct SessionStartSheet: View {
 
     private func saveDefaults() {
         defaultMode = selectedMode
+        defaultPower = powerText
+        defaultRadio = selectedRadio ?? ""
         if !myGrid.isEmpty {
             defaultGrid = myGrid.uppercased()
         }

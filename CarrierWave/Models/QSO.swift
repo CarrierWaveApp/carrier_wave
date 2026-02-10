@@ -29,6 +29,7 @@ final class QSO {
         state: String? = nil,
         country: String? = nil,
         power: Int? = nil,
+        myRig: String? = nil,
         sotaRef: String? = nil,
         qrzLogId: String? = nil,
         qrzConfirmed: Bool = false,
@@ -59,6 +60,7 @@ final class QSO {
         self.state = state
         self.country = country
         self.power = power
+        self.myRig = myRig
         self.sotaRef = sotaRef
         self.qrzLogId = qrzLogId
         self.qrzConfirmed = qrzConfirmed
@@ -94,6 +96,7 @@ final class QSO {
     var state: String?
     var country: String?
     var power: Int?
+    var myRig: String?
     var sotaRef: String?
 
     // QRZ sync tracking

@@ -55,7 +55,9 @@ final class LoggingSession {
         parkReference: String? = nil,
         sotaReference: String? = nil,
         myGrid: String? = nil,
-        notes: String? = nil
+        notes: String? = nil,
+        power: Int? = nil,
+        myRig: String? = nil
     ) {
         self.id = id
         self.myCallsign = myCallsign
@@ -67,6 +69,8 @@ final class LoggingSession {
         self.sotaReference = sotaReference
         self.myGrid = myGrid
         self.notes = notes
+        self.power = power
+        self.myRig = myRig
     }
 
     // MARK: Internal
@@ -160,6 +164,12 @@ final class LoggingSession {
 
     /// Operator's grid square
     var myGrid: String?
+
+    /// Transmit power in watts
+    var power: Int?
+
+    /// Radio/rig name (e.g., "Elecraft KX3")
+    var myRig: String?
 
     /// Session notes
     var notes: String?
@@ -292,9 +302,11 @@ final class LoggingSession {
         case "CW": cwFrequencies
         case "SSB",
              "USB",
-             "LSB": ssbFrequencies
+             "LSB":
+            ssbFrequencies
         case "FT8",
-             "FT4": ft8Frequencies
+             "FT4":
+            ft8Frequencies
         case "RTTY": rttyFrequencies
         case "AM": amFrequencies
         case "FM": fmFrequencies

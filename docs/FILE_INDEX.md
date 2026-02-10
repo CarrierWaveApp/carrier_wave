@@ -194,6 +194,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `SessionStartHelperViews.swift` | Helper views and validation for session start (CallsignBreakdown, ActivationSection, FrequencySuggestions) |
 | `LiveActivitySuggestionsView.swift` | Unified FrequencyBandView: static band frequencies + live POTA spots + nestled clear-frequency recommendations |
 | `BandPlanSheet.swift` | Interactive band plan reference with segments, license requirements, and activity frequencies |
+| `RadioPickerSheet.swift` | Radio/rig picker sheet with user-managed list and RadioStorage helper |
 | `ParkPickerSheet.swift` | Park search and nearby selection sheet |
 | `ParkEntryField.swift` | Enhanced park entry with search picker and shorthand |
 | `LoggerSettingsView.swift` | (Deprecated) Logger settings moved to main SettingsView |

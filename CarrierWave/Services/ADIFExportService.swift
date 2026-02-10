@@ -32,6 +32,7 @@ struct QSOExportSnapshot: Sendable {
         state = qso.state
         country = qso.country
         power = qso.power
+        myRig = qso.myRig
         sotaRef = qso.sotaRef
         dxcc = qso.dxcc
         qrzConfirmed = qso.qrzConfirmed
@@ -58,6 +59,7 @@ struct QSOExportSnapshot: Sendable {
     let state: String?
     let country: String?
     let power: Int?
+    let myRig: String?
     let sotaRef: String?
     let dxcc: Int?
     let qrzConfirmed: Bool
@@ -289,6 +291,9 @@ actor ADIFExportService {
         }
         if let power = snapshot.power {
             fields.append(formatField("TX_PWR", String(power)))
+        }
+        if let myRig = snapshot.myRig {
+            fields.append(formatField("MY_RIG", myRig))
         }
     }
 

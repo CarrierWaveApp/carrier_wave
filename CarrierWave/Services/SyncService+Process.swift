@@ -493,6 +493,7 @@ extension SyncService {
         existing.state = existing.state.nonEmpty ?? fetched.state
         existing.country = existing.country.nonEmpty ?? fetched.country
         existing.power = existing.power ?? fetched.power
+        existing.myRig = existing.myRig.nonEmpty ?? fetched.myRig
         existing.sotaRef = existing.sotaRef.nonEmpty ?? fetched.sotaRef
 
         // QRZ-specific: only update from QRZ source
@@ -534,6 +535,7 @@ extension SyncService {
         existing.state = fetched.state
         existing.country = fetched.country
         existing.power = fetched.power
+        existing.myRig = fetched.myRig
         existing.sotaRef = fetched.sotaRef
 
         // QRZ-specific
@@ -630,6 +632,7 @@ extension SyncService {
                 state: merged.state.nonEmpty ?? other.state,
                 country: merged.country.nonEmpty ?? other.country,
                 power: merged.power ?? other.power,
+                myRig: merged.myRig.nonEmpty ?? other.myRig,
                 sotaRef: merged.sotaRef.nonEmpty ?? other.sotaRef,
                 qrzLogId: merged.qrzLogId ?? other.qrzLogId,
                 qrzConfirmed: merged.qrzConfirmed || other.qrzConfirmed,
@@ -666,6 +669,7 @@ extension SyncService {
             state: fetched.state,
             country: fetched.country,
             power: fetched.power,
+            myRig: fetched.myRig,
             sotaRef: fetched.sotaRef,
             qrzLogId: fetched.qrzLogId,
             qrzConfirmed: fetched.qrzConfirmed,

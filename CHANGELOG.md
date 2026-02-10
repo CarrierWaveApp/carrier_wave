@@ -5,6 +5,8 @@ All notable changes to Carrier Wave will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Add radio (rig) selection to session start wizard with a growing user-managed list, saved as default, propagated to all QSOs, visible in QSO detail, and exported as MY_RIG in ADIF
+- Add transmit power (watts) field to session start wizard with 1,500W US max validation, saved as default, and automatically applied to all QSOs logged in the session
 - Add mode-aware frequency suggestions for all modes in session start wizard — FT8, FT4, RTTY, AM, and FM now show correct frequencies instead of defaulting to CW (CAR-56)
 - Add live "Active Now" section in session start showing POTA spots filtered by mode and license class, with clear-frequency recommendations based on ARRL band plan usage zones
 - Add band plan reference sheet accessible from session start frequency section, showing band segments, license requirements, and activity frequencies

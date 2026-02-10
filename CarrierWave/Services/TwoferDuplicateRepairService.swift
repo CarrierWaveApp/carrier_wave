@@ -117,48 +117,22 @@ actor TwoferDuplicateRepairService {
 
     /// Fill nil/empty fields in winner from loser
     private func absorbFields(from loser: QSO, into winner: QSO) {
-        if winner.rstSent == nil {
-            winner.rstSent = loser.rstSent
-        }
-        if winner.rstReceived == nil {
-            winner.rstReceived = loser.rstReceived
-        }
-        if winner.myGrid == nil {
-            winner.myGrid = loser.myGrid
-        }
-        if winner.theirGrid == nil {
-            winner.theirGrid = loser.theirGrid
-        }
-        if winner.notes == nil {
-            winner.notes = loser.notes
-        }
-        if winner.qrzLogId == nil {
-            winner.qrzLogId = loser.qrzLogId
-        }
-        if winner.rawADIF == nil {
-            winner.rawADIF = loser.rawADIF
-        }
-        if winner.frequency == nil {
-            winner.frequency = loser.frequency
-        }
-        if winner.name == nil {
-            winner.name = loser.name
-        }
-        if winner.qth == nil {
-            winner.qth = loser.qth
-        }
-        if winner.state == nil {
-            winner.state = loser.state
-        }
-        if winner.country == nil {
-            winner.country = loser.country
-        }
-        if winner.power == nil {
-            winner.power = loser.power
-        }
-        if winner.theirLicenseClass == nil {
-            winner.theirLicenseClass = loser.theirLicenseClass
-        }
+        // Fill nil fields from loser using nil-coalescing
+        winner.rstSent = winner.rstSent ?? loser.rstSent
+        winner.rstReceived = winner.rstReceived ?? loser.rstReceived
+        winner.myGrid = winner.myGrid ?? loser.myGrid
+        winner.theirGrid = winner.theirGrid ?? loser.theirGrid
+        winner.notes = winner.notes ?? loser.notes
+        winner.qrzLogId = winner.qrzLogId ?? loser.qrzLogId
+        winner.rawADIF = winner.rawADIF ?? loser.rawADIF
+        winner.frequency = winner.frequency ?? loser.frequency
+        winner.name = winner.name ?? loser.name
+        winner.qth = winner.qth ?? loser.qth
+        winner.state = winner.state ?? loser.state
+        winner.country = winner.country ?? loser.country
+        winner.power = winner.power ?? loser.power
+        winner.myRig = winner.myRig ?? loser.myRig
+        winner.theirLicenseClass = winner.theirLicenseClass ?? loser.theirLicenseClass
 
         // Absorb band if winner has empty band
         let winnerBand = winner.band.trimmingCharacters(in: .whitespaces)

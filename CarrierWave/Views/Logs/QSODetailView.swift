@@ -123,6 +123,10 @@ struct QSODetailView: View {
             if let power = qso.power {
                 detailRow("Power", "\(power)W")
             }
+
+            if let rig = qso.myRig {
+                detailRow("Radio", rig)
+            }
         }
     }
 
