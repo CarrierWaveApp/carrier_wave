@@ -4,6 +4,8 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.27.0] - 2026-02-09
+
 ### Added
 - Add radio (rig) selection to session start wizard with a growing user-managed list, saved as default, propagated to all QSOs, visible in QSO detail, and exported as MY_RIG in ADIF
 - Add transmit power (watts) field to session start wizard with 1,500W US max validation, saved as default, and automatically applied to all QSOs logged in the session
@@ -12,6 +14,11 @@ All notable changes to Carrier Wave will be documented in this file.
 - Add band plan reference sheet accessible from session start frequency section, showing band segments, license requirements, and activity frequencies
 - Add RTTY activity frequencies to band plan data
 - Add VHF/UHF band support (6m, 2m, 70cm) in frequency suggestions for FM mode
+
+### Changed
+- Enhance activation share card with RST-based colored dots on map (green/yellow/red matching the activation map), distance stats (avg/max), power, watts/mile, and radio info
+- Show radio/rig and power on activation detail view and activation map overlay
+- Add radio/rig selector to activation metadata edit sheet, applied to all QSOs in the activation
 
 ### Fixed
 - Fix LoTW first sync making 25+ unnecessary API requests by trying single request first, falling back to adaptive windowing only on rate limit (CAR-44)

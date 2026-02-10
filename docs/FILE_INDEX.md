@@ -270,12 +270,14 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `POTAActivationLabel.swift` | Shared activation label view (date, park, status, metadata) |
 | `POTAJobViews.swift` | POTA job display components (POTAJobRow, POTAJobDetailSheet) |
 | `POTALogEntryRow.swift` | Individual POTA log entry display (legacy) |
-| `ActivationMetadataEditSheet.swift` | Edit activation metadata (title, park, watts) after completion |
+| `ActivationMetadataEditSheet.swift` | Edit activation metadata (title, park, watts, radio) after completion |
 | `ActivationShareCardView.swift` | Shareable activation card with map and stats |
+| `ActivationShareCardComponents.swift` | Reusable component views for share cards (header, footer, stats, park info) |
 | `ActivationShareRenderer.swift` | Render activation card to UIImage for sharing |
 | `ADIFExportSheet.swift` | ADIF export sheet with share, save, copy options |
 | `ActivationMapHelpers.swift` | Map utilities for activation share cards (region, geodesic paths) and activation stats helper |
 | `ActivationMapView.swift` | Full-screen activation map with RST-based contact coloring |
+| `ActivationMapComponents.swift` | RST coloring helpers, annotation/marker views, QSO callout |
 | `ShareableImage.swift` | Transferable wrapper for UIImage sharing |
 
 ## Views - Challenges (`CarrierWave/Views/Challenges/`)

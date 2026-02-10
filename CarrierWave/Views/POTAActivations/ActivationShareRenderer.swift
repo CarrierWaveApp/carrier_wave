@@ -6,6 +6,14 @@ import MapKit
 import SwiftUI
 import UIKit
 
+// MARK: - ShareMapMarker
+
+/// Lightweight marker for share card map rendering with RST-based color
+struct ShareMapMarker: Sendable {
+    let coordinate: CLLocationCoordinate2D
+    let rstColor: UIColor
+}
+
 // MARK: - ActivationShareRenderer
 
 /// Renders activation share cards to UIImage for sharing
@@ -37,22 +45,32 @@ enum ActivationShareRenderer {
         myGrid: String?,
         metadata: ActivationMetadata? = nil
     ) async -> UIImage? {
-        // Capture minimal data on main thread, then yield immediately
-        let qsoGrids: [(id: UUID, grid: String)] = activation.mappableQSOs.compactMap { qso in
-            guard let grid = qso.theirGrid else {
-                return nil
+        // Capture minimal data and RST colors on main thread (trivially fast)
+        let qsoData: [(grid: String, rstColor: UIColor)] =
+            activation.mappableQSOs.compactMap { qso in
+                guard let grid = qso.theirGrid else {
+                    return nil
+                }
+                return (
+                    grid,
+                    RSTColorHelper.uiColor(
+                        rstSent: qso.rstSent,
+                        rstReceived: qso.rstReceived
+                    )
+                )
             }
-            return (qso.id, grid)
-        }
         let capturedMyGrid = myGrid
 
         // Yield to let UI update (show spinner) before heavy computation
         await Task.yield()
 
         // Compute coordinates off main thread
-        let (qsoCoordinates, myCoordinate) = await Task.detached {
-            let coords: [CLLocationCoordinate2D] = qsoGrids.compactMap { item in
-                MaidenheadConverter.coordinate(from: item.grid)
+        let (qsoMarkers, myCoordinate) = await Task.detached {
+            let markers: [ShareMapMarker] = qsoData.compactMap { item in
+                guard let coord = MaidenheadConverter.coordinate(from: item.grid) else {
+                    return nil
+                }
+                return ShareMapMarker(coordinate: coord, rstColor: item.rstColor)
             }
 
             let myCoord: CLLocationCoordinate2D? =
@@ -62,14 +80,14 @@ enum ActivationShareRenderer {
                     nil
                 }
 
-            return (coords, myCoord)
+            return (markers, myCoord)
         }.value
 
         // Generate map snapshot if we have coordinates
         let mapImage: UIImage? =
-            if !qsoCoordinates.isEmpty {
+            if !qsoMarkers.isEmpty {
                 await generateMapSnapshot(
-                    qsoCoordinates: qsoCoordinates,
+                    markers: qsoMarkers,
                     myCoordinate: myCoordinate
                 )
             } else {
@@ -106,12 +124,12 @@ enum ActivationShareRenderer {
     }
 
     private static func generateMapSnapshot(
-        qsoCoordinates: [CLLocationCoordinate2D],
+        markers: [ShareMapMarker],
         myCoordinate: CLLocationCoordinate2D?
     ) async -> UIImage? {
         guard
             let region = ActivationMapHelpers.mapRegion(
-                qsoCoordinates: qsoCoordinates,
+                qsoCoordinates: markers.map(\.coordinate),
                 myCoordinate: myCoordinate
             )
         else {
@@ -128,11 +146,9 @@ enum ActivationShareRenderer {
 
         do {
             let snapshot = try await snapshotter.start()
-
-            // Draw annotations on the snapshot
             return drawAnnotations(
                 on: snapshot,
-                qsoCoordinates: qsoCoordinates,
+                markers: markers,
                 myCoordinate: myCoordinate
             )
         } catch {
@@ -142,7 +158,7 @@ enum ActivationShareRenderer {
 
     private static func drawAnnotations(
         on snapshot: MKMapSnapshotter.Snapshot,
-        qsoCoordinates: [CLLocationCoordinate2D],
+        markers: [ShareMapMarker],
         myCoordinate: CLLocationCoordinate2D?
     ) -> UIImage {
         let image = snapshot.image
@@ -160,29 +176,26 @@ enum ActivationShareRenderer {
             context.setStrokeColor(UIColor.systemBlue.withAlphaComponent(0.6).cgColor)
             context.setLineWidth(2.0)
 
-            for qsoCoord in qsoCoordinates {
+            for marker in markers {
                 let path = ActivationMapHelpers.geodesicPath(
-                    from: myCoord, to: qsoCoord, segments: 30
+                    from: myCoord, to: marker.coordinate, segments: 30
                 )
                 guard path.count >= 2 else {
                     continue
                 }
 
-                let startPoint = snapshot.point(for: path[0])
-                context.move(to: startPoint)
-
+                context.move(to: snapshot.point(for: path[0]))
                 for i in 1 ..< path.count {
-                    let point = snapshot.point(for: path[i])
-                    context.addLine(to: point)
+                    context.addLine(to: snapshot.point(for: path[i]))
                 }
                 context.strokePath()
             }
         }
 
-        // Draw QSO markers
-        for coord in qsoCoordinates {
-            let point = snapshot.point(for: coord)
-            drawMarker(at: point, in: context, color: .systemGreen)
+        // Draw QSO markers with RST-based colors
+        for marker in markers {
+            let point = snapshot.point(for: marker.coordinate)
+            drawMarker(at: point, in: context, color: marker.rstColor)
         }
 
         let finalImage = UIGraphicsGetImageFromCurrentImageContext()

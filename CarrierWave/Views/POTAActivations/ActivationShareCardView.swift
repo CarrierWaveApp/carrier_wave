@@ -96,6 +96,21 @@ struct ActivationShareCardView: View {
         )
     }
 
+    // MARK: - Stats Section
+
+    private var activationStats: MapStatistics {
+        ActivationStatsHelper.statistics(for: activation)
+    }
+
+    private var activationRadio: String? {
+        activation.qsos.compactMap(\.myRig).first
+    }
+
+    /// Metadata watts, falling back to most common QSO-level power
+    private var activationWatts: Int? {
+        metadata?.watts ?? activation.qsos.compactMap(\.power).first
+    }
+
     // MARK: - Header
 
     private var header: some View {
@@ -126,9 +141,14 @@ struct ActivationShareCardView: View {
                     coordinate: item.coordinate,
                     anchor: .bottom
                 ) {
-                    Image(systemName: "antenna.radiowaves.left.and.right.circle.fill")
-                        .font(.title3)
-                        .foregroundStyle(.green)
+                    Circle()
+                        .fill(
+                            RSTColorHelper.color(
+                                rstSent: item.qso.rstSent,
+                                rstReceived: item.qso.rstReceived
+                            )
+                        )
+                        .frame(width: 12, height: 12)
                         .background(
                             Circle()
                                 .fill(.white)
@@ -164,15 +184,18 @@ struct ActivationShareCardView: View {
         )
     }
 
-    // MARK: - Stats Section
-
     private var statsSection: some View {
-        ActivationShareCardStats(
+        let stats = activationStats
+        return ActivationShareCardStats(
             qsoCount: activation.qsoCount,
             duration: activation.formattedDuration,
             bandsCount: activation.uniqueBands.count,
             modesCount: activation.uniqueModes.count,
-            watts: metadata?.watts
+            watts: activationWatts,
+            avgDistanceKm: stats.averageDistanceKm,
+            maxDistanceKm: stats.longestDistanceKm,
+            wattsPerMile: stats.wattsPerMile,
+            radio: activationRadio
         )
     }
 
@@ -204,13 +227,7 @@ struct ActivationShareCardForExport: View {
                 displayDate: activation.displayDate,
                 title: metadata?.title
             )
-            ActivationShareCardStats(
-                qsoCount: activation.qsoCount,
-                duration: activation.formattedDuration,
-                bandsCount: activation.uniqueBands.count,
-                modesCount: activation.uniqueModes.count,
-                watts: metadata?.watts
-            )
+            exportStatsSection
             ActivationShareCardFooter(callsign: activation.callsign)
         }
         .frame(width: 400, height: 600)
@@ -236,6 +253,23 @@ struct ActivationShareCardForExport: View {
 
     private let cornerRadius: CGFloat = 24
 
+    private var exportStatsSection: some View {
+        let stats = ActivationStatsHelper.statistics(for: activation)
+        let radio = activation.qsos.compactMap(\.myRig).first
+        let watts = metadata?.watts ?? activation.qsos.compactMap(\.power).first
+        return ActivationShareCardStats(
+            qsoCount: activation.qsoCount,
+            duration: activation.formattedDuration,
+            bandsCount: activation.uniqueBands.count,
+            modesCount: activation.uniqueModes.count,
+            watts: watts,
+            avgDistanceKm: stats.averageDistanceKm,
+            maxDistanceKm: stats.longestDistanceKm,
+            wattsPerMile: stats.wattsPerMile,
+            radio: radio
+        )
+    }
+
     private var mapSection: some View {
         Group {
             if let mapImage {
@@ -249,140 +283,6 @@ struct ActivationShareCardForExport: View {
         .frame(height: 200)
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .padding(.horizontal, 16)
-    }
-}
-
-// MARK: - ActivationShareCardHeader
-
-private struct ActivationShareCardHeader: View {
-    var body: some View {
-        HStack {
-            Image(systemName: "tree.fill")
-                .font(.title2)
-            Text("CARRIER WAVE")
-                .font(.headline)
-                .fontWeight(.bold)
-        }
-        .foregroundStyle(.white)
-        .padding(.top, 24)
-        .padding(.bottom, 12)
-    }
-}
-
-// MARK: - ActivationShareCardEmptyMap
-
-struct ActivationShareCardEmptyMap: View {
-    var body: some View {
-        ZStack {
-            Color.white.opacity(0.2)
-            VStack(spacing: 8) {
-                Image(systemName: "map")
-                    .font(.title)
-                Text("No grid data available")
-                    .font(.caption)
-            }
-            .foregroundStyle(.white.opacity(0.7))
-        }
-    }
-}
-
-// MARK: - ActivationShareCardParkInfo
-
-private struct ActivationShareCardParkInfo: View {
-    let parkReference: String
-    let parkName: String?
-    let displayDate: String
-    var title: String?
-
-    var body: some View {
-        VStack(spacing: 4) {
-            Text(parkReference)
-                .font(.title2)
-                .fontWeight(.bold)
-                .foregroundStyle(.white)
-
-            if let name = parkName {
-                Text(name)
-                    .font(.subheadline)
-                    .foregroundStyle(.white.opacity(0.9))
-                    .multilineTextAlignment(.center)
-                    .lineLimit(2)
-            }
-
-            if let title, !title.isEmpty {
-                Text(title)
-                    .font(.caption)
-                    .foregroundStyle(.white.opacity(0.9))
-                    .italic()
-            }
-
-            Text(displayDate)
-                .font(.caption)
-                .foregroundStyle(.white.opacity(0.8))
-        }
-        .padding(.vertical, 16)
-        .padding(.horizontal, 24)
-    }
-}
-
-// MARK: - ActivationShareCardStats
-
-private struct ActivationShareCardStats: View {
-    let qsoCount: Int
-    let duration: String
-    let bandsCount: Int
-    let modesCount: Int
-    var watts: Int?
-
-    var body: some View {
-        HStack(spacing: 24) {
-            StatItem(value: "\(qsoCount)", label: "QSOs")
-            StatItem(value: duration, label: "Duration")
-            StatItem(value: "\(bandsCount)", label: "Bands")
-            StatItem(value: "\(modesCount)", label: "Modes")
-            if let watts {
-                StatItem(value: "\(watts)W", label: "Power")
-            }
-        }
-        .padding(.vertical, 16)
-        .padding(.horizontal, 16)
-        .background(Color.purple.opacity(0.2))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .padding(.horizontal, 16)
-    }
-}
-
-// MARK: - ActivationShareCardFooter
-
-private struct ActivationShareCardFooter: View {
-    let callsign: String
-
-    var body: some View {
-        Text(callsign)
-            .font(.headline)
-            .fontWeight(.semibold)
-            .foregroundStyle(.white)
-            .padding(.top, 16)
-            .padding(.bottom, 24)
-    }
-}
-
-// MARK: - StatItem
-
-private struct StatItem: View {
-    let value: String
-    let label: String
-
-    var body: some View {
-        VStack(spacing: 4) {
-            Text(value)
-                .font(.title3)
-                .fontWeight(.bold)
-                .foregroundStyle(.white)
-            Text(label)
-                .font(.caption2)
-                .foregroundStyle(.white.opacity(0.8))
-        }
     }
 }
 

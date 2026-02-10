@@ -65,8 +65,13 @@ struct POTAActivationDetailView: View {
         activation.qsos.sorted { $0.timestamp > $1.timestamp }
     }
 
+    private var activationRadio: String? {
+        activation.qsos.compactMap(\.myRig).first
+    }
+
     private var hasMetadata: Bool {
         metadata?.watts != nil || metadata?.averageWPM != nil
+            || activationRadio != nil
             || (metadata?.weather != nil && !(metadata?.weather?.isEmpty ?? true))
             || (metadata?.solarConditions != nil && !(metadata?.solarConditions?.isEmpty ?? true))
     }
@@ -131,6 +136,14 @@ struct POTAActivationDetailView: View {
                     .padding(.horizontal, 5)
                     .padding(.vertical, 1)
                     .background(Color.purple.opacity(0.15))
+                    .cornerRadius(4)
+            }
+            if let radio = activationRadio {
+                Text(radio)
+                    .font(.caption)
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, 1)
+                    .background(Color.orange.opacity(0.15))
                     .cornerRadius(4)
             }
             if let wpm = metadata?.averageWPM {

@@ -428,6 +428,11 @@ extension POTAActivationsContentView {
         meta.title = result.title
         meta.watts = result.watts
 
+        // Apply radio to all QSOs in the activation
+        for qso in activation.qsos {
+            qso.myRig = result.radio
+        }
+
         try? modelContext.save()
 
         Task {
