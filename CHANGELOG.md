@@ -4,6 +4,8 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.28.0] - 2026-02-10
+
 ### Added
 - Add spot age filter — only spots ≤12 minutes old shown by default, configurable 5–30 min in Activity Log settings
 - Add spot sort order — toggle between Recent (newest first) and Frequency (low to high)
