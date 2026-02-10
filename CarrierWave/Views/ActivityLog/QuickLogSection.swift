@@ -36,7 +36,8 @@ struct QuickLogSection: View {
     @State private var rstSent = ""
     @State private var rstReceived = ""
 
-    private let fieldHeight: CGFloat = 36
+    @ScaledMetric(relativeTo: .subheadline) private var fieldHeight: CGFloat = 36
+    @ScaledMetric(relativeTo: .subheadline) private var rstFieldWidth: CGFloat = 50
 
     private var defaultRST: String {
         let mode = currentMode.uppercased()
@@ -77,6 +78,7 @@ struct QuickLogSection: View {
                 }
                 .opacity(callsignInput.isEmpty ? 0 : 1)
                 .disabled(callsignInput.isEmpty)
+                .accessibilityLabel("Clear callsign")
             }
             .padding()
             .background(Color(.secondarySystemGroupedBackground))
@@ -105,9 +107,9 @@ struct QuickLogSection: View {
 
     private var fieldsRow: some View {
         HStack(spacing: 8) {
-            compactField(label: "Sent", placeholder: defaultRST, text: $rstSent, width: 50)
+            compactField(label: "Sent", placeholder: defaultRST, text: $rstSent, width: rstFieldWidth)
                 .keyboardType(.numberPad)
-            compactField(label: "Rcvd", placeholder: defaultRST, text: $rstReceived, width: 50)
+            compactField(label: "Rcvd", placeholder: defaultRST, text: $rstReceived, width: rstFieldWidth)
                 .keyboardType(.numberPad)
             Spacer()
         }
@@ -148,7 +150,7 @@ struct QuickLogSection: View {
                 .textInputAutocapitalization(.characters)
                 .autocorrectionDisabled()
                 .padding(.horizontal, 8)
-                .frame(height: fieldHeight)
+                .frame(height: max(fieldHeight, 44))
                 .background(Color(.tertiarySystemGroupedBackground))
                 .clipShape(RoundedRectangle(cornerRadius: 8))
                 .frame(width: width)
