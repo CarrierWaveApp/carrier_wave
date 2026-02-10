@@ -1,0 +1,1540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Activity Log — UI Mockups</title>
+<style>
+  /* === iOS Dark Mode System Colors === */
+  :root {
+    --bg: #000000;
+    --systemGroupedBackground: #000000;
+    --secondarySystemGroupedBackground: #1c1c1e;
+    --tertiarySystemGroupedBackground: #2c2c2e;
+    --systemGray6: #1c1c1e;
+    --systemGray5: #2c2c2e;
+    --systemGray4: #3a3a3c;
+    --systemGray3: #48484a;
+    --systemGray2: #636366;
+    --systemGray: #8e8e93;
+    --label: #ffffff;
+    --secondaryLabel: #ebebf599;
+    --tertiaryLabel: #ebebf54d;
+    --separator: #38383a;
+    --blue: #0a84ff;
+    --green: #30d158;
+    --orange: #ff9f0a;
+    --red: #ff453a;
+    --purple: #bf5af2;
+    --yellow: #ffd60a;
+    --indigo: #5e5ce6;
+    --teal: #64d2ff;
+    --systemFill: rgba(120,120,128,0.36);
+    --tertiarySystemFill: rgba(120,120,128,0.12);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #111;
+    font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+    color: var(--label);
+    padding: 40px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 60px;
+  }
+
+  h1.page-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--label);
+    text-align: center;
+  }
+  .page-subtitle {
+    font-size: 15px;
+    color: var(--secondaryLabel);
+    text-align: center;
+    margin-top: -40px;
+  }
+
+  /* === Phone Frame === */
+  .phone {
+    width: 393px;
+    background: var(--bg);
+    border-radius: 40px;
+    border: 3px solid #333;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .phone-label {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--secondaryLabel);
+    text-align: center;
+    margin-bottom: 12px;
+  }
+  .phone-caption {
+    font-size: 13px;
+    color: var(--tertiaryLabel);
+    text-align: center;
+    max-width: 393px;
+    margin-top: 8px;
+    line-height: 1.4;
+  }
+
+  /* Status bar */
+  .status-bar {
+    height: 54px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding: 0 28px 8px;
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .status-bar .time { font-variant-numeric: tabular-nums; }
+  .status-icons { display: flex; gap: 6px; align-items: center; font-size: 13px; }
+
+  /* Nav bar */
+  .nav-bar {
+    height: 44px;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    border-bottom: 0.5px solid var(--separator);
+  }
+  .nav-bar .back {
+    color: var(--blue);
+    font-size: 17px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .nav-bar .title {
+    flex: 1;
+    text-align: center;
+    font-size: 17px;
+    font-weight: 600;
+    margin: 0 -60px;
+  }
+  .nav-bar .action {
+    color: var(--blue);
+    font-size: 17px;
+  }
+
+  /* Scrollable content */
+  .content {
+    padding: 0 0 34px;
+    background: var(--systemGroupedBackground);
+  }
+
+  /* === Common Components === */
+
+  /* Card */
+  .card {
+    background: var(--systemGray6);
+    border-radius: 12px;
+    padding: 16px;
+    margin: 8px 16px;
+  }
+
+  /* Stat boxes */
+  .stat-row {
+    display: flex;
+    gap: 8px;
+  }
+  .stat-box {
+    flex: 1;
+    background: var(--systemGray5);
+    border-radius: 8px;
+    padding: 8px 4px;
+    text-align: center;
+  }
+  .stat-box .value {
+    font-size: 22px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .stat-box .label {
+    font-size: 11px;
+    color: var(--secondaryLabel);
+    margin-top: 2px;
+  }
+
+  /* Section header */
+  .section-header {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--secondaryLabel);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 16px 16px 6px;
+  }
+
+  /* Badge capsule */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 99px;
+  }
+  .badge.blue { background: rgba(10,132,255,0.2); color: var(--blue); }
+  .badge.orange { background: rgba(255,159,10,0.15); color: var(--orange); }
+  .badge.green { background: rgba(48,209,88,0.2); color: var(--green); }
+  .badge.muted { color: var(--secondaryLabel); background: transparent; }
+  .badge.solid-blue { background: var(--blue); color: #fff; border-radius: 3px; }
+  .badge.indigo { background: var(--indigo); color: #fff; }
+  .badge.rbn { background: var(--tertiarySystemFill); color: var(--secondaryLabel); border-radius: 3px; }
+
+  /* Filter chip */
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 5px 12px;
+    border-radius: 99px;
+    cursor: pointer;
+  }
+  .chip.selected { background: rgba(10,132,255,0.2); color: var(--blue); }
+  .chip.unselected { background: var(--tertiarySystemFill); color: var(--secondaryLabel); }
+
+  /* Monospaced text */
+  .mono {
+    font-family: 'SF Mono', 'Menlo', 'Courier New', monospace;
+  }
+
+  /* Divider */
+  .divider {
+    height: 0.5px;
+    background: var(--separator);
+    margin: 0 16px;
+  }
+
+  /* Button */
+  .btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 14px;
+    border-radius: 12px;
+    font-size: 17px;
+    font-weight: 600;
+    width: 100%;
+    border: none;
+    cursor: pointer;
+  }
+  .btn.primary { background: var(--blue); color: #fff; }
+  .btn.green { background: var(--green); color: #fff; }
+  .btn.bordered { background: transparent; border: 1px solid var(--systemGray4); color: var(--blue); }
+  .btn.small {
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    width: auto;
+    border-radius: 8px;
+    border: 1px solid var(--systemGray4);
+    color: var(--blue);
+    background: transparent;
+  }
+
+  /* Home indicator */
+  .home-indicator {
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .home-indicator .bar {
+    width: 134px;
+    height: 5px;
+    background: var(--label);
+    border-radius: 99px;
+    opacity: 0.3;
+  }
+
+  /* Drag indicator for sheets */
+  .drag-indicator {
+    display: flex;
+    justify-content: center;
+    padding: 8px 0 4px;
+  }
+  .drag-indicator .bar {
+    width: 36px;
+    height: 5px;
+    background: var(--systemGray3);
+    border-radius: 99px;
+  }
+
+  /* Spot row */
+  .spot-row {
+    display: flex;
+    align-items: flex-start;
+    padding: 10px 16px;
+    gap: 12px;
+  }
+  .spot-row .freq-col {
+    width: 72px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .spot-row .freq {
+    font-size: 15px;
+    font-weight: 500;
+  }
+  .spot-row .band-mode {
+    font-size: 11px;
+    color: var(--secondaryLabel);
+    margin-top: 2px;
+  }
+  .spot-row .info {
+    flex: 1;
+    min-width: 0;
+  }
+  .spot-row .callsign-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .spot-row .callsign {
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .spot-row .detail {
+    font-size: 12px;
+    color: var(--secondaryLabel);
+    margin-top: 2px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .spot-row .worked-line {
+    margin-top: 3px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .spot-row .age {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+  }
+  .spot-row .age .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  /* QSO row */
+  .qso-row {
+    display: flex;
+    align-items: center;
+    padding: 8px 16px;
+    gap: 10px;
+    font-size: 14px;
+  }
+  .qso-row .time {
+    font-size: 12px;
+    color: var(--secondaryLabel);
+    width: 38px;
+    flex-shrink: 0;
+  }
+  .qso-row .call {
+    font-weight: 600;
+    font-size: 14px;
+    width: 72px;
+  }
+  .qso-row .band-mode-cell {
+    display: flex;
+    gap: 4px;
+  }
+  .qso-row .park {
+    font-size: 12px;
+    color: var(--secondaryLabel);
+    flex: 1;
+  }
+  .qso-row .rst {
+    font-size: 12px;
+    color: var(--secondaryLabel);
+    width: 28px;
+    text-align: right;
+  }
+
+  /* Form field */
+  .form-field {
+    padding: 12px 16px;
+    background: var(--secondarySystemGroupedBackground);
+  }
+  .form-field + .form-field {
+    border-top: 0.5px solid var(--separator);
+  }
+  .form-label {
+    font-size: 12px;
+    color: var(--secondaryLabel);
+    margin-bottom: 4px;
+  }
+  .form-value {
+    font-size: 17px;
+  }
+  .form-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .form-row .chevron {
+    color: var(--tertiaryLabel);
+    font-size: 14px;
+  }
+
+  /* Toggle */
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    background: var(--secondarySystemGroupedBackground);
+  }
+  .toggle-row + .toggle-row {
+    border-top: 0.5px solid var(--separator);
+  }
+  .toggle-row .text { flex: 1; font-size: 15px; }
+  .toggle-track {
+    width: 51px; height: 31px; border-radius: 16px;
+    position: relative; flex-shrink: 0;
+  }
+  .toggle-track.on { background: var(--green); }
+  .toggle-track.off { background: var(--systemGray4); }
+  .toggle-track .thumb {
+    width: 27px; height: 27px; border-radius: 14px;
+    background: white; position: absolute; top: 2px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  }
+  .toggle-track.on .thumb { right: 2px; }
+  .toggle-track.off .thumb { left: 2px; }
+
+  /* Profile row */
+  .profile-row {
+    display: flex;
+    padding: 12px 16px;
+    background: var(--secondarySystemGroupedBackground);
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .profile-row + .profile-row { border-top: 0.5px solid var(--separator); }
+  .profile-row .radio-dot {
+    width: 22px; height: 22px; border-radius: 11px;
+    border: 2px solid var(--blue); margin-top: 2px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .profile-row .radio-dot.selected { background: var(--blue); }
+  .profile-row .radio-dot.selected::after {
+    content: ''; width: 8px; height: 8px; border-radius: 4px; background: #fff;
+  }
+  .profile-row .profile-info { flex: 1; }
+  .profile-row .name { font-size: 17px; font-weight: 500; }
+  .profile-row .details { font-size: 13px; color: var(--secondaryLabel); margin-top: 2px; }
+  .profile-row .grid-line { font-size: 13px; color: var(--secondaryLabel); margin-top: 1px; }
+  .profile-row .check { color: var(--blue); font-size: 17px; flex-shrink: 0; margin-top: 4px; }
+
+  /* Toast */
+  .toast {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    background: rgba(44,44,46,0.92);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    margin: 8px 16px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  }
+  .toast .icon { font-size: 22px; flex-shrink: 0; }
+  .toast .text { flex: 1; }
+  .toast .toast-title { font-size: 15px; font-weight: 600; }
+  .toast .toast-subtitle { font-size: 13px; color: var(--secondaryLabel); margin-top: 1px; }
+
+  /* Phone group (for side-by-side) */
+  .phone-group {
+    display: flex;
+    gap: 40px;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: flex-start;
+  }
+  .phone-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* Sheet overlay */
+  .sheet {
+    background: var(--secondarySystemGroupedBackground);
+    border-radius: 12px 12px 0 0;
+    margin-top: -8px;
+  }
+
+  /* Counter bar */
+  .counter-bar {
+    background: var(--secondarySystemGroupedBackground);
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .counter-bar .stats-line {
+    font-size: 15px;
+    font-weight: 500;
+  }
+  .counter-bar .profile-line {
+    font-size: 13px;
+    color: var(--secondaryLabel);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  /* Filter bar */
+  .filter-bar {
+    display: flex;
+    gap: 6px;
+    padding: 8px 16px;
+    overflow-x: auto;
+  }
+
+  /* Band timeline */
+  .timeline-container {
+    padding: 12px;
+  }
+  .timeline-axis {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--secondaryLabel);
+    padding: 0 4px;
+    margin-bottom: 8px;
+  }
+  .timeline-row {
+    height: 28px;
+    position: relative;
+    margin-bottom: 4px;
+  }
+  .timeline-segment {
+    position: absolute;
+    height: 100%;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: #fff;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+</style>
+</head>
+<body>
+
+<h1 class="page-title">Activity Log — UI Mockups</h1>
+<p class="page-subtitle">CAR-47 · Carrier Wave · Feb 2026</p>
+
+<!-- ============================================ -->
+<!-- SCREEN 1: Dashboard Card                     -->
+<!-- ============================================ -->
+
+<div class="phone-group">
+<div class="phone-wrapper">
+<div class="phone-label">1a. Dashboard — First Time</div>
+<div class="phone">
+  <div class="status-bar">
+    <span class="time">9:41</span>
+    <span class="status-icons">
+      <span>●●●●○</span>
+      <span>📶</span>
+      <span>🔋</span>
+    </span>
+  </div>
+  <div class="nav-bar">
+    <div class="title">Dashboard</div>
+    <div class="action">⟳</div>
+  </div>
+  <div class="content">
+    <!-- Activity Grid placeholder -->
+    <div class="card" style="padding: 12px 16px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <span style="font-size:15px; font-weight:600;">Activity</span>
+        <span style="font-size:12px; color:var(--secondaryLabel);">Last 16 weeks</span>
+      </div>
+      <div style="display:flex; gap:2px; flex-wrap:wrap; height:56px; overflow:hidden;">
+        <script>
+          // Generate activity grid cells inline
+        </script>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(16,1fr); gap:2px; height:56px;">
+        <!-- Just colored squares to suggest the activity grid -->
+      </div>
+      <div style="display:flex; gap:2px; flex-wrap:wrap;">
+        <!-- Simulated grid cells -->
+        <div style="display:grid; grid-template-columns:repeat(28,1fr); gap:1.5px; width:100%;">
+        </div>
+      </div>
+      <!-- Simplified activity grid visual -->
+      <div style="display:flex; gap:1.5px;">
+        <div style="width:10px;height:10px;border-radius:2px;background:var(--systemGray5)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:rgba(48,209,88,0.3)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:var(--systemGray5)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:rgba(48,209,88,0.5)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:rgba(48,209,88,0.9)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:var(--systemGray5)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:rgba(48,209,88,0.4)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:var(--systemGray5)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:var(--systemGray5)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:rgba(48,209,88,0.6)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:rgba(48,209,88,0.3)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:var(--systemGray5)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:rgba(48,209,88,0.7)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:rgba(48,209,88,1.0)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:var(--systemGray5)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:rgba(48,209,88,0.4)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:var(--systemGray5)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:rgba(48,209,88,0.3)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:rgba(48,209,88,0.5)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:var(--systemGray5)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:var(--systemGray5)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:rgba(48,209,88,0.8)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:var(--systemGray5)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:rgba(48,209,88,0.3)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:var(--systemGray5)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:var(--systemGray5)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:rgba(48,209,88,0.6)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:rgba(48,209,88,0.4)"></div>
+      </div>
+    </div>
+
+    <!-- Activity Log CTA Card -->
+    <div class="card" style="text-align:center; padding:24px 16px;">
+      <div style="font-size:32px; margin-bottom:8px;">🔭</div>
+      <div style="font-size:17px; font-weight:600; margin-bottom:6px;">Activity Log</div>
+      <div style="font-size:14px; color:var(--secondaryLabel); margin-bottom:16px; line-height:1.4;">
+        Track daily contacts while hunting<br>spots. No session start/stop needed.
+      </div>
+      <div class="btn primary" style="border-radius:10px;">Set Up Activity Log</div>
+    </div>
+
+    <!-- Streaks placeholder -->
+    <div class="card" style="padding:12px 16px;">
+      <div style="display:flex; justify-content:space-between; align-items:baseline;">
+        <span style="font-size:15px; font-weight:600;">🔥 Streaks</span>
+        <span style="font-size:13px; color:var(--secondaryLabel);">12 days</span>
+      </div>
+    </div>
+  </div>
+  <div class="home-indicator"><div class="bar"></div></div>
+</div>
+<div class="phone-caption">First-time setup prompt between activity grid and streaks</div>
+</div>
+
+<div class="phone-wrapper">
+<div class="phone-label">1b. Dashboard — Active</div>
+<div class="phone">
+  <div class="status-bar">
+    <span class="time">14:32</span>
+    <span class="status-icons">
+      <span>●●●●○</span>
+      <span>📶</span>
+      <span>🔋</span>
+    </span>
+  </div>
+  <div class="nav-bar">
+    <div class="title">Dashboard</div>
+    <div class="action">⟳</div>
+  </div>
+  <div class="content">
+    <!-- Activity Grid placeholder -->
+    <div class="card" style="padding: 12px 16px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <span style="font-size:15px; font-weight:600;">Activity</span>
+        <span style="font-size:12px; color:var(--secondaryLabel);">Last 16 weeks</span>
+      </div>
+      <div style="display:flex; gap:1.5px;">
+        <div style="width:10px;height:10px;border-radius:2px;background:var(--systemGray5)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:rgba(48,209,88,0.3)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:var(--systemGray5)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:rgba(48,209,88,0.5)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:rgba(48,209,88,0.9)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:var(--systemGray5)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:rgba(48,209,88,0.4)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:var(--systemGray5)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:var(--systemGray5)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:rgba(48,209,88,0.6)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:rgba(48,209,88,0.3)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:var(--systemGray5)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:rgba(48,209,88,0.7)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:rgba(48,209,88,1.0)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:var(--systemGray5)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:rgba(48,209,88,0.4)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:var(--systemGray5)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:rgba(48,209,88,0.3)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:rgba(48,209,88,0.5)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:var(--systemGray5)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:var(--systemGray5)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:rgba(48,209,88,0.8)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:var(--systemGray5)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:rgba(48,209,88,0.3)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:var(--systemGray5)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:var(--systemGray5)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:rgba(48,209,88,0.6)"></div>
+        <div style="width:10px;height:10px;border-radius:2px;background:rgba(48,209,88,1.0)"></div>
+      </div>
+    </div>
+
+    <!-- Activity Log Active Card -->
+    <div class="card" style="cursor:pointer;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-size:20px;">🔭</span>
+          <span style="font-size:17px; font-weight:600;">Activity Log</span>
+        </div>
+        <span style="color:var(--tertiaryLabel); font-size:16px;">›</span>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat-box">
+          <div class="value" style="color:var(--green);">12</div>
+          <div class="label">QSOs today</div>
+        </div>
+        <div class="stat-box">
+          <div class="value" style="color:var(--blue);">4</div>
+          <div class="label">Bands today</div>
+        </div>
+        <div class="stat-box">
+          <div class="value" style="color:var(--blue);">3</div>
+          <div class="label">DXCC new</div>
+        </div>
+      </div>
+
+      <div style="font-size:12px; color:var(--secondaryLabel); margin-top:10px; display:flex; justify-content:space-between;">
+        <span>Home QTH · IC-7300 · 100W</span>
+        <span class="mono">📍 EM85</span>
+      </div>
+    </div>
+
+    <!-- Streaks placeholder -->
+    <div class="card" style="padding:12px 16px;">
+      <div style="display:flex; justify-content:space-between; align-items:baseline;">
+        <span style="font-size:15px; font-weight:600;">🔥 Streaks</span>
+        <span style="font-size:13px; color:var(--secondaryLabel);">12 days</span>
+      </div>
+    </div>
+
+    <!-- Stats placeholder -->
+    <div class="card" style="padding:12px 16px;">
+      <div style="margin-bottom:8px; font-size:15px; font-weight:600;">Statistics</div>
+      <div class="stat-row">
+        <div class="stat-box">
+          <div class="value">1,247</div>
+          <div class="label">QSOs</div>
+        </div>
+        <div class="stat-box">
+          <div class="value">86</div>
+          <div class="label">DXCC</div>
+        </div>
+        <div class="stat-box">
+          <div class="value">312</div>
+          <div class="label">Grids</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="home-indicator"><div class="bar"></div></div>
+</div>
+<div class="phone-caption">Active card shows today's stats. Tap to open full view.</div>
+</div>
+</div>
+
+<!-- ============================================ -->
+<!-- SCREEN 2: Main Activity Log View             -->
+<!-- ============================================ -->
+
+<div class="phone-wrapper">
+<div class="phone-label">2. Main View — Spot-First Layout</div>
+<div class="phone">
+  <div class="status-bar">
+    <span class="time">14:35</span>
+    <span class="status-icons">
+      <span>●●●●○</span>
+      <span>📶</span>
+      <span>🔋</span>
+    </span>
+  </div>
+  <div class="nav-bar">
+    <div class="back">‹ Back</div>
+    <div class="title">Activity Log</div>
+    <div class="action">⚙</div>
+  </div>
+  <div class="content">
+    <!-- Counter bar -->
+    <div class="counter-bar">
+      <div class="stats-line">
+        Today: <span style="color:var(--green); font-weight:700;">12</span> QSOs · <span style="color:var(--blue)">4</span> bands · <span style="color:var(--blue)">3</span> new DXCC
+      </div>
+      <div class="profile-line">
+        <span>Home QTH · IC-7300 · 100W · <span class="mono">EM85</span></span>
+        <span class="btn small">Switch</span>
+      </div>
+    </div>
+
+    <!-- Filter chips -->
+    <div class="filter-bar">
+      <span class="chip selected">POTA</span>
+      <span class="chip selected">RBN</span>
+      <span class="chip unselected">SOTA</span>
+      <span class="chip unselected" style="border-left:2px solid var(--separator); padding-left:14px; margin-left:4px;">All ▾</span>
+      <span class="chip unselected">CW ▾</span>
+    </div>
+
+    <!-- Spots list -->
+    <div style="background:var(--systemGray6); border-radius:12px; margin:0 16px; overflow:hidden;">
+      <!-- Spot 1: POTA, fresh, not worked -->
+      <div class="spot-row">
+        <div class="freq-col">
+          <div class="freq mono">14.062</div>
+          <div class="band-mode">20m CW</div>
+        </div>
+        <div class="info">
+          <div class="callsign-row">
+            <span style="font-size:12px; color:var(--orange);">👤</span>
+            <span class="callsign mono">W4DOG</span>
+          </div>
+          <div class="detail">
+            <span style="color:var(--green);">🌲</span>
+            K-1234 · Pisgah NF
+          </div>
+          <div class="detail">Spotted by N4EX</div>
+        </div>
+        <div class="age">
+          <span style="color:var(--green); font-size:12px;">2m</span>
+          <div class="dot" style="background:var(--green);"></div>
+        </div>
+      </div>
+
+      <div class="divider" style="margin:0 16px;"></div>
+
+      <!-- Spot 2: RBN, worked on 20m -->
+      <div class="spot-row">
+        <div class="freq-col">
+          <div class="freq mono">&nbsp;7.030</div>
+          <div class="band-mode">40m CW</div>
+        </div>
+        <div class="info">
+          <div class="callsign-row">
+            <span class="callsign mono">N5RZ</span>
+            <span class="badge rbn">RBN</span>
+          </div>
+          <div class="detail">22 dB · WA</div>
+          <div class="worked-line">
+            <span class="badge orange">✓ 20m</span>
+          </div>
+        </div>
+        <div class="age">
+          <span style="color:var(--blue); font-size:12px;">5m</span>
+          <div class="dot" style="background:var(--blue);"></div>
+        </div>
+      </div>
+
+      <div class="divider" style="margin:0 16px;"></div>
+
+      <!-- Spot 3: POTA, NEW DXCC -->
+      <div class="spot-row">
+        <div class="freq-col">
+          <div class="freq mono">14.061</div>
+          <div class="band-mode">20m CW</div>
+        </div>
+        <div class="info">
+          <div class="callsign-row">
+            <span style="font-size:12px; color:var(--orange);">👤</span>
+            <span class="callsign mono">RA3XYZ</span>
+          </div>
+          <div class="detail">
+            <span style="color:var(--green);">🌲</span>
+            RFF-1234 · Moscow Region
+          </div>
+          <div class="worked-line">
+            <span class="badge solid-blue">★ NEW DXCC</span>
+          </div>
+        </div>
+        <div class="age">
+          <span style="color:var(--green); font-size:12px;">1m</span>
+          <div class="dot" style="background:var(--green);"></div>
+        </div>
+      </div>
+
+      <div class="divider" style="margin:0 16px;"></div>
+
+      <!-- Spot 4: POTA, worked on 2 bands -->
+      <div class="spot-row">
+        <div class="freq-col">
+          <div class="freq mono">21.062</div>
+          <div class="band-mode">15m CW</div>
+        </div>
+        <div class="info">
+          <div class="callsign-row">
+            <span style="font-size:12px; color:var(--orange);">👤</span>
+            <span class="callsign mono">VE3XYZ</span>
+          </div>
+          <div class="detail">
+            <span style="color:var(--green);">🌲</span>
+            VE-1234 · Algonquin PP
+          </div>
+          <div class="worked-line">
+            <span class="badge orange">✓ 20m</span>
+            <span class="badge orange">✓ 40m</span>
+          </div>
+        </div>
+        <div class="age">
+          <span style="color:var(--blue); font-size:12px;">8m</span>
+          <div class="dot" style="background:var(--blue);"></div>
+        </div>
+      </div>
+
+      <div class="divider" style="margin:0 16px;"></div>
+
+      <!-- Spot 5: DUPE warning -->
+      <div class="spot-row">
+        <div class="freq-col">
+          <div class="freq mono">14.044</div>
+          <div class="band-mode">20m CW</div>
+        </div>
+        <div class="info">
+          <div class="callsign-row">
+            <span class="callsign mono">KE8OGR</span>
+            <span class="badge rbn">RBN</span>
+          </div>
+          <div class="detail">18 dB · OH</div>
+          <div class="worked-line">
+            <span class="badge orange" style="background:rgba(255,159,10,0.15);">⚠ DUPE 20m CW</span>
+          </div>
+        </div>
+        <div class="age">
+          <span style="color:var(--orange); font-size:12px;">12m</span>
+          <div class="dot" style="background:var(--orange);"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Log -->
+    <div class="card" style="margin-top:8px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <span style="font-size:15px; font-weight:600;">Quick Log</span>
+        <span style="color:var(--tertiaryLabel);">▾</span>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <div style="flex:1; background:var(--tertiarySystemGroupedBackground); border-radius:8px; padding:10px 12px; font-size:17px; color:var(--systemGray);" class="mono">Callsign...</div>
+        <div class="btn green" style="width:auto; padding:10px 20px; border-radius:10px; font-size:15px;">Log</div>
+      </div>
+    </div>
+
+    <!-- Recent QSOs -->
+    <div style="margin:8px 16px 0;">
+      <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px;">
+        <span style="font-size:15px; font-weight:600;">Recent QSOs</span>
+        <span style="font-size:13px; color:var(--blue);">See All</span>
+      </div>
+    </div>
+    <div style="background:var(--systemGray6); border-radius:12px; margin:4px 16px; overflow:hidden;">
+      <div class="qso-row">
+        <span class="time mono">14:32</span>
+        <span class="call mono">W4DOG</span>
+        <span class="band-mode-cell">
+          <span class="badge blue">20m</span>
+          <span class="badge blue">CW</span>
+        </span>
+        <span class="park mono" style="text-align:right;">K-1234</span>
+        <span class="rst mono">599</span>
+      </div>
+      <div class="divider" style="margin:0 16px;"></div>
+      <div class="qso-row">
+        <span class="time mono">14:28</span>
+        <span class="call mono">N5RZ</span>
+        <span class="band-mode-cell">
+          <span class="badge blue">40m</span>
+          <span class="badge blue">CW</span>
+        </span>
+        <span class="park"></span>
+        <span class="rst mono">599</span>
+      </div>
+      <div class="divider" style="margin:0 16px;"></div>
+      <div class="qso-row">
+        <span class="time mono">14:15</span>
+        <span class="call mono">KE8OGR</span>
+        <span class="band-mode-cell">
+          <span class="badge blue">20m</span>
+          <span class="badge blue">CW</span>
+        </span>
+        <span class="park mono" style="text-align:right;">K-9012</span>
+        <span class="rst mono">599</span>
+      </div>
+      <div class="divider" style="margin:0 16px;"></div>
+      <div class="qso-row">
+        <span class="time mono">14:02</span>
+        <span class="call mono">JA7ABC</span>
+        <span class="band-mode-cell">
+          <span class="badge blue">20m</span>
+          <span class="badge blue">CW</span>
+        </span>
+        <span class="park"></span>
+        <span class="rst mono">579</span>
+      </div>
+    </div>
+  </div>
+  <div class="home-indicator"><div class="bar"></div></div>
+</div>
+<div class="phone-caption">Spots are the primary UI. Worked-before badges show on each row.<br>Tap any spot to open the Log QSO sheet.</div>
+</div>
+
+<!-- ============================================ -->
+<!-- SCREEN 3: Tap-to-Log Sheet                   -->
+<!-- ============================================ -->
+
+<div class="phone-wrapper">
+<div class="phone-label">3. Tap-to-Log from Spot</div>
+<div class="phone">
+  <div class="status-bar">
+    <span class="time">14:36</span>
+    <span class="status-icons">
+      <span>●●●●○</span>
+      <span>📶</span>
+      <span>🔋</span>
+    </span>
+  </div>
+  <!-- Dimmed background -->
+  <div style="background:rgba(0,0,0,0.4); height:260px; display:flex; align-items:flex-end;">
+    <!-- Blurred hint of spots list behind -->
+    <div style="width:100%; padding:20px; opacity:0.3;">
+      <div style="font-size:13px; color:var(--secondaryLabel);">14.062 &nbsp; W4DOG &nbsp;&nbsp;&nbsp; 2m ●</div>
+      <div style="font-size:13px; color:var(--secondaryLabel); margin-top:8px;">7.030 &nbsp;&nbsp; N5RZ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 5m ●</div>
+    </div>
+  </div>
+
+  <!-- Sheet -->
+  <div class="sheet">
+    <div class="drag-indicator"><div class="bar"></div></div>
+
+    <div style="padding:16px;">
+      <div style="font-size:17px; font-weight:600; margin-bottom:16px;">Log QSO from Spot</div>
+
+      <!-- Callsign card -->
+      <div style="background:var(--systemGray5); border-radius:12px; padding:14px 16px; margin-bottom:16px;">
+        <div style="font-size:22px; font-weight:700; margin-bottom:4px;" class="mono">W4DOG</div>
+        <div style="font-size:15px; color:var(--secondaryLabel); margin-bottom:4px;" class="mono">14.062 MHz · 20m CW</div>
+        <div style="font-size:13px; color:var(--secondaryLabel); display:flex; align-items:center; gap:4px;">
+          <span style="color:var(--green);">🌲</span> K-1234 · Pisgah National Forest
+        </div>
+      </div>
+
+      <!-- RST fields -->
+      <div style="display:flex; gap:12px; margin-bottom:16px;">
+        <div style="flex:1;">
+          <div class="form-label">RST Sent</div>
+          <div style="background:var(--tertiarySystemGroupedBackground); border-radius:8px; padding:10px 12px; font-size:17px;" class="mono">599</div>
+        </div>
+        <div style="flex:1;">
+          <div class="form-label">RST Rcvd</div>
+          <div style="background:var(--tertiarySystemGroupedBackground); border-radius:8px; padding:10px 12px; font-size:17px;" class="mono">599</div>
+        </div>
+      </div>
+
+      <!-- More fields disclosure -->
+      <div style="display:flex; align-items:center; gap:6px; color:var(--secondaryLabel); font-size:15px; margin-bottom:16px; padding:4px 0;">
+        <span style="font-size:12px;">▸</span> More Fields
+        <span style="font-size:12px; color:var(--tertiaryLabel);">(Grid, State, Notes)</span>
+      </div>
+
+      <!-- Log button -->
+      <div class="btn green" style="margin-bottom:12px; font-size:17px;">Log QSO</div>
+
+      <!-- Context line -->
+      <div style="text-align:center; font-size:12px; color:var(--tertiaryLabel);">
+        Logging as <span class="mono">AJ7CM</span> · Home QTH · 100W
+      </div>
+    </div>
+  </div>
+  <div class="home-indicator"><div class="bar"></div></div>
+</div>
+<div class="phone-caption">Pre-filled from spot data. One tap to confirm.<br>Target: 3 seconds from spot to logged QSO.</div>
+</div>
+
+<!-- ============================================ -->
+<!-- SCREEN 4-5: Profile Picker + Location Change -->
+<!-- ============================================ -->
+
+<div class="phone-group">
+<div class="phone-wrapper">
+<div class="phone-label">4. Station Profile Picker</div>
+<div class="phone">
+  <div class="status-bar">
+    <span class="time">14:37</span>
+    <span class="status-icons">
+      <span>●●●●○</span>
+      <span>📶</span>
+      <span>🔋</span>
+    </span>
+  </div>
+  <div class="nav-bar">
+    <div class="back"></div>
+    <div class="title">Station Profile</div>
+    <div class="action">Done</div>
+  </div>
+  <div class="content" style="background:var(--systemGroupedBackground);">
+    <div class="section-header">Active</div>
+    <div style="background:var(--secondarySystemGroupedBackground); border-radius:12px; margin:0 16px; overflow:hidden;">
+      <div class="profile-row">
+        <div class="radio-dot selected"></div>
+        <div class="profile-info">
+          <div class="name">Home QTH</div>
+          <div class="details">IC-7300 · 100W · Hex beam</div>
+          <div class="grid-line"><span class="mono">📍 EM85</span></div>
+        </div>
+        <div class="check">✓</div>
+      </div>
+    </div>
+
+    <div class="section-header">Other Profiles</div>
+    <div style="background:var(--secondarySystemGroupedBackground); border-radius:12px; margin:0 16px; overflow:hidden;">
+      <div class="profile-row">
+        <div class="radio-dot"></div>
+        <div class="profile-info">
+          <div class="name">Mobile</div>
+          <div class="details">IC-705 · 10W · Hamstick</div>
+          <div class="grid-line" style="font-style:italic;">📍 Use current location</div>
+        </div>
+      </div>
+      <div class="profile-row">
+        <div class="radio-dot"></div>
+        <div class="profile-info">
+          <div class="name">QRP Portable</div>
+          <div class="details">KX3 · 5W · EFHW</div>
+          <div class="grid-line" style="font-style:italic;">📍 Use current location</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="background:var(--secondarySystemGroupedBackground); border-radius:12px; margin:16px 16px 0; overflow:hidden;">
+      <div style="padding:12px 16px; display:flex; align-items:center; gap:8px; color:var(--blue); font-size:17px;">
+        <span style="font-size:20px;">＋</span> Add Station Profile
+      </div>
+    </div>
+  </div>
+  <div class="home-indicator"><div class="bar"></div></div>
+</div>
+<div class="phone-caption">Mirrors RadioPickerSheet pattern.<br>Swipe to delete. Tap to select.</div>
+</div>
+
+<div class="phone-wrapper">
+<div class="phone-label">5. Location Change Prompt</div>
+<div class="phone">
+  <div class="status-bar">
+    <span class="time">15:10</span>
+    <span class="status-icons">
+      <span>●●●●○</span>
+      <span>📶</span>
+      <span>🔋</span>
+    </span>
+  </div>
+  <!-- Dimmed background -->
+  <div style="background:rgba(0,0,0,0.4); height:200px;"></div>
+
+  <!-- Sheet -->
+  <div class="sheet">
+    <div class="drag-indicator"><div class="bar"></div></div>
+
+    <div style="padding:20px 24px; text-align:center;">
+      <div style="font-size:48px; margin-bottom:12px;">📍</div>
+      <div style="font-size:20px; font-weight:600; margin-bottom:8px;">Location Changed</div>
+      <div style="font-size:15px; color:var(--secondaryLabel); margin-bottom:20px;">Your grid square appears to have changed.</div>
+
+      <!-- Grid comparison -->
+      <div style="background:var(--systemGray5); border-radius:12px; padding:16px; margin-bottom:20px;">
+        <div style="font-size:22px; font-weight:600; display:flex; align-items:center; justify-content:center; gap:12px;" class="mono">
+          <span>EM85</span>
+          <span style="color:var(--secondaryLabel); font-size:16px;">→</span>
+          <span style="color:var(--blue);">EM84</span>
+        </div>
+        <div style="font-size:13px; color:var(--secondaryLabel); margin-top:6px;">≈ 15 km moved</div>
+      </div>
+
+      <!-- Buttons -->
+      <div class="btn primary" style="margin-bottom:8px;">Update to EM84</div>
+      <div class="btn bordered" style="margin-bottom:20px;">Keep EM85</div>
+
+      <!-- Profile switcher -->
+      <div style="font-size:13px; color:var(--secondaryLabel); margin-bottom:10px;">Switch station profile?</div>
+      <div style="display:flex; gap:8px; justify-content:center;">
+        <span class="chip selected">Home QTH</span>
+        <span class="chip unselected">Mobile</span>
+        <span class="chip unselected">Portable</span>
+      </div>
+    </div>
+  </div>
+  <div class="home-indicator"><div class="bar"></div></div>
+</div>
+<div class="phone-caption">Auto-shown when app resumes and grid changed.<br>Optional profile switch below.</div>
+</div>
+</div>
+
+<!-- ============================================ -->
+<!-- SCREEN 6: Filter Sheet                       -->
+<!-- ============================================ -->
+
+<div class="phone-wrapper">
+<div class="phone-label">6. Spot Filter Sheet</div>
+<div class="phone">
+  <div class="status-bar">
+    <span class="time">14:38</span>
+    <span class="status-icons">
+      <span>●●●●○</span>
+      <span>📶</span>
+      <span>🔋</span>
+    </span>
+  </div>
+  <!-- Dimmed background -->
+  <div style="background:rgba(0,0,0,0.4); height:120px;"></div>
+
+  <!-- Sheet -->
+  <div class="sheet">
+    <div class="drag-indicator"><div class="bar"></div></div>
+
+    <div style="padding:16px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <span style="font-size:17px; font-weight:600;">Filter Spots</span>
+        <span style="font-size:15px; color:var(--blue);">Reset</span>
+      </div>
+
+      <!-- Source -->
+      <div style="font-size:13px; font-weight:600; color:var(--secondaryLabel); margin-bottom:8px;">SOURCE</div>
+      <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px;">
+        <span class="chip selected">🌲 POTA</span>
+        <span class="chip selected">📡 RBN</span>
+        <span class="chip unselected">⛰ SOTA</span>
+      </div>
+
+      <!-- Band -->
+      <div style="font-size:13px; font-weight:600; color:var(--secondaryLabel); margin-bottom:8px;">BAND</div>
+      <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px;">
+        <span class="chip unselected">160m</span>
+        <span class="chip unselected">80m</span>
+        <span class="chip selected">40m</span>
+        <span class="chip unselected">30m</span>
+        <span class="chip selected">20m</span>
+        <span class="chip unselected">17m</span>
+        <span class="chip selected">15m</span>
+        <span class="chip unselected">12m</span>
+        <span class="chip unselected">10m</span>
+      </div>
+
+      <!-- Mode -->
+      <div style="font-size:13px; font-weight:600; color:var(--secondaryLabel); margin-bottom:8px;">MODE</div>
+      <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px;">
+        <span class="chip selected">CW</span>
+        <span class="chip unselected">SSB</span>
+        <span class="chip unselected">FT8</span>
+        <span class="chip unselected">RTTY</span>
+      </div>
+
+      <!-- Region -->
+      <div style="font-size:13px; font-weight:600; color:var(--secondaryLabel); margin-bottom:8px;">REGION</div>
+      <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px;">
+        <span class="chip selected">All</span>
+        <span class="chip unselected">NA</span>
+        <span class="chip unselected">DX</span>
+      </div>
+
+      <div style="height:0.5px; background:var(--separator); margin-bottom:12px;"></div>
+
+      <!-- Toggles -->
+      <div class="toggle-row" style="padding:8px 0; background:transparent;">
+        <span class="text" style="font-size:15px;">Hide already-worked callsigns</span>
+        <div class="toggle-track off"><div class="thumb"></div></div>
+      </div>
+      <div class="toggle-row" style="padding:8px 0; background:transparent;">
+        <span class="text" style="font-size:15px;">Show only new DXCC</span>
+        <div class="toggle-track off"><div class="thumb"></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="home-indicator"><div class="bar"></div></div>
+</div>
+<div class="phone-caption">Multi-select for source/band/mode. Single-select for region.<br>Toggles for worked-before and DXCC filtering.</div>
+</div>
+
+<!-- ============================================ -->
+<!-- SCREEN 7: Daily Summary + Band Timeline      -->
+<!-- ============================================ -->
+
+<div class="phone-wrapper">
+<div class="phone-label">7. Daily Summary with Band Timeline</div>
+<div class="phone">
+  <div class="status-bar">
+    <span class="time">15:45</span>
+    <span class="status-icons">
+      <span>●●●●○</span>
+      <span>📶</span>
+      <span>🔋</span>
+    </span>
+  </div>
+  <div class="nav-bar">
+    <div class="back" style="color:var(--blue);">‹ Back</div>
+    <div class="title">Today's Activity</div>
+    <div class="action"></div>
+  </div>
+  <div class="content">
+    <!-- Day summary card -->
+    <div class="card">
+      <div style="font-size:15px; font-weight:600; margin-bottom:4px;">Feb 10, 2026</div>
+      <div style="font-size:14px; color:var(--secondaryLabel); line-height:1.5;">
+        12 QSOs · 4 bands · 2 modes<br>
+        3 new DXCC · 2 POTA hunters
+      </div>
+    </div>
+
+    <!-- Band Timeline -->
+    <div style="margin:0 16px;">
+      <div style="font-size:13px; font-weight:600; color:var(--secondaryLabel); margin-bottom:4px;">BAND TIMELINE</div>
+    </div>
+    <div class="card" style="padding:12px 16px;">
+      <!-- Time axis -->
+      <div style="display:flex; justify-content:space-between; font-size:11px; color:var(--secondaryLabel); margin-bottom:10px; padding:0 2px;" class="mono">
+        <span>13:00</span>
+        <span>14:00</span>
+        <span>15:00</span>
+        <span>16:00</span>
+      </div>
+
+      <!-- Timeline segments -->
+      <div style="position:relative; height:32px; margin-bottom:6px;">
+        <div style="position:absolute; left:0%; width:52%; height:100%; background:var(--blue); border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600; color:#fff;">
+          20m CW (6)
+        </div>
+      </div>
+      <div style="position:relative; height:32px; margin-bottom:6px;">
+        <div style="position:absolute; left:52%; width:28%; height:100%; background:var(--green); border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600; color:#fff;">
+          40m CW (3)
+        </div>
+      </div>
+      <div style="position:relative; height:32px; margin-bottom:6px;">
+        <div style="position:absolute; left:78%; width:16%; height:100%; background:var(--orange); border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600; color:#fff;">
+          15m SSB
+        </div>
+      </div>
+      <div style="position:relative; height:32px;">
+        <div style="position:absolute; left:92%; width:8%; height:100%; background:var(--purple); border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:600; color:#fff;">
+          2
+        </div>
+      </div>
+    </div>
+
+    <!-- QSO list -->
+    <div style="margin:8px 16px 0;">
+      <div style="font-size:13px; font-weight:600; color:var(--secondaryLabel); margin-bottom:4px;">QSOs</div>
+    </div>
+    <div style="background:var(--systemGray6); border-radius:12px; margin:4px 16px; overflow:hidden;">
+      <div class="qso-row">
+        <span class="time mono">15:32</span>
+        <span class="call mono">W4DOG</span>
+        <span class="band-mode-cell"><span class="badge blue">20m</span><span class="badge blue">CW</span></span>
+        <span class="park mono" style="text-align:right;">K-1234</span>
+        <span class="rst mono">599</span>
+      </div>
+      <div class="divider" style="margin:0 16px;"></div>
+      <div class="qso-row">
+        <span class="time mono">15:28</span>
+        <span class="call mono">N5RZ</span>
+        <span class="band-mode-cell"><span class="badge blue">40m</span><span class="badge blue">CW</span></span>
+        <span class="park"></span>
+        <span class="rst mono">599</span>
+      </div>
+      <div class="divider" style="margin:0 16px;"></div>
+      <div class="qso-row">
+        <span class="time mono">15:15</span>
+        <span class="call mono">KE8OGR</span>
+        <span class="band-mode-cell"><span class="badge blue">20m</span><span class="badge blue">CW</span></span>
+        <span class="park mono" style="text-align:right;">K-9012</span>
+        <span class="rst mono">599</span>
+      </div>
+      <div class="divider" style="margin:0 16px;"></div>
+      <div class="qso-row">
+        <span class="time mono">15:02</span>
+        <span class="call mono">JA7ABC</span>
+        <span class="band-mode-cell"><span class="badge blue">20m</span><span class="badge blue">CW</span></span>
+        <span class="park"></span>
+        <span class="rst mono">579</span>
+      </div>
+      <div class="divider" style="margin:0 16px;"></div>
+      <div class="qso-row">
+        <span class="time mono">14:45</span>
+        <span class="call mono">VK2XYZ</span>
+        <span class="band-mode-cell"><span class="badge blue">15m</span><span class="badge blue">SSB</span></span>
+        <span class="park"></span>
+        <span class="rst mono">57</span>
+      </div>
+      <div class="divider" style="margin:0 16px;"></div>
+      <div class="qso-row">
+        <span class="time mono">14:30</span>
+        <span class="call mono">DL1ABC</span>
+        <span class="band-mode-cell"><span class="badge blue">15m</span><span class="badge blue">SSB</span></span>
+        <span class="park"></span>
+        <span class="rst mono">59</span>
+      </div>
+      <div class="divider" style="margin:0 16px;"></div>
+      <div class="qso-row">
+        <span class="time mono">14:15</span>
+        <span class="call mono">KG5YOW</span>
+        <span class="band-mode-cell"><span class="badge blue">40m</span><span class="badge blue">CW</span></span>
+        <span class="park mono" style="text-align:right;">K-5678</span>
+        <span class="rst mono">599</span>
+      </div>
+    </div>
+
+    <!-- Previous day nav -->
+    <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; margin-top:4px;">
+      <span style="color:var(--blue); font-size:15px;">‹ Feb 9: 8 QSOs · 3 bands</span>
+      <span style="color:var(--tertiaryLabel); font-size:15px;">›</span>
+    </div>
+  </div>
+  <div class="home-indicator"><div class="bar"></div></div>
+</div>
+<div class="phone-caption">Band timeline reuses QSOTimelineLayout engine.<br>Navigate to previous days with swipe or arrows.</div>
+</div>
+
+<!-- ============================================ -->
+<!-- SCREEN 8: Toast Notifications                -->
+<!-- ============================================ -->
+
+<div class="phone-wrapper">
+<div class="phone-label">8. Toast Notifications</div>
+<div style="width:393px; display:flex; flex-direction:column; gap:16px;">
+
+  <div class="toast">
+    <div class="icon" style="color:var(--green);">✓</div>
+    <div class="text">
+      <div class="toast-title">QSO Logged</div>
+      <div class="toast-subtitle"><span class="mono">W4DOG</span> · 20m CW · K-1234</div>
+    </div>
+  </div>
+
+  <div class="toast">
+    <div class="icon">🎯</div>
+    <div class="text">
+      <div class="toast-title">Daily Goal!</div>
+      <div class="toast-subtitle">10 QSOs today — nice work!</div>
+    </div>
+  </div>
+
+  <div class="toast">
+    <div class="icon">🌍</div>
+    <div class="text">
+      <div class="toast-title">New DXCC Entity!</div>
+      <div class="toast-subtitle">Russia (<span class="mono">RA3XYZ</span>) — DXCC #156</div>
+    </div>
+  </div>
+
+  <div class="toast" style="border-left:3px solid var(--orange);">
+    <div class="icon" style="color:var(--orange);">⚠</div>
+    <div class="text">
+      <div class="toast-title">Duplicate</div>
+      <div class="toast-subtitle"><span class="mono">KE8OGR</span> already worked on 20m CW today</div>
+    </div>
+  </div>
+
+</div>
+<div class="phone-caption">Reuse existing LoggerToastView patterns with new content types.</div>
+</div>
+
+<!-- ============================================ -->
+<!-- SCREEN 9: Add Profile Form                   -->
+<!-- ============================================ -->
+
+<div class="phone-wrapper">
+<div class="phone-label">9. Add Station Profile</div>
+<div class="phone">
+  <div class="status-bar">
+    <span class="time">14:39</span>
+    <span class="status-icons">
+      <span>●●●●○</span>
+      <span>📶</span>
+      <span>🔋</span>
+    </span>
+  </div>
+  <div class="nav-bar">
+    <div class="back" style="color:var(--blue);">Cancel</div>
+    <div class="title">New Profile</div>
+    <div class="action" style="font-weight:600;">Save</div>
+  </div>
+  <div class="content" style="background:var(--systemGroupedBackground);">
+    <div class="section-header">Details</div>
+    <div style="background:var(--secondarySystemGroupedBackground); border-radius:12px; margin:0 16px; overflow:hidden;">
+      <div class="form-field">
+        <div class="form-label">Name</div>
+        <div class="form-value">Home QTH</div>
+      </div>
+      <div class="form-field">
+        <div class="form-row">
+          <div>
+            <div class="form-label">Radio</div>
+            <div class="form-value">IC-7300</div>
+          </div>
+          <span class="chevron">›</span>
+        </div>
+      </div>
+      <div class="form-field">
+        <div class="form-label">Power (Watts)</div>
+        <div class="form-value mono">100</div>
+      </div>
+      <div class="form-field">
+        <div class="form-label">Antenna</div>
+        <div class="form-value">Hex beam</div>
+      </div>
+    </div>
+
+    <div class="section-header">Location</div>
+    <div style="background:var(--secondarySystemGroupedBackground); border-radius:12px; margin:0 16px; overflow:hidden;">
+      <div class="form-field">
+        <div class="form-label">Grid Square</div>
+        <div class="form-value mono">EM85</div>
+      </div>
+      <div class="toggle-row">
+        <span class="text">Use current location</span>
+        <div class="toggle-track off"><div class="thumb"></div></div>
+      </div>
+    </div>
+
+    <div class="section-header">Options</div>
+    <div style="background:var(--secondarySystemGroupedBackground); border-radius:12px; margin:0 16px; overflow:hidden;">
+      <div class="toggle-row">
+        <span class="text">Set as default profile</span>
+        <div class="toggle-track on"><div class="thumb"></div></div>
+      </div>
+    </div>
+
+    <div style="padding:16px; font-size:12px; color:var(--tertiaryLabel); text-align:center;">
+      Radio is selected from your saved radio list.<br>
+      Default profile is auto-selected when opening the activity log.
+    </div>
+  </div>
+  <div class="home-indicator"><div class="bar"></div></div>
+</div>
+<div class="phone-caption">Radio field opens the existing RadioPickerSheet.<br>UserDefaults-backed storage (JSON array).</div>
+</div>
+
+</body>
+</html>
