@@ -81,7 +81,7 @@ struct ActivityLogSetupSheet: View {
 
     @State private var logName = "Daily Log"
     @State private var callsign = ""
-    @State private var profileName = "Home QTH"
+    @State private var profileName = "QTH"
     @State private var selectedRig: String?
     @State private var powerText = ""
     @State private var antenna = ""
