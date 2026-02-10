@@ -4,7 +4,7 @@ import SwiftUI
 // MARK: - ActivityLogView
 
 /// Main Activity Log view, pushed from the dashboard card.
-/// Spot-list-first layout with quick log and recent QSOs below.
+/// Quick log first, then spots list and recent QSOs below.
 struct ActivityLogView: View {
     // MARK: Internal
 
@@ -16,8 +16,8 @@ struct ActivityLogView: View {
         ScrollView {
             VStack(spacing: 16) {
                 headerSection
-                spotsSection
                 quickLogSection
+                spotsSection
                 recentQSOsSection
             }
             .padding()

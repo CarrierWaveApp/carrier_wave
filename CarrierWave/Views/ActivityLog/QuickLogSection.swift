@@ -5,7 +5,7 @@ import UIKit
 // MARK: - QuickLogSection
 
 /// Manual callsign entry section for the Activity Log.
-/// Supports quick entry parsing (e.g., "AJ7CM 579 US-0189").
+/// Mirrors the Logger's callsign input + compact fields layout.
 struct QuickLogSection: View {
     // MARK: Internal
 
@@ -17,40 +17,17 @@ struct QuickLogSection: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Quick Log")
                 .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.secondary)
 
-            HStack(spacing: 8) {
-                TextField("Callsign...", text: $callsignInput)
-                    .font(.subheadline.monospaced())
-                    .textInputAutocapitalization(.characters)
-                    .autocorrectionDisabled()
-                    .padding(.horizontal, 8)
-                    .frame(height: 36)
-                    .background(Color(.tertiarySystemGroupedBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                    .onSubmit { logFromInput() }
+            callsignRow
 
-                rstField(label: "Snt", text: $rstSent)
-                rstField(label: "Rcv", text: $rstReceived)
-
-                Button {
-                    logFromInput()
-                } label: {
-                    Text("Log")
-                        .font(.subheadline.weight(.medium))
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(.green)
-                .disabled(callsignInput.trimmingCharacters(in: .whitespaces).isEmpty)
-            }
+            fieldsRow
 
             // Show quick entry preview if multi-token input
             if !parsedTokens.isEmpty {
                 quickEntryPreview
             }
         }
-        .padding()
-        .background(Color(.systemGray6))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 
     // MARK: Private
@@ -59,7 +36,7 @@ struct QuickLogSection: View {
     @State private var rstSent = ""
     @State private var rstReceived = ""
 
-    @ScaledMetric(relativeTo: .caption) private var rstFieldWidth: CGFloat = 44
+    private let fieldHeight: CGFloat = 36
 
     private var defaultRST: String {
         let mode = currentMode.uppercased()
@@ -77,6 +54,70 @@ struct QuickLogSection: View {
         return QuickEntryParser.parseTokens(trimmed)
     }
 
+    private var isInputEmpty: Bool {
+        callsignInput.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+
+    // MARK: - Callsign Row (matches Logger callsignInputSection)
+
+    private var callsignRow: some View {
+        HStack(spacing: 8) {
+            HStack(spacing: 12) {
+                TextField("Callsign or quick entry...", text: $callsignInput)
+                    .font(.subheadline.monospaced())
+                    .textInputAutocapitalization(.characters)
+                    .autocorrectionDisabled()
+                    .onSubmit { logFromInput() }
+
+                Button {
+                    callsignInput = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(.secondary)
+                }
+                .opacity(callsignInput.isEmpty ? 0 : 1)
+                .disabled(callsignInput.isEmpty)
+            }
+            .padding()
+            .background(Color(.secondarySystemGroupedBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+
+            Button {
+                logFromInput()
+            } label: {
+                Text("LOG")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .frame(maxHeight: .infinity)
+                    .frame(width: 48)
+                    .background(.green)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+            }
+            .buttonStyle(.plain)
+            .disabled(isInputEmpty)
+            .opacity(isInputEmpty ? 0.4 : 1)
+            .accessibilityLabel("Log QSO")
+        }
+        .fixedSize(horizontal: false, vertical: true)
+    }
+
+    // MARK: - Fields Row (matches Logger compactFieldsSection)
+
+    private var fieldsRow: some View {
+        HStack(spacing: 8) {
+            compactField(label: "Sent", placeholder: defaultRST, text: $rstSent, width: 50)
+                .keyboardType(.numberPad)
+            compactField(label: "Rcvd", placeholder: defaultRST, text: $rstReceived, width: 50)
+                .keyboardType(.numberPad)
+            Spacer()
+        }
+        .padding(12)
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+
+    // MARK: - Quick Entry Preview
+
     private var quickEntryPreview: some View {
         HStack(spacing: 4) {
             ForEach(Array(parsedTokens.enumerated()), id: \.offset) { _, token in
@@ -90,20 +131,31 @@ struct QuickLogSection: View {
         }
     }
 
-    private func rstField(label: String, text: Binding<String>) -> some View {
+    // MARK: - Compact Field (matches Logger compactField)
+
+    private func compactField(
+        label: String,
+        placeholder: String,
+        text: Binding<String>,
+        width: CGFloat? = nil
+    ) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(label)
                 .font(.caption2)
                 .foregroundStyle(.secondary)
-            TextField(defaultRST, text: text)
-                .font(.caption.monospaced())
-                .frame(width: rstFieldWidth, height: 44)
-                .multilineTextAlignment(.center)
+            TextField(placeholder, text: text)
+                .font(.subheadline.monospaced())
+                .textInputAutocapitalization(.characters)
+                .autocorrectionDisabled()
+                .padding(.horizontal, 8)
+                .frame(height: fieldHeight)
                 .background(Color(.tertiarySystemGroupedBackground))
                 .clipShape(RoundedRectangle(cornerRadius: 8))
-                .keyboardType(.numberPad)
+                .frame(width: width)
         }
     }
+
+    // MARK: - Token Colors
 
     private func tokenColor(for type: TokenType) -> Color {
         switch type {
@@ -116,6 +168,8 @@ struct QuickLogSection: View {
         case .notes: .gray
         }
     }
+
+    // MARK: - Logging
 
     private func logFromInput() {
         let trimmed = callsignInput.trimmingCharacters(in: .whitespaces)
