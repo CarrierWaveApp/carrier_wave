@@ -78,6 +78,8 @@ Pure logic library that can be tested without iOS Simulator. Run tests with `mak
 | `BandPlan+Activities.swift` | Frequency activity data (QRP, SSTV, FT8, CWT, nets) and time windows |
 | `UserProfile.swift` | User's amateur radio profile (callsign, name, QTH, grid, license) |
 | `SpotRegion.swift` | Geographic region classification for spots (SpotRegion, EnrichedSpot, SpotSummary) |
+| `ActivityLog.swift` | Activity log SwiftData model for persistent hunter workflow |
+| `StationProfile.swift` | Station profile struct and UserDefaults-backed storage |
 
 ## Services (`CarrierWave/Services/`)
 | File | Purpose |
@@ -168,12 +170,14 @@ Pure logic library that can be tested without iOS Simulator. Run tests with `mak
 | `SpotsService.swift` | Combined RBN + POTA spots service |
 | `P2PService.swift` | Park-to-park discovery via RBN skimmers near user's grid |
 | `SpotCommentsService.swift` | Background polling for POTA spot comments |
-| `SpotMonitoringService.swift` | Background RBN/POTA spot polling during logging sessions |
+| `SpotMonitoringService.swift` | Background RBN/POTA spot polling (activator + hunter modes) |
+| `WorkedBeforeCache.swift` | Actor-based cache for worked-before spot checking |
 | `BandPlanService.swift` | Validates frequency/mode against license class privileges |
 | `FrequencyActivityService.swift` | Aggregates nearby frequency activity from RBN |
 | `HamDBClient.swift` | HamDB.org API client for US callsign license class lookup |
 | `UserProfileService.swift` | Persists and retrieves user profile data |
 | `QuickEntryParser.swift` | Parses quick entry strings (e.g., "AJ7CM 579 WA US-0189") into structured data |
+| `ActivityLogManager.swift` | Activity log lifecycle management (create, activate, log QSO, daily stats) |
 
 ## Services - Query Language (`CarrierWave/Services/QueryLanguage/`)
 
@@ -293,6 +297,28 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `ChallengeProgressCard.swift` | Progress visualization card |
 | `LeaderboardView.swift` | Challenge leaderboard display |
 
+## Views - Activity Log (`CarrierWave/Views/ActivityLog/`)
+| File | Purpose |
+|------|---------|
+| `ActivityLogView.swift` | Main activity log view (spots, quick log, recent QSOs) |
+| `ActivityLogCard.swift` | Dashboard card component (setup prompt or active stats) |
+| `ActivityLogHeader.swift` | Daily counter bar and station profile banner |
+| `ActivityLogSetupSheet.swift` | Initial activity log setup sheet (name, callsign, profile) |
+| `ActivityLogSettingsView.swift` | Activity log settings (profiles, upload, daily goal) |
+| `ActivityLogSpotsList.swift` | Hunter spot list container with worked-before checking |
+| `ActivityLogSpotRow.swift` | Individual spot row with frequency, callsign, badges |
+| `SpotLogSheet.swift` | Half-sheet for logging a QSO from a tapped spot |
+| `SpotFilterBar.swift` | Horizontal scrolling filter chips for spot list |
+| `SpotFilterSheet.swift` | Full filter sheet (source, band, mode, toggles) |
+| `QuickLogSection.swift` | Manual callsign entry section with quick entry parsing |
+| `RecentQSOsSection.swift` | Recent QSOs list for today |
+| `StationProfilePicker.swift` | Station profile selection sheet |
+| `AddEditProfileSheet.swift` | Station profile add/edit form |
+| `LocationChangeSheet.swift` | Grid change prompt (old grid → new grid with distance) |
+| `BandTimelineView.swift` | Horizontal band timeline showing activity segments |
+| `DailySummaryView.swift` | Full day activity with band timeline and QSO list |
+| `ActivityShareCardView.swift` | Daily activity share card using ShareCardContent |
+
 ## Views - Activity (`CarrierWave/Views/Activity/`)
 | File | Purpose |
 |------|---------|
@@ -349,6 +375,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `features/logger-requirements.md` | Logger requirements and compliance checklist |
 | `features/sync.md` | QRZ, POTA, LoFi sync integration |
 | `features/statistics.md` | Dashboard stats and drilldown views |
+| `features/tour-requirements.md` | Feature tour rules and mini tour implementation guide |
 
 ## Views - Map (`CarrierWave/Views/Map/`)
 | File | Purpose |

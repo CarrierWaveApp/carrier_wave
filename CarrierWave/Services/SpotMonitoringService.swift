@@ -27,6 +27,12 @@ final class SpotMonitoringService {
     /// Last error message (cleared on successful fetch)
     private(set) var lastError: String?
 
+    /// Whether in hunter mode (fetches ALL spots, not just self-spots)
+    private(set) var isHunterMode = false
+
+    /// All spots in hunter mode (full list for display)
+    private(set) var hunterSpots: [EnrichedSpot] = []
+
     /// Start monitoring spots for a callsign
     /// - Parameters:
     ///   - callsign: The operator's callsign to monitor spots for
@@ -57,15 +63,41 @@ final class SpotMonitoringService {
         }
     }
 
+    /// Start monitoring ALL spots for hunter mode (activity log)
+    /// - Parameter myGrid: The operator's grid square for distance calculation
+    func startHunterMonitoring(myGrid: String?) {
+        guard !isMonitoring else {
+            return
+        }
+
+        self.myGrid = myGrid
+        isHunterMode = true
+
+        if let grid = myGrid {
+            myCoordinate = MaidenheadConverter.coordinate(from: grid)
+        } else {
+            myCoordinate = nil
+        }
+
+        isMonitoring = true
+        lastError = nil
+
+        pollingTask = Task { [weak self] in
+            await self?.hunterPollLoop()
+        }
+    }
+
     /// Stop monitoring spots
     func stopMonitoring() {
         isMonitoring = false
+        isHunterMode = false
         pollingTask?.cancel()
         pollingTask = nil
         callsign = nil
         myGrid = nil
         myCoordinate = nil
         summary = .empty
+        hunterSpots = []
         lastError = nil
     }
 
@@ -108,6 +140,9 @@ final class SpotMonitoringService {
     @ObservationIgnored
     private var rbnClient: RBNClient?
 
+    /// Window for hunter spots (30 minutes — broader than activator mode)
+    private let hunterSpotWindowMinutes = 30
+
     /// Main polling loop
     private func pollLoop() async {
         guard let callsign else {
@@ -126,6 +161,93 @@ final class SpotMonitoringService {
             }
 
             await fetchSpots(for: callsign)
+        }
+    }
+
+    /// Hunter mode polling loop — fetches ALL spots
+    private func hunterPollLoop() async {
+        await fetchAllSpots()
+
+        while !Task.isCancelled, isMonitoring {
+            try? await Task.sleep(for: .seconds(pollingInterval))
+
+            guard !Task.isCancelled, isMonitoring else {
+                break
+            }
+
+            await fetchAllSpots()
+        }
+    }
+
+    /// Fetch ALL spots for hunter mode (RBN + POTA, not filtered by callsign)
+    private func fetchAllSpots() async {
+        let cutoff = Date().addingTimeInterval(-Double(hunterSpotWindowMinutes) * 60)
+
+        let rbnUnified = await fetchHunterRBNSpots(since: cutoff)
+        let potaUnified = await fetchHunterPOTASpots(since: cutoff)
+
+        var allSpots = rbnUnified + potaUnified
+        allSpots.sort { $0.timestamp > $1.timestamp }
+
+        let enriched = enrichSpots(allSpots)
+        hunterSpots = enriched
+        summary = buildSummary(from: enriched)
+        lastError = nil
+    }
+
+    /// Fetch all RBN spots (not per-callsign) for hunter mode
+    private func fetchHunterRBNSpots(since cutoff: Date) async -> [UnifiedSpot] {
+        let client = RBNClient()
+        guard let rbnSpots = try? await client.spots(since: cutoff, limit: 200) else {
+            return []
+        }
+        return rbnSpots.map { spot in
+            UnifiedSpot(
+                id: "rbn-\(spot.id)",
+                callsign: spot.callsign,
+                frequencyKHz: spot.frequency,
+                mode: spot.mode,
+                timestamp: spot.timestamp,
+                source: .rbn,
+                snr: spot.snr,
+                wpm: spot.wpm,
+                spotter: spot.spotter,
+                spotterGrid: spot.spotterGrid,
+                parkRef: nil,
+                parkName: nil,
+                comments: nil
+            )
+        }
+    }
+
+    /// Fetch all POTA spots for hunter mode
+    private func fetchHunterPOTASpots(since cutoff: Date) async -> [UnifiedSpot] {
+        let client = POTAClient(authService: POTAAuthService())
+        guard let potaSpots = try? await client.fetchActiveSpots() else {
+            return []
+        }
+        return potaSpots.compactMap { spot in
+            guard let freqKHz = spot.frequencyKHz,
+                  let timestamp = spot.timestamp,
+                  timestamp >= cutoff
+            else {
+                return nil
+            }
+            return UnifiedSpot(
+                id: "pota-\(spot.spotId)",
+                callsign: spot.activator,
+                frequencyKHz: freqKHz,
+                mode: spot.mode,
+                timestamp: timestamp,
+                source: .pota,
+                snr: nil,
+                wpm: nil,
+                spotter: spot.spotter,
+                spotterGrid: nil,
+                parkRef: spot.reference,
+                parkName: spot.parkName,
+                comments: spot.comments
+            )
         }
     }
 

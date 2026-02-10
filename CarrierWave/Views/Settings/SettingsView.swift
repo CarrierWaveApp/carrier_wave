@@ -131,6 +131,7 @@ struct SettingsMainView: View {
             profileSection
             tabsSection
             loggerSection
+            activityLogSection
             potaSection
             SyncSourcesSection(
                 potaAuth: potaAuth,
@@ -361,6 +362,22 @@ struct SettingsMainView: View {
                 "Keep screen on prevents device sleep during sessions. "
                     + "Notes and RST are always visible. Other fields appear without tapping \"More Fields\"."
             )
+        }
+    }
+
+    private var activityLogSection: some View {
+        Section("Activity Log") {
+            NavigationLink {
+                ActivityLogSettingsView()
+            } label: {
+                HStack {
+                    Text("Activity Log Settings")
+                    Spacer()
+                    let count = StationProfileStorage.load().count
+                    Text("\(count) profile\(count == 1 ? "" : "s")")
+                        .foregroundStyle(.secondary)
+                }
+            }
         }
     }
 

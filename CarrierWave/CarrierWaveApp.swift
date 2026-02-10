@@ -23,6 +23,7 @@ struct CarrierWaveApp: App {
             Club.self,
             ActivityItem.self,
             LoggingSession.self,
+            ActivityLog.self,
             CallsignNotesSource.self,
             DismissedSuggestion.self,
         ])

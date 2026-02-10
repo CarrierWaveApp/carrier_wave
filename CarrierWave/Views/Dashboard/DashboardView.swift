@@ -21,6 +21,10 @@ struct DashboardView: View {
     @AppStorage("debugMode") var debugMode = false
     @AppStorage("bypassPOTAMaintenance") var bypassPOTAMaintenance = false
 
+    // Activity log state
+    @State var activityLogManager: ActivityLogManager?
+    @State var showingActivityLogSetup = false
+
     // Sync state
     @State var isSyncing = false
     @State var syncingService: ServiceType?
@@ -91,6 +95,7 @@ struct DashboardView: View {
             ScrollView {
                 VStack(spacing: 16) {
                     activityCard
+                    activityLogCard
                     // In landscape on iPhone (compact vertical), combine streaks and stats
                     if verticalSizeClass == .compact {
                         combinedStreaksAndStatsCard
@@ -107,6 +112,9 @@ struct DashboardView: View {
             .onAppear {
                 loadQRZConfig()
                 refreshServiceStatus()
+                if activityLogManager == nil {
+                    activityLogManager = ActivityLogManager(modelContext: modelContext)
+                }
             }
             .task {
                 // Compute stats and presence counts in background on first load
@@ -173,6 +181,9 @@ struct DashboardView: View {
             }
             .sheet(item: $selectedService) { service in
                 serviceDetailSheet(for: service)
+            }
+            .sheet(isPresented: $showingActivityLogSetup) {
+                ActivityLogSetupSheet(manager: activityLogManager)
             }
         }
     }
@@ -370,27 +381,6 @@ struct DashboardView: View {
         .padding()
         .background(Color(.systemGray6))
         .clipShape(RoundedRectangle(cornerRadius: 12))
-    }
-
-    // MARK: - Favorites Card
-
-    @ViewBuilder
-    private var favoritesCard: some View {
-        if asyncStats.hasComputed {
-            FavoritesCard(asyncStats: asyncStats, tourState: tourState)
-        } else {
-            // Show placeholder while stats are loading
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Favorites")
-                    .font(.headline)
-                Text("Loading...")
-                    .foregroundStyle(.secondary)
-            }
-            .padding()
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color(.systemGray6))
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-        }
     }
 }
 

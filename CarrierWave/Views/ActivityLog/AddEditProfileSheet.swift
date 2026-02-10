@@ -1,0 +1,127 @@
+import SwiftUI
+
+// MARK: - AddEditProfileSheet
+
+/// Sheet for adding or editing a station profile.
+/// Reuses RadioPickerSheet for radio selection.
+struct AddEditProfileSheet: View {
+    // MARK: Lifecycle
+
+    init(profile: StationProfile?, onSave: @escaping (StationProfile) -> Void) {
+        self.profile = profile
+        self.onSave = onSave
+
+        let existing = profile
+        profileId = existing?.id ?? UUID()
+        _name = State(initialValue: existing?.name ?? "")
+        _rig = State(initialValue: existing?.rig)
+        _powerText = State(initialValue: existing?.power.map { "\($0)" } ?? "")
+        _antenna = State(initialValue: existing?.antenna ?? "")
+        _grid = State(initialValue: existing?.grid ?? "")
+        _useCurrentLocation = State(initialValue: existing?.useCurrentLocation ?? false)
+        _isDefault = State(initialValue: existing?.isDefault ?? false)
+    }
+
+    // MARK: Internal
+
+    /// Pass nil to create a new profile, or an existing profile to edit
+    let profile: StationProfile?
+    let onSave: (StationProfile) -> Void
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Profile") {
+                    TextField("Name", text: $name)
+                        .textInputAutocapitalization(.words)
+                }
+
+                Section("Equipment") {
+                    HStack {
+                        Text("Radio")
+                        Spacer()
+                        Button(rig ?? "None") {
+                            showingRadioPicker = true
+                        }
+                        .foregroundStyle(.secondary)
+                    }
+
+                    HStack {
+                        Text("Power (W)")
+                        Spacer()
+                        TextField("Watts", text: $powerText)
+                            .keyboardType(.numberPad)
+                            .multilineTextAlignment(.trailing)
+                            .frame(width: 80)
+                    }
+
+                    TextField("Antenna", text: $antenna)
+                        .textInputAutocapitalization(.words)
+                }
+
+                Section("Location") {
+                    TextField("Grid Square", text: $grid)
+                        .font(.body.monospaced())
+                        .textInputAutocapitalization(.characters)
+                        .autocorrectionDisabled()
+
+                    Toggle("Use Current Location", isOn: $useCurrentLocation)
+                }
+
+                Section {
+                    Toggle("Set as Default", isOn: $isDefault)
+                }
+            }
+            .navigationTitle(isEditing ? "Edit Profile" : "New Profile")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") { save() }
+                        .disabled(
+                            name.trimmingCharacters(in: .whitespaces).isEmpty
+                        )
+                }
+            }
+            .sheet(isPresented: $showingRadioPicker) {
+                RadioPickerSheet(selection: $rig)
+            }
+        }
+    }
+
+    // MARK: Private
+
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var name: String
+    @State private var rig: String?
+    @State private var powerText: String
+    @State private var antenna: String
+    @State private var grid: String
+    @State private var useCurrentLocation: Bool
+    @State private var isDefault: Bool
+    @State private var showingRadioPicker = false
+
+    private let profileId: UUID
+
+    private var isEditing: Bool {
+        profile != nil
+    }
+
+    private func save() {
+        let saved = StationProfile(
+            id: profileId,
+            name: name.trimmingCharacters(in: .whitespaces),
+            power: Int(powerText),
+            rig: rig,
+            antenna: antenna.isEmpty ? nil : antenna,
+            grid: grid.isEmpty ? nil : grid.uppercased(),
+            useCurrentLocation: useCurrentLocation,
+            isDefault: isDefault
+        )
+        onSave(saved)
+        dismiss()
+    }
+}

@@ -215,6 +215,49 @@ enum MiniTourContent {
         ),
     ]
 
+    static let activityLog: [TourPage] = [
+        TourPage(
+            icon: "scope",
+            title: "Activity Log",
+            body: """
+            Your always-on logbook for everyday contacts. \
+            No session to start or stop — just open and log.
+            """
+        ),
+        TourPage(
+            icon: "text.line.first.and.arrowtriangle.forward",
+            title: "Quick Entry",
+            body: """
+            Type a callsign and tap Log. Or enter everything in one line: \
+            "AJ7CM 579 WA US-0189" to auto-fill RST, state, and park.
+            """
+        ),
+        TourPage(
+            icon: "antenna.radiowaves.left.and.right",
+            title: "Station Profiles",
+            body: """
+            Set up a station profile with your radio, power, antenna, and grid \
+            via the gear icon. Switch profiles when you change operating conditions.
+            """
+        ),
+        TourPage(
+            icon: "chart.bar.xaxis",
+            title: "Daily Tracking",
+            body: """
+            Your daily QSO count, bands, and modes update in real time. \
+            Set a daily goal in settings to stay motivated.
+            """
+        ),
+        TourPage(
+            icon: "arrow.up.doc",
+            title: "Automatic Uploads",
+            body: """
+            QSOs are marked for upload to QRZ and LoFi automatically. \
+            Activity log contacts never go to POTA — use a POTA session for activations.
+            """
+        ),
+    ]
+
     static func pages(for id: TourState.MiniTourID) -> [TourPage] {
         switch id {
         case .logger: logger
@@ -224,6 +267,7 @@ enum MiniTourContent {
         case .challenges: challenges
         case .statsDrilldown: statsDrilldown
         case .lofiSetup: lofiSetup
+        case .activityLog: activityLog
         }
     }
 }

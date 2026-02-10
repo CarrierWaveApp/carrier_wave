@@ -25,6 +25,7 @@ final class TourState {
         case challenges
         case statsDrilldown = "stats_drilldown"
         case lofiSetup = "lofi_setup"
+        case activityLog = "activity_log"
     }
 
     private(set) var hasCompletedIntroTour: Bool {

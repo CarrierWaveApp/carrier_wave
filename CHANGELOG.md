@@ -4,6 +4,28 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Add Activity Log feature for persistent hunter workflow — always-open daily QSO tracking without session start/stop (CAR-47, Phase 1)
+- Add ActivityLog SwiftData model and ActivityLogManager service for log lifecycle and QSO creation
+- Add StationProfile model with UserDefaults-backed storage for reusable station configurations
+- Add Dashboard card showing activity log setup prompt or today's QSO stats
+- Add main ActivityLogView with daily counter header, quick log section, and recent QSOs
+- Add station profile picker and add/edit sheets for managing equipment profiles
+- Add Activity Log settings section with profile management, upload service info, and daily goal
+- Activity log QSOs upload to QRZ and LoFi only (never POTA — no operator park reference)
+- Add mini tour for Activity Log (4 pages: overview, quick entry, daily tracking, uploads)
+- Add hunter spot list showing POTA and RBN spots with worked-before badges (CAR-47, Phase 2)
+- Add tap-to-log half-sheet pre-filled from spot data (callsign, frequency, mode, park)
+- Add spot filtering by source (POTA/RBN), band, mode, and hide-worked toggle
+- Add worked-before cache with dupe detection, today/historical band tracking
+- Add hunter monitoring mode to SpotMonitoringService for all-spots polling
+- Add daily summary view with band timeline visualization and day navigation (CAR-47, Phase 3)
+- Add location change detection sheet with grid distance display and profile switching
+- Add daily QSO goal tracking with alert notification on goal reached
+- Add daily activity share card for sharing day's QSO stats (CAR-47, Phase 4)
+- Add share button to daily summary view
+- Add activity feed integration — activity log QSOs now trigger activity detection (new DXCC, new band, DX contacts, streaks)
+
 ## [1.27.2] - 2026-02-09
 
 ### Changed
