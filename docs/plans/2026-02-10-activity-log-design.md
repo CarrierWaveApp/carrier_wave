@@ -3,6 +3,7 @@
 **Linear:** CAR-47
 **Status:** Draft
 **Date:** 2026-02-10
+**UI Mockups:** [Activity Log UI Mockups](2026-02-10-activity-log-ui-mockups.md)
 
 ## Problem
 
@@ -62,21 +63,33 @@ QSOs logged from the activity log still use the existing `QSO` model. They link 
 
 ### Station Profiles
 
-Reusable station configurations the user defines once and swaps between:
+Reusable station configurations the user defines once and swaps between. Follows the same `UserDefaults`-backed storage pattern as `RadioStorage` (used by `RadioPickerSheet`).
 
 ```swift
+/// UserDefaults-backed storage, mirrors RadioStorage pattern
+enum StationProfileStorage {
+    static func load() -> [StationProfile] { ... }
+    static func save(_ profiles: [StationProfile]) { ... }
+    static func add(_ profile: StationProfile) { ... }
+    static func remove(_ id: UUID) { ... }
+    static func defaultProfile() -> StationProfile? { ... }
+}
+
 struct StationProfile: Codable, Identifiable {
     var id: UUID
     var name: String          // "Home QTH", "Mobile", "QRP Portable"
     var power: Int?           // Watts
-    var rig: String?          // "IC-7300", "KX3"
+    var rig: String?          // "IC-7300", "KX3" — selected via existing RadioPickerSheet
     var antenna: String?      // "Hex beam", "EFHW"
     var grid: String?         // Default grid for this profile
+    var useCurrentLocation: Bool  // If true, grid comes from CoreLocation instead of fixed value
     var isDefault: Bool       // Auto-selected when opening activity log
 }
 ```
 
-Stored in UserDefaults or a SwiftData model. When the user opens the activity log, the default profile is loaded. They can switch profiles from a picker (e.g., arriving at a park for casual operating, switching from "Home" to "Portable").
+Storage: JSON-encoded array in `UserDefaults` under key `"stationProfiles"`. This matches the `RadioStorage` pattern — simple, no SwiftData migration needed, profiles are small user-managed data. The radio field (`rig`) reuses the existing `RadioPickerSheet` for selection rather than duplicating that UI.
+
+When the user opens the activity log, the default profile is loaded. They can switch profiles from a picker (e.g., arriving at a park for casual operating, switching from "Home" to "Portable").
 
 ### Daily Segments
 
@@ -328,7 +341,7 @@ Under Settings > Activity Log:
 
 2. **One activity log or many?** Should there be exactly one persistent activity log, or can users create multiple (e.g., "Home CW Hunting", "Contest Logging")? Recommendation: start with exactly one, add named logs later if needed.
 
-3. **Antenna field?** Station profiles include antenna. Is this worth tracking in ADIF (there's no standard ADIF field for antenna, though `MY_ANTENNA` exists as a non-standard extension)? Recommendation: store locally for display but don't include in ADIF exports.
+3. **Antenna field?** Station profiles include antenna. Is this worth tracking in ADIF (there's no standard ADIF field for antenna, though `MY_ANTENNA` exists as a non-standard extension)? Recommendation: store locally for display but don't include in ADIF exports. *(Note: `MY_ANTENNA` is actually in the ADIF 3.1.4 spec — could include it if services accept it.)*
 
 4. **Interaction with active POTA session?** If the user has an activity log open and starts a POTA session, what happens? Recommendation: POTA session takes over the logger UI. Activity log state is preserved but dormant. When POTA session ends, activity log resumes.
 
