@@ -4,6 +4,19 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.27.2] - 2026-02-09
+
+### Changed
+- Move Log QSO button inline next to callsign input field, always visible regardless of keyboard state (CAR-59)
+- Replace full-width Log QSO / Run Command buttons with compact LOG/RUN/SAVE button that stays fixed-width to prevent layout shifts
+- Anchor End Session confirmation dialog to the END button instead of bottom of screen
+- Move Delete Session sheet buttons above spacer so they remain visible when keyboard is open
+
+### Fixed
+- Fix callsign input field width shifting when clear button appears by always reserving space for it
+- Fix command mode purple border causing layout width changes by using strokeBorder
+- Fix End Session confirmation dialog hidden behind keyboard by dismissing keyboard first
+
 ## [1.27.1] - 2026-02-09
 
 ### Added

@@ -71,7 +71,17 @@ struct LoggerView: View {
                                 // Compact fields: State, RSTs, with More expansion
                                 compactFieldsSection
 
-                                logButtonSection
+                                // Cancel button when editing a QSO
+                                if editingQSO != nil {
+                                    Button {
+                                        cancelEditingCallsign()
+                                    } label: {
+                                        Text("Cancel Edit")
+                                            .font(.subheadline)
+                                    }
+                                    .buttonStyle(.bordered)
+                                    .accessibilityLabel("Cancel editing callsign")
+                                }
                             }
 
                             qsoListSection
@@ -191,24 +201,6 @@ struct LoggerView: View {
             }
             .sheet(isPresented: $showHelpSheet) {
                 LoggerHelpSheet()
-            }
-            .confirmationDialog(
-                "End Session",
-                isPresented: $showEndSessionConfirmation,
-                titleVisibility: .visible
-            ) {
-                Button("End Session") {
-                    handleEndSession()
-                }
-                Button("Delete Session", role: .destructive) {
-                    showDeleteSessionSheet = true
-                }
-                Button("Cancel", role: .cancel) {}
-            } message: {
-                Text(
-                    "End keeps your \(displayQSOs.count) QSOs for sync. "
-                        + "Delete hides them permanently."
-                )
             }
             .sheet(isPresented: $showPOTAUploadPrompt) {
                 POTAUploadPromptSheet(
@@ -425,6 +417,41 @@ struct LoggerView: View {
         }
 
         return true
+    }
+
+    /// Whether the action button next to the callsign field is enabled
+    private var actionButtonEnabled: Bool {
+        detectedCommand != nil || canLog
+    }
+
+    /// Label for the action button next to the callsign field
+    private var actionButtonLabel: String {
+        if detectedCommand != nil {
+            return "RUN"
+        } else if editingQSO != nil {
+            return "SAVE"
+        }
+        return "LOG"
+    }
+
+    /// Color for the action button next to the callsign field
+    private var actionButtonColor: Color {
+        if detectedCommand != nil {
+            return .purple
+        } else if editingQSO != nil {
+            return .orange
+        }
+        return .green
+    }
+
+    /// Accessibility label for the action button
+    private var actionButtonAccessibilityLabel: String {
+        if detectedCommand != nil {
+            return "Run command"
+        } else if editingQSO != nil {
+            return "Save callsign edit"
+        }
+        return "Log QSO"
     }
 
     /// Current mode (for RST default)
@@ -716,35 +743,29 @@ struct LoggerView: View {
 
     private var callsignInputSection: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 12) {
-                // Icon only shown for commands
-                if let command = detectedCommand {
-                    Image(systemName: command.icon)
-                        .foregroundStyle(.purple)
-                        .transition(.scale.combined(with: .opacity))
-                }
-
-                CallsignTextField(
-                    "Callsign or command...",
-                    text: $callsignInput,
-                    isFocused: $callsignFieldFocused,
-                    onSubmit: {
-                        // Defer to next run loop to avoid UICollectionView crash
-                        // when keyboard dismiss triggers List updates simultaneously
-                        DispatchQueue.main.async {
-                            handleInputSubmit()
+            HStack(spacing: 8) {
+                // Text field with clear button
+                HStack(spacing: 12) {
+                    CallsignTextField(
+                        "Callsign or command...",
+                        text: $callsignInput,
+                        isFocused: $callsignFieldFocused,
+                        onSubmit: {
+                            // Defer to next run loop to avoid UICollectionView crash
+                            // when keyboard dismiss triggers List updates simultaneously
+                            DispatchQueue.main.async {
+                                handleInputSubmit()
+                            }
+                        },
+                        onCommand: { command in
+                            executeCommand(command)
                         }
-                    },
-                    onCommand: { command in
-                        executeCommand(command)
+                    )
+                    .foregroundStyle(detectedCommand != nil ? .purple : .primary)
+                    .onChange(of: callsignInput) { _, newValue in
+                        onCallsignChanged(newValue)
                     }
-                )
-                .foregroundStyle(detectedCommand != nil ? .purple : .primary)
-                .onChange(of: callsignInput) { _, newValue in
-                    onCallsignChanged(newValue)
-                }
 
-                if !callsignInput.isEmpty {
                     Button {
                         callsignInput = ""
                         lookupResult = nil
@@ -755,15 +776,41 @@ struct LoggerView: View {
                         Image(systemName: "xmark.circle.fill")
                             .foregroundStyle(.secondary)
                     }
+                    .opacity(callsignInput.isEmpty ? 0 : 1)
+                    .disabled(callsignInput.isEmpty)
                 }
+                .padding()
+                .background(Color(.secondarySystemGroupedBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .strokeBorder(detectedCommand != nil ? Color.purple : Color.clear, lineWidth: 2)
+                )
+
+                // Action button to the right of text field (always present)
+                Button {
+                    if let command = detectedCommand {
+                        executeCommand(command)
+                        callsignInput = ""
+                    } else if quickEntryResult != nil {
+                        logQuickEntry()
+                    } else {
+                        logQSO()
+                    }
+                } label: {
+                    Text(actionButtonLabel)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .frame(maxHeight: .infinity)
+                        .frame(width: 48)
+                        .background(actionButtonColor)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+                .buttonStyle(.plain)
+                .disabled(!actionButtonEnabled)
+                .opacity(actionButtonEnabled ? 1 : 0.4)
+                .accessibilityLabel(actionButtonAccessibilityLabel)
             }
-            .padding()
-            .background(Color(.secondarySystemGroupedBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(detectedCommand != nil ? Color.purple : Color.clear, lineWidth: 2)
-            )
 
             // Command description badge
             if let command = detectedCommand {
@@ -883,63 +930,6 @@ struct LoggerView: View {
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 
-    // MARK: - Log Button
-
-    @ViewBuilder
-    private var logButtonSection: some View {
-        if let command = detectedCommand {
-            // Show "Run Command" button when a command is detected
-            Button {
-                executeCommand(command)
-                callsignInput = ""
-            } label: {
-                HStack {
-                    Image(systemName: command.icon)
-                    Text("Run Command")
-                }
-                .font(.headline)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(.purple)
-        } else {
-            // Show "Log QSO" button normally
-            Button {
-                // Use quick entry if we have parsed results, otherwise normal log
-                if quickEntryResult != nil {
-                    logQuickEntry()
-                } else {
-                    logQSO()
-                }
-            } label: {
-                HStack {
-                    if editingQSO != nil {
-                        Image(systemName: "pencil")
-                    }
-                    Text(editingQSO != nil ? "Update Callsign" : "Log QSO")
-                }
-                .font(.headline)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(editingQSO != nil ? .orange : .green)
-            .disabled(!canLog)
-
-            // Cancel button when editing
-            if editingQSO != nil {
-                Button {
-                    cancelEditingCallsign()
-                } label: {
-                    Text("Cancel Edit")
-                        .font(.subheadline)
-                }
-                .buttonStyle(.bordered)
-            }
-        }
-    }
-
     @ViewBuilder
     private var qsoListSection: some View {
         // Only show QSO list when there's an active session
@@ -1038,6 +1028,7 @@ struct LoggerView: View {
                     .foregroundStyle(.green)
 
                 Button {
+                    callsignFieldFocused = false
                     showEndSessionConfirmation = true
                 } label: {
                     Text("END")
@@ -1049,6 +1040,24 @@ struct LoggerView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 6))
                 }
                 .buttonStyle(.plain)
+                .confirmationDialog(
+                    "End Session",
+                    isPresented: $showEndSessionConfirmation,
+                    titleVisibility: .visible
+                ) {
+                    Button("End Session") {
+                        handleEndSession()
+                    }
+                    Button("Delete Session", role: .destructive) {
+                        showDeleteSessionSheet = true
+                    }
+                    Button("Cancel", role: .cancel) {}
+                } message: {
+                    Text(
+                        "End keeps your \(displayQSOs.count) QSOs for sync. "
+                            + "Delete hides them permanently."
+                    )
+                }
             }
 
             HStack {
@@ -2851,8 +2860,6 @@ struct DeleteSessionConfirmationSheet: View {
                         .focused($isTextFieldFocused)
                 }
 
-                Spacer()
-
                 VStack(spacing: 12) {
                     Button(role: .destructive) {
                         onConfirm()
@@ -2870,6 +2877,8 @@ struct DeleteSessionConfirmationSheet: View {
                         onCancel()
                     }
                 }
+
+                Spacer()
             }
             .padding()
             .navigationBarHidden(true)
@@ -2877,7 +2886,7 @@ struct DeleteSessionConfirmationSheet: View {
                 isTextFieldFocused = true
             }
         }
-        .presentationDetents([.medium])
+        .presentationDetents([.medium, .large])
     }
 
     // MARK: Private
