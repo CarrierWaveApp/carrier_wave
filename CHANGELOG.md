@@ -4,6 +4,8 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.27.1] - 2026-02-09
+
 ### Added
 - Add QSO timeline bar to activation detail, activation list rows, and share cards showing when contacts occurred during an activation with band-colored ticks and collapsed gaps (1hr+) shown as zigzag breaks
 
