@@ -56,7 +56,7 @@ struct BandTimelineView: View {
 
     // MARK: Private
 
-    private let segmentRowHeight: CGFloat = 32
+    @ScaledMetric(relativeTo: .caption2) private var segmentRowHeight: CGFloat = 32
 
     private var segments: [ActivityBandSegment] {
         buildSegments(from: qsos)
@@ -99,7 +99,7 @@ struct BandTimelineView: View {
 
         return Text(segment.label)
             .font(.caption2.weight(.medium))
-            .foregroundStyle(.white)
+            .foregroundStyle(Color(.systemBackground))
             .lineLimit(1)
             .padding(.horizontal, 4)
             .frame(width: max(barWidth, 20), height: segmentRowHeight - 4)

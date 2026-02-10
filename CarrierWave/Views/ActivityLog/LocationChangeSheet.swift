@@ -17,14 +17,23 @@ struct LocationChangeSheet: View {
     let onKeep: () -> Void
 
     var body: some View {
-        VStack(spacing: 20) {
-            locationIcon
-            titleSection
-            gridChangeCard
-            actionButtons
-            profileSwitcher
+        NavigationStack {
+            VStack(spacing: 20) {
+                locationIcon
+                titleSection
+                gridChangeCard
+                actionButtons
+                profileSwitcher
+            }
+            .padding()
+            .navigationTitle("Location Changed")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Dismiss") { onKeep() }
+                }
+            }
         }
-        .padding()
         .presentationDetents([.medium])
         .presentationDragIndicator(.visible)
     }

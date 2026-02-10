@@ -1,5 +1,6 @@
 import CarrierWaveCore
 import SwiftUI
+import UIKit
 
 // MARK: - SpotLogSheet
 
@@ -182,6 +183,7 @@ struct SpotLogSheet: View {
         )
 
         if qso != nil {
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
             onLogged()
             dismiss()
         }

@@ -598,7 +598,101 @@ withTransaction(transaction) {
 
 ---
 
-## Accessibility
+## Accessibility & HIG Compliance
+
+### Icon-Only Buttons MUST Have Accessibility Labels
+
+Every button that shows only an SF Symbol (no visible text) **must** have an `.accessibilityLabel`. VoiceOver users cannot interact with unlabeled icon buttons.
+
+```swift
+// REQUIRED — icon-only buttons always need a label
+Button { ... } label: {
+    Image(systemName: "square.and.arrow.up")
+}
+.accessibilityLabel("Share daily activity")
+
+// Navigation links with icon-only labels too
+NavigationLink { SettingsView() } label: {
+    Image(systemName: "gearshape")
+}
+.accessibilityLabel("Activity log settings")
+```
+
+### Decorative Images Must Be Hidden
+
+Icons used purely for decoration (empty state illustrations, separator dots, status indicators with adjacent text) must be hidden from VoiceOver:
+
+```swift
+Image(systemName: "antenna.radiowaves.left.and.right")
+    .accessibilityHidden(true)
+```
+
+For status indicators where color alone conveys meaning (e.g., age dots), wrap in a combined element with a text label:
+
+```swift
+HStack {
+    Circle().fill(ageColor).frame(width: 8, height: 8)
+        .accessibilityHidden(true)
+    Text(timeAgo)
+}
+.accessibilityElement(children: .combine)
+.accessibilityLabel("Spotted \(timeAgo) ago")
+```
+
+### Minimum Touch Targets: 44×44pt
+
+All interactive elements must meet the 44×44pt minimum. This is a hard HIG requirement.
+
+```swift
+// Small icon buttons — enforce minimum frame
+Button { ... } label: {
+    Image(systemName: "line.3.horizontal.decrease")
+        .font(.subheadline)
+}
+.frame(minWidth: 44, minHeight: 44)
+
+// Text fields and form controls — use 44pt height
+TextField("599", text: $rst)
+    .frame(width: rstFieldWidth, height: 44)
+
+// Filter chips / capsules — use enough padding
+Text(label)
+    .padding(.horizontal, 10)
+    .padding(.vertical, 8)  // Ensures ≥44pt height with text
+```
+
+### Dynamic Type with @ScaledMetric
+
+Fixed-width columns (time, frequency, RST) must scale with Dynamic Type. Use `@ScaledMetric` instead of hardcoded `CGFloat`:
+
+```swift
+// REQUIRED for fixed-width columns
+@ScaledMetric(relativeTo: .caption) private var timeColumnWidth: CGFloat = 44
+@ScaledMetric(relativeTo: .subheadline) private var frequencyColumnWidth: CGFloat = 80
+
+// Use in layout
+Text(formattedTime)
+    .frame(width: timeColumnWidth, alignment: .trailing)
+```
+
+General Dynamic Type rules:
+- Use system fonts that scale automatically
+- Avoid fixed heights that would clip text at large sizes
+- Test with largest accessibility text sizes
+
+### Semantic Colors Only — No Hardcoded White/Black
+
+Never use `.white` or `.black` directly. These break in dark mode / high contrast.
+
+```swift
+// BANNED
+.foregroundStyle(.white)
+.foregroundStyle(.black)
+
+// REQUIRED — use semantic equivalents
+.foregroundStyle(Color(.systemBackground))  // adapts to light/dark
+.foregroundStyle(Color(.label))             // adapts to light/dark
+```
 
 ### Reduce Motion Support
 
@@ -608,25 +702,55 @@ withTransaction(transaction) {
 .animation(reduceMotion ? .none : .easeInOut, value: currentPage)
 ```
 
-### Accessibility Labels
+### Static DateFormatters
+
+DateFormatter allocation is expensive. Never create formatters as computed properties or inside view bodies. Use `private static let`:
 
 ```swift
-.accessibilityLabel("Sync all services")
+// REQUIRED
+private static let timeFormatter: DateFormatter = {
+    let formatter = DateFormatter()
+    formatter.dateFormat = "HH:mm"
+    formatter.timeZone = TimeZone(identifier: "UTC")
+    return formatter
+}()
 
-// Activity grid cells
-.accessibilityLabel("\(dateFormatter.string(from: date)): \(count) QSO\(count == 1 ? "" : "s")")
-.accessibilityHint("Tap to show details")
-
-// Status icons
-Image(systemName: "checkmark.circle.fill")
-    .accessibilityLabel("Connected")
+// BANNED — creates a new formatter every render
+private var timeFormatter: DateFormatter {
+    let formatter = DateFormatter()
+    ...
+}
 ```
 
-### Dynamic Type
+### Haptic Feedback on Primary Actions
 
-- Use system fonts that scale automatically
-- Avoid fixed heights that would clip text
-- Test with largest accessibility text sizes
+Primary actions (logging a QSO, confirming a change) should provide haptic feedback:
+
+```swift
+// Success confirmation (log QSO, save profile)
+UINotificationFeedbackGenerator().notificationOccurred(.success)
+
+// Impact for quick actions (quick log button)
+UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+```
+
+### Sheets Must Have Navigation Structure
+
+All `.sheet` presentations must wrap content in `NavigationStack` with a title and dismiss button:
+
+```swift
+.sheet(isPresented: $showing) {
+    NavigationStack {
+        MySheetContent()
+            .navigationTitle("Sheet Title")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Done") { showing = false }
+                }
+            }
+    }
+}
 
 ---
 
@@ -679,6 +803,7 @@ Use semantic colors (`Color(.systemGray5)`, `.primary`, `.secondary`) that autom
 
 When creating new views, verify:
 
+**Visual:**
 - [ ] Uses `Color(.systemGray6)` for cards, not custom grays
 - [ ] Callsigns use `.monospaced()` font
 - [ ] Frequencies use appropriate formatter
@@ -686,7 +811,20 @@ When creating new views, verify:
 - [ ] Cards use `RoundedRectangle(cornerRadius: 12)`
 - [ ] Spacing follows 4/8/12/16 scale
 - [ ] Loading states show "--" with 0.6 opacity
-- [ ] Destructive actions have confirmation
-- [ ] Animations respect reduce motion
 - [ ] Icons from SF Symbols only
+- [ ] No hardcoded `.white` or `.black` — use `Color(.systemBackground)` / `Color(.label)`
 - [ ] Adapts to iPad/landscape where appropriate
+
+**Accessibility (MANDATORY):**
+- [ ] All icon-only buttons have `.accessibilityLabel`
+- [ ] Decorative images use `.accessibilityHidden(true)`
+- [ ] Color-only status indicators have text alternatives
+- [ ] All interactive elements meet 44×44pt minimum touch target
+- [ ] Fixed-width columns use `@ScaledMetric` (not hardcoded `CGFloat`)
+- [ ] DateFormatters are `private static let` (not computed properties)
+
+**Interaction:**
+- [ ] Destructive actions have confirmation
+- [ ] Primary actions (log QSO, save) provide haptic feedback
+- [ ] Animations respect reduce motion
+- [ ] Sheets wrapped in `NavigationStack` with title and dismiss button

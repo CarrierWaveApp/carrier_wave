@@ -46,6 +46,13 @@ struct RecentQSOsSection: View {
 
     // MARK: Private
 
+    private static let timeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm"
+        formatter.timeZone = TimeZone(identifier: "UTC")
+        return formatter
+    }()
+
     private func recentQSORow(_ qso: QSO) -> some View {
         HStack(spacing: 8) {
             // Time (UTC)
@@ -86,9 +93,6 @@ struct RecentQSOsSection: View {
     }
 
     private func formattedTime(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm"
-        formatter.timeZone = TimeZone(identifier: "UTC")
-        return formatter.string(from: date)
+        Self.timeFormatter.string(from: date)
     }
 }

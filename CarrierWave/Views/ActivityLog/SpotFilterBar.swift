@@ -2,47 +2,43 @@ import SwiftUI
 
 // MARK: - SpotFilterBar
 
-/// Horizontal scrolling filter chips for the spot list.
-/// Tapping a chip toggles it; tapping the filter icon opens the full sheet.
+/// Horizontal scrolling filter chips for active spot filters.
+/// Only renders when there are active filters to display.
 struct SpotFilterBar: View {
     // MARK: Internal
 
     @Binding var filters: SpotFilters
 
-    let onShowFilterSheet: () -> Void
-
     var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 6) {
-                filterButton
+        if hasChipsToShow {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 6) {
+                    if filters.proximityMode == .heardNearby {
+                        activeChip(label: "Heard Nearby") {
+                            filters.proximityMode = .all
+                        }
+                    }
 
-                sourceChips
-                bandChips
-                modeChips
+                    sourceChips
+                    bandChips
+                    modeChips
 
-                if filters.hideWorked {
-                    activeChip(label: "Hide Worked") {
-                        filters.hideWorked = false
+                    if filters.hideWorked {
+                        activeChip(label: "Hide Worked") {
+                            filters.hideWorked = false
+                        }
                     }
                 }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 4)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
         }
     }
 
     // MARK: Private
 
-    private var filterButton: some View {
-        Button {
-            onShowFilterSheet()
-        } label: {
-            Image(systemName: filters.hasActiveFilters
-                ? "line.3.horizontal.decrease.circle.fill"
-                : "line.3.horizontal.decrease.circle")
-                .font(.subheadline)
-                .foregroundStyle(filters.hasActiveFilters ? .blue : .secondary)
-        }
+    private var hasChipsToShow: Bool {
+        filters.hasActiveFilters
     }
 
     private var sourceChips: some View {
@@ -82,10 +78,11 @@ struct SpotFilterBar: View {
                     .font(.caption2)
             }
             .foregroundStyle(.blue)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
             .background(Color.blue.opacity(0.15))
             .clipShape(Capsule())
         }
+        .accessibilityLabel("Remove \(label) filter")
     }
 }

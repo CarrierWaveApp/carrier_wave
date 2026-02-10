@@ -16,7 +16,6 @@ struct ActivityLogView: View {
         ScrollView {
             VStack(spacing: 16) {
                 headerSection
-                filterBar
                 spotsSection
                 quickLogSection
                 recentQSOsSection
@@ -33,6 +32,7 @@ struct ActivityLogView: View {
                 } label: {
                     Image(systemName: "gearshape")
                 }
+                .accessibilityLabel("Activity log settings")
             }
         }
         .sheet(isPresented: $showingProfilePicker) {
@@ -105,6 +105,9 @@ struct ActivityLogView: View {
 
     // MARK: Private
 
+    @AppStorage("spotMaxAgeMinutes") private var spotMaxAgeMinutes = 12
+    @AppStorage("spotProximityRadiusMiles") private var proximityRadiusMiles = 500
+
     @State private var showingProfilePicker = false
     @State private var showingFilterSheet = false
     @State private var showingLocationChange = false
@@ -129,22 +132,16 @@ struct ActivityLogView: View {
         )
     }
 
-    @ViewBuilder
-    private var filterBar: some View {
-        if !spotMonitor.hunterSpots.isEmpty || spotFilters.hasActiveFilters {
-            SpotFilterBar(
-                filters: $spotFilters,
-                onShowFilterSheet: { showingFilterSheet = true }
-            )
-        }
-    }
-
     private var spotsSection: some View {
         ActivityLogSpotsList(
             spots: spotMonitor.hunterSpots,
+            filters: $spotFilters,
+            maxAgeMinutes: spotMaxAgeMinutes,
+            proximityRadiusMiles: proximityRadiusMiles,
             workedBeforeCache: workedBeforeCache,
             manager: manager,
             container: modelContext.container,
+            onShowFilterSheet: { showingFilterSheet = true },
             onSpotLogged: { handleSpotLogged() }
         )
     }

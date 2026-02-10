@@ -5,6 +5,12 @@ All notable changes to Carrier Wave will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Add spot age filter — only spots ≤12 minutes old shown by default, configurable 5–30 min in Activity Log settings
+- Add spot sort order — toggle between Recent (newest first) and Frequency (low to high)
+- Add proximity filter — "Heard Nearby" toggle in filter sheet with configurable radius (100–2000 mi) in settings
+- Wire up SpotFilters.apply() — spot list now applies source, band, mode, worked, age, and proximity filters
+- Default spot filters: POTA source, 20m band, CW mode, Heard Nearby, and Hide Already Worked enabled out of the box
+- Deduplicate spot list by callsign+band — combines POTA and RBN reports for same station into single row, preferring POTA source
 - Add Activity Log feature for persistent hunter workflow — always-open daily QSO tracking without session start/stop (CAR-47, Phase 1)
 - Add ActivityLog SwiftData model and ActivityLogManager service for log lifecycle and QSO creation
 - Add StationProfile model with UserDefaults-backed storage for reusable station configurations
@@ -25,6 +31,17 @@ All notable changes to Carrier Wave will be documented in this file.
 - Add daily activity share card for sharing day's QSO stats (CAR-47, Phase 4)
 - Add share button to daily summary view
 - Add activity feed integration — activity log QSOs now trigger activity detection (new DXCC, new band, DX contacts, streaks)
+
+### Fixed
+- Add accessibility labels to all icon-only buttons across Activity Log views (VoiceOver compliance)
+- Mark decorative images as accessibilityHidden (empty state icons, age dots)
+- Increase touch targets to 44×44pt minimum on filter chips, RST fields, and icon buttons
+- Use @ScaledMetric for fixed-width columns (time, frequency, RST) to scale with Dynamic Type
+- Replace hardcoded .white with Color(.systemBackground) for dark mode adaptability (band timeline, DXCC badge)
+- Use static DateFormatter instances instead of computed properties (DailySummaryView, RecentQSOsSection)
+- Add haptic feedback on QSO logging actions (quick log, spot log)
+- Wrap LocationChangeSheet in NavigationStack with title and dismiss button
+- Add HIG compliance rules and expanded accessibility checklist to design language docs
 
 ## [1.27.2] - 2026-02-09
 

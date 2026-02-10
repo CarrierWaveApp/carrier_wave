@@ -16,30 +16,47 @@ struct SpotFilters: Equatable {
         }
     }
 
-    /// Selected source filters (empty = show all)
-    var sources: Set<SourceFilter> = []
+    enum ProximityMode: String, CaseIterable {
+        case heardNearby = "Heard Nearby"
+        case all = "All Spots"
+    }
 
-    /// Selected band filters (empty = show all)
-    var bands: Set<String> = []
+    /// Selected source filters (empty = show all, default: POTA)
+    var sources: Set<SourceFilter> = [.pota]
 
-    /// Selected mode filters (empty = show all)
-    var modes: Set<String> = []
+    /// Selected band filters (empty = show all, default: 20m)
+    var bands: Set<String> = ["20m"]
+
+    /// Selected mode filters (empty = show all, default: CW)
+    var modes: Set<String> = ["CW"]
 
     /// Whether to hide already-worked callsigns
-    var hideWorked = false
+    var hideWorked = true
+
+    /// Proximity filter mode
+    var proximityMode: ProximityMode = .heardNearby
 
     /// Whether any filters are active
     var hasActiveFilters: Bool {
-        !sources.isEmpty || !bands.isEmpty || !modes.isEmpty || hideWorked
+        !sources.isEmpty || !bands.isEmpty || !modes.isEmpty
+            || hideWorked || proximityMode == .heardNearby
     }
 
-    /// Apply filters to a spot list
+    /// Apply all filters to a spot list
     func apply(
         to spots: [EnrichedSpot],
-        workedResults: [String: WorkedBeforeResult]
+        workedResults: [String: WorkedBeforeResult],
+        maxAgeMinutes: Int,
+        proximityRadiusMiles: Int
     ) -> [EnrichedSpot] {
-        spots.filter { spot in
-            // Source filter
+        let cutoff = Date().addingTimeInterval(-Double(maxAgeMinutes) * 60)
+        let radiusMeters = Double(proximityRadiusMiles) * 1_609.344
+
+        return spots.filter { spot in
+            if spot.spot.timestamp < cutoff {
+                return false
+            }
+
             if !sources.isEmpty {
                 let spotSource: SourceFilter = spot.spot.source == .pota ? .pota : .rbn
                 if !sources.contains(spotSource) {
@@ -47,20 +64,23 @@ struct SpotFilters: Equatable {
                 }
             }
 
-            // Band filter
             if !bands.isEmpty, !bands.contains(spot.spot.band) {
                 return false
             }
 
-            // Mode filter
             if !modes.isEmpty, !modes.contains(spot.spot.mode.uppercased()) {
                 return false
             }
 
-            // Hide worked filter
             if hideWorked {
                 let result = workedResults[spot.spot.callsign.uppercased()]
                 if let result, result.hasBeenWorked {
+                    return false
+                }
+            }
+
+            if proximityMode == .heardNearby {
+                if let distance = spot.distanceMeters, distance > radiusMeters {
                     return false
                 }
             }
@@ -82,6 +102,7 @@ struct SpotFilterSheet: View {
         NavigationStack {
             Form {
                 sourceSection
+                proximitySection
                 bandSection
                 modeSection
                 togglesSection
@@ -93,8 +114,8 @@ struct SpotFilterSheet: View {
                     Button("Done") { dismiss() }
                 }
                 ToolbarItem(placement: .cancellationAction) {
-                    if filters.hasActiveFilters {
-                        Button("Clear All") {
+                    if filters != SpotFilters() {
+                        Button("Reset") {
                             filters = SpotFilters()
                         }
                     }
@@ -111,6 +132,17 @@ struct SpotFilterSheet: View {
 
     private let commonBands = ["160m", "80m", "40m", "30m", "20m", "17m", "15m", "12m", "10m"]
     private let commonModes = ["CW", "SSB", "FT8", "FT4", "RTTY"]
+
+    private var proximitySection: some View {
+        Section("Proximity") {
+            Picker("Show", selection: $filters.proximityMode) {
+                ForEach(SpotFilters.ProximityMode.allCases, id: \.self) { mode in
+                    Text(mode.rawValue).tag(mode)
+                }
+            }
+            .pickerStyle(.segmented)
+        }
+    }
 
     private var sourceSection: some View {
         Section("Source") {
@@ -191,6 +223,7 @@ struct SpotFilterSheet: View {
                 )
                 .clipShape(Capsule())
         }
+        .buttonStyle(.borderless)
     }
 }
 

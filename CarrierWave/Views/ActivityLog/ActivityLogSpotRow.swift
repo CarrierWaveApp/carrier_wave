@@ -31,6 +31,8 @@ struct ActivityLogSpotRow: View {
 
     // MARK: - Frequency Column
 
+    @ScaledMetric(relativeTo: .subheadline) private var frequencyColumnWidth: CGFloat = 80
+
     private var frequencyColumn: some View {
         VStack(alignment: .trailing, spacing: 2) {
             Text(FrequencyFormatter.format(spot.spot.frequencyMHz))
@@ -44,7 +46,7 @@ struct ActivityLogSpotRow: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .frame(width: 80, alignment: .trailing)
+        .frame(width: frequencyColumnWidth, alignment: .trailing)
     }
 
     // MARK: - Callsign Column
@@ -137,17 +139,21 @@ struct ActivityLogSpotRow: View {
             Circle()
                 .fill(spot.spot.ageColor)
                 .frame(width: 8, height: 8)
+                .accessibilityHidden(true)
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Spotted \(spot.spot.timeAgo) ago")
     }
 
     private var newDXCCBadge: some View {
         Text("\u{2605} NEW DXCC")
             .font(.caption2.weight(.bold))
-            .foregroundStyle(.white)
+            .foregroundStyle(Color(.systemBackground))
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
             .background(Color.blue)
             .clipShape(RoundedRectangle(cornerRadius: 3))
+            .accessibilityLabel("New DXCC entity")
     }
 
     // MARK: - Badge Views

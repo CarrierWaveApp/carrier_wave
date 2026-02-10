@@ -10,6 +10,7 @@ struct ActivityLogSettingsView: View {
     var body: some View {
         Form {
             stationProfilesSection
+            spotFilteringSection
             uploadSection
             dailyGoalSection
         }
@@ -20,9 +21,37 @@ struct ActivityLogSettingsView: View {
 
     // MARK: Private
 
+    private static let ageOptions = [5, 10, 12, 15, 20, 30]
+    private static let radiusOptions = [100, 250, 500, 1_000, 1_500, 2_000]
+
     @AppStorage("activityLogDailyGoalEnabled") private var dailyGoalEnabled = false
     @AppStorage("activityLogDailyGoal") private var dailyGoal = 10
+    @AppStorage("spotMaxAgeMinutes") private var spotMaxAgeMinutes = 12
+    @AppStorage("spotProximityRadiusMiles") private var proximityRadiusMiles = 500
     @State private var profileCount = 0
+
+    private var spotFilteringSection: some View {
+        Section {
+            Picker("Max Spot Age", selection: $spotMaxAgeMinutes) {
+                ForEach(Self.ageOptions, id: \.self) { minutes in
+                    Text("\(minutes) min").tag(minutes)
+                }
+            }
+
+            Picker("Proximity Radius", selection: $proximityRadiusMiles) {
+                ForEach(Self.radiusOptions, id: \.self) { miles in
+                    Text("\(miles) mi").tag(miles)
+                }
+            }
+        } header: {
+            Text("Spots")
+        } footer: {
+            Text(
+                "Spots older than the max age are hidden. " +
+                    "Proximity radius applies when \"Heard Nearby\" is enabled in the spot filter."
+            )
+        }
+    }
 
     private var stationProfilesSection: some View {
         Section("Station Profiles") {

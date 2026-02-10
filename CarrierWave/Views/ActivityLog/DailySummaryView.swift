@@ -52,16 +52,25 @@ struct DailySummaryView: View {
 
     // MARK: Private
 
-    @State private var selectedDate = Date()
-    @State private var dayQSOs: [QSO] = []
-    @State private var showingShareSheet = false
-
-    private var dateFormatter: DateFormatter {
+    private static let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateStyle = .long
         formatter.timeZone = TimeZone(identifier: "UTC")
         return formatter
-    }
+    }()
+
+    private static let timeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm"
+        formatter.timeZone = TimeZone(identifier: "UTC")
+        return formatter
+    }()
+
+    @State private var selectedDate = Date()
+    @State private var dayQSOs: [QSO] = []
+    @State private var showingShareSheet = false
+
+    @ScaledMetric(relativeTo: .caption) private var timeColumnWidth: CGFloat = 44
 
     private var shareCardImage: UIImage? {
         let callsign = manager.activeLog?.myCallsign ?? ""
@@ -78,7 +87,7 @@ struct DailySummaryView: View {
     }
 
     private var dateHeader: some View {
-        Text(dateFormatter.string(from: selectedDate))
+        Text(Self.dateFormatter.string(from: selectedDate))
             .font(.headline)
     }
 
@@ -138,6 +147,7 @@ struct DailySummaryView: View {
             } label: {
                 Image(systemName: "chevron.left")
             }
+            .accessibilityLabel("Previous day")
 
             Button {
                 selectedDate = Calendar.current.date(
@@ -147,6 +157,7 @@ struct DailySummaryView: View {
                 Image(systemName: "chevron.right")
             }
             .disabled(Calendar.current.isDateInToday(selectedDate))
+            .accessibilityLabel("Next day")
         }
     }
 
@@ -158,6 +169,7 @@ struct DailySummaryView: View {
             } label: {
                 Image(systemName: "square.and.arrow.up")
             }
+            .accessibilityLabel("Share daily activity")
         }
     }
 
@@ -166,7 +178,7 @@ struct DailySummaryView: View {
             Text(formatTime(qso.timestamp))
                 .font(.caption.monospaced())
                 .foregroundStyle(.secondary)
-                .frame(width: 44, alignment: .trailing)
+                .frame(width: timeColumnWidth, alignment: .trailing)
 
             Text(qso.callsign)
                 .font(.subheadline.weight(.semibold).monospaced())
@@ -201,10 +213,7 @@ struct DailySummaryView: View {
     }
 
     private func formatTime(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm"
-        formatter.timeZone = TimeZone(identifier: "UTC")
-        return formatter.string(from: date)
+        Self.timeFormatter.string(from: date)
     }
 
     private func loadDayQSOs() {

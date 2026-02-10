@@ -1,5 +1,6 @@
 import CarrierWaveCore
 import SwiftUI
+import UIKit
 
 // MARK: - QuickLogSection
 
@@ -58,6 +59,8 @@ struct QuickLogSection: View {
     @State private var rstSent = ""
     @State private var rstReceived = ""
 
+    @ScaledMetric(relativeTo: .caption) private var rstFieldWidth: CGFloat = 44
+
     private var defaultRST: String {
         let mode = currentMode.uppercased()
         if mode == "SSB" || mode == "USB" || mode == "LSB" || mode == "FM" || mode == "AM" {
@@ -94,7 +97,7 @@ struct QuickLogSection: View {
                 .foregroundStyle(.secondary)
             TextField(defaultRST, text: text)
                 .font(.caption.monospaced())
-                .frame(width: 40, height: 36)
+                .frame(width: rstFieldWidth, height: 44)
                 .multilineTextAlignment(.center)
                 .background(Color(.tertiarySystemGroupedBackground))
                 .clipShape(RoundedRectangle(cornerRadius: 8))
@@ -144,6 +147,7 @@ struct QuickLogSection: View {
         } ?? "Unknown"
 
         onLog(data)
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
 
         // Reset form
         callsignInput = ""
