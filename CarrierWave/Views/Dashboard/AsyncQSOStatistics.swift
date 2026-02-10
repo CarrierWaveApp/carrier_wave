@@ -25,6 +25,8 @@ final class AsyncQSOStatistics {
     private(set) var uniqueEntities: Int?
     private(set) var successfulActivations: Int?
     private(set) var activityByDate: [Date: Int]?
+    private(set) var activationActivityByDate: [Date: Int]?
+    private(set) var activityLogActivityByDate: [Date: Int]?
     private(set) var dailyStreak: StreakInfo?
     private(set) var potaActivationStreak: StreakInfo?
 
@@ -110,6 +112,8 @@ final class AsyncQSOStatistics {
         uniqueEntities = nil
         successfulActivations = nil
         activityByDate = nil
+        activationActivityByDate = nil
+        activityLogActivityByDate = nil
         dailyStreak = nil
         potaActivationStreak = nil
         qrzConfirmedCount = 0
@@ -186,6 +190,8 @@ final class AsyncQSOStatistics {
         uniqueEntities = computed.uniqueEntities
         successfulActivations = computed.successfulActivations
         activityByDate = computed.activityByDate
+        activationActivityByDate = computed.activationActivityByDate
+        activityLogActivityByDate = computed.activityLogActivityByDate
 
         // Convert streak data to StreakInfo
         dailyStreak = StreakInfo(

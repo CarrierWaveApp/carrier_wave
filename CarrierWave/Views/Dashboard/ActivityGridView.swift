@@ -1,22 +1,67 @@
 import SwiftUI
 
+// MARK: - ActivityGridColors
+
+enum ActivityGridColors {
+    /// Green for activations (POTA sessions) — matches original grid color
+    static let activation = Color.green
+    /// Blue for activity log (hunter/casual) — system color, adapts to dark mode
+    static let activityLog = Color.blue
+    /// Empty cell
+    static let empty = Color(.systemGray5)
+}
+
 // MARK: - ActivityGrid
 
 struct ActivityGrid: View {
     // MARK: Internal
 
-    let activityData: [Date: Int]?
+    let activationData: [Date: Int]?
+    let activityLogData: [Date: Int]?
 
     var body: some View {
-        ActivityGridContent(activityData: activityData ?? [:], selectedDate: $selectedDate)
+        VStack(alignment: .leading, spacing: 6) {
+            ActivityGridContent(
+                activationData: activationData ?? [:],
+                activityLogData: activityLogData ?? [:],
+                selectedDate: $selectedDate
+            )
             .accessibilityElement(children: .contain)
             .accessibilityLabel("Activity grid showing QSO history")
-            .opacity(activityData == nil ? 0.5 : 1.0)
+            .opacity(isLoading ? 0.5 : 1.0)
+
+            activityGridLegend
+        }
     }
 
     // MARK: Private
 
     @State private var selectedDate: Date?
+
+    private var isLoading: Bool {
+        activationData == nil && activityLogData == nil
+    }
+
+    private var activityGridLegend: some View {
+        HStack(spacing: 12) {
+            HStack(spacing: 4) {
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(ActivityGridColors.activation)
+                    .frame(width: 10, height: 10)
+                Text("Activation")
+                    .font(.system(size: 10))
+                    .foregroundStyle(.secondary)
+            }
+            HStack(spacing: 4) {
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(ActivityGridColors.activityLog)
+                    .frame(width: 10, height: 10)
+                Text("Activity Log")
+                    .font(.system(size: 10))
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
 }
 
 // MARK: - ActivityGridContent
@@ -26,7 +71,8 @@ struct ActivityGrid: View {
 private struct ActivityGridContent: View {
     // MARK: Internal
 
-    let activityData: [Date: Int]
+    let activationData: [Date: Int]
+    let activityLogData: [Date: Int]
 
     @Binding var selectedDate: Date?
 
@@ -39,45 +85,46 @@ private struct ActivityGridContent: View {
                             VStack(spacing: spacing) {
                                 ForEach(0 ..< rows, id: \.self) { row in
                                     let date = dateFor(column: column, row: row)
-                                    let count = countFor(date: date)
+                                    let actCount = countFor(date: date, in: activationData)
+                                    let logCount = countFor(date: date, in: activityLogData)
+                                    let total = actCount + logCount
 
-                                    RoundedRectangle(cornerRadius: 2)
-                                        .fill(colorFor(count: count))
-                                        .frame(width: cellSize, height: cellSize)
-                                        .accessibilityLabel(
-                                            "\(tooltipDateFormatter.string(from: date)): "
-                                                + "\(count) QSO\(count == 1 ? "" : "s")"
+                                    cellView(
+                                        activationCount: actCount,
+                                        activityLogCount: logCount
+                                    )
+                                    .frame(width: cellSize, height: cellSize)
+                                    .clipShape(RoundedRectangle(cornerRadius: 2))
+                                    .accessibilityLabel(
+                                        accessibilityLabel(
+                                            date: date, activation: actCount,
+                                            activityLog: logCount, total: total
                                         )
-                                        .accessibilityHint("Tap to show details")
-                                        .onTapGesture {
-                                            if selectedDate == date {
-                                                selectedDate = nil
-                                            } else {
-                                                selectedDate = date
-                                            }
+                                    )
+                                    .accessibilityHint("Tap to show details")
+                                    .onTapGesture {
+                                        if selectedDate == date {
+                                            selectedDate = nil
+                                        } else {
+                                            selectedDate = date
                                         }
-                                        .popover(
-                                            isPresented: Binding(
-                                                get: { selectedDate == date },
-                                                set: {
-                                                    if !$0 {
-                                                        selectedDate = nil
-                                                    }
+                                    }
+                                    .popover(
+                                        isPresented: Binding(
+                                            get: { selectedDate == date },
+                                            set: {
+                                                if !$0 {
+                                                    selectedDate = nil
                                                 }
-                                            ),
-                                            arrowEdge: .top
-                                        ) {
-                                            VStack(spacing: 4) {
-                                                Text(tooltipDateFormatter.string(from: date))
-                                                    .font(.caption)
-                                                    .foregroundStyle(.secondary)
-                                                Text("\(count) QSO\(count == 1 ? "" : "s")")
-                                                    .font(.headline)
                                             }
-                                            .padding(.horizontal, 12)
-                                            .padding(.vertical, 8)
-                                            .presentationCompactAdaptation(.popover)
-                                        }
+                                        ),
+                                        arrowEdge: .top
+                                    ) {
+                                        popoverContent(
+                                            date: date, activation: actCount,
+                                            activityLog: logCount, total: total
+                                        )
+                                    }
                                 }
                             }
                             .id(column)
@@ -126,10 +173,6 @@ private struct ActivityGridContent: View {
         return formatter
     }()
 
-    /// Minimum columns based on available space:
-    /// - iPhone portrait (compact horizontal, regular vertical): 26 weeks (~6 months)
-    /// - iPhone landscape (compact vertical): 52 weeks (~1 year)
-    /// - iPad (regular horizontal): 52 weeks (~1 year)
     private var minColumns: Int {
         if verticalSizeClass == .compact || horizontalSizeClass == .regular {
             return 52
@@ -137,18 +180,26 @@ private struct ActivityGridContent: View {
         return 26
     }
 
-    private var maxCount: Int {
-        activityData.values.max() ?? 1
+    private var combinedData: [Date: Int] {
+        var combined: [Date: Int] = [:]
+        for (date, count) in activationData {
+            combined[date, default: 0] += count
+        }
+        for (date, count) in activityLogData {
+            combined[date, default: 0] += count
+        }
+        return combined
     }
 
-    /// Calculate total columns needed to show all QSO history
+    private var maxCount: Int {
+        combinedData.values.max() ?? 1
+    }
+
     private var totalColumns: Int {
         let today = calendar.startOfDay(for: Date())
 
-        // Find oldest date with activity, or default to minColumns weeks ago
         let oldestDate: Date
-        if let minDate = activityData.keys.min() {
-            // Align to start of that week
+        if let minDate = combinedData.keys.min() {
             let weekday = calendar.component(.weekday, from: minDate)
             oldestDate =
                 calendar.date(byAdding: .day, value: -(weekday - 1), to: minDate) ?? minDate
@@ -174,8 +225,6 @@ private struct ActivityGridContent: View {
         gridHeight + gridToLabelSpacing + monthLabelHeight
     }
 
-    /// Returns label positions for month markers.
-    /// Shows year on January (e.g., "Jan '26").
     private var labelPositions: [(column: Int, label: String)] {
         var labels: [(Int, String)] = []
         var lastMonth = -1
@@ -186,7 +235,6 @@ private struct ActivityGridContent: View {
             let month = calendar.component(.month, from: date)
 
             if month != lastMonth {
-                // Show year on January
                 if month == 1 {
                     monthFormatter.dateFormat = "MMM ''yy"
                 } else {
@@ -199,6 +247,84 @@ private struct ActivityGridContent: View {
         return labels
     }
 
+    @ViewBuilder
+    private func cellView(activationCount: Int, activityLogCount: Int) -> some View {
+        if activationCount == 0, activityLogCount == 0 {
+            RoundedRectangle(cornerRadius: 2)
+                .fill(ActivityGridColors.empty)
+        } else if activationCount > 0, activityLogCount > 0 {
+            // Diagonal split: activation top-left, activity log bottom-right
+            Canvas { context, size in
+                var topLeft = Path()
+                topLeft.move(to: .zero)
+                topLeft.addLine(to: CGPoint(x: size.width, y: 0))
+                topLeft.addLine(to: CGPoint(x: 0, y: size.height))
+                topLeft.closeSubpath()
+                context.fill(
+                    topLeft,
+                    with: .color(
+                        ActivityGridColors.activation
+                            .opacity(intensityFor(count: activationCount))
+                    )
+                )
+
+                var bottomRight = Path()
+                bottomRight.move(to: CGPoint(x: size.width, y: 0))
+                bottomRight.addLine(to: CGPoint(x: size.width, y: size.height))
+                bottomRight.addLine(to: CGPoint(x: 0, y: size.height))
+                bottomRight.closeSubpath()
+                context.fill(
+                    bottomRight,
+                    with: .color(
+                        ActivityGridColors.activityLog
+                            .opacity(intensityFor(count: activityLogCount))
+                    )
+                )
+            }
+        } else if activationCount > 0 {
+            RoundedRectangle(cornerRadius: 2)
+                .fill(
+                    ActivityGridColors.activation
+                        .opacity(intensityFor(count: activationCount))
+                )
+        } else {
+            RoundedRectangle(cornerRadius: 2)
+                .fill(
+                    ActivityGridColors.activityLog
+                        .opacity(intensityFor(count: activityLogCount))
+                )
+        }
+    }
+
+    private func popoverContent(
+        date: Date, activation: Int, activityLog: Int, total: Int
+    ) -> some View {
+        VStack(spacing: 4) {
+            Text(tooltipDateFormatter.string(from: date))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Text("\(total) QSO\(total == 1 ? "" : "s")")
+                .font(.headline)
+            if activation > 0 || activityLog > 0 {
+                HStack(spacing: 8) {
+                    if activation > 0 {
+                        Label("\(activation)", systemImage: "antenna.radiowaves.left.and.right")
+                            .font(.caption)
+                            .foregroundStyle(ActivityGridColors.activation)
+                    }
+                    if activityLog > 0 {
+                        Label("\(activityLog)", systemImage: "list.bullet")
+                            .font(.caption)
+                            .foregroundStyle(ActivityGridColors.activityLog)
+                    }
+                }
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .presentationCompactAdaptation(.popover)
+    }
+
     private func dateFor(column: Int, row: Int) -> Date {
         let today = calendar.startOfDay(for: Date())
         let todayWeekday = calendar.component(.weekday, from: today)
@@ -207,28 +333,32 @@ private struct ActivityGridContent: View {
         return calendar.date(byAdding: .day, value: -daysBack, to: today) ?? today
     }
 
-    /// Look up count for a date, handling potential Date precision mismatches
-    private func countFor(date: Date) -> Int {
-        // First try direct lookup
-        if let count = activityData[date] {
+    private func countFor(date: Date, in data: [Date: Int]) -> Int {
+        if let count = data[date] {
             return count
         }
-
-        // Fall back to finding a matching date within the same calendar day
-        // This handles cases where Date objects have slightly different times
         let targetDay = calendar.startOfDay(for: date)
-        for (key, value) in activityData where calendar.isDate(key, inSameDayAs: targetDay) {
+        for (key, value) in data where calendar.isDate(key, inSameDayAs: targetDay) {
             return value
         }
-
         return 0
     }
 
-    private func colorFor(count: Int) -> Color {
-        if count == 0 {
-            return Color(.systemGray5)
+    private func intensityFor(count: Int) -> Double {
+        guard count > 0 else {
+            return 0
         }
-        let intensity = min(Double(count) / Double(max(maxCount, 1)), 1.0)
-        return Color.green.opacity(0.3 + intensity * 0.7)
+        return 0.3 + min(Double(count) / Double(max(maxCount, 1)), 1.0) * 0.7
+    }
+
+    private func accessibilityLabel(
+        date: Date, activation: Int, activityLog: Int, total: Int
+    ) -> String {
+        var parts = [tooltipDateFormatter.string(from: date) + ":"]
+        parts.append("\(total) QSO\(total == 1 ? "" : "s")")
+        if activation > 0, activityLog > 0 {
+            parts.append("(\(activation) activation, \(activityLog) activity log)")
+        }
+        return parts.joined(separator: " ")
     }
 }

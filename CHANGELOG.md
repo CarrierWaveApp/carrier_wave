@@ -4,6 +4,9 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Add dual-color activity grid on dashboard — green for activations, blue for activity log, diagonal split for days with both
+
 ## [1.28.0] - 2026-02-10
 
 ### Added

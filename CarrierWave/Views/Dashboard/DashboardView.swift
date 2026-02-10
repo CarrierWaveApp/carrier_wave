@@ -283,7 +283,10 @@ struct DashboardView: View {
                     .foregroundStyle(.secondary)
             }
 
-            ActivityGrid(activityData: asyncStats.activityByDate)
+            ActivityGrid(
+                activationData: asyncStats.activationActivityByDate,
+                activityLogData: asyncStats.activityLogActivityByDate
+            )
 
             // Show progress bar while computing
             if asyncStats.isComputing {

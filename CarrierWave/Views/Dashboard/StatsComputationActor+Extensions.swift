@@ -7,6 +7,7 @@ extension StatsComputationActor {
     func computeActivationsAndActivity(
         into stats: inout ComputedStats,
         from realQSOs: [StatsQSOSnapshot],
+        activityLogIds: Set<UUID>,
         onProgress: @escaping @Sendable (Double, String) -> Void
     ) async throws {
         onProgress(0.75, "Computing activations...")
@@ -21,14 +22,25 @@ extension StatsComputationActor {
         onProgress(0.80, "Computing activity grid...")
 
         try Task.checkCancellation()
-        // Activity by date
+        // Activity by date — combined plus split by type
         var activity: [Date: Int] = [:]
+        var activationActivity: [Date: Int] = [:]
+        var activityLogActivity: [Date: Int] = [:]
         let calendar = Calendar.current
         for qso in realQSOs {
             let dateOnly = calendar.startOfDay(for: qso.timestamp)
             activity[dateOnly, default: 0] += 1
+
+            let isActivityLog = qso.loggingSessionId.map { activityLogIds.contains($0) } ?? false
+            if isActivityLog {
+                activityLogActivity[dateOnly, default: 0] += 1
+            } else {
+                activationActivity[dateOnly, default: 0] += 1
+            }
         }
         stats.activityByDate = activity
+        stats.activationActivityByDate = activationActivity
+        stats.activityLogActivityByDate = activityLogActivity
     }
 
     /// Compute top frequency, friend, and hunter for the favorites card

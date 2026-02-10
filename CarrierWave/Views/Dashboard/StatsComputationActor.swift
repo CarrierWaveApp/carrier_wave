@@ -21,6 +21,7 @@ struct StatsQSOSnapshot: Sendable {
     let qrzConfirmed: Bool
     let lotwConfirmed: Bool
     let dxcc: Int?
+    let loggingSessionId: UUID?
 }
 
 // MARK: - ComputedStats
@@ -34,6 +35,8 @@ struct ComputedStats: Sendable {
     var uniqueEntities: Int = 0
     var successfulActivations: Int = 0
     var activityByDate: [Date: Int] = [:]
+    var activationActivityByDate: [Date: Int] = [:]
+    var activityLogActivityByDate: [Date: Int] = [:]
 
     // Streak data - raw values that will be converted to StreakInfo on main actor
     var dailyStreakCurrent: Int = 0
@@ -83,6 +86,15 @@ actor StatsComputationActor {
         return calendar.startOfDay(for: date)
     }
 
+    /// Fetch all ActivityLog IDs for categorizing QSOs as activation vs activity log.
+    static func fetchActivityLogIds(context: ModelContext) -> Set<UUID> {
+        let descriptor = FetchDescriptor<ActivityLog>()
+        guard let logs = try? context.fetch(descriptor) else {
+            return []
+        }
+        return Set(logs.map(\.id))
+    }
+
     /// Fetch QSOs and compute all statistics on background thread.
     func computeStats(
         container: ModelContainer,
@@ -103,8 +115,13 @@ actor StatsComputationActor {
             return ComputedStats()
         }
 
+        // Fetch ActivityLog IDs for categorizing QSOs
+        let activityLogIds = Self.fetchActivityLogIds(context: context)
+
         // Phase 2: Compute stats from snapshots
-        return try await computeStatsFromSnapshots(snapshots, onProgress: onProgress)
+        return try await computeStatsFromSnapshots(
+            snapshots, activityLogIds: activityLogIds, onProgress: onProgress
+        )
     }
 
     // MARK: Private
@@ -205,7 +222,8 @@ actor StatsComputationActor {
                     importSource: qso.importSource,
                     qrzConfirmed: qso.qrzConfirmed,
                     lotwConfirmed: qso.lotwConfirmed,
-                    dxcc: qso.dxcc
+                    dxcc: qso.dxcc,
+                    loggingSessionId: qso.loggingSessionId
                 )
                 snapshots.append(snapshot)
             }
@@ -225,6 +243,7 @@ actor StatsComputationActor {
     /// Compute all statistics from pre-fetched snapshots.
     private func computeStatsFromSnapshots(
         _ snapshots: [StatsQSOSnapshot],
+        activityLogIds: Set<UUID>,
         onProgress: @escaping @Sendable (Double, String) -> Void
     ) async throws -> ComputedStats {
         onProgress(0.50, "Computing statistics...")
@@ -239,7 +258,8 @@ actor StatsComputationActor {
 
         // Phase 2: Activations and activity
         try await computeActivationsAndActivity(
-            into: &stats, from: realQSOs, onProgress: onProgress
+            into: &stats, from: realQSOs, activityLogIds: activityLogIds,
+            onProgress: onProgress
         )
 
         // Phase 3: Streaks
