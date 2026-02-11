@@ -107,6 +107,15 @@ struct RadioPickerSheet: View {
                         Text(radio)
                             .foregroundStyle(.primary)
                         Spacer()
+                        if FieldGuideLinker.hasManual(for: radio) {
+                            Button {
+                                FieldGuideLinker.openManual(for: radio)
+                            } label: {
+                                Image(systemName: "book.closed")
+                                    .foregroundStyle(.blue)
+                            }
+                            .buttonStyle(.plain)
+                        }
                         if selection == radio {
                             Image(systemName: "checkmark")
                                 .foregroundStyle(Color.accentColor)

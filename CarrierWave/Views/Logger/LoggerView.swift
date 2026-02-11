@@ -1454,7 +1454,22 @@ struct LoggerView: View {
         case .hidden: showHiddenQSOsSheet = true
         case .help: showHelpSheet = true
         case let .note(text): executeNoteCommand(text)
+        case .manual: executeManualCommand()
         }
+    }
+
+    private func executeManualCommand() {
+        guard let radio = sessionManager?.activeSession?.myRig,
+              !radio.isEmpty
+        else {
+            ToastManager.shared.warning("No radio selected")
+            return
+        }
+        guard FieldGuideLinker.hasManual(for: radio) else {
+            ToastManager.shared.warning("No manual found for \(radio)")
+            return
+        }
+        FieldGuideLinker.openManual(for: radio)
     }
 
     private func executeFrequencyCommand(_ freq: Double) {

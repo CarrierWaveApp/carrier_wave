@@ -41,6 +41,9 @@ enum LoggerCommand: Equatable {
     /// Add a note to the session log
     case note(text: String)
 
+    /// Open radio manual in CW Field Guide
+    case manual
+
     // MARK: Internal
 
     /// Help text listing all available commands
@@ -63,6 +66,7 @@ enum LoggerCommand: Equatable {
         MAP             - Show session QSO map
         HIDDEN          - Show deleted QSOs
         NOTE <text>     - Add a note to the session log
+        MANUAL          - Open radio manual (or MAN)
         HELP            - Show this help (or ?)
 
         Type a frequency directly: 14.060, 14060, 14060kHz
@@ -104,6 +108,8 @@ enum LoggerCommand: Equatable {
             "Show available commands"
         case let .note(text):
             "Add note: \"\(text)\""
+        case .manual:
+            "Open radio manual"
         }
     }
 
@@ -134,6 +140,8 @@ enum LoggerCommand: Equatable {
             "questionmark.circle"
         case .note:
             "note.text"
+        case .manual:
+            "book.closed"
         }
     }
 
@@ -285,6 +293,9 @@ enum LoggerCommand: Equatable {
         case "HIDDEN",
              "DELETED":
             .hidden
+        case "MANUAL",
+             "MAN":
+            .manual
         case "HELP",
              "?":
             .help
@@ -387,6 +398,11 @@ extension LoggerCommand {
         CommandSuggestion(
             command: "NOTE ", description: "Add a note to session log",
             icon: "note.text", prefixes: ["NO"], exact: ["N"]
+        ),
+        // MANUAL
+        CommandSuggestion(
+            command: "MANUAL", description: "Open radio manual",
+            icon: "book.closed", prefixes: ["MAN"]
         ),
         // HELP
         CommandSuggestion(

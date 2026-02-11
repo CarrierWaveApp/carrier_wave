@@ -390,6 +390,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | File | Purpose |
 |------|---------|
 | `BandUtilities.swift` | Band derivation from frequency and band ordering |
+| `FieldGuideLinker.swift` | Match radio names to CW Field Guide IDs and open deep links |
 | `FrequencyFormatter.swift` | Frequency formatting with sub-kHz precision support |
 | `KeychainHelper.swift` | Secure credential storage |
 | `MaidenheadConverter.swift` | Grid square to coordinate conversion |

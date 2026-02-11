@@ -25,6 +25,7 @@ enum CommandRowItem: String, CaseIterable {
     case weather
     case spot
     case map
+    case manual
     case help
 
     // MARK: Internal
@@ -38,6 +39,7 @@ enum CommandRowItem: String, CaseIterable {
         case .weather: "WX"
         case .spot: "SPOT"
         case .map: "MAP"
+        case .manual: "MANUAL"
         case .help: "HELP"
         }
     }
@@ -51,6 +53,7 @@ enum CommandRowItem: String, CaseIterable {
         case .weather: "cloud.sun"
         case .spot: "mappin.and.ellipse"
         case .map: "map"
+        case .manual: "book.closed"
         case .help: "questionmark.circle"
         }
     }
@@ -64,6 +67,7 @@ enum CommandRowItem: String, CaseIterable {
         case .weather: "Show weather conditions"
         case .spot: "Self-spot to POTA"
         case .map: "Show session QSO map"
+        case .manual: "Open radio manual"
         case .help: "Show command help"
         }
     }
@@ -77,6 +81,7 @@ enum CommandRowItem: String, CaseIterable {
         case .weather: .weather
         case .spot: .spot(comment: nil)
         case .map: .map
+        case .manual: .manual
         case .help: .help
         }
     }

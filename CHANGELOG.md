@@ -2,10 +2,11 @@
 
 All notable changes to Carrier Wave will be documented in this file.
 
-## [Unreleased]
+## [1.29.0] - 2026-02-10
 
 ### Added
 - Add dual-color activity grid on dashboard — green for activations, blue for activity log, diagonal split for days with both
+- Add deep link to CW Field Guide radio manuals — book icon in radio picker and MANUAL command in logger open the matching manual
 
 ## [1.28.0] - 2026-02-10
 
