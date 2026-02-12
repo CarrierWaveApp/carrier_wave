@@ -1,3 +1,4 @@
+import CarrierWaveCore
 import SwiftData
 import SwiftUI
 
@@ -123,7 +124,7 @@ struct ContentView: View {
     )
     private var incomingFriendRequests: [Friendship]
 
-    private let lofiClient = LoFiClient()
+    private let lofiClient = LoFiClient.appDefault()
     private let qrzClient = QRZClient()
     private let hamrsClient = HAMRSClient()
     private let lotwClient = LoTWClient()

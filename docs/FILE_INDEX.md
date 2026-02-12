@@ -33,6 +33,24 @@ Pure logic library that can be tested without iOS Simulator. Run tests with `mak
 | `Sources/CarrierWaveCore/QueryLanguage/QueryAST.swift` | Query AST types (expression, term, condition) |
 | `Sources/CarrierWaveCore/QueryLanguage/QueryParser.swift` | Token stream to AST parsing |
 | `Sources/CarrierWaveCore/QueryLanguage/QueryAnalyzer.swift` | Query performance analysis and warnings |
+| `Sources/CarrierWaveCore/LoFi/LoFiCredentialStore.swift` | Protocol + key enum for credential storage |
+| `Sources/CarrierWaveCore/LoFi/LoFiLogger.swift` | Protocol for logging |
+| `Sources/CarrierWaveCore/LoFi/LoFiModels.swift` | LoFi API request/response models (operations, registration) |
+| `Sources/CarrierWaveCore/LoFi/LoFiModels+QSO.swift` | LoFi QSO response models (QSOs, metadata) |
+| `Sources/CarrierWaveCore/LoFi/LoFiClient.swift` | Ham2K LoFi sync client (core, config, setup) |
+| `Sources/CarrierWaveCore/LoFi/LoFiClient+Fetch.swift` | LoFi fetch endpoints (operations, QSOs) |
+| `Sources/CarrierWaveCore/LoFi/LoFiClient+Sync.swift` | LoFi sync orchestration (full download, progress) |
+| `Sources/CarrierWaveCore/LoFi/LoFiClient+Helpers.swift` | LoFi helpers (token, secret gen, request, accumulator) |
+
+## LoFi CLI (`Sources/LoFiCLI/`)
+
+Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `cd CarrierWaveCore && swift run lofi-cli`.
+
+| File | Purpose |
+|------|---------|
+| `Sources/LoFiCLI/LoFiCLI.swift` | CLI entry point with register/link/download/status subcommands |
+| `Sources/LoFiCLI/FileCredentialStore.swift` | LoFiCredentialStore backed by ~/.config/lofi-cli/credentials.json |
+| `Sources/LoFiCLI/ConsoleLogger.swift` | LoFiLogger that prints to stderr with level prefixes |
 
 ## Entry Points
 | File | Purpose |
@@ -97,9 +115,10 @@ Pure logic library that can be tested without iOS Simulator. Run tests with `mak
 | `POTAAuthService.swift` | POTA OAuth flow handling (main service) |
 | `POTAAuthService+JavaScript.swift` | JavaScript helpers for POTA WebView auth |
 | `POTAAuthService+HeadlessAuth.swift` | Headless authentication with stored credentials |
-| `LoFiClient.swift` | Ham2K LoFi sync client |
-| `LoFiClient+Helpers.swift` | LoFi helper methods |
-| `LoFiModels.swift` | LoFi API response models |
+| `LoFiModels+QSOHelpers.swift` | LoFi QSO convenience properties (theirCall, timestamp, etc.) |
+| `LoFi/KeychainCredentialStore.swift` | LoFiCredentialStore adapter wrapping KeychainHelper |
+| `LoFi/SyncDebugLogAdapter.swift` | LoFiLogger adapter wrapping SyncDebugLog |
+| `LoFi/LoFiClient+App.swift` | Convenience LoFiClient.appDefault() factory |
 | `LoTWClient.swift` | LoTW API client (download-only, username/password auth) |
 | `LoTWClient+Parsing.swift` | LoTW ADIF parsing methods |
 | `LoTWClient+Adaptive.swift` | LoTW adaptive date windowing for rate limiting |

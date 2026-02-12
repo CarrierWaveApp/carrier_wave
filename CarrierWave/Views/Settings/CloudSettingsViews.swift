@@ -123,7 +123,7 @@ struct LoFiSettingsView: View {
     @State private var errorMessage = ""
     @State private var statusMessage = ""
 
-    private let lofiClient = LoFiClient()
+    private let lofiClient = LoFiClient.appDefault()
 
     @ViewBuilder
     private var configuredSection: some View {

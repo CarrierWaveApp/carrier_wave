@@ -5,6 +5,7 @@
 //  Created by Jay Vana on 1/20/26.
 //
 
+import CarrierWaveCore
 import XCTest
 @testable import CarrierWave
 

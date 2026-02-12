@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Activity Grid — Split Day Mockup</title>
+<style>
+  :root {
+    --bg: #1c1c1e;
+    --card-bg: #2c2c2e;
+    --cell-empty: #3a3a3c;
+    --green-low: rgba(232, 119, 34, 0.35);
+    --green-mid: rgba(232, 119, 34, 0.60);
+    --green-high: rgba(232, 119, 34, 0.85);
+    --green-max: rgba(232, 119, 34, 1.0);
+    --blue-low: rgba(12, 35, 64, 0.55);
+    --blue-mid: rgba(12, 35, 64, 0.70);
+    --blue-high: rgba(12, 35, 64, 0.85);
+    --blue-max: rgba(12, 35, 64, 1.0);
+    --text: #f5f5f7;
+    --text-secondary: #98989d;
+    --text-tertiary: #636366;
+    --cell-size: 14px;
+    --cell-gap: 2px;
+    --corner-radius: 2px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+    padding: 24px;
+    min-height: 100vh;
+  }
+
+  h1 {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .subtitle {
+    color: var(--text-secondary);
+    font-size: 13px;
+    margin-bottom: 24px;
+  }
+
+  .card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+  }
+
+  .card-title {
+    font-size: 17px;
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+
+  /* Legend */
+  .legend {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  .legend-swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  /* Grid */
+  .grid-scroll {
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .grid-container {
+    display: inline-flex;
+    flex-direction: row;
+    gap: var(--cell-gap);
+  }
+
+  .grid-column {
+    display: flex;
+    flex-direction: column;
+    gap: var(--cell-gap);
+  }
+
+  .cell {
+    width: var(--cell-size);
+    height: var(--cell-size);
+    border-radius: var(--corner-radius);
+    position: relative;
+    overflow: hidden;
+    cursor: default;
+  }
+
+  .cell-empty {
+    background: var(--cell-empty);
+  }
+
+  /* Activation only (green) */
+  .cell-activation-1 { background: var(--green-low); }
+  .cell-activation-2 { background: var(--green-mid); }
+  .cell-activation-3 { background: var(--green-high); }
+  .cell-activation-4 { background: var(--green-max); }
+
+  /* Activity only (blue) */
+  .cell-activity-1 { background: var(--blue-low); }
+  .cell-activity-2 { background: var(--blue-mid); }
+  .cell-activity-3 { background: var(--blue-high); }
+  .cell-activity-4 { background: var(--blue-max); }
+
+  /* Both — diagonal split using SVG backgrounds */
+  .cell-both {
+    background: transparent;
+  }
+
+  .cell-both svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Month labels */
+  .month-labels {
+    display: flex;
+    gap: var(--cell-gap);
+    margin-top: 4px;
+  }
+
+  .month-label {
+    font-size: 10px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+  }
+
+  /* Day labels */
+  .day-labels {
+    display: flex;
+    flex-direction: column;
+    gap: var(--cell-gap);
+    margin-right: 6px;
+  }
+
+  .day-label {
+    font-size: 10px;
+    color: var(--text-tertiary);
+    height: var(--cell-size);
+    line-height: var(--cell-size);
+    width: 24px;
+    text-align: right;
+  }
+
+  .grid-with-labels {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  /* Tooltip */
+  .tooltip {
+    display: none;
+    position: fixed;
+    background: #3a3a3c;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 12px;
+    color: var(--text);
+    pointer-events: none;
+    z-index: 100;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    white-space: nowrap;
+  }
+
+  .tooltip .date {
+    color: var(--text-secondary);
+    font-size: 11px;
+    margin-bottom: 2px;
+  }
+
+  .tooltip .count {
+    font-weight: 700;
+    font-size: 15px;
+  }
+
+  .tooltip .breakdown {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-top: 2px;
+  }
+
+  /* Enlarged examples */
+  .examples {
+    display: flex;
+    gap: 32px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+
+  .example {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .example-cell {
+    width: 40px;
+    height: 40px;
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .example-cell svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .example-label {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+  }
+
+  .example-label strong {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  /* Colorblind simulation */
+  .sim-row {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    margin-top: 8px;
+  }
+
+  .sim-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    width: 120px;
+    flex-shrink: 0;
+  }
+
+  .sim-cells {
+    display: flex;
+    gap: 6px;
+  }
+
+  .sim-cell {
+    width: 28px;
+    height: 28px;
+    border-radius: 3px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .sim-cell svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .section-label {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+
+  /* Protanopia simulation colors — Orange becomes brownish-yellow, Navy stays dark blue */
+  .proto-green { background: rgba(170, 145, 40, 0.85); }
+  .proto-blue { background: rgba(15, 35, 60, 0.85); }
+  .proto-empty { background: var(--cell-empty); }
+
+  /* Deuteranopia simulation colors — Orange becomes gold-brown, Navy stays dark blue */
+  .deuter-green { background: rgba(185, 155, 35, 0.85); }
+  .deuter-blue { background: rgba(10, 30, 55, 0.85); }
+  .deuter-empty { background: var(--cell-empty); }
+
+  /* Tritanopia simulation colors — Orange becomes pinkish-red, Navy becomes dark teal */
+  .trit-green { background: rgba(235, 105, 90, 0.85); }
+  .trit-blue { background: rgba(10, 40, 50, 0.85); }
+  .trit-empty { background: var(--cell-empty); }
+</style>
+</head>
+<body>
+
+<h1>Activity Grid — Split Day Design</h1>
+<p class="subtitle">Orange = activation QSOs &nbsp;|&nbsp; Navy Blue = activity log QSOs &nbsp;|&nbsp; Diagonal = both</p>
+
+<!-- LEGEND & LARGE EXAMPLES -->
+<div class="card">
+  <div class="card-title">Cell Types (enlarged)</div>
+  <div class="examples">
+    <div class="example">
+      <div class="example-cell" style="background: var(--cell-empty)"></div>
+      <div class="example-label"><strong>Empty</strong><br>No QSOs</div>
+    </div>
+    <div class="example">
+      <div class="example-cell" style="background: var(--green-high)"></div>
+      <div class="example-label"><strong>Activation only</strong><br>e.g. 8 QSOs from POTA</div>
+    </div>
+    <div class="example">
+      <div class="example-cell" style="background: var(--blue-high)"></div>
+      <div class="example-label"><strong>Activity log only</strong><br>e.g. 5 hunter QSOs</div>
+    </div>
+    <div class="example">
+      <div class="example-cell">
+        <svg viewBox="0 0 40 40" preserveAspectRatio="none">
+          <polygon points="0,0 40,0 0,40" fill="rgba(232,119,34,0.85)"/>
+          <polygon points="40,0 40,40 0,40" fill="rgba(12,35,64,0.85)"/>
+        </svg>
+      </div>
+      <div class="example-label"><strong>Both types</strong><br>Activation (top-left) + Activity (bottom-right)</div>
+    </div>
+  </div>
+</div>
+
+<!-- INTENSITY SCALE -->
+<div class="card">
+  <div class="card-title">Intensity Scale</div>
+  <div class="legend" style="margin-bottom: 12px;">
+    <div class="legend-item">
+      <div class="legend-swatch" style="background: var(--cell-empty)"></div>
+      0
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch" style="background: var(--green-low)"></div>
+      1–3
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch" style="background: var(--green-mid)"></div>
+      4–8
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch" style="background: var(--green-high)"></div>
+      9–15
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch" style="background: var(--green-max)"></div>
+      16+
+    </div>
+  </div>
+  <div class="legend">
+    <div class="legend-item">
+      <div class="legend-swatch" style="background: var(--cell-empty)"></div>
+      0
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch" style="background: var(--blue-low)"></div>
+      1–3
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch" style="background: var(--blue-mid)"></div>
+      4–8
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch" style="background: var(--blue-high)"></div>
+      9–15
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch" style="background: var(--blue-max)"></div>
+      16+
+    </div>
+  </div>
+</div>
+
+<!-- FULL GRID -->
+<div class="card">
+  <div class="card-title">Activity</div>
+  <div class="legend">
+    <div class="legend-item">
+      <div class="legend-swatch" style="background: var(--cell-empty)"></div>
+      None
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch" style="background: var(--green-mid)"></div>
+      Activation
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch" style="background: var(--blue-mid)"></div>
+      Activity Log
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch" style="position:relative; overflow:hidden;">
+        <svg viewBox="0 0 14 14" style="position:absolute;top:0;left:0;width:100%;height:100%;">
+          <polygon points="0,0 14,0 0,14" fill="rgba(232,119,34,0.6)"/>
+          <polygon points="14,0 14,14 0,14" fill="rgba(12,35,64,0.7)"/>
+        </svg>
+      </div>
+      Both
+    </div>
+  </div>
+  <div id="grid-area" class="grid-with-labels"></div>
+</div>
+
+<!-- COLORBLIND SIMULATIONS -->
+<div class="card">
+  <div class="card-title">Colorblind Accessibility Check</div>
+  <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 16px;">
+    Orange + navy blue provides strong luminance contrast across all types of color vision deficiency.
+    Below shows approximate simulations.
+  </p>
+
+  <div class="section-label">Normal Vision</div>
+  <div class="sim-row" style="margin-bottom: 16px;">
+    <div class="sim-label">Trichromatic</div>
+    <div class="sim-cells">
+      <div class="sim-cell" style="background: var(--cell-empty)"></div>
+      <div class="sim-cell" style="background: var(--green-mid)"></div>
+      <div class="sim-cell" style="background: var(--green-max)"></div>
+      <div class="sim-cell" style="background: var(--blue-mid)"></div>
+      <div class="sim-cell" style="background: var(--blue-max)"></div>
+      <div class="sim-cell">
+        <svg viewBox="0 0 28 28" preserveAspectRatio="none">
+          <polygon points="0,0 28,0 0,28" fill="rgba(232,119,34,0.85)"/>
+          <polygon points="28,0 28,28 0,28" fill="rgba(12,35,64,0.85)"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label">Red-blind (~1% of males)</div>
+  <div class="sim-row" style="margin-bottom: 16px;">
+    <div class="sim-label">Protanopia</div>
+    <div class="sim-cells">
+      <div class="sim-cell proto-empty"></div>
+      <div class="sim-cell proto-green" style="opacity: 0.6"></div>
+      <div class="sim-cell proto-green"></div>
+      <div class="sim-cell proto-blue" style="opacity: 0.6"></div>
+      <div class="sim-cell proto-blue"></div>
+      <div class="sim-cell">
+        <svg viewBox="0 0 28 28" preserveAspectRatio="none">
+          <polygon points="0,0 28,0 0,28" fill="rgba(170,145,40,0.85)"/>
+          <polygon points="28,0 28,28 0,28" fill="rgba(15,35,60,0.85)"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label">Green-blind (~6% of males)</div>
+  <div class="sim-row" style="margin-bottom: 16px;">
+    <div class="sim-label">Deuteranopia</div>
+    <div class="sim-cells">
+      <div class="sim-cell deuter-empty"></div>
+      <div class="sim-cell deuter-green" style="opacity: 0.6"></div>
+      <div class="sim-cell deuter-green"></div>
+      <div class="sim-cell deuter-blue" style="opacity: 0.6"></div>
+      <div class="sim-cell deuter-blue"></div>
+      <div class="sim-cell">
+        <svg viewBox="0 0 28 28" preserveAspectRatio="none">
+          <polygon points="0,0 28,0 0,28" fill="rgba(185,155,35,0.85)"/>
+          <polygon points="28,0 28,28 0,28" fill="rgba(10,30,55,0.85)"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label">Blue-blind (~0.01% of population)</div>
+  <div class="sim-row">
+    <div class="sim-label">Tritanopia</div>
+    <div class="sim-cells">
+      <div class="sim-cell trit-empty"></div>
+      <div class="sim-cell trit-green" style="opacity: 0.6"></div>
+      <div class="sim-cell trit-green"></div>
+      <div class="sim-cell trit-blue" style="opacity: 0.6"></div>
+      <div class="sim-cell trit-blue"></div>
+      <div class="sim-cell">
+        <svg viewBox="0 0 28 28" preserveAspectRatio="none">
+          <polygon points="0,0 28,0 0,28" fill="rgba(235,105,90,0.85)"/>
+          <polygon points="28,0 28,28 0,28" fill="rgba(10,40,50,0.85)"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="tooltip" id="tooltip">
+  <div class="date" id="tooltip-date"></div>
+  <div class="count" id="tooltip-count"></div>
+  <div class="breakdown" id="tooltip-breakdown"></div>
+</div>
+
+<script>
+// Generate realistic mock data
+const weeks = 26;
+const rows = 7;
+const today = new Date();
+today.setHours(0,0,0,0);
+
+// Types: 'empty', 'activation', 'activity', 'both'
+function generateData() {
+  const data = [];
+
+  for (let w = 0; w < weeks; w++) {
+    const col = [];
+    for (let r = 0; r < rows; r++) {
+      const daysBack = (weeks - 1 - w) * 7 + (today.getDay() - r);
+      const date = new Date(today);
+      date.setDate(date.getDate() - daysBack);
+
+      // Skip future dates
+      if (date > today) {
+        col.push({ date, type: 'empty', activation: 0, activity: 0 });
+        continue;
+      }
+
+      const dayOfWeek = date.getDay();
+      const weekNum = w;
+      const rand = Math.random();
+
+      let activation = 0;
+      let activity = 0;
+
+      // Activations more likely on weekends, in clusters
+      if (dayOfWeek === 0 || dayOfWeek === 6) {
+        if (rand > 0.55) {
+          activation = Math.floor(Math.random() * 25) + 5;
+        }
+      } else {
+        if (rand > 0.82) {
+          activation = Math.floor(Math.random() * 15) + 3;
+        }
+      }
+
+      // Activity log — scattered throughout, more on weekday evenings
+      if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+        if (Math.random() > 0.5) {
+          activity = Math.floor(Math.random() * 8) + 1;
+        }
+      } else {
+        if (Math.random() > 0.65) {
+          activity = Math.floor(Math.random() * 5) + 1;
+        }
+      }
+
+      // Recent weeks more active
+      if (w > weeks - 6) {
+        if (Math.random() > 0.4) {
+          activity = Math.max(activity, Math.floor(Math.random() * 6) + 1);
+        }
+      }
+
+      let type = 'empty';
+      if (activation > 0 && activity > 0) type = 'both';
+      else if (activation > 0) type = 'activation';
+      else if (activity > 0) type = 'activity';
+
+      col.push({ date, type, activation, activity });
+    }
+    data.push(col);
+  }
+  return data;
+}
+
+const data = generateData();
+
+// Find max for intensity scaling
+let maxActivation = 1, maxActivity = 1;
+data.forEach(col => col.forEach(d => {
+  if (d.activation > maxActivation) maxActivation = d.activation;
+  if (d.activity > maxActivity) maxActivity = d.activity;
+}));
+
+function greenColor(count) {
+  if (count === 0) return null;
+  const intensity = Math.min(count / maxActivation, 1.0);
+  const alpha = 0.3 + intensity * 0.7;
+  return `rgba(232, 119, 34, ${alpha})`;
+}
+
+function blueColor(count) {
+  if (count === 0) return null;
+  const intensity = Math.min(count / maxActivity, 1.0);
+  const alpha = 0.5 + intensity * 0.5;
+  return `rgba(12, 35, 64, ${alpha})`;
+}
+
+// Build grid
+const gridArea = document.getElementById('grid-area');
+
+// Day labels
+const dayLabels = document.createElement('div');
+dayLabels.className = 'day-labels';
+const dayNames = ['Sun', '', 'Tue', '', 'Thu', '', 'Sat'];
+dayNames.forEach(name => {
+  const label = document.createElement('div');
+  label.className = 'day-label';
+  label.textContent = name;
+  dayLabels.appendChild(label);
+});
+gridArea.appendChild(dayLabels);
+
+// Grid columns wrapper
+const gridWrapper = document.createElement('div');
+gridWrapper.style.overflowX = 'auto';
+
+const gridInner = document.createElement('div');
+gridInner.style.display = 'flex';
+gridInner.style.flexDirection = 'column';
+
+const gridContainer = document.createElement('div');
+gridContainer.className = 'grid-container';
+
+const tooltip = document.getElementById('tooltip');
+const tooltipDate = document.getElementById('tooltip-date');
+const tooltipCount = document.getElementById('tooltip-count');
+const tooltipBreakdown = document.getElementById('tooltip-breakdown');
+
+const monthFormatter = new Intl.DateTimeFormat('en-US', { month: 'short' });
+const dateFormatter = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+// Track month labels
+let lastMonth = -1;
+const monthLabelsData = [];
+
+data.forEach((col, colIdx) => {
+  const colDiv = document.createElement('div');
+  colDiv.className = 'grid-column';
+
+  // Check first cell for month label
+  const firstDate = col[0].date;
+  const month = firstDate.getMonth();
+  if (month !== lastMonth) {
+    let label = monthFormatter.format(firstDate);
+    if (month === 0) {
+      label += " '" + String(firstDate.getFullYear()).slice(-2);
+    }
+    monthLabelsData.push({ col: colIdx, label });
+    lastMonth = month;
+  }
+
+  col.forEach(cellData => {
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+
+    if (cellData.type === 'empty') {
+      cell.classList.add('cell-empty');
+    } else if (cellData.type === 'activation') {
+      cell.style.background = greenColor(cellData.activation);
+    } else if (cellData.type === 'activity') {
+      cell.style.background = blueColor(cellData.activity);
+    } else if (cellData.type === 'both') {
+      cell.classList.add('cell-both');
+      const gFill = greenColor(cellData.activation);
+      const bFill = blueColor(cellData.activity);
+      cell.innerHTML = `<svg viewBox="0 0 14 14" preserveAspectRatio="none">
+        <polygon points="0,0 14,0 0,14" fill="${gFill}"/>
+        <polygon points="14,0 14,14 0,14" fill="${bFill}"/>
+      </svg>`;
+    }
+
+    // Tooltip
+    cell.addEventListener('mouseenter', (e) => {
+      const total = cellData.activation + cellData.activity;
+      tooltipDate.textContent = dateFormatter.format(cellData.date);
+      tooltipCount.textContent = `${total} QSO${total === 1 ? '' : 's'}`;
+
+      let parts = [];
+      if (cellData.activation > 0) parts.push(`${cellData.activation} activation`);
+      if (cellData.activity > 0) parts.push(`${cellData.activity} activity log`);
+      tooltipBreakdown.textContent = parts.join(' + ');
+
+      tooltip.style.display = 'block';
+      const rect = cell.getBoundingClientRect();
+      tooltip.style.left = (rect.left + rect.width/2 - tooltip.offsetWidth/2) + 'px';
+      tooltip.style.top = (rect.top - tooltip.offsetHeight - 6) + 'px';
+    });
+
+    cell.addEventListener('mouseleave', () => {
+      tooltip.style.display = 'none';
+    });
+
+    colDiv.appendChild(cell);
+  });
+
+  gridContainer.appendChild(colDiv);
+});
+
+gridInner.appendChild(gridContainer);
+
+// Month labels row
+const monthRow = document.createElement('div');
+monthRow.style.position = 'relative';
+monthRow.style.height = '14px';
+monthRow.style.marginTop = '4px';
+const colWidth = 14 + 2; // cellSize + gap
+
+monthLabelsData.forEach(item => {
+  const label = document.createElement('span');
+  label.className = 'month-label';
+  label.textContent = item.label;
+  label.style.position = 'absolute';
+  label.style.left = (item.col * colWidth) + 'px';
+  monthRow.appendChild(label);
+});
+
+// Make month row as wide as the grid
+monthRow.style.width = (weeks * colWidth) + 'px';
+gridInner.appendChild(monthRow);
+gridWrapper.appendChild(gridInner);
+gridArea.appendChild(gridWrapper);
+</script>
+
+</body>
+</html>

@@ -1,5 +1,6 @@
 // swiftlint:disable type_body_length
 
+import CarrierWaveCore
 import SwiftData
 import XCTest
 @testable import CarrierWave

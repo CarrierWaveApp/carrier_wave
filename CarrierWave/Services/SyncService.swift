@@ -19,7 +19,7 @@ class SyncService: ObservableObject {
         qrzClient = QRZClient()
         self.potaAuthService = potaAuthService
         potaClient = POTAClient(authService: potaAuthService)
-        self.lofiClient = lofiClient ?? LoFiClient()
+        self.lofiClient = lofiClient ?? LoFiClient.appDefault()
         self.hamrsClient = hamrsClient ?? HAMRSClient()
         self.lotwClient = lotwClient ?? LoTWClient()
     }
@@ -291,14 +291,16 @@ class SyncService: ObservableObject {
         syncPhase = .downloading(service: .lofi)
         let qsos = try await withTimeout(seconds: syncTimeoutSeconds, service: .lofi) {
             try await self.lofiClient.fetchAllQsosSinceLastSync { [weak self] progress in
-                guard let self else {
-                    return
+                Task { @MainActor [weak self] in
+                    guard let self else {
+                        return
+                    }
+                    var updated = syncProgress
+                    updated.lofiTotalQSOs = progress.totalQSOs
+                    updated.lofiTotalOperations = progress.totalOperations
+                    updated.lofiDownloadedQSOs = progress.downloadedQSOs
+                    syncProgress = updated
                 }
-                var updated = syncProgress
-                updated.lofiTotalQSOs = progress.totalQSOs
-                updated.lofiTotalOperations = progress.totalOperations
-                updated.lofiDownloadedQSOs = progress.downloadedQSOs
-                syncProgress = updated
             }
         }
         debugLog.info("Fetched \(qsos.count) raw QSOs", service: .lofi)
@@ -494,7 +496,3 @@ extension SyncService {
         }
     }
 }
-
-// Download methods are in SyncService+Download.swift
-// Upload methods are in SyncService+Upload.swift
-// Process methods are in SyncService+Process.swift

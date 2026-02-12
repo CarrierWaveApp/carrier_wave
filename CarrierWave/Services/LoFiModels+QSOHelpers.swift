@@ -1,5 +1,6 @@
 // LoFi QSO computed property helpers
 
+import CarrierWaveCore
 import Foundation
 
 // MARK: - QSO Helpers

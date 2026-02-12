@@ -1,3 +1,4 @@
+import CarrierWaveCore
 import SwiftUI
 
 // MARK: - LazyView
@@ -114,7 +115,7 @@ struct MoreTabView: View {
             LogsContainerView(
                 potaClient: nil,
                 potaAuth: potaAuthService,
-                lofiClient: LoFiClient(),
+                lofiClient: LoFiClient.appDefault(),
                 qrzClient: QRZClient(),
                 hamrsClient: HAMRSClient(),
                 lotwClient: LoTWClient(),

@@ -6,7 +6,7 @@
 //  with the app's LoggerCommand for command detection.
 //
 
-import CarrierWaveCore
+@_exported import CarrierWaveCore
 import Foundation
 
 // Re-export types from CarrierWaveCore for app compatibility

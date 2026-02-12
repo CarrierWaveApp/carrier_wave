@@ -13,10 +13,18 @@ let package = Package(
             name: "CarrierWaveCore",
             targets: ["CarrierWaveCore"]
         ),
+        .executable(
+            name: "lofi-cli",
+            targets: ["LoFiCLI"]
+        ),
     ],
     targets: [
         .target(
             name: "CarrierWaveCore"
+        ),
+        .executableTarget(
+            name: "LoFiCLI",
+            dependencies: ["CarrierWaveCore"]
         ),
         .testTarget(
             name: "CarrierWaveCoreTests",

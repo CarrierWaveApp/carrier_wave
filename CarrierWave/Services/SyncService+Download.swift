@@ -175,19 +175,21 @@ extension SyncService {
         do {
             let qsos = try await withTimeout(seconds: timeout, service: .lofi) {
                 try await self.lofiClient.fetchAllQsosSinceLastSync { [weak self] progress in
-                    guard let self else {
-                        return
+                    Task { @MainActor [weak self] in
+                        guard let self else {
+                            return
+                        }
+                        // Update progress - must modify struct to trigger @Published
+                        NSLog(
+                            "[LoFi Progress] total=%d, downloaded=%d",
+                            progress.totalQSOs, progress.downloadedQSOs
+                        )
+                        var updated = syncProgress
+                        updated.lofiTotalQSOs = progress.totalQSOs
+                        updated.lofiTotalOperations = progress.totalOperations
+                        updated.lofiDownloadedQSOs = progress.downloadedQSOs
+                        syncProgress = updated
                     }
-                    // Update progress - must modify struct to trigger @Published
-                    NSLog(
-                        "[LoFi Progress] total=%d, downloaded=%d",
-                        progress.totalQSOs, progress.downloadedQSOs
-                    )
-                    var updated = syncProgress
-                    updated.lofiTotalQSOs = progress.totalQSOs
-                    updated.lofiTotalOperations = progress.totalOperations
-                    updated.lofiDownloadedQSOs = progress.downloadedQSOs
-                    syncProgress = updated
                 }
             }
             debugLog.info("Downloaded \(qsos.count) raw QSOs from LoFi API", service: .lofi)

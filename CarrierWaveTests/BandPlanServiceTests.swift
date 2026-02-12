@@ -2,6 +2,7 @@ import XCTest
 @testable import CarrierWave
 
 /// Tests for BandPlanService frequency/mode/license validation
+@MainActor
 final class BandPlanServiceTests: XCTestCase {
     // MARK: - Technician CW Tests
 

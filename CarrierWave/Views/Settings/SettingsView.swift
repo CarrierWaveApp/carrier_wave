@@ -96,7 +96,7 @@ struct SettingsMainView: View {
 
     @Query(sort: \ChallengeSource.name) private var challengeSources: [ChallengeSource]
 
-    private let lofiClient = LoFiClient()
+    private let lofiClient = LoFiClient.appDefault()
     private let qrzClient = QRZClient()
     private let hamrsClient = HAMRSClient()
     private let lotwClient = LoTWClient()

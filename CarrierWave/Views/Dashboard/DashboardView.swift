@@ -73,7 +73,7 @@ struct DashboardView: View {
     /// Service presence counts - computed in background
     @State var presenceCounts = AsyncServicePresenceCounts()
 
-    let lofiClient = LoFiClient()
+    let lofiClient = LoFiClient.appDefault()
     let qrzClient = QRZClient()
     let hamrsClient = HAMRSClient()
     let lotwClient = LoTWClient()

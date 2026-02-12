@@ -4,10 +4,17 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Extract LoFi client into CarrierWaveCore package for sharing between iOS app and CLI tool
+- Add `lofi-cli` executable target for standalone LoFi download testing without iOS Simulator
+- Add `LoFiCredentialStore` and `LoFiLogger` protocols to abstract app-specific dependencies
+
 ### Changed
 - Display contact nickname (if available) instead of full name in logger session log and QSO log
 - Show callsign notes emoji in QSO log rows
 - Show total contact count in logger session log and QSO log rows
+- Move LoFi models, client, and helpers from app to CarrierWaveCore package
+- Replace `LoFiClient()` with `LoFiClient.appDefault()` at all call sites
 
 ## [1.29.0] - 2026-02-10
 
