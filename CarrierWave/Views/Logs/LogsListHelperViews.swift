@@ -1,4 +1,5 @@
 import CarrierWaveCore
+import SwiftData
 import SwiftUI
 
 // MARK: - QueryWarningBanner
@@ -153,8 +154,28 @@ struct QSORow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
-                Text(qso.callsign)
-                    .font(.headline)
+                HStack(spacing: 4) {
+                    if let emoji = callsignInfo?.combinedEmoji {
+                        Text(emoji)
+                            .font(.headline)
+                    }
+
+                    Text(qso.callsign)
+                        .font(.headline)
+                }
+
+                if let name = displayName {
+                    Text(name)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+
+                if totalContactCount > 1 {
+                    Text("×\(totalContactCount)")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.secondary)
+                }
 
                 Spacer()
 
@@ -201,6 +222,8 @@ struct QSORow: View {
             if let park = qso.parkReference {
                 parkName = await POTAParksCache.shared.name(for: park)
             }
+            callsignInfo = await CallsignNotesCache.shared.info(for: qso.callsign)
+            totalContactCount = fetchTotalContactCount(for: qso.callsign)
         }
     }
 
@@ -213,7 +236,16 @@ struct QSORow: View {
         return formatter
     }()
 
+    @Environment(\.modelContext) private var modelContext
+
     @State private var parkName: String?
+    @State private var callsignInfo: CallsignInfo?
+    @State private var totalContactCount: Int = 0
+
+    /// Display name from callsign notes (prefers nickname), fallback to QSO stored name
+    private var displayName: String? {
+        callsignInfo?.displayName ?? qso.name?.capitalized
+    }
 
     private var formattedTimestamp: String {
         Self.utcFormatter.string(from: qso.timestamp) + "Z"
@@ -221,6 +253,23 @@ struct QSORow: View {
 
     private var sortedPresence: [ServicePresence] {
         qso.servicePresence.sorted { $0.serviceType.rawValue < $1.serviceType.rawValue }
+    }
+
+    /// Count all-time QSOs with a callsign (excludes hidden and metadata modes)
+    private func fetchTotalContactCount(for callsign: String) -> Int {
+        let upper = callsign.uppercased()
+        return
+            (try? modelContext.fetchCount(
+                FetchDescriptor<QSO>(
+                    predicate: #Predicate<QSO> { qso in
+                        qso.callsign == upper
+                            && !qso.isHidden
+                            && qso.mode != "WEATHER"
+                            && qso.mode != "SOLAR"
+                            && qso.mode != "NOTE"
+                    }
+                )
+            )) ?? 0
     }
 }
 

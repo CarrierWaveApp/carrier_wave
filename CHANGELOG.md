@@ -2,6 +2,13 @@
 
 All notable changes to Carrier Wave will be documented in this file.
 
+## [Unreleased]
+
+### Changed
+- Display contact nickname (if available) instead of full name in logger session log and QSO log
+- Show callsign notes emoji in QSO log rows
+- Show total contact count in logger session log and QSO log rows
+
 ## [1.29.0] - 2026-02-10
 
 ### Added
