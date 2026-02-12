@@ -154,15 +154,8 @@ struct QSORow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
-                HStack(spacing: 4) {
-                    if let emoji = callsignInfo?.combinedEmoji {
-                        Text(emoji)
-                            .font(.headline)
-                    }
-
-                    Text(qso.callsign)
-                        .font(.headline)
-                }
+                Text(qso.callsign)
+                    .font(.headline)
 
                 if let name = displayName {
                     Text(name)
@@ -171,8 +164,13 @@ struct QSORow: View {
                         .lineLimit(1)
                 }
 
+                if let emoji = callsignInfo?.combinedEmoji {
+                    Text(emoji)
+                        .font(.caption)
+                }
+
                 if totalContactCount > 1 {
-                    Text("×\(totalContactCount)")
+                    Text("\u{00d7}\(totalContactCount)")
                         .font(.caption.weight(.medium))
                         .foregroundStyle(.secondary)
                 }
