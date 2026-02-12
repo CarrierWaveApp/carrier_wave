@@ -24,6 +24,7 @@ struct ActivationShareCardView: View {
             statsSection
             ShareCardTimelineView(qsos: activation.qsos)
                 .padding(.top, 8)
+                .padding(.horizontal, 16)
             footer
         }
         .frame(width: 400, height: 640)
@@ -232,6 +233,7 @@ struct ActivationShareCardForExport: View {
             exportStatsSection
             ShareCardTimelineView(qsos: activation.qsos)
                 .padding(.top, 8)
+                .padding(.horizontal, 16)
             ActivationShareCardFooter(callsign: activation.callsign)
         }
         .frame(width: 400, height: 640)

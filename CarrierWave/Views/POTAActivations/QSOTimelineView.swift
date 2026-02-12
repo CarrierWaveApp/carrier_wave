@@ -196,7 +196,6 @@ struct ShareCardTimelineView: View {
                 bandLegend
             }
         }
-        .padding(.horizontal, 16)
     }
 
     private var timelineBar: some View {
