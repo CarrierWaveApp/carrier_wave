@@ -161,7 +161,7 @@ struct ActivationQSOCallout: View {
             }
 
             if let name = qso.name {
-                Text(name)
+                Text(name.capitalized)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

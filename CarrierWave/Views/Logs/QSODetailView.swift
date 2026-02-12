@@ -76,7 +76,7 @@ struct QSODetailView: View {
                     .frame(maxWidth: .infinity)
 
                 if let name = qso.name {
-                    Text(name)
+                    Text(name.capitalized)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }

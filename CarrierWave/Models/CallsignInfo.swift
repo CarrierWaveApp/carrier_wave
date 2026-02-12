@@ -104,16 +104,17 @@ struct CallsignInfo: Codable, Identifiable, Equatable, Sendable {
         callsign
     }
 
-    /// Display name for the operator, prioritizing nickname > firstName > name
+    /// Display name for the operator, prioritizing nickname > firstName > name.
+    /// Normalizes casing to title case (e.g., "JOHN SMITH" → "John Smith").
     nonisolated var displayName: String? {
         if let nickname, !nickname.isEmpty {
-            return nickname
+            return nickname.capitalized
         }
         if let firstName, !firstName.isEmpty {
-            return firstName
+            return firstName.capitalized
         }
         if let name, !name.isEmpty {
-            return name
+            return name.capitalized
         }
         return nil
     }
