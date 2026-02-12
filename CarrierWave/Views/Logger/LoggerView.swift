@@ -2106,9 +2106,9 @@ struct LoggerQSORow: View {
     @State private var callsignInfo: CallsignInfo?
     @State private var showEditSheet = false
 
-    /// Display name from QSO or callsign lookup
+    /// Display name from QSO or callsign lookup, normalized to title case
     private var displayName: String? {
-        qso.name ?? callsignInfo?.name
+        (qso.name ?? callsignInfo?.name)?.capitalized
     }
 
     /// Display location from QSO or callsign lookup
