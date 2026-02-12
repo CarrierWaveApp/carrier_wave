@@ -142,7 +142,6 @@ struct LoggerCallsignCard: View {
             }
             .font(.caption)
             .foregroundStyle(.secondary)
-            .lineLimit(2)
         }
         .padding(.top, 4)
     }
