@@ -2088,6 +2088,7 @@ struct LoggerQSORow: View {
         }
         .task(id: qso.id) {
             await lookupCallsign()
+            totalContactCount = fetchTotalContactCount(for: qso.callsign)
         }
     }
 
@@ -2105,10 +2106,11 @@ struct LoggerQSORow: View {
 
     @State private var callsignInfo: CallsignInfo?
     @State private var showEditSheet = false
+    @State private var totalContactCount: Int = 0
 
-    /// Display name from QSO or callsign lookup, normalized to title case
+    /// Display name from callsign lookup (prefers nickname), fallback to QSO stored name
     private var displayName: String? {
-        (qso.name ?? callsignInfo?.name)?.capitalized
+        callsignInfo?.displayName ?? qso.name?.capitalized
     }
 
     /// Display location from QSO or callsign lookup
@@ -2196,10 +2198,17 @@ struct LoggerQSORow: View {
             .fixedSize(horizontal: true, vertical: false)
 
             VStack(alignment: .leading, spacing: 2) {
-                if let name = displayName {
-                    Text(name)
-                        .font(.caption)
-                        .lineLimit(1)
+                HStack(spacing: 4) {
+                    if let name = displayName {
+                        Text(name)
+                            .font(.caption)
+                            .lineLimit(1)
+                    }
+                    if totalContactCount > 1 {
+                        Text("×\(totalContactCount)")
+                            .font(.caption2.weight(.medium))
+                            .foregroundStyle(.secondary)
+                    }
                 }
                 if let note = callsignInfo?.note, !note.isEmpty {
                     Text(note)
@@ -2306,6 +2315,23 @@ struct LoggerQSORow: View {
         if updated {
             try? modelContext.save()
         }
+    }
+
+    /// Count all-time QSOs with a callsign (excludes hidden and metadata modes)
+    private func fetchTotalContactCount(for callsign: String) -> Int {
+        let upper = callsign.uppercased()
+        return
+            (try? modelContext.fetchCount(
+                FetchDescriptor<QSO>(
+                    predicate: #Predicate<QSO> { qso in
+                        qso.callsign == upper
+                            && !qso.isHidden
+                            && qso.mode != "WEATHER"
+                            && qso.mode != "SOLAR"
+                            && qso.mode != "NOTE"
+                    }
+                )
+            )) ?? 0
     }
 }
 
