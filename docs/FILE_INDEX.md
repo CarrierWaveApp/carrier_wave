@@ -165,6 +165,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `ActivityFeedSyncService.swift` | Sync activity feed from server |
 | `POTAPresenceRepairService.swift` | Detect and fix incorrectly marked POTA service presence |
 | `WPMBackfillService.swift` | One-time backfill of average WPM from stored spot comments into ActivationMetadata |
+| `ConditionsBackfillService.swift` | One-time backfill parsing text solar/weather into structured ActivationMetadata fields |
 | `TwoferDuplicateRepairService.swift` | Detect and merge duplicate QSOs from two-fer park reference mismatches |
 | `CWError.swift` | CW transcription error types |
 | `CWAudioCapture.swift` | AVAudioEngine microphone capture for CW decoding |
@@ -295,6 +296,8 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `QSOTimelineView.swift` | Horizontal timeline bar showing QSO timing during activations (compact + share card variants) |
 | `QSOTimelineLayout.swift` | Timeline layout engine: segments, gap detection, x-position computation, band colors |
 | `POTALogEntryRow.swift` | Individual POTA log entry display (legacy) |
+| `ActivationConditionsComponents.swift` | Compact solar gauge and weather badge components for activation rows |
+| `ActivationConditionsSheet.swift` | Detail sheet showing full solar/weather conditions for an activation |
 | `ActivationMetadataEditSheet.swift` | Edit activation metadata (title, park, watts, radio) after completion |
 | `ActivationShareCardView.swift` | Shareable activation card with map and stats |
 | `ActivationShareCardComponents.swift` | Reusable component views for share cards (header, footer, stats, park info) |

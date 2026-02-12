@@ -5,6 +5,8 @@ import SwiftUI
 // MARK: - ActivationLabel
 
 struct ActivationLabel: View {
+    // MARK: Internal
+
     let activation: POTAActivation
     let metadata: ActivationMetadata?
     let showParkReference: Bool
@@ -59,19 +61,19 @@ struct ActivationLabel: View {
                         .background(Color.blue.opacity(0.15))
                         .cornerRadius(4)
                 }
-                if let weather = metadata?.weather, !weather.isEmpty {
-                    Label(weather, systemImage: "cloud")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                }
-                if let solar = metadata?.solarConditions, !solar.isEmpty {
-                    Label(solar, systemImage: "sun.max")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                if let meta = metadata {
+                    ConditionsGaugeRow(metadata: meta, showingSheet: $showingConditions)
                 }
             }
         }
+        .sheet(isPresented: $showingConditions) {
+            if let meta = metadata {
+                ActivationConditionsSheet(metadata: meta)
+            }
+        }
     }
+
+    // MARK: Private
+
+    @State private var showingConditions = false
 }

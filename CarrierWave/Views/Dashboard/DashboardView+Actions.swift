@@ -445,4 +445,29 @@ extension DashboardView {
             print("WPM backfill failed: \(error)")
         }
     }
+
+    // MARK: - Conditions Backfill
+
+    private static let conditionsBackfillKey = "conditionsBackfillCompleted"
+
+    /// One-time backfill: parse text-based solar/weather into structured fields.
+    /// Runs silently on background thread, only once.
+    func backfillConditionsIfNeeded() async {
+        guard !UserDefaults.standard.bool(forKey: Self.conditionsBackfillKey) else {
+            return
+        }
+
+        let service = ConditionsBackfillService(container: modelContext.container)
+        do {
+            let result = try await service.backfill()
+            if result.solarUpdated > 0 || result.weatherUpdated > 0 {
+                let msg = "Conditions backfill: solar=\(result.solarUpdated)"
+                    + ", weather=\(result.weatherUpdated)"
+                print(msg)
+            }
+            UserDefaults.standard.set(true, forKey: Self.conditionsBackfillKey)
+        } catch {
+            print("Conditions backfill failed: \(error)")
+        }
+    }
 }

@@ -44,4 +44,33 @@ final class ActivationMetadata {
     var solarConditions: String?
     /// Average CW speed from RBN spots during activation
     var averageWPM: Int?
+
+    // MARK: - Structured Solar Fields
+
+    var solarKIndex: Double?
+    var solarFlux: Double?
+    var solarSunspots: Int?
+    /// "Excellent", "Good", "Fair", "Poor", or "Very Poor"
+    var solarPropagationRating: String?
+    var solarTimestamp: Date?
+
+    // MARK: - Structured Weather Fields
+
+    var weatherTemperatureF: Double?
+    var weatherTemperatureC: Double?
+    var weatherHumidity: Int?
+    var weatherWindSpeed: Double?
+    var weatherWindDirection: String?
+    var weatherDescription: String?
+    var weatherTimestamp: Date?
+
+    /// Whether structured solar data is available
+    var hasSolarData: Bool {
+        solarKIndex != nil
+    }
+
+    /// Whether structured weather data is available
+    var hasWeatherData: Bool {
+        weatherTemperatureF != nil
+    }
 }

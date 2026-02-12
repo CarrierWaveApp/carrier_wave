@@ -133,6 +133,7 @@ struct DashboardView: View {
                 await checkForMismarkedPOTAPresence()
                 await checkForTwoferDuplicates()
                 await backfillWPMIfNeeded()
+                await backfillConditionsIfNeeded()
             }
             .onChange(of: syncService.lastSyncDate) { _, _ in
                 // Recompute stats after sync completes

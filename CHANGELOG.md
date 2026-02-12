@@ -8,6 +8,9 @@ All notable changes to Carrier Wave will be documented in this file.
 - Extract LoFi client into CarrierWaveCore package for sharing between iOS app and CLI tool
 - Add `lofi-cli` executable target for standalone LoFi download testing without iOS Simulator
 - Add `LoFiCredentialStore` and `LoFiLogger` protocols to abstract app-specific dependencies
+- Add visual condition gauges for POTA activations — compact solar gauge (3-segment red/yellow/green) and weather badge (icon + temperature) replace plain text labels
+- Add tappable conditions detail sheet showing full solar metrics (K-index, SFI, sunspots) and weather details (temperature, wind, humidity)
+- Add structured solar/weather fields to ActivationMetadata with one-time backfill from existing text data
 
 ### Changed
 - Display contact nickname (if available) instead of full name in logger session log and QSO log

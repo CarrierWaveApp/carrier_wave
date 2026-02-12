@@ -21,19 +21,23 @@ extension LoggingSessionManager {
 
             // Fetch solar conditions
             var solarText: String?
+            var solarData: SolarConditions?
             do {
                 let conditions = try await noaaClient.fetchSolarConditions()
                 solarText = conditions.description
+                solarData = conditions
             } catch {
                 // Solar fetch failed, continue with weather
             }
 
             // Fetch weather if grid is available
             var weatherText: String?
+            var weatherData: WeatherConditions?
             if let grid, !grid.isEmpty {
                 do {
                     let conditions = try await noaaClient.fetchWeather(grid: grid)
                     weatherText = Self.formatWeatherForMetadata(conditions)
+                    weatherData = conditions
                 } catch {
                     // Weather fetch failed, continue with what we have
                 }
@@ -48,7 +52,9 @@ extension LoggingSessionManager {
                     parkRef: parkRef,
                     date: sessionDate,
                     solar: solarText,
-                    weather: weatherText
+                    weather: weatherText,
+                    solarData: solarData,
+                    weatherData: weatherData
                 )
             }
         }
@@ -84,7 +90,9 @@ extension LoggingSessionManager {
         parkRef: String,
         date: Date,
         solar: String?,
-        weather: String?
+        weather: String?,
+        solarData: SolarConditions? = nil,
+        weatherData: WeatherConditions? = nil
     ) {
         var calendar = Calendar.current
         calendar.timeZone = TimeZone(identifier: "UTC")!
@@ -111,6 +119,26 @@ extension LoggingSessionManager {
         }
         if let weather, metadata.weather == nil || metadata.weather?.isEmpty == true {
             metadata.weather = weather
+        }
+
+        // Store structured solar data
+        if let solarData, !metadata.hasSolarData {
+            metadata.solarKIndex = solarData.kIndex
+            metadata.solarFlux = solarData.solarFlux
+            metadata.solarSunspots = solarData.sunspots
+            metadata.solarPropagationRating = solarData.propagationRating
+            metadata.solarTimestamp = solarData.timestamp
+        }
+
+        // Store structured weather data
+        if let weatherData, !metadata.hasWeatherData {
+            metadata.weatherTemperatureF = weatherData.temperature
+            metadata.weatherTemperatureC = weatherData.temperatureCelsius
+            metadata.weatherHumidity = weatherData.humidity
+            metadata.weatherWindSpeed = weatherData.windSpeed
+            metadata.weatherWindDirection = weatherData.windDirection
+            metadata.weatherDescription = weatherData.description
+            metadata.weatherTimestamp = weatherData.timestamp
         }
 
         try? modelContext.save()

@@ -53,6 +53,8 @@ struct POTAActivationDetailView: View {
     @State private var isUploading = false
     @State private var uploadErrors: [String: String] = [:]
 
+    @State private var showingConditions = false
+
     private var hasCompletedJob: Bool {
         matchingJobs.contains { $0.status == .completed }
     }
@@ -72,6 +74,7 @@ struct POTAActivationDetailView: View {
     private var hasMetadata: Bool {
         metadata?.watts != nil || metadata?.averageWPM != nil
             || activationRadio != nil
+            || metadata?.hasSolarData == true || metadata?.hasWeatherData == true
             || (metadata?.weather != nil && !(metadata?.weather?.isEmpty ?? true))
             || (metadata?.solarConditions != nil && !(metadata?.solarConditions?.isEmpty ?? true))
     }
@@ -156,17 +159,13 @@ struct POTAActivationDetailView: View {
                     .background(Color.blue.opacity(0.15))
                     .cornerRadius(4)
             }
-            if let weather = metadata?.weather, !weather.isEmpty {
-                Label(weather, systemImage: "cloud")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
+            if let meta = metadata {
+                ConditionsGaugeRow(metadata: meta, showingSheet: $showingConditions)
             }
-            if let solar = metadata?.solarConditions, !solar.isEmpty {
-                Label(solar, systemImage: "sun.max")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
+        }
+        .sheet(isPresented: $showingConditions) {
+            if let meta = metadata {
+                ActivationConditionsSheet(metadata: meta)
             }
         }
     }
