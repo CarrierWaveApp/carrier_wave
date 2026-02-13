@@ -71,7 +71,6 @@ struct SessionsView: View {
             if let recording {
                 RecordingPlayerView(
                     recording: recording,
-                    qsos: [],
                     engine: engineFor(session.id)
                 )
             } else {

@@ -1,3 +1,4 @@
+import SwiftData
 import SwiftUI
 
 /// Full-screen recording player with waveform scrubber, transport controls,
@@ -6,7 +7,7 @@ struct RecordingPlayerView: View {
     // MARK: Internal
 
     let recording: WebSDRRecording
-    let qsos: [QSO]
+    var initialQSOs: [QSO] = []
 
     @Bindable var engine: RecordingPlaybackEngine
 
@@ -52,11 +53,12 @@ struct RecordingPlayerView: View {
             ShareClipSheet(
                 recording: recording,
                 engine: engine,
-                qsos: qsos
+                qsos: effectiveQSOs
             )
             .presentationDetents([.medium])
         }
         .task {
+            await loadQSOs()
             await loadIfNeeded()
         }
     }
@@ -65,13 +67,19 @@ struct RecordingPlayerView: View {
 
     // MARK: - Speed Picker
 
+    @Environment(\.modelContext) private var modelContext
     @State private var selectedRate: Float = 1.0
     @State private var showShareClip = false
+    @State private var loadedQSOs: [QSO]?
 
     // MARK: - Helpers
 
+    private var effectiveQSOs: [QSO] {
+        loadedQSOs ?? (initialQSOs.isEmpty ? [] : initialQSOs)
+    }
+
     private var sortedQSOs: [QSO] {
-        qsos.sorted { $0.timestamp < $1.timestamp }
+        effectiveQSOs.sorted { $0.timestamp < $1.timestamp }
     }
 
     private var qsoOffsets: [TimeInterval] {
@@ -251,6 +259,21 @@ struct RecordingPlayerView: View {
         .listRowBackground(
             isActive ? Color.accentColor.opacity(0.1) : nil
         )
+    }
+
+    private func loadQSOs() async {
+        guard initialQSOs.isEmpty else {
+            return
+        }
+        let sessionId = recording.loggingSessionId
+        var descriptor = FetchDescriptor<QSO>(
+            predicate: #Predicate {
+                $0.loggingSessionId == sessionId && !$0.isHidden
+            },
+            sortBy: [SortDescriptor(\.timestamp)]
+        )
+        descriptor.fetchLimit = 500
+        loadedQSOs = (try? modelContext.fetch(descriptor)) ?? []
     }
 
     private func loadIfNeeded() async {

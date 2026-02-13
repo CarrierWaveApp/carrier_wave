@@ -188,21 +188,14 @@ final class RecordingPlaybackEngine: NSObject {
             return []
         }
 
-        let sampleRate = audioFile.processingFormat.sampleRate
+        // Use the file's processingFormat (AVAudioFile always converts to
+        // non-interleaved float32 for reading)
+        let format = audioFile.processingFormat
+        let sampleRate = format.sampleRate
         let totalFrames = AVAudioFrameCount(audioFile.length)
         let windowFrames = AVAudioFrameCount(sampleRate * windowSeconds)
 
         guard windowFrames > 0 else {
-            return []
-        }
-
-        // Read into a float buffer for peak detection
-        guard let format = AVAudioFormat(
-            commonFormat: .pcmFormatFloat32,
-            sampleRate: sampleRate,
-            channels: 1,
-            interleaved: true
-        ) else {
             return []
         }
 

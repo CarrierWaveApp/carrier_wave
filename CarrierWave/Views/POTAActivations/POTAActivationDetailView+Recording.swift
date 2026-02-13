@@ -11,7 +11,7 @@ extension POTAActivationDetailView {
             NavigationLink {
                 RecordingPlayerView(
                     recording: recording,
-                    qsos: activation.qsos,
+                    initialQSOs: activation.qsos,
                     engine: engine
                 )
             } label: {
