@@ -214,6 +214,8 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `WebSDRRecorder.swift` | Records KiwiSDR audio frames to compressed audio file |
 | `WebSDRSession.swift` | Coordinates WebSDR connection, recording, playback, and resilient reconnects |
 | `WebSDRSession+Internals.swift` | Internal helpers: audio stream processing, reconnect logic, recording lifecycle |
+| `RecordingPlaybackEngine.swift` | @Observable AVAudioPlayer wrapper with seeking, speed control, amplitude envelope, QSO sync |
+| `RecordingClipExporter.swift` | M4A clip export from recordings using AVAssetExportSession |
 
 ## Services - Query Language (`CarrierWave/Services/QueryLanguage/`)
 
@@ -222,6 +224,20 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | File | Purpose |
 |------|---------|
 | `QueryCompiler.swift` | Compiles AST to SwiftData predicates and filter closures |
+
+## Views - Recording Player (`CarrierWave/Views/RecordingPlayer/`)
+| File | Purpose |
+|------|---------|
+| `RecordingWaveformView.swift` | Reusable amplitude waveform with QSO markers, playback head, drag-to-seek |
+| `CompactRecordingPlayer.swift` | Inline card for activation detail and sessions list |
+| `RecordingPlayerView.swift` | Full-screen player with transport controls, speed picker, QSO list |
+| `RecordingPlayerView+Actions.swift` | Share clip sheet with range selection and M4A export |
+
+## Views - Sessions (`CarrierWave/Views/Sessions/`)
+| File | Purpose |
+|------|---------|
+| `SessionsView.swift` | Sessions list with month grouping and recording indicators |
+| `SessionDetailView.swift` | Non-POTA session detail (QSO list, metadata) |
 
 ## Views - Components (`CarrierWave/Views/Components/`)
 
@@ -304,7 +320,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 ## Views - Logs (`CarrierWave/Views/Logs/`)
 | File | Purpose |
 |------|---------|
-| `LogsContainerView.swift` | Container with segmented picker for QSOs and POTA Uploads |
+| `LogsContainerView.swift` | Container with segmented picker for QSOs, POTA Activations, and Sessions |
 | `LogsListView.swift` | Searchable/filterable QSO list content |
 | `LogsListHelperViews.swift` | Helper views (QueryWarningBanner, QueryHelpSheet, QSORow, ServicePresenceBadge) |
 | `QSODetailView.swift` | Read-only QSO detail view showing all metadata, sync status, and source info |
@@ -317,6 +333,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `POTAActivationsHelperViews.swift` | Helper views for POTA activations (ActivationRow, sheets) |
 | `POTAActivationsBulkActions.swift` | Bulk action components (multi-select, upload/reject/export toolbar, progress banner) |
 | `POTAActivationDetailView.swift` | Full activation detail view with upload, jobs, QSO list |
+| `POTAActivationDetailView+Recording.swift` | Recording integration: lookup and compact player section |
 | `POTAActivationLabel.swift` | Shared activation label view (date, park, status, metadata) |
 | `POTAJobViews.swift` | POTA job display components (POTAJobRow, POTAJobDetailSheet) |
 | `QSOTimelineView.swift` | Horizontal timeline bar showing QSO timing during activations (compact + share card variants) |
@@ -462,6 +479,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `DXCCTests.swift` | DXCC extraction, QRZ import, and repair task tests |
 | `QuickEntryParserTests.swift` | Quick entry parser unit tests (callsign, RST, park, grid, state detection) |
 | `QuickEntryParserIntegrationTests.swift` | Quick entry parser integration tests (full parsing, token preview) |
+| `WebSDRRecordingTests.swift` | WebSDR recording query helper tests |
 | `Helpers/QSOFactory.swift` | Synthetic QSO generator for testing (duplicates, metadata, edge cases) |
 | `Helpers/TestModelContainer.swift` | Shared test infrastructure for SwiftData tests |
 | `BandPlanServiceTests.swift` | Band plan validation tests (license class privileges) |
