@@ -36,6 +36,26 @@ struct RecordingPlayerView: View {
         }
         .navigationTitle("Recording")
         .navigationBarTitleDisplayMode(.inline)
+        .safeAreaInset(edge: .bottom) {
+            HStack(spacing: 16) {
+                Button {
+                    showShareClip = true
+                } label: {
+                    Label("Share Clip", systemImage: "scissors")
+                }
+                .buttonStyle(.bordered)
+            }
+            .padding()
+            .background(.bar)
+        }
+        .sheet(isPresented: $showShareClip) {
+            ShareClipSheet(
+                recording: recording,
+                engine: engine,
+                qsos: qsos
+            )
+            .presentationDetents([.medium])
+        }
         .task {
             await loadIfNeeded()
         }
@@ -46,6 +66,7 @@ struct RecordingPlayerView: View {
     // MARK: - Speed Picker
 
     @State private var selectedRate: Float = 1.0
+    @State private var showShareClip = false
 
     // MARK: - Helpers
 
