@@ -15,6 +15,7 @@ enum TestModelContainer {
             ServicePresence.self,
             UploadDestination.self,
             LoggingSession.self,
+            WebSDRRecording.self,
         ])
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
         return try ModelContainer(for: schema, configurations: [config])

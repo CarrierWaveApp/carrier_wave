@@ -87,6 +87,35 @@ final class WebSDRRecording {
         "WebSDRRecordings/\(sessionId.uuidString).caf"
     }
 
+    /// Find the completed recording for a specific logging session
+    static func findRecording(
+        forSessionId sessionId: UUID, in context: ModelContext
+    ) throws -> WebSDRRecording? {
+        var descriptor = FetchDescriptor<WebSDRRecording>(
+            predicate: #Predicate {
+                $0.loggingSessionId == sessionId && $0.isComplete
+            }
+        )
+        descriptor.fetchLimit = 1
+        return try context.fetch(descriptor).first
+    }
+
+    /// Find all completed recordings matching any of the given session IDs
+    static func findRecordings(
+        forSessionIds sessionIds: [UUID], in context: ModelContext
+    ) throws -> [WebSDRRecording] {
+        // SwiftData predicates can't use `contains` on arrays,
+        // so fetch all complete recordings and filter in memory.
+        // Recording count is tiny (one per session at most).
+        var descriptor = FetchDescriptor<WebSDRRecording>(
+            predicate: #Predicate { $0.isComplete }
+        )
+        descriptor.fetchLimit = 500
+        let all = try context.fetch(descriptor)
+        let idSet = Set(sessionIds)
+        return all.filter { idSet.contains($0.loggingSessionId) }
+    }
+
     /// Mark recording as finished
     func finish() {
         endedAt = Date()
