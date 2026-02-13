@@ -41,9 +41,19 @@ When spawning subagents via the Task tool, select models based on task complexit
 
 ## Building and Testing
 
-**NEVER build, run tests, or use the iOS simulator yourself. Always prompt the user to do so.**
+Use the **xcode-build** skill (`~/.claude/skills/xcode-build/scripts/xc`) for all builds and tests. This wraps xcodebuild with `-quiet` and `xcresulttool` for minimal token output. All builds target the physical device **theseus** (no simulator).
 
-When you need to verify changes compile or tests pass, ask the user to run the appropriate command (e.g., `make build`, `make test`) and report back the results.
+```bash
+xc build        # Build for device
+xc test-unit    # Run unit tests (skip perf)
+xc test-core    # CarrierWaveCore SPM tests (no device)
+xc lint          # SwiftLint with JSON output
+xc format        # SwiftFormat
+xc quality       # format → lint → build (pre-commit gate)
+xc deploy        # Build + install + launch on theseus
+```
+
+The Makefile is still available for simulator-based builds/tests (`make build`, `make test`) when needed.
 
 ## Overview
 
