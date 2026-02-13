@@ -38,6 +38,8 @@ All notable changes to Carrier Wave will be documented in this file.
 - Add structured solar/weather fields to ActivationMetadata with one-time backfill from existing text data
 
 ### Fixed
+- Fix WebSDR audio crash on device — render callback inherited @MainActor isolation, crashing on the audio I/O thread; extract as nonisolated static factory and mark AudioRingBuffer methods nonisolated
+- Fix WebSDR buffer underrun — add 1-second pre-buffering phase before starting audio engine to absorb network jitter; increase ring buffer from 3s to 5s capacity
 - Fix WebSDR audio silence — write audio frames to playback ring buffer before recorder file I/O, remove unnecessary actor hops and suspension points that starved the buffer
 - Fix WebSDR directory fetch — correct URL from `/public/` to `/.public/`, rewrite parser to extract receiver data from HTML comments, add ATS exception for HTTP/WS connections
 - Fix KiwiSDR connection — remove incorrect `/kiwi/` URL prefix, use seconds not milliseconds for timestamp, fix identity command (`SET ident_user=`), add `SET compression=1`, parse server error messages (auth failures, busy, down), use negotiated sample rate, and restore correct frequency/mode on reconnect

@@ -82,12 +82,20 @@ extension WebSDRPanelView {
 
     var bufferIndicator: some View {
         HStack(spacing: 6) {
-            Circle()
-                .fill(bufferColor)
-                .frame(width: 6, height: 6)
-            Text("Buffer")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
+            if webSDRSession.audioEngine?.isBuffering == true {
+                ProgressView()
+                    .controlSize(.mini)
+                Text("Buffering...")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            } else {
+                Circle()
+                    .fill(bufferColor)
+                    .frame(width: 6, height: 6)
+                Text("Buffer")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
                     RoundedRectangle(cornerRadius: 2)

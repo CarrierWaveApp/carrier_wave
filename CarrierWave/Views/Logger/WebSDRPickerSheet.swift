@@ -130,6 +130,7 @@ struct WebSDRPickerSheet: View {
 
     private func loadReceivers() async {
         isLoading = true
+        await WebSDRDirectory.shared.refresh()
         receivers = await WebSDRDirectory.shared.findNearby(
             grid: myGrid,
             limit: 20

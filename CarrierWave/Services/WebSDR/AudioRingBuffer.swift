@@ -20,7 +20,7 @@ final class AudioRingBuffer: Sendable {
     // MARK: Internal
 
     /// Current fill ratio (0.0 to 1.0). Safe to call from any thread.
-    var fillRatio: Double {
+    nonisolated var fillRatio: Double {
         lockedState.withLock { state in
             guard state.capacity > 0 else {
                 return 0.0
@@ -30,13 +30,13 @@ final class AudioRingBuffer: Sendable {
     }
 
     /// Number of samples currently buffered.
-    var availableSamples: Int {
+    nonisolated var availableSamples: Int {
         lockedState.withLock { $0.count }
     }
 
     /// Write samples into the buffer (called from network thread).
     /// On overflow, drops oldest samples to make room.
-    func write(_ samples: [Int16]) {
+    nonisolated func write(_ samples: [Int16]) {
         guard !samples.isEmpty else {
             return
         }
@@ -59,7 +59,7 @@ final class AudioRingBuffer: Sendable {
     /// Read samples into a raw pointer (called from audio render thread).
     /// Returns the number of samples actually read. Fills remaining with silence.
     /// This method is real-time safe — no allocations.
-    func read(into buffer: UnsafeMutablePointer<Int16>, count: Int) -> Int {
+    nonisolated func read(into buffer: UnsafeMutablePointer<Int16>, count: Int) -> Int {
         // The pointer is valid for the duration of this call and the lock
         // scope is synchronous, so this is safe despite the Sendable warning.
         nonisolated(unsafe) let buf = buffer
@@ -81,8 +81,54 @@ final class AudioRingBuffer: Sendable {
         }
     }
 
+    /// Read samples as Float32, resampling from input rate to output rate.
+    /// Uses nearest-neighbor interpolation — sufficient for narrowband
+    /// ham radio audio. Converts Int16 → Float32 and resamples inside
+    /// the lock with zero allocation on the real-time audio thread.
+    /// `ratio` is outputRate / inputRate (e.g., 4.0 for 12kHz → 48kHz).
+    nonisolated func readResampledAsFloat(
+        into buffer: UnsafeMutablePointer<Float>,
+        outputCount: Int,
+        ratio: Double
+    ) -> Int {
+        nonisolated(unsafe) let buf = buffer
+        let scale: Float = 1.0 / Float(Int16.max)
+
+        return lockedState.withLock { state in
+            let inputNeeded = Int(ceil(Double(outputCount) / ratio))
+            let available = min(inputNeeded, state.count)
+
+            guard available > 0 else {
+                for i in 0 ..< outputCount {
+                    buf[i] = 0
+                }
+                return 0
+            }
+
+            // How many output frames we can produce from available input
+            let producible = min(outputCount, Int(Double(available) * ratio))
+
+            for i in 0 ..< producible {
+                let srcIdx = min(Int(Double(i) / ratio), available - 1)
+                let ringIdx = (state.readIndex + srcIdx) % state.capacity
+                buf[i] = Float(state.buffer[ringIdx]) * scale
+            }
+
+            // Fill remainder with silence
+            for i in producible ..< outputCount {
+                buf[i] = 0
+            }
+
+            // Consume the input samples we used
+            state.readIndex = (state.readIndex + available) % state.capacity
+            state.count -= available
+
+            return available
+        }
+    }
+
     /// Reset the buffer, discarding all samples.
-    func reset() {
+    nonisolated func reset() {
         lockedState.withLock { state in
             state.readIndex = 0
             state.writeIndex = 0

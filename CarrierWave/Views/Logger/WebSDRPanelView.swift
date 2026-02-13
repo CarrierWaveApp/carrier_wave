@@ -210,6 +210,13 @@ struct WebSDRPanelView: View {
             // Buffer health indicator
             bufferIndicator
 
+            // Audio engine error (diagnostic)
+            if let error = webSDRSession.audioEngine?.startError {
+                Text(error)
+                    .font(.caption2)
+                    .foregroundStyle(.red)
+            }
+
             // Controls
             HStack(spacing: 16) {
                 // Mute/unmute toggle
