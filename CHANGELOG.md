@@ -5,6 +5,12 @@ All notable changes to Carrier Wave will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Add WebSDR recording playback — play back recordings with seeking, speed control (0.5x-2x), and amplitude waveform visualization
+- Add QSO-synced audio navigation — dynamically highlight the active QSO based on playback position with bidirectional sync (scrub highlights QSOs, tap QSO seeks audio)
+- Add compact recording player in POTA activation detail — inline card with mini waveform that expands to full-screen player
+- Add full-screen recording player — waveform scrubber with QSO markers, transport controls, speed picker, and scrollable QSO list with auto-scroll
+- Add share clip feature — export time-range clips from recordings as M4A with adjustable range handles defaulting to active QSO window
+- Add Sessions tab in Logs — browse all completed logging sessions grouped by month with recording indicators and navigation to player or session detail
 - Add WebSDR session recording — record audio from a nearby KiwiSDR during logging sessions with WEBSDR command, auto-retune on frequency/mode changes, level meter, and lifecycle integration
 - Add WebSDR live audio playback — hear the stream through speakers/headphones via jitter-buffered ring buffer with adaptive rate, mute toggle, and buffer health indicator
 - Add WebSDR resilient reconnects — connection loss preserves the recording file, duration timer, and audio engine instead of resetting; exponential backoff with up to 5 retries
