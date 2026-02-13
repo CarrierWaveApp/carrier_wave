@@ -51,6 +51,9 @@ xc lint          # SwiftLint with JSON output
 xc format        # SwiftFormat
 xc quality       # format → lint → build (pre-commit gate)
 xc deploy        # Build + install + launch on device
+xc crashes [filter]  # List crash logs on device (e.g., xc crashes CarrierWave)
+xc crash <file.ips>  # Pull and display a crash log
+xc logs [filter]     # Stream live device logs (requires idevicesyslog)
 ```
 
 The Makefile is still available for simulator-based builds/tests (`make build`, `make test`) when needed.
