@@ -199,7 +199,7 @@ struct RecordingPlayerView: View {
             if isActive {
                 Image(systemName: "speaker.wave.2.fill")
                     .font(.caption)
-                    .foregroundStyle(.accentColor)
+                    .foregroundStyle(.tint)
             } else {
                 Text(formatQSOTime(qso.timestamp))
                     .font(.caption.monospacedDigit())

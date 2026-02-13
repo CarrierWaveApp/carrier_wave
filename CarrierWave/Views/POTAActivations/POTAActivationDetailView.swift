@@ -4,6 +4,7 @@
 // an activation card in the list. Displays activation info, upload
 // controls, POTA jobs, and QSO list.
 
+import SwiftData
 import SwiftUI
 
 // MARK: - POTAActivationDetailView
@@ -27,9 +28,16 @@ struct POTAActivationDetailView: View {
     let onMap: () -> Void
     var onForceReupload: () -> Void = {}
 
+    @Environment(\.modelContext) var modelContext
+    @State var recording: WebSDRRecording?
+    @State var engine = RecordingPlaybackEngine()
+
     var body: some View {
         List {
             activationInfoSection
+            if let recording {
+                recordingSection(recording)
+            }
             if shouldShowUpload {
                 uploadSection
             }
@@ -45,6 +53,16 @@ struct POTAActivationDetailView: View {
                 actionsMenu
             }
         }
+        .task {
+            await loadRecording()
+        }
+    }
+
+    // MARK: - Helpers
+
+    func statBadge(_ text: String, icon: String) -> some View {
+        Label(text, systemImage: icon)
+            .lineLimit(1)
     }
 
     // MARK: Private
@@ -287,12 +305,5 @@ struct POTAActivationDetailView: View {
         } label: {
             Image(systemName: "ellipsis.circle")
         }
-    }
-
-    // MARK: - Helpers
-
-    private func statBadge(_ text: String, icon: String) -> some View {
-        Label(text, systemImage: icon)
-            .lineLimit(1)
     }
 }

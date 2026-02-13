@@ -152,11 +152,11 @@ final class RecordingPlaybackEngine: NSObject {
         isLoadingAmplitude = true
         let sampleWindowSeconds = 0.5
 
-        Task.detached(priority: .utility) { [weak self] in
-            let envelope = Self.computeEnvelope(
+        Task.detached(priority: .utility) {
+            let envelope = RecordingPlaybackEngine.computeEnvelope(
                 fileURL: fileURL, windowSeconds: sampleWindowSeconds
             )
-            await MainActor.run {
+            await MainActor.run { [weak self] in
                 self?.amplitudeEnvelope = envelope
                 self?.isLoadingAmplitude = false
             }
@@ -181,7 +181,7 @@ final class RecordingPlaybackEngine: NSObject {
 
     /// Compute peak amplitude envelope from a CAF/audio file.
     /// Returns one float (0.0-1.0) per window of `windowSeconds`.
-    private static func computeEnvelope(
+    nonisolated private static func computeEnvelope(
         fileURL: URL, windowSeconds: Double
     ) -> [Float] {
         guard let audioFile = try? AVAudioFile(forReading: fileURL) else {
@@ -244,7 +244,7 @@ final class RecordingPlaybackEngine: NSObject {
     }
 
     /// Extract peak amplitudes from a buffer in windowed chunks
-    private static func extractPeaks(
+    nonisolated private static func extractPeaks(
         from channelData: UnsafePointer<Float>,
         frameCount: Int,
         windowFrames: Int
