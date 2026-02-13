@@ -6,54 +6,168 @@ import Foundation
 extension LoFiCLI {
     static func printPipelineBreakdown(result: LoFiDownloadResult) {
         let qsos = result.qsos
-        let rawCount = result.rawFetchCount
-        let dedupCount = qsos.count
-        let dedupDropped = rawCount - dedupCount
+        let stats = countInvalidQsos(qsos)
+        let (uniqueKeys, duplicates) = findDeduplicationDuplicates(qsos)
+
+        // Classify duplicates
+        let twoFers = duplicates.filter { isTwoFer($0.1) }
+        let trueDupes = duplicates.filter { !isTwoFer($0.1) }
+
+        // Count merged QSOs (each group of N merges into 1, so N-1 are "absorbed")
+        let twoFerMerged = twoFers.reduce(0) { $0 + $1.1.count - 1 }
+        let dupeMerged = trueDupes.reduce(0) { $0 + $1.1.count - 1 }
+
+        let report = ReportData(
+            downloaded: qsos.count,
+            stats: stats,
+            finalCount: uniqueKeys,
+            twoFers: twoFers,
+            twoFerMerged: twoFerMerged,
+            trueDupes: trueDupes,
+            dupeMerged: dupeMerged
+        )
+        printReport(report)
+    }
+
+    // MARK: - Report output
+
+    private static func printReport(_ report: ReportData) {
+        let fmt = DateFormatter()
+        fmt.dateFormat = "yyyy-MM-dd HH:mm"
+        fmt.timeZone = TimeZone(identifier: "UTC")
 
         printInfo("")
-        printInfo("Sync pipeline breakdown:")
-        printInfo("  Step 1 — Raw API fetch:      \(rawCount) QSOs")
-        printInfo("  Step 2 — After UUID dedup:    \(dedupCount) QSOs (-\(dedupDropped) duplicates)")
+        printInfo("========================================")
+        printInfo("  LoFi Sync Report")
+        printInfo("========================================")
+        printInfo("")
+        printInfo("Downloaded \(report.downloaded) contacts from LoFi.")
+        printInfo("")
 
-        // Step 3: simulate FetchedQSO.fromLoFi field validation
-        let stats = countInvalidQsos(qsos)
-
-        printInfo(
-            "  Step 3 — After field check:   \(stats.valid) QSOs "
-                + "(-\(stats.invalid) missing required fields)"
-        )
-        if stats.missingCall > 0 {
-            printInfo("    - \(stats.missingCall) missing callsign (their.call)")
-        }
-        if stats.missingBand > 0 {
-            printInfo("    - \(stats.missingBand) missing band")
-        }
-        if stats.missingMode > 0 {
-            printInfo("    - \(stats.missingMode) missing mode")
-        }
-        if stats.missingTimestamp > 0 {
-            printInfo("    - \(stats.missingTimestamp) missing timestamp")
-        }
-        if stats.deleted > 0 {
-            printInfo("    - \(stats.deleted) marked as deleted")
+        // Skipped contacts
+        if !report.stats.skipped.isEmpty {
+            let word = report.stats.skipped.count == 1 ? "contact was" : "contacts were"
+            printInfo(
+                "\(report.stats.skipped.count) \(word) skipped (missing required info):"
+            )
+            printSkippedDetails(report.stats.skipped, fmt: fmt)
+            printInfo("")
         }
 
-        // Step 4: simulate deduplication key grouping (matches app pipeline)
-        let (uniqueKeys, duplicates) = findDeduplicationDuplicates(qsos)
-        let keyDropped = stats.valid - uniqueKeys
-        printInfo(
-            "  Step 4 — After dedup key:     \(uniqueKeys) QSOs "
-                + "(-\(keyDropped) cross-operation duplicates)"
-        )
-        printDedupDuplicates(duplicates)
+        // Merged contacts
+        let totalMerged = report.twoFerMerged + report.dupeMerged
+        if totalMerged > 0 {
+            let word = totalMerged == 1 ? "contact" : "contacts"
+            printInfo(
+                "\(totalMerged) \(word) merged into existing entries:"
+            )
+            printInfo("")
+
+            if !report.twoFers.isEmpty {
+                printTwoFerSection(report.twoFers, merged: report.twoFerMerged, fmt: fmt)
+            }
+            if !report.trueDupes.isEmpty {
+                printDuplicateSection(report.trueDupes, merged: report.dupeMerged, fmt: fmt)
+            }
+        }
+
+        // Final count
+        printInfo("----------------------------------------")
+        printInfo("Final count: \(report.finalCount) unique contacts")
+        printInfo("----------------------------------------")
+
+        // Deleted contacts note
+        if report.stats.deleted > 0 {
+            printInfo("")
+            printInfo(
+                "Note: \(report.stats.deleted) of these contacts are marked as"
+                    + " deleted in LoFi."
+            )
+        }
     }
+
+    private static func printSkippedDetails(
+        _ skipped: [SkippedQSO], fmt: DateFormatter
+    ) {
+        for entry in skipped {
+            let missing = entry.missingFields.joined(separator: ", ")
+            let call = entry.callsign ?? "unknown"
+            let band = entry.band ?? "?"
+            let mode = entry.mode ?? "?"
+            let ts = entry.timestamp.map { fmt.string(from: $0) + " UTC" }
+                ?? "unknown time"
+            let op = entry.operationTitle
+            printInfo("  - \(call) \(band) \(mode) \(ts) (\(op))")
+            printInfo("    Missing: \(missing)")
+        }
+    }
+
+    private static func printTwoFerSection(
+        _ twoFers: [(String, [(LoFiQso, LoFiOperation)])],
+        merged: Int,
+        fmt: DateFormatter
+    ) {
+        let word = merged == 1 ? "contact appears" : "contacts appear"
+        printInfo(
+            "  Two-fer activations (\(merged) \(word) in"
+                + " multiple parks):"
+        )
+        printInfo(
+            "  These are the same over-the-air contact logged at"
+        )
+        printInfo(
+            "  multiple parks. Both park references are kept."
+        )
+        printInfo("")
+        for (key, group) in twoFers {
+            printMergeGroup(key: key, group: group, fmt: fmt)
+        }
+        printInfo("")
+    }
+
+    private static func printDuplicateSection(
+        _ trueDupes: [(String, [(LoFiQso, LoFiOperation)])],
+        merged: Int,
+        fmt: DateFormatter
+    ) {
+        let word = merged == 1 ? "contact appears" : "contacts appear"
+        printInfo(
+            "  Duplicates (\(merged) \(word) more than once"
+                + " in the same park):"
+        )
+        printInfo("")
+        for (key, group) in trueDupes {
+            printMergeGroup(key: key, group: group, fmt: fmt)
+        }
+        printInfo("")
+    }
+
+    private static func printMergeGroup(
+        key: String,
+        group: [(LoFiQso, LoFiOperation)],
+        fmt: DateFormatter
+    ) {
+        let parts = key.split(separator: "|")
+        let call = parts.first ?? "?"
+        let bandMode = parts.dropFirst().prefix(2).joined(separator: " ")
+        printInfo("    \(call) on \(bandMode):")
+        for (qso, op) in group {
+            let ts = qso.startAtMillis.map {
+                fmt.string(from: Date(timeIntervalSince1970: $0 / 1_000.0))
+            } ?? "unknown time"
+            let opTitle = op.title ?? "unknown"
+            printInfo("      \(ts) UTC — \(opTitle)")
+        }
+    }
+
+    // MARK: - Analysis helpers
 
     private static func countInvalidQsos(
         _ qsos: [(LoFiQso, LoFiOperation)]
     ) -> FieldStats {
         var stats = FieldStats(total: qsos.count)
 
-        for (qso, _) in qsos {
+        for (qso, op) in qsos {
             if qso.deleted == 1 {
                 stats.deleted += 1
             }
@@ -61,48 +175,41 @@ extension LoFiCLI {
             let hasBand = qso.band != nil
             let hasMode = qso.mode != nil
             let hasTime = qso.startAtMillis != nil
-            if !hasCall {
-                stats.missingCall += 1
-            }
-            if !hasBand {
-                stats.missingBand += 1
-            }
-            if !hasMode {
-                stats.missingMode += 1
-            }
-            if !hasTime {
-                stats.missingTimestamp += 1
-            }
             if !hasCall || !hasBand || !hasMode || !hasTime {
-                stats.invalid += 1
+                var missing: [String] = []
+                if !hasCall {
+                    missing.append("callsign")
+                }
+                if !hasBand {
+                    missing.append("band")
+                }
+                if !hasMode {
+                    missing.append("mode")
+                }
+                if !hasTime {
+                    missing.append("date/time")
+                }
+                let ts = qso.startAtMillis.map {
+                    Date(timeIntervalSince1970: $0 / 1_000.0)
+                }
+                stats.skipped.append(SkippedQSO(
+                    callsign: qso.their?.call,
+                    band: qso.band,
+                    mode: qso.mode,
+                    timestamp: ts,
+                    operationTitle: op.title ?? String(op.uuid.prefix(8)),
+                    missingFields: missing
+                ))
             }
         }
 
         return stats
     }
 
-    static func printDedupDuplicates(
-        _ duplicates: [(String, [(LoFiQso, LoFiOperation)])]
-    ) {
-        guard !duplicates.isEmpty else {
-            return
-        }
-        let fmt = DateFormatter()
-        fmt.dateFormat = "yyyy-MM-dd HH:mm"
-        fmt.timeZone = TimeZone(identifier: "UTC")
-
-        for (key, group) in duplicates {
-            let parts = key.split(separator: "|")
-            let call = parts.first ?? "?"
-            printInfo("    Dedup key: \(call) \(parts.dropFirst().prefix(2).joined(separator: "/"))")
-            for (qso, op) in group {
-                let ts = qso.startAtMillis.map {
-                    fmt.string(from: Date(timeIntervalSince1970: $0 / 1_000.0))
-                } ?? "?"
-                let opTitle = op.title ?? op.uuid.prefix(8).description
-                printInfo("      - \(ts) UTC  op: \(opTitle)  uuid: \(qso.uuid.prefix(8))")
-            }
-        }
+    /// Check if a dedup group is a two-fer (same QSO across different parks).
+    static func isTwoFer(_ group: [(LoFiQso, LoFiOperation)]) -> Bool {
+        let uniqueOps = Set(group.map(\.1.uuid))
+        return uniqueOps.count > 1
     }
 
     /// Find QSOs that share dedup keys (same callsign+band+mode in 2-min window).
@@ -131,18 +238,37 @@ extension LoFiCLI {
     }
 }
 
+// MARK: - ReportData
+
+private struct ReportData {
+    let downloaded: Int
+    let stats: FieldStats
+    let finalCount: Int
+    let twoFers: [(String, [(LoFiQso, LoFiOperation)])]
+    let twoFerMerged: Int
+    let trueDupes: [(String, [(LoFiQso, LoFiOperation)])]
+    let dupeMerged: Int
+}
+
 // MARK: - FieldStats
 
 private struct FieldStats {
     let total: Int
-    var missingCall = 0
-    var missingBand = 0
-    var missingMode = 0
-    var missingTimestamp = 0
     var deleted = 0
-    var invalid = 0
+    var skipped: [SkippedQSO] = []
 
     var valid: Int {
-        total - invalid
+        total - skipped.count
     }
+}
+
+// MARK: - SkippedQSO
+
+private struct SkippedQSO {
+    let callsign: String?
+    let band: String?
+    let mode: String?
+    let timestamp: Date?
+    let operationTitle: String
+    let missingFields: [String]
 }

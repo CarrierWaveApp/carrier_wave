@@ -49,6 +49,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | File | Purpose |
 |------|---------|
 | `Sources/LoFiCLI/LoFiCLI.swift` | CLI entry point with register/link/download/status subcommands |
+| `Sources/LoFiCLI/LoFiCLI+Pipeline.swift` | Sync report pipeline breakdown (skipped, two-fer, dupe analysis) |
 | `Sources/LoFiCLI/FileCredentialStore.swift` | LoFiCredentialStore backed by ~/.config/lofi-cli/credentials.json |
 | `Sources/LoFiCLI/ConsoleLogger.swift` | LoFiLogger that prints to stderr with level prefixes |
 
