@@ -111,9 +111,7 @@ struct LoggerCallsignCard: View {
             }
 
             if previousQSOCount > 0 {
-                DetailChip(
-                    text: "\(previousQSOCount) prev QSO\(previousQSOCount == 1 ? "" : "s")"
-                )
+                ContactCountBadge(count: previousQSOCount, showLabel: true)
             }
         }
     }

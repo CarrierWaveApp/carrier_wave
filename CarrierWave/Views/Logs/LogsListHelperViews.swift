@@ -170,9 +170,7 @@ struct QSORow: View {
                 }
 
                 if totalContactCount > 1 {
-                    Text("\u{00d7}\(totalContactCount)")
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(.secondary)
+                    ContactCountBadge(count: totalContactCount)
                 }
 
                 Spacer()

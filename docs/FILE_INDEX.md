@@ -207,6 +207,13 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 |------|---------|
 | `QueryCompiler.swift` | Compiles AST to SwiftData predicates and filter closures |
 
+## Views - Components (`CarrierWave/Views/Components/`)
+
+| File | Purpose |
+|------|---------|
+| `ContactCountBadge.swift` | Tiered contact count badge (bronze/silver/gold at 10/25/50 QSOs) |
+| `UnderConstructionBanner.swift` | Under-construction banner for incomplete features |
+
 ## Views - Logger (`CarrierWave/Views/Logger/`)
 | File | Purpose |
 |------|---------|
