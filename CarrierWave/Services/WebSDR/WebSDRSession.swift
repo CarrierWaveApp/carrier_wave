@@ -84,6 +84,8 @@ final class WebSDRSession {
         self.receiver = receiver
         self.loggingSessionId = loggingSessionId
         self.modelContext = modelContext
+        lastFrequencyMHz = frequencyMHz
+        lastMode = mode
 
         let frequencyKHz = frequencyMHz * 1_000
         let kiwiMode = KiwiSDRMode.from(
@@ -109,8 +111,7 @@ final class WebSDRSession {
             }
 
             recorder = WebSDRRecorder()
-            // Get sample rate from the first frame or default
-            let sampleRate = 12_000.0
+            let sampleRate = await client!.negotiatedSampleRate
             try await recorder!.startRecording(to: fileURL, sampleRate: sampleRate)
 
             // Create recording model
@@ -193,12 +194,17 @@ final class WebSDRSession {
 
     /// Retune to a new frequency (follows session frequency changes)
     func retune(frequencyMHz: Double) async {
+        lastFrequencyMHz = frequencyMHz
         let frequencyKHz = frequencyMHz * 1_000
         try? await client?.retune(frequencyKHz: frequencyKHz)
     }
 
     /// Change mode (follows session mode changes)
     func changeMode(_ mode: String, frequencyMHz: Double?) async {
+        lastMode = mode
+        if let frequencyMHz {
+            lastFrequencyMHz = frequencyMHz
+        }
         let kiwiMode = KiwiSDRMode.from(
             carrierWaveMode: mode,
             frequencyMHz: frequencyMHz
@@ -217,6 +223,8 @@ final class WebSDRSession {
     private var modelContext: ModelContext?
     private var reconnectAttempts = 0
     private let maxReconnectAttempts = 5
+    private var lastFrequencyMHz: Double = 14.060
+    private var lastMode: String = "CW"
 
     /// Process incoming audio frames from the KiwiSDR
     private func processAudioStream(
@@ -274,12 +282,11 @@ final class WebSDRSession {
             return
         }
 
-        // Re-read the current frequency/mode from the receiver
-        // For now just try reconnecting with the original settings
+        // Reconnect with the last known frequency and mode
         await start(
             receiver: receiver,
-            frequencyMHz: 14.060, // Will be overridden by session
-            mode: "CW",
+            frequencyMHz: lastFrequencyMHz,
+            mode: lastMode,
             loggingSessionId: loggingSessionId,
             modelContext: modelContext
         )
