@@ -1989,17 +1989,23 @@ struct LoggerView: View {
             )
 
             if result.success {
-                await MainActor.run {
-                    // Mark QSOs as uploaded
-                    for qso in pendingSessionEndQSOs {
-                        qso.markUploadedToPark(parkRef, context: modelContext)
-                    }
-                    try? modelContext.save()
+                // Mark QSOs as submitted (not confirmed - POTA processes async)
+                for qso in pendingSessionEndQSOs {
+                    qso.markSubmittedToPark(parkRef, context: modelContext)
                 }
+                try? modelContext.save()
                 return true
             }
+            SyncDebugLog.shared.warning(
+                "POTA upload prompt: result.success=false, message=\(result.message ?? "nil")",
+                service: .pota
+            )
             return false
         } catch {
+            SyncDebugLog.shared.error(
+                "POTA upload prompt failed: \(error.localizedDescription)",
+                service: .pota
+            )
             return false
         }
     }
