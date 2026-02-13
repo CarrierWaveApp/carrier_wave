@@ -24,11 +24,11 @@ final class WebSDRRecording {
 
     // MARK: Internal
 
-    var id: UUID = UUID()
-    var loggingSessionId: UUID = UUID()
-    var kiwisdrHost: String = ""
-    var kiwisdrName: String = ""
-    var startedAt: Date = Date()
+    var id = UUID()
+    var loggingSessionId = UUID()
+    var kiwisdrHost = ""
+    var kiwisdrName = ""
+    var startedAt = Date()
     var endedAt: Date?
     var frequencyKHz: Double = 0
     var mode: String = ""
@@ -47,7 +47,9 @@ final class WebSDRRecording {
 
     /// Full file URL resolved from relative path
     var fileURL: URL? {
-        guard !relativeFilePath.isEmpty else { return nil }
+        guard !relativeFilePath.isEmpty else {
+            return nil
+        }
         let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
         return docs?.appendingPathComponent(relativeFilePath)
     }
@@ -67,6 +69,24 @@ final class WebSDRRecording {
         ByteCountFormatter.string(fromByteCount: fileSizeBytes, countStyle: .file)
     }
 
+    /// Create the recordings directory if needed, return file URL for a new recording
+    static func newRecordingURL(sessionId: UUID) -> URL? {
+        guard let docs = FileManager.default.urls(
+            for: .documentDirectory, in: .userDomainMask
+        ).first else {
+            return nil
+        }
+
+        let dir = docs.appendingPathComponent("WebSDRRecordings")
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir.appendingPathComponent("\(sessionId.uuidString).caf")
+    }
+
+    /// Relative path for a session's recording
+    static func relativePath(sessionId: UUID) -> String {
+        "WebSDRRecordings/\(sessionId.uuidString).caf"
+    }
+
     /// Mark recording as finished
     func finish() {
         endedAt = Date()
@@ -77,30 +97,18 @@ final class WebSDRRecording {
 
     /// Update file size from disk
     func updateFileSize() {
-        guard let url = fileURL else { return }
+        guard let url = fileURL else {
+            return
+        }
         let attrs = try? FileManager.default.attributesOfItem(atPath: url.path)
         fileSizeBytes = (attrs?[.size] as? Int64) ?? 0
     }
 
     /// Delete the recording file from disk
     func deleteFile() {
-        guard let url = fileURL else { return }
+        guard let url = fileURL else {
+            return
+        }
         try? FileManager.default.removeItem(at: url)
-    }
-
-    /// Create the recordings directory if needed, return file URL for a new recording
-    static func newRecordingURL(sessionId: UUID) -> URL? {
-        guard let docs = FileManager.default.urls(
-            for: .documentDirectory, in: .userDomainMask
-        ).first else { return nil }
-
-        let dir = docs.appendingPathComponent("WebSDRRecordings")
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        return dir.appendingPathComponent("\(sessionId.uuidString).caf")
-    }
-
-    /// Relative path for a session's recording
-    static func relativePath(sessionId: UUID) -> String {
-        "WebSDRRecordings/\(sessionId.uuidString).caf"
     }
 }

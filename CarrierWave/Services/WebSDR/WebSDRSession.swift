@@ -24,9 +24,13 @@ final class WebSDRSession {
 
         var isActive: Bool {
             switch self {
-            case .recording, .paused, .connecting, .reconnecting:
+            case .recording,
+                 .paused,
+                 .connecting,
+                 .reconnecting:
                 true
-            case .idle, .error:
+            case .idle,
+                 .error:
                 false
             }
         }
@@ -45,7 +49,8 @@ final class WebSDRSession {
         var statusIcon: String {
             switch self {
             case .idle: "antenna.radiowaves.left.and.right.slash"
-            case .connecting, .reconnecting: "antenna.radiowaves.left.and.right"
+            case .connecting,
+                 .reconnecting: "antenna.radiowaves.left.and.right"
             case .recording: "record.circle.fill"
             case .paused: "pause.circle.fill"
             case .error: "exclamationmark.triangle.fill"
@@ -132,7 +137,6 @@ final class WebSDRSession {
 
             // Start duration timer
             startDurationTimer()
-
         } catch {
             state = .error(error.localizedDescription)
             await cleanup()
@@ -169,7 +173,9 @@ final class WebSDRSession {
 
     /// Pause recording (keeps WebSDR connection alive)
     func pause() async {
-        guard state == .recording else { return }
+        guard state == .recording else {
+            return
+        }
         await recorder?.pause()
         durationTimer?.invalidate()
         state = .paused
@@ -177,7 +183,9 @@ final class WebSDRSession {
 
     /// Resume recording
     func resume() async {
-        guard state == .paused else { return }
+        guard state == .paused else {
+            return
+        }
         await recorder?.resume()
         startDurationTimer()
         state = .recording
@@ -215,7 +223,9 @@ final class WebSDRSession {
         _ stream: AsyncStream<KiwiSDRClient.AudioFrame>
     ) async {
         for await frame in stream {
-            guard !Task.isCancelled else { break }
+            guard !Task.isCancelled else {
+                break
+            }
 
             // Write to recorder
             do {
@@ -260,7 +270,9 @@ final class WebSDRSession {
         let delay = pow(2.0, Double(reconnectAttempts))
         try? await Task.sleep(for: .seconds(delay))
 
-        guard !Task.isCancelled else { return }
+        guard !Task.isCancelled else {
+            return
+        }
 
         // Re-read the current frequency/mode from the receiver
         // For now just try reconnecting with the original settings
@@ -280,7 +292,9 @@ final class WebSDRSession {
             repeats: true
         ) { [weak self] _ in
             Task { @MainActor in
-                guard let self else { return }
+                guard let self else {
+                    return
+                }
                 if let recorder = self.recorder {
                     self.recordingDuration = await recorder.recordedDuration
                 }
@@ -289,7 +303,9 @@ final class WebSDRSession {
     }
 
     private func finalizeRecording() {
-        guard let recordingId, let modelContext else { return }
+        guard let recordingId, let modelContext else {
+            return
+        }
 
         let id = recordingId
         let descriptor = FetchDescriptor<WebSDRRecording>(

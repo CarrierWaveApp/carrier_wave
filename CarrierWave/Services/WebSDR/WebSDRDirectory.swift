@@ -29,7 +29,9 @@ struct KiwiSDRReceiver: Identifiable, Sendable {
     }
 
     var formattedDistance: String? {
-        guard let km = distanceKm else { return nil }
+        guard let km = distanceKm else {
+            return nil
+        }
         if km < 1 {
             return "<1 km"
         }
@@ -48,6 +50,11 @@ actor WebSDRDirectory {
     /// Shared singleton
     static let shared = WebSDRDirectory()
 
+    /// Number of cached receivers
+    var receiverCount: Int {
+        receivers.count
+    }
+
     /// Find nearby KiwiSDR receivers sorted by distance
     func findNearby(
         grid: String?,
@@ -56,13 +63,12 @@ actor WebSDRDirectory {
         limit: Int = 10
     ) async -> [KiwiSDRReceiver] {
         // Determine reference coordinate
-        let refCoord: CLLocationCoordinate2D?
-        if let lat = latitude, let lon = longitude {
-            refCoord = CLLocationCoordinate2D(latitude: lat, longitude: lon)
+        let refCoord: CLLocationCoordinate2D? = if let lat = latitude, let lon = longitude {
+            CLLocationCoordinate2D(latitude: lat, longitude: lon)
         } else if let grid, let coord = MaidenheadConverter.coordinate(from: grid) {
-            refCoord = coord
+            coord
         } else {
-            refCoord = nil
+            nil
         }
 
         // Load directory if needed
@@ -76,13 +82,13 @@ actor WebSDRDirectory {
         if let ref = refCoord {
             let refLocation = CLLocation(latitude: ref.latitude, longitude: ref.longitude)
             results = results.map { receiver in
-                var r = receiver
+                var updated = receiver
                 let loc = CLLocation(
                     latitude: receiver.latitude,
                     longitude: receiver.longitude
                 )
-                r.distanceKm = refLocation.distance(from: loc) / 1_000
-                return r
+                updated.distanceKm = refLocation.distance(from: loc) / 1_000
+                return updated
             }
             results.sort { ($0.distanceKm ?? .infinity) < ($1.distanceKm ?? .infinity) }
         }
@@ -95,15 +101,36 @@ actor WebSDRDirectory {
         await fetchDirectory()
     }
 
-    /// Number of cached receivers
-    var receiverCount: Int { receivers.count }
-
     // MARK: Private
+
+    // MARK: - Cache
+
+    private struct CachedDirectory: Codable {
+        let receivers: [CodableReceiver]
+        let fetchedAt: Date
+    }
+
+    private struct CodableReceiver: Codable {
+        let name: String
+        let host: String
+        let port: Int
+        let latitude: Double
+        let longitude: Double
+        let bands: String
+        let maxUsers: Int
+        let location: String
+        let antenna: String
+    }
 
     private var receivers: [KiwiSDRReceiver] = []
     private var lastFetched: Date?
     private let cacheFile = "kiwisdr_directory.json"
     private let refreshInterval: TimeInterval = 24 * 60 * 60 // 24 hours
+
+    private var cacheURL: URL? {
+        FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)
+            .first?.appendingPathComponent(cacheFile)
+    }
 
     private func loadDirectory() async {
         // Try loading from cache first
@@ -137,8 +164,7 @@ actor WebSDRDirectory {
 
     /// Fetch the KiwiSDR public receiver list
     private func fetchKiwiSDRList() async throws -> [KiwiSDRReceiver] {
-        // KiwiSDR publishes a JSON status endpoint
-        guard let url = URL(string: "http://kiwisdr.com/public/") else {
+        guard let url = URL(string: "http://kiwisdr.com/.public/") else {
             return []
         }
 
@@ -151,19 +177,22 @@ actor WebSDRDirectory {
     }
 
     /// Parse the KiwiSDR public directory HTML for receiver data.
-    /// The page contains a JavaScript array with receiver metadata.
+    /// Receiver metadata is embedded in HTML comments within cl-entry blocks.
     private func parseKiwiSDRHTML(_ html: String) -> [KiwiSDRReceiver] {
-        // The KiwiSDR public page embeds receiver data in a JS variable.
-        // We parse the key fields from the HTML table rows as a fallback.
+        let blocks = html.components(separatedBy: "<div class='cl-entry")
+        // First element is everything before the first entry — skip it
+        guard blocks.count > 1 else {
+            return []
+        }
+
         var results: [KiwiSDRReceiver] = []
+        let commentPattern = try? NSRegularExpression(
+            pattern: "<!--\\s*(\\w+)=(.+?)\\s*-->",
+            options: []
+        )
 
-        // Look for table rows with receiver data
-        // Each row has: name, band, users, location, antenna, coordinates
-        let lines = html.components(separatedBy: "\n")
-
-        for line in lines {
-            guard line.contains("class=\"cl-") else { continue }
-            if let receiver = parseReceiverRow(line) {
+        for block in blocks.dropFirst() {
+            if let receiver = parseEntryBlock(block, commentPattern: commentPattern) {
                 results.append(receiver)
             }
         }
@@ -171,34 +200,55 @@ actor WebSDRDirectory {
         return results
     }
 
-    /// Parse a single receiver row from the HTML
-    private func parseReceiverRow(_ html: String) -> KiwiSDRReceiver? {
-        // Extract hostname from href
-        guard let hostMatch = extractBetween(html, prefix: "href=\"http://", suffix: "\""),
-              let name = extractBetween(html, prefix: "class=\"cl-name\">", suffix: "<")
-        else {
+    /// Parse a single cl-entry block from the directory HTML
+    private func parseEntryBlock(
+        _ block: String,
+        commentPattern: NSRegularExpression?
+    ) -> KiwiSDRReceiver? {
+        guard let commentPattern else {
             return nil
         }
 
-        // Parse host:port
-        let hostParts = hostMatch.components(separatedBy: ":")
-        let host = hostParts[0]
-        let port = hostParts.count > 1 ? Int(hostParts[1]) ?? 8073 : 8073
+        // Extract comment fields into a dictionary
+        let nsBlock = block as NSString
+        let matches = commentPattern.matches(
+            in: block,
+            range: NSRange(location: 0, length: nsBlock.length)
+        )
+        var fields: [String: String] = [:]
+        for match in matches {
+            let key = nsBlock.substring(with: match.range(at: 1))
+            let value = nsBlock.substring(with: match.range(at: 2))
+                .trimmingCharacters(in: .whitespaces)
+            fields[key] = value
+        }
 
-        // Extract location, bands, users, coordinates
-        let location = extractBetween(html, prefix: "class=\"cl-loc\">", suffix: "<") ?? ""
-        let bands = extractBetween(html, prefix: "class=\"cl-band\">", suffix: "<") ?? "0-30 MHz"
-        let antenna = extractBetween(html, prefix: "class=\"cl-ant\">", suffix: "<") ?? ""
-        let usersStr = extractBetween(html, prefix: "class=\"cl-users\">", suffix: "<") ?? "0/4"
-        let gpsStr = extractBetween(html, prefix: "class=\"cl-gps\">", suffix: "<") ?? ""
+        // Only include active receivers
+        guard fields["status"] == "active" else {
+            return nil
+        }
 
-        // Parse users "N/M"
-        let userParts = usersStr.components(separatedBy: "/")
-        let users = Int(userParts.first ?? "0") ?? 0
-        let maxUsers = Int(userParts.last ?? "4") ?? 4
+        // Extract host from the link: <a href='http://host:port' ...>
+        let host: String
+        let port: Int
+        if let linkRange = block.range(of: "href='http://"),
+           let endRange = block[linkRange.upperBound...].range(of: "'")
+        {
+            let hostPort = String(block[linkRange.upperBound ..< endRange.lowerBound])
+            let parts = hostPort.components(separatedBy: ":")
+            host = parts[0]
+            port = parts.count > 1 ? Int(parts[1]) ?? 8_073 : 8_073
+        } else {
+            return nil
+        }
 
-        // Parse GPS coordinates
-        let coords = parseCoordinates(gpsStr)
+        let name = fields["name"] ?? host
+        let coords = parseCoordinates(fields["gps"] ?? "")
+        let users = Int(fields["users"] ?? "0") ?? 0
+        let maxUsers = Int(fields["users_max"] ?? "4") ?? 4
+        let location = fields["loc"] ?? ""
+        let antenna = fields["antenna"] ?? ""
+        let bands = formatBands(fields["bands"] ?? "0-30000000")
 
         return KiwiSDRReceiver(
             id: "\(host):\(port)",
@@ -215,11 +265,22 @@ actor WebSDRDirectory {
         )
     }
 
-    private func extractBetween(_ str: String, prefix: String, suffix: String) -> String? {
-        guard let prefixRange = str.range(of: prefix) else { return nil }
-        let after = str[prefixRange.upperBound...]
-        guard let suffixRange = after.range(of: suffix) else { return nil }
-        return String(after[..<suffixRange.lowerBound])
+    /// Convert raw band range (Hz) to human-readable format
+    private func formatBands(_ raw: String) -> String {
+        let parts = raw.components(separatedBy: ",")
+        guard let firstRange = parts.first else {
+            return raw
+        }
+        let bounds = firstRange.components(separatedBy: "-")
+        guard bounds.count == 2,
+              let low = Double(bounds[0]),
+              let high = Double(bounds[1])
+        else {
+            return raw
+        }
+        let lowMHz = low / 1_000_000
+        let highMHz = high / 1_000_000
+        return String(format: "%.0f-%.0f MHz", lowMHz, highMHz)
     }
 
     private func parseCoordinates(_ str: String) -> CLLocationCoordinate2D? {
@@ -233,61 +294,43 @@ actor WebSDRDirectory {
         guard parts.count == 2,
               let lat = Double(parts[0]),
               let lon = Double(parts[1])
-        else { return nil }
+        else {
+            return nil
+        }
         return CLLocationCoordinate2D(latitude: lat, longitude: lon)
-    }
-
-    // MARK: - Cache
-
-    private struct CachedDirectory: Codable {
-        let receivers: [CodableReceiver]
-        let fetchedAt: Date
-    }
-
-    private struct CodableReceiver: Codable {
-        let name: String
-        let host: String
-        let port: Int
-        let latitude: Double
-        let longitude: Double
-        let bands: String
-        let maxUsers: Int
-        let location: String
-        let antenna: String
-    }
-
-    private var cacheURL: URL? {
-        FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)
-            .first?.appendingPathComponent(cacheFile)
     }
 
     private func loadFromCache() -> (receivers: [KiwiSDRReceiver], fetchedAt: Date)? {
         guard let url = cacheURL,
               let data = try? Data(contentsOf: url),
               let cached = try? JSONDecoder().decode(CachedDirectory.self, from: data)
-        else { return nil }
+        else {
+            return nil
+        }
 
-        let receivers = cached.receivers.map { r in
+        let receivers = cached.receivers.map { cached in
             KiwiSDRReceiver(
-                id: "\(r.host):\(r.port)",
-                name: r.name, host: r.host, port: r.port,
-                latitude: r.latitude, longitude: r.longitude,
-                bands: r.bands, users: 0, maxUsers: r.maxUsers,
-                location: r.location, antenna: r.antenna
+                id: "\(cached.host):\(cached.port)",
+                name: cached.name, host: cached.host, port: cached.port,
+                latitude: cached.latitude, longitude: cached.longitude,
+                bands: cached.bands, users: 0, maxUsers: cached.maxUsers,
+                location: cached.location, antenna: cached.antenna
             )
         }
         return (receivers, cached.fetchedAt)
     }
 
     private func saveToCache(receivers: [KiwiSDRReceiver], fetchedAt: Date) {
-        guard let url = cacheURL else { return }
+        guard let url = cacheURL else {
+            return
+        }
         let codable = CachedDirectory(
-            receivers: receivers.map { r in
+            receivers: receivers.map { receiver in
                 CodableReceiver(
-                    name: r.name, host: r.host, port: r.port,
-                    latitude: r.latitude, longitude: r.longitude,
-                    bands: r.bands, maxUsers: r.maxUsers,
-                    location: r.location, antenna: r.antenna
+                    name: receiver.name, host: receiver.host, port: receiver.port,
+                    latitude: receiver.latitude, longitude: receiver.longitude,
+                    bands: receiver.bands, maxUsers: receiver.maxUsers,
+                    location: receiver.location, antenna: receiver.antenna
                 )
             },
             fetchedAt: fetchedAt

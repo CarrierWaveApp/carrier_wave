@@ -7,7 +7,7 @@ import Foundation
 actor KiwiSDRClient {
     // MARK: Lifecycle
 
-    init(host: String, port: Int = 8073) {
+    init(host: String, port: Int = 8_073) {
         self.host = host
         self.port = port
     }
@@ -35,6 +35,16 @@ actor KiwiSDRClient {
         case error(String)
     }
 
+    /// Current connection state
+    var currentState: ConnectionState {
+        state
+    }
+
+    /// Current S-meter reading
+    var currentSMeter: UInt16 {
+        lastSMeter
+    }
+
     /// Connect and start receiving audio. Returns an AsyncStream of audio frames.
     func connect(
         frequencyKHz: Double,
@@ -49,13 +59,14 @@ actor KiwiSDRClient {
         targetFrequency = frequencyKHz
         targetMode = mode
 
-        let timestamp = Int(Date().timeIntervalSince1970 * 1000)
-        let urlString = "ws://\(host):\(port)/\(timestamp)/SND"
+        let timestamp = Int(Date().timeIntervalSince1970 * 1_000)
+        let urlString = "ws://\(host):\(port)/kiwi/\(timestamp)/SND"
         guard let url = URL(string: urlString) else {
             throw KiwiSDRError.invalidURL
         }
 
         let session = URLSession(configuration: .default)
+        urlSession = session
         let ws = session.webSocketTask(with: url)
         webSocket = ws
         ws.resume()
@@ -107,6 +118,8 @@ actor KiwiSDRClient {
 
         webSocket?.cancel(with: .normalClosure, reason: nil)
         webSocket = nil
+        urlSession?.invalidateAndCancel()
+        urlSession = nil
 
         audioContinuation?.finish()
         audioContinuation = nil
@@ -127,17 +140,12 @@ actor KiwiSDRClient {
         try await tune(frequencyKHz: targetFrequency, mode: mode)
     }
 
-    /// Current connection state
-    var currentState: ConnectionState { state }
-
-    /// Current S-meter reading
-    var currentSMeter: UInt16 { lastSMeter }
-
     // MARK: Private
 
     private let host: String
     private let port: Int
 
+    private var urlSession: URLSession?
     private var webSocket: URLSessionWebSocketTask?
     private var audioContinuation: AsyncStream<AudioFrame>.Continuation?
     private var sampleRate: Double = 12_000
@@ -171,7 +179,9 @@ actor KiwiSDRClient {
         keepAliveTask = Task { [weak self] in
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(10))
-                guard !Task.isCancelled else { return }
+                guard !Task.isCancelled else {
+                    return
+                }
                 try? await self?.send("SET keepalive")
             }
         }
@@ -198,16 +208,22 @@ actor KiwiSDRClient {
 
     private func parseSampleRate(_ message: String) -> Double? {
         // Format: "MSG sample_rate=12000.000000"
-        guard message.contains("sample_rate=") else { return nil }
+        guard message.contains("sample_rate=") else {
+            return nil
+        }
         let parts = message.components(separatedBy: "sample_rate=")
-        guard parts.count > 1 else { return nil }
+        guard parts.count > 1 else {
+            return nil
+        }
         let valueStr = parts[1].components(separatedBy: " ").first ?? parts[1]
         return Double(valueStr)
     }
 
     /// Main receive loop for WebSocket messages
     private func receiveLoop() async {
-        guard let ws = webSocket else { return }
+        guard let ws = webSocket else {
+            return
+        }
 
         while !Task.isCancelled {
             do {
@@ -233,10 +249,14 @@ actor KiwiSDRClient {
     /// Process a binary audio frame from the KiwiSDR
     private func processAudioData(_ data: Data) {
         // Minimum frame: "SND" (3) + flags (1) + seq (4) + smeter (2) = 10 bytes
-        guard data.count >= 10 else { return }
+        guard data.count >= 10 else {
+            return
+        }
 
         // Verify "SND" header
-        guard data[0] == 0x53, data[1] == 0x4E, data[2] == 0x44 else { return }
+        guard data[0] == 0x53, data[1] == 0x4E, data[2] == 0x44 else {
+            return
+        }
 
         let flags = data[3]
         let isCompressed = (flags & 0x10) != 0
@@ -244,23 +264,28 @@ actor KiwiSDRClient {
         let isIQ = (flags & 0x08) != 0
 
         // We only handle mono modes for recording
-        guard !isIQ else { return }
+        guard !isIQ else {
+            return
+        }
 
         // Parse S-meter (big-endian UInt16 at offset 8)
         lastSMeter = UInt16(data[8]) << 8 | UInt16(data[9])
 
         // Audio data starts at offset 10
         let audioData = data.subdata(in: 10 ..< data.count)
-        guard !audioData.isEmpty else { return }
-
-        let samples: [Int16]
-        if isCompressed {
-            samples = KiwiSDRADPCM.decode(audioData, state: &adpcmState)
-        } else {
-            samples = parsePCM(audioData, littleEndian: isLittleEndian)
+        guard !audioData.isEmpty else {
+            return
         }
 
-        guard !samples.isEmpty else { return }
+        let samples: [Int16] = if isCompressed {
+            KiwiSDRADPCM.decode(audioData, state: &adpcmState)
+        } else {
+            parsePCM(audioData, littleEndian: isLittleEndian)
+        }
+
+        guard !samples.isEmpty else {
+            return
+        }
 
         let frame = AudioFrame(
             samples: samples,
@@ -280,11 +305,10 @@ actor KiwiSDRClient {
 
         for i in 0 ..< sampleCount {
             let offset = i * 2
-            let sample: Int16
-            if littleEndian {
-                sample = Int16(data[offset]) | Int16(data[offset + 1]) << 8
+            let sample = if littleEndian {
+                Int16(data[offset]) | Int16(data[offset + 1]) << 8
             } else {
-                sample = Int16(data[offset]) << 8 | Int16(data[offset + 1])
+                Int16(data[offset]) << 8 | Int16(data[offset + 1])
             }
             samples.append(sample)
         }
@@ -300,8 +324,9 @@ actor KiwiSDRClient {
 
 // MARK: - KiwiSDRMode
 
-/// Radio modes supported by KiwiSDR, mapped from amateur radio modes
-enum KiwiSDRMode: Sendable {
+/// Radio modes supported by KiwiSDR, mapped from amateur radio modes.
+/// Explicitly nonisolated — pure value type used across actor boundaries.
+nonisolated enum KiwiSDRMode: Sendable {
     case cw
     case usb
     case lsb
@@ -358,8 +383,16 @@ enum KiwiSDRMode: Sendable {
             return .usb
         case "LSB":
             return .lsb
-        case "FT8", "FT4", "RTTY", "DATA", "DIGITAL", "PSK31", "PSK",
-             "JT65", "JT9", "WSPR":
+        case "FT8",
+             "FT4",
+             "RTTY",
+             "DATA",
+             "DIGITAL",
+             "PSK31",
+             "PSK",
+             "JT65",
+             "JT9",
+             "WSPR":
             return .usb
         case "AM":
             return .am
@@ -373,7 +406,7 @@ enum KiwiSDRMode: Sendable {
 
 // MARK: - KiwiSDRError
 
-enum KiwiSDRError: Error, LocalizedError {
+nonisolated enum KiwiSDRError: Error, LocalizedError {
     case invalidURL
     case notConnected
     case alreadyConnected

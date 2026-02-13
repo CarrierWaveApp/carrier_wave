@@ -16,6 +16,7 @@ All notable changes to Carrier Wave will be documented in this file.
 - Add structured solar/weather fields to ActivationMetadata with one-time backfill from existing text data
 
 ### Fixed
+- Fix WebSDR directory fetch — correct URL from `/public/` to `/.public/`, rewrite parser to extract receiver data from HTML comments, add ATS exception for HTTP/WS connections, and fix WebSocket path (add `/kiwi/` prefix)
 - Fix POTA upload prompt sheet: buttons hidden below visible area on medium detent — pin buttons at bottom with scrollable content and allow expansion to large detent
 - Fix POTA upload prompt falsely reporting "upload failed" when POTA returns empty adif_files on HTTP 200 (file queued for async processing, not rejected)
 - Fix POTA upload prompt using wrong QSO marking method — use markSubmittedToPark (matches SyncService behavior) instead of markUploadedToPark

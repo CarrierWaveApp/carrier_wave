@@ -40,6 +40,40 @@ struct WebSDRPanelView: View {
 
     @State private var showPicker = false
 
+    // MARK: - Helpers
+
+    private var headerColor: Color {
+        switch webSDRSession.state {
+        case .recording: .red
+        case .paused: .orange
+        case .connecting,
+             .reconnecting: .blue
+        case .error: .orange
+        case .idle: .secondary
+        }
+    }
+
+    private var levelColor: Color {
+        let level = webSDRSession.peakLevel
+        if level > 0.8 {
+            return .red
+        } else if level > 0.5 {
+            return .yellow
+        }
+        return .green
+    }
+
+    private var formattedDuration: String {
+        let total = Int(webSDRSession.recordingDuration)
+        let hours = total / 3_600
+        let minutes = (total % 3_600) / 60
+        let seconds = total % 60
+        if hours > 0 {
+            return String(format: "%d:%02d:%02d", hours, minutes, seconds)
+        }
+        return String(format: "%d:%02d", minutes, seconds)
+    }
+
     private var header: some View {
         HStack {
             Image(systemName: webSDRSession.state.statusIcon)
@@ -83,9 +117,11 @@ struct WebSDRPanelView: View {
         switch webSDRSession.state {
         case .idle:
             idleView
-        case .connecting, .reconnecting:
+        case .connecting,
+             .reconnecting:
             connectingView
-        case .recording, .paused:
+        case .recording,
+             .paused:
             recordingView
         case let .error(message):
             errorView(message)
@@ -222,45 +258,14 @@ struct WebSDRPanelView: View {
         .frame(maxWidth: .infinity, minHeight: 120)
     }
 
-    // MARK: - Helpers
-
-    private var headerColor: Color {
-        switch webSDRSession.state {
-        case .recording: .red
-        case .paused: .orange
-        case .connecting, .reconnecting: .blue
-        case .error: .orange
-        case .idle: .secondary
-        }
-    }
-
-    private var levelColor: Color {
-        let level = webSDRSession.peakLevel
-        if level > 0.8 {
-            return .red
-        } else if level > 0.5 {
-            return .yellow
-        }
-        return .green
-    }
-
-    private var formattedDuration: String {
-        let total = Int(webSDRSession.recordingDuration)
-        let hours = total / 3_600
-        let minutes = (total % 3_600) / 60
-        let seconds = total % 60
-        if hours > 0 {
-            return String(format: "%d:%02d:%02d", hours, minutes, seconds)
-        }
-        return String(format: "%d:%02d", minutes, seconds)
-    }
-
     private func startRecording(receiver: KiwiSDRReceiver) async {
         guard let loggingSessionId,
               let modelContext,
               let frequencyMHz,
               let mode
-        else { return }
+        else {
+            return
+        }
 
         await webSDRSession.start(
             receiver: receiver,

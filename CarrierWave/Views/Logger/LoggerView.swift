@@ -309,6 +309,7 @@ struct LoggerView: View {
     @State private var showP2PPanel = false
     @State private var showHelpSheet = false
     @State private var showHiddenQSOsSheet = false
+    @State private var showWebSDRPanel = false
 
     // Session title editing
     @State private var showTitleEditSheet = false
@@ -508,7 +509,7 @@ struct LoggerView: View {
     /// Whether any bottom panel is currently open
     private var isAnyPanelOpen: Bool {
         showRBNPanel || showSolarPanel || showWeatherPanel || showMapPanel || showPOTAPanel
-            || showP2PPanel
+            || showP2PPanel || showWebSDRPanel
     }
 
     /// Deprecated: Use currentWarning instead
@@ -695,6 +696,22 @@ struct LoggerView: View {
                 .padding()
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
+
+            if showWebSDRPanel, let session = sessionManager {
+                SwipeToDismissPanel(isPresented: $showWebSDRPanel) {
+                    WebSDRPanelView(
+                        webSDRSession: session.webSDRSession,
+                        myGrid: session.activeSession?.myGrid,
+                        frequencyMHz: session.activeSession?.frequency,
+                        mode: session.activeSession?.mode,
+                        loggingSessionId: session.activeSession?.id,
+                        modelContext: modelContext,
+                        onDismiss: { showWebSDRPanel = false }
+                    )
+                }
+                .padding()
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
         }
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: showRBNPanel)
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: showSolarPanel)
@@ -702,6 +719,7 @@ struct LoggerView: View {
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: showMapPanel)
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: showPOTAPanel)
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: showP2PPanel)
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: showWebSDRPanel)
     }
 
     /// Session header - shows active session info or "no session" prompt
@@ -1455,6 +1473,7 @@ struct LoggerView: View {
         case .help: showHelpSheet = true
         case let .note(text): executeNoteCommand(text)
         case .manual: executeManualCommand()
+        case .websdr: showWebSDRPanel = true
         }
     }
 

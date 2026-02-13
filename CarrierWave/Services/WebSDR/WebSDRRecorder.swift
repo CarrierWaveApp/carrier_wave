@@ -9,7 +9,7 @@ actor WebSDRRecorder {
     // MARK: Internal
 
     /// Recording state
-    enum State: Sendable {
+    enum State: Sendable, Equatable {
         case idle
         case recording
         case paused
@@ -18,7 +18,9 @@ actor WebSDRRecorder {
     }
 
     /// Current recording state
-    var currentState: State { state }
+    var currentState: State {
+        state
+    }
 
     /// Duration of the recording so far in seconds
     var recordedDuration: TimeInterval {
@@ -26,7 +28,9 @@ actor WebSDRRecorder {
     }
 
     /// Peak level (0.0 to 1.0) from recent audio for level meter display
-    var peakLevel: Float { recentPeak }
+    var peakLevel: Float {
+        recentPeak
+    }
 
     /// Start recording to a file
     func startRecording(to fileURL: URL, sampleRate: Double) throws {
@@ -61,7 +65,9 @@ actor WebSDRRecorder {
 
     /// Write audio samples from a KiwiSDR frame
     func writeFrame(_ samples: [Int16]) throws {
-        guard state == .recording else { return }
+        guard state == .recording else {
+            return
+        }
         guard let file = audioFile else {
             throw WebSDRRecorderError.noFileOpen
         }
@@ -70,12 +76,16 @@ actor WebSDRRecorder {
         guard let buffer = AVAudioPCMBuffer(
             pcmFormat: file.processingFormat,
             frameCapacity: frameCount
-        ) else { return }
+        ) else {
+            return
+        }
 
         buffer.frameLength = frameCount
 
         // Copy Int16 samples into the buffer
-        guard let int16Data = buffer.int16ChannelData?[0] else { return }
+        guard let int16Data = buffer.int16ChannelData?[0] else {
+            return
+        }
         for i in 0 ..< samples.count {
             int16Data[i] = samples[i]
         }
@@ -89,19 +99,25 @@ actor WebSDRRecorder {
 
     /// Pause recording (keeps file open)
     func pause() {
-        guard state == .recording else { return }
+        guard state == .recording else {
+            return
+        }
         state = .paused
     }
 
     /// Resume recording
     func resume() {
-        guard state == .paused else { return }
+        guard state == .paused else {
+            return
+        }
         state = .recording
     }
 
     /// Stop recording and close the file
     func stopRecording() -> URL? {
-        guard state == .recording || state == .paused else { return nil }
+        guard state == .recording || state == .paused else {
+            return nil
+        }
 
         audioFile = nil // Closes the file
         state = .finished
@@ -132,7 +148,7 @@ actor WebSDRRecorder {
 
 // MARK: - WebSDRRecorderError
 
-enum WebSDRRecorderError: Error, LocalizedError {
+nonisolated enum WebSDRRecorderError: Error, LocalizedError {
     case alreadyRecording
     case noFileOpen
     case invalidFormat

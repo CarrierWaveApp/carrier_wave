@@ -55,7 +55,7 @@ struct SettingsMainView: View {
     @AppStorage("readOnlyMode") private var readOnlyMode = false
     @AppStorage("bypassPOTAMaintenance") private var bypassPOTAMaintenance = false
 
-    // Appearance
+    /// Appearance
     @AppStorage("appearanceMode") private var appearanceMode = "system"
 
     // Logger settings
