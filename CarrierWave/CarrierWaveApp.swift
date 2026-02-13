@@ -47,6 +47,7 @@ struct CarrierWaveApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView(tourState: tourState)
+                .preferredColorScheme(colorScheme)
                 .task {
                     // Preload caches on app launch (loads from disk, refreshes in background)
                     await POTAParksCache.shared.ensureLoaded()
@@ -66,6 +67,15 @@ struct CarrierWaveApp: App {
     // MARK: Private
 
     @State private var tourState = TourState()
+    @AppStorage("appearanceMode") private var appearanceMode = "system"
+
+    private var colorScheme: ColorScheme? {
+        switch appearanceMode {
+        case "light": .light
+        case "dark": .dark
+        default: nil
+        }
+    }
 
     private func handleURL(_ url: URL) {
         // Check if it's a challenge invite link

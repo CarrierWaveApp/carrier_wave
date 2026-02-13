@@ -5,6 +5,7 @@ All notable changes to Carrier Wave will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Add appearance mode picker in Settings (System/Light/Dark) to override system color scheme
 - Add tiered contact count badges (bronze/silver/gold at 10/25/50 QSOs) in log rows and logger card
 - Extract LoFi client into CarrierWaveCore package for sharing between iOS app and CLI tool
 - Add `lofi-cli` executable target for standalone LoFi download testing without iOS Simulator
