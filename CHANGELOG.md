@@ -11,6 +11,10 @@ All notable changes to Carrier Wave will be documented in this file.
 - Add full-screen recording player — waveform scrubber with QSO markers, transport controls, speed picker, and scrollable QSO list with auto-scroll
 - Add share clip feature — export time-range clips from recordings as M4A with adjustable range handles defaulting to active QSO window
 - Add Sessions tab in Logs — browse all completed logging sessions grouped by month with recording indicators and navigation to player or session detail
+
+### Fixed
+- Fix recording player amplitude waveform not displaying — use file's native audio format instead of mismatched custom format
+- Fix recording player showing no QSOs when opened from Sessions tab — auto-load QSOs by session ID when none provided
 - Add WebSDR session recording — record audio from a nearby KiwiSDR during logging sessions with WEBSDR command, auto-retune on frequency/mode changes, level meter, and lifecycle integration
 - Add WebSDR live audio playback — hear the stream through speakers/headphones via jitter-buffered ring buffer with adaptive rate, mute toggle, and buffer health indicator
 - Add WebSDR resilient reconnects — connection loss preserves the recording file, duration timer, and audio engine instead of resetting; exponential backoff with up to 5 retries
