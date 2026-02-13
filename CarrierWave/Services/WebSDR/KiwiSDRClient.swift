@@ -199,20 +199,46 @@ actor KiwiSDRClient {
             throw KiwiSDRError.notConnected
         }
 
-        // Read messages until we get sample_rate or a server error
+        // Read messages until we get sample_rate or a server error.
+        // KiwiSDR sends MSG text as binary WebSocket frames, so we
+        // must check both text and binary frames for MSG content.
         for _ in 0 ..< 30 {
-            let message = try await ws.receive()
-            if case let .string(text) = message {
-                // Check for error responses first
-                try checkForServerError(text)
+            let text = try await receiveText(from: ws)
+            guard let text else {
+                continue
+            }
 
-                if let rate = parseSampleRate(text) {
-                    return rate
-                }
+            try checkForServerError(text)
+
+            if let rate = parseSampleRate(text) {
+                return rate
             }
         }
 
         throw KiwiSDRError.handshakeFailed("No sample_rate received")
+    }
+
+    /// Receive a WebSocket message and extract text content.
+    /// KiwiSDR sends MSG text as binary frames, so this decodes
+    /// binary data as UTF-8 when it doesn't start with "SND".
+    private func receiveText(
+        from ws: URLSessionWebSocketTask
+    ) async throws -> String? {
+        let message = try await ws.receive()
+        switch message {
+        case let .string(text):
+            return text
+        case let .data(data):
+            // Skip audio frames (start with "SND")
+            if data.count >= 3,
+               data[0] == 0x53, data[1] == 0x4E, data[2] == 0x44
+            {
+                return nil
+            }
+            return String(data: data, encoding: .utf8)
+        @unknown default:
+            return nil
+        }
     }
 
     private func parseSampleRate(_ message: String) -> Double? {
@@ -265,7 +291,15 @@ actor KiwiSDRClient {
                 let message = try await ws.receive()
                 switch message {
                 case let .data(data):
-                    processAudioData(data)
+                    // KiwiSDR sends MSG text as binary frames.
+                    // Route based on "SND" header vs text content.
+                    if data.count >= 3,
+                       data[0] == 0x53, data[1] == 0x4E, data[2] == 0x44
+                    {
+                        processAudioData(data)
+                    } else if let text = String(data: data, encoding: .utf8) {
+                        processTextMessage(text)
+                    }
                 case let .string(text):
                     processTextMessage(text)
                 @unknown default:
@@ -370,127 +404,6 @@ actor KiwiSDRClient {
         {
             state = .error("Server disconnected: \(text)")
             audioContinuation?.finish()
-        }
-    }
-}
-
-// MARK: - KiwiSDRMode
-
-/// Radio modes supported by KiwiSDR, mapped from amateur radio modes.
-/// Explicitly nonisolated — pure value type used across actor boundaries.
-nonisolated enum KiwiSDRMode: Sendable {
-    case cw
-    case usb
-    case lsb
-    case am
-    case nbfm
-
-    // MARK: Internal
-
-    /// KiwiSDR protocol name for this mode
-    var kiwiName: String {
-        switch self {
-        case .cw: "cw"
-        case .usb: "usb"
-        case .lsb: "lsb"
-        case .am: "am"
-        case .nbfm: "nbfm"
-        }
-    }
-
-    /// Low frequency cut in Hz
-    var lowCut: Int {
-        switch self {
-        case .cw: 200
-        case .usb: 300
-        case .lsb: -2_700
-        case .am: -5_000
-        case .nbfm: -6_000
-        }
-    }
-
-    /// High frequency cut in Hz
-    var highCut: Int {
-        switch self {
-        case .cw: 1_000
-        case .usb: 2_700
-        case .lsb: -300
-        case .am: 5_000
-        case .nbfm: 6_000
-        }
-    }
-
-    /// Map from Carrier Wave mode string to KiwiSDR mode
-    static func from(carrierWaveMode: String, frequencyMHz: Double?) -> KiwiSDRMode {
-        switch carrierWaveMode.uppercased() {
-        case "CW":
-            return .cw
-        case "SSB":
-            // SSB → USB above 10 MHz, LSB below
-            if let freq = frequencyMHz, freq < 10.0 {
-                return .lsb
-            }
-            return .usb
-        case "USB":
-            return .usb
-        case "LSB":
-            return .lsb
-        case "FT8",
-             "FT4",
-             "RTTY",
-             "DATA",
-             "DIGITAL",
-             "PSK31",
-             "PSK",
-             "JT65",
-             "JT9",
-             "WSPR":
-            return .usb
-        case "AM":
-            return .am
-        case "FM":
-            return .nbfm
-        default:
-            return .usb
-        }
-    }
-}
-
-// MARK: - KiwiSDRError
-
-nonisolated enum KiwiSDRError: Error, LocalizedError {
-    case invalidURL
-    case notConnected
-    case alreadyConnected
-    case handshakeFailed(String)
-    case connectionLost
-    case authenticationFailed
-    case tooBusy(Int)
-    case serverDown
-    case serverRedirect(String)
-
-    // MARK: Internal
-
-    var errorDescription: String? {
-        switch self {
-        case .invalidURL:
-            "Invalid KiwiSDR URL"
-        case .notConnected:
-            "Not connected to KiwiSDR"
-        case .alreadyConnected:
-            "Already connected to a KiwiSDR"
-        case let .handshakeFailed(reason):
-            "KiwiSDR handshake failed: \(reason)"
-        case .connectionLost:
-            "Connection to KiwiSDR lost"
-        case .authenticationFailed:
-            "KiwiSDR authentication failed (bad password)"
-        case let .tooBusy(slots):
-            "KiwiSDR is full (\(slots) channels in use)"
-        case .serverDown:
-            "KiwiSDR server is down"
-        case let .serverRedirect(url):
-            "KiwiSDR redirected to \(url)"
         }
     }
 }

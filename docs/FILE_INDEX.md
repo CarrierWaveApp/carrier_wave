@@ -205,11 +205,15 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 
 | File | Purpose |
 |------|---------|
+| `AudioRingBuffer.swift` | Thread-safe circular buffer for audio jitter buffering between network and render threads |
+| `KiwiSDRAudioEngine.swift` | AVAudioEngine-based live playback with adaptive rate from ring buffer |
 | `KiwiSDRClient.swift` | KiwiSDR WebSocket client (connection, tuning, audio streaming) |
+| `KiwiSDRTypes.swift` | KiwiSDRMode (mode mapping/passbands) and KiwiSDRError types |
 | `KiwiSDRADPCM.swift` | IMA ADPCM decoder for KiwiSDR compressed audio |
 | `WebSDRDirectory.swift` | KiwiSDR public directory fetch, cache, and proximity search |
 | `WebSDRRecorder.swift` | Records KiwiSDR audio frames to compressed audio file |
-| `WebSDRSession.swift` | Coordinates WebSDR connection + recording lifecycle |
+| `WebSDRSession.swift` | Coordinates WebSDR connection, recording, playback, and resilient reconnects |
+| `WebSDRSession+Internals.swift` | Internal helpers: audio stream processing, reconnect logic, recording lifecycle |
 
 ## Services - Query Language (`CarrierWave/Services/QueryLanguage/`)
 
@@ -261,6 +265,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `QuickEntryPreview.swift` | Quick entry token display with color-coded badges |
 | `SpotSummaryView.swift` | Compact spot monitoring summary with region breakdown |
 | `WebSDRPanelView.swift` | WebSDR connection status, recording controls, level meter |
+| `WebSDRPanelView+Subviews.swift` | Extension with level meter, buffer indicator, reconnecting/error views |
 | `WebSDRPickerSheet.swift` | Nearby KiwiSDR receiver selection with distance/availability |
 
 ## Views - CW Transcription (`CarrierWave/Views/CWTranscription/`)
@@ -409,6 +414,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `CallsignNotesSettingsView.swift` | Manage callsign notes file sources (URL + title) |
 | `KeyboardRowSettingsView.swift` | Configure number row symbols above keyboard |
 | `CommandRowSettingsView.swift` | Configure command row buttons above keyboard |
+| `WebSDRRecordingsView.swift` | List of all WebSDR recordings with delete, share, and details |
 
 ## Documentation (`docs/`)
 | File | Purpose |

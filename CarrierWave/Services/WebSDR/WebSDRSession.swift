@@ -4,13 +4,11 @@ import SwiftUI
 
 // MARK: - WebSDRSession
 
-/// Coordinates WebSDR connection, recording, and lifecycle.
+/// Coordinates WebSDR connection, recording, audio playback, and lifecycle.
 /// Integrates with LoggingSessionManager for start/stop/pause/resume.
 @MainActor
 @Observable
 final class WebSDRSession {
-    // MARK: Internal
-
     /// Overall session state
     enum State: Equatable {
         case idle
@@ -73,6 +71,34 @@ final class WebSDRSession {
     /// S-meter reading from the KiwiSDR
     private(set) var sMeter: UInt16 = 0
 
+    /// Whether audio output is muted
+    private(set) var isMuted = false
+
+    /// URL of the current recording file (for sharing)
+    private(set) var recordingFileURL: URL?
+
+    // MARK: Internal (accessed by WebSDRSession+Internals)
+
+    var client: KiwiSDRClient?
+    var recorder: WebSDRRecorder?
+    var audioEngine: KiwiSDRAudioEngine?
+    var streamTask: Task<Void, Never>?
+    var durationTimer: Timer?
+    var loggingSessionId: UUID?
+    var recordingId: UUID?
+    var modelContext: ModelContext?
+    var reconnectAttempts = 0
+    let maxReconnectAttempts = 5
+    var lastFrequencyMHz: Double = 14.060
+    var lastMode: String = "CW"
+    /// Frozen duration preserved across reconnects
+    var frozenDuration: TimeInterval = 0
+
+    /// Buffer fill ratio for UI indicator (0.0 to 1.0)
+    var bufferFillRatio: Double {
+        audioEngine?.fillRatio ?? 0
+    }
+
     /// Start recording from a WebSDR
     func start(
         receiver: KiwiSDRReceiver,
@@ -102,41 +128,20 @@ final class WebSDRSession {
                 mode: kiwiMode
             )
 
-            // Start recorder
-            guard let fileURL = WebSDRRecording.newRecordingURL(
-                sessionId: loggingSessionId
-            ) else {
-                state = .error("Cannot create recording file")
-                return
-            }
-
-            recorder = WebSDRRecorder()
-            let sampleRate = await client!.negotiatedSampleRate
-            try await recorder!.startRecording(to: fileURL, sampleRate: sampleRate)
-
-            // Create recording model
-            let recording = WebSDRRecording(
+            try await setupRecording(
                 loggingSessionId: loggingSessionId,
-                kiwisdrHost: receiver.host,
-                kiwisdrName: receiver.name,
+                receiver: receiver,
                 frequencyKHz: frequencyKHz,
-                mode: mode
+                mode: mode,
+                modelContext: modelContext
             )
-            recording.relativeFilePath = WebSDRRecording.relativePath(
-                sessionId: loggingSessionId
-            )
-            modelContext.insert(recording)
-            try? modelContext.save()
-            recordingId = recording.id
 
+            reconnectAttempts = 0
             state = .recording
 
-            // Start processing audio stream
             streamTask = Task { [weak self] in
                 await self?.processAudioStream(audioStream)
             }
-
-            // Start duration timer
             startDurationTimer()
         } catch {
             state = .error(error.localizedDescription)
@@ -150,6 +155,10 @@ final class WebSDRSession {
         durationTimer = nil
         streamTask?.cancel()
         streamTask = nil
+
+        // Stop audio engine
+        audioEngine?.stop()
+        audioEngine = nil
 
         // Stop recorder and get file URL
         if let recorder {
@@ -169,7 +178,9 @@ final class WebSDRSession {
         state = .idle
         receiver = nil
         recordingDuration = 0
+        recordingFileURL = nil
         peakLevel = 0
+        isMuted = false
     }
 
     /// Pause recording (keeps WebSDR connection alive)
@@ -178,6 +189,7 @@ final class WebSDRSession {
             return
         }
         await recorder?.pause()
+        audioEngine?.setMuted(true)
         durationTimer?.invalidate()
         state = .paused
     }
@@ -188,8 +200,17 @@ final class WebSDRSession {
             return
         }
         await recorder?.resume()
+        if !isMuted {
+            audioEngine?.setMuted(false)
+        }
         startDurationTimer()
         state = .recording
+    }
+
+    /// Toggle mute state
+    func toggleMute() {
+        isMuted.toggle()
+        audioEngine?.setMuted(isMuted)
     }
 
     /// Retune to a new frequency (follows session frequency changes)
@@ -210,129 +231,5 @@ final class WebSDRSession {
             frequencyMHz: frequencyMHz
         )
         try? await client?.changeMode(kiwiMode)
-    }
-
-    // MARK: Private
-
-    private var client: KiwiSDRClient?
-    private var recorder: WebSDRRecorder?
-    private var streamTask: Task<Void, Never>?
-    private var durationTimer: Timer?
-    private var loggingSessionId: UUID?
-    private var recordingId: UUID?
-    private var modelContext: ModelContext?
-    private var reconnectAttempts = 0
-    private let maxReconnectAttempts = 5
-    private var lastFrequencyMHz: Double = 14.060
-    private var lastMode: String = "CW"
-
-    /// Process incoming audio frames from the KiwiSDR
-    private func processAudioStream(
-        _ stream: AsyncStream<KiwiSDRClient.AudioFrame>
-    ) async {
-        for await frame in stream {
-            guard !Task.isCancelled else {
-                break
-            }
-
-            // Write to recorder
-            do {
-                try await recorder?.writeFrame(frame.samples)
-            } catch {
-                // Recording write error — continue receiving but log it
-                print("[WebSDR] Write error: \(error.localizedDescription)")
-            }
-
-            // Update UI state on main actor
-            await MainActor.run {
-                self.sMeter = frame.sMeter
-            }
-
-            // Update peak level from recorder
-            if let level = await recorder?.peakLevel {
-                await MainActor.run {
-                    self.peakLevel = level
-                }
-            }
-        }
-
-        // Stream ended — try to reconnect if unexpected
-        if state == .recording {
-            await attemptReconnect()
-        }
-    }
-
-    /// Attempt to reconnect after connection loss
-    private func attemptReconnect() async {
-        guard reconnectAttempts < maxReconnectAttempts,
-              let receiver, let loggingSessionId, let modelContext
-        else {
-            state = .error("Connection lost")
-            return
-        }
-
-        reconnectAttempts += 1
-        state = .reconnecting(attempt: reconnectAttempts)
-
-        // Exponential backoff: 2s, 4s, 8s, 16s, 32s
-        let delay = pow(2.0, Double(reconnectAttempts))
-        try? await Task.sleep(for: .seconds(delay))
-
-        guard !Task.isCancelled else {
-            return
-        }
-
-        // Reconnect with the last known frequency and mode
-        await start(
-            receiver: receiver,
-            frequencyMHz: lastFrequencyMHz,
-            mode: lastMode,
-            loggingSessionId: loggingSessionId,
-            modelContext: modelContext
-        )
-    }
-
-    private func startDurationTimer() {
-        durationTimer?.invalidate()
-        durationTimer = Timer.scheduledTimer(
-            withTimeInterval: 1.0,
-            repeats: true
-        ) { [weak self] _ in
-            Task { @MainActor in
-                guard let self else {
-                    return
-                }
-                if let recorder = self.recorder {
-                    self.recordingDuration = await recorder.recordedDuration
-                }
-            }
-        }
-    }
-
-    private func finalizeRecording() {
-        guard let recordingId, let modelContext else {
-            return
-        }
-
-        let id = recordingId
-        let descriptor = FetchDescriptor<WebSDRRecording>(
-            predicate: #Predicate { $0.id == id }
-        )
-
-        if let recording = try? modelContext.fetch(descriptor).first {
-            recording.finish()
-            try? modelContext.save()
-        }
-    }
-
-    private func cleanup() async {
-        if let recorder {
-            _ = await recorder.stopRecording()
-        }
-        if let client {
-            await client.disconnect()
-        }
-        client = nil
-        recorder = nil
     }
 }

@@ -1,3 +1,4 @@
+import SwiftData
 import SwiftUI
 
 // MARK: - WebSDRPanelView
@@ -14,6 +15,37 @@ struct WebSDRPanelView: View {
     let loggingSessionId: UUID?
     let modelContext: ModelContext?
     let onDismiss: () -> Void
+
+    @State var showPicker = false
+
+    var levelColor: Color {
+        let level = webSDRSession.peakLevel
+        if level > 0.8 {
+            return .red
+        } else if level > 0.5 {
+            return .yellow
+        }
+        return .green
+    }
+
+    var formattedDuration: String {
+        let total = Int(webSDRSession.recordingDuration)
+        let hours = total / 3_600
+        let minutes = (total % 3_600) / 60
+        let seconds = total % 60
+        if hours > 0 {
+            return String(format: "%d:%02d:%02d", hours, minutes, seconds)
+        }
+        return String(format: "%d:%02d", minutes, seconds)
+    }
+
+    var bufferColor: Color {
+        let fill = webSDRSession.bufferFillRatio
+        if fill < 0.15 || fill > 0.9 {
+            return .orange
+        }
+        return .green
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -38,8 +70,6 @@ struct WebSDRPanelView: View {
 
     // MARK: Private
 
-    @State private var showPicker = false
-
     // MARK: - Helpers
 
     private var headerColor: Color {
@@ -53,27 +83,6 @@ struct WebSDRPanelView: View {
         }
     }
 
-    private var levelColor: Color {
-        let level = webSDRSession.peakLevel
-        if level > 0.8 {
-            return .red
-        } else if level > 0.5 {
-            return .yellow
-        }
-        return .green
-    }
-
-    private var formattedDuration: String {
-        let total = Int(webSDRSession.recordingDuration)
-        let hours = total / 3_600
-        let minutes = (total % 3_600) / 60
-        let seconds = total % 60
-        if hours > 0 {
-            return String(format: "%d:%02d:%02d", hours, minutes, seconds)
-        }
-        return String(format: "%d:%02d", minutes, seconds)
-    }
-
     private var header: some View {
         HStack {
             Image(systemName: webSDRSession.state.statusIcon)
@@ -83,7 +92,9 @@ struct WebSDRPanelView: View {
             Text("WebSDR")
                 .font(.headline)
 
-            if webSDRSession.state == .recording {
+            if webSDRSession.state == .recording ||
+                webSDRSession.state.isActive
+            {
                 recordingBadge
             }
 
@@ -117,9 +128,10 @@ struct WebSDRPanelView: View {
         switch webSDRSession.state {
         case .idle:
             idleView
-        case .connecting,
-             .reconnecting:
+        case .connecting:
             connectingView
+        case let .reconnecting(attempt):
+            reconnectingView(attempt: attempt)
         case .recording,
              .paused:
             recordingView
@@ -192,8 +204,23 @@ struct WebSDRPanelView: View {
             // Level meter
             levelMeter
 
+            // Buffer health indicator
+            bufferIndicator
+
             // Controls
             HStack(spacing: 16) {
+                // Mute/unmute toggle
+                Button {
+                    webSDRSession.toggleMute()
+                } label: {
+                    Image(
+                        systemName: webSDRSession.isMuted
+                            ? "speaker.slash.fill" : "speaker.wave.2.fill"
+                    )
+                }
+                .buttonStyle(.bordered)
+                .tint(webSDRSession.isMuted ? .secondary : .blue)
+
                 if webSDRSession.state == .paused {
                     Button {
                         Task { await webSDRSession.resume() }
@@ -218,63 +245,23 @@ struct WebSDRPanelView: View {
                 }
                 .buttonStyle(.bordered)
             }
-        }
-        .padding()
-    }
 
-    private var levelMeter: some View {
-        GeometryReader { geometry in
-            ZStack(alignment: .leading) {
-                // Background
-                RoundedRectangle(cornerRadius: 4)
-                    .fill(Color(.systemGray5))
-
-                // Level bar
-                RoundedRectangle(cornerRadius: 4)
-                    .fill(levelColor)
-                    .frame(width: geometry.size.width * CGFloat(webSDRSession.peakLevel))
-                    .animation(.linear(duration: 0.1), value: webSDRSession.peakLevel)
+            // File location and share
+            if let fileURL = webSDRSession.recordingFileURL {
+                HStack {
+                    Text("WebSDRRecordings/")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    ShareLink(item: fileURL) {
+                        Label("Share", systemImage: "square.and.arrow.up")
+                            .font(.caption)
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                }
             }
         }
-        .frame(height: 8)
-    }
-
-    private func errorView(_ message: String) -> some View {
-        VStack(spacing: 8) {
-            Image(systemName: "exclamationmark.triangle")
-                .font(.title2)
-                .foregroundStyle(.orange)
-            Text(message)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-            Button("Try Again") {
-                showPicker = true
-            }
-            .font(.caption)
-            .buttonStyle(.bordered)
-        }
         .padding()
-        .frame(maxWidth: .infinity, minHeight: 120)
-    }
-
-    private func startRecording(receiver: KiwiSDRReceiver) async {
-        guard let loggingSessionId,
-              let modelContext,
-              let frequencyMHz,
-              let mode
-        else {
-            return
-        }
-
-        await webSDRSession.start(
-            receiver: receiver,
-            frequencyMHz: frequencyMHz,
-            mode: mode,
-            loggingSessionId: loggingSessionId,
-            modelContext: modelContext
-        )
     }
 }
-
-import SwiftData

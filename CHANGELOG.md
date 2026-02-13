@@ -6,6 +6,12 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ### Added
 - Add WebSDR session recording — record audio from a nearby KiwiSDR during logging sessions with WEBSDR command, auto-retune on frequency/mode changes, level meter, and lifecycle integration
+- Add WebSDR live audio playback — hear the stream through speakers/headphones via jitter-buffered ring buffer with adaptive rate, mute toggle, and buffer health indicator
+- Add WebSDR resilient reconnects — connection loss preserves the recording file, duration timer, and audio engine instead of resetting; exponential backoff with up to 5 retries
+- Add persistent WebSDR recording badge — tappable mini badge in logger header shows duration when panel is closed, tap to reopen
+- Add WebSDR recording file sharing — share button on active recording and in recordings list
+- Add WebSDR Recordings settings screen — browse, share, and delete past recordings
+- Add background audio mode — WebSDR recording and playback continue when app is backgrounded
 - Add appearance mode picker in Settings (System/Light/Dark) to override system color scheme
 - Add tiered contact count badges (bronze/silver/gold at 10/25/50 QSOs) in log rows and logger card
 - Extract LoFi client into CarrierWaveCore package for sharing between iOS app and CLI tool
@@ -18,6 +24,7 @@ All notable changes to Carrier Wave will be documented in this file.
 ### Fixed
 - Fix WebSDR directory fetch — correct URL from `/public/` to `/.public/`, rewrite parser to extract receiver data from HTML comments, add ATS exception for HTTP/WS connections
 - Fix KiwiSDR connection — remove incorrect `/kiwi/` URL prefix, use seconds not milliseconds for timestamp, fix identity command (`SET ident_user=`), add `SET compression=1`, parse server error messages (auth failures, busy, down), use negotiated sample rate, and restore correct frequency/mode on reconnect
+- Fix KiwiSDR binary frame handling — KiwiSDR sends MSG text as binary WebSocket frames; decode binary data as UTF-8 during handshake and in the receive loop to properly detect sample_rate and other server messages
 - Fix POTA upload prompt sheet: buttons hidden below visible area on medium detent — pin buttons at bottom with scrollable content and allow expansion to large detent
 - Fix POTA upload prompt falsely reporting "upload failed" when POTA returns empty adif_files on HTTP 200 (file queued for async processing, not rejected)
 - Fix POTA upload prompt using wrong QSO marking method — use markSubmittedToPark (matches SyncService behavior) instead of markUploadedToPark

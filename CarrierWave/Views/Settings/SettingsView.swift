@@ -359,6 +359,12 @@ struct SettingsMainView: View {
                 Text("Source names").tag("sources")
             }
 
+            NavigationLink {
+                WebSDRRecordingsView()
+            } label: {
+                Label("WebSDR Recordings", systemImage: "waveform.circle")
+            }
+
             DisclosureGroup("Always visible fields") {
                 Toggle("Their Grid", isOn: $showTheirGrid)
                 Toggle("Their Park", isOn: $showTheirPark)

@@ -1,0 +1,123 @@
+import SwiftData
+import SwiftUI
+
+// MARK: - WebSDRPanelView Subviews
+
+extension WebSDRPanelView {
+    var levelMeter: some View {
+        VStack(spacing: 4) {
+            GeometryReader { geometry in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(Color(.systemGray5))
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(levelColor)
+                        .frame(
+                            width: geometry.size.width
+                                * CGFloat(webSDRSession.peakLevel)
+                        )
+                }
+            }
+            .frame(height: 8)
+
+            HStack {
+                Text("Level")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Text("S\(webSDRSession.sMeter)")
+                    .font(.caption2.monospacedDigit())
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    var bufferIndicator: some View {
+        HStack(spacing: 6) {
+            Circle()
+                .fill(bufferColor)
+                .frame(width: 6, height: 6)
+            Text("Buffer")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            GeometryReader { geometry in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(Color(.systemGray5))
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(bufferColor)
+                        .frame(
+                            width: geometry.size.width
+                                * webSDRSession.bufferFillRatio
+                        )
+                }
+            }
+            .frame(height: 4)
+        }
+    }
+
+    func reconnectingView(attempt: Int) -> some View {
+        VStack(spacing: 12) {
+            ProgressView()
+
+            Text("Connection lost — reconnecting (attempt \(attempt))...")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+
+            if webSDRSession.recordingDuration > 0 {
+                Text(formattedDuration)
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
+            }
+
+            Button(role: .destructive) {
+                Task { await webSDRSession.stop() }
+            } label: {
+                Label("Stop Recording", systemImage: "stop.fill")
+            }
+            .buttonStyle(.bordered)
+        }
+        .frame(maxWidth: .infinity, minHeight: 120)
+    }
+
+    func errorView(_ message: String) -> some View {
+        VStack(spacing: 12) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.largeTitle)
+                .foregroundStyle(.orange)
+
+            Text(message)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+
+            Button {
+                showPicker = true
+            } label: {
+                Label("Try Again", systemImage: "arrow.clockwise")
+            }
+            .buttonStyle(.bordered)
+        }
+        .padding()
+        .frame(maxWidth: .infinity, minHeight: 120)
+    }
+
+    func startRecording(receiver: KiwiSDRReceiver) async {
+        guard let frequencyMHz,
+              let mode,
+              let loggingSessionId,
+              let modelContext
+        else {
+            return
+        }
+
+        await webSDRSession.start(
+            receiver: receiver,
+            frequencyMHz: frequencyMHz,
+            mode: mode,
+            loggingSessionId: loggingSessionId,
+            modelContext: modelContext
+        )
+    }
+}

@@ -25,6 +25,14 @@ struct LoggerView: View {
                 VStack(spacing: 0) {
                     sessionHeader
 
+                    // WebSDR mini recording badge (visible when panel is closed)
+                    if let manager = sessionManager,
+                       !showWebSDRPanel,
+                       manager.webSDRSession.state.isActive
+                    {
+                        webSDRMiniBadge(session: manager.webSDRSession)
+                    }
+
                     // Spot monitoring summary (always visible when session active)
                     if let manager = sessionManager {
                         SpotSummaryView(monitoringService: manager.spotMonitoringService)
@@ -995,6 +1003,29 @@ struct LoggerView: View {
         }
     }
 
+    private func webSDRMiniBadge(session: WebSDRSession) -> some View {
+        Button {
+            showWebSDRPanel = true
+        } label: {
+            HStack(spacing: 6) {
+                Circle()
+                    .fill(.red)
+                    .frame(width: 8, height: 8)
+                Image(systemName: "antenna.radiowaves.left.and.right")
+                    .font(.caption2)
+                Text(formatWebSDRDuration(session.recordingDuration))
+                    .font(.caption.monospacedDigit())
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(.red.opacity(0.1))
+            .clipShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal)
+        .padding(.top, 4)
+    }
+
     /// Reusable compact field with label above
     private func compactField(
         label: String,
@@ -1176,6 +1207,13 @@ struct LoggerView: View {
         }
         .padding()
         .background(Color(.secondarySystemGroupedBackground))
+    }
+
+    private func formatWebSDRDuration(_ duration: TimeInterval) -> String {
+        let total = Int(duration)
+        let minutes = total / 60
+        let seconds = total % 60
+        return String(format: "%d:%02d", minutes, seconds)
     }
 
     /// Current frequency warning (if any) - includes license violations, activity warnings, and nearby spots
