@@ -90,7 +90,8 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `CWConversation.swift` | CW conversation and message models for chat display |
 | `CallsignInfo.swift` | Callsign lookup result with name, note, emoji, source |
 | `LoggingSession.swift` | Logging session model with activation type, frequency, mode |
-| `LoggerCommand.swift` | Command enum for logger input (FREQ, MODE, SPOT, RBN, POTA, P2P, SOLAR, WEATHER, MAP) |
+| `LoggerCommand.swift` | Command enum for logger input (FREQ, MODE, SPOT, RBN, POTA, P2P, SOLAR, WEATHER, MAP, WEBSDR) |
+| `WebSDRRecording.swift` | WebSDR recording metadata (host, file path, duration, session link) |
 | `CallsignNotesSource.swift` | SwiftData model for user-configured callsign notes file sources |
 | `BandPlan.swift` | US amateur radio band plan data with license class privileges |
 | `BandPlan+Activities.swift` | Frequency activity data (QRP, SSTV, FT8, CWT, nets) and time windows |
@@ -199,6 +200,16 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `QuickEntryParser.swift` | Parses quick entry strings (e.g., "AJ7CM 579 WA US-0189") into structured data |
 | `ActivityLogManager.swift` | Activity log lifecycle management (create, activate, log QSO, daily stats) |
 
+## Services - WebSDR (`CarrierWave/Services/WebSDR/`)
+
+| File | Purpose |
+|------|---------|
+| `KiwiSDRClient.swift` | KiwiSDR WebSocket client (connection, tuning, audio streaming) |
+| `KiwiSDRADPCM.swift` | IMA ADPCM decoder for KiwiSDR compressed audio |
+| `WebSDRDirectory.swift` | KiwiSDR public directory fetch, cache, and proximity search |
+| `WebSDRRecorder.swift` | Records KiwiSDR audio frames to compressed audio file |
+| `WebSDRSession.swift` | Coordinates WebSDR connection + recording lifecycle |
+
 ## Services - Query Language (`CarrierWave/Services/QueryLanguage/`)
 
 Most Query Language types are now in CarrierWaveCore. Only the compiler remains in the main app.
@@ -248,6 +259,8 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `SpotFilters.swift` | Band and mode filter enums for spots |
 | `QuickEntryPreview.swift` | Quick entry token display with color-coded badges |
 | `SpotSummaryView.swift` | Compact spot monitoring summary with region breakdown |
+| `WebSDRPanelView.swift` | WebSDR connection status, recording controls, level meter |
+| `WebSDRPickerSheet.swift` | Nearby KiwiSDR receiver selection with distance/availability |
 
 ## Views - CW Transcription (`CarrierWave/Views/CWTranscription/`)
 | File | Purpose |
