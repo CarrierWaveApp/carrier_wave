@@ -48,24 +48,36 @@ extension WebSDRSession {
                 break
             }
 
+            // Feed audio engine immediately for low-latency playback
+            audioEngine?.write(frame.samples)
+
+            // Update UI directly (already on @MainActor)
+            sMeter = frame.sMeter
+            peakLevel = computePeakLevel(frame.samples)
+
+            // Write to recorder file (async, may involve I/O)
             do {
                 try await recorder?.writeFrame(frame.samples)
             } catch {
                 print("[WebSDR] Write error: \(error.localizedDescription)")
-            }
-
-            audioEngine?.write(frame.samples)
-
-            await MainActor.run { self.sMeter = frame.sMeter }
-
-            if let level = await recorder?.peakLevel {
-                await MainActor.run { self.peakLevel = level }
             }
         }
 
         if state == .recording {
             await reconnect()
         }
+    }
+
+    /// Compute peak level from audio samples (0.0 to 1.0)
+    private func computePeakLevel(_ samples: [Int16]) -> Float {
+        var maxSample: Int16 = 0
+        for sample in samples {
+            let abs = sample == Int16.min ? Int16.max : abs(sample)
+            if abs > maxSample {
+                maxSample = abs
+            }
+        }
+        return Float(maxSample) / Float(Int16.max)
     }
 
     /// Reconnect after connection loss, preserving recorder, audio engine,
