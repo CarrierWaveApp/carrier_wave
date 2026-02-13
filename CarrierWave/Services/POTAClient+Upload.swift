@@ -443,18 +443,19 @@ extension POTAClient {
             service: .pota
         )
 
-        // Empty adif_files = POTA silently rejected the ADIF (no job will be created)
+        // Empty adif_files with HTTP 200 means the file is queued for async processing.
+        // Log a note but treat as success - the server accepted the upload.
         if let adifFiles = json["adif_files"] as? [Any], adifFiles.isEmpty,
            json["qsosAccepted"] == nil
         {
-            debugLog.error(
+            debugLog.info(
                 "POTA returned empty adif_files for \(parkReference) "
-                    + "- upload was silently rejected. JSON: \(json)",
+                    + "- file queued for async processing. JSON: \(json)",
                 service: .pota
             )
             return POTAUploadResult(
-                success: false, qsosAccepted: 0,
-                message: "Upload rejected: POTA returned empty adif_files"
+                success: true, qsosAccepted: qsoCount,
+                message: "Upload accepted, awaiting processing"
             )
         }
 

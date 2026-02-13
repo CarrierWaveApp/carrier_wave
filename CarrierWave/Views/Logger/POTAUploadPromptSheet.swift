@@ -22,93 +22,99 @@ struct POTAUploadPromptSheet: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 24) {
-                // Park info header
-                VStack(spacing: 8) {
-                    Image(systemName: "tree.fill")
-                        .font(.system(size: 48))
-                        .foregroundStyle(.green)
+            VStack(spacing: 0) {
+                ScrollView {
+                    VStack(spacing: 24) {
+                        // Park info header
+                        VStack(spacing: 8) {
+                            Image(systemName: "tree.fill")
+                                .font(.system(size: 48))
+                                .foregroundStyle(.green)
 
-                    Text(parkReference)
-                        .font(.title2)
-                        .fontWeight(.bold)
+                            Text(parkReference)
+                                .font(.title2)
+                                .fontWeight(.bold)
 
-                    if let name = parkName {
-                        Text(name)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
+                            if let name = parkName {
+                                Text(name)
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                    .multilineTextAlignment(.center)
+                            }
+                        }
+
+                        // QSO count
+                        VStack(spacing: 4) {
+                            Text("\(qsoCount)")
+                                .font(.system(size: 48, weight: .bold, design: .rounded))
+                                .foregroundStyle(.green)
+                            Text("QSOs ready to upload")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        // Success state
+                        if uploadState == .success {
+                            VStack(spacing: 12) {
+                                Image(systemName: "clock.arrow.circlepath")
+                                    .font(.system(size: 64))
+                                    .foregroundStyle(.blue)
+                                Text("Submitted!")
+                                    .font(.title2)
+                                    .fontWeight(.semibold)
+                                Text("Awaiting POTA confirmation")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .transition(.scale.combined(with: .opacity))
+                        } else if uploadState == .uploading {
+                            VStack(spacing: 12) {
+                                ProgressView()
+                                    .scaleEffect(1.5)
+                                Text("Uploading to POTA...")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                            }
+                        } else if uploadState == .failed {
+                            VStack(spacing: 12) {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .font(.system(size: 48))
+                                    .foregroundStyle(.orange)
+                                Text("Upload failed")
+                                    .font(.headline)
+                                Text(errorMessage ?? "Please try again from the POTA Activations tab.")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .multilineTextAlignment(.center)
+                            }
+                            .transition(.scale.combined(with: .opacity))
+                        }
+
+                        // Maintenance warning
+                        if isInMaintenance, uploadState == .idle {
+                            maintenanceWarning
+                        }
                     }
+                    .padding(.horizontal)
+                    .padding(.top)
                 }
 
-                // QSO count
-                VStack(spacing: 4) {
-                    Text("\(qsoCount)")
-                        .font(.system(size: 48, weight: .bold, design: .rounded))
-                        .foregroundStyle(.green)
-                    Text("QSOs ready to upload")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-
-                Spacer()
-
-                // Success state
-                if uploadState == .success {
-                    VStack(spacing: 12) {
-                        Image(systemName: "clock.arrow.circlepath")
-                            .font(.system(size: 64))
-                            .foregroundStyle(.blue)
-                        Text("Submitted!")
-                            .font(.title2)
-                            .fontWeight(.semibold)
-                        Text("Awaiting POTA confirmation")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    .transition(.scale.combined(with: .opacity))
-                } else if uploadState == .uploading {
-                    VStack(spacing: 12) {
-                        ProgressView()
-                            .scaleEffect(1.5)
-                        Text("Uploading to POTA...")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                    }
-                } else if uploadState == .failed {
-                    VStack(spacing: 12) {
-                        Image(systemName: "exclamationmark.triangle.fill")
-                            .font(.system(size: 48))
-                            .foregroundStyle(.orange)
-                        Text("Upload failed")
-                            .font(.headline)
-                        Text(errorMessage ?? "Please try again from the POTA Activations tab.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
-                    }
-                    .transition(.scale.combined(with: .opacity))
-                }
-
-                // Maintenance warning
-                if isInMaintenance, uploadState == .idle {
-                    maintenanceWarning
-                }
-
-                // Action buttons
+                // Action buttons pinned at bottom
                 if uploadState == .idle || uploadState == .failed {
-                    if isInMaintenance {
-                        maintenanceActions
-                    } else {
-                        uploadActions
+                    Group {
+                        if isInMaintenance {
+                            maintenanceActions
+                        } else {
+                            uploadActions
+                        }
                     }
+                    .padding()
                 }
             }
-            .padding()
             .navigationTitle("Upload to POTA?")
             .navigationBarTitleDisplayMode(.inline)
         }
-        .presentationDetents([.medium])
+        .presentationDetents([.medium, .large])
         .interactiveDismissDisabled(uploadState == .uploading)
     }
 
