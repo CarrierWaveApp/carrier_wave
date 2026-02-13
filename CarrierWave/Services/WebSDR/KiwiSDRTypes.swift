@@ -24,10 +24,21 @@ nonisolated enum KiwiSDRMode: Sendable {
         }
     }
 
+    /// Human-readable mode name
+    var displayName: String {
+        switch self {
+        case .cw: "CW"
+        case .usb: "USB"
+        case .lsb: "LSB"
+        case .am: "AM"
+        case .nbfm: "NBFM"
+        }
+    }
+
     /// Low frequency cut in Hz
     var lowCut: Int {
         switch self {
-        case .cw: 200
+        case .cw: 300
         case .usb: 300
         case .lsb: -2_700
         case .am: -5_000
@@ -38,12 +49,26 @@ nonisolated enum KiwiSDRMode: Sendable {
     /// High frequency cut in Hz
     var highCut: Int {
         switch self {
-        case .cw: 1_000
+        case .cw: 800
         case .usb: 2_700
         case .lsb: -300
         case .am: 5_000
         case .nbfm: 6_000
         }
+    }
+
+    /// Bandwidth in Hz
+    var bandwidthHz: Int {
+        highCut - lowCut
+    }
+
+    /// Human-readable bandwidth description
+    var bandwidthDescription: String {
+        let bw = bandwidthHz
+        if bw >= 1_000 {
+            return String(format: "%.1f kHz", Double(bw) / 1_000.0)
+        }
+        return "\(bw) Hz"
     }
 
     /// Map from Carrier Wave mode string to KiwiSDR mode

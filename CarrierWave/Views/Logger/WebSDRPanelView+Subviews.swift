@@ -4,6 +4,54 @@ import SwiftUI
 // MARK: - WebSDRPanelView Subviews
 
 extension WebSDRPanelView {
+    var tuningInfoRow: some View {
+        let kiwiMode = webSDRSession.currentKiwiMode
+        return HStack {
+            // Frequency and mode
+            HStack(spacing: 6) {
+                Image(systemName: "dial.low.fill")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text(FrequencyFormatter.formatWithUnit(
+                    webSDRSession.lastFrequencyMHz
+                ))
+                .font(.caption.monospacedDigit())
+                .fontWeight(.medium)
+                Text(kiwiMode.displayName)
+                    .font(.caption)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(.fill.tertiary)
+                    .clipShape(Capsule())
+            }
+
+            Spacer()
+
+            // Filter width
+            HStack(spacing: 4) {
+                Image(systemName: "waveform")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                Text(kiwiMode.bandwidthDescription)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    var browserLink: some View {
+        Group {
+            if let url = webSDRSession.webURL {
+                Link(destination: url) {
+                    Label("Open in Browser", systemImage: "safari")
+                        .font(.caption)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+            }
+        }
+    }
+
     var levelMeter: some View {
         VStack(spacing: 4) {
             GeometryReader { geometry in

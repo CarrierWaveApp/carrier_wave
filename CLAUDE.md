@@ -41,7 +41,7 @@ When spawning subagents via the Task tool, select models based on task complexit
 
 ## Building and Testing
 
-Use the **xcode-build** skill (`~/.claude/skills/xcode-build/scripts/xc`) for all builds and tests. This wraps xcodebuild with `-quiet` and `xcresulttool` for minimal token output. All builds target the physical device **theseus** (no simulator).
+Use the **xcode-build** skill (`~/.claude/skills/xcode-build/scripts/xc`) for all builds and tests. This wraps xcodebuild with `-quiet` and `xcresulttool` for minimal token output. Device name is configured in `CLAUDE.local.md`.
 
 ```bash
 xc build        # Build for device
@@ -50,10 +50,12 @@ xc test-core    # CarrierWaveCore SPM tests (no device)
 xc lint          # SwiftLint with JSON output
 xc format        # SwiftFormat
 xc quality       # format → lint → build (pre-commit gate)
-xc deploy        # Build + install + launch on theseus
+xc deploy        # Build + install + launch on device
 ```
 
 The Makefile is still available for simulator-based builds/tests (`make build`, `make test`) when needed.
+
+**Deploying to device:** When you need to test on-device, run `make deploy` yourself. Do not ask the user to build or deploy — just do it.
 
 ## Overview
 

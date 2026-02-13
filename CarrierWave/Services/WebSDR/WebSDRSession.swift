@@ -91,12 +91,30 @@ final class WebSDRSession {
     let maxReconnectAttempts = 5
     var lastFrequencyMHz: Double = 14.060
     var lastMode: String = "CW"
-    /// Frozen duration preserved across reconnects
-    var frozenDuration: TimeInterval = 0
+    var lastSampleRate: Double = 12_000
+    var silenceTask: Task<Void, Never>?
 
     /// Buffer fill ratio for UI indicator (0.0 to 1.0)
     var bufferFillRatio: Double {
         audioEngine?.fillRatio ?? 0
+    }
+
+    /// Current KiwiSDR mode derived from session mode and frequency
+    var currentKiwiMode: KiwiSDRMode {
+        KiwiSDRMode.from(carrierWaveMode: lastMode, frequencyMHz: lastFrequencyMHz)
+    }
+
+    /// URL to open this receiver in a web browser with current tuning
+    var webURL: URL? {
+        guard let receiver else {
+            return nil
+        }
+        let freqKHz = lastFrequencyMHz * 1_000
+        let mode = currentKiwiMode
+        let urlString = "http://\(receiver.host):\(receiver.port)"
+            + "/?f=\(String(format: "%.3f", freqKHz))"
+            + "/\(mode.kiwiName)/\(mode.lowCut),\(mode.highCut)"
+        return URL(string: urlString)
     }
 
     /// Start recording from a WebSDR
@@ -151,6 +169,7 @@ final class WebSDRSession {
 
     /// Stop recording and disconnect
     func stop() async {
+        stopSilenceWriter()
         durationTimer?.invalidate()
         durationTimer = nil
         streamTask?.cancel()

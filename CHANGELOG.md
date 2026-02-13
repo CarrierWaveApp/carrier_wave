@@ -5,6 +5,8 @@ All notable changes to Carrier Wave will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Add WebSDR tuning info display — show current frequency, mode, and filter bandwidth in WebSDR panel
+- Add WebSDR browser link — open the connected KiwiSDR in Safari with current tuning settings
 - Add WebSDR recording playback — play back recordings with seeking, speed control (0.5x-2x), and amplitude waveform visualization
 - Add QSO-synced audio navigation — dynamically highlight the active QSO based on playback position with bidirectional sync (scrub highlights QSOs, tap QSO seeks audio)
 - Add compact recording player in POTA activation detail — inline card with mini waveform that expands to full-screen player
@@ -13,6 +15,9 @@ All notable changes to Carrier Wave will be documented in this file.
 - Add Sessions tab in Logs — browse all completed logging sessions grouped by month with recording indicators and navigation to player or session detail
 
 ### Fixed
+- Fix KiwiSDR false disconnect on `too_busy=0` — server sends `MSG too_busy=0` as an informational status (not busy), but string matching treated it as a disconnect causing 10-second reconnect cycles
+- Fix WebSDR reconnect drops recording — keep recording timer running and write silence during reconnect gaps instead of pausing recorder
+- Change CW filter passband from 200-1000 Hz to 300-800 Hz for tighter 500 Hz bandwidth
 - Fix recording player amplitude waveform not displaying — use file's native audio format instead of mismatched custom format
 - Fix recording player showing no QSOs when opened from Sessions tab — auto-load QSOs by session ID when none provided
 - Add WebSDR session recording — record audio from a nearby KiwiSDR during logging sessions with WEBSDR command, auto-retune on frequency/mode changes, level meter, and lifecycle integration

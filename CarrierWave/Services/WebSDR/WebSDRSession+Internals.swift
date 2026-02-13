@@ -20,6 +20,7 @@ extension WebSDRSession {
 
         recorder = WebSDRRecorder()
         let sampleRate = await client!.negotiatedSampleRate
+        lastSampleRate = sampleRate
         try await recorder!.startRecording(to: fileURL, sampleRate: sampleRate)
         recordingFileURL = fileURL
 
@@ -81,11 +82,13 @@ extension WebSDRSession {
     }
 
     /// Reconnect after connection loss, preserving recorder, audio engine,
-    /// recording model, and duration timer.
+    /// recording model, and duration timer. Writes silence to the recording
+    /// during the gap so the timer keeps advancing.
     func reconnect() async {
         guard reconnectAttempts < maxReconnectAttempts,
               let receiver
         else {
+            stopSilenceWriter()
             state = .error("Connection lost")
             await finalizeOnError()
             return
@@ -94,11 +97,8 @@ extension WebSDRSession {
         reconnectAttempts += 1
         state = .reconnecting(attempt: reconnectAttempts)
 
-        frozenDuration = recordingDuration
-        durationTimer?.invalidate()
-        durationTimer = nil
-
-        await recorder?.pause()
+        // Keep timer running and write silence to fill the gap
+        startSilenceWriter()
 
         if let client {
             await client.disconnect()
@@ -129,9 +129,7 @@ extension WebSDRSession {
                 frequencyKHz: frequencyKHz,
                 mode: kiwiMode
             )
-            await recorder?.resume()
-            recordingDuration = frozenDuration
-            startDurationTimer()
+            stopSilenceWriter()
             reconnectAttempts = 0
             state = .recording
 
@@ -145,6 +143,7 @@ extension WebSDRSession {
     }
 
     func finalizeOnError() async {
+        stopSilenceWriter()
         durationTimer?.invalidate()
         durationTimer = nil
 
@@ -192,6 +191,7 @@ extension WebSDRSession {
     }
 
     func cleanup() async {
+        stopSilenceWriter()
         if let recorder {
             _ = await recorder.stopRecording()
         }
@@ -202,6 +202,29 @@ extension WebSDRSession {
         audioEngine = nil
         client = nil
         recorder = nil
+    }
+
+    // MARK: - Silence Writer
+
+    /// Write silence frames to the recorder during disconnects
+    /// so the recording duration keeps advancing and the gap is
+    /// filled with silence in the audio file.
+    func startSilenceWriter() {
+        silenceTask?.cancel()
+        let sampleRate = lastSampleRate
+        silenceTask = Task { [weak self] in
+            let chunkSize = Int(sampleRate * 0.1) // ~100ms of silence
+            let silence = [Int16](repeating: 0, count: chunkSize)
+            while !Task.isCancelled {
+                try? await self?.recorder?.writeFrame(silence)
+                try? await Task.sleep(for: .milliseconds(100))
+            }
+        }
+    }
+
+    func stopSilenceWriter() {
+        silenceTask?.cancel()
+        silenceTask = nil
     }
 
     // MARK: - Private Helpers

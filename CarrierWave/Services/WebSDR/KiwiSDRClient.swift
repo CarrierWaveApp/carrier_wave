@@ -183,12 +183,10 @@ actor KiwiSDRClient {
     private func startKeepAlive() {
         keepAliveTask?.cancel()
         keepAliveTask = Task { [weak self] in
+            // Send first keepalive immediately, then every 5 seconds
             while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(10))
-                guard !Task.isCancelled else {
-                    return
-                }
                 try? await self?.send("SET keepalive")
+                try? await Task.sleep(for: .seconds(5))
             }
         }
     }
@@ -266,7 +264,7 @@ actor KiwiSDRClient {
         }
 
         if let busyStr = parseMSGValue(message, key: "too_busy"),
-           let slots = Int(busyStr)
+           let slots = Int(busyStr), slots > 0
         {
             throw KiwiSDRError.tooBusy(slots)
         }
@@ -399,7 +397,15 @@ actor KiwiSDRClient {
         }
 
         // Detect server-initiated disconnect
-        if text.contains("MSG too_busy") || text.contains("MSG down") ||
+        // Note: "too_busy=0" is an informational status (not busy), not a disconnect.
+        let isTooBusy = if let busyStr = parseMSGValue(text, key: "too_busy"),
+                           let slots = Int(busyStr)
+        {
+            slots > 0
+        } else {
+            false
+        }
+        if isTooBusy || text.contains("MSG down") ||
             text.contains("MSG inactivity_timeout")
         {
             state = .error("Server disconnected: \(text)")

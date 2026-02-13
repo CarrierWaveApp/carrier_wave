@@ -201,6 +201,9 @@ struct WebSDRPanelView: View {
                 }
             }
 
+            // Tuning info
+            tuningInfoRow
+
             // Level meter
             levelMeter
 
@@ -246,9 +249,9 @@ struct WebSDRPanelView: View {
                 .buttonStyle(.bordered)
             }
 
-            // File location and share
-            if let fileURL = webSDRSession.recordingFileURL {
-                HStack {
+            // File location, share, and browser link
+            HStack {
+                if let fileURL = webSDRSession.recordingFileURL {
                     Text("WebSDRRecordings/")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
@@ -259,7 +262,11 @@ struct WebSDRPanelView: View {
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
+                } else {
+                    Spacer()
                 }
+
+                browserLink
             }
         }
         .padding()
