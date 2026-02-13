@@ -55,6 +55,9 @@ struct SettingsMainView: View {
     @AppStorage("readOnlyMode") private var readOnlyMode = false
     @AppStorage("bypassPOTAMaintenance") private var bypassPOTAMaintenance = false
 
+    // Appearance
+    @AppStorage("appearanceMode") private var appearanceMode = "system"
+
     // Logger settings
     @AppStorage("loggerDefaultMode") private var defaultMode = "CW"
     @AppStorage("loggerShowActivityPanel") private var showActivityPanel = true
@@ -284,6 +287,12 @@ struct SettingsMainView: View {
                     Text(isIPad ? "\(visibleCount) visible" : "\(visibleCount) in tab bar")
                         .foregroundStyle(.secondary)
                 }
+            }
+
+            Picker("Appearance", selection: $appearanceMode) {
+                Text("System").tag("system")
+                Text("Light").tag("light")
+                Text("Dark").tag("dark")
             }
         } header: {
             Text("Navigation")
