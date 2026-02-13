@@ -293,11 +293,17 @@ struct SettingsMainView: View {
                 Text("System").tag("system")
                 Text("Light").tag("light")
                 Text("Dark").tag("dark")
+                Text("Sunlight").tag("sunlight")
             }
         } header: {
             Text("Navigation")
         } footer: {
-            if isIPad {
+            if appearanceMode == "sunlight" {
+                Text(
+                    "Sunlight mode uses a bright theme with boosted contrast for "
+                        + "outdoor visibility. Best for use in direct sunlight."
+                )
+            } else if isIPad {
                 Text("Choose which tabs appear in the sidebar.")
             } else {
                 Text(

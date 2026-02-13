@@ -12,7 +12,8 @@ All notable changes to Carrier Wave will be documented in this file.
 - Add WebSDR recording file sharing — share button on active recording and in recordings list
 - Add WebSDR Recordings settings screen — browse, share, and delete past recordings
 - Add background audio mode — WebSDR recording and playback continue when app is backgrounded
-- Add appearance mode picker in Settings (System/Light/Dark) to override system color scheme
+- Add appearance mode picker in Settings (System/Light/Dark/Sunlight) to override system color scheme
+- Add Sunlight appearance mode for outdoor visibility — forces light theme with boosted contrast for direct sunlight use
 - Add tiered contact count badges (bronze/silver/gold at 10/25/50 QSOs) in log rows and logger card
 - Extract LoFi client into CarrierWaveCore package for sharing between iOS app and CLI tool
 - Add `lofi-cli` executable target for standalone LoFi download testing without iOS Simulator

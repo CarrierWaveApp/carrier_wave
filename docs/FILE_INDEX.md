@@ -444,6 +444,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `FrequencyFormatter.swift` | Frequency formatting with sub-kHz precision support |
 | `KeychainHelper.swift` | Secure credential storage |
 | `MaidenheadConverter.swift` | Grid square to coordinate conversion |
+| `SunlightMode.swift` | Sunlight mode environment key and view modifier for outdoor visibility |
 
 ## Tests (`CarrierWaveTests/`)
 | File | Purpose |
