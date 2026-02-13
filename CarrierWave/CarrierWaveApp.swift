@@ -48,6 +48,7 @@ struct CarrierWaveApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView(tourState: tourState)
+                .sunlightMode(isSunlightMode)
                 .preferredColorScheme(colorScheme)
                 .task {
                     // Preload caches on app launch (loads from disk, refreshes in background)
@@ -70,10 +71,15 @@ struct CarrierWaveApp: App {
     @State private var tourState = TourState()
     @AppStorage("appearanceMode") private var appearanceMode = "system"
 
+    private var isSunlightMode: Bool {
+        appearanceMode == "sunlight"
+    }
+
     private var colorScheme: ColorScheme? {
         switch appearanceMode {
         case "light": .light
         case "dark": .dark
+        case "sunlight": .light // Sunlight mode forces light scheme
         default: nil
         }
     }
