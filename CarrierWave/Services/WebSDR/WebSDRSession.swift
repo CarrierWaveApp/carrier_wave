@@ -57,25 +57,25 @@ final class WebSDRSession {
     }
 
     /// Current state
-    private(set) var state: State = .idle
+    var state: State = .idle
 
     /// Connected receiver info
-    private(set) var receiver: KiwiSDRReceiver?
+    var receiver: KiwiSDRReceiver?
 
     /// Recording duration in seconds
-    private(set) var recordingDuration: TimeInterval = 0
+    var recordingDuration: TimeInterval = 0
 
     /// Audio peak level for level meter (0.0 to 1.0)
-    private(set) var peakLevel: Float = 0
+    var peakLevel: Float = 0
 
     /// S-meter reading from the KiwiSDR
-    private(set) var sMeter: UInt16 = 0
+    var sMeter: UInt16 = 0
 
     /// Whether audio output is muted
-    private(set) var isMuted = false
+    var isMuted = false
 
     /// URL of the current recording file (for sharing)
-    private(set) var recordingFileURL: URL?
+    var recordingFileURL: URL?
 
     // MARK: Internal (accessed by WebSDRSession+Internals)
 

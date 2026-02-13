@@ -195,8 +195,17 @@ final class KiwiSDRAudioEngine {
                 object: nil,
                 queue: nil
             ) { [weak self] notification in
+                let typeValue = notification.userInfo?[
+                    AVAudioSessionInterruptionTypeKey
+                ] as? UInt
+                let optionValue = notification.userInfo?[
+                    AVAudioSessionInterruptionOptionKey
+                ] as? UInt
                 Task { @MainActor in
-                    self?.handleInterruption(notification)
+                    self?.handleInterruption(
+                        typeValue: typeValue,
+                        optionValue: optionValue
+                    )
                 }
             }
         )
@@ -206,8 +215,11 @@ final class KiwiSDRAudioEngine {
                 object: nil,
                 queue: nil
             ) { [weak self] notification in
+                let reasonValue = notification.userInfo?[
+                    AVAudioSessionRouteChangeReasonKey
+                ] as? UInt
                 Task { @MainActor in
-                    self?.handleRouteChange(notification)
+                    self?.handleRouteChange(reasonValue: reasonValue)
                 }
             }
         )
@@ -220,9 +232,11 @@ final class KiwiSDRAudioEngine {
         notificationTokens.removeAll()
     }
 
-    private func handleInterruption(_ notification: Notification) {
-        guard let info = notification.userInfo,
-              let typeValue = info[AVAudioSessionInterruptionTypeKey] as? UInt,
+    private func handleInterruption(
+        typeValue: UInt?,
+        optionValue: UInt?
+    ) {
+        guard let typeValue,
               let type = AVAudioSession.InterruptionType(rawValue: typeValue)
         else {
             return
@@ -232,9 +246,9 @@ final class KiwiSDRAudioEngine {
         case .began:
             break
         case .ended:
-            let options = (
-                info[AVAudioSessionInterruptionOptionKey] as? UInt
-            ).flatMap { AVAudioSession.InterruptionOptions(rawValue: $0) }
+            let options = optionValue.flatMap {
+                AVAudioSession.InterruptionOptions(rawValue: $0)
+            }
             if options?.contains(.shouldResume) == true {
                 startEngine()
             }
@@ -243,10 +257,11 @@ final class KiwiSDRAudioEngine {
         }
     }
 
-    private func handleRouteChange(_ notification: Notification) {
-        guard let info = notification.userInfo,
-              let reasonValue = info[AVAudioSessionRouteChangeReasonKey] as? UInt,
-              let reason = AVAudioSession.RouteChangeReason(rawValue: reasonValue)
+    private func handleRouteChange(reasonValue: UInt?) {
+        guard let reasonValue,
+              let reason = AVAudioSession.RouteChangeReason(
+                  rawValue: reasonValue
+              )
         else {
             return
         }
