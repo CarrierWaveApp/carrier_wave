@@ -289,7 +289,7 @@ class SyncService: ObservableObject {
 
         // Download with timeout and progress tracking
         syncPhase = .downloading(service: .lofi)
-        let qsos = try await withTimeout(seconds: syncTimeoutSeconds, service: .lofi) {
+        let downloadResult = try await withTimeout(seconds: syncTimeoutSeconds, service: .lofi) {
             try await self.lofiClient.fetchAllQsosSinceLastSync { [weak self] progress in
                 Task { @MainActor [weak self] in
                     guard let self else {
@@ -303,7 +303,8 @@ class SyncService: ObservableObject {
                 }
             }
         }
-        debugLog.info("Fetched \(qsos.count) raw QSOs", service: .lofi)
+        let qsos = downloadResult.qsos
+        debugLog.info("Fetched \(downloadResult.rawFetchCount) raw QSOs (\(qsos.count) after dedup)", service: .lofi)
         let fetched = qsos.compactMap { FetchedQSO.fromLoFi($0.0, operation: $0.1) }
         debugLog.info("After filtering: \(fetched.count) valid QSOs", service: .lofi)
 

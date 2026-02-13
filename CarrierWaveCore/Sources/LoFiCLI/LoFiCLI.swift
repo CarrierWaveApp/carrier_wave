@@ -152,11 +152,11 @@ struct LoFiCLI {
         printInfo("Downloading QSOs...")
         let startTime = Date()
 
-        let qsos: [(LoFiQso, LoFiOperation)]
+        let result: LoFiDownloadResult
         if fresh {
-            qsos = try await client.fetchAllQsos()
+            result = try await client.fetchAllQsos()
         } else {
-            qsos = try await client.fetchAllQsosSinceLastSync(
+            result = try await client.fetchAllQsosSinceLastSync(
                 onProgress: { progress in
                     let pct = progress.totalQSOs > 0
                         ? Int(Double(progress.downloadedQSOs) / Double(progress.totalQSOs) * 100)
@@ -169,6 +169,7 @@ struct LoFiCLI {
             FileHandle.standardError.write(Data("\n".utf8))
         }
 
+        let qsos = result.qsos
         let elapsed = Date().timeIntervalSince(startTime)
 
         // Group by operation for summary
@@ -180,6 +181,9 @@ struct LoFiCLI {
         printInfo("Download complete in \(String(format: "%.1f", elapsed))s")
         printInfo("  Operations: \(opCounts.count)")
         printInfo("  QSOs: \(qsos.count)")
+
+        // Three-step pipeline breakdown
+        printPipelineBreakdown(result: result)
 
         // Date range
         let timestamps = qsos.compactMap(\.0.startAtMillis)

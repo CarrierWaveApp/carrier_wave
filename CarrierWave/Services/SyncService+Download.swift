@@ -173,7 +173,7 @@ extension SyncService {
         }
 
         do {
-            let qsos = try await withTimeout(seconds: timeout, service: .lofi) {
+            let downloadResult = try await withTimeout(seconds: timeout, service: .lofi) {
                 try await self.lofiClient.fetchAllQsosSinceLastSync { [weak self] progress in
                     Task { @MainActor [weak self] in
                         guard let self else {
@@ -192,7 +192,11 @@ extension SyncService {
                     }
                 }
             }
-            debugLog.info("Downloaded \(qsos.count) raw QSOs from LoFi API", service: .lofi)
+            let qsos = downloadResult.qsos
+            debugLog.info(
+                "Downloaded \(downloadResult.rawFetchCount) raw QSOs from LoFi API (\(qsos.count) after dedup)",
+                service: .lofi
+            )
 
             // Log date range of downloaded QSOs
             if !qsos.isEmpty {
@@ -430,7 +434,8 @@ extension SyncService {
         debugLog.info("Ignoring last sync timestamp, fetching ALL QSOs", service: .lofi)
 
         // Fetch ALL QSOs, not just since last sync
-        let qsos = try await lofiClient.fetchAllQsos()
+        let downloadResult = try await lofiClient.fetchAllQsos()
+        let qsos = downloadResult.qsos
 
         // Log date range
         if !qsos.isEmpty {

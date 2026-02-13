@@ -12,6 +12,11 @@ All notable changes to Carrier Wave will be documented in this file.
 - Add tappable conditions detail sheet showing full solar metrics (K-index, SFI, sunspots) and weather details (temperature, wind, humidity)
 - Add structured solar/weather fields to ActivationMetadata with one-time backfill from existing text data
 
+### Fixed
+- Fix LoFi sync fetching every QSO twice (server ignores `deleted` param on QSO endpoint, causing 2x bandwidth)
+- Fix two-fer park references lost during QSO merge — combine park references instead of "first wins" so both parks are preserved
+- Add Step 4 (dedup key grouping) to CLI pipeline breakdown so QSO counts match the app
+
 ### Changed
 - Display contact nickname (if available) instead of full name in logger session log and QSO log
 - Show callsign notes emoji in QSO log rows

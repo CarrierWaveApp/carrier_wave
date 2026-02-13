@@ -229,9 +229,10 @@ actor QSOProcessingActor {
             existing.rstReceived = existing.rstReceived.nonEmpty ?? fetched.rstReceived
             existing.myGrid = existing.myGrid.nonEmpty ?? fetched.myGrid
             existing.theirGrid = existing.theirGrid.nonEmpty ?? fetched.theirGrid
-            existing.parkReference =
-                existing.parkReference.nonEmpty
-                    ?? fetched.parkReference.flatMap { ParkReference.sanitizeMulti($0) }
+            existing.parkReference = FetchedQSO.combineParkReferences(
+                existing.parkReference,
+                fetched.parkReference.flatMap { ParkReference.sanitizeMulti($0) }
+            )
             existing.theirParkReference =
                 existing.theirParkReference.nonEmpty
                     ?? fetched.theirParkReference.flatMap { ParkReference.sanitize($0) }
@@ -329,7 +330,7 @@ actor QSOProcessingActor {
                 myCallsign: merged.myCallsign.isEmpty ? other.myCallsign : merged.myCallsign,
                 myGrid: merged.myGrid.nonEmpty ?? other.myGrid,
                 theirGrid: merged.theirGrid.nonEmpty ?? other.theirGrid,
-                parkReference: merged.parkReference.nonEmpty ?? other.parkReference,
+                parkReference: FetchedQSO.combineParkReferences(merged.parkReference, other.parkReference),
                 theirParkReference: merged.theirParkReference.nonEmpty ?? other.theirParkReference,
                 notes: merged.notes.nonEmpty ?? other.notes,
                 rawADIF: merged.rawADIF.nonEmpty ?? other.rawADIF,

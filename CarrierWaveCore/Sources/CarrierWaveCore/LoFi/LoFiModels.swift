@@ -1,5 +1,24 @@
 import Foundation
 
+// MARK: - LoFiDownloadResult
+
+/// Result of a LoFi download including pipeline stats for diagnostics
+public struct LoFiDownloadResult: @unchecked Sendable {
+    /// QSOs after UUID deduplication
+    public let qsos: [(LoFiQso, LoFiOperation)]
+    /// Total QSOs received from API before dedup
+    public let rawFetchCount: Int
+}
+
+// MARK: - LoFiQsoFetchResult
+
+/// Internal result from fetching QSOs across operations (before final filtering)
+public struct LoFiQsoFetchResult: @unchecked Sendable {
+    public let qsosByUUID: [String: (LoFiQso, LoFiOperation)]
+    public let maxSyncMillis: Int64
+    public let rawFetchCount: Int
+}
+
 // MARK: - LoFiRegistrationRequest
 
 public struct LoFiRegistrationRequest: Encodable, @unchecked Sendable {

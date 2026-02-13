@@ -23,6 +23,7 @@ public actor QSODownloadAccumulator {
     public let maxBackoffMs: UInt64 = 5_000
 
     public func addResults(_ qsos: [(LoFiQso, LoFiOperation)], syncMillis: Int64) {
+        totalReceived += qsos.count
         for (qso, op) in qsos where qsosByUUID[qso.uuid] == nil {
             qsosByUUID[qso.uuid] = (qso, op)
         }
@@ -66,6 +67,10 @@ public actor QSODownloadAccumulator {
         qsosByUUID.count
     }
 
+    public func getTotalReceived() -> Int {
+        totalReceived
+    }
+
     public func getResults() -> ([String: (LoFiQso, LoFiOperation)], Int64) {
         (qsosByUUID, maxSyncMillis)
     }
@@ -74,6 +79,7 @@ public actor QSODownloadAccumulator {
 
     private var qsosByUUID: [String: (LoFiQso, LoFiOperation)] = [:]
     private var maxSyncMillis: Int64 = 0
+    private var totalReceived = 0
     private var processedCount = 0
     private var currentConcurrency: Int
     private var consecutiveErrors = 0

@@ -8,7 +8,7 @@ public extension LoFiClient {
     /// - Parameter onProgress: Optional callback invoked as QSOs are downloaded
     func fetchAllQsosSinceLastSync(
         onProgress: (@Sendable (SyncProgressInfo) -> Void)? = nil
-    ) async throws -> [(LoFiQso, LoFiOperation)] {
+    ) async throws -> LoFiDownloadResult {
         let lastSyncMillis = getLastSyncMillis()
         let isFreshSync = lastSyncMillis == 0
 
@@ -65,7 +65,7 @@ public extension LoFiClient {
         let operations = try await fetchAllOperations(isFreshSync: isFreshSync)
 
         // Fetch QSOs for each operation with progress tracking
-        let (qsosByUUID, maxSyncMillis) = try await fetchQsosForOperations(
+        let fetchResult = try await fetchQsosForOperations(
             operations,
             lastSyncMillis: lastSyncMillis,
             isFreshSync: isFreshSync,
@@ -84,11 +84,11 @@ public extension LoFiClient {
         )
 
         // Update last sync timestamp
-        if maxSyncMillis > lastSyncMillis {
-            try? credentials.setString(String(maxSyncMillis), for: .lastSyncMillis)
+        if fetchResult.maxSyncMillis > lastSyncMillis {
+            try? credentials.setString(String(fetchResult.maxSyncMillis), for: .lastSyncMillis)
         }
 
-        let allQsos = Array(qsosByUUID.values)
+        let allQsos = Array(fetchResult.qsosByUUID.values)
 
         // Log comprehensive summary
         logSyncSummary(
@@ -97,11 +97,11 @@ public extension LoFiClient {
             hasCutoffDate: hasCutoffDate
         )
 
-        return allQsos
+        return LoFiDownloadResult(qsos: allQsos, rawFetchCount: fetchResult.rawFetchCount)
     }
 
     /// Fetch ALL QSOs from all operations (ignoring last sync timestamp, for force re-download)
-    func fetchAllQsos() async throws -> [(LoFiQso, LoFiOperation)] {
+    func fetchAllQsos() async throws -> LoFiDownloadResult {
         logger.info("Force re-downloading ALL QSOs")
 
         // Re-register to get fresh account info (including cutoff date)
@@ -120,13 +120,13 @@ public extension LoFiClient {
         let operations = try await fetchAllOperations(isFreshSync: true)
 
         // Fetch all QSOs starting from 0
-        let (qsosByUUID, _) = try await fetchQsosForOperations(
+        let fetchResult = try await fetchQsosForOperations(
             operations,
             lastSyncMillis: 0,
             isFreshSync: true
         )
 
-        let allQsos = Array(qsosByUUID.values)
+        let allQsos = Array(fetchResult.qsosByUUID.values)
 
         // Log comprehensive summary
         logSyncSummary(
@@ -135,7 +135,7 @@ public extension LoFiClient {
             hasCutoffDate: hasCutoffDate
         )
 
-        return allQsos
+        return LoFiDownloadResult(qsos: allQsos, rawFetchCount: fetchResult.rawFetchCount)
     }
 }
 
@@ -218,7 +218,7 @@ extension LoFiClient {
         lastSyncMillis: Int64,
         isFreshSync: Bool,
         onProgress: ((Int, Int) -> Void)? = nil
-    ) async throws -> ([String: (LoFiQso, LoFiOperation)], Int64) {
+    ) async throws -> LoFiQsoFetchResult {
         let qsoSyncStart: Int64 = isFreshSync ? 0 : lastSyncMillis
         let totalOperations = operations.count
         let syncFlags = getSyncFlags()
@@ -292,7 +292,13 @@ extension LoFiClient {
             await Task.yield()
         }
 
-        return await accumulator.getResults()
+        let totalReceived = await accumulator.getTotalReceived()
+        let (dict, syncMillis) = await accumulator.getResults()
+        return LoFiQsoFetchResult(
+            qsosByUUID: dict,
+            maxSyncMillis: syncMillis,
+            rawFetchCount: totalReceived
+        )
     }
 
     func fetchQsosForOperation(
@@ -302,39 +308,37 @@ extension LoFiClient {
     ) async throws -> ([(LoFiQso, LoFiOperation)], Int64) {
         var qsos: [(LoFiQso, LoFiOperation)] = []
         var maxSyncMillis: Int64 = 0
+        var qsoSyncedSince = syncStart
 
-        for deleted in [false, true] {
-            var qsoSyncedSince = syncStart
+        // Note: LoFi QSO endpoint ignores the `deleted` param and always returns all QSOs
+        // (both active and deleted), unlike the operations endpoint. No need to fetch twice.
+        while true {
+            let response = try await fetchOperationQsos(
+                operationUUID: operation.uuid,
+                syncedSinceMillis: qsoSyncedSince,
+                otherClientsOnly: !isFreshSync
+            )
 
-            while true {
-                let response = try await fetchOperationQsos(
-                    operationUUID: operation.uuid,
-                    syncedSinceMillis: qsoSyncedSince,
-                    otherClientsOnly: !isFreshSync,
-                    deleted: deleted
-                )
-
-                for qso in response.qsos {
-                    qsos.append((qso, operation))
-                    if let syncedAt = qso.syncedAtMillis {
-                        maxSyncMillis = max(maxSyncMillis, Int64(syncedAt))
-                    }
+            for qso in response.qsos {
+                qsos.append((qso, operation))
+                if let syncedAt = qso.syncedAtMillis {
+                    maxSyncMillis = max(maxSyncMillis, Int64(syncedAt))
                 }
-
-                if response.meta.qsos.recordsLeft == 0 {
-                    break
-                }
-                guard
-                    let next = response.meta.qsos.nextUpdatedAtMillis
-                    ?? response.meta.qsos.nextSyncedAtMillis
-                else {
-                    logger.warning(
-                        "Op \(operation.uuid): recordsLeft=\(response.meta.qsos.recordsLeft) but no next page"
-                    )
-                    break
-                }
-                qsoSyncedSince = Int64(next)
             }
+
+            if response.meta.qsos.recordsLeft == 0 {
+                break
+            }
+            guard
+                let next = response.meta.qsos.nextUpdatedAtMillis
+                ?? response.meta.qsos.nextSyncedAtMillis
+            else {
+                logger.warning(
+                    "Op \(operation.uuid): recordsLeft=\(response.meta.qsos.recordsLeft) but no next page"
+                )
+                break
+            }
+            qsoSyncedSince = Int64(next)
         }
 
         return (qsos, maxSyncMillis)

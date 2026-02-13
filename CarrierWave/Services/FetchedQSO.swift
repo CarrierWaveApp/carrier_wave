@@ -102,6 +102,21 @@ struct FetchedQSO: Sendable {
     }
 }
 
+// MARK: - Park Reference Merging
+
+extension FetchedQSO {
+    /// Combine two park reference strings, deduplicating and sorting.
+    /// e.g., "US-3984" + "US-9944" → "US-3984, US-9944"
+    /// e.g., "US-4526" + "US-4526" → "US-4526" (no change)
+    /// e.g., "US-1044, US-3791" + "US-3791" → "US-1044, US-3791"
+    nonisolated static func combineParkReferences(_ lhs: String?, _ rhs: String?) -> String? {
+        let parksA = lhs.map { ParkReference.split($0) } ?? []
+        let parksB = rhs.map { ParkReference.split($0) } ?? []
+        let combined = Set(parksA + parksB).sorted()
+        return combined.isEmpty ? nil : combined.joined(separator: ", ")
+    }
+}
+
 // MARK: - FetchedQSO Factory Methods
 
 extension FetchedQSO {
