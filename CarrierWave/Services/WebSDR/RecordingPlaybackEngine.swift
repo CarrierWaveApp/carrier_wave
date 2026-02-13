@@ -24,6 +24,14 @@ final class RecordingPlaybackEngine: NSObject {
     /// Index of the QSO currently under the playback head (nil if none)
     private(set) var activeQSOIndex: Int?
 
+    // MARK: - Amplitude Envelope
+
+    /// Downsampled amplitude envelope for waveform display (0.0 to 1.0)
+    private(set) var amplitudeEnvelope: [Float] = []
+
+    /// Whether the amplitude envelope is still being computed
+    private(set) var isLoadingAmplitude = false
+
     /// Current playback rate (0.5, 1.0, 1.5, 2.0)
     var playbackRate: Float = 1.0 {
         didSet { player?.rate = playbackRate }
@@ -54,6 +62,8 @@ final class RecordingPlaybackEngine: NSObject {
         qsoOffsets = qsoTimestamps.map { timestamp in
             timestamp.timeIntervalSince(recordingStart)
         }
+
+        scanAmplitude(fileURL: fileURL)
     }
 
     // MARK: - Transport Controls
@@ -134,6 +144,25 @@ final class RecordingPlaybackEngine: NSObject {
         }
     }
 
+    // MARK: - Amplitude Scanning
+
+    /// Scan the audio file and compute amplitude envelope on a background task.
+    /// Call after load(). Each sample represents 0.5 seconds of audio.
+    func scanAmplitude(fileURL: URL) {
+        isLoadingAmplitude = true
+        let sampleWindowSeconds = 0.5
+
+        Task.detached(priority: .utility) { [weak self] in
+            let envelope = Self.computeEnvelope(
+                fileURL: fileURL, windowSeconds: sampleWindowSeconds
+            )
+            await MainActor.run {
+                self?.amplitudeEnvelope = envelope
+                self?.isLoadingAmplitude = false
+            }
+        }
+    }
+
     // MARK: Private
 
     // MARK: - QSO Time Alignment
@@ -149,6 +178,95 @@ final class RecordingPlaybackEngine: NSObject {
 
     private var player: AVAudioPlayer?
     private var displayLink: CADisplayLink?
+
+    /// Compute peak amplitude envelope from a CAF/audio file.
+    /// Returns one float (0.0-1.0) per window of `windowSeconds`.
+    private static func computeEnvelope(
+        fileURL: URL, windowSeconds: Double
+    ) -> [Float] {
+        guard let audioFile = try? AVAudioFile(forReading: fileURL) else {
+            return []
+        }
+
+        let sampleRate = audioFile.processingFormat.sampleRate
+        let totalFrames = AVAudioFrameCount(audioFile.length)
+        let windowFrames = AVAudioFrameCount(sampleRate * windowSeconds)
+
+        guard windowFrames > 0 else {
+            return []
+        }
+
+        // Read into a float buffer for peak detection
+        guard let format = AVAudioFormat(
+            commonFormat: .pcmFormatFloat32,
+            sampleRate: sampleRate,
+            channels: 1,
+            interleaved: true
+        ) else {
+            return []
+        }
+
+        var envelope: [Float] = []
+        let bufferCapacity = min(windowFrames, 65_536)
+
+        guard let buffer = AVAudioPCMBuffer(
+            pcmFormat: format, frameCapacity: bufferCapacity
+        ) else {
+            return []
+        }
+
+        var framesRemaining = totalFrames
+        while framesRemaining > 0 {
+            let framesToRead = min(bufferCapacity, framesRemaining)
+            buffer.frameLength = 0
+
+            do {
+                try audioFile.read(into: buffer, frameCount: framesToRead)
+            } catch {
+                break
+            }
+
+            guard let channelData = buffer.floatChannelData?[0] else {
+                break
+            }
+
+            let peaks = extractPeaks(
+                from: channelData,
+                frameCount: Int(buffer.frameLength),
+                windowFrames: Int(windowFrames)
+            )
+            envelope.append(contentsOf: peaks)
+
+            framesRemaining -= buffer.frameLength
+        }
+
+        return envelope
+    }
+
+    /// Extract peak amplitudes from a buffer in windowed chunks
+    private static func extractPeaks(
+        from channelData: UnsafePointer<Float>,
+        frameCount: Int,
+        windowFrames: Int
+    ) -> [Float] {
+        var peaks: [Float] = []
+        var offset = 0
+
+        while offset < frameCount {
+            let end = min(offset + windowFrames, frameCount)
+            var peak: Float = 0
+            for i in offset ..< end {
+                let abs = Swift.abs(channelData[i])
+                if abs > peak {
+                    peak = abs
+                }
+            }
+            peaks.append(peak)
+            offset = end
+        }
+
+        return peaks
+    }
 
     private func startDisplayLink() {
         stopDisplayLink()
