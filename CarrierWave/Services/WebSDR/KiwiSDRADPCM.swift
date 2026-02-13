@@ -1,0 +1,78 @@
+import Foundation
+
+/// IMA ADPCM decoder for KiwiSDR compressed audio streams.
+/// KiwiSDR uses IMA ADPCM (4:1 compression) for mono audio modes.
+enum KiwiSDRADPCM {
+    // MARK: Internal
+
+    /// Decode IMA ADPCM data to Int16 PCM samples.
+    /// Each input byte produces two output samples (4 bits per sample).
+    static func decode(_ data: Data, state: inout DecoderState) -> [Int16] {
+        var samples: [Int16] = []
+        samples.reserveCapacity(data.count * 2)
+
+        for byte in data {
+            // Low nibble first, then high nibble
+            samples.append(decodeNibble(byte & 0x0F, state: &state))
+            samples.append(decodeNibble(byte >> 4, state: &state))
+        }
+
+        return samples
+    }
+
+    /// Mutable decoder state carried between frames
+    struct DecoderState {
+        var predictor: Int32 = 0
+        var stepIndex: Int = 0
+    }
+
+    // MARK: Private
+
+    // swiftlint:disable comma
+    private static let stepTable: [Int32] = [
+        7,     8,     9,     10,    11,    12,    13,    14,
+        16,    17,    19,    21,    23,    25,    28,    31,
+        34,    37,    41,    45,    50,    55,    60,    66,
+        73,    80,    88,    97,    107,   118,   130,   143,
+        157,   173,   190,   209,   230,   253,   279,   307,
+        337,   371,   408,   449,   494,   544,   598,   658,
+        724,   796,   876,   963,   1060,  1166,  1282,  1411,
+        1552,  1707,  1878,  2066,  2272,  2499,  2749,  3024,
+        3327,  3660,  4026,  4428,  4871,  5358,  5894,  6484,
+        7132,  7845,  8630,  9493,  10442, 11487, 12635, 13899,
+        15289, 16818, 18500, 20350, 22385, 24623, 27086, 29794,
+        32767,
+    ]
+
+    private static let indexTable: [Int] = [
+        -1, -1, -1, -1, 2, 4, 6, 8,
+        -1, -1, -1, -1, 2, 4, 6, 8,
+    ]
+    // swiftlint:enable comma
+
+    private static func decodeNibble(_ nibble: UInt8, state: inout DecoderState) -> Int16 {
+        let step = stepTable[state.stepIndex]
+
+        // Update step index
+        state.stepIndex += indexTable[Int(nibble)]
+        state.stepIndex = max(0, min(88, state.stepIndex))
+
+        // Calculate difference
+        var diff = step >> 3
+        if nibble & 4 != 0 { diff += step }
+        if nibble & 2 != 0 { diff += step >> 1 }
+        if nibble & 1 != 0 { diff += step >> 2 }
+
+        // Apply with sign
+        if nibble & 8 != 0 {
+            state.predictor -= diff
+        } else {
+            state.predictor += diff
+        }
+
+        // Clamp to Int16 range
+        state.predictor = max(-32_768, min(32_767, state.predictor))
+
+        return Int16(state.predictor)
+    }
+}

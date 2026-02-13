@@ -44,6 +44,9 @@ enum LoggerCommand: Equatable {
     /// Open radio manual in CW Field Guide
     case manual
 
+    /// Show WebSDR recording panel
+    case websdr
+
     // MARK: Internal
 
     /// Help text listing all available commands
@@ -67,6 +70,7 @@ enum LoggerCommand: Equatable {
         HIDDEN          - Show deleted QSOs
         NOTE <text>     - Add a note to the session log
         MANUAL          - Open radio manual (or MAN)
+        WEBSDR          - Record from a nearby WebSDR (or SDR)
         HELP            - Show this help (or ?)
 
         Type a frequency directly: 14.060, 14060, 14060kHz
@@ -110,6 +114,8 @@ enum LoggerCommand: Equatable {
             "Add note: \"\(text)\""
         case .manual:
             "Open radio manual"
+        case .websdr:
+            "Record from WebSDR"
         }
     }
 
@@ -142,6 +148,8 @@ enum LoggerCommand: Equatable {
             "note.text"
         case .manual:
             "book.closed"
+        case .websdr:
+            "radio"
         }
     }
 
@@ -296,6 +304,9 @@ enum LoggerCommand: Equatable {
         case "MANUAL",
              "MAN":
             .manual
+        case "WEBSDR",
+             "SDR":
+            .websdr
         case "HELP",
              "?":
             .help
@@ -403,6 +414,11 @@ extension LoggerCommand {
         CommandSuggestion(
             command: "MANUAL", description: "Open radio manual",
             icon: "book.closed", prefixes: ["MAN"]
+        ),
+        // WEBSDR
+        CommandSuggestion(
+            command: "WEBSDR", description: "Record from a nearby WebSDR",
+            icon: "radio", prefixes: ["WEB", "SDR"]
         ),
         // HELP
         CommandSuggestion(

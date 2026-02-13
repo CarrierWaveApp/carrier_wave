@@ -38,6 +38,9 @@ final class LoggingSessionManager {
     /// Service for monitoring RBN/POTA spots during session
     let spotMonitoringService = SpotMonitoringService()
 
+    /// WebSDR recording session (optional, user-initiated)
+    let webSDRSession = WebSDRSession()
+
     let modelContext: ModelContext
 
     /// Whether there's an active session
@@ -137,6 +140,11 @@ final class LoggingSessionManager {
         // Stop spot monitoring
         spotMonitoringService.stopMonitoring()
 
+        // Stop WebSDR recording if active
+        if webSDRSession.state.isActive {
+            Task { await webSDRSession.stop() }
+        }
+
         // Re-enable screen timeout
         UIApplication.shared.isIdleTimerDisabled = false
 
@@ -158,6 +166,11 @@ final class LoggingSessionManager {
 
         // Pause spot monitoring
         spotMonitoringService.stopMonitoring()
+
+        // Pause WebSDR recording
+        if webSDRSession.state == .recording {
+            Task { await webSDRSession.pause() }
+        }
 
         try? modelContext.save()
     }
@@ -182,6 +195,11 @@ final class LoggingSessionManager {
 
         // Restart spot monitoring
         startSpotMonitoring()
+
+        // Resume WebSDR recording
+        if webSDRSession.state == .paused {
+            Task { await webSDRSession.resume() }
+        }
 
         try? modelContext.save()
     }
@@ -226,6 +244,11 @@ final class LoggingSessionManager {
         let oldFrequency = session.frequency
         session.updateFrequency(frequency)
         try? modelContext.save()
+
+        // Retune WebSDR if recording
+        if webSDRSession.state == .recording {
+            Task { await webSDRSession.retune(frequencyMHz: frequency) }
+        }
 
         // Check if mode should change based on frequency
         let suggestedMode = BandPlanService.suggestedMode(for: frequency)
@@ -288,6 +311,11 @@ final class LoggingSessionManager {
         let oldMode = session.mode
         session.updateMode(mode)
         try? modelContext.save()
+
+        // Retune WebSDR if recording
+        if webSDRSession.state == .recording {
+            Task { await webSDRSession.changeMode(mode, frequencyMHz: session.frequency) }
+        }
 
         // Return whether this is a QSY that could be spotted
         // Only prompt if QSY spots are enabled in settings
@@ -483,6 +511,11 @@ final class LoggingSessionManager {
         spotCommentsService.clear()
         attachedSpotCommentIds = []
         spotMonitoringService.stopMonitoring()
+
+        // Stop WebSDR recording
+        if webSDRSession.state.isActive {
+            Task { await webSDRSession.stop() }
+        }
 
         // Re-enable screen timeout
         UIApplication.shared.isIdleTimerDisabled = false
