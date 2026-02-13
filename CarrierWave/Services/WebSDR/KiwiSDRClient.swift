@@ -45,6 +45,11 @@ actor KiwiSDRClient {
         lastSMeter
     }
 
+    /// Negotiated sample rate from the server handshake
+    var negotiatedSampleRate: Double {
+        sampleRate
+    }
+
     /// Connect and start receiving audio. Returns an AsyncStream of audio frames.
     func connect(
         frequencyKHz: Double,
@@ -59,8 +64,8 @@ actor KiwiSDRClient {
         targetFrequency = frequencyKHz
         targetMode = mode
 
-        let timestamp = Int(Date().timeIntervalSince1970 * 1_000)
-        let urlString = "ws://\(host):\(port)/kiwi/\(timestamp)/SND"
+        let timestamp = Int(Date().timeIntervalSince1970)
+        let urlString = "ws://\(host):\(port)/\(timestamp)/SND"
         guard let url = URL(string: urlString) else {
             throw KiwiSDRError.invalidURL
         }
@@ -78,10 +83,11 @@ actor KiwiSDRClient {
         // Wait for sample_rate message
         sampleRate = try await waitForSampleRate()
 
-        // Acknowledge and identify
+        // Acknowledge, identify, and configure
         let inRate = Int(sampleRate)
         try await send("SET AR OK in=\(inRate) out=\(inRate)")
-        try await send("SERVER DE CLIENT CarrierWave SND")
+        try await send("SET ident_user=CarrierWave")
+        try await send("SET compression=1")
 
         // Tune to requested frequency and mode
         try await tune(frequencyKHz: frequencyKHz, mode: mode)
@@ -193,10 +199,13 @@ actor KiwiSDRClient {
             throw KiwiSDRError.notConnected
         }
 
-        // Read messages until we get sample_rate (with timeout)
-        for _ in 0 ..< 20 {
+        // Read messages until we get sample_rate or a server error
+        for _ in 0 ..< 30 {
             let message = try await ws.receive()
             if case let .string(text) = message {
+                // Check for error responses first
+                try checkForServerError(text)
+
                 if let rate = parseSampleRate(text) {
                     return rate
                 }
@@ -207,16 +216,42 @@ actor KiwiSDRClient {
     }
 
     private func parseSampleRate(_ message: String) -> Double? {
-        // Format: "MSG sample_rate=12000.000000"
-        guard message.contains("sample_rate=") else {
+        parseMSGValue(message, key: "sample_rate").flatMap { Double($0) }
+    }
+
+    /// Extract a value for a key from a "MSG key=value key2=value2" message.
+    private func parseMSGValue(_ message: String, key: String) -> String? {
+        guard message.contains("\(key)=") else {
             return nil
         }
-        let parts = message.components(separatedBy: "sample_rate=")
+        let parts = message.components(separatedBy: "\(key)=")
         guard parts.count > 1 else {
             return nil
         }
-        let valueStr = parts[1].components(separatedBy: " ").first ?? parts[1]
-        return Double(valueStr)
+        return parts[1].components(separatedBy: " ").first ?? parts[1]
+    }
+
+    /// Check a server message for error conditions and throw if found.
+    private func checkForServerError(_ message: String) throws {
+        if let badp = parseMSGValue(message, key: "badp"),
+           let code = Int(badp), code != 0
+        {
+            throw KiwiSDRError.authenticationFailed
+        }
+
+        if let busyStr = parseMSGValue(message, key: "too_busy"),
+           let slots = Int(busyStr)
+        {
+            throw KiwiSDRError.tooBusy(slots)
+        }
+
+        if message.contains("MSG down") {
+            throw KiwiSDRError.serverDown
+        }
+
+        if let redirect = parseMSGValue(message, key: "redirect") {
+            throw KiwiSDRError.serverRedirect(redirect)
+        }
     }
 
     /// Main receive loop for WebSocket messages
@@ -317,8 +352,25 @@ actor KiwiSDRClient {
     }
 
     private func processTextMessage(_ text: String) {
-        // Handle server messages (auth results, status updates, etc.)
-        // Currently we only need sample_rate which is handled during handshake
+        // Check for ADPCM state resets from the server
+        if let adpcmStr = parseMSGValue(text, key: "audio_adpcm_state") {
+            let parts = adpcmStr.split(separator: ",")
+            if parts.count == 2,
+               let index = Int(parts[0]),
+               let prev = Int32(parts[1])
+            {
+                adpcmState.stepIndex = max(0, min(88, index))
+                adpcmState.predictor = prev
+            }
+        }
+
+        // Detect server-initiated disconnect
+        if text.contains("MSG too_busy") || text.contains("MSG down") ||
+            text.contains("MSG inactivity_timeout")
+        {
+            state = .error("Server disconnected: \(text)")
+            audioContinuation?.finish()
+        }
     }
 }
 
@@ -412,6 +464,10 @@ nonisolated enum KiwiSDRError: Error, LocalizedError {
     case alreadyConnected
     case handshakeFailed(String)
     case connectionLost
+    case authenticationFailed
+    case tooBusy(Int)
+    case serverDown
+    case serverRedirect(String)
 
     // MARK: Internal
 
@@ -427,6 +483,14 @@ nonisolated enum KiwiSDRError: Error, LocalizedError {
             "KiwiSDR handshake failed: \(reason)"
         case .connectionLost:
             "Connection to KiwiSDR lost"
+        case .authenticationFailed:
+            "KiwiSDR authentication failed (bad password)"
+        case let .tooBusy(slots):
+            "KiwiSDR is full (\(slots) channels in use)"
+        case .serverDown:
+            "KiwiSDR server is down"
+        case let .serverRedirect(url):
+            "KiwiSDR redirected to \(url)"
         }
     }
 }
