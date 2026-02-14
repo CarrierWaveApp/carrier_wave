@@ -284,6 +284,22 @@ extension SyncService {
         }
     }
 
+    /// Clear needsUpload flags on hidden (soft-deleted) QSOs.
+    func clearHiddenQSOUploadFlagsAsync() async {
+        do {
+            let result = try await Self.processingActor.clearHiddenQSOUploadFlags(
+                container: modelContext.container
+            )
+            if result.clearedCount > 0 {
+                let msg =
+                    "Cleared needsUpload on \(result.clearedCount) hidden (soft-deleted) QSO(s)"
+                SyncDebugLog.shared.warning(msg)
+            }
+        } catch {
+            SyncDebugLog.shared.error("Failed to clear hidden QSO upload flags: \(error)")
+        }
+    }
+
     /// Clear needsUpload flags on metadata pseudo-modes (WEATHER, SOLAR, NOTE from Ham2K PoLo).
     func clearMetadataUploadFlagsAsync() async {
         do {

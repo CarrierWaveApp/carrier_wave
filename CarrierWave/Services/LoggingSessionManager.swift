@@ -502,6 +502,10 @@ final class LoggingSessionManager {
     /// Hide a QSO (soft delete)
     func hideQSO(_ qso: QSO) {
         qso.isHidden = true
+        // Clear upload flags so hidden QSOs are never synced
+        for presence in qso.servicePresence where presence.needsUpload {
+            presence.needsUpload = false
+        }
         try? modelContext.save()
     }
 
@@ -533,6 +537,10 @@ final class LoggingSessionManager {
             let qsos = try modelContext.fetch(descriptor)
             for qso in qsos {
                 qso.isHidden = true
+                // Clear upload flags so hidden QSOs are never synced
+                for presence in qso.servicePresence where presence.needsUpload {
+                    presence.needsUpload = false
+                }
             }
         } catch {
             // Continue with session deletion even if QSO hiding fails

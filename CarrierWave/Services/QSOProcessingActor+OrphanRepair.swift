@@ -26,6 +26,54 @@ extension QSOProcessingActor {
         let byCallsign: [String: Int]
     }
 
+    /// Result of clearing upload flags on hidden QSOs
+    struct HiddenQSORepairResult: Sendable {
+        let clearedCount: Int
+    }
+
+    /// Clear needsUpload flags on hidden (soft-deleted) QSOs.
+    /// Hidden QSOs should never be synced to any service.
+    func clearHiddenQSOUploadFlags(container: ModelContainer) async throws -> HiddenQSORepairResult {
+        let context = ModelContext(container)
+        context.autosaveEnabled = false
+
+        // Fetch all ServicePresence records that need upload
+        let presenceDescriptor = FetchDescriptor<ServicePresence>(
+            predicate: #Predicate<ServicePresence> { $0.needsUpload }
+        )
+        let presenceRecords = try context.fetch(presenceDescriptor)
+
+        var clearedCount = 0
+        var unsavedCount = 0
+
+        for presence in presenceRecords {
+            try Task.checkCancellation()
+
+            guard let qso = presence.qso else {
+                continue
+            }
+
+            if qso.isHidden {
+                presence.needsUpload = false
+                clearedCount += 1
+                unsavedCount += 1
+
+                // Save periodically
+                if unsavedCount >= 100 {
+                    try context.save()
+                    unsavedCount = 0
+                }
+            }
+        }
+
+        // Save any remaining changes
+        if unsavedCount > 0 {
+            try context.save()
+        }
+
+        return HiddenQSORepairResult(clearedCount: clearedCount)
+    }
+
     /// Clear needsUpload flags on metadata pseudo-modes (WEATHER, SOLAR, NOTE).
     /// These are activation metadata from Ham2K PoLo that should never be synced.
     func clearMetadataUploadFlags(container: ModelContainer) async throws -> MetadataRepairResult {
