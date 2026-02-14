@@ -72,6 +72,8 @@ struct POTAActivationDetailView: View {
     @State private var uploadErrors: [String: String] = [:]
 
     @State private var showingConditions = false
+    @State private var qsoToDelete: QSO?
+    @State private var hiddenQSOIds: Set<UUID> = []
 
     private var hasCompletedJob: Bool {
         matchingJobs.contains { $0.status == .completed }
@@ -82,7 +84,9 @@ struct POTAActivationDetailView: View {
     }
 
     private var sortedQSOs: [QSO] {
-        activation.qsos.sorted { $0.timestamp > $1.timestamp }
+        activation.qsos
+            .filter { !hiddenQSOIds.contains($0.id) }
+            .sorted { $0.timestamp > $1.timestamp }
     }
 
     private var activationRadio: String? {
@@ -256,9 +260,43 @@ struct POTAActivationDetailView: View {
         Section {
             ForEach(sortedQSOs) { qso in
                 POTAQSORow(qso: qso, parks: activation.parks)
+                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                        Button(role: .destructive) {
+                            qsoToDelete = qso
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                    }
             }
         } header: {
-            Text("\(activation.qsoCount) QSO\(activation.qsoCount == 1 ? "" : "s")")
+            Text("\(sortedQSOs.count) QSO\(sortedQSOs.count == 1 ? "" : "s")")
+        }
+        .alert(
+            "Delete QSO",
+            isPresented: Binding(
+                get: { qsoToDelete != nil },
+                set: {
+                    if !$0 {
+                        qsoToDelete = nil
+                    }
+                }
+            )
+        ) {
+            Button("Delete", role: .destructive) {
+                if let qso = qsoToDelete {
+                    hiddenQSOIds.insert(qso.id)
+                    qso.isHidden = true
+                    try? modelContext.save()
+                }
+                qsoToDelete = nil
+            }
+            Button("Cancel", role: .cancel) {
+                qsoToDelete = nil
+            }
+        } message: {
+            if let qso = qsoToDelete {
+                Text("Delete QSO with \(qso.callsign)?")
+            }
         }
     }
 
@@ -269,7 +307,7 @@ struct POTAActivationDetailView: View {
             Button {
                 onEdit()
             } label: {
-                Label("Edit Metadata", systemImage: "pencil")
+                Label("Edit Info", systemImage: "pencil")
             }
             Button {
                 onMap()
