@@ -23,6 +23,7 @@ All notable changes to Carrier Wave will be documented in this file.
 - Fix activity feed not auto-refreshing — feed now polls every 60 seconds while Activity tab is visible
 - Fix third-party callsigns being sent to server for DX contact activities — workedCallsign is now only uploaded for worked-friend events where both parties are app users
 - Fix unbounded QSO fetch in activity detection that could freeze UI for large datasets — capped at 10k most-recent QSOs
+- Fix friend requests not appearing in Friends list — list now syncs from server on appear instead of only showing cached data
 
 ### Changed
 - Rename "Edit Metadata" to "Edit Info" in POTA activation detail toolbar menu
