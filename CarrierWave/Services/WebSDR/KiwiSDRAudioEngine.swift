@@ -44,7 +44,7 @@ final class KiwiSDRAudioEngine {
         }
 
         inputSampleRate = sampleRate.rounded()
-        prebufferThreshold = Int(inputSampleRate) // 1 second of samples
+        prebufferThreshold = Int(inputSampleRate * 2) // 2 seconds of samples
         ringBuffer.reset()
         startError = nil
         isBuffering = true
@@ -91,6 +91,19 @@ final class KiwiSDRAudioEngine {
     }
 
     // MARK: Private
+
+    // MARK: - Adaptive Rate Control
+
+    /// Target fill ratio for the ring buffer. The adaptive rate controller
+    /// adjusts playback speed to keep the buffer near this level.
+    private static let targetFillRatio = 0.75
+
+    /// Maximum rate adjustment (±8%). Inaudible for narrowband ham radio.
+    private static let maxRateOffset: Float = 0.08
+
+    /// Gain for the proportional controller. Maps fill deviation to rate
+    /// adjustment: deviation of 0.4 → maxRateOffset.
+    private static let rateGain: Float = 0.20
 
     private let ringBuffer: AudioRingBuffer
     private let engine = AVAudioEngine()
@@ -194,10 +207,19 @@ final class KiwiSDRAudioEngine {
         )
         sourceNode = node
 
-        engine.attach(node)
+        // TimePitch node for adaptive rate control — adjusts playback
+        // speed ±5% to keep the ring buffer near 50% full.
+        let pitchNode = AVAudioUnitTimePitch()
+        pitchNode.rate = 1.0
+        pitchNode.pitch = 0 // no pitch shift
+        timePitchNode = pitchNode
 
-        // Source → MainMixer → Output
-        engine.connect(node, to: engine.mainMixerNode, format: monoFormat)
+        engine.attach(node)
+        engine.attach(pitchNode)
+
+        // Source → TimePitch → MainMixer → Output
+        engine.connect(node, to: pitchNode, format: monoFormat)
+        engine.connect(pitchNode, to: engine.mainMixerNode, format: monoFormat)
 
         engine.mainMixerNode.outputVolume = isMuted ? 0 : 1
     }
@@ -240,6 +262,34 @@ final class KiwiSDRAudioEngine {
 
         startEngine()
         isPlaying = true
+        startRateTimer()
+    }
+
+    private func startRateTimer() {
+        rateTimer?.invalidate()
+        rateTimer = Timer.scheduledTimer(
+            withTimeInterval: 0.5,
+            repeats: true
+        ) { [weak self] _ in
+            Task { @MainActor in
+                self?.adjustPlaybackRate()
+            }
+        }
+    }
+
+    private func adjustPlaybackRate() {
+        guard let timePitchNode, isPlaying else {
+            return
+        }
+
+        let fill = ringBuffer.fillRatio
+        let error = Float(fill - Self.targetFillRatio)
+
+        // Proportional control: positive error (buffer filling up) → speed up,
+        // negative error (buffer draining) → slow down
+        let raw = error * Self.rateGain
+        let adjustment = min(Self.maxRateOffset, max(-Self.maxRateOffset, raw))
+        timePitchNode.rate = 1.0 + adjustment
     }
 
     // MARK: - Interruption Handling
