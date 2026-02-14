@@ -5,9 +5,11 @@ All notable changes to Carrier Wave will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Auto-populate grid square from GPS when station profile has "Use Current Location" enabled — works in profile setup, editing, and live activity log with location indicator icon
 - Enhance park selector with GPS-based nearby parks, activation/QSO counts per park, and unified search by number or name
 - Track SDR parameter changes (frequency/mode) during WebSDR recordings with timestamps and offsets, enabling accurate segment reconstruction for playback rendering
 - Stitch WebSDR recordings across pause/resume and disconnect/reconnect — silence fills gaps to maintain accurate timeline, dormant state keeps recording alive for up to 30 minutes between connections
+- Show station profile name and grid square dividers in Activity Log QSO lists — visual sections appear when station profile or grid changes between QSOs, stored per-QSO for historical accuracy
 
 ## [1.30.0] - 2026-02-13
 

@@ -17,7 +17,7 @@ Pure logic library that can be tested without iOS Simulator. Run tests with `mak
 | `Sources/CarrierWaveCore/DeduplicationMatcher.swift` | Duplicate detection logic |
 | `Sources/CarrierWaveCore/DetectedCallsign.swift` | Detected callsign with context |
 | `Sources/CarrierWaveCore/FrequencyFormatter.swift` | Frequency formatting and parsing |
-| `Sources/CarrierWaveCore/MaidenheadConverter.swift` | Grid square to coordinate conversion |
+| `Sources/CarrierWaveCore/MaidenheadConverter.swift` | Grid square ↔ coordinate conversion |
 | `Sources/CarrierWaveCore/ModeEquivalence.swift` | Mode family classification and equivalence |
 | `Sources/CarrierWaveCore/MorseCode.swift` | Morse code tables and timing utilities |
 | `Sources/CarrierWaveCore/MorseEditDistance.swift` | Levenshtein distance on morse patterns |
@@ -469,7 +469,8 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `FieldGuideLinker.swift` | Match radio names to CW Field Guide IDs and open deep links |
 | `FrequencyFormatter.swift` | Frequency formatting with sub-kHz precision support |
 | `KeychainHelper.swift` | Secure credential storage |
-| `MaidenheadConverter.swift` | Grid square to coordinate conversion |
+| `GridLocationService.swift` | One-shot GPS → 6-char Maidenhead grid square service |
+| `MaidenheadConverter.swift` | Grid square to coordinate conversion (and reverse) |
 | `SunlightMode.swift` | Sunlight mode environment key and view modifier for outdoor visibility |
 
 ## Tests (`CarrierWaveTests/`)

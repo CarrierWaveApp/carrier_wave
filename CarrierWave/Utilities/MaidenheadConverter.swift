@@ -15,6 +15,16 @@ enum MaidenheadConverter {
         return CLLocationCoordinate2D(latitude: coord.latitude, longitude: coord.longitude)
     }
 
+    /// Convert a coordinate to a 6-character Maidenhead grid locator
+    nonisolated static func grid(from coordinate: CLLocationCoordinate2D) -> String {
+        CarrierWaveCore.MaidenheadConverter.grid(
+            from: Coordinate(
+                latitude: coordinate.latitude,
+                longitude: coordinate.longitude
+            )
+        )
+    }
+
     /// Check if a grid locator string is valid
     nonisolated static func isValid(_ grid: String) -> Bool {
         CarrierWaveCore.MaidenheadConverter.isValid(grid)

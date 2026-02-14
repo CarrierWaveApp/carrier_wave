@@ -12,6 +12,7 @@ struct ActivityLogHeader: View {
     let profileName: String?
     let profileSummary: String?
     let grid: String?
+    var useCurrentLocation: Bool = false
     let onSwitchProfile: () -> Void
 
     var body: some View {
@@ -70,9 +71,12 @@ struct ActivityLogHeader: View {
             Spacer()
 
             if let grid, !grid.isEmpty {
-                Label(grid, systemImage: "mappin")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                Label(
+                    grid,
+                    systemImage: useCurrentLocation ? "location.fill" : "mappin"
+                )
+                .font(.caption)
+                .foregroundStyle(useCurrentLocation ? .blue : .secondary)
             }
 
             Button("Switch") {

@@ -72,4 +72,61 @@ struct MaidenheadConverterTests {
         #expect(amsterdam?.latitude == 52.5)
         #expect(amsterdam?.longitude == 5.0)
     }
+
+    // MARK: - grid(from:) Tests
+
+    @Test("Convert coordinate to 6-char grid")
+    func coordinateToGrid() {
+        // Seattle area: CN87
+        let grid = MaidenheadConverter.grid(
+            from: Coordinate(latitude: 47.5, longitude: -123.0)
+        )
+        #expect(grid.count == 6)
+        #expect(grid.hasPrefix("CN87"))
+    }
+
+    @Test("Convert coordinate to grid — known locations")
+    func coordinateToGridKnownLocations() {
+        // Amsterdam: JO22
+        let amsterdam = MaidenheadConverter.grid(
+            from: Coordinate(latitude: 52.5, longitude: 5.0)
+        )
+        #expect(amsterdam.hasPrefix("JO22"))
+
+        // FN31 center
+        let fn31 = MaidenheadConverter.grid(
+            from: Coordinate(latitude: 41.5, longitude: -73.0)
+        )
+        #expect(fn31.hasPrefix("FN31"))
+    }
+
+    @Test(
+        "Round-trip: grid → coordinate → grid returns same 6-char grid",
+        arguments: ["CN87vq", "FN31pr", "JO22of", "EM73sb", "IO91wm", "AA00aa", "RR99xx"]
+    )
+    func roundTrip6Char(grid: String) {
+        guard let coord = MaidenheadConverter.coordinate(from: grid) else {
+            Issue.record("Failed to convert grid \(grid) to coordinate")
+            return
+        }
+        let result = MaidenheadConverter.grid(from: coord)
+        #expect(result.uppercased() == grid.uppercased())
+    }
+
+    @Test("Grid from edge coordinates")
+    func gridFromEdgeCoordinates() {
+        // South pole
+        let southPole = MaidenheadConverter.grid(
+            from: Coordinate(latitude: -89.9, longitude: 0.0)
+        )
+        #expect(southPole.count == 6)
+        #expect(southPole.hasPrefix("JA"))
+
+        // North pole
+        let northPole = MaidenheadConverter.grid(
+            from: Coordinate(latitude: 89.9, longitude: 0.0)
+        )
+        #expect(northPole.count == 6)
+        #expect(northPole.hasPrefix("JR"))
+    }
 }

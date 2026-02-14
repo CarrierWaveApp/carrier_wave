@@ -44,6 +44,7 @@ struct ActivityLogView: View {
                            let profile = StationProfileStorage.profile(for: newId)
                         {
                             manager.switchProfile(profile)
+                            requestGPSGridIfNeeded()
                         }
                     }
                 )
@@ -97,6 +98,14 @@ struct ActivityLogView: View {
             spotMonitor.startHunterMonitoring(
                 myGrid: manager.activeLog?.currentGrid
             )
+            requestGPSGridIfNeeded()
+        }
+        .onChange(of: locationService.currentGrid) { _, newGrid in
+            if let newGrid,
+               manager.currentProfile?.useCurrentLocation == true
+            {
+                manager.updateGrid(newGrid)
+            }
         }
         .onDisappear {
             spotMonitor.stopMonitoring()
@@ -119,6 +128,7 @@ struct ActivityLogView: View {
     @State private var spotFilters = SpotFilters()
     @State private var spotMonitor = SpotMonitoringService()
     @State private var workedBeforeCache = WorkedBeforeCache()
+    @State private var locationService = GridLocationService()
 
     private var headerSection: some View {
         ActivityLogHeader(
@@ -128,6 +138,7 @@ struct ActivityLogView: View {
             profileName: manager.currentProfile?.name,
             profileSummary: manager.currentProfile?.summaryLine,
             grid: manager.activeLog?.currentGrid,
+            useCurrentLocation: manager.currentProfile?.useCurrentLocation ?? false,
             onSwitchProfile: { showingProfilePicker = true }
         )
     }
@@ -198,5 +209,11 @@ struct ActivityLogView: View {
         currentMode = mode
         manager.refreshTodayStats()
         recentQSOs = manager.fetchRecentQSOs()
+    }
+
+    private func requestGPSGridIfNeeded() {
+        if manager.currentProfile?.useCurrentLocation == true {
+            locationService.requestGrid()
+        }
     }
 }

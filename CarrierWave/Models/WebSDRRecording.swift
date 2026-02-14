@@ -91,9 +91,11 @@ final class WebSDRRecording {
                 }
             case .mode:
                 currentMode = event.newValue
-            case .pause, .sdrDisconnected:
+            case .pause,
+                 .sdrDisconnected:
                 currentSilence = true
-            case .resume, .sdrConnected:
+            case .resume,
+                 .sdrConnected:
                 currentSilence = false
             }
 

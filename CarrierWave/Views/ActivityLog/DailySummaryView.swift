@@ -51,7 +51,11 @@ struct DailySummaryView: View {
             "Delete QSO",
             isPresented: Binding(
                 get: { qsoToDelete != nil },
-                set: { if !$0 { qsoToDelete = nil } }
+                set: { newValue in
+                    if !newValue {
+                        qsoToDelete = nil
+                    }
+                }
             )
         ) {
             Button("Delete", role: .destructive) {
@@ -100,6 +104,11 @@ struct DailySummaryView: View {
 
     @ScaledMetric(relativeTo: .caption) private var timeColumnWidth: CGFloat = 44
     @ScaledMetric(relativeTo: .subheadline) private var rowHeight: CGFloat = 44
+    @ScaledMetric(relativeTo: .caption) private var dividerHeight: CGFloat = 28
+
+    private var dividerCount: Int {
+        dayQSOs.indices.filter { shouldShowDivider(at: $0) }.count
+    }
 
     private var shareCardImage: UIImage? {
         let callsign = manager.activeLog?.myCallsign ?? ""
@@ -153,11 +162,16 @@ struct DailySummaryView: View {
                 .padding(.vertical, 8)
 
             List {
-                ForEach(dayQSOs) { qso in
+                ForEach(Array(dayQSOs.enumerated()), id: \.element.id) { index, qso in
                     Button {
                         editingQSO = qso
                     } label: {
-                        dailyQSORow(qso)
+                        VStack(alignment: .leading, spacing: 0) {
+                            if shouldShowDivider(at: index) {
+                                stationGridDivider(for: qso)
+                            }
+                            dailyQSORow(qso)
+                        }
                     }
                     .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
                     .listRowBackground(Color.clear)
@@ -174,7 +188,10 @@ struct DailySummaryView: View {
             .listStyle(.plain)
             .scrollDisabled(true)
             .scrollContentBackground(.hidden)
-            .frame(height: rowHeight * CGFloat(dayQSOs.count))
+            .frame(
+                height: rowHeight * CGFloat(dayQSOs.count)
+                    + dividerHeight * CGFloat(dividerCount)
+            )
         }
         .background(Color(.secondarySystemGroupedBackground))
         .clipShape(RoundedRectangle(cornerRadius: 12))
@@ -254,18 +271,62 @@ struct DailySummaryView: View {
             .background(bandColor(band).opacity(0.15))
             .clipShape(Capsule())
     }
+}
 
-    private func formatTime(_ date: Date) -> String {
+// MARK: - DailySummaryView + Helpers
+
+extension DailySummaryView {
+    func stationGridDivider(for qso: QSO) -> some View {
+        let profileName = qso.stationProfileName ?? manager.currentProfile?.name
+        return HStack(spacing: 4) {
+            Image(systemName: "location.fill")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            if let name = profileName {
+                Text(name)
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.secondary)
+            }
+            if profileName != nil, qso.myGrid != nil {
+                Text("\u{00B7}")
+                    .foregroundStyle(.tertiary)
+            }
+            if let grid = qso.myGrid {
+                Text(grid)
+                    .font(.caption.monospaced())
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+        }
+        .frame(height: dividerHeight)
+        .accessibilityElement(children: .combine)
+    }
+
+    func formatTime(_ date: Date) -> String {
         Self.timeFormatter.string(from: date)
     }
 
-    private func deleteQSO(_ qso: QSO) {
+    func shouldShowDivider(at index: Int) -> Bool {
+        let qso = dayQSOs[index]
+        guard qso.stationProfileName != nil || qso.myGrid != nil else {
+            return false
+        }
+        // Always show for newest (top) and oldest (bottom) QSO
+        if index == 0 || index == dayQSOs.count - 1 {
+            return true
+        }
+        let prev = dayQSOs[index - 1]
+        return qso.stationProfileName != prev.stationProfileName
+            || qso.myGrid != prev.myGrid
+    }
+
+    func deleteQSO(_ qso: QSO) {
         qso.isHidden = true
         try? modelContext.save()
         loadDayQSOs()
     }
 
-    private func loadDayQSOs() {
+    func loadDayQSOs() {
         guard let log = manager.activeLog else {
             dayQSOs = []
             return

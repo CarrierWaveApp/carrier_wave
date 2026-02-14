@@ -35,13 +35,13 @@ final class RecordingPlaybackEngine: NSObject {
     /// Whether the amplitude envelope is still being computed
     private(set) var isLoadingAmplitude = false
 
+    /// Recording segments with frequency/mode metadata (empty if no changes)
+    private(set) var segments: [SDRRecordingSegment] = []
+
     /// Current playback rate (0.5, 1.0, 1.5, 2.0)
     var playbackRate: Float = 1.0 {
         didSet { player?.rate = playbackRate }
     }
-
-    /// Recording segments with frequency/mode metadata (empty if no changes)
-    private(set) var segments: [SDRRecordingSegment] = []
 
     /// Whether a recording is loaded and ready to play
     var isLoaded: Bool {

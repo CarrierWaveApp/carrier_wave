@@ -51,7 +51,11 @@ struct RecentQSOsSection: View {
             "Delete QSO",
             isPresented: Binding(
                 get: { qsoToDelete != nil },
-                set: { if !$0 { qsoToDelete = nil } }
+                set: { newValue in
+                    if !newValue {
+                        qsoToDelete = nil
+                    }
+                }
             )
         ) {
             Button("Delete", role: .destructive) {
@@ -85,14 +89,24 @@ struct RecentQSOsSection: View {
     @State private var qsoToDelete: QSO?
 
     @ScaledMetric(relativeTo: .subheadline) private var rowHeight: CGFloat = 44
+    @ScaledMetric(relativeTo: .caption) private var dividerHeight: CGFloat = 28
+
+    private var dividerCount: Int {
+        recentQSOs.indices.filter { shouldShowDivider(at: $0) }.count
+    }
 
     private var qsoListContent: some View {
         List {
-            ForEach(recentQSOs) { qso in
+            ForEach(Array(recentQSOs.enumerated()), id: \.element.id) { index, qso in
                 Button {
                     editingQSO = qso
                 } label: {
-                    recentQSORow(qso)
+                    VStack(alignment: .leading, spacing: 0) {
+                        if shouldShowDivider(at: index) {
+                            stationGridDivider(for: qso)
+                        }
+                        recentQSORow(qso)
+                    }
                 }
                 .listRowInsets(EdgeInsets(top: 0, leading: 12, bottom: 0, trailing: 12))
                 .listRowBackground(Color.clear)
@@ -109,7 +123,36 @@ struct RecentQSOsSection: View {
         .listStyle(.plain)
         .scrollDisabled(true)
         .scrollContentBackground(.hidden)
-        .frame(height: rowHeight * CGFloat(recentQSOs.count))
+        .frame(
+            height: rowHeight * CGFloat(recentQSOs.count)
+                + dividerHeight * CGFloat(dividerCount)
+        )
+    }
+
+    private func stationGridDivider(for qso: QSO) -> some View {
+        let profileName = qso.stationProfileName ?? manager?.currentProfile?.name
+        return HStack(spacing: 4) {
+            Image(systemName: "location.fill")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            if let name = profileName {
+                Text(name)
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.secondary)
+            }
+            if profileName != nil, qso.myGrid != nil {
+                Text("\u{00B7}")
+                    .foregroundStyle(.tertiary)
+            }
+            if let grid = qso.myGrid {
+                Text(grid)
+                    .font(.caption.monospaced())
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+        }
+        .frame(height: dividerHeight)
+        .accessibilityElement(children: .combine)
     }
 
     private func recentQSORow(_ qso: QSO) -> some View {
@@ -150,6 +193,20 @@ struct RecentQSOsSection: View {
         }
         .frame(minHeight: rowHeight)
         .contentShape(Rectangle())
+    }
+
+    private func shouldShowDivider(at index: Int) -> Bool {
+        let qso = recentQSOs[index]
+        guard qso.stationProfileName != nil || qso.myGrid != nil else {
+            return false
+        }
+        // Always show for newest (top) and oldest (bottom) QSO
+        if index == 0 || index == recentQSOs.count - 1 {
+            return true
+        }
+        let prev = recentQSOs[index - 1]
+        return qso.stationProfileName != prev.stationProfileName
+            || qso.myGrid != prev.myGrid
     }
 
     private func formattedTime(_ date: Date) -> String {

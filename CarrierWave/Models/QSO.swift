@@ -30,6 +30,7 @@ final class QSO {
         country: String? = nil,
         power: Int? = nil,
         myRig: String? = nil,
+        stationProfileName: String? = nil,
         sotaRef: String? = nil,
         qrzLogId: String? = nil,
         qrzConfirmed: Bool = false,
@@ -61,6 +62,7 @@ final class QSO {
         self.country = country
         self.power = power
         self.myRig = myRig
+        self.stationProfileName = stationProfileName
         self.sotaRef = sotaRef
         self.qrzLogId = qrzLogId
         self.qrzConfirmed = qrzConfirmed
@@ -97,6 +99,7 @@ final class QSO {
     var country: String?
     var power: Int?
     var myRig: String?
+    var stationProfileName: String?
     var sotaRef: String?
 
     // QRZ sync tracking

@@ -60,12 +60,32 @@ struct AddEditProfileSheet: View {
                 }
 
                 Section("Location") {
-                    TextField("Grid Square", text: $grid)
-                        .font(.body.monospaced())
-                        .textInputAutocapitalization(.characters)
-                        .autocorrectionDisabled()
-
                     Toggle("Use Current Location", isOn: $useCurrentLocation)
+
+                    if useCurrentLocation {
+                        HStack {
+                            Label {
+                                if locationService.isLocating {
+                                    Text("Locating...")
+                                        .foregroundStyle(.secondary)
+                                } else if let gpsGrid = locationService.currentGrid {
+                                    Text(gpsGrid)
+                                        .font(.body.monospaced())
+                                } else {
+                                    Text("Waiting for GPS")
+                                        .foregroundStyle(.secondary)
+                                }
+                            } icon: {
+                                Image(systemName: "location.fill")
+                                    .foregroundStyle(.blue)
+                            }
+                        }
+                    } else {
+                        TextField("Grid Square", text: $grid)
+                            .font(.body.monospaced())
+                            .textInputAutocapitalization(.characters)
+                            .autocorrectionDisabled()
+                    }
                 }
 
                 Section {
@@ -83,6 +103,16 @@ struct AddEditProfileSheet: View {
                         .disabled(
                             name.trimmingCharacters(in: .whitespaces).isEmpty
                         )
+                }
+            }
+            .task {
+                if useCurrentLocation {
+                    locationService.requestGrid()
+                }
+            }
+            .onChange(of: useCurrentLocation) { _, isOn in
+                if isOn {
+                    locationService.requestGrid()
                 }
             }
             .sheet(isPresented: $showingRadioPicker) {
@@ -103,6 +133,7 @@ struct AddEditProfileSheet: View {
     @State private var useCurrentLocation: Bool
     @State private var isDefault: Bool
     @State private var showingRadioPicker = false
+    @State private var locationService = GridLocationService()
 
     private let profileId: UUID
 
@@ -117,7 +148,7 @@ struct AddEditProfileSheet: View {
             power: Int(powerText),
             rig: rig,
             antenna: antenna.isEmpty ? nil : antenna,
-            grid: grid.isEmpty ? nil : grid.uppercased(),
+            grid: useCurrentLocation ? nil : (grid.isEmpty ? nil : grid.uppercased()),
             useCurrentLocation: useCurrentLocation,
             isDefault: isDefault
         )

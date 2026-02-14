@@ -2481,6 +2481,28 @@ struct QSOEditSheet: View {
                         .lineLimit(3 ... 6)
                 }
 
+                if qso.stationProfileName != nil || qso.myGrid != nil {
+                    Section("My Station") {
+                        if let profileName = qso.stationProfileName {
+                            HStack {
+                                Text("Station")
+                                Spacer()
+                                Text(profileName)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        if let myGrid = qso.myGrid {
+                            HStack {
+                                Text("Grid")
+                                Spacer()
+                                Text(myGrid)
+                                    .font(.body.monospaced())
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                }
+
                 Section {
                     Button(role: .destructive) {
                         showDeleteConfirmation = true

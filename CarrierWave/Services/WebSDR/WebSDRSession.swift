@@ -378,11 +378,13 @@ final class WebSDRSession {
         )
         parameterChanges.append(event)
     }
+}
 
-    // MARK: - Private
+// MARK: - WebSDRSession + Private
 
+extension WebSDRSession {
     /// Connect to the WebSDR and begin streaming audio into the recorder.
-    private func connectAndRecord(
+    func connectAndRecord(
         receiver: KiwiSDRReceiver,
         frequencyMHz: Double,
         mode: String,
@@ -424,5 +426,4 @@ final class WebSDRSession {
             await cleanup()
         }
     }
-
 }

@@ -88,8 +88,8 @@ final class ActivityLogManager {
             isActive: true
         )
 
-        // Set grid from profile if available
-        if let profile = currentProfile {
+        // Set grid from profile if available (skip for location-based profiles)
+        if let profile = currentProfile, !profile.useCurrentLocation {
             log.currentGrid = profile.grid
         }
 
@@ -210,7 +210,8 @@ final class ActivityLogManager {
             state: state,
             country: country,
             power: profile?.power,
-            myRig: profile?.rig
+            myRig: profile?.rig,
+            stationProfileName: profile?.name
         )
 
         // Link QSO to this activity log via loggingSessionId

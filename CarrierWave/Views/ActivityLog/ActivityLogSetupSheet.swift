@@ -51,10 +51,32 @@ struct ActivityLogSetupSheet: View {
                     TextField("Antenna", text: $antenna)
                         .textInputAutocapitalization(.words)
 
-                    TextField("Grid Square", text: $grid)
-                        .font(.body.monospaced())
-                        .textInputAutocapitalization(.characters)
-                        .autocorrectionDisabled()
+                    Toggle("Use Current Location", isOn: $useCurrentLocation)
+
+                    if useCurrentLocation {
+                        HStack {
+                            Label {
+                                if locationService.isLocating {
+                                    Text("Locating...")
+                                        .foregroundStyle(.secondary)
+                                } else if let gpsGrid = locationService.currentGrid {
+                                    Text(gpsGrid)
+                                        .font(.body.monospaced())
+                                } else {
+                                    Text("Waiting for GPS")
+                                        .foregroundStyle(.secondary)
+                                }
+                            } icon: {
+                                Image(systemName: "location.fill")
+                                    .foregroundStyle(.blue)
+                            }
+                        }
+                    } else {
+                        TextField("Grid Square", text: $grid)
+                            .font(.body.monospaced())
+                            .textInputAutocapitalization(.characters)
+                            .autocorrectionDisabled()
+                    }
                 }
             }
             .navigationTitle("Set Up Activity Log")
@@ -66,6 +88,11 @@ struct ActivityLogSetupSheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Create") { createLog() }
                         .disabled(!isValid)
+                }
+            }
+            .onChange(of: useCurrentLocation) { _, isOn in
+                if isOn {
+                    locationService.requestGrid()
                 }
             }
             .sheet(isPresented: $showingRadioPicker) {
@@ -86,6 +113,8 @@ struct ActivityLogSetupSheet: View {
     @State private var powerText = ""
     @State private var antenna = ""
     @State private var grid = ""
+    @State private var useCurrentLocation = false
+    @State private var locationService = GridLocationService()
     @State private var showingRadioPicker = false
 
     private var isValid: Bool {
@@ -118,7 +147,8 @@ struct ActivityLogSetupSheet: View {
                 power: Int(powerText),
                 rig: selectedRig,
                 antenna: antenna.isEmpty ? nil : antenna,
-                grid: grid.isEmpty ? nil : grid.uppercased(),
+                grid: useCurrentLocation ? nil : (grid.isEmpty ? nil : grid.uppercased()),
+                useCurrentLocation: useCurrentLocation,
                 isDefault: true
             )
             StationProfileStorage.add(profile)

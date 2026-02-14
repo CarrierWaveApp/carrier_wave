@@ -20,8 +20,7 @@ struct ParkStats: Sendable {
 
 /// Background actor for computing per-park activation and QSO counts
 private actor ParkStatsLoader {
-    /// Metadata pseudo-modes that should not count as QSOs
-    private static let metadataModes: Set<String> = ["WEATHER", "SOLAR", "NOTE"]
+    // MARK: Internal
 
     func loadStats(container: ModelContainer) async -> [String: ParkStats] {
         let context = ModelContext(container)
@@ -42,8 +41,12 @@ private actor ParkStatsLoader {
             descriptor.fetchLimit = batchSize
             descriptor.fetchOffset = offset
 
-            guard let batch = try? context.fetch(descriptor) else { break }
-            if batch.isEmpty { break }
+            guard let batch = try? context.fetch(descriptor) else {
+                break
+            }
+            if batch.isEmpty {
+                break
+            }
 
             for qso in batch {
                 guard let park = qso.parkReference, !park.isEmpty,
@@ -67,6 +70,11 @@ private actor ParkStatsLoader {
             ParkStats(activationCount: $0.dates.count, qsoCount: $0.qsoCount)
         }
     }
+
+    // MARK: Private
+
+    /// Metadata pseudo-modes that should not count as QSOs
+    private static let metadataModes: Set<String> = ["WEATHER", "SOLAR", "NOTE"]
 }
 
 // MARK: - ParkPickerSheet
@@ -132,6 +140,27 @@ struct ParkPickerSheet: View {
     @State private var parkStats: [String: ParkStats] = [:]
     @State private var isLoadingNearby = true
 
+    /// Parks matching the search query, nearby matches first, then database results
+    private var filteredParks: [(park: POTAPark, distance: Double?)] {
+        let query = searchText.trimmingCharacters(in: .whitespaces).lowercased()
+        guard !query.isEmpty else {
+            return []
+        }
+
+        // Nearby parks that match the query (shown with distance)
+        let nearbyMatches: [(park: POTAPark, distance: Double?)] = nearbyParks
+            .filter { matchesPark($0.park, query: query) }
+            .map { (park: $0.park, distance: Optional($0.distanceKm)) }
+
+        // Additional results from the full database (without distance)
+        let nearbyRefs = Set(nearbyMatches.map(\.park.reference))
+        let additional: [(park: POTAPark, distance: Double?)] = searchResults
+            .filter { !nearbyRefs.contains($0.reference) }
+            .map { (park: $0, distance: nil) }
+
+        return nearbyMatches + additional
+    }
+
     // MARK: - Search Field
 
     private var searchField: some View {
@@ -175,25 +204,6 @@ struct ParkPickerSheet: View {
         } else {
             filteredList
         }
-    }
-
-    /// Parks matching the search query, nearby matches first, then database results
-    private var filteredParks: [(park: POTAPark, distance: Double?)] {
-        let query = searchText.trimmingCharacters(in: .whitespaces).lowercased()
-        guard !query.isEmpty else { return [] }
-
-        // Nearby parks that match the query (shown with distance)
-        let nearbyMatches: [(park: POTAPark, distance: Double?)] = nearbyParks
-            .filter { matchesPark($0.park, query: query) }
-            .map { (park: $0.park, distance: Optional($0.distanceKm)) }
-
-        // Additional results from the full database (without distance)
-        let nearbyRefs = Set(nearbyMatches.map(\.park.reference))
-        let additional: [(park: POTAPark, distance: Double?)] = searchResults
-            .filter { !nearbyRefs.contains($0.reference) }
-            .map { (park: $0, distance: nil) }
-
-        return nearbyMatches + additional
     }
 
     private var filteredList: some View {
@@ -265,10 +275,16 @@ struct ParkPickerSheet: View {
 
     private func matchesPark(_ park: POTAPark, query: String) -> Bool {
         // Match by reference (e.g., "1234" matches "US-1234")
-        if park.reference.lowercased().contains(query) { return true }
-        if park.numericPart.lowercased().contains(query) { return true }
+        if park.reference.lowercased().contains(query) {
+            return true
+        }
+        if park.numericPart.lowercased().contains(query) {
+            return true
+        }
         // Match by name (e.g., "yellow" matches "Yellowstone")
-        if park.name.lowercased().contains(query) { return true }
+        if park.name.lowercased().contains(query) {
+            return true
+        }
         return false
     }
 
@@ -300,7 +316,9 @@ struct ParkPickerSheet: View {
 
         // Wait for location (up to 3 seconds)
         for _ in 0 ..< 30 {
-            if locationManager.location != nil { break }
+            if locationManager.location != nil {
+                break
+            }
             try? await Task.sleep(for: .milliseconds(100))
         }
 
@@ -399,7 +417,6 @@ struct ParkRow: View {
 
     // MARK: Private
 
-    @ViewBuilder
     private func statsBadge(_ stats: ParkStats) -> some View {
         HStack(spacing: 4) {
             Image(systemName: "antenna.radiowaves.left.and.right")
@@ -478,15 +495,4 @@ private class ParkLocationManager: NSObject, CLLocationManagerDelegate {
     // MARK: Private
 
     private let manager = CLLocationManager()
-}
-
-// MARK: - Preview
-
-#Preview("Park Picker") {
-    ParkPickerSheet(
-        selectedPark: .constant(""),
-        userGrid: "FN31",
-        defaultCountry: "US",
-        onDismiss: {}
-    )
 }
