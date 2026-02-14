@@ -47,6 +47,27 @@ struct RecentQSOsSection: View {
                 onQSOChanged?()
             }
         }
+        .alert(
+            "Delete QSO",
+            isPresented: Binding(
+                get: { qsoToDelete != nil },
+                set: { if !$0 { qsoToDelete = nil } }
+            )
+        ) {
+            Button("Delete", role: .destructive) {
+                if let qso = qsoToDelete {
+                    deleteQSO(qso)
+                }
+                qsoToDelete = nil
+            }
+            Button("Cancel", role: .cancel) {
+                qsoToDelete = nil
+            }
+        } message: {
+            if let qso = qsoToDelete {
+                Text("Delete QSO with \(qso.callsign)?")
+            }
+        }
     }
 
     // MARK: Private
@@ -61,6 +82,7 @@ struct RecentQSOsSection: View {
     @Environment(\.modelContext) private var modelContext
 
     @State private var editingQSO: QSO?
+    @State private var qsoToDelete: QSO?
 
     @ScaledMetric(relativeTo: .subheadline) private var rowHeight: CGFloat = 44
 
@@ -75,9 +97,9 @@ struct RecentQSOsSection: View {
                 .listRowInsets(EdgeInsets(top: 0, leading: 12, bottom: 0, trailing: 12))
                 .listRowBackground(Color.clear)
                 .listRowSeparatorTint(.secondary.opacity(0.3))
-                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                     Button(role: .destructive) {
-                        deleteQSO(qso)
+                        qsoToDelete = qso
                     } label: {
                         Label("Delete", systemImage: "trash")
                     }
