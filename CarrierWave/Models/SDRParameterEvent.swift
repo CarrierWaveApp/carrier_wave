@@ -43,6 +43,24 @@ struct SDRParameterEvent: Codable, Sendable, Equatable {
 /// A contiguous segment of an SDR recording with consistent tuning parameters.
 /// Built from the initial recording parameters plus any parameter change events.
 struct SDRRecordingSegment: Sendable, Equatable {
+    // MARK: Lifecycle
+
+    nonisolated init(
+        startOffset: TimeInterval,
+        endOffset: TimeInterval?,
+        frequencyKHz: Double,
+        mode: String,
+        isSilence: Bool = false
+    ) {
+        self.startOffset = startOffset
+        self.endOffset = endOffset
+        self.frequencyKHz = frequencyKHz
+        self.mode = mode
+        self.isSilence = isSilence
+    }
+
+    // MARK: Internal
+
     /// Offset from recording start in seconds
     let startOffset: TimeInterval
 
@@ -57,22 +75,6 @@ struct SDRRecordingSegment: Sendable, Equatable {
 
     /// Whether this segment is a silence gap (pause or SDR disconnect)
     let isSilence: Bool
-
-    // MARK: Lifecycle
-
-    init(
-        startOffset: TimeInterval,
-        endOffset: TimeInterval?,
-        frequencyKHz: Double,
-        mode: String,
-        isSilence: Bool = false
-    ) {
-        self.startOffset = startOffset
-        self.endOffset = endOffset
-        self.frequencyKHz = frequencyKHz
-        self.mode = mode
-        self.isSilence = isSilence
-    }
 
     /// Duration of this segment in seconds (requires recording duration for last segment)
     func duration(recordingDuration: TimeInterval) -> TimeInterval {
