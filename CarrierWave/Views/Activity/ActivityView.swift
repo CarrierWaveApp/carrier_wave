@@ -295,6 +295,16 @@ struct ActivityView: View {
                 showingCommunityPrompt = true
             }
         }
+        .task(id: "feedRefresh") {
+            // Periodically refresh feed while tab is visible (cancelled on disappear)
+            await periodicFeedRefresh()
+        }
+        .onReceive(
+            NotificationCenter.default.publisher(for: .didDetectActivities)
+        ) { _ in
+            // Reload local activity items when new activities are detected
+            loadActivityItems()
+        }
         .miniTour(.challenges, tourState: tourState)
     }
 }
@@ -421,6 +431,23 @@ extension ActivityView {
             try modelContext.save()
         } catch {
             // Silently fail - background operation
+        }
+    }
+
+    /// Periodically refresh the activity feed while the tab is visible.
+    /// Uses cooperative cancellation — SwiftUI cancels this task on disappear.
+    func periodicFeedRefresh() async {
+        // Wait 60 seconds before first refresh (initial load already happened)
+        try? await Task.sleep(for: .seconds(60))
+
+        while !Task.isCancelled {
+            if let feedService = feedSyncService {
+                try? await feedService.syncFeed(
+                    sourceURL: "https://activities.carrierwave.app"
+                )
+                loadActivityItems()
+            }
+            try? await Task.sleep(for: .seconds(60))
         }
     }
 
