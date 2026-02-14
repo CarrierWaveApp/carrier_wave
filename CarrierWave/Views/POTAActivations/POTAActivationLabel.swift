@@ -62,9 +62,7 @@ struct ActivationLabel: View {
                         .cornerRadius(4)
                 }
             }
-            if let meta = metadata, meta.hasSolarData || meta.hasWeatherData {
-                ConditionsGaugeRow(metadata: meta, showingSheet: $showingConditions)
-            }
+            conditionsRow
         }
         .sheet(isPresented: $showingConditions) {
             if let meta = metadata {
@@ -76,4 +74,11 @@ struct ActivationLabel: View {
     // MARK: Private
 
     @State private var showingConditions = false
+
+    @ViewBuilder
+    private var conditionsRow: some View {
+        if let meta = metadata, meta.hasSolarData || meta.hasWeatherData {
+            ConditionsGaugeRow(metadata: meta, showingSheet: $showingConditions)
+        }
+    }
 }
