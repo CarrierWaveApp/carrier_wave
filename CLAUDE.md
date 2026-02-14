@@ -75,6 +75,7 @@ Carrier Wave is a SwiftUI/SwiftData iOS app for amateur radio QSO (contact) logg
 | Statistics | Dashboard stats and drilldown views | [docs/features/statistics.md](docs/features/statistics.md) |
 | Performance | View body rules, critical views, review checklist | [docs/PERFORMANCE.md](docs/PERFORMANCE.md) |
 | Tour Requirements | Feature tour rules, mini tour implementation | [docs/features/tour-requirements.md](docs/features/tour-requirements.md) |
+| Delete Confirmation | All deletes require confirmation dialogs | [docs/features/delete-confirmation.md](docs/features/delete-confirmation.md) |
 
 ## Code Standards
 
@@ -86,6 +87,7 @@ Carrier Wave is a SwiftUI/SwiftData iOS app for amateur radio QSO (contact) logg
 - **Follow [Callsign Filtering Guidelines](docs/features/callsign-filtering.md)** — only operate on primary callsign for syncs
 - **Follow [Design Language](docs/design-language.md)** — colors, typography, spacing, component patterns, and **HIG compliance checklist** (accessibility labels, touch targets, @ScaledMetric, semantic colors, haptics, sheet navigation)
 - **Follow [Tour Requirements](docs/features/tour-requirements.md)** — all major/minor features must have tours
+- **All delete operations MUST have confirmation dialogs** — see [Delete Confirmation Guidelines](docs/features/delete-confirmation.md)
 
 ## Metadata Pseudo-Modes (IMPORTANT)
 

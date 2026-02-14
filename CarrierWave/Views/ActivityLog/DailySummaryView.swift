@@ -47,6 +47,27 @@ struct DailySummaryView: View {
                 loadDayQSOs()
             }
         }
+        .alert(
+            "Delete QSO",
+            isPresented: Binding(
+                get: { qsoToDelete != nil },
+                set: { if !$0 { qsoToDelete = nil } }
+            )
+        ) {
+            Button("Delete", role: .destructive) {
+                if let qso = qsoToDelete {
+                    deleteQSO(qso)
+                }
+                qsoToDelete = nil
+            }
+            Button("Cancel", role: .cancel) {
+                qsoToDelete = nil
+            }
+        } message: {
+            if let qso = qsoToDelete {
+                Text("Delete QSO with \(qso.callsign)?")
+            }
+        }
         .task {
             loadDayQSOs()
         }
@@ -75,6 +96,7 @@ struct DailySummaryView: View {
     @State private var dayQSOs: [QSO] = []
     @State private var showingShareSheet = false
     @State private var editingQSO: QSO?
+    @State private var qsoToDelete: QSO?
 
     @ScaledMetric(relativeTo: .caption) private var timeColumnWidth: CGFloat = 44
     @ScaledMetric(relativeTo: .subheadline) private var rowHeight: CGFloat = 44
@@ -140,9 +162,9 @@ struct DailySummaryView: View {
                     .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
                     .listRowBackground(Color.clear)
                     .listRowSeparatorTint(.secondary.opacity(0.3))
-                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                         Button(role: .destructive) {
-                            deleteQSO(qso)
+                            qsoToDelete = qso
                         } label: {
                             Label("Delete", systemImage: "trash")
                         }

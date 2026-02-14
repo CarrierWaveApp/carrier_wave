@@ -446,6 +446,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `design-language.md` | Visual and interaction design patterns specification |
 | `kiwisdr-protocol.md` | KiwiSDR WebSocket protocol reference (from kiwiclient) |
 | `features/callsign-filtering.md` | Primary callsign filtering requirements for syncs |
+| `features/delete-confirmation.md` | Delete confirmation requirements and review checklist |
 | `features/logger-requirements.md` | Logger requirements and compliance checklist |
 | `features/sync.md` | QRZ, POTA, LoFi sync integration |
 | `features/statistics.md` | Dashboard stats and drilldown views |
