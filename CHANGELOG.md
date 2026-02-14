@@ -5,6 +5,8 @@ All notable changes to Carrier Wave will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Add hunt-first session flow for POTA/SOTA — frequency is no longer required at session start, allowing activators to hunt first and set their run frequency later via BAND command or band picker
+- Add BAND command to logger — opens band picker with live POTA/RBN spot data and recommended clear frequencies per band
 - Add QSOs/hour rate to session detail and POTA activation detail views
 - Add equipment (radio, antenna, key, mic) to map QSO callout popups
 - Add swipe-to-delete on individual QSOs in POTA activation detail view with confirmation dialog

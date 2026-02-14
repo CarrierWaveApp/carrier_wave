@@ -27,6 +27,8 @@ final class LoggingSessionManager {
         let shouldPromptForSpot: Bool
         /// Suggested mode for the new frequency (nil if no change needed)
         let suggestedMode: String?
+        /// Whether this was the first frequency set on a hunt-first session
+        let isFirstFrequencySet: Bool
     }
 
     /// Currently active session
@@ -257,16 +259,26 @@ final class LoggingSessionManager {
     /// Returns info about whether to prompt for spot and suggested mode
     func updateFrequency(_ frequency: Double) -> FrequencyUpdateResult {
         guard let session = activeSession else {
-            return FrequencyUpdateResult(shouldPromptForSpot: false, suggestedMode: nil)
+            return FrequencyUpdateResult(
+                shouldPromptForSpot: false, suggestedMode: nil, isFirstFrequencySet: false
+            )
         }
 
         let oldFrequency = session.frequency
+        let isFirstSet = oldFrequency == nil
         session.updateFrequency(frequency)
         try? modelContext.save()
 
         // Retune WebSDR if recording
         if webSDRSession.state == .recording {
             Task { await webSDRSession.retune(frequencyMHz: frequency) }
+        }
+
+        // If this is the first frequency set on a POTA session, trigger an initial spot
+        if isFirstSet, session.activationType == .pota {
+            Task {
+                await postSpot()
+            }
         }
 
         // Check if mode should change based on frequency
@@ -285,10 +297,11 @@ final class LoggingSessionManager {
         // Don't prompt for spot if:
         // - QSY spots are disabled in settings
         // - Frequency is outside amateur bands or violates license
+        // - This is the first frequency set (we already auto-spotted above)
         var shouldPromptForSpot = false
         if potaQSYSpotEnabled,
            session.activationType == .pota,
-           oldFrequency != nil,
+           !isFirstSet,
            oldFrequency != frequency
         {
             // Get user's license class
@@ -310,7 +323,8 @@ final class LoggingSessionManager {
 
         return FrequencyUpdateResult(
             shouldPromptForSpot: shouldPromptForSpot,
-            suggestedMode: modeToSuggest
+            suggestedMode: modeToSuggest,
+            isFirstFrequencySet: isFirstSet
         )
     }
 

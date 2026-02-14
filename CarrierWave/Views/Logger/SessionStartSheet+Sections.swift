@@ -104,6 +104,27 @@ extension SessionStartSheet {
         }
     }
 
+    func frequencyOptionalCallout(for type: ActivationType) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "info.circle.fill")
+                .foregroundStyle(.blue)
+                .font(.title3)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Frequency is optional")
+                    .font(.subheadline.weight(.semibold))
+                Text(
+                    "Start without a frequency to hunt other activators first."
+                        + " Use the BAND command to pick your run frequency"
+                        + " when you're ready. Until then, QSOs log without a band."
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+        }
+        .padding(.vertical, 4)
+    }
+
     var activationSection: some View {
         ActivationSectionView(
             activationType: $activationType,

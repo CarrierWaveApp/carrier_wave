@@ -206,6 +206,7 @@ struct SessionStartSheet: View {
     @State private var showSavedConfirmation = false
     @State private var showBandPlanSheet = false
     @State private var bandDetail: BandSuggestion?
+    @State private var showBandSuggestions = false
     @State private var hasLoadedDefaults = false
 
     private var canStart: Bool {
@@ -266,11 +267,23 @@ struct SessionStartSheet: View {
                     .foregroundStyle(.secondary)
             }
 
-            FrequencyBandView(
-                selectedMode: selectedMode,
-                frequency: $frequency,
-                detailBand: $bandDetail
-            )
+            DisclosureGroup(
+                "Band Suggestions",
+                isExpanded: $showBandSuggestions
+            ) {
+                FrequencyBandView(
+                    selectedMode: selectedMode,
+                    frequency: $frequency,
+                    detailBand: $bandDetail
+                )
+            }
+
+            // Prominent callout for POTA/SOTA when no frequency entered
+            if frequency.isEmpty,
+               activationType == .pota || activationType == .sota
+            {
+                frequencyOptionalCallout(for: activationType)
+            }
         } header: {
             HStack {
                 Text("Frequency")

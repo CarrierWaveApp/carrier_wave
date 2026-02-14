@@ -92,7 +92,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `CallsignInfo.swift` | Callsign lookup result with name, note, emoji, source |
 | `LoggingSession.swift` | Logging session model with activation type, frequency, mode, equipment |
 | `LoggingSession+Frequencies.swift` | Static frequency maps, band derivation, computed display properties |
-| `LoggerCommand.swift` | Command enum for logger input (FREQ, MODE, SPOT, RBN, POTA, P2P, SOLAR, WEATHER, MAP, WEBSDR) |
+| `LoggerCommand.swift` | Command enum for logger input (FREQ, BAND, MODE, SPOT, RBN, POTA, P2P, SOLAR, WEATHER, MAP, WEBSDR) |
 | `WebSDRRecording.swift` | WebSDR recording metadata (host, file path, duration, session link) |
 | `CallsignNotesSource.swift` | SwiftData model for user-configured callsign notes file sources |
 | `BandPlan.swift` | US amateur radio band plan data with license class privileges |

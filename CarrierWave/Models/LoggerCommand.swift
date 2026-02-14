@@ -47,6 +47,9 @@ enum LoggerCommand: Equatable {
     /// Show WebSDR recording panel
     case websdr
 
+    /// Show band picker with recommended frequencies
+    case band
+
     // MARK: Internal
 
     /// Help text listing all available commands
@@ -56,6 +59,7 @@ enum LoggerCommand: Equatable {
 
         FREQ <freq>     - Set frequency
                           e.g., 14.060, 14060 kHz, 14.060 MHz
+        BAND            - Pick band with recommended frequencies
         <mode>          - Set mode (CW, SSB, FT8, etc.)
         SPOT [comment]  - Self-spot to POTA
                           e.g., SPOT QRT, SPOT QSY
@@ -116,6 +120,8 @@ enum LoggerCommand: Equatable {
             "Open radio manual"
         case .websdr:
             "Record from WebSDR"
+        case .band:
+            "Pick band with recommended frequencies"
         }
     }
 
@@ -150,6 +156,8 @@ enum LoggerCommand: Equatable {
             "book.closed"
         case .websdr:
             "radio"
+        case .band:
+            "list.bullet.rectangle.portrait"
         }
     }
 
@@ -291,6 +299,8 @@ enum LoggerCommand: Equatable {
 
     private static func parseSingleWord(upper: String) -> LoggerCommand? {
         switch upper {
+        case "BAND":
+            .band
         case "SOLAR":
             .solar
         case "WEATHER",
@@ -331,6 +341,11 @@ extension LoggerCommand {
         CommandSuggestion(
             command: "FREQ 14.060", description: "Set frequency",
             icon: "antenna.radiowaves.left.and.right", prefixes: ["FREQ", "F"]
+        ),
+        // Band picker
+        CommandSuggestion(
+            command: "BAND", description: "Pick band with live spots",
+            icon: "list.bullet.rectangle.portrait", prefixes: ["BA"], exact: ["B"]
         ),
         // Modes
         CommandSuggestion(

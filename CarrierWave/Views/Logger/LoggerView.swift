@@ -52,6 +52,14 @@ struct LoggerView: View {
                         }
                     )
 
+                    // Hunting mode banner for POTA/SOTA sessions without a frequency
+                    if let session = sessionManager?.activeSession,
+                       session.frequency == nil,
+                       session.activationType == .pota || session.activationType == .sota
+                    {
+                        huntingBanner
+                    }
+
                     ScrollView {
                         VStack(spacing: 12) {
                             UnderConstructionBanner()
@@ -141,14 +149,27 @@ struct LoggerView: View {
                     currentFrequency: sessionManager?.activeSession?.frequency,
                     currentMode: sessionManager?.activeSession?.mode ?? "CW",
                     onSelectFrequency: { freq in
-                        _ = sessionManager?.updateFrequency(freq)
+                        let result = sessionManager?.updateFrequency(freq)
+                        if result?.isFirstFrequencySet == true {
+                            let band = LoggingSession.bandForFrequency(freq)
+                            ToastManager.shared.success(
+                                "Frequency set to \(FrequencyFormatter.formatWithUnit(freq)) (\(band))"
+                            )
+                        }
+                        if autoModeSwitch, let suggestedMode = result?.suggestedMode {
+                            _ = sessionManager?.updateMode(suggestedMode)
+                        }
+                        if result?.shouldPromptForSpot == true {
+                            qsyNewFrequency = freq
+                            showQSYSpotConfirmation = true
+                        }
                         showBandEditSheet = false
                     },
                     onCancel: {
                         showBandEditSheet = false
                     }
                 )
-                .presentationDetents([.medium])
+                .presentationDetents([.medium, .large])
             }
             .sheet(isPresented: $showModeEditSheet) {
                 SessionModeEditSheet(
@@ -1003,6 +1024,47 @@ struct LoggerView: View {
         }
     }
 
+    private var huntingBanner: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "scope")
+                .font(.system(size: 20))
+                .foregroundStyle(.blue)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Hunting Mode")
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                Text("Log hunted QSOs now. Type BAND to pick your run frequency.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            Button {
+                showBandEditSheet = true
+            } label: {
+                Text("Set Freq")
+                    .font(.caption.weight(.medium))
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.blue)
+                    .foregroundStyle(Color(.systemBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
+            }
+            .buttonStyle(.plain)
+        }
+        .padding()
+        .background(Color.blue.opacity(0.1))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(Color.blue.opacity(0.3), lineWidth: 1)
+        )
+        .padding(.horizontal)
+        .padding(.top, 8)
+    }
+
     private func webSDRMiniBadge(session: WebSDRSession) -> some View {
         Button {
             showWebSDRPanel = true
@@ -1102,10 +1164,18 @@ struct LoggerView: View {
                     }
                     Button("Cancel", role: .cancel) {}
                 } message: {
-                    Text(
-                        "End keeps your \(displayQSOs.count) QSOs for sync. "
-                            + "Delete hides them permanently."
-                    )
+                    if session.frequency == nil, !displayQSOs.isEmpty {
+                        Text(
+                            "End keeps your \(displayQSOs.count) QSOs for sync. "
+                                + "QSOs were logged without a frequency and will show as \"Unknown\" band. "
+                                + "Delete hides them permanently."
+                        )
+                    } else {
+                        Text(
+                            "End keeps your \(displayQSOs.count) QSOs for sync. "
+                                + "Delete hides them permanently."
+                        )
+                    }
                 }
             }
 
@@ -1141,29 +1211,68 @@ struct LoggerView: View {
                 if let freq = session.frequency {
                     Text(FrequencyFormatter.formatWithUnit(freq))
                         .font(.caption.monospaced())
-                }
 
-                Button {
-                    showBandEditSheet = true
-                } label: {
-                    HStack(spacing: 2) {
-                        if let band = session.band {
-                            Text(band)
-                        } else {
-                            Text("Band")
+                    Button {
+                        showBandEditSheet = true
+                    } label: {
+                        HStack(spacing: 2) {
+                            if let band = session.band {
+                                Text(band)
+                            } else {
+                                Text("Band")
+                                    .foregroundStyle(.secondary)
+                            }
+                            Image(systemName: "chevron.up.chevron.down")
+                                .font(.system(size: 8))
                                 .foregroundStyle(.secondary)
                         }
-                        Image(systemName: "chevron.up.chevron.down")
-                            .font(.system(size: 8))
-                            .foregroundStyle(.secondary)
+                        .font(.caption.weight(.medium))
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.blue.opacity(0.2))
+                        .clipShape(Capsule())
                     }
-                    .font(.caption.weight(.medium))
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Color.blue.opacity(0.2))
-                    .clipShape(Capsule())
+                    .buttonStyle(.plain)
+                } else if session.activationType == .pota
+                    || session.activationType == .sota
+                {
+                    // Hunt-first: orange "Set Freq" capsule for POTA/SOTA without frequency
+                    Button {
+                        showBandEditSheet = true
+                    } label: {
+                        HStack(spacing: 2) {
+                            Text("Set Freq")
+                            Image(systemName: "chevron.up.chevron.down")
+                                .font(.system(size: 8))
+                                .foregroundStyle(.secondary)
+                        }
+                        .font(.caption.weight(.medium))
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.orange.opacity(0.2))
+                        .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                } else {
+                    // Casual session without frequency: standard blue band picker
+                    Button {
+                        showBandEditSheet = true
+                    } label: {
+                        HStack(spacing: 2) {
+                            Text("Band")
+                                .foregroundStyle(.secondary)
+                            Image(systemName: "chevron.up.chevron.down")
+                                .font(.system(size: 8))
+                                .foregroundStyle(.secondary)
+                        }
+                        .font(.caption.weight(.medium))
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.blue.opacity(0.2))
+                        .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
 
                 Button {
                     showModeEditSheet = true
@@ -1512,6 +1621,7 @@ struct LoggerView: View {
         case let .note(text): executeNoteCommand(text)
         case .manual: executeManualCommand()
         case .websdr: showWebSDRPanel = true
+        case .band: showBandEditSheet = true
         }
     }
 
@@ -1531,7 +1641,17 @@ struct LoggerView: View {
 
     private func executeFrequencyCommand(_ freq: Double) {
         let result = sessionManager?.updateFrequency(freq)
-        ToastManager.shared.commandExecuted("FREQ", result: FrequencyFormatter.formatWithUnit(freq))
+
+        if result?.isFirstFrequencySet == true {
+            let band = LoggingSession.bandForFrequency(freq)
+            ToastManager.shared.success(
+                "Frequency set to \(FrequencyFormatter.formatWithUnit(freq)) (\(band))"
+            )
+        } else {
+            ToastManager.shared.commandExecuted(
+                "FREQ", result: FrequencyFormatter.formatWithUnit(freq)
+            )
+        }
 
         // Auto-switch mode based on frequency segment (if enabled)
         if autoModeSwitch, let suggestedMode = result?.suggestedMode {
@@ -3027,7 +3147,8 @@ struct DeleteSessionConfirmationSheet: View {
 
 // MARK: - SessionBandEditSheet
 
-/// Sheet for selecting a new band/frequency during an active session
+/// Sheet for selecting a new band/frequency during an active session.
+/// Shows live POTA/RBN spot data with recommended clear frequencies.
 struct SessionBandEditSheet: View {
     // MARK: Internal
 
@@ -3039,67 +3160,47 @@ struct SessionBandEditSheet: View {
     var body: some View {
         NavigationStack {
             List {
-                Section {
-                    ForEach(bandOptions, id: \.band) { option in
-                        Button {
-                            onSelectFrequency(option.frequency)
-                        } label: {
-                            HStack {
-                                Text(option.band)
-                                    .font(.headline.monospaced())
-                                    .frame(width: 50, alignment: .leading)
-
-                                Text(FrequencyFormatter.formatWithUnit(option.frequency))
-                                    .font(.subheadline.monospaced())
-                                    .foregroundStyle(.secondary)
-
-                                Spacer()
-
-                                if currentBand == option.band {
-                                    Image(systemName: "checkmark")
-                                        .foregroundStyle(.blue)
-                                }
-                            }
-                        }
-                        .buttonStyle(.plain)
-                    }
-                } header: {
-                    Text("Select Band")
-                } footer: {
-                    Text("Frequency will be set to a common \(currentMode) frequency for the band")
-                }
+                FrequencyBandView(
+                    selectedMode: currentMode,
+                    frequency: $frequencyText,
+                    detailBand: $bandDetail
+                )
             }
-            .navigationTitle("Change Band")
+            .navigationTitle("Pick Frequency")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        onCancel()
-                    }
+                    Button("Cancel") { onCancel() }
                 }
+            }
+            .sheet(item: $bandDetail) { band in
+                BandActivitySheet(
+                    suggestion: band,
+                    frequency: $frequencyText
+                )
+            }
+            .onChange(of: frequencyText) { _, newValue in
+                guard hasInitialized else {
+                    return
+                }
+                if let freq = FrequencyFormatter.parse(newValue) {
+                    onSelectFrequency(freq)
+                }
+            }
+            .task {
+                if let freq = currentFrequency {
+                    frequencyText = FrequencyFormatter.format(freq)
+                }
+                hasInitialized = true
             }
         }
     }
 
     // MARK: Private
 
-    private var currentBand: String? {
-        guard let freq = currentFrequency else {
-            return nil
-        }
-        return LoggingSession.bandForFrequency(freq)
-    }
-
-    private var bandOptions: [(band: String, frequency: Double)] {
-        let frequencies = LoggingSession.suggestedFrequencies(for: currentMode)
-        let bands = ["160m", "80m", "60m", "40m", "30m", "20m", "17m", "15m", "12m", "10m"]
-        return bands.compactMap { band in
-            if let freq = frequencies[band] {
-                return (band, freq)
-            }
-            return nil
-        }
-    }
+    @State private var frequencyText = ""
+    @State private var bandDetail: BandSuggestion?
+    @State private var hasInitialized = false
 }
 
 // MARK: - SessionModeEditSheet

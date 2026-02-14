@@ -102,7 +102,7 @@ enum SessionStartValidation {
         activationType: ActivationType,
         parkReference: String,
         sotaReference: String,
-        frequency: Double?
+        frequency _: Double?
     ) -> Bool {
         guard !callsign.isEmpty, callsign.count >= 3 else {
             return false
@@ -110,11 +110,9 @@ enum SessionStartValidation {
 
         switch activationType {
         case .pota:
-            let hasPark = !parkReference.trimmingCharacters(in: .whitespaces).isEmpty
-            return frequency != nil && hasPark
+            return !parkReference.trimmingCharacters(in: .whitespaces).isEmpty
         case .sota:
-            let hasSummit = !sotaReference.trimmingCharacters(in: .whitespaces).isEmpty
-            return frequency != nil && hasSummit
+            return !sotaReference.trimmingCharacters(in: .whitespaces).isEmpty
         case .casual:
             return true
         }
@@ -125,7 +123,7 @@ enum SessionStartValidation {
         activationType: ActivationType,
         parkReference: String,
         sotaReference: String,
-        frequency: Double?
+        frequency _: Double?
     ) -> String? {
         if callsign.isEmpty || callsign.count < 3 {
             return "Set your callsign in Settings → About Me"
@@ -133,22 +131,12 @@ enum SessionStartValidation {
 
         switch activationType {
         case .pota:
-            let hasPark = !parkReference.trimmingCharacters(in: .whitespaces).isEmpty
-            if !hasPark, frequency == nil {
-                return "POTA requires park reference and frequency"
-            } else if !hasPark {
+            if parkReference.trimmingCharacters(in: .whitespaces).isEmpty {
                 return "POTA requires park reference"
-            } else if frequency == nil {
-                return "POTA requires frequency"
             }
         case .sota:
-            let hasSummit = !sotaReference.trimmingCharacters(in: .whitespaces).isEmpty
-            if !hasSummit, frequency == nil {
-                return "SOTA requires summit reference and frequency"
-            } else if !hasSummit {
+            if sotaReference.trimmingCharacters(in: .whitespaces).isEmpty {
                 return "SOTA requires summit reference"
-            } else if frequency == nil {
-                return "SOTA requires frequency"
             }
         case .casual:
             break
