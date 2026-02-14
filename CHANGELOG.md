@@ -5,6 +5,8 @@ All notable changes to Carrier Wave will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Merge POTA Activations and Sessions into a single unified Sessions list — every session (POTA, SOTA, casual) now shows rich content including QSO timeline, upload status, conditions, and equipment badges
+- Record solar/weather conditions at the start of every session type, not just POTA — conditions display on session cards when available
 - Add multi-park (n-fer) support for POTA activations — park entry is now multi-select with removable chips, search picker supports adding multiple parks, and self-spots are posted to all parks simultaneously
 - Add hunt-first session flow for POTA/SOTA — frequency is no longer required at session start, allowing activators to hunt first and set their run frequency later via BAND command or band picker
 - Add BAND command to logger — opens band picker with live POTA/RBN spot data and recommended clear frequencies per band
@@ -27,6 +29,7 @@ All notable changes to Carrier Wave will be documented in this file.
 - Fix friend requests not appearing in Friends list — list now syncs from server on appear instead of only showing cached data
 
 ### Changed
+- Remove "POTA Activations" segment from Logs tab — all activations now appear in the unified "Sessions" list
 - Rename "Edit Metadata" to "Edit Info" in POTA activation detail toolbar menu
 - Add imperial/metric unit system picker in Settings — affects distances, temperatures, wind speed, and watts-per-distance across all views
 - Auto-populate grid square from GPS when station profile has "Use Current Location" enabled — works in profile setup, editing, and live activity log with location indicator icon

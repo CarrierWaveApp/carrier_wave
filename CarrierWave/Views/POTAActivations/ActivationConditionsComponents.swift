@@ -1,18 +1,48 @@
-// Compact condition gauge components for POTA activation rows
+// Compact condition gauge components for activation and session rows
 //
 // SolarConditionGauge: 3-segment gauge bar (Poor/Fair/Good)
 // WeatherConditionBadge: Weather icon + temperature badge
+//
+// These views accept any type conforming to ConditionsData,
+// which both ActivationMetadata and LoggingSession conform to.
 
 import SwiftUI
+
+// MARK: - ConditionsData
+
+/// Protocol for types that provide solar/weather condition data for display.
+/// Both ActivationMetadata and LoggingSession conform to this.
+protocol ConditionsData {
+    var solarKIndex: Double? { get }
+    var solarPropagationRating: String? { get }
+    var solarFlux: Double? { get }
+    var solarSunspots: Int? { get }
+    var solarTimestamp: Date? { get }
+    var weatherTemperatureF: Double? { get }
+    var weatherTemperatureC: Double? { get }
+    var weatherHumidity: Int? { get }
+    var weatherWindSpeed: Double? { get }
+    var weatherWindDirection: String? { get }
+    var weatherDescription: String? { get }
+    var weatherTimestamp: Date? { get }
+    var hasSolarData: Bool { get }
+    var hasWeatherData: Bool { get }
+    // Text fallback fields
+    var weather: String? { get }
+    var solarConditions: String? { get }
+}
+
+extension ActivationMetadata: ConditionsData {}
+extension LoggingSession: ConditionsData {}
 
 // MARK: - SolarConditionGauge
 
 /// Compact 3-segment gauge showing propagation quality.
 /// Inspired by propagation_estimator's BandConditionGauge.
-struct SolarConditionGauge: View {
+struct SolarConditionGauge<C: ConditionsData>: View {
     // MARK: Internal
 
-    let metadata: ActivationMetadata
+    let metadata: C
 
     var body: some View {
         HStack(spacing: 3) {
@@ -61,10 +91,10 @@ struct SolarConditionGauge: View {
 // MARK: - WeatherConditionBadge
 
 /// Compact badge showing weather icon and temperature.
-struct WeatherConditionBadge: View {
+struct WeatherConditionBadge<C: ConditionsData>: View {
     // MARK: Internal
 
-    let metadata: ActivationMetadata
+    let metadata: C
 
     var body: some View {
         // swiftlint:disable:next redundant_discardable_let
@@ -226,10 +256,10 @@ struct ConditionGaugeCard: View {
 // MARK: - ConditionsGaugeRow
 
 /// Wraps solar and weather gauges as tappable buttons that open a conditions sheet.
-struct ConditionsGaugeRow: View {
+struct ConditionsGaugeRow<C: ConditionsData>: View {
     // MARK: Internal
 
-    let metadata: ActivationMetadata
+    let metadata: C
 
     @Binding var showingSheet: Bool
 

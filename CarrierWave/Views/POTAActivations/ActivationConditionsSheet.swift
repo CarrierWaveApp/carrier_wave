@@ -1,16 +1,16 @@
-// Activation Conditions Detail Sheet
+// Conditions Detail Sheet
 //
-// Shows full solar and weather conditions for a POTA activation
+// Shows full solar and weather conditions for an activation or session
 // using gauge cards matching Propagation Estimator style.
 
 import SwiftUI
 
 // MARK: - ActivationConditionsSheet
 
-struct ActivationConditionsSheet: View {
+struct ActivationConditionsSheet<C: ConditionsData>: View {
     // MARK: Internal
 
-    let metadata: ActivationMetadata
+    let metadata: C
 
     var body: some View {
         // swiftlint:disable:next redundant_discardable_let
@@ -111,8 +111,8 @@ struct ActivationConditionsSheet: View {
             icon: "waveform",
             title: "K-Index",
             value: String(format: "%.1f", kIndex),
-            rating: Self.kIndexRating(kIndex),
-            segmentColors: Self.kIndexColors,
+            rating: ConditionsConstants.kIndexRating(kIndex),
+            segmentColors: ConditionsConstants.kIndexColors,
             activeSegment: min(Int(kIndex), 9),
             scaleLabels: ["0", "Quiet", "Storm", "9"]
         )
@@ -123,10 +123,10 @@ struct ActivationConditionsSheet: View {
             icon: "sun.max.fill",
             title: "Solar Flux (SFI)",
             value: "\(Int(sfi))",
-            rating: Self.sfiRating(sfi),
-            segmentColors: Self.sfiColors,
-            activeSegment: Self.segmentIndex(
-                value: sfi, boundaries: Self.sfiBoundaries
+            rating: ConditionsConstants.sfiRating(sfi),
+            segmentColors: ConditionsConstants.sfiColors,
+            activeSegment: ConditionsConstants.segmentIndex(
+                value: sfi, boundaries: ConditionsConstants.sfiBoundaries
             ),
             scaleLabels: ["0", "Poor", "Good", "300"]
         )
@@ -137,10 +137,10 @@ struct ActivationConditionsSheet: View {
             icon: "circle.dotted",
             title: "Sunspot Number",
             value: "\(ssn)",
-            rating: Self.sunspotRating(ssn),
-            segmentColors: Self.sunspotColors,
-            activeSegment: Self.segmentIndex(
-                value: Double(ssn), boundaries: Self.sunspotBoundaries
+            rating: ConditionsConstants.sunspotRating(ssn),
+            segmentColors: ConditionsConstants.sunspotColors,
+            activeSegment: ConditionsConstants.segmentIndex(
+                value: Double(ssn), boundaries: ConditionsConstants.sunspotBoundaries
             ),
             scaleLabels: ["0", "Poor", "Ideal", "200+"]
         )
@@ -150,7 +150,7 @@ struct ActivationConditionsSheet: View {
 
     private func weatherBanner(_ description: String) -> some View {
         HStack(spacing: 12) {
-            Self.weatherIcon(description)
+            ConditionsConstants.weatherIcon(description)
                 .font(.title)
             Text(description)
                 .font(.headline)
@@ -169,12 +169,12 @@ struct ActivationConditionsSheet: View {
             icon: "thermometer.medium",
             title: "Temperature",
             value: UnitFormatter.temperature(temp),
-            rating: Self.tempRating(temp),
-            segmentColors: Self.tempColors,
-            activeSegment: Self.segmentIndex(
-                value: temp, boundaries: Self.tempBoundaries
+            rating: ConditionsConstants.tempRating(temp),
+            segmentColors: ConditionsConstants.tempColors,
+            activeSegment: ConditionsConstants.segmentIndex(
+                value: temp, boundaries: ConditionsConstants.tempBoundaries
             ),
-            scaleLabels: Self.tempScaleLabels
+            scaleLabels: ConditionsConstants.tempScaleLabels
         )
     }
 
@@ -184,12 +184,12 @@ struct ActivationConditionsSheet: View {
             icon: "wind",
             title: "Wind Speed",
             value: UnitFormatter.windSpeed(wind, direction: dir.isEmpty ? nil : dir),
-            rating: Self.windRating(wind),
-            segmentColors: Self.windColors,
-            activeSegment: Self.segmentIndex(
-                value: wind, boundaries: Self.windBoundaries
+            rating: ConditionsConstants.windRating(wind),
+            segmentColors: ConditionsConstants.windColors,
+            activeSegment: ConditionsConstants.segmentIndex(
+                value: wind, boundaries: ConditionsConstants.windBoundaries
             ),
-            scaleLabels: Self.windScaleLabels
+            scaleLabels: ConditionsConstants.windScaleLabels
         )
     }
 
@@ -198,19 +198,20 @@ struct ActivationConditionsSheet: View {
             icon: "humidity",
             title: "Humidity",
             value: "\(humidity)%",
-            rating: Self.humidityRating(humidity),
-            segmentColors: Self.humidityColors,
-            activeSegment: Self.segmentIndex(
-                value: Double(humidity), boundaries: Self.humidityBoundaries
+            rating: ConditionsConstants.humidityRating(humidity),
+            segmentColors: ConditionsConstants.humidityColors,
+            activeSegment: ConditionsConstants.segmentIndex(
+                value: Double(humidity), boundaries: ConditionsConstants.humidityBoundaries
             ),
             scaleLabels: ["0%", "Dry", "Humid", "100%"]
         )
     }
 }
 
-// MARK: - Segment Data & Helpers
+// MARK: - ConditionsConstants
 
-extension ActivationConditionsSheet {
+/// Constants for conditions gauge display (extracted from generic type to allow static stored properties)
+enum ConditionsConstants {
     // MARK: - Segment Colors
 
     // K-Index: 10 segments (0-9), green→yellow→orange→red (lower is better)

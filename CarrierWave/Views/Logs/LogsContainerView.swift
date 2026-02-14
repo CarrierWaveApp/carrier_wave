@@ -5,7 +5,6 @@ import SwiftUI
 
 enum LogsSegment: String, CaseIterable {
     case qsos = "QSOs"
-    case potaActivations = "POTA Activations"
     case sessions = "Sessions"
 }
 
@@ -66,12 +65,12 @@ struct LogsContainerView: View {
                 potaAuth: potaAuth,
                 tourState: tourState
             )
-        case .potaActivations:
-            POTAActivationsContentView(
-                potaClient: potaClient, potaAuth: potaAuth, tourState: tourState
-            )
         case .sessions:
-            SessionsView()
+            SessionsView(
+                potaClient: potaClient,
+                potaAuth: potaAuth,
+                tourState: tourState
+            )
         }
     }
 }

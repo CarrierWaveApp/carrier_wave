@@ -243,7 +243,9 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 ## Views - Sessions (`CarrierWave/Views/Sessions/`)
 | File | Purpose |
 |------|---------|
-| `SessionsView.swift` | Sessions list with month grouping, recording and photo indicators |
+| `SessionsView.swift` | Unified sessions list merging POTA activations and all sessions, with rich content |
+| `SessionsView+Actions.swift` | Data loading, POTA actions, and helpers for SessionsView |
+| `SessionRow.swift` | Unified rich session row: timeline, conditions, badges, upload status |
 | `SessionDetailView.swift` | Session detail with equipment, photos, notes, QSO list, edit button |
 | `SessionMetadataEditSheet.swift` | Unified edit sheet for all session types (equipment, photos, notes) |
 | `PhotoViewer.swift` | Full-screen photo viewer with pinch-to-zoom |

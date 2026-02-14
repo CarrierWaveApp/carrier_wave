@@ -153,6 +153,33 @@ final class LoggingSession {
     /// Photo filenames relative to SessionPhotos/<sessionUUID>/
     var photoFilenames: [String] = []
 
+    // MARK: - Conditions (recorded at session start)
+
+    var solarKIndex: Double?
+    var solarFlux: Double?
+    var solarSunspots: Int?
+    var solarPropagationRating: String?
+    var solarTimestamp: Date?
+    var solarConditions: String?
+    var weatherTemperatureF: Double?
+    var weatherTemperatureC: Double?
+    var weatherHumidity: Int?
+    var weatherWindSpeed: Double?
+    var weatherWindDirection: String?
+    var weatherDescription: String?
+    var weatherTimestamp: Date?
+    var weather: String?
+
+    /// Whether structured solar data is available
+    var hasSolarData: Bool {
+        solarKIndex != nil
+    }
+
+    /// Whether structured weather data is available
+    var hasWeatherData: Bool {
+        weatherTemperatureF != nil
+    }
+
     /// Activation type enum accessor
     var activationType: ActivationType {
         get { ActivationType(rawValue: activationTypeRawValue) ?? .casual }

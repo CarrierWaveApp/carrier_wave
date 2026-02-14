@@ -1,20 +1,20 @@
 import Foundation
 import SwiftData
 
-/// Extension for auto-recording solar/weather conditions at POTA session start
+/// Extension for auto-recording solar/weather conditions at session start
 extension LoggingSessionManager {
-    /// Auto-record solar and weather conditions for the current POTA activation
+    /// Auto-record solar and weather conditions for the current session (all types)
     func recordConditions() {
         guard autoRecordConditions,
-              let session = activeSession,
-              session.activationType == .pota,
-              let parkRef = session.parkReference, !parkRef.isEmpty
+              let session = activeSession
         else {
             return
         }
 
         let grid = session.myGrid
         let sessionDate = session.startedAt
+        let parkRef = session.parkReference
+        let isPOTA = session.activationType == .pota && parkRef != nil && !parkRef!.isEmpty
 
         Task {
             let noaaClient = NOAAClient()
@@ -43,19 +43,31 @@ extension LoggingSessionManager {
                 }
             }
 
-            // Store into ActivationMetadata on the main actor
             guard solarText != nil || weatherText != nil else {
                 return
             }
+
             await MainActor.run {
-                storeConditionsMetadata(
-                    parkRef: parkRef,
-                    date: sessionDate,
+                // Store conditions on the session itself (all session types)
+                storeConditionsOnSession(
+                    session: session,
                     solar: solarText,
                     weather: weatherText,
                     solarData: solarData,
                     weatherData: weatherData
                 )
+
+                // For POTA sessions, also store into ActivationMetadata
+                if isPOTA, let parkRef {
+                    storeConditionsMetadata(
+                        parkRef: parkRef,
+                        date: sessionDate,
+                        solar: solarText,
+                        weather: weatherText,
+                        solarData: solarData,
+                        weatherData: weatherData
+                    )
+                }
             }
         }
     }
@@ -71,8 +83,8 @@ extension LoggingSessionManager {
         return UserDefaults.standard.bool(forKey: "autoRecordConditions")
     }
 
-    /// Format weather conditions as a compact string for ActivationMetadata
-    private static func formatWeatherForMetadata(_ conditions: WeatherConditions) -> String {
+    /// Format weather conditions as a compact string
+    static func formatWeatherForMetadata(_ conditions: WeatherConditions) -> String {
         var parts: [String] = []
         parts.append(conditions.formattedTemperature)
         parts.append(conditions.description)
@@ -85,7 +97,43 @@ extension LoggingSessionManager {
         return parts.joined(separator: ", ")
     }
 
-    /// Store solar/weather conditions into ActivationMetadata
+    /// Store solar/weather conditions directly on the LoggingSession
+    private func storeConditionsOnSession(
+        session: LoggingSession,
+        solar: String?,
+        weather: String?,
+        solarData: SolarConditions?,
+        weatherData: WeatherConditions?
+    ) {
+        if let solar, session.solarConditions == nil {
+            session.solarConditions = solar
+        }
+        if let weather, session.weather == nil {
+            session.weather = weather
+        }
+
+        if let solarData, !session.hasSolarData {
+            session.solarKIndex = solarData.kIndex
+            session.solarFlux = solarData.solarFlux
+            session.solarSunspots = solarData.sunspots
+            session.solarPropagationRating = solarData.propagationRating
+            session.solarTimestamp = solarData.timestamp
+        }
+
+        if let weatherData, !session.hasWeatherData {
+            session.weatherTemperatureF = weatherData.temperature
+            session.weatherTemperatureC = weatherData.temperatureCelsius
+            session.weatherHumidity = weatherData.humidity
+            session.weatherWindSpeed = weatherData.windSpeed
+            session.weatherWindDirection = weatherData.windDirection
+            session.weatherDescription = weatherData.description
+            session.weatherTimestamp = weatherData.timestamp
+        }
+
+        try? modelContext.save()
+    }
+
+    /// Store solar/weather conditions into ActivationMetadata (POTA only)
     private func storeConditionsMetadata(
         parkRef: String,
         date: Date,
@@ -113,7 +161,6 @@ extension LoggingSessionManager {
             modelContext.insert(metadata)
         }
 
-        // Only overwrite if we got data and there's nothing stored yet
         if let solar, metadata.solarConditions == nil || metadata.solarConditions?.isEmpty == true {
             metadata.solarConditions = solar
         }
@@ -121,7 +168,6 @@ extension LoggingSessionManager {
             metadata.weather = weather
         }
 
-        // Store structured solar data
         if let solarData, !metadata.hasSolarData {
             metadata.solarKIndex = solarData.kIndex
             metadata.solarFlux = solarData.solarFlux
@@ -130,7 +176,6 @@ extension LoggingSessionManager {
             metadata.solarTimestamp = solarData.timestamp
         }
 
-        // Store structured weather data
         if let weatherData, !metadata.hasWeatherData {
             metadata.weatherTemperatureF = weatherData.temperature
             metadata.weatherTemperatureC = weatherData.temperatureCelsius
