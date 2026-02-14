@@ -4,6 +4,8 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.30.0] - 2026-02-13
+
 ### Added
 - Add tap-to-edit and swipe-to-delete on QSO rows in Activity Log (Recent QSOs and Daily Summary) — tap opens QSOEditSheet, swipe left reveals Delete action, row height meets 44pt HIG minimum
 - Add frequency and band pill display in Activity Log quick entry — typed frequencies (e.g., "W1AW 14.060") show as "14.060 MHz" and "20m" pills, and propagate to logged QSO
