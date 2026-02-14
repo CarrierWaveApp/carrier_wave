@@ -5,6 +5,7 @@ All notable changes to Carrier Wave will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Add number row keyboard accessory to Activity Log quick entry — shows digits 1-0, configurable symbols, and dismiss button above keyboard (shares settings with Logger)
 - Add rich share card preview sheet with ShareLink (proper thumbnail in share sheet) and Save to Photos button
 - Add sync report UI — structured per-service reports with visual funnel (fetched → validated → changes applied → uploaded), status badges, and reconciliation details; persisted across app launches via UserDefaults; populated by both normal sync and force re-download
 - Add WebSDR tuning info display — show current frequency, mode, and filter bandwidth in WebSDR panel
@@ -17,6 +18,7 @@ All notable changes to Carrier Wave will be documented in this file.
 - Add Sessions tab in Logs — browse all completed logging sessions grouped by month with recording indicators and navigation to player or session detail
 
 ### Fixed
+- Fix Activity Log quick entry not passing notes to QSO — parsed notes from multi-token input were silently dropped
 - Fix POTA job matching showing jobs from unrelated activations on activation detail cards — nil-date jobs (from all-duplicate uploads) now match to the closest activation by submitted date instead of all activations for the same park
 - Fix KiwiSDR redirect handling — follow server redirects during handshake (up to 3 hops) instead of showing an error; detect redirects during streaming to trigger immediate reconnect; cache effective host/port so reconnects go directly to the correct server
 - Fix WebSDR CW tuning — apply CW pitch offset so the signal lands in the center of the audio passband instead of at 0 Hz (inaudible)

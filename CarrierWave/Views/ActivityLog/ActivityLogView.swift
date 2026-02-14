@@ -169,6 +169,7 @@ struct ActivityLogView: View {
             rstReceived: data.rstReceived,
             theirGrid: data.theirGrid,
             theirParkReference: data.theirParkReference,
+            notes: data.notes,
             state: data.state
         )
 

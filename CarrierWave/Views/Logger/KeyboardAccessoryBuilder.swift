@@ -57,7 +57,8 @@ enum KeyboardAccessoryBuilder {
         numberButtonAction: Selector,
         commandButtonAction: Selector,
         dismissAction: Selector,
-        target: AnyObject
+        target: AnyObject,
+        includeCommands: Bool = true
     ) -> UIView {
         let accessoryView = UIView()
         accessoryView.backgroundColor = .secondarySystemBackground
@@ -69,7 +70,7 @@ enum KeyboardAccessoryBuilder {
         mainStack.translatesAutoresizingMaskIntoConstraints = false
 
         let characters = configuredCharacters()
-        let commands = configuredCommands()
+        let commands = includeCommands ? configuredCommands() : []
 
         // Command row (appears ABOVE number row)
         if !commands.isEmpty {

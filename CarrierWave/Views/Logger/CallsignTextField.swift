@@ -17,12 +17,16 @@ struct CallsignTextField: UIViewRepresentable {
         _ placeholder: String,
         text: Binding<String>,
         isFocused: FocusState<Bool>.Binding,
+        fontSize: CGFloat = 20,
+        showCommands: Bool = true,
         onSubmit: @escaping () -> Void,
         onCommand: @escaping (LoggerCommand) -> Void = { _ in }
     ) {
         self.placeholder = placeholder
         _text = text
         self.isFocused = isFocused
+        self.fontSize = fontSize
+        self.showCommands = showCommands
         self.onSubmit = onSubmit
         self.onCommand = onCommand
     }
@@ -175,13 +179,15 @@ struct CallsignTextField: UIViewRepresentable {
 
     let placeholder: String
     var isFocused: FocusState<Bool>.Binding
+    let fontSize: CGFloat
+    let showCommands: Bool
     let onSubmit: () -> Void
     let onCommand: (LoggerCommand) -> Void
 
     func makeUIView(context: Context) -> UITextField {
         let textField = UITextField()
         textField.placeholder = placeholder
-        textField.font = UIFont.monospacedSystemFont(ofSize: 20, weight: .regular)
+        textField.font = UIFont.monospacedSystemFont(ofSize: fontSize, weight: .regular)
         textField.autocapitalizationType = .allCharacters
         textField.autocorrectionType = .no
         textField.spellCheckingType = .no
@@ -253,7 +259,8 @@ struct CallsignTextField: UIViewRepresentable {
             numberButtonAction: #selector(Coordinator.numberButtonTapped(_:)),
             commandButtonAction: #selector(Coordinator.commandButtonTapped(_:)),
             dismissAction: #selector(Coordinator.dismissKeyboard(_:)),
-            target: coordinator
+            target: coordinator,
+            includeCommands: showCommands
         )
     }
 }

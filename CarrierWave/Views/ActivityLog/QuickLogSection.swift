@@ -35,6 +35,7 @@ struct QuickLogSection: View {
     @State private var callsignInput = ""
     @State private var rstSent = ""
     @State private var rstReceived = ""
+    @FocusState private var callsignFocused: Bool
 
     @ScaledMetric(relativeTo: .subheadline) private var fieldHeight: CGFloat = 36
     @ScaledMetric(relativeTo: .subheadline) private var rstFieldWidth: CGFloat = 50
@@ -64,11 +65,14 @@ struct QuickLogSection: View {
     private var callsignRow: some View {
         HStack(spacing: 8) {
             HStack(spacing: 12) {
-                TextField("Callsign or quick entry...", text: $callsignInput)
-                    .font(.subheadline.monospaced())
-                    .textInputAutocapitalization(.characters)
-                    .autocorrectionDisabled()
-                    .onSubmit { logFromInput() }
+                CallsignTextField(
+                    "Callsign or quick entry...",
+                    text: $callsignInput,
+                    isFocused: $callsignFocused,
+                    fontSize: 15,
+                    showCommands: false,
+                    onSubmit: { logFromInput() }
+                )
 
                 Button {
                     callsignInput = ""
@@ -189,6 +193,7 @@ struct QuickLogSection: View {
             data.theirParkReference = result.theirPark
             data.theirGrid = result.theirGrid
             data.state = result.state
+            data.notes = result.notes
         } else {
             // Single callsign
             data.callsign = trimmed.uppercased()
@@ -229,4 +234,5 @@ struct QuickLogData {
     var theirParkReference: String?
     var theirGrid: String?
     var state: String?
+    var notes: String?
 }
