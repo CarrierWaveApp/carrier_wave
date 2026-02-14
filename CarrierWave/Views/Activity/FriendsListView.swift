@@ -58,6 +58,7 @@ struct FriendsListView: View {
             )
         }
         .task {
+            await syncFriendsOnAppear()
             await loadSuggestions()
         }
     }
@@ -189,6 +190,21 @@ struct FriendsListView: View {
                 errorMessage = error.localizedDescription
                 showingError = true
             }
+        }
+    }
+
+    /// Sync friends and pending requests from server so @Query reflects latest state.
+    private func syncFriendsOnAppear() async {
+        if friendsSyncService == nil {
+            friendsSyncService = FriendsSyncService(modelContext: modelContext)
+        }
+        guard let service = friendsSyncService else {
+            return
+        }
+        do {
+            try await service.syncFriends(sourceURL: sourceURL)
+        } catch {
+            // Non-critical — @Query still shows locally cached friendships
         }
     }
 

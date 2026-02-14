@@ -43,7 +43,6 @@ final class ActivityReporter {
         details.entityCode = activity.entityCode
         details.band = activity.band
         details.mode = activity.mode
-        details.workedCallsign = activity.workedCallsign
         details.distanceKm = activity.distanceKm
         details.parkReference = activity.parkReference
         details.parkName = activity.parkName
@@ -51,6 +50,13 @@ final class ActivityReporter {
         details.streakDays = activity.streakDays
         details.recordType = activity.recordType
         details.recordValue = activity.recordValue
+
+        // Only include workedCallsign for workedFriend (both parties are app users).
+        // For other types (dxContact, personalBest), strip it to avoid sending
+        // third-party callsigns to the server without their consent.
+        if activity.type == .workedFriend {
+            details.workedCallsign = activity.workedCallsign
+        }
 
         return ReportActivityRequest(
             type: activity.type.rawValue,

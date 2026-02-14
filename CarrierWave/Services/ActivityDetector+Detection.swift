@@ -10,8 +10,13 @@ extension ActivityDetector {
     func loadHistoricalData(excluding newQSOs: [QSO]) -> HistoricalData {
         let newQSOIds = Set(newQSOs.map(\.id))
 
-        // Fetch all QSOs
-        let descriptor = FetchDescriptor<QSO>()
+        // Fetch QSOs with a limit to avoid full table scans that freeze the UI.
+        // 10k is enough to cover bands/modes/DXCC for the vast majority of users.
+        // Users with more QSOs may see rare false "new" detections — acceptable tradeoff.
+        var descriptor = FetchDescriptor<QSO>(
+            sortBy: [SortDescriptor(\QSO.timestamp, order: .reverse)]
+        )
+        descriptor.fetchLimit = 10_000
         let allQSOs = (try? modelContext.fetch(descriptor)) ?? []
 
         // Filter out the new QSOs

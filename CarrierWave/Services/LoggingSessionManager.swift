@@ -491,6 +491,11 @@ final class LoggingSessionManager {
 
         try? modelContext.save()
 
+        // Detect and report social activities async (non-blocking)
+        Task { [weak self] in
+            await self?.processActivityForQSO(qso)
+        }
+
         return qso
     }
 
@@ -716,6 +721,36 @@ final class LoggingSessionManager {
             (try? KeychainHelper.shared.readString(for: KeychainHelper.Keys.potaUsername)) != nil
                 && (try? KeychainHelper.shared.readString(for: KeychainHelper.Keys.potaPassword)) != nil
         lofiConfigured = UserDefaults.standard.bool(forKey: "lofi.deviceLinked")
+    }
+
+    /// Detect and report notable activities for a newly logged QSO.
+    /// Runs async and never blocks the logger.
+    private func processActivityForQSO(_ qso: QSO) async {
+        let aliasService = CallsignAliasService.shared
+        guard let userCallsign = aliasService.getCurrentCallsign(), !userCallsign.isEmpty else {
+            return
+        }
+
+        let detector = ActivityDetector(modelContext: modelContext, userCallsign: userCallsign)
+        let detected = detector.detectActivities(for: [qso])
+
+        guard !detected.isEmpty else {
+            return
+        }
+
+        // Save local activity items
+        detector.createActivityItems(from: detected)
+
+        // Report to server (fire and forget, errors silently logged)
+        let reporter = ActivityReporter()
+        await reporter.reportActivities(detected, sourceURL: "https://activities.carrierwave.app")
+
+        // Notify UI of new activities
+        NotificationCenter.default.post(
+            name: .didDetectActivities,
+            object: nil,
+            userInfo: ["count": detected.count]
+        )
     }
 
     private func markForUpload(_ qso: QSO) {
