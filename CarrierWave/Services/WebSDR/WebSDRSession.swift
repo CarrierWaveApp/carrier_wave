@@ -93,6 +93,8 @@ final class WebSDRSession {
     var lastMode: String = "CW"
     var lastSampleRate: Double = 12_000
     var silenceTask: Task<Void, Never>?
+    var effectiveHost: String?
+    var effectivePort: Int?
 
     /// Buffer fill ratio for UI indicator (0.0 to 1.0)
     var bufferFillRatio: Double {
@@ -130,6 +132,8 @@ final class WebSDRSession {
         self.modelContext = modelContext
         lastFrequencyMHz = frequencyMHz
         lastMode = mode
+        effectiveHost = nil
+        effectivePort = nil
 
         let frequencyKHz = frequencyMHz * 1_000
         let kiwiMode = KiwiSDRMode.from(
@@ -138,13 +142,13 @@ final class WebSDRSession {
         )
 
         state = .connecting
-        client = KiwiSDRClient(host: receiver.host, port: receiver.port)
 
         do {
-            let audioStream = try await client!.connect(
-                frequencyKHz: frequencyKHz,
-                mode: kiwiMode
+            let (newClient, audioStream) = try await connectFollowingRedirects(
+                host: receiver.host, port: receiver.port,
+                frequencyKHz: frequencyKHz, mode: kiwiMode
             )
+            client = newClient
 
             try await setupRecording(
                 loggingSessionId: loggingSessionId,
@@ -200,6 +204,8 @@ final class WebSDRSession {
         recordingFileURL = nil
         peakLevel = 0
         isMuted = false
+        effectiveHost = nil
+        effectivePort = nil
     }
 
     /// Pause recording (keeps WebSDR connection alive)

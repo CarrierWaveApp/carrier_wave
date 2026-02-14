@@ -113,11 +113,9 @@ extension WebSDRSession {
             return
         }
 
-        let newClient = KiwiSDRClient(
-            host: receiver.host, port: receiver.port
-        )
-        client = newClient
-
+        // Use cached redirect target if available, otherwise original host
+        let host = effectiveHost ?? receiver.host
+        let port = effectivePort ?? receiver.port
         let frequencyKHz = lastFrequencyMHz * 1_000
         let kiwiMode = KiwiSDRMode.from(
             carrierWaveMode: lastMode,
@@ -125,10 +123,11 @@ extension WebSDRSession {
         )
 
         do {
-            let audioStream = try await newClient.connect(
-                frequencyKHz: frequencyKHz,
-                mode: kiwiMode
+            let (newClient, audioStream) = try await connectFollowingRedirects(
+                host: host, port: port,
+                frequencyKHz: frequencyKHz, mode: kiwiMode
             )
+            client = newClient
             stopSilenceWriter()
             reconnectAttempts = 0
             state = .recording
@@ -140,6 +139,68 @@ extension WebSDRSession {
             client = nil
             await reconnect()
         }
+    }
+
+    /// Connect to a KiwiSDR, following server redirects up to 3 times.
+    func connectFollowingRedirects(
+        host: String,
+        port: Int,
+        frequencyKHz: Double,
+        mode: KiwiSDRMode
+    ) async throws -> (KiwiSDRClient, AsyncStream<KiwiSDRClient.AudioFrame>) {
+        var currentHost = host
+        var currentPort = port
+        let maxRedirects = 3
+
+        for _ in 0 ... maxRedirects {
+            let newClient = KiwiSDRClient(
+                host: currentHost, port: currentPort
+            )
+            do {
+                let stream = try await newClient.connect(
+                    frequencyKHz: frequencyKHz, mode: mode
+                )
+                // Cache effective host/port if redirected
+                if currentHost != host || currentPort != port {
+                    effectiveHost = currentHost
+                    effectivePort = currentPort
+                }
+                return (newClient, stream)
+            } catch {
+                await newClient.disconnect()
+                if case let KiwiSDRError.serverRedirect(redirect) = error,
+                   let target = Self.parseRedirectTarget(redirect)
+                {
+                    currentHost = target.host
+                    currentPort = target.port
+                } else {
+                    throw error
+                }
+            }
+        }
+
+        throw KiwiSDRError.handshakeFailed("Too many redirects")
+    }
+
+    /// Parse a KiwiSDR redirect target into host and port.
+    /// Handles "http://host:port", "host:port", and bare "host" formats.
+    static func parseRedirectTarget(
+        _ redirect: String
+    ) -> (host: String, port: Int)? {
+        var cleaned = redirect
+        if let range = cleaned.range(of: "://") {
+            cleaned = String(cleaned[range.upperBound...])
+        }
+        if let slashIndex = cleaned.firstIndex(of: "/") {
+            cleaned = String(cleaned[..<slashIndex])
+        }
+        let parts = cleaned.components(separatedBy: ":")
+        let host = parts[0]
+        guard !host.isEmpty else {
+            return nil
+        }
+        let port = parts.count > 1 ? Int(parts[1]) ?? 8_073 : 8_073
+        return (host, port)
     }
 
     func finalizeOnError() async {

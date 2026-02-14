@@ -73,6 +73,7 @@ struct WebSDRPickerSheet: View {
             } label: {
                 receiverRow(receiver)
             }
+            .disabled(!receiver.isAvailable)
         }
     }
 
@@ -115,6 +116,7 @@ struct WebSDRPickerSheet: View {
             }
         }
         .contentShape(Rectangle())
+        .opacity(receiver.isAvailable ? 1.0 : 0.5)
     }
 
     private func availabilityBadge(_ receiver: KiwiSDRReceiver) -> some View {
@@ -122,9 +124,15 @@ struct WebSDRPickerSheet: View {
             Circle()
                 .fill(receiver.isAvailable ? .green : .red)
                 .frame(width: 6, height: 6)
-            Text("\(receiver.users)/\(receiver.maxUsers)")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
+            if receiver.isAvailable {
+                Text("\(receiver.users)/\(receiver.maxUsers)")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            } else {
+                Text("Full (\(receiver.users)/\(receiver.maxUsers))")
+                    .font(.caption2)
+                    .foregroundStyle(.red)
+            }
         }
     }
 

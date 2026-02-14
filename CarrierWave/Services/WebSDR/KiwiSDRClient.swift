@@ -278,9 +278,13 @@ actor KiwiSDRClient {
             throw KiwiSDRError.serverRedirect(redirect)
         }
     }
+}
 
+// MARK: - Receive Loop & Message Processing
+
+extension KiwiSDRClient {
     /// Main receive loop for WebSocket messages
-    private func receiveLoop() async {
+    func receiveLoop() async {
         guard let ws = webSocket else {
             return
         }
@@ -395,6 +399,13 @@ actor KiwiSDRClient {
                 adpcmState.stepIndex = max(0, min(88, index))
                 adpcmState.predictor = prev
             }
+        }
+
+        // Detect server redirect and finish stream so session can reconnect
+        if parseMSGValue(text, key: "redirect") != nil {
+            state = .error("Server redirect")
+            audioContinuation?.finish()
+            return
         }
 
         // Detect server-initiated disconnect
