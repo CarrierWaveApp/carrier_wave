@@ -239,6 +239,65 @@ struct QuickEntryParserTests {
         #expect(!QuickEntryParser.isStateOrRegion("USA")) // Too long
     }
 
+    // MARK: - Frequency Detection
+
+    @Test("Frequency with decimal detected")
+    func frequencyWithDecimalDetected() {
+        let result = QuickEntryParser.parse("W1AW 14.060")
+        #expect(result != nil)
+        #expect(result?.callsign == "W1AW")
+        #expect(result?.frequency == 14.060)
+        #expect(result?.band == "20m")
+    }
+
+    @Test("Frequency in kHz detected")
+    func frequencyInKHzDetected() {
+        let result = QuickEntryParser.parse("W1AW 7030")
+        #expect(result != nil)
+        #expect(result?.frequency == 7.030)
+        #expect(result?.band == "40m")
+    }
+
+    @Test("Frequency with RST and park")
+    func frequencyWithRSTAndPark() {
+        let result = QuickEntryParser.parse("K3LR 14.060 599 US-0189")
+        #expect(result != nil)
+        #expect(result?.callsign == "K3LR")
+        #expect(result?.frequency == 14.060)
+        #expect(result?.band == "20m")
+        #expect(result?.rstReceived == "599")
+        #expect(result?.theirPark == "US-0189")
+    }
+
+    @Test("Frequency token displayed with MHz suffix")
+    func frequencyTokenDisplayedWithMHz() {
+        let tokens = QuickEntryParser.parseTokens("W1AW 14.060")
+        #expect(tokens.count == 3) // callsign + freq + band
+        #expect(tokens[0].type == .callsign)
+        #expect(tokens[1].type == .frequency)
+        #expect(tokens[1].text == "14.060 MHz")
+        #expect(tokens[2].type == .band)
+        #expect(tokens[2].text == "20m")
+    }
+
+    @Test("Frequency without recognized band omits band token")
+    func frequencyWithoutBandOmitsBandToken() {
+        // 450 MHz is just outside 70cm (420-450), but 440 is in range
+        let tokens = QuickEntryParser.parseTokens("W1AW 440.000")
+        #expect(tokens.count == 3) // callsign + freq + band
+        #expect(tokens[1].type == .frequency)
+        #expect(tokens[2].type == .band)
+        #expect(tokens[2].text == "70cm")
+    }
+
+    @Test("RST not confused with frequency")
+    func rstNotConfusedWithFrequency() {
+        // "599" should be RST, not frequency
+        let result = QuickEntryParser.parse("W1AW 599")
+        #expect(result?.rstReceived == "599")
+        #expect(result?.frequency == nil)
+    }
+
     // MARK: - Edge Cases
 
     @Test("Empty string returns nil")

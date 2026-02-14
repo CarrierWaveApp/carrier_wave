@@ -23,6 +23,10 @@ extension TokenType {
             .green
         case .grid:
             .purple
+        case .frequency:
+            .teal
+        case .band:
+            .indigo
         case .notes:
             .secondary
         }
@@ -43,6 +47,10 @@ extension TokenType {
             "park"
         case .grid:
             "grid"
+        case .frequency:
+            "freq"
+        case .band:
+            "band"
         case .notes:
             "note"
         }

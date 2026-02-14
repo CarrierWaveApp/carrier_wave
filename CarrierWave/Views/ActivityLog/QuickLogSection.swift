@@ -185,6 +185,8 @@ struct QuickLogSection: View {
         case .park: .orange
         case .grid: .purple
         case .state: .cyan
+        case .frequency: .teal
+        case .band: .indigo
         case .notes: .gray
         }
     }
@@ -216,18 +218,22 @@ struct QuickLogSection: View {
             data.theirGrid = result.theirGrid
             data.state = result.state
             data.notes = result.notes
+            data.frequency = result.frequency ?? currentFrequency
+            data.band = result.band ?? currentFrequency.map {
+                LoggingSession.bandForFrequency($0)
+            } ?? "Unknown"
         } else {
             // Single callsign
             data.callsign = trimmed.uppercased()
             data.rstSent = effectiveRST(rstSent)
             data.rstReceived = effectiveRST(rstReceived)
+            data.frequency = currentFrequency
+            data.band = currentFrequency.map {
+                LoggingSession.bandForFrequency($0)
+            } ?? "Unknown"
         }
 
         data.mode = currentMode
-        data.frequency = currentFrequency
-        data.band = currentFrequency.map {
-            LoggingSession.bandForFrequency($0)
-        } ?? "Unknown"
 
         onLog(data)
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()

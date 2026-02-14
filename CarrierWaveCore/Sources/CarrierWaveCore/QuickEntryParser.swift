@@ -15,6 +15,8 @@ public enum TokenType: Equatable, Sendable {
     case state
     case park
     case grid
+    case frequency
+    case band
     case notes
 }
 
@@ -56,6 +58,8 @@ public struct QuickEntryResult: Equatable, Sendable {
         state: String? = nil,
         theirPark: String? = nil,
         theirGrid: String? = nil,
+        frequency: Double? = nil,
+        band: String? = nil,
         notes: String? = nil
     ) {
         self.callsign = callsign
@@ -64,6 +68,8 @@ public struct QuickEntryResult: Equatable, Sendable {
         self.state = state
         self.theirPark = theirPark
         self.theirGrid = theirGrid
+        self.frequency = frequency
+        self.band = band
         self.notes = notes
     }
 
@@ -75,6 +81,8 @@ public struct QuickEntryResult: Equatable, Sendable {
     public var state: String?
     public var theirPark: String?
     public var theirGrid: String?
+    public var frequency: Double?
+    public var band: String?
     public var notes: String?
 }
 
@@ -136,6 +144,9 @@ public enum QuickEntryParser: Sendable {
                 result.theirGrid = token.uppercased()
             } else if isStateOrRegion(token) {
                 result.state = token
+            } else if let freq = FrequencyFormatter.parse(token) {
+                result.frequency = freq
+                result.band = BandUtilities.deriveBand(from: freq * 1_000.0)
             } else {
                 unrecognized.append(token)
             }
@@ -194,32 +205,7 @@ public enum QuickEntryParser: Sendable {
 
         for (index, token) in tokens.dropFirst().enumerated() {
             let originalIndex = index + 1
-            let type: TokenType =
-                if isRST(token) {
-                    if let rstPos = rstIndices.firstIndex(of: originalIndex) {
-                        if rstIndices.count == 1 {
-                            .rstReceived
-                        } else if rstPos == 0 {
-                            .rstSent
-                        } else if rstPos == 1 {
-                            .rstReceived
-                        } else {
-                            .notes // 3rd+ RST becomes notes
-                        }
-                    } else {
-                        .notes
-                    }
-                } else if isParkReference(token) {
-                    .park
-                } else if isGridSquare(token) {
-                    .grid
-                } else if isStateOrRegion(token) {
-                    .state
-                } else {
-                    .notes
-                }
-
-            result.append(ParsedToken(index: result.count, text: token, type: type))
+            classifyToken(token, originalIndex: originalIndex, rstIndices: rstIndices, into: &result)
         }
 
         return result
@@ -356,6 +342,49 @@ public enum QuickEntryParser: Sendable {
 
         return usStates.union(canada).union(dxRegions)
     }()
+
+    private static func classifyToken(
+        _ token: String,
+        originalIndex: Int,
+        rstIndices: [Int],
+        into result: inout [ParsedToken]
+    ) {
+        if isRST(token) {
+            let rstType = rstTokenType(originalIndex: originalIndex, rstIndices: rstIndices)
+            result.append(ParsedToken(index: result.count, text: token, type: rstType))
+        } else if isParkReference(token) {
+            result.append(ParsedToken(index: result.count, text: token, type: .park))
+        } else if isGridSquare(token) {
+            result.append(ParsedToken(index: result.count, text: token.uppercased(), type: .grid))
+        } else if isStateOrRegion(token) {
+            result.append(ParsedToken(index: result.count, text: token, type: .state))
+        } else if let freq = FrequencyFormatter.parse(token) {
+            result.append(ParsedToken(
+                index: result.count,
+                text: FrequencyFormatter.formatWithUnit(freq),
+                type: .frequency
+            ))
+            if let band = BandUtilities.deriveBand(from: freq * 1_000.0) {
+                result.append(ParsedToken(index: result.count, text: band, type: .band))
+            }
+        } else {
+            result.append(ParsedToken(index: result.count, text: token, type: .notes))
+        }
+    }
+
+    private static func rstTokenType(originalIndex: Int, rstIndices: [Int]) -> TokenType {
+        guard let rstPos = rstIndices.firstIndex(of: originalIndex) else {
+            return .notes
+        }
+        if rstIndices.count == 1 {
+            return .rstReceived
+        } else if rstPos == 0 {
+            return .rstSent
+        } else if rstPos == 1 {
+            return .rstReceived
+        }
+        return .notes
+    }
 
     /// Check if string matches basic callsign pattern (no modifiers)
     /// Pattern: optional digit/letters prefix + digit + 1-4 letter suffix
