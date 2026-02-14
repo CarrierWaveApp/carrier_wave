@@ -67,12 +67,14 @@ struct WeatherConditionBadge: View {
     let metadata: ActivationMetadata
 
     var body: some View {
+        // swiftlint:disable:next redundant_discardable_let
+        let _ = useMetricUnits // Trigger re-render when unit preference changes
         HStack(spacing: 3) {
             weatherIcon
                 .font(.system(size: 9))
 
             if let tempF = metadata.weatherTemperatureF {
-                Text("\(Int(tempF))\u{00B0}")
+                Text(UnitFormatter.temperatureCompact(tempF))
                     .font(.caption)
             }
         }
@@ -86,13 +88,15 @@ struct WeatherConditionBadge: View {
 
     // MARK: Private
 
+    @AppStorage("useMetricUnits") private var useMetricUnits = false
+
     private var accessibilityDescription: String {
         var parts: [String] = []
         if let desc = metadata.weatherDescription {
             parts.append(desc)
         }
         if let tempF = metadata.weatherTemperatureF {
-            parts.append("\(Int(tempF)) degrees")
+            parts.append(UnitFormatter.temperature(tempF))
         }
         return parts.isEmpty ? "Weather" : parts.joined(separator: ", ")
     }

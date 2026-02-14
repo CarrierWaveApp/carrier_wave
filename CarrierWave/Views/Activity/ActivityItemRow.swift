@@ -11,6 +11,8 @@ struct ActivityItemRow: View {
     var onCallsignTap: ((String) -> Void)?
 
     var body: some View {
+        // swiftlint:disable:next redundant_discardable_let
+        let _ = useMetricUnits // Trigger re-render when unit preference changes
         VStack(alignment: .leading, spacing: 8) {
             // Top row: icon, callsign, timestamp
             HStack(alignment: .top) {
@@ -91,6 +93,8 @@ struct ActivityItemRow: View {
     }
 
     // MARK: Private
+
+    @AppStorage("useMetricUnits") private var useMetricUnits = false
 
     private var iconColor: Color {
         switch item.activityType {
@@ -213,11 +217,7 @@ struct ActivityItemRow: View {
     }
 
     private func formatDistance(_ km: Double) -> String {
-        if km >= 1_000 {
-            String(format: "%.0f km", km)
-        } else {
-            String(format: "%.0f km", km)
-        }
+        UnitFormatter.distance(km)
     }
 }
 

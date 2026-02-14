@@ -14,6 +14,8 @@ struct SpotSummaryView: View {
     @Bindable var monitoringService: SpotMonitoringService
 
     var body: some View {
+        // swiftlint:disable:next redundant_discardable_let
+        let _ = useMetricUnits // Trigger re-render when unit preference changes
         if monitoringService.isMonitoring {
             VStack(spacing: 0) {
                 summaryBanner
@@ -38,10 +40,7 @@ struct SpotSummaryView: View {
     /// Whether to show detailed spot list
     @State private var isExpanded = false
 
-    /// User preference for metric units
-    private var useMetric: Bool {
-        UserDefaults.standard.bool(forKey: "useMetricDistance")
-    }
+    @AppStorage("useMetricUnits") private var useMetricUnits = false
 
     private var summary: SpotSummary {
         monitoringService.summary
@@ -66,7 +65,7 @@ struct SpotSummaryView: View {
                 Spacer()
 
                 // Distance range
-                if let range = summary.distanceRange(useMetric: useMetric) {
+                if let range = summary.distanceRange(useMetric: UnitFormatter.useMetric) {
                     Text(range)
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -172,7 +171,7 @@ struct SpotSummaryView: View {
             }
 
             // Distance
-            if let distance = enrichedSpot.formattedDistance(useMetric: useMetric) {
+            if let distance = enrichedSpot.formattedDistance(useMetric: UnitFormatter.useMetric) {
                 Text(distance)
                     .font(.caption2)
                     .foregroundStyle(.secondary)

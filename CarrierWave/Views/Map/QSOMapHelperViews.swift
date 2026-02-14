@@ -274,6 +274,8 @@ struct MapStatsOverlay: View {
     let statistics: MapStatistics
 
     var body: some View {
+        // swiftlint:disable:next redundant_discardable_let
+        let _ = useMetricUnits // Trigger re-render when unit preference changes
         VStack(spacing: 6) {
             HStack(spacing: 12) {
                 statItem(value: visibleQSOs, label: "QSOs")
@@ -284,17 +286,25 @@ struct MapStatsOverlay: View {
 
             HStack(spacing: 10) {
                 statItem(
-                    text: statistics.averageDistanceKm.map { formatDistance($0) } ?? "--",
-                    label: "Avg km"
+                    text: statistics.averageDistanceKm.map {
+                        UnitFormatter.distanceCompact($0)
+                    } ?? "--",
+                    label: "Avg"
                 )
                 statItem(
-                    text: statistics.longestDistanceKm.map { formatDistance($0) } ?? "--",
-                    label: "Max km"
+                    text: statistics.longestDistanceKm.map {
+                        UnitFormatter.distanceCompact($0)
+                    } ?? "--",
+                    label: "Max"
                 )
                 if statistics.wattsPerMile != nil {
+                    let wpmValue = statistics.wattsPerMile.map { wpm -> String in
+                        let display = UnitFormatter.useMetric ? wpm * 0.621371 : wpm
+                        return String(format: "%.2f", display)
+                    }
                     statItem(
-                        text: statistics.wattsPerMile.map { String(format: "%.2f", $0) } ?? "--",
-                        label: "W/mi"
+                        text: wpmValue ?? "--",
+                        label: UnitFormatter.wattsPerDistanceLabel()
                     )
                 }
             }
@@ -305,6 +315,8 @@ struct MapStatsOverlay: View {
     }
 
     // MARK: Private
+
+    @AppStorage("useMetricUnits") private var useMetricUnits = false
 
     private func statItem(value: Int, label: String) -> some View {
         statItem(text: "\(value)", label: label)
@@ -327,13 +339,6 @@ struct MapStatsOverlay: View {
             return "\(hours)h\(minutes)m"
         }
         return "\(minutes)m"
-    }
-
-    private func formatDistance(_ km: Double) -> String {
-        if km >= 1_000 {
-            return String(format: "%.0fk", km / 1_000)
-        }
-        return String(format: "%.0f", km)
     }
 }
 

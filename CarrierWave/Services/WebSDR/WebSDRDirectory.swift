@@ -32,11 +32,7 @@ struct KiwiSDRReceiver: Identifiable, Sendable {
         guard let km = distanceKm else {
             return nil
         }
-        if km < 1 {
-            return "<1 km"
-        }
-        let miles = km * 0.621371
-        return String(format: "%.0f km (%.0f mi)", km, miles)
+        return UnitFormatter.distance(km)
     }
 }
 

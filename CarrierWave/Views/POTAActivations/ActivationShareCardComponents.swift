@@ -93,6 +93,8 @@ struct ActivationShareCardStats: View {
     var radio: String?
 
     var body: some View {
+        // swiftlint:disable:next redundant_discardable_let
+        let _ = useMetricUnits // Trigger re-render when unit preference changes
         VStack(spacing: 8) {
             HStack(spacing: 24) {
                 ShareCardStatItem(value: "\(qsoCount)", label: "QSOs")
@@ -119,6 +121,8 @@ struct ActivationShareCardStats: View {
 
     // MARK: Private
 
+    @AppStorage("useMetricUnits") private var useMetricUnits = false
+
     private var hasDetailRow: Bool {
         watts != nil || avgDistanceKm != nil || radio != nil
     }
@@ -130,7 +134,7 @@ struct ActivationShareCardStats: View {
                 detailBadge("\(watts)W")
             }
             if let wpm = wattsPerMile {
-                detailBadge(String(format: "%.2f W/mi", wpm))
+                detailBadge(UnitFormatter.wattsPerDistance(wpm))
             }
             if let avg = avgDistanceKm {
                 detailBadge(compactDistance(avg, label: "avg"))
@@ -156,11 +160,7 @@ struct ActivationShareCardStats: View {
     }
 
     private func compactDistance(_ km: Double, label: String) -> String {
-        let mi = km * 0.621371
-        if mi >= 1_000 {
-            return String(format: "%.\(mi >= 10_000 ? "0" : "1")fk mi %@", mi / 1_000, label)
-        }
-        return String(format: "%.0f mi %@", mi, label)
+        UnitFormatter.distanceCompact(km, label: label)
     }
 }
 

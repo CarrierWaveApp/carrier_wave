@@ -17,6 +17,8 @@ struct LocationChangeSheet: View {
     let onKeep: () -> Void
 
     var body: some View {
+        // swiftlint:disable:next redundant_discardable_let
+        let _ = useMetricUnits // Trigger re-render when unit preference changes
         NavigationStack {
             VStack(spacing: 20) {
                 locationIcon
@@ -40,6 +42,8 @@ struct LocationChangeSheet: View {
 
     // MARK: Private
 
+    @AppStorage("useMetricUnits") private var useMetricUnits = false
+
     @State private var selectedProfileId: UUID?
 
     private var distanceText: String? {
@@ -51,7 +55,7 @@ struct LocationChangeSheet: View {
         let loc1 = CLLocation(latitude: oldCoord.latitude, longitude: oldCoord.longitude)
         let loc2 = CLLocation(latitude: newCoord.latitude, longitude: newCoord.longitude)
         let km = loc1.distance(from: loc2) / 1_000.0
-        return String(format: "\u{2248} %.0f km moved", km)
+        return "\u{2248} \(UnitFormatter.distance(km)) moved"
     }
 
     private var locationIcon: some View {

@@ -5,6 +5,7 @@ All notable changes to Carrier Wave will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Add imperial/metric unit system picker in Settings — affects distances, temperatures, wind speed, and watts-per-distance across all views
 - Auto-populate grid square from GPS when station profile has "Use Current Location" enabled — works in profile setup, editing, and live activity log with location indicator icon
 - Enhance park selector with GPS-based nearby parks, activation/QSO counts per park, and unified search by number or name
 - Track SDR parameter changes (frequency/mode) during WebSDR recordings with timestamps and offsets, enabling accurate segment reconstruction for playback rendering

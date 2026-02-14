@@ -125,9 +125,6 @@ enum ActivationStatsHelper {
     }
 
     static func formatDistance(_ km: Double) -> String {
-        if km >= 1_000 {
-            return String(format: "%.0fk km", km / 1_000)
-        }
-        return String(format: "%.0f km", km)
+        UnitFormatter.distance(km)
     }
 }

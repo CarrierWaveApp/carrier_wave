@@ -15,6 +15,8 @@ struct WeatherPanelView: View {
     let onDismiss: () -> Void
 
     var body: some View {
+        // swiftlint:disable:next redundant_discardable_let
+        let _ = useMetricUnits // Trigger re-render when unit preference changes
         VStack(spacing: 0) {
             header
             Divider()
@@ -36,6 +38,8 @@ struct WeatherPanelView: View {
     }
 
     // MARK: Private
+
+    @AppStorage("useMetricUnits") private var useMetricUnits = false
 
     @State private var conditions: WeatherConditions?
     @State private var isLoading = true
@@ -116,10 +120,10 @@ struct WeatherPanelView: View {
             HStack(spacing: 20) {
                 // Temperature
                 VStack(spacing: 4) {
-                    Text(conditions.formattedTemperature)
+                    Text(UnitFormatter.temperature(conditions.temperature))
                         .font(.system(size: 48, weight: .light))
 
-                    Text("\(Int(conditions.temperatureCelsius))\u{00B0}C")
+                    Text(UnitFormatter.temperatureSecondary(conditions.temperature))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

@@ -472,6 +472,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `GridLocationService.swift` | One-shot GPS → 6-char Maidenhead grid square service |
 | `MaidenheadConverter.swift` | Grid square to coordinate conversion (and reverse) |
 | `SunlightMode.swift` | Sunlight mode environment key and view modifier for outdoor visibility |
+| `UnitFormatter.swift` | Centralized imperial/metric unit formatting (distance, temperature, wind, watts/distance) |
 
 ## Tests (`CarrierWaveTests/`)
 | File | Purpose |

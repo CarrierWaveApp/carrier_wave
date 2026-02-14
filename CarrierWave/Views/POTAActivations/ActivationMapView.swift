@@ -18,6 +18,8 @@ struct ActivationMapView: View {
     var metadata: ActivationMetadata?
 
     var body: some View {
+        // swiftlint:disable:next redundant_discardable_let
+        let _ = useMetricUnits // Trigger re-render when unit preference changes
         ZStack {
             mapContent
 
@@ -72,6 +74,8 @@ struct ActivationMapView: View {
     }
 
     // MARK: Private
+
+    @AppStorage("useMetricUnits") private var useMetricUnits = false
 
     @Environment(\.modelContext) private var modelContext
     @State private var cameraPosition: MapCameraPosition = .automatic
@@ -207,9 +211,10 @@ struct ActivationMapView: View {
                 )
             }
             if let wpm = stats.wattsPerMile {
+                let displayWpm = UnitFormatter.useMetric ? wpm * 0.621371 : wpm
                 activationStatRow(
-                    label: "W/mi",
-                    value: String(format: "%.2f", wpm)
+                    label: UnitFormatter.wattsPerDistanceLabel(),
+                    value: String(format: "%.2f", displayWpm)
                 )
             }
             if let wpm = metadata?.averageWPM {

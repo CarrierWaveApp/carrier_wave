@@ -91,20 +91,17 @@ struct WeatherConditions: Sendable {
     let icon: String?
     let timestamp: Date
 
-    /// Formatted temperature string
+    /// Formatted temperature string using user's unit preference
     var formattedTemperature: String {
-        "\(Int(temperature))\u{00B0}F"
+        UnitFormatter.temperature(temperature)
     }
 
-    /// Formatted wind string
+    /// Formatted wind string using user's unit preference
     var formattedWind: String? {
         guard let speed = windSpeed else {
             return nil
         }
-        if let dir = windDirection {
-            return "\(Int(speed)) mph \(dir)"
-        }
-        return "\(Int(speed)) mph"
+        return UnitFormatter.windSpeed(speed, direction: windDirection)
     }
 }
 

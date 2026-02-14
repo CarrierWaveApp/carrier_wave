@@ -70,7 +70,7 @@ struct SettingsMainView: View {
     @AppStorage("autoRecordConditions") private var autoRecordConditions = true
     @AppStorage("loggerAutoModeSwitch") private var autoModeSwitch = true
     @AppStorage("callsignNotesDisplayMode") private var notesDisplayMode = "emoji"
-    @AppStorage("useMetricDistance") private var useMetricDistance = false
+    @AppStorage("useMetricUnits") private var useMetricUnits = false
 
     // Keyboard row settings
     @AppStorage("keyboardRowShowNumbers") private var keyboardRowShowNumbers = true
@@ -295,6 +295,11 @@ struct SettingsMainView: View {
                 Text("Dark").tag("dark")
                 Text("Sunlight").tag("sunlight")
             }
+
+            Picker("Units", selection: $useMetricUnits) {
+                Text("Imperial (mi, \u{00B0}F, mph)").tag(false)
+                Text("Metric (km, \u{00B0}C, km/h)").tag(true)
+            }
         } header: {
             Text("Navigation")
         } footer: {
@@ -358,8 +363,6 @@ struct SettingsMainView: View {
             Toggle("Show frequency activity", isOn: $showActivityPanel)
             Toggle("Keep screen on", isOn: $keepScreenOn)
             Toggle("Auto-switch mode for frequency", isOn: $autoModeSwitch)
-            Toggle("Use kilometers for distance", isOn: $useMetricDistance)
-
             Picker("Notes display", selection: $notesDisplayMode) {
                 Text("Emoji").tag("emoji")
                 Text("Source names").tag("sources")

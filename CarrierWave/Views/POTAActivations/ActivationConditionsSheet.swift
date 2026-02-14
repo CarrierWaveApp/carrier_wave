@@ -13,6 +13,8 @@ struct ActivationConditionsSheet: View {
     let metadata: ActivationMetadata
 
     var body: some View {
+        // swiftlint:disable:next redundant_discardable_let
+        let _ = useMetricUnits // Trigger re-render when unit preference changes
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
@@ -40,6 +42,8 @@ struct ActivationConditionsSheet: View {
     }
 
     // MARK: Private
+
+    @AppStorage("useMetricUnits") private var useMetricUnits = false
 
     @Environment(\.dismiss) private var dismiss
 
@@ -164,29 +168,28 @@ struct ActivationConditionsSheet: View {
         ConditionGaugeCard(
             icon: "thermometer.medium",
             title: "Temperature",
-            value: "\(Int(temp))\u{00B0}F",
+            value: UnitFormatter.temperature(temp),
             rating: Self.tempRating(temp),
             segmentColors: Self.tempColors,
             activeSegment: Self.segmentIndex(
                 value: temp, boundaries: Self.tempBoundaries
             ),
-            scaleLabels: ["0\u{00B0}F", "Cold", "Hot", "110\u{00B0}F"]
+            scaleLabels: Self.tempScaleLabels
         )
     }
 
     private func windCard(_ wind: Double) -> some View {
         let dir = metadata.weatherWindDirection ?? ""
-        let suffix = dir.isEmpty ? "" : " \(dir)"
         return ConditionGaugeCard(
             icon: "wind",
             title: "Wind Speed",
-            value: "\(Int(wind)) mph\(suffix)",
+            value: UnitFormatter.windSpeed(wind, direction: dir.isEmpty ? nil : dir),
             rating: Self.windRating(wind),
             segmentColors: Self.windColors,
             activeSegment: Self.segmentIndex(
                 value: wind, boundaries: Self.windBoundaries
             ),
-            scaleLabels: ["0", "Calm", "Strong", "50+"]
+            scaleLabels: Self.windScaleLabels
         )
     }
 
@@ -247,6 +250,13 @@ extension ActivationConditionsSheet {
         Color(red: 0.8, green: 0.0, blue: 0.0),
     ]
 
+    static var tempScaleLabels: [String] {
+        if UnitFormatter.useMetric {
+            return ["-18\u{00B0}C", "Cold", "Hot", "43\u{00B0}C"]
+        }
+        return ["0\u{00B0}F", "Cold", "Hot", "110\u{00B0}F"]
+    }
+
     // Wind: 8 segments (0-40+ mph), green→red (calmer is better)
     static let windColors: [Color] = [
         .green, .green,
@@ -256,6 +266,13 @@ extension ActivationConditionsSheet {
         Color(red: 1.0, green: 0.2, blue: 0.2),
         Color(red: 0.8, green: 0.0, blue: 0.0),
     ]
+
+    static var windScaleLabels: [String] {
+        if UnitFormatter.useMetric {
+            return ["0", "Calm", "Strong", "80+"]
+        }
+        return ["0", "Calm", "Strong", "50+"]
+    }
 
     // Humidity: 10 segments (0-100%), orange→green→red (mid-range is best)
     static let humidityColors: [Color] = [

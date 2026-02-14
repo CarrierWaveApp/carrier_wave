@@ -369,6 +369,8 @@ struct ParkRow: View {
     let onSelect: () -> Void
 
     var body: some View {
+        // swiftlint:disable:next redundant_discardable_let
+        let _ = useMetricUnits // Trigger re-render when unit preference changes
         Button(action: onSelect) {
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 4) {
@@ -417,6 +419,8 @@ struct ParkRow: View {
 
     // MARK: Private
 
+    @AppStorage("useMetricUnits") private var useMetricUnits = false
+
     private func statsBadge(_ stats: ParkStats) -> some View {
         HStack(spacing: 4) {
             Image(systemName: "antenna.radiowaves.left.and.right")
@@ -436,13 +440,7 @@ struct ParkRow: View {
     }
 
     private func formatDistance(_ km: Double) -> String {
-        if km < 1 {
-            String(format: "%.0f m", km * 1_000)
-        } else if km < 10 {
-            String(format: "%.1f km", km)
-        } else {
-            String(format: "%.0f km", km)
-        }
+        UnitFormatter.distance(km)
     }
 }
 

@@ -234,23 +234,10 @@ struct EnrichedSpot: Identifiable, Sendable {
 
     /// Formatted distance string based on user preference
     func formattedDistance(useMetric: Bool) -> String? {
-        if useMetric {
-            guard let km = distanceKm else {
-                return nil
-            }
-            if km >= 1_000 {
-                return String(format: "%.0f km", km)
-            }
-            return String(format: "%.0f km", km)
-        } else {
-            guard let miles = distanceMiles else {
-                return nil
-            }
-            if miles >= 1_000 {
-                return String(format: "%.0f mi", miles)
-            }
-            return String(format: "%.0f mi", miles)
+        guard let km = distanceKm else {
+            return nil
         }
+        return UnitFormatter.distance(km)
     }
 }
 
@@ -292,15 +279,6 @@ struct SpotSummary: Sendable {
         else {
             return nil
         }
-
-        if useMetric {
-            let minKm = minMeters / 1_000.0
-            let maxKm = maxMeters / 1_000.0
-            return String(format: "%.0f-%.0f km", minKm, maxKm)
-        } else {
-            let minMiles = minMeters / 1_609.344
-            let maxMiles = maxMeters / 1_609.344
-            return String(format: "%.0f-%.0f mi", minMiles, maxMiles)
-        }
+        return UnitFormatter.distanceRange(minMeters: minMeters, maxMeters: maxMeters)
     }
 }
