@@ -17,6 +17,7 @@ All notable changes to Carrier Wave will be documented in this file.
 - Add Sessions tab in Logs — browse all completed logging sessions grouped by month with recording indicators and navigation to player or session detail
 
 ### Fixed
+- Fix POTA job matching showing jobs from unrelated activations on activation detail cards — nil-date jobs (from all-duplicate uploads) now match to the closest activation by submitted date instead of all activations for the same park
 - Fix KiwiSDR redirect handling — follow server redirects during handshake (up to 3 hops) instead of showing an error; detect redirects during streaming to trigger immediate reconnect; cache effective host/port so reconnects go directly to the correct server
 - Fix WebSDR CW tuning — apply CW pitch offset so the signal lands in the center of the audio passband instead of at 0 Hz (inaudible)
 - Fix KiwiSDR false disconnect on `too_busy=0` — server sends `MSG too_busy=0` as an informational status (not busy), but string matching treated it as a disconnect causing 10-second reconnect cycles

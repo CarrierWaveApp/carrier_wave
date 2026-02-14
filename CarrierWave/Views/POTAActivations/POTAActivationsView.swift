@@ -406,9 +406,7 @@ extension POTAActivationsContentView {
         }
     }
 
-    /// Confirm or reset submitted uploads based on POTA job statuses.
-    /// Called after jobs are refreshed to reconcile local state with remote job log.
-    /// Returns true if any changes were made.
+    /// Confirm or reset submitted uploads based on POTA job statuses. Returns true if changed.
     @discardableResult
     private func confirmUploadsFromJobs() -> Bool {
         var confirmedCount = 0
@@ -420,21 +418,16 @@ extension POTAActivationsContentView {
                 continue
             }
 
-            // Check for completed jobs — confirm submitted QSOs
             let hasCompletedJob = matching.contains { $0.status == .completed }
-            // Check for failed jobs (only if no completed job exists)
             let hasFailedJob = !hasCompletedJob && matching.contains { $0.status.isFailure }
 
             for park in activation.parks {
                 if hasCompletedJob {
-                    // Confirm all non-uploaded QSOs for this park
-                    // (covers both submitted QSOs and QSOs uploaded before the submitted state existed)
                     for qso in activation.qsos where !qso.isUploadedToPark(park) {
                         qso.confirmUploadedToPark(park, context: modelContext)
                         confirmedCount += 1
                     }
                 } else if hasFailedJob {
-                    // Reset submitted QSOs back to needing upload
                     for qso in activation.qsos where qso.isSubmittedToPark(park) {
                         qso.resetSubmittedToPark(park, context: modelContext)
                         resetCount += 1
@@ -450,14 +443,11 @@ extension POTAActivationsContentView {
         return false
     }
 
-    /// Rebuild the job index mapping activation IDs to their matching jobs.
-    /// Pass 1: exact match (park + callsign + firstQSO date).
-    /// Pass 2: fuzzy match nil-date jobs to unmatched activations (park + callsign only).
+    /// Rebuild the job index: exact match first, then fuzzy match nil-date jobs.
     private func rebuildJobIndex() {
         var index: [String: [POTAJob]] = [:]
         var matchedJobIds = Set<Int>()
 
-        // Pass 1: exact match (park + callsign + firstQSO date)
         for activation in activations {
             let matching = activation.matchingJobs(from: jobs)
             if !matching.isEmpty {
@@ -466,15 +456,12 @@ extension POTAActivationsContentView {
             }
         }
 
-        // Pass 2: fuzzy match nil-date jobs to unmatched activations.
-        // POTA sometimes returns jobs with firstQSO=nil (e.g., all-duplicate uploads).
         fuzzyMatchNilDateJobs(into: &index, excluding: matchedJobIds)
-
         jobsByActivationId = index
     }
 
-    /// Assign nil-date jobs to unmatched activations by park + callsign.
-    /// Safe because confirmUploadsFromJobs only checks whether a completed job exists.
+    /// Assign nil-date jobs to the closest unmatched activation by submitted date,
+    /// preventing jobs from old activations leaking onto newer ones.
     private func fuzzyMatchNilDateJobs(
         into index: inout [String: [POTAJob]], excluding matchedJobIds: Set<Int>
     ) {
@@ -484,17 +471,26 @@ extension POTAActivationsContentView {
         }
 
         let unmatchedActivations = activations.filter { index[$0.id] == nil }
-        for activation in unmatchedActivations {
-            let fuzzyMatches = nilDateJobs.filter {
-                $0.matchesParkAndCallsign(
-                    parkReference: activation.parkReference,
-                    callsign: activation.callsign
-                )
-            }.sorted { $0.submitted > $1.submitted }
+        guard !unmatchedActivations.isEmpty else {
+            return
+        }
 
-            if !fuzzyMatches.isEmpty {
-                index[activation.id] = fuzzyMatches
+        var fuzzyIndex: [String: [POTAJob]] = [:]
+        for job in nilDateJobs {
+            let candidates = unmatchedActivations.filter {
+                job.matchesParkAndCallsign(
+                    parkReference: $0.parkReference,
+                    callsign: $0.callsign
+                ) && $0.utcDate <= job.submitted
             }
+            guard let bestMatch = candidates.max(by: { $0.utcDate < $1.utcDate }) else {
+                continue
+            }
+            fuzzyIndex[bestMatch.id, default: []].append(job)
+        }
+
+        for (activationId, matchedJobs) in fuzzyIndex {
+            index[activationId] = matchedJobs.sorted { $0.submitted > $1.submitted }
         }
     }
 }
