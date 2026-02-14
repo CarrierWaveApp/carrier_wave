@@ -1,8 +1,9 @@
 // Park Picker Sheet
 //
-// Sheet for selecting a POTA park. Shows nearby parks by device
+// Sheet for selecting POTA parks. Shows nearby parks by device
 // GPS location with activation/QSO history, and supports
-// filtering by park number or name.
+// filtering by park number or name. Supports multi-select
+// for n-fer activations.
 
 import CoreLocation
 import SwiftData
@@ -79,28 +80,29 @@ private actor ParkStatsLoader {
 
 // MARK: - ParkPickerSheet
 
-/// Sheet for selecting a park by search or nearby location
+/// Sheet for adding parks by search or nearby location (multi-select)
 struct ParkPickerSheet: View {
     // MARK: Lifecycle
 
     init(
-        selectedPark: Binding<String>,
+        selectedParks: [String],
         userGrid: String?,
         defaultCountry: String = "US",
+        onAdd: @escaping (POTAPark) -> Void,
         onDismiss: @escaping () -> Void
     ) {
-        _selectedPark = selectedPark
+        _selectedParks = State(initialValue: Set(selectedParks.map { $0.uppercased() }))
         self.userGrid = userGrid
         self.defaultCountry = defaultCountry
+        self.onAdd = onAdd
         self.onDismiss = onDismiss
     }
 
     // MARK: Internal
 
-    @Binding var selectedPark: String
-
     let userGrid: String?
     let defaultCountry: String
+    let onAdd: (POTAPark) -> Void
     let onDismiss: () -> Void
 
     var body: some View {
@@ -109,11 +111,11 @@ struct ParkPickerSheet: View {
                 searchField
                 parkList
             }
-            .navigationTitle("Select Park")
+            .navigationTitle("Add Park")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") {
                         onDismiss()
                     }
                 }
@@ -133,6 +135,8 @@ struct ParkPickerSheet: View {
 
     @Environment(\.modelContext) private var modelContext
 
+    /// Parks already selected (shown with checkmark, not dismissing on tap)
+    @State private var selectedParks: Set<String>
     @State private var searchText = ""
     @State private var locationManager = ParkLocationManager()
     @State private var nearbyParks: [(park: POTAPark, distanceKm: Double)] = []
@@ -140,25 +144,27 @@ struct ParkPickerSheet: View {
     @State private var parkStats: [String: ParkStats] = [:]
     @State private var isLoadingNearby = true
 
-    /// Parks matching the search query, nearby matches first, then database results
+    /// Parks matching the search query
     private var filteredParks: [(park: POTAPark, distance: Double?)] {
         let query = searchText.trimmingCharacters(in: .whitespaces).lowercased()
         guard !query.isEmpty else {
             return []
         }
 
-        // Nearby parks that match the query (shown with distance)
         let nearbyMatches: [(park: POTAPark, distance: Double?)] = nearbyParks
             .filter { matchesPark($0.park, query: query) }
             .map { (park: $0.park, distance: Optional($0.distanceKm)) }
 
-        // Additional results from the full database (without distance)
         let nearbyRefs = Set(nearbyMatches.map(\.park.reference))
         let additional: [(park: POTAPark, distance: Double?)] = searchResults
             .filter { !nearbyRefs.contains($0.reference) }
             .map { (park: $0, distance: nil) }
 
         return nearbyMatches + additional
+    }
+
+    private func isSelected(_ park: POTAPark) -> Bool {
+        selectedParks.contains(park.reference.uppercased())
     }
 
     // MARK: - Search Field
@@ -212,9 +218,10 @@ struct ParkPickerSheet: View {
                 ParkRow(
                     park: item.park,
                     distance: item.distance,
-                    stats: parkStats[item.park.reference]
+                    stats: parkStats[item.park.reference],
+                    isSelected: isSelected(item.park)
                 ) {
-                    selectPark(item.park)
+                    addPark(item.park)
                 }
             }
         }
@@ -233,9 +240,10 @@ struct ParkPickerSheet: View {
                     ParkRow(
                         park: item.park,
                         distance: item.distanceKm,
-                        stats: parkStats[item.park.reference]
+                        stats: parkStats[item.park.reference],
+                        isSelected: isSelected(item.park)
                     ) {
-                        selectPark(item.park)
+                        addPark(item.park)
                     }
                 }
             }
@@ -274,14 +282,12 @@ struct ParkPickerSheet: View {
     // MARK: - Search Logic
 
     private func matchesPark(_ park: POTAPark, query: String) -> Bool {
-        // Match by reference (e.g., "1234" matches "US-1234")
         if park.reference.lowercased().contains(query) {
             return true
         }
         if park.numericPart.lowercased().contains(query) {
             return true
         }
-        // Match by name (e.g., "yellow" matches "Yellowstone")
         if park.name.lowercased().contains(query) {
             return true
         }
@@ -295,13 +301,13 @@ struct ParkPickerSheet: View {
             return
         }
 
-        // Try direct reference lookup first
-        if let park = POTAParksCache.shared.lookupPark(trimmed, defaultCountry: defaultCountry) {
+        if let park = POTAParksCache.shared.lookupPark(
+            trimmed, defaultCountry: defaultCountry
+        ) {
             searchResults = [park]
             return
         }
 
-        // Fall back to name search
         searchResults = POTAParksCache.shared.searchByName(trimmed)
     }
 
@@ -311,10 +317,8 @@ struct ParkPickerSheet: View {
         isLoadingNearby = true
         defer { isLoadingNearby = false }
 
-        // Request device GPS location
         locationManager.requestLocation()
 
-        // Wait for location (up to 3 seconds)
         for _ in 0 ..< 30 {
             if locationManager.location != nil {
                 break
@@ -331,7 +335,6 @@ struct ParkPickerSheet: View {
             return
         }
 
-        // Fall back to grid square if GPS unavailable
         guard let grid = userGrid, !grid.isEmpty,
               let coordinate = MaidenheadConverter.coordinate(from: grid)
         else {
@@ -351,9 +354,10 @@ struct ParkPickerSheet: View {
         parkStats = await loader.loadStats(container: container)
     }
 
-    private func selectPark(_ park: POTAPark) {
-        selectedPark = park.reference
-        onDismiss()
+    private func addPark(_ park: POTAPark) {
+        guard !isSelected(park) else { return }
+        selectedParks.insert(park.reference.uppercased())
+        onAdd(park)
     }
 }
 
@@ -366,6 +370,7 @@ struct ParkRow: View {
     let park: POTAPark
     var distance: Double?
     var stats: ParkStats?
+    var isSelected: Bool = false
     let onSelect: () -> Void
 
     var body: some View {
@@ -408,13 +413,19 @@ struct ParkRow: View {
                         .clipShape(Capsule())
                 }
 
-                Image(systemName: "chevron.right")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
+                } else {
+                    Image(systemName: "plus.circle")
+                        .font(.caption)
+                        .foregroundStyle(.blue)
+                }
             }
             .padding(.vertical, 4)
         }
         .buttonStyle(.plain)
+        .disabled(isSelected)
     }
 
     // MARK: Private

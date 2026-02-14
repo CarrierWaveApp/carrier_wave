@@ -71,7 +71,7 @@ struct ActivationSectionView: View {
             if activationType == .pota {
                 ParkEntryField(
                     parkReference: $parkReference,
-                    label: "Park",
+                    label: "Parks",
                     placeholder: "1234 or US-1234",
                     userGrid: userGrid,
                     defaultCountry: defaultCountry

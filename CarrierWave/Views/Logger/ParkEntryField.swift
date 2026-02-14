@@ -1,13 +1,16 @@
 // Park Entry Field
 //
-// Enhanced text field for entering POTA park references with
-// integrated search picker and number shorthand expansion.
+// Enhanced field for entering one or more POTA park references.
+// Shows selected parks as removable chips and supports adding
+// via search picker or direct text entry. The binding stores
+// parks as a comma-separated string for model compatibility.
 
+import CarrierWaveCore
 import SwiftUI
 
 // MARK: - ParkEntryField
 
-/// Enhanced park entry field with search picker and number shorthand
+/// Multi-park entry field with chip display, search picker, and text entry
 struct ParkEntryField: View {
     // MARK: Lifecycle
 
@@ -36,35 +39,28 @@ struct ParkEntryField: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            // Label
-            Text(label)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            // Label with count for multi-park
+            HStack {
+                Text(label)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
 
-            // Input row: TextField + magnifying glass button
-            HStack(spacing: 8) {
-                TextField(placeholder, text: $parkReference)
-                    .font(.subheadline.monospaced())
-                    .textInputAutocapitalization(.characters)
-                    .autocorrectionDisabled()
-                    .keyboardType(.numbersAndPunctuation)
-                    .onChange(of: parkReference) { _, newValue in
-                        handleParkInput(newValue)
-                    }
-
-                Button {
-                    showPicker = true
-                } label: {
-                    Image(systemName: "magnifyingglass")
-                        .foregroundStyle(.blue)
+                if selectedParks.count > 1 {
+                    Text("(\(selectedParks.count)-fer)")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.green)
                 }
-                .buttonStyle(.plain)
             }
-            .padding(10)
-            .background(Color(.tertiarySystemGroupedBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 8))
 
-            // Park name display (if valid reference)
+            // Selected parks as removable chips
+            if !selectedParks.isEmpty {
+                parkChips
+            }
+
+            // Input row: TextField + search button
+            addParkRow
+
+            // Resolved park name for current text entry
             if let parkName = resolvedParkName {
                 Text(parkName)
                     .font(.caption)
@@ -74,9 +70,12 @@ struct ParkEntryField: View {
         }
         .sheet(isPresented: $showPicker) {
             ParkPickerSheet(
-                selectedPark: $parkReference,
+                selectedParks: selectedParks,
                 userGrid: userGrid,
                 defaultCountry: defaultCountry,
+                onAdd: { park in
+                    addPark(park.reference)
+                },
                 onDismiss: { showPicker = false }
             )
         }
@@ -86,16 +85,210 @@ struct ParkEntryField: View {
 
     @State private var showPicker = false
     @State private var resolvedParkName: String?
+    @State private var textEntry = ""
 
-    private func handleParkInput(_ input: String) {
-        // Use POTAParksCache.shared.lookupPark() with defaultCountry
-        // This handles shorthand: "1234" -> "US-1234"
+    /// Parse the comma-separated binding into individual park references
+    private var selectedParks: [String] {
+        ParkReference.split(parkReference)
+    }
+
+    private var parkChips: some View {
+        FlowLayout(spacing: 6) {
+            ForEach(selectedParks, id: \.self) { park in
+                ParkChip(
+                    reference: park,
+                    name: POTAParksCache.shared.nameSync(for: park),
+                    onRemove: { removePark(park) }
+                )
+            }
+        }
+    }
+
+    private var addParkRow: some View {
+        HStack(spacing: 8) {
+            TextField(placeholder, text: $textEntry)
+                .font(.subheadline.monospaced())
+                .textInputAutocapitalization(.characters)
+                .autocorrectionDisabled()
+                .keyboardType(.numbersAndPunctuation)
+                .onChange(of: textEntry) { _, newValue in
+                    handleTextInput(newValue)
+                }
+                .onSubmit {
+                    commitTextEntry()
+                }
+
+            Button {
+                showPicker = true
+            } label: {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(.blue)
+            }
+            .buttonStyle(.plain)
+
+            if !textEntry.isEmpty {
+                Button {
+                    commitTextEntry()
+                } label: {
+                    Image(systemName: "plus.circle.fill")
+                        .foregroundStyle(.green)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(10)
+        .background(Color(.tertiarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+
+    private func handleTextInput(_ input: String) {
         let trimmed = input.trimmingCharacters(in: .whitespaces).uppercased()
-        if let park = POTAParksCache.shared.lookupPark(trimmed, defaultCountry: defaultCountry) {
+        if let park = POTAParksCache.shared.lookupPark(
+            trimmed, defaultCountry: defaultCountry
+        ) {
             resolvedParkName = park.name
         } else {
             resolvedParkName = nil
         }
+    }
+
+    private func commitTextEntry() {
+        let trimmed = textEntry.trimmingCharacters(in: .whitespaces).uppercased()
+        guard !trimmed.isEmpty else { return }
+
+        // Try to resolve via cache (handles shorthand like "1234" -> "US-1234")
+        if let park = POTAParksCache.shared.lookupPark(
+            trimmed, defaultCountry: defaultCountry
+        ) {
+            addPark(park.reference)
+        } else if ParkReference.isValid(trimmed) {
+            addPark(trimmed)
+        } else {
+            // Try adding default country prefix
+            let withPrefix = "\(defaultCountry)-\(trimmed)"
+            if ParkReference.isValid(withPrefix) {
+                addPark(withPrefix)
+            }
+        }
+
+        textEntry = ""
+        resolvedParkName = nil
+    }
+
+    private func addPark(_ reference: String) {
+        let normalized = reference.uppercased()
+        var parks = selectedParks
+        guard !parks.contains(normalized) else { return }
+        parks.append(normalized)
+        parkReference = parks.joined(separator: ", ")
+    }
+
+    private func removePark(_ reference: String) {
+        var parks = selectedParks
+        parks.removeAll { $0 == reference }
+        parkReference = parks.joined(separator: ", ")
+    }
+}
+
+// MARK: - ParkChip
+
+/// Removable chip showing a park reference and optional name
+struct ParkChip: View {
+    let reference: String
+    var name: String?
+    let onRemove: () -> Void
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Text(reference)
+                .font(.caption.monospaced().weight(.semibold))
+                .foregroundStyle(.green)
+
+            if let name {
+                Text(name)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+
+            Button(action: onRemove) {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(Color.green.opacity(0.1))
+        .clipShape(Capsule())
+    }
+}
+
+// MARK: - FlowLayout
+
+/// Simple flow layout that wraps items to the next line when they exceed width
+struct FlowLayout: Layout {
+    var spacing: CGFloat = 6
+
+    func sizeThatFits(
+        proposal: ProposedViewSize,
+        subviews: Subviews,
+        cache _: inout ()
+    ) -> CGSize {
+        let result = computeLayout(proposal: proposal, subviews: subviews)
+        return result.size
+    }
+
+    func placeSubviews(
+        in bounds: CGRect,
+        proposal: ProposedViewSize,
+        subviews: Subviews,
+        cache _: inout ()
+    ) {
+        let result = computeLayout(proposal: proposal, subviews: subviews)
+        for (index, position) in result.positions.enumerated() {
+            subviews[index].place(
+                at: CGPoint(
+                    x: bounds.minX + position.x,
+                    y: bounds.minY + position.y
+                ),
+                proposal: .unspecified
+            )
+        }
+    }
+
+    private func computeLayout(
+        proposal: ProposedViewSize,
+        subviews: Subviews
+    ) -> (size: CGSize, positions: [CGPoint]) {
+        let maxWidth = proposal.width ?? .infinity
+        var positions: [CGPoint] = []
+        var x: CGFloat = 0
+        var y: CGFloat = 0
+        var rowHeight: CGFloat = 0
+        var totalHeight: CGFloat = 0
+
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+
+            if x + size.width > maxWidth, x > 0 {
+                // Wrap to next line
+                x = 0
+                y += rowHeight + spacing
+                rowHeight = 0
+            }
+
+            positions.append(CGPoint(x: x, y: y))
+            x += size.width + spacing
+            rowHeight = max(rowHeight, size.height)
+            totalHeight = y + rowHeight
+        }
+
+        return (
+            size: CGSize(width: maxWidth, height: totalHeight),
+            positions: positions
+        )
     }
 }
 
@@ -112,10 +305,21 @@ struct ParkEntryField: View {
     .padding()
 }
 
-#Preview("With Reference") {
+#Preview("Single Park") {
     VStack {
         ParkEntryField(
             parkReference: .constant("US-1234"),
+            userGrid: "FN31",
+            defaultCountry: "US"
+        )
+    }
+    .padding()
+}
+
+#Preview("Multi-Park (Two-fer)") {
+    VStack {
+        ParkEntryField(
+            parkReference: .constant("US-1044, US-3791"),
             userGrid: "FN31",
             defaultCountry: "US"
         )
