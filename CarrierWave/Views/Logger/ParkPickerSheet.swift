@@ -1,10 +1,73 @@
 // Park Picker Sheet
 //
-// Sheet for selecting a POTA park by search or nearby location.
-// Provides two tabs: search by name and nearby parks based on grid.
+// Sheet for selecting a POTA park. Shows nearby parks by device
+// GPS location with activation/QSO history, and supports
+// filtering by park number or name.
 
 import CoreLocation
+import SwiftData
 import SwiftUI
+
+// MARK: - ParkStats
+
+/// Activation and QSO counts for a park
+struct ParkStats: Sendable {
+    let activationCount: Int
+    let qsoCount: Int
+}
+
+// MARK: - ParkStatsLoader
+
+/// Background actor for computing per-park activation and QSO counts
+private actor ParkStatsLoader {
+    /// Metadata pseudo-modes that should not count as QSOs
+    private static let metadataModes: Set<String> = ["WEATHER", "SOLAR", "NOTE"]
+
+    func loadStats(container: ModelContainer) async -> [String: ParkStats] {
+        let context = ModelContext(container)
+        context.autosaveEnabled = false
+
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        dateFormatter.timeZone = TimeZone(identifier: "UTC")
+
+        var stats: [String: (qsoCount: Int, dates: Set<String>)] = [:]
+        let batchSize = 1_000
+        var offset = 0
+
+        while true {
+            var descriptor = FetchDescriptor<QSO>(
+                predicate: #Predicate { $0.parkReference != nil && !$0.isHidden }
+            )
+            descriptor.fetchLimit = batchSize
+            descriptor.fetchOffset = offset
+
+            guard let batch = try? context.fetch(descriptor) else { break }
+            if batch.isEmpty { break }
+
+            for qso in batch {
+                guard let park = qso.parkReference, !park.isEmpty,
+                      !Self.metadataModes.contains(qso.mode.uppercased())
+                else {
+                    continue
+                }
+                let key = park.uppercased()
+                let dateStr = dateFormatter.string(from: qso.timestamp)
+                var entry = stats[key, default: (qsoCount: 0, dates: [])]
+                entry.qsoCount += 1
+                entry.dates.insert(dateStr)
+                stats[key] = entry
+            }
+
+            offset += batchSize
+            await Task.yield()
+        }
+
+        return stats.mapValues {
+            ParkStats(activationCount: $0.dates.count, qsoCount: $0.qsoCount)
+        }
+    }
+}
 
 // MARK: - ParkPickerSheet
 
@@ -26,11 +89,6 @@ struct ParkPickerSheet: View {
 
     // MARK: Internal
 
-    enum Tab: String, CaseIterable {
-        case search = "Search"
-        case nearby = "Nearby"
-    }
-
     @Binding var selectedPark: String
 
     let userGrid: String?
@@ -40,20 +98,8 @@ struct ParkPickerSheet: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                Picker("Tab", selection: $selectedTab) {
-                    ForEach(Tab.allCases, id: \.self) { tab in
-                        Text(tab.rawValue).tag(tab)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .padding()
-
-                switch selectedTab {
-                case .search:
-                    searchTab
-                case .nearby:
-                    nearbyTab
-                }
+                searchField
+                parkList
             }
             .navigationTitle("Select Park")
             .navigationBarTitleDisplayMode(.inline)
@@ -70,33 +116,31 @@ struct ParkPickerSheet: View {
         .task {
             await loadNearbyParks()
         }
+        .task {
+            await loadParkStats()
+        }
     }
 
     // MARK: Private
 
-    @State private var selectedTab: Tab = .search
+    @Environment(\.modelContext) private var modelContext
+
     @State private var searchText = ""
-    @State private var searchResults: [POTAPark] = []
+    @State private var locationManager = ParkLocationManager()
     @State private var nearbyParks: [(park: POTAPark, distanceKm: Double)] = []
-    @State private var isLoadingNearby = false
-    @State private var nearbyError: String?
+    @State private var searchResults: [POTAPark] = []
+    @State private var parkStats: [String: ParkStats] = [:]
+    @State private var isLoadingNearby = true
 
-    // MARK: - Search Tab
-
-    private var searchTab: some View {
-        VStack(spacing: 0) {
-            searchField
-            searchResultsList
-        }
-    }
+    // MARK: - Search Field
 
     private var searchField: some View {
         HStack {
             Image(systemName: "magnifyingglass")
                 .foregroundStyle(.secondary)
 
-            TextField("Search park name or reference", text: $searchText)
-                .textInputAutocapitalization(.words)
+            TextField("Park name or number", text: $searchText)
+                .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
                 .onChange(of: searchText) { _, newValue in
                     performSearch(query: newValue)
@@ -120,66 +164,76 @@ struct ParkPickerSheet: View {
         .padding(.bottom, 8)
     }
 
-    private var searchResultsList: some View {
-        Group {
-            if searchText.isEmpty {
-                searchEmptyState
-            } else if searchResults.isEmpty {
-                noResultsState
-            } else {
-                List {
-                    ForEach(searchResults, id: \.reference) { park in
-                        ParkRow(park: park, distance: nil) {
-                            selectPark(park)
-                        }
+    // MARK: - Park List
+
+    @ViewBuilder
+    private var parkList: some View {
+        if searchText.trimmingCharacters(in: .whitespaces).isEmpty {
+            nearbyParksList
+        } else if filteredParks.isEmpty {
+            noResultsState
+        } else {
+            filteredList
+        }
+    }
+
+    /// Parks matching the search query, nearby matches first, then database results
+    private var filteredParks: [(park: POTAPark, distance: Double?)] {
+        let query = searchText.trimmingCharacters(in: .whitespaces).lowercased()
+        guard !query.isEmpty else { return [] }
+
+        // Nearby parks that match the query (shown with distance)
+        let nearbyMatches: [(park: POTAPark, distance: Double?)] = nearbyParks
+            .filter { matchesPark($0.park, query: query) }
+            .map { (park: $0.park, distance: Optional($0.distanceKm)) }
+
+        // Additional results from the full database (without distance)
+        let nearbyRefs = Set(nearbyMatches.map(\.park.reference))
+        let additional: [(park: POTAPark, distance: Double?)] = searchResults
+            .filter { !nearbyRefs.contains($0.reference) }
+            .map { (park: $0, distance: nil) }
+
+        return nearbyMatches + additional
+    }
+
+    private var filteredList: some View {
+        List {
+            ForEach(filteredParks, id: \.park.reference) { item in
+                ParkRow(
+                    park: item.park,
+                    distance: item.distance,
+                    stats: parkStats[item.park.reference]
+                ) {
+                    selectPark(item.park)
+                }
+            }
+        }
+        .listStyle(.plain)
+    }
+
+    @ViewBuilder
+    private var nearbyParksList: some View {
+        if isLoadingNearby {
+            loadingState
+        } else if nearbyParks.isEmpty {
+            noNearbyState
+        } else {
+            List {
+                ForEach(nearbyParks, id: \.park.reference) { item in
+                    ParkRow(
+                        park: item.park,
+                        distance: item.distanceKm,
+                        stats: parkStats[item.park.reference]
+                    ) {
+                        selectPark(item.park)
                     }
                 }
-                .listStyle(.plain)
             }
+            .listStyle(.plain)
         }
     }
 
-    private var searchEmptyState: some View {
-        ContentUnavailableView {
-            Label("Search Parks", systemImage: "magnifyingglass")
-        } description: {
-            Text("Enter a park name or reference to search")
-        }
-    }
-
-    private var noResultsState: some View {
-        ContentUnavailableView {
-            Label("No Results", systemImage: "tree")
-        } description: {
-            Text("No parks found matching \"\(searchText)\"")
-        }
-    }
-
-    // MARK: - Nearby Tab
-
-    private var nearbyTab: some View {
-        Group {
-            if userGrid == nil || userGrid?.isEmpty == true {
-                gridNotSetState
-            } else if isLoadingNearby {
-                loadingState
-            } else if let error = nearbyError {
-                errorState(message: error)
-            } else if nearbyParks.isEmpty {
-                noNearbyParksState
-            } else {
-                nearbyParksList
-            }
-        }
-    }
-
-    private var gridNotSetState: some View {
-        ContentUnavailableView {
-            Label("Grid Not Set", systemImage: "location.slash")
-        } description: {
-            Text("Set your grid square in Settings to see nearby parks")
-        }
-    }
+    // MARK: - Empty States
 
     private var loadingState: some View {
         VStack(spacing: 12) {
@@ -191,31 +245,31 @@ struct ParkPickerSheet: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    private var noNearbyParksState: some View {
+    private var noNearbyState: some View {
         ContentUnavailableView {
             Label("No Nearby Parks", systemImage: "tree")
         } description: {
-            Text("No POTA parks found within 100km of your location")
+            Text("No parks found nearby. Try searching by name or number.")
         }
     }
 
-    private var nearbyParksList: some View {
-        List {
-            ForEach(nearbyParks, id: \.park.reference) { item in
-                ParkRow(park: item.park, distance: item.distanceKm) {
-                    selectPark(item.park)
-                }
-            }
-        }
-        .listStyle(.plain)
-    }
-
-    private func errorState(message: String) -> some View {
+    private var noResultsState: some View {
         ContentUnavailableView {
-            Label("Error", systemImage: "exclamationmark.triangle")
+            Label("No Results", systemImage: "tree")
         } description: {
-            Text(message)
+            Text("No parks found matching \"\(searchText)\"")
         }
+    }
+
+    // MARK: - Search Logic
+
+    private func matchesPark(_ park: POTAPark, query: String) -> Bool {
+        // Match by reference (e.g., "1234" matches "US-1234")
+        if park.reference.lowercased().contains(query) { return true }
+        if park.numericPart.lowercased().contains(query) { return true }
+        // Match by name (e.g., "yellow" matches "Yellowstone")
+        if park.name.lowercased().contains(query) { return true }
+        return false
     }
 
     private func performSearch(query: String) {
@@ -225,7 +279,7 @@ struct ParkPickerSheet: View {
             return
         }
 
-        // First try direct reference lookup
+        // Try direct reference lookup first
         if let park = POTAParksCache.shared.lookupPark(trimmed, defaultCountry: defaultCountry) {
             searchResults = [park]
             return
@@ -235,28 +289,48 @@ struct ParkPickerSheet: View {
         searchResults = POTAParksCache.shared.searchByName(trimmed)
     }
 
+    // MARK: - Data Loading
+
     private func loadNearbyParks() async {
-        guard let grid = userGrid, !grid.isEmpty else {
-            return
-        }
-
-        guard let coordinate = MaidenheadConverter.coordinate(from: grid) else {
-            nearbyError = "Invalid grid square format"
-            return
-        }
-
         isLoadingNearby = true
-        nearbyError = nil
+        defer { isLoadingNearby = false }
 
-        // Small delay to allow UI to update
-        try? await Task.sleep(for: .milliseconds(100))
+        // Request device GPS location
+        locationManager.requestLocation()
+
+        // Wait for location (up to 3 seconds)
+        for _ in 0 ..< 30 {
+            if locationManager.location != nil { break }
+            try? await Task.sleep(for: .milliseconds(100))
+        }
+
+        if let location = locationManager.location {
+            nearbyParks = POTAParksCache.shared.nearbyParks(
+                latitude: location.coordinate.latitude,
+                longitude: location.coordinate.longitude,
+                limit: 30
+            )
+            return
+        }
+
+        // Fall back to grid square if GPS unavailable
+        guard let grid = userGrid, !grid.isEmpty,
+              let coordinate = MaidenheadConverter.coordinate(from: grid)
+        else {
+            return
+        }
 
         nearbyParks = POTAParksCache.shared.nearbyParks(
             latitude: coordinate.latitude,
-            longitude: coordinate.longitude
+            longitude: coordinate.longitude,
+            limit: 30
         )
+    }
 
-        isLoadingNearby = false
+    private func loadParkStats() async {
+        let container = modelContext.container
+        let loader = ParkStatsLoader()
+        parkStats = await loader.loadStats(container: container)
     }
 
     private func selectPark(_ park: POTAPark) {
@@ -267,12 +341,13 @@ struct ParkPickerSheet: View {
 
 // MARK: - ParkRow
 
-/// Row displaying a park with optional distance
+/// Row displaying a park with optional distance and activation stats
 struct ParkRow: View {
     // MARK: Internal
 
     let park: POTAPark
     var distance: Double?
+    var stats: ParkStats?
     let onSelect: () -> Void
 
     var body: some View {
@@ -288,10 +363,16 @@ struct ParkRow: View {
                         .foregroundStyle(.primary)
                         .lineLimit(2)
 
-                    if let state = park.state {
-                        Text(state)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                    HStack(spacing: 8) {
+                        if let state = park.state {
+                            Text(state)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        if let stats, stats.qsoCount > 0 {
+                            statsBadge(stats)
+                        }
                     }
                 }
 
@@ -318,6 +399,25 @@ struct ParkRow: View {
 
     // MARK: Private
 
+    @ViewBuilder
+    private func statsBadge(_ stats: ParkStats) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: "antenna.radiowaves.left.and.right")
+                .font(.caption2)
+            Text("\(stats.activationCount)")
+                .font(.caption.monospacedDigit())
+            Text("·")
+                .font(.caption)
+            Text("\(stats.qsoCount) Qs")
+                .font(.caption.monospacedDigit())
+        }
+        .foregroundStyle(.blue)
+        .padding(.horizontal, 6)
+        .padding(.vertical, 2)
+        .background(Color.blue.opacity(0.1))
+        .clipShape(Capsule())
+    }
+
     private func formatDistance(_ km: Double) -> String {
         if km < 1 {
             String(format: "%.0f m", km * 1_000)
@@ -329,21 +429,63 @@ struct ParkRow: View {
     }
 }
 
+// MARK: - ParkLocationManager
+
+/// Lightweight CLLocationManager wrapper for the park picker
+@Observable
+private class ParkLocationManager: NSObject, CLLocationManagerDelegate {
+    // MARK: Lifecycle
+
+    override init() {
+        super.init()
+        manager.delegate = self
+        manager.desiredAccuracy = kCLLocationAccuracyKilometer
+    }
+
+    // MARK: Internal
+
+    var location: CLLocation?
+    var authorizationStatus: CLAuthorizationStatus = .notDetermined
+
+    func requestLocation() {
+        manager.requestWhenInUseAuthorization()
+        manager.requestLocation()
+    }
+
+    nonisolated func locationManager(
+        _ manager: CLLocationManager,
+        didUpdateLocations locations: [CLLocation]
+    ) {
+        Task { @MainActor in
+            self.location = locations.last
+        }
+    }
+
+    nonisolated func locationManager(
+        _ manager: CLLocationManager,
+        didFailWithError _: Error
+    ) {
+        // Silently handle - will fall back to grid square
+    }
+
+    nonisolated func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        let status = manager.authorizationStatus
+        Task { @MainActor in
+            self.authorizationStatus = status
+        }
+    }
+
+    // MARK: Private
+
+    private let manager = CLLocationManager()
+}
+
 // MARK: - Preview
 
-#Preview("Search Tab") {
+#Preview("Park Picker") {
     ParkPickerSheet(
         selectedPark: .constant(""),
         userGrid: "FN31",
-        defaultCountry: "US",
-        onDismiss: {}
-    )
-}
-
-#Preview("No Grid") {
-    ParkPickerSheet(
-        selectedPark: .constant(""),
-        userGrid: nil,
         defaultCountry: "US",
         onDismiss: {}
     )

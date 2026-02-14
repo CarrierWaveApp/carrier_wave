@@ -4,6 +4,9 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Enhance park selector with GPS-based nearby parks, activation/QSO counts per park, and unified search by number or name
+
 ## [1.30.0] - 2026-02-13
 
 ### Added
