@@ -24,6 +24,9 @@ final class RecordingPlaybackEngine: NSObject {
     /// Index of the QSO currently under the playback head (nil if none)
     private(set) var activeQSOIndex: Int?
 
+    /// Index of the recording segment currently under the playback head
+    private(set) var activeSegmentIndex: Int = 0
+
     // MARK: - Amplitude Envelope
 
     /// Downsampled amplitude envelope for waveform display (0.0 to 1.0)
@@ -37,15 +40,31 @@ final class RecordingPlaybackEngine: NSObject {
         didSet { player?.rate = playbackRate }
     }
 
+    /// Recording segments with frequency/mode metadata (empty if no changes)
+    private(set) var segments: [SDRRecordingSegment] = []
+
     /// Whether a recording is loaded and ready to play
     var isLoaded: Bool {
         player != nil
     }
 
+    /// The segment at the current playback position (nil if no segments loaded)
+    var activeSegment: SDRRecordingSegment? {
+        guard !segments.isEmpty, activeSegmentIndex < segments.count else {
+            return nil
+        }
+        return segments[activeSegmentIndex]
+    }
+
     // MARK: - Loading
 
     /// Load a recording file and prepare for playback
-    func load(fileURL: URL, qsoTimestamps: [Date], recordingStart: Date) throws {
+    func load(
+        fileURL: URL,
+        qsoTimestamps: [Date],
+        recordingStart: Date,
+        segments: [SDRRecordingSegment] = []
+    ) throws {
         stop()
 
         let audioPlayer = try AVAudioPlayer(contentsOf: fileURL)
@@ -57,6 +76,7 @@ final class RecordingPlaybackEngine: NSObject {
         player = audioPlayer
         duration = audioPlayer.duration
         currentTime = 0
+        self.segments = segments
 
         // Compute QSO offsets relative to recording start
         qsoOffsets = qsoTimestamps.map { timestamp in
@@ -103,6 +123,8 @@ final class RecordingPlaybackEngine: NSObject {
         currentTime = 0
         duration = 0
         activeQSOIndex = nil
+        activeSegmentIndex = 0
+        segments = []
         stopDisplayLink()
     }
 
@@ -112,6 +134,7 @@ final class RecordingPlaybackEngine: NSObject {
         player?.currentTime = clamped
         currentTime = clamped
         updateActiveQSO()
+        updateActiveSegment()
     }
 
     /// Seek to a QSO by index (jumps to activeLeadIn before the QSO timestamp)
@@ -286,6 +309,7 @@ final class RecordingPlaybackEngine: NSObject {
         }
         currentTime = player.currentTime
         updateActiveQSO()
+        updateActiveSegment()
     }
 
     private func updateActiveQSO() {
@@ -306,6 +330,21 @@ final class RecordingPlaybackEngine: NSObject {
             }
         }
         activeQSOIndex = bestIndex
+    }
+
+    private func updateActiveSegment() {
+        guard !segments.isEmpty else {
+            return
+        }
+        for (index, segment) in segments.enumerated() {
+            let end = segment.endOffset ?? duration
+            if currentTime >= segment.startOffset, currentTime < end {
+                activeSegmentIndex = index
+                return
+            }
+        }
+        // Past all segments — stay on last
+        activeSegmentIndex = segments.count - 1
     }
 }
 

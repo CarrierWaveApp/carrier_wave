@@ -99,6 +99,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `UserProfile.swift` | User's amateur radio profile (callsign, name, QTH, grid, license) |
 | `SpotRegion.swift` | Geographic region classification for spots (SpotRegion, EnrichedSpot, SpotSummary) |
 | `ActivityLog.swift` | Activity log SwiftData model for persistent hunter workflow |
+| `SDRParameterEvent.swift` | SDR parameter change event and recording segment types for tracking freq/mode changes |
 | `StationProfile.swift` | Station profile struct and UserDefaults-backed storage |
 
 ## Services (`CarrierWave/Services/`)
@@ -488,6 +489,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `QuickEntryParserTests.swift` | Quick entry parser unit tests (callsign, RST, park, grid, state detection) |
 | `QuickEntryParserIntegrationTests.swift` | Quick entry parser integration tests (full parsing, token preview) |
 | `WebSDRRecordingTests.swift` | WebSDR recording query helper tests |
+| `SDRParameterTrackingTests.swift` | SDR parameter change tracking, segment computation, and persistence tests |
 | `Helpers/QSOFactory.swift` | Synthetic QSO generator for testing (duplicates, metadata, edge cases) |
 | `Helpers/TestModelContainer.swift` | Shared test infrastructure for SwiftData tests |
 | `BandPlanServiceTests.swift` | Band plan validation tests (license class privileges) |

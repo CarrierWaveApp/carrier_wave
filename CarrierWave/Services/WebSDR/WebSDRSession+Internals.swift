@@ -246,6 +246,10 @@ extension WebSDRSession {
         )
 
         if let recording = try? modelContext.fetch(descriptor).first {
+            // Persist parameter change events before finishing
+            if !parameterChanges.isEmpty {
+                recording.parameterChanges = parameterChanges
+            }
             recording.finish()
             try? modelContext.save()
         }
@@ -286,6 +290,107 @@ extension WebSDRSession {
     func stopSilenceWriter() {
         silenceTask?.cancel()
         silenceTask = nil
+    }
+
+    // MARK: - Dormant Timeout
+
+    /// Start a timeout that auto-finalizes the recording if the WebSDR
+    /// isn't reconnected within `maxDormantDuration`.
+    func startDormantTimeout() {
+        dormantTimeoutTask?.cancel()
+        let timeout = maxDormantDuration
+        dormantTimeoutTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(timeout))
+            guard !Task.isCancelled else {
+                return
+            }
+            await self?.finalize()
+        }
+    }
+
+    func stopDormantTimeout() {
+        dormantTimeoutTask?.cancel()
+        dormantTimeoutTask = nil
+    }
+
+    // MARK: - Dormant Resume
+
+    /// Resume a dormant recording by reconnecting to a WebSDR.
+    /// The gap since disconnect is already filled with silence by the
+    /// silence writer. Reconnects, resumes real audio streaming, and
+    /// records parameter change events for any tuning differences.
+    func resumeFromDormant(
+        receiver: KiwiSDRReceiver,
+        frequencyMHz: Double,
+        mode: String
+    ) async {
+        stopDormantTimeout()
+        self.receiver = receiver
+        effectiveHost = nil
+        effectivePort = nil
+
+        // Track parameter changes from the reconnection
+        let oldFreqKHz = lastFrequencyMHz * 1_000
+        let newFreqKHz = frequencyMHz * 1_000
+        lastFrequencyMHz = frequencyMHz
+
+        if lastMode != mode {
+            recordParameterChange(type: .mode, oldValue: lastMode, newValue: mode)
+            lastMode = mode
+        }
+        if oldFreqKHz != newFreqKHz {
+            recordParameterChange(
+                type: .frequency,
+                oldValue: String(format: "%.3f", oldFreqKHz),
+                newValue: String(format: "%.3f", newFreqKHz)
+            )
+        }
+
+        let frequencyKHz = newFreqKHz
+        let kiwiMode = KiwiSDRMode.from(
+            carrierWaveMode: mode,
+            frequencyMHz: frequencyMHz
+        )
+
+        state = .connecting
+
+        do {
+            let (newClient, audioStream) = try await connectFollowingRedirects(
+                host: receiver.host, port: receiver.port,
+                frequencyKHz: frequencyKHz, mode: kiwiMode
+            )
+            client = newClient
+
+            // Set up audio engine for the new connection
+            let sampleRate = await newClient.negotiatedSampleRate
+            lastSampleRate = sampleRate
+            let engine = KiwiSDRAudioEngine()
+            engine.start(sampleRate: sampleRate)
+            if isMuted {
+                engine.setMuted(true)
+            }
+            audioEngine = engine
+
+            // Stop silence and start real audio
+            stopSilenceWriter()
+
+            recordParameterChange(
+                type: .sdrConnected,
+                oldValue: "",
+                newValue: receiver.host
+            )
+
+            reconnectAttempts = 0
+            state = .recording
+
+            streamTask = Task { [weak self] in
+                await self?.processAudioStream(audioStream)
+            }
+        } catch {
+            // Reconnect failed — stay dormant, keep writing silence
+            state = .dormant
+            startDormantTimeout()
+        }
     }
 
     // MARK: - Private Helpers
