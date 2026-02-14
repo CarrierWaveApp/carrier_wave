@@ -227,7 +227,12 @@ struct QSOCalloutView: View {
     private var hasActivationMetadata: Bool {
         !annotation.parkReferences.isEmpty
             && (annotation.weather != nil || annotation.solarConditions != nil
-                || annotation.averageWPM != nil)
+                || annotation.averageWPM != nil || hasEquipment)
+    }
+
+    private var hasEquipment: Bool {
+        annotation.radio != nil || annotation.antenna != nil
+            || annotation.key != nil || annotation.mic != nil
     }
 
     private var activationMetadataSection: some View {
@@ -242,6 +247,34 @@ struct QSOCalloutView: View {
                 Label("\(wpm) WPM avg", systemImage: "gauge.medium")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+            }
+
+            if let radio = annotation.radio {
+                Label(radio, systemImage: "radio")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+
+            if let antenna = annotation.antenna {
+                Label(antenna, systemImage: "antenna.radiowaves.left.and.right")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+
+            if let key = annotation.key {
+                Label(key, systemImage: "pianokeys")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+
+            if let mic = annotation.mic {
+                Label(mic, systemImage: "mic")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
             }
 
             if let weather = annotation.weather, !weather.isEmpty {

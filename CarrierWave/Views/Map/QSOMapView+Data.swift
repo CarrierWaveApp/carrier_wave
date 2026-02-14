@@ -10,6 +10,10 @@ struct ResolvedAnnotationMetadata {
     var weather: String?
     var solar: String?
     var wpm: Int?
+    var radio: String?
+    var antenna: String?
+    var key: String?
+    var mic: String?
 }
 
 // MARK: - QSOMapView Data Helpers
@@ -95,13 +99,16 @@ extension QSOMapView {
         var weather: String?
         var solar: String?
         var wpms: [Int] = []
+        var antenna: String?
+        var key: String?
+        var mic: String?
 
         for snapshot in snapshots {
             if let park = snapshot.parkReference {
                 parkRefs.insert(park)
                 let dateStr = formatter.string(from: snapshot.timestamp)
-                let key = "\(park)|\(dateStr)"
-                if let meta = metadataByKey[key] {
+                let metaKey = "\(park)|\(dateStr)"
+                if let meta = metadataByKey[metaKey] {
                     if weather == nil, let weatherVal = meta.weather, !weatherVal.isEmpty {
                         weather = weatherVal
                     }
@@ -111,13 +118,24 @@ extension QSOMapView {
                     if let wpm = meta.averageWPM {
                         wpms.append(wpm)
                     }
+                    if antenna == nil {
+                        antenna = meta.antenna
+                    }
+                    if key == nil {
+                        key = meta.key
+                    }
+                    if mic == nil {
+                        mic = meta.mic
+                    }
                 }
             }
         }
 
+        let radio = snapshots.compactMap(\.myRig).first
         let avgWPM = wpms.isEmpty ? nil : wpms.reduce(0, +) / wpms.count
         return ResolvedAnnotationMetadata(
-            parkRefs: parkRefs, weather: weather, solar: solar, wpm: avgWPM
+            parkRefs: parkRefs, weather: weather, solar: solar, wpm: avgWPM,
+            radio: radio, antenna: antenna, key: key, mic: mic
         )
     }
 
@@ -145,7 +163,11 @@ extension QSOMapView {
                 parkReferences: meta.parkRefs,
                 weather: meta.weather,
                 solarConditions: meta.solar,
-                averageWPM: meta.wpm
+                averageWPM: meta.wpm,
+                radio: meta.radio,
+                antenna: meta.antenna,
+                key: meta.key,
+                mic: meta.mic
             )
         }
     }
@@ -184,7 +206,11 @@ extension QSOMapView {
                 parkReferences: meta.parkRefs,
                 weather: meta.weather,
                 solarConditions: meta.solar,
-                averageWPM: meta.wpm
+                averageWPM: meta.wpm,
+                radio: meta.radio,
+                antenna: meta.antenna,
+                key: meta.key,
+                mic: meta.mic
             )
         }
     }

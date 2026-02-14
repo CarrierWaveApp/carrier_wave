@@ -312,6 +312,13 @@ struct POTAActivationDetailView: View {
         items.append(MetadataItem(icon: "antenna.radiowaves.left.and.right", label: qsoLabel))
         if activation.duration > 0 {
             items.append(MetadataItem(icon: "clock", label: activation.formattedDuration))
+            let hours = activation.duration / 3_600
+            if hours > 0 {
+                let rate = Double(activation.qsoCount) / hours
+                items.append(MetadataItem(
+                    icon: "speedometer", label: String(format: "%.1f/hr", rate)
+                ))
+            }
         }
         if !activation.uniqueBands.isEmpty {
             let bands = activation.uniqueBands.sorted().joined(separator: ", ")

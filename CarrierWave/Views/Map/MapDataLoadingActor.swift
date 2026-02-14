@@ -22,6 +22,7 @@ struct MapQSOSnapshot: Sendable, Identifiable {
     let qrzConfirmed: Bool
     let power: Int?
     let loggingSessionId: UUID?
+    let myRig: String?
 }
 
 // MARK: - MapLoadingProgress
@@ -40,6 +41,9 @@ struct MapActivationMetadata: Sendable {
     let weather: String?
     let solarConditions: String?
     let averageWPM: Int?
+    let antenna: String?
+    let key: String?
+    let mic: String?
 }
 
 // MARK: - MapLoadedData
@@ -195,7 +199,8 @@ actor MapDataLoadingActor {
                 lotwConfirmed: qso.lotwConfirmed,
                 qrzConfirmed: qso.qrzConfirmed,
                 power: qso.power,
-                loggingSessionId: qso.loggingSessionId
+                loggingSessionId: qso.loggingSessionId,
+                myRig: qso.myRig
             )
             result.snapshots.append(snapshot)
 
@@ -239,12 +244,16 @@ actor MapDataLoadingActor {
         )
     }
 
-    /// Fetch all ActivationMetadata and convert to Sendable snapshots
+    /// Fetch all ActivationMetadata and convert to Sendable snapshots,
+    /// enriched with equipment from matching LoggingSessions.
     private func fetchActivationMetadata(
         context: ModelContext
     ) -> [String: MapActivationMetadata] {
         let descriptor = FetchDescriptor<ActivationMetadata>()
         let allMetadata = (try? context.fetch(descriptor)) ?? []
+
+        // Fetch logging sessions with equipment to enrich metadata
+        let sessionEquipment = fetchSessionEquipment(context: context)
 
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
@@ -252,20 +261,70 @@ actor MapDataLoadingActor {
 
         var dict: [String: MapActivationMetadata] = [:]
         for item in allMetadata {
+            let dateStr = formatter.string(from: item.date)
+            let key = "\(item.parkReference)|\(dateStr)"
+            let equipment = sessionEquipment[key]
             let hasData =
                 item.weather != nil || item.solarConditions != nil
-                    || item.averageWPM != nil
+                    || item.averageWPM != nil || equipment != nil
             guard hasData else {
                 continue
             }
-            let dateStr = formatter.string(from: item.date)
-            let key = "\(item.parkReference)|\(dateStr)"
             dict[key] = MapActivationMetadata(
                 weather: item.weather,
                 solarConditions: item.solarConditions,
-                averageWPM: item.averageWPM
+                averageWPM: item.averageWPM,
+                antenna: equipment?.antenna,
+                key: equipment?.key,
+                mic: equipment?.mic
             )
         }
         return dict
     }
+
+    /// Fetch equipment from LoggingSessions keyed by "parkRef|date"
+    private func fetchSessionEquipment(
+        context: ModelContext
+    ) -> [String: SessionEquipment] {
+        let predicate = #Predicate<LoggingSession> {
+            $0.activationReference != nil
+        }
+        var descriptor = FetchDescriptor<LoggingSession>(predicate: predicate)
+        descriptor.propertiesToFetch = []
+        let sessions = (try? context.fetch(descriptor)) ?? []
+
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.timeZone = TimeZone(identifier: "UTC")
+
+        var dict: [String: SessionEquipment] = [:]
+        for session in sessions {
+            guard let ref = session.activationReference else {
+                continue
+            }
+            let hasEquipment =
+                session.myAntenna != nil || session.myKey != nil
+                    || session.myMic != nil
+            guard hasEquipment else {
+                continue
+            }
+            let dateStr = formatter.string(from: session.startedAt)
+            let key = "\(ref)|\(dateStr)"
+            dict[key] = SessionEquipment(
+                antenna: session.myAntenna,
+                key: session.myKey,
+                mic: session.myMic
+            )
+        }
+        return dict
+    }
+}
+
+// MARK: - SessionEquipment
+
+/// Lightweight equipment snapshot from a LoggingSession
+private struct SessionEquipment {
+    let antenna: String?
+    let key: String?
+    let mic: String?
 }

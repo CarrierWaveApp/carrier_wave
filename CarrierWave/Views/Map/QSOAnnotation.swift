@@ -19,6 +19,14 @@ struct QSOAnnotation: Identifiable, Hashable {
     let solarConditions: String?
     /// Average CW speed from RBN spots (from ActivationMetadata)
     let averageWPM: Int?
+    /// Radio used (from QSO myRig)
+    let radio: String?
+    /// Antenna used (from LoggingSession)
+    let antenna: String?
+    /// CW key used (from LoggingSession)
+    let key: String?
+    /// Microphone used (from LoggingSession)
+    let mic: String?
 
     /// Display title showing grid and count
     var displayTitle: String {

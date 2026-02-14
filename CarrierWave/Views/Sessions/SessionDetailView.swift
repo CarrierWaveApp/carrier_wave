@@ -62,6 +62,15 @@ struct SessionDetailView: View {
     @State private var showEditSheet = false
     @State private var selectedPhoto: PhotoItem?
 
+    private var formattedQSOsPerHour: String {
+        let hours = session.duration / 3_600
+        guard hours > 0 else {
+            return "\(qsos.count)"
+        }
+        let rate = Double(qsos.count) / hours
+        return String(format: "%.1f", rate)
+    }
+
     private var infoSection: some View {
         Section("Session Info") {
             LabeledContent("Type", value: session.activationType.displayName)
@@ -75,6 +84,12 @@ struct SessionDetailView: View {
             LabeledContent("Mode", value: session.mode)
 
             LabeledContent("Duration", value: session.formattedDuration)
+
+            if !qsos.isEmpty {
+                LabeledContent("QSOs/Hour") {
+                    Text(formattedQSOsPerHour)
+                }
+            }
 
             if let ref = session.activationReference {
                 LabeledContent("Reference", value: ref)

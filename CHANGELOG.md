@@ -5,6 +5,8 @@ All notable changes to Carrier Wave will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Add QSOs/hour rate to session detail and POTA activation detail views
+- Add equipment (radio, antenna, key, mic) to map QSO callout popups
 - Add swipe-to-delete on individual QSOs in POTA activation detail view with confirmation dialog
 - Add expanded session metadata: antenna, CW key, microphone, attendees, photos, and extra equipment fields on logging sessions
 - Add generic equipment picker with user-managed lists for antenna, key, and microphone
