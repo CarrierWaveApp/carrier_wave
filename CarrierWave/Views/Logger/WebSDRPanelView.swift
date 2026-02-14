@@ -75,7 +75,8 @@ struct WebSDRPanelView: View {
     private var headerColor: Color {
         switch webSDRSession.state {
         case .recording: .red
-        case .paused: .orange
+        case .paused,
+             .dormant: .orange
         case .connecting,
              .reconnecting: .blue
         case .error: .orange
@@ -143,6 +144,8 @@ struct WebSDRPanelView: View {
         case .recording,
              .paused:
             recordingView
+        case .dormant:
+            dormantView
         case let .error(message):
             errorView(message)
         }
@@ -257,9 +260,9 @@ struct WebSDRPanelView: View {
                 }
 
                 Button(role: .destructive) {
-                    Task { await webSDRSession.stop() }
+                    Task { await webSDRSession.disconnect() }
                 } label: {
-                    Label("Stop", systemImage: "stop.fill")
+                    Label("Disconnect", systemImage: "stop.fill")
                 }
                 .buttonStyle(.bordered)
             }
@@ -285,5 +288,41 @@ struct WebSDRPanelView: View {
             }
         }
         .padding()
+    }
+
+    private var dormantView: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "record.circle")
+                .font(.largeTitle)
+                .foregroundStyle(.orange)
+
+            Text("WebSDR disconnected — recording silence")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+
+            Text(formattedDuration)
+                .font(.caption.monospacedDigit())
+                .foregroundStyle(.secondary)
+
+            HStack(spacing: 16) {
+                Button {
+                    showPicker = true
+                } label: {
+                    Label("Reconnect", systemImage: "antenna.radiowaves.left.and.right")
+                }
+                .buttonStyle(.bordered)
+                .tint(.green)
+
+                Button(role: .destructive) {
+                    Task { await webSDRSession.finalize() }
+                } label: {
+                    Label("End Recording", systemImage: "stop.fill")
+                }
+                .buttonStyle(.bordered)
+            }
+        }
+        .padding()
+        .frame(maxWidth: .infinity, minHeight: 120)
     }
 }

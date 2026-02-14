@@ -19,7 +19,7 @@ final class SDRParameterTrackingTests: XCTestCase {
         modelContainer = nil
     }
 
-    // MARK: - SDRParameterEvent Tests
+    // MARK: - SDRParameterEvent Codable Tests
 
     func testParameterEventCodable() throws {
         let event = SDRParameterEvent(
@@ -65,6 +65,48 @@ final class SDRParameterTrackingTests: XCTestCase {
         XCTAssertEqual(decoded[1].type, .mode)
     }
 
+    func testLifecycleEventsCodable() throws {
+        let events: [SDRParameterEvent] = [
+            SDRParameterEvent(
+                type: .pause,
+                timestamp: Date(),
+                offsetSeconds: 300,
+                oldValue: "",
+                newValue: ""
+            ),
+            SDRParameterEvent(
+                type: .resume,
+                timestamp: Date(),
+                offsetSeconds: 900,
+                oldValue: "",
+                newValue: ""
+            ),
+            SDRParameterEvent(
+                type: .sdrDisconnected,
+                timestamp: Date(),
+                offsetSeconds: 1_200,
+                oldValue: "test.kiwisdr.com",
+                newValue: ""
+            ),
+            SDRParameterEvent(
+                type: .sdrConnected,
+                timestamp: Date(),
+                offsetSeconds: 1_800,
+                oldValue: "",
+                newValue: "other.kiwisdr.com"
+            ),
+        ]
+
+        let data = try JSONEncoder().encode(events)
+        let decoded = try JSONDecoder().decode([SDRParameterEvent].self, from: data)
+
+        XCTAssertEqual(decoded.count, 4)
+        XCTAssertEqual(decoded[0].type, .pause)
+        XCTAssertEqual(decoded[1].type, .resume)
+        XCTAssertEqual(decoded[2].type, .sdrDisconnected)
+        XCTAssertEqual(decoded[3].type, .sdrConnected)
+    }
+
     // MARK: - WebSDRRecording Parameter Storage Tests
 
     @MainActor
@@ -99,12 +141,6 @@ final class SDRParameterTrackingTests: XCTestCase {
         modelContext.insert(recording)
         try modelContext.save()
 
-        // Fetch back
-        let found = try WebSDRRecording.findRecording(
-            forSessionId: sessionId, in: modelContext
-        )
-        // Recording isn't complete yet, so findRecording won't return it
-        // Fetch directly instead
         var descriptor = FetchDescriptor<WebSDRRecording>(
             predicate: #Predicate { $0.loggingSessionId == sessionId }
         )
@@ -131,145 +167,199 @@ final class SDRParameterTrackingTests: XCTestCase {
         XCTAssertNil(recording.parameterChangesData)
     }
 
-    // MARK: - Segment Computation Tests
+    // MARK: - Segment Computation: Tuning Changes
 
     @MainActor
     func testSegmentsNoChanges() {
-        let recording = WebSDRRecording(
-            loggingSessionId: UUID(),
-            kiwisdrHost: "test.kiwisdr.com",
-            kiwisdrName: "Test SDR",
-            frequencyKHz: 14_060,
-            mode: "CW"
-        )
-
+        let recording = makeRecording()
         let segments = recording.segments
+
         XCTAssertEqual(segments.count, 1)
         XCTAssertEqual(segments[0].startOffset, 0)
         XCTAssertNil(segments[0].endOffset)
         XCTAssertEqual(segments[0].frequencyKHz, 14_060)
         XCTAssertEqual(segments[0].mode, "CW")
+        XCTAssertFalse(segments[0].isSilence)
     }
 
     @MainActor
     func testSegmentsWithFrequencyChange() {
-        let recording = WebSDRRecording(
-            loggingSessionId: UUID(),
-            kiwisdrHost: "test.kiwisdr.com",
-            kiwisdrName: "Test SDR",
-            frequencyKHz: 14_060,
-            mode: "CW"
-        )
-
+        let recording = makeRecording()
         recording.parameterChanges = [
-            SDRParameterEvent(
-                type: .frequency,
-                timestamp: Date(),
-                offsetSeconds: 300,
-                oldValue: "14060.000",
-                newValue: "7030.000"
-            ),
+            makeEvent(.frequency, offset: 300, old: "14060.000", new: "7030.000"),
         ]
 
         let segments = recording.segments
         XCTAssertEqual(segments.count, 2)
 
-        // First segment: 0-300s at 14060 CW
         XCTAssertEqual(segments[0].startOffset, 0)
         XCTAssertEqual(segments[0].endOffset, 300)
         XCTAssertEqual(segments[0].frequencyKHz, 14_060)
-        XCTAssertEqual(segments[0].mode, "CW")
+        XCTAssertFalse(segments[0].isSilence)
 
-        // Second segment: 300s+ at 7030 CW
         XCTAssertEqual(segments[1].startOffset, 300)
         XCTAssertNil(segments[1].endOffset)
         XCTAssertEqual(segments[1].frequencyKHz, 7_030)
-        XCTAssertEqual(segments[1].mode, "CW")
+        XCTAssertFalse(segments[1].isSilence)
     }
 
     @MainActor
     func testSegmentsWithModeChange() {
-        let recording = WebSDRRecording(
-            loggingSessionId: UUID(),
-            kiwisdrHost: "test.kiwisdr.com",
-            kiwisdrName: "Test SDR",
-            frequencyKHz: 14_060,
-            mode: "CW"
-        )
-
+        let recording = makeRecording()
         recording.parameterChanges = [
-            SDRParameterEvent(
-                type: .mode,
-                timestamp: Date(),
-                offsetSeconds: 600,
-                oldValue: "CW",
-                newValue: "SSB"
-            ),
+            makeEvent(.mode, offset: 600, old: "CW", new: "SSB"),
         ]
 
         let segments = recording.segments
         XCTAssertEqual(segments.count, 2)
 
         XCTAssertEqual(segments[0].mode, "CW")
-        XCTAssertEqual(segments[0].frequencyKHz, 14_060)
         XCTAssertEqual(segments[1].mode, "SSB")
         XCTAssertEqual(segments[1].frequencyKHz, 14_060)
     }
 
     @MainActor
     func testSegmentsMultipleChanges() {
-        let recording = WebSDRRecording(
-            loggingSessionId: UUID(),
-            kiwisdrHost: "test.kiwisdr.com",
-            kiwisdrName: "Test SDR",
-            frequencyKHz: 14_060,
-            mode: "CW"
-        )
-
+        let recording = makeRecording()
         recording.parameterChanges = [
-            SDRParameterEvent(
-                type: .frequency,
-                timestamp: Date(),
-                offsetSeconds: 300,
-                oldValue: "14060.000",
-                newValue: "7030.000"
-            ),
-            SDRParameterEvent(
-                type: .mode,
-                timestamp: Date(),
-                offsetSeconds: 600,
-                oldValue: "CW",
-                newValue: "SSB"
-            ),
-            SDRParameterEvent(
-                type: .frequency,
-                timestamp: Date(),
-                offsetSeconds: 900,
-                oldValue: "7030.000",
-                newValue: "21060.000"
-            ),
+            makeEvent(.frequency, offset: 300, old: "14060.000", new: "7030.000"),
+            makeEvent(.mode, offset: 600, old: "CW", new: "SSB"),
+            makeEvent(.frequency, offset: 900, old: "7030.000", new: "21060.000"),
         ]
 
         let segments = recording.segments
         XCTAssertEqual(segments.count, 4)
 
-        // Segment 1: 0-300 at 14060/CW
         XCTAssertEqual(segments[0].frequencyKHz, 14_060)
         XCTAssertEqual(segments[0].mode, "CW")
-
-        // Segment 2: 300-600 at 7030/CW
         XCTAssertEqual(segments[1].frequencyKHz, 7_030)
         XCTAssertEqual(segments[1].mode, "CW")
-
-        // Segment 3: 600-900 at 7030/SSB
         XCTAssertEqual(segments[2].frequencyKHz, 7_030)
         XCTAssertEqual(segments[2].mode, "SSB")
-
-        // Segment 4: 900+ at 21060/SSB
         XCTAssertEqual(segments[3].frequencyKHz, 21_060)
         XCTAssertEqual(segments[3].mode, "SSB")
         XCTAssertNil(segments[3].endOffset)
     }
+
+    // MARK: - Segment Computation: Silence Gaps
+
+    @MainActor
+    func testSegmentsWithPauseResume() {
+        let recording = makeRecording()
+        recording.parameterChanges = [
+            makeEvent(.pause, offset: 300),
+            makeEvent(.resume, offset: 900),
+        ]
+
+        let segments = recording.segments
+        XCTAssertEqual(segments.count, 3)
+
+        // Active segment before pause
+        XCTAssertFalse(segments[0].isSilence)
+        XCTAssertEqual(segments[0].startOffset, 0)
+        XCTAssertEqual(segments[0].endOffset, 300)
+
+        // Silence during pause
+        XCTAssertTrue(segments[1].isSilence)
+        XCTAssertEqual(segments[1].startOffset, 300)
+        XCTAssertEqual(segments[1].endOffset, 900)
+        XCTAssertEqual(segments[1].duration(recordingDuration: 3_600), 600)
+
+        // Active segment after resume
+        XCTAssertFalse(segments[2].isSilence)
+        XCTAssertEqual(segments[2].startOffset, 900)
+    }
+
+    @MainActor
+    func testSegmentsWithDisconnectReconnect() {
+        let recording = makeRecording()
+        recording.parameterChanges = [
+            makeEvent(.sdrDisconnected, offset: 600, old: "sdr1.com"),
+            makeEvent(.sdrConnected, offset: 1_200, new: "sdr2.com"),
+        ]
+
+        let segments = recording.segments
+        XCTAssertEqual(segments.count, 3)
+
+        // Active recording
+        XCTAssertFalse(segments[0].isSilence)
+        XCTAssertEqual(segments[0].endOffset, 600)
+
+        // Silence gap (10 minutes)
+        XCTAssertTrue(segments[1].isSilence)
+        XCTAssertEqual(segments[1].startOffset, 600)
+        XCTAssertEqual(segments[1].endOffset, 1_200)
+        XCTAssertEqual(segments[1].duration(recordingDuration: 3_600), 600)
+
+        // Resumed recording
+        XCTAssertFalse(segments[2].isSilence)
+        XCTAssertEqual(segments[2].startOffset, 1_200)
+    }
+
+    @MainActor
+    func testSegmentsMixedTuningAndSilence() {
+        let recording = makeRecording()
+        recording.parameterChanges = [
+            makeEvent(.frequency, offset: 300, old: "14060.000", new: "7030.000"),
+            makeEvent(.pause, offset: 600),
+            makeEvent(.resume, offset: 1_200),
+            makeEvent(.mode, offset: 1_500, old: "CW", new: "SSB"),
+            makeEvent(.sdrDisconnected, offset: 1_800, old: "sdr.com"),
+            makeEvent(.sdrConnected, offset: 2_400, new: "sdr.com"),
+        ]
+
+        let segments = recording.segments
+        XCTAssertEqual(segments.count, 7)
+
+        // 0-300: 14060/CW active
+        XCTAssertEqual(segments[0].frequencyKHz, 14_060)
+        XCTAssertFalse(segments[0].isSilence)
+
+        // 300-600: 7030/CW active
+        XCTAssertEqual(segments[1].frequencyKHz, 7_030)
+        XCTAssertFalse(segments[1].isSilence)
+
+        // 600-1200: 7030/CW silence (paused)
+        XCTAssertTrue(segments[2].isSilence)
+        XCTAssertEqual(segments[2].frequencyKHz, 7_030)
+
+        // 1200-1500: 7030/CW active
+        XCTAssertFalse(segments[3].isSilence)
+
+        // 1500-1800: 7030/SSB active
+        XCTAssertEqual(segments[4].mode, "SSB")
+        XCTAssertFalse(segments[4].isSilence)
+
+        // 1800-2400: 7030/SSB silence (disconnected)
+        XCTAssertTrue(segments[5].isSilence)
+
+        // 2400+: 7030/SSB active
+        XCTAssertFalse(segments[6].isSilence)
+        XCTAssertNil(segments[6].endOffset)
+    }
+
+    @MainActor
+    func testSegmentPreservesTuningAcrossSilence() {
+        let recording = makeRecording()
+        recording.parameterChanges = [
+            makeEvent(.frequency, offset: 100, old: "14060.000", new: "7030.000"),
+            makeEvent(.pause, offset: 200),
+            makeEvent(.resume, offset: 500),
+        ]
+
+        let segments = recording.segments
+        XCTAssertEqual(segments.count, 4)
+
+        // Silence segment should retain 7030 kHz
+        XCTAssertTrue(segments[2].isSilence)
+        XCTAssertEqual(segments[2].frequencyKHz, 7_030)
+
+        // Resumed segment should also be 7030 kHz
+        XCTAssertFalse(segments[3].isSilence)
+        XCTAssertEqual(segments[3].frequencyKHz, 7_030)
+    }
+
+    // MARK: - Segment Duration Tests
 
     @MainActor
     func testSegmentDuration() {
@@ -291,5 +381,68 @@ final class SDRParameterTrackingTests: XCTestCase {
             mode: "CW"
         )
         XCTAssertEqual(segment.duration(recordingDuration: 1_000), 900)
+    }
+
+    @MainActor
+    func testSilenceSegmentDuration() {
+        let segment = SDRRecordingSegment(
+            startOffset: 300,
+            endOffset: 900,
+            frequencyKHz: 14_060,
+            mode: "CW",
+            isSilence: true
+        )
+        XCTAssertEqual(segment.duration(recordingDuration: 3_600), 600)
+        XCTAssertTrue(segment.isSilence)
+    }
+
+    // MARK: - State Machine Tests
+
+    @MainActor
+    func testDormantStateIsActive() {
+        let state = WebSDRSession.State.dormant
+        XCTAssertTrue(state.isActive)
+        XCTAssertFalse(state.isStreaming)
+    }
+
+    @MainActor
+    func testRecordingStateIsStreaming() {
+        let state = WebSDRSession.State.recording
+        XCTAssertTrue(state.isActive)
+        XCTAssertTrue(state.isStreaming)
+    }
+
+    @MainActor
+    func testIdleStateNotActive() {
+        let state = WebSDRSession.State.idle
+        XCTAssertFalse(state.isActive)
+        XCTAssertFalse(state.isStreaming)
+    }
+
+    // MARK: - Helpers
+
+    private func makeRecording() -> WebSDRRecording {
+        WebSDRRecording(
+            loggingSessionId: UUID(),
+            kiwisdrHost: "test.kiwisdr.com",
+            kiwisdrName: "Test SDR",
+            frequencyKHz: 14_060,
+            mode: "CW"
+        )
+    }
+
+    private func makeEvent(
+        _ type: SDRParameterEvent.ChangeType,
+        offset: Double,
+        old: String = "",
+        new: String = ""
+    ) -> SDRParameterEvent {
+        SDRParameterEvent(
+            type: type,
+            timestamp: Date(),
+            offsetSeconds: offset,
+            oldValue: old,
+            newValue: new
+        )
     }
 }

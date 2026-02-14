@@ -128,9 +128,9 @@ extension WebSDRPanelView {
             }
 
             Button(role: .destructive) {
-                Task { await webSDRSession.stop() }
+                Task { await webSDRSession.disconnect() }
             } label: {
-                Label("Stop Recording", systemImage: "stop.fill")
+                Label("Disconnect", systemImage: "stop.fill")
             }
             .buttonStyle(.bordered)
         }

@@ -64,20 +64,23 @@ final class WebSDRRecording {
     }
 
     /// Contiguous recording segments derived from initial parameters and change events.
-    /// Each segment has a consistent frequency and mode.
+    /// Each segment has a consistent frequency, mode, and silence/active status.
     var segments: [SDRRecordingSegment] {
         var result: [SDRRecordingSegment] = []
         var currentFreq = frequencyKHz
         var currentMode = mode
+        var currentSilence = false
         var segmentStart: TimeInterval = 0
 
-        for event in parameterChanges.sorted(by: { $0.offsetSeconds < $1.offsetSeconds }) {
+        let sorted = parameterChanges.sorted { $0.offsetSeconds < $1.offsetSeconds }
+        for event in sorted {
             // Close the current segment at this event's offset
             result.append(SDRRecordingSegment(
                 startOffset: segmentStart,
                 endOffset: event.offsetSeconds,
                 frequencyKHz: currentFreq,
-                mode: currentMode
+                mode: currentMode,
+                isSilence: currentSilence
             ))
 
             // Apply the change
@@ -88,6 +91,10 @@ final class WebSDRRecording {
                 }
             case .mode:
                 currentMode = event.newValue
+            case .pause, .sdrDisconnected:
+                currentSilence = true
+            case .resume, .sdrConnected:
+                currentSilence = false
             }
 
             segmentStart = event.offsetSeconds
@@ -98,7 +105,8 @@ final class WebSDRRecording {
             startOffset: segmentStart,
             endOffset: nil,
             frequencyKHz: currentFreq,
-            mode: currentMode
+            mode: currentMode,
+            isSilence: currentSilence
         ))
 
         return result

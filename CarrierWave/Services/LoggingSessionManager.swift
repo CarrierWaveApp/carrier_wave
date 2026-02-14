@@ -140,9 +140,9 @@ final class LoggingSessionManager {
         // Stop spot monitoring
         spotMonitoringService.stopMonitoring()
 
-        // Stop WebSDR recording if active
+        // Finalize WebSDR recording if active
         if webSDRSession.state.isActive {
-            Task { await webSDRSession.stop() }
+            Task { await webSDRSession.finalize() }
         }
 
         // Re-enable screen timeout
@@ -512,9 +512,9 @@ final class LoggingSessionManager {
         attachedSpotCommentIds = []
         spotMonitoringService.stopMonitoring()
 
-        // Stop WebSDR recording
+        // Finalize WebSDR recording
         if webSDRSession.state.isActive {
-            Task { await webSDRSession.stop() }
+            Task { await webSDRSession.finalize() }
         }
 
         // Re-enable screen timeout

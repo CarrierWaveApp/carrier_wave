@@ -3,28 +3,38 @@ import Foundation
 // MARK: - SDRParameterEvent
 
 /// A recorded parameter change during an SDR recording session.
-/// Captures when the operator changed frequency or mode so the recording
-/// can be accurately segmented for playback and rendering.
+/// Captures when the operator changed frequency, mode, or recording lifecycle
+/// so the recording can be accurately segmented for playback and rendering.
 struct SDRParameterEvent: Codable, Sendable, Equatable {
-    /// What kind of parameter changed
+    /// What kind of event occurred
     enum ChangeType: String, Codable, Sendable {
+        /// Frequency changed (oldValue/newValue are kHz strings)
         case frequency
+        /// Mode changed (oldValue/newValue are mode names)
         case mode
+        /// Recording paused (silence begins)
+        case pause
+        /// Recording resumed from pause
+        case resume
+        /// WebSDR disconnected mid-session (silence begins)
+        case sdrDisconnected
+        /// WebSDR reconnected mid-session (audio resumes)
+        case sdrConnected
     }
 
-    /// What changed
+    /// What happened
     let type: ChangeType
 
-    /// When the change occurred
+    /// When the event occurred
     let timestamp: Date
 
     /// Offset in seconds from recording start
     let offsetSeconds: Double
 
-    /// Previous value (frequency in kHz as string, or mode name)
+    /// Previous value (frequency in kHz as string, mode name, or empty for lifecycle events)
     let oldValue: String
 
-    /// New value (frequency in kHz as string, or mode name)
+    /// New value (frequency in kHz as string, mode name, receiver host, or empty)
     let newValue: String
 }
 
@@ -44,6 +54,25 @@ struct SDRRecordingSegment: Sendable, Equatable {
 
     /// Operating mode (CW, SSB, etc.)
     let mode: String
+
+    /// Whether this segment is a silence gap (pause or SDR disconnect)
+    let isSilence: Bool
+
+    // MARK: Lifecycle
+
+    init(
+        startOffset: TimeInterval,
+        endOffset: TimeInterval?,
+        frequencyKHz: Double,
+        mode: String,
+        isSilence: Bool = false
+    ) {
+        self.startOffset = startOffset
+        self.endOffset = endOffset
+        self.frequencyKHz = frequencyKHz
+        self.mode = mode
+        self.isSilence = isSilence
+    }
 
     /// Duration of this segment in seconds (requires recording duration for last segment)
     func duration(recordingDuration: TimeInterval) -> TimeInterval {
