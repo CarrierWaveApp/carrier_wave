@@ -64,6 +64,7 @@ extension LoggingSessionManager {
     }
 
     /// Start spot comments polling for POTA activations
+    /// Uses the first (primary) park reference for comments lookup
     func startSpotCommentsPolling() {
         guard let session = activeSession,
               session.activationType == .pota,
@@ -77,13 +78,16 @@ extension LoggingSessionManager {
             return
         }
 
+        // Use the first park for spot comments polling
+        let primaryPark = ParkReference.split(parkRef).first ?? parkRef
+
         spotCommentsService.onNewComments = { [weak self] comments in
             self?.attachSpotComments(comments)
         }
 
         spotCommentsService.startPolling(
             activator: callsign,
-            parkRef: parkRef,
+            parkRef: primaryPark,
             sessionStart: session.startedAt
         )
     }
@@ -164,7 +168,7 @@ extension LoggingSessionManager {
         )
     }
 
-    /// Post a spot to POTA (used for both auto-spots and QSY spots)
+    /// Post spots to POTA for all parks in the session (supports n-fer)
     func postSpot(comment: String? = nil, showToast: Bool = false) async {
         guard let session = activeSession, session.activationType == .pota,
               let parkRef = session.parkReference, let freq = session.frequency,
@@ -187,25 +191,39 @@ extension LoggingSessionManager {
             return
         }
 
-        do {
-            let potaClient = POTAClient(authService: POTAAuthService())
-            _ = try await potaClient.postSpot(
-                callsign: session.myCallsign, reference: parkRef,
-                frequency: freq * 1_000, mode: session.mode, comments: comment
-            )
-            let msg = comment != nil ? "\(comment!) spot posted" : "Auto-spot posted"
-            SyncDebugLog.shared.info("\(msg) for \(parkRef)", service: .pota)
-            if showToast {
-                ToastManager.shared.spotPosted(
-                    park: parkRef, comment: "QSY to \(FrequencyFormatter.format(freq))"
+        let parks = ParkReference.split(parkRef)
+        let potaClient = POTAClient(authService: POTAAuthService())
+        var successCount = 0
+
+        for park in parks {
+            do {
+                _ = try await potaClient.postSpot(
+                    callsign: session.myCallsign, reference: park,
+                    frequency: freq * 1_000, mode: session.mode, comments: comment
+                )
+                successCount += 1
+                let msg = comment != nil ? "\(comment!) spot posted" : "Auto-spot posted"
+                SyncDebugLog.shared.info("\(msg) for \(park)", service: .pota)
+            } catch {
+                SyncDebugLog.shared.error(
+                    "Spot failed for \(park): \(error.localizedDescription)", service: .pota
                 )
             }
-        } catch {
-            SyncDebugLog.shared.error("Spot failed: \(error.localizedDescription)", service: .pota)
+        }
+
+        if showToast, successCount > 0 {
+            let label = parks.count > 1 ? "\(parks.count) parks" : parks.first ?? parkRef
+            if let comment, !comment.isEmpty {
+                ToastManager.shared.spotPosted(
+                    park: label, comment: "QSY to \(FrequencyFormatter.format(freq))"
+                )
+            } else {
+                ToastManager.shared.spotPosted(park: label)
+            }
         }
     }
 
-    /// Post a QRT spot if enabled and the session had spots
+    /// Post QRT spots for all parks if enabled and the session had spots
     func postQRTSpotIfNeeded(for session: LoggingSession) async {
         guard potaQRTSpotEnabled,
               session.activationType == .pota,
@@ -216,42 +234,53 @@ extension LoggingSessionManager {
             return
         }
 
-        // Check if this activation has any spots on POTA
+        let parks = ParkReference.split(parkRef)
+        let potaClient = POTAClient(authService: POTAAuthService())
+
+        // Use the first park to check if activation was spotted
+        let primaryPark = parks.first ?? parkRef
         do {
-            let potaClient = POTAClient(authService: POTAAuthService())
             let comments = try await potaClient.fetchSpotComments(
                 activator: session.myCallsign,
-                parkRef: parkRef
+                parkRef: primaryPark
             )
 
-            // If there are any spots/comments, the activation was spotted
             guard !comments.isEmpty else {
                 SyncDebugLog.shared.info(
-                    "No spots found for \(parkRef), skipping QRT spot",
+                    "No spots found for \(primaryPark), skipping QRT spot",
                     service: .pota
                 )
                 return
             }
 
-            // Post QRT spot
-            _ = try await potaClient.postSpot(
-                callsign: session.myCallsign,
-                reference: parkRef,
-                frequency: freq * 1_000,
-                mode: session.mode,
-                comments: "QRT"
-            )
-
-            SyncDebugLog.shared.info("QRT spot posted for \(parkRef)", service: .pota)
+            // Post QRT spot for each park
+            for park in parks {
+                do {
+                    _ = try await potaClient.postSpot(
+                        callsign: session.myCallsign,
+                        reference: park,
+                        frequency: freq * 1_000,
+                        mode: session.mode,
+                        comments: "QRT"
+                    )
+                    SyncDebugLog.shared.info("QRT spot posted for \(park)", service: .pota)
+                } catch {
+                    SyncDebugLog.shared.warning(
+                        "Failed to post QRT spot for \(park): \(error.localizedDescription)",
+                        service: .pota
+                    )
+                }
+            }
         } catch {
             SyncDebugLog.shared.warning(
-                "Failed to post QRT spot: \(error.localizedDescription)",
+                "Failed to check spots for QRT: \(error.localizedDescription)",
                 service: .pota
             )
         }
     }
 
     /// Save average WPM from RBN spot comments to ActivationMetadata
+    /// For multi-park, saves to the first (primary) park
     func saveAverageWPM(from comments: [POTASpotComment], session: LoggingSession) {
         guard let parkRef = session.parkReference, !parkRef.isEmpty else {
             return
@@ -264,19 +293,24 @@ extension LoggingSessionManager {
 
         let avgWPM = wpms.reduce(0, +) / wpms.count
 
+        // Use first park for metadata storage
+        let primaryPark = ParkReference.split(parkRef).first ?? parkRef
+
         var calendar = Calendar.current
         calendar.timeZone = TimeZone(identifier: "UTC")!
         let date = calendar.startOfDay(for: session.startedAt)
 
         let descriptor = FetchDescriptor<ActivationMetadata>()
         let allMetadata = (try? modelContext.fetch(descriptor)) ?? []
-        let existing = allMetadata.first { $0.parkReference == parkRef && $0.date == date }
+        let existing = allMetadata.first {
+            $0.parkReference == primaryPark && $0.date == date
+        }
 
         if let existing {
             existing.averageWPM = avgWPM
         } else {
             let metadata = ActivationMetadata(
-                parkReference: parkRef, date: date, averageWPM: avgWPM
+                parkReference: primaryPark, date: date, averageWPM: avgWPM
             )
             modelContext.insert(metadata)
         }

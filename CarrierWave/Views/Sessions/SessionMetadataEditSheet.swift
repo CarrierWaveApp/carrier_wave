@@ -271,17 +271,17 @@ struct SessionMetadataEditSheet: View {
         Section {
             ParkEntryField(
                 parkReference: $parkReference,
-                label: "Park Reference",
+                label: "Parks",
                 placeholder: "K-1234",
                 userGrid: userGrid,
                 defaultCountry: "US"
             )
         } header: {
-            Text("Park")
+            Text("Parks")
         } footer: {
             if parkChanged {
                 Label(
-                    "Changing the park will update all QSOs and clear POTA upload status.",
+                    "Changing parks will update all QSOs and clear POTA upload status.",
                     systemImage: "exclamationmark.triangle"
                 )
                 .foregroundStyle(.orange)

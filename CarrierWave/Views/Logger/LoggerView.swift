@@ -1186,20 +1186,7 @@ struct LoggerView: View {
                         showParkEditSheet = true
                     } label: {
                         HStack(spacing: 2) {
-                            if let parkName = lookupParkName(session.parkReference) {
-                                Text(parkName)
-                                    .font(.caption)
-                                    .foregroundStyle(.green)
-                                    .lineLimit(1)
-                            } else if let ref = session.parkReference {
-                                Text(ref)
-                                    .font(.caption.monospaced())
-                                    .foregroundStyle(.green)
-                            } else {
-                                Text("No park")
-                                    .font(.caption)
-                                    .foregroundStyle(.orange)
-                            }
+                            parkHeaderLabel(session.parkReference)
                             Image(systemName: "pencil")
                                 .font(.system(size: 8))
                                 .foregroundStyle(.secondary)
@@ -1753,24 +1740,38 @@ struct LoggerView: View {
             return
         }
 
-        do {
-            let potaClient = POTAClient(authService: POTAAuthService())
-            let success = try await potaClient.postSpot(
-                callsign: callsign,
-                reference: parkRef,
-                frequency: freq * 1_000, // Convert MHz to kHz
-                mode: session.mode,
-                comments: comment
-            )
-            if success {
-                if let comment, !comment.isEmpty {
-                    ToastManager.shared.spotPosted(park: parkRef, comment: comment)
-                } else {
-                    ToastManager.shared.spotPosted(park: parkRef)
+        // Post spot for each park in multi-park activation
+        let parks = ParkReference.split(parkRef)
+        let potaClient = POTAClient(authService: POTAAuthService())
+        var successCount = 0
+
+        for park in parks {
+            do {
+                let success = try await potaClient.postSpot(
+                    callsign: callsign,
+                    reference: park,
+                    frequency: freq * 1_000,
+                    mode: session.mode,
+                    comments: comment
+                )
+                if success {
+                    successCount += 1
                 }
+            } catch {
+                ToastManager.shared.error(
+                    "Spot failed for \(park): \(error.localizedDescription)"
+                )
             }
-        } catch {
-            ToastManager.shared.error("Spot failed: \(error.localizedDescription)")
+        }
+
+        if successCount > 0 {
+            let label = parks.count > 1
+                ? "\(parks.count) parks" : parks.first ?? parkRef
+            if let comment, !comment.isEmpty {
+                ToastManager.shared.spotPosted(park: label, comment: comment)
+            } else {
+                ToastManager.shared.spotPosted(park: label)
+            }
         }
     }
 
@@ -2088,8 +2089,44 @@ struct LoggerView: View {
         guard let ref = reference else {
             return nil
         }
-        // Use the POTA parks cache if available
-        return POTAParksCache.shared.nameSync(for: ref)
+        // For multi-park, look up the first park only
+        let firstPark = ParkReference.split(ref).first ?? ref
+        return POTAParksCache.shared.nameSync(for: firstPark)
+    }
+
+    /// Build a compact label for park(s) in the session header
+    @ViewBuilder
+    private func parkHeaderLabel(_ parkRef: String?) -> some View {
+        if let parkRef, !parkRef.isEmpty {
+            let parks = ParkReference.split(parkRef)
+            if parks.count > 1 {
+                // Multi-park: show refs as compact chips
+                HStack(spacing: 4) {
+                    ForEach(parks, id: \.self) { park in
+                        Text(park)
+                            .font(.caption.monospaced().weight(.medium))
+                            .foregroundStyle(.green)
+                            .padding(.horizontal, 4)
+                            .padding(.vertical, 1)
+                            .background(Color.green.opacity(0.1))
+                            .clipShape(Capsule())
+                    }
+                }
+            } else if let name = lookupParkName(parkRef) {
+                Text(name)
+                    .font(.caption)
+                    .foregroundStyle(.green)
+                    .lineLimit(1)
+            } else {
+                Text(parkRef)
+                    .font(.caption.monospaced())
+                    .foregroundStyle(.green)
+            }
+        } else {
+            Text("No park")
+                .font(.caption)
+                .foregroundStyle(.orange)
+        }
     }
 
     // MARK: - Session End Handling
@@ -2149,7 +2186,7 @@ struct LoggerView: View {
         pendingSessionEndMaintenanceRemaining = nil
     }
 
-    /// Upload pending POTA QSOs from the upload prompt
+    /// Upload pending POTA QSOs from the upload prompt (supports multi-park)
     private func uploadPendingPOTAQSOs() async -> Bool {
         guard let parkRef = pendingSessionEndParkRef,
               !pendingSessionEndQSOs.isEmpty
@@ -2157,34 +2194,41 @@ struct LoggerView: View {
             return false
         }
 
-        do {
-            let potaClient = POTAClient(authService: POTAAuthService())
-            let result = try await potaClient.uploadActivationWithRecording(
-                parkReference: parkRef,
-                qsos: pendingSessionEndQSOs,
-                modelContext: modelContext
-            )
+        let parks = ParkReference.split(parkRef)
+        let potaClient = POTAClient(authService: POTAAuthService())
+        var allSucceeded = true
 
-            if result.success {
-                // Mark QSOs as submitted (not confirmed - POTA processes async)
-                for qso in pendingSessionEndQSOs {
-                    qso.markSubmittedToPark(parkRef, context: modelContext)
+        for park in parks {
+            do {
+                let result = try await potaClient.uploadActivationWithRecording(
+                    parkReference: park,
+                    qsos: pendingSessionEndQSOs,
+                    modelContext: modelContext
+                )
+
+                if result.success {
+                    for qso in pendingSessionEndQSOs {
+                        qso.markSubmittedToPark(park, context: modelContext)
+                    }
+                    try? modelContext.save()
+                } else {
+                    allSucceeded = false
+                    SyncDebugLog.shared.warning(
+                        "POTA upload for \(park): result.success=false, "
+                            + "message=\(result.message ?? "nil")",
+                        service: .pota
+                    )
                 }
-                try? modelContext.save()
-                return true
+            } catch {
+                allSucceeded = false
+                SyncDebugLog.shared.error(
+                    "POTA upload for \(park) failed: \(error.localizedDescription)",
+                    service: .pota
+                )
             }
-            SyncDebugLog.shared.warning(
-                "POTA upload prompt: result.success=false, message=\(result.message ?? "nil")",
-                service: .pota
-            )
-            return false
-        } catch {
-            SyncDebugLog.shared.error(
-                "POTA upload prompt failed: \(error.localizedDescription)",
-                service: .pota
-            )
-            return false
         }
+
+        return allSucceeded
     }
 }
 
@@ -2859,7 +2903,7 @@ struct SessionTitleEditSheet: View {
 
 // MARK: - SessionParkEditSheet
 
-/// Sheet for editing the park reference on an active POTA session
+/// Sheet for editing parks on an active POTA session (supports n-fer)
 struct SessionParkEditSheet: View {
     // MARK: Internal
 
@@ -2874,20 +2918,20 @@ struct SessionParkEditSheet: View {
             VStack(spacing: 16) {
                 ParkEntryField(
                     parkReference: $parkReference,
-                    label: "Park Reference",
+                    label: "Parks",
                     placeholder: "K-1234",
                     userGrid: userGrid,
                     defaultCountry: "US"
                 )
 
-                Text("Change the park for this activation session")
+                Text("Add or remove parks for this n-fer activation")
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
                 Spacer()
             }
             .padding()
-            .navigationTitle("Edit Park")
+            .navigationTitle("Edit Parks")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -2897,29 +2941,12 @@ struct SessionParkEditSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
-                        // Normalize the park reference (e.g., "4571" -> "US-4571")
-                        let normalized = normalizeParkReference(parkReference)
-                        onSave(normalized)
+                        onSave(parkReference)
                     }
                     .disabled(parkReference.isEmpty)
                 }
             }
         }
-    }
-
-    // MARK: Private
-
-    /// Normalize park reference by looking it up and returning the full reference
-    private func normalizeParkReference(_ input: String) -> String {
-        let trimmed = input.trimmingCharacters(in: .whitespaces).uppercased()
-        if let park = POTAParksCache.shared.lookupPark(trimmed, defaultCountry: "US") {
-            return park.reference
-        }
-        // If lookup fails, still try to add prefix for numeric-only input
-        if trimmed.allSatisfy(\.isNumber) {
-            return "US-\(trimmed)"
-        }
-        return trimmed
     }
 }
 
