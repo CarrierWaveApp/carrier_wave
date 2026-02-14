@@ -116,10 +116,24 @@ struct QuickLogSection: View {
             compactField(label: "Rcvd", placeholder: defaultRST, text: $rstReceived, width: rstFieldWidth)
                 .keyboardType(.numberPad)
             Spacer()
+            bandModeLabel
         }
         .padding(12)
         .background(Color(.secondarySystemGroupedBackground))
         .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+
+    private var bandModeLabel: some View {
+        let band = currentFrequency.map {
+            LoggingSession.bandForFrequency($0)
+        } ?? "No band"
+        return Text("\(band) \(currentMode)")
+            .font(.caption.weight(.medium))
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(Color(.tertiarySystemGroupedBackground))
+            .clipShape(Capsule())
     }
 
     // MARK: - Quick Entry Preview
@@ -188,8 +202,16 @@ struct QuickLogSection: View {
         // Try quick entry parse first
         if let result = QuickEntryParser.parse(trimmed) {
             data.callsign = result.callsign
-            data.rstSent = result.rstSent ?? effectiveRST(rstSent)
-            data.rstReceived = result.rstReceived ?? effectiveRST(rstReceived)
+
+            // Single RST applies to both sent and received
+            if result.rstSent == nil, let rst = result.rstReceived {
+                data.rstSent = rst
+                data.rstReceived = rst
+            } else {
+                data.rstSent = result.rstSent ?? effectiveRST(rstSent)
+                data.rstReceived = result.rstReceived ?? effectiveRST(rstReceived)
+            }
+
             data.theirParkReference = result.theirPark
             data.theirGrid = result.theirGrid
             data.state = result.state

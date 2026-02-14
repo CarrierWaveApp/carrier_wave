@@ -142,7 +142,7 @@ struct ActivityLogView: View {
             manager: manager,
             container: modelContext.container,
             onShowFilterSheet: { showingFilterSheet = true },
-            onSpotLogged: { handleSpotLogged() }
+            onSpotLogged: { freq, mode in handleSpotLogged(frequencyMHz: freq, mode: mode) }
         )
     }
 
@@ -186,7 +186,9 @@ struct ActivityLogView: View {
         }
     }
 
-    private func handleSpotLogged() {
+    private func handleSpotLogged(frequencyMHz: Double, mode: String) {
+        currentFrequency = frequencyMHz
+        currentMode = mode
         manager.refreshTodayStats()
         recentQSOs = manager.fetchRecentQSOs()
     }

@@ -26,7 +26,7 @@ struct ActivityLogSpotsList: View {
     let manager: ActivityLogManager
     let container: ModelContainer
     let onShowFilterSheet: () -> Void
-    let onSpotLogged: () -> Void
+    let onSpotLogged: (_ frequencyMHz: Double, _ mode: String) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -53,7 +53,7 @@ struct ActivityLogSpotsList: View {
                         band: spot.spot.band
                     )
                 }
-                onSpotLogged()
+                onSpotLogged(spot.spot.frequencyMHz, spot.spot.mode)
             }
         }
         .task {
