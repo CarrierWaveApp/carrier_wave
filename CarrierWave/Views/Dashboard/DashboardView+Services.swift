@@ -45,7 +45,7 @@ extension DashboardView {
             primaryStat: lofiIsConfigured && lofiIsLinked
                 ? "\(uploadedCount(for: .lofi)) synced" : nil,
             secondaryStat: nil,
-            tertiaryInfo: lofiStatusText,
+            tertiaryInfo: lofiStatusText ?? syncService.lastSyncResults[.lofi]?.summaryText,
             showWarning: false,
             isSyncing: syncService.isSyncing
         )
@@ -58,7 +58,8 @@ extension DashboardView {
             status: qrzIsConfigured ? .connected : .notConfigured,
             primaryStat: qrzIsConfigured ? "\(uploadedCount(for: .qrz)) synced" : nil,
             secondaryStat: qrzIsConfigured ? "\(asyncStats.qrzConfirmedCount) QSLs" : nil,
-            tertiaryInfo: qrzIsConfigured ? nil : "Not configured",
+            tertiaryInfo: qrzIsConfigured
+                ? syncService.lastSyncResults[.qrz]?.summaryText : "Not configured",
             showWarning: pendingCount(for: .qrz) > 0,
             isSyncing: syncService.isSyncing
         )
@@ -72,7 +73,8 @@ extension DashboardView {
             primaryStat: potaAuth.isConfigured ? "\(uploadedCount(for: .pota)) synced" : nil,
             secondaryStat: pendingCount(for: .pota) > 0
                 ? "\(pendingCount(for: .pota)) pending" : nil,
-            tertiaryInfo: potaAuth.isConfigured ? nil : "Not configured",
+            tertiaryInfo: potaAuth.isConfigured
+                ? syncService.lastSyncResults[.pota]?.summaryText : "Not configured",
             showWarning: inMaintenance || potaAuth.currentToken?.isExpiringSoon() == true,
             isSyncing: syncService.isSyncing
         )
@@ -85,7 +87,8 @@ extension DashboardView {
             status: hamrsIsConfigured ? .connected : .notConfigured,
             primaryStat: hamrsIsConfigured ? "\(uploadedCount(for: .hamrs)) synced" : nil,
             secondaryStat: nil,
-            tertiaryInfo: hamrsIsConfigured ? nil : "Not configured",
+            tertiaryInfo: hamrsIsConfigured
+                ? syncService.lastSyncResults[.hamrs]?.summaryText : "Not configured",
             showWarning: false,
             isSyncing: syncService.isSyncing
         )
@@ -98,7 +101,8 @@ extension DashboardView {
             status: lotwIsConfigured ? .connected : .notConfigured,
             primaryStat: lotwIsConfigured ? "\(uploadedCount(for: .lotw)) synced" : nil,
             secondaryStat: lotwIsConfigured ? "\(asyncStats.lotwConfirmedCount) QSLs" : nil,
-            tertiaryInfo: lotwIsConfigured ? nil : "Not configured",
+            tertiaryInfo: lotwIsConfigured
+                ? syncService.lastSyncResults[.lotw]?.summaryText : "Not configured",
             showWarning: false,
             isSyncing: syncService.isSyncing
         )
@@ -181,7 +185,7 @@ extension DashboardView {
             syncedCount: uploadedCount(for: .lofi),
             pendingCount: pendingCount(for: .lofi),
             confirmedCount: nil,
-            lastSyncResult: lofiSyncResult,
+            lastSyncReport: syncService.lastSyncResults[.lofi],
             isSyncing: isSyncing,
             debugMode: debugMode,
             isInMaintenance: false,
@@ -209,7 +213,7 @@ extension DashboardView {
             syncedCount: uploadedCount(for: .qrz),
             pendingCount: pendingCount(for: .qrz),
             confirmedCount: asyncStats.qrzConfirmedCount,
-            lastSyncResult: qrzSyncResult,
+            lastSyncReport: syncService.lastSyncResults[.qrz],
             isSyncing: isSyncing,
             debugMode: debugMode,
             isInMaintenance: false,
@@ -240,7 +244,7 @@ extension DashboardView {
             syncedCount: uploadedCount(for: .pota),
             pendingCount: pendingCount(for: .pota),
             confirmedCount: nil,
-            lastSyncResult: potaSyncResult,
+            lastSyncReport: syncService.lastSyncResults[.pota],
             isSyncing: isSyncing,
             debugMode: debugMode,
             isInMaintenance: inMaintenance,
@@ -268,7 +272,7 @@ extension DashboardView {
             syncedCount: uploadedCount(for: .hamrs),
             pendingCount: pendingCount(for: .hamrs),
             confirmedCount: nil,
-            lastSyncResult: hamrsSyncResult,
+            lastSyncReport: syncService.lastSyncResults[.hamrs],
             isSyncing: isSyncing,
             debugMode: debugMode,
             isInMaintenance: false,
@@ -296,7 +300,7 @@ extension DashboardView {
             syncedCount: uploadedCount(for: .lotw),
             pendingCount: pendingCount(for: .lotw),
             confirmedCount: asyncStats.lotwConfirmedCount,
-            lastSyncResult: lotwSyncResult,
+            lastSyncReport: syncService.lastSyncResults[.lotw],
             isSyncing: isSyncing,
             debugMode: debugMode,
             isInMaintenance: false,
@@ -324,7 +328,7 @@ extension DashboardView {
             syncedCount: 0,
             pendingCount: 0,
             confirmedCount: nil,
-            lastSyncResult: nil,
+            lastSyncReport: nil,
             isSyncing: false,
             debugMode: debugMode,
             isInMaintenance: false,

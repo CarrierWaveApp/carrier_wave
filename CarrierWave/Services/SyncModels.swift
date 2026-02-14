@@ -138,3 +138,82 @@ struct SyncResult {
     var mergedQSOs: Int
     var potaMaintenanceSkipped: Bool
 }
+
+// MARK: - ServiceSyncReport
+
+/// User-facing report of what happened during a single service sync.
+/// Sendable so it can cross from background actors to MainActor safely.
+/// Codable so reports persist across app launches via UserDefaults.
+struct ServiceSyncReport: Sendable, Codable {
+    let service: ServiceType
+    let timestamp: Date
+    let status: SyncReportStatus
+    let downloaded: Int
+    let skipped: Int
+    let created: Int
+    let merged: Int
+    let uploaded: Int
+    let reconciliation: ReconciliationReport?
+
+    /// Summary text for the service row tertiary info.
+    /// Shows input → output: "247 fetched → 5 new, 12 enriched"
+    var summaryText: String? {
+        guard status != .error else {
+            return nil
+        }
+        let changed = created + merged
+        if changed == 0, uploaded == 0 {
+            return downloaded > 0 ? "\(downloaded) fetched → no changes" : nil
+        }
+        var parts: [String] = []
+        if created > 0 {
+            parts.append("\(created) new")
+        }
+        if merged > 0 {
+            parts.append("\(merged) enriched")
+        }
+        if uploaded > 0 {
+            parts.append("\(uploaded) uploaded")
+        }
+        return "\(downloaded) fetched → \(parts.joined(separator: ", "))"
+    }
+
+    /// Whether the report has any notable issues worth highlighting
+    var hasWarnings: Bool {
+        skipped > 0
+            || reconciliation?.hasWarnings == true
+            || status == .error
+    }
+}
+
+// MARK: - SyncReportStatus
+
+enum SyncReportStatus: String, Sendable, Codable {
+    case success
+    case warning
+    case error
+}
+
+// MARK: - ReconciliationReport
+
+/// Service-specific reconciliation results.
+struct ReconciliationReport: Sendable, Codable {
+    static let empty = ReconciliationReport(
+        qrzResetCount: 0, potaConfirmed: 0, potaFailed: 0,
+        potaStale: 0, potaOrphan: 0, potaInProgress: 0
+    )
+
+    // QRZ-specific: presence records reset on full sync
+    let qrzResetCount: Int
+
+    // POTA-specific
+    let potaConfirmed: Int
+    let potaFailed: Int
+    let potaStale: Int
+    let potaOrphan: Int
+    let potaInProgress: Int
+
+    var hasWarnings: Bool {
+        potaFailed > 0 || potaStale > 0 || potaOrphan > 0 || qrzResetCount > 0
+    }
+}

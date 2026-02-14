@@ -33,10 +33,6 @@ extension DashboardView {
             if !result.errors.isEmpty {
                 print("Sync errors: \(result.errors)")
             }
-            if result.potaMaintenanceSkipped {
-                potaSyncResult = "Maintenance until 0400 UTC"
-            }
-
             // Small delay to ensure SQLite writes are fully committed
             try? await Task.sleep(for: .milliseconds(50))
 
@@ -79,78 +75,45 @@ extension DashboardView {
     func syncFromLoFi() async {
         isSyncing = true
         syncingService = .lofi
-        lofiSyncResult = "Syncing..."
         defer {
             isSyncing = false
             syncingService = nil
         }
 
         do {
-            let count = try await syncService.syncLoFi()
-            lofiSyncResult = count > 0 ? "+\(count) QSOs" : "Already in sync"
+            _ = try await syncService.syncLoFi()
         } catch {
-            lofiSyncResult = "Error: \(error.localizedDescription)"
+            syncService.storeErrorReport(service: .lofi, error: error)
         }
     }
 
     func performQRZSync() async {
         isSyncing = true
         syncingService = .qrz
-        qrzSyncResult = "Syncing..."
         defer {
             isSyncing = false
             syncingService = nil
         }
 
         do {
-            let result = try await syncService.syncQRZ()
-            if result.downloaded == 0, result.uploaded == 0, result.skipped == 0 {
-                qrzSyncResult = "Already in sync"
-            } else {
-                var parts: [String] = []
-                if result.downloaded > 0 {
-                    parts.append("↓\(result.downloaded)")
-                }
-                if result.uploaded > 0 {
-                    parts.append("↑\(result.uploaded)")
-                }
-                if result.skipped > 0 {
-                    parts.append("⚠️\(result.skipped) skipped")
-                }
-                qrzSyncResult = parts.joined(separator: " ")
-            }
+            _ = try await syncService.syncQRZ()
         } catch {
-            qrzSyncResult = "Error: \(error.localizedDescription)"
+            syncService.storeErrorReport(service: .qrz, error: error)
         }
     }
 
     func performPOTASync() async {
         isSyncing = true
         syncingService = .pota
-        potaSyncResult = "Syncing..."
         defer {
             isSyncing = false
             syncingService = nil
         }
 
         do {
-            let result = try await syncService.syncPOTA()
-            if result.downloaded == 0, result.uploaded == 0 {
-                potaSyncResult = "Already in sync"
-            } else {
-                var parts: [String] = []
-                if result.downloaded > 0 {
-                    parts.append("↓\(result.downloaded)")
-                }
-                if result.uploaded > 0 {
-                    parts.append("↑\(result.uploaded)")
-                }
-                potaSyncResult = parts.joined(separator: " ")
-            }
-        } catch POTAError.maintenanceWindow {
-            potaSyncResult = "Maintenance until 0400 UTC"
+            _ = try await syncService.syncPOTA()
         } catch {
-            potaSyncResult = "Error: \(error.localizedDescription)"
+            syncService.storeErrorReport(service: .pota, error: error)
         }
     }
 
@@ -166,7 +129,7 @@ extension DashboardView {
         do {
             return try await syncService.forceRedownloadFromQRZ()
         } catch {
-            qrzSyncResult = "Error: \(error.localizedDescription)"
+            syncService.storeErrorReport(service: .qrz, error: error)
             return (updated: 0, created: 0)
         }
     }
@@ -181,7 +144,7 @@ extension DashboardView {
         do {
             return try await syncService.forceRedownloadFromPOTA()
         } catch {
-            potaSyncResult = "Error: \(error.localizedDescription)"
+            syncService.storeErrorReport(service: .pota, error: error)
             return (updated: 0, created: 0)
         }
     }
@@ -196,7 +159,7 @@ extension DashboardView {
         do {
             return try await syncService.forceRedownloadFromLoFi()
         } catch {
-            lofiSyncResult = "Error: \(error.localizedDescription)"
+            syncService.storeErrorReport(service: .lofi, error: error)
             return (updated: 0, created: 0)
         }
     }
@@ -211,7 +174,7 @@ extension DashboardView {
         do {
             return try await syncService.forceRedownloadFromHAMRS()
         } catch {
-            hamrsSyncResult = "Error: \(error.localizedDescription)"
+            syncService.storeErrorReport(service: .hamrs, error: error)
             return (updated: 0, created: 0)
         }
     }
@@ -226,7 +189,7 @@ extension DashboardView {
         do {
             return try await syncService.forceRedownloadFromLoTW()
         } catch {
-            lotwSyncResult = "Error: \(error.localizedDescription)"
+            syncService.storeErrorReport(service: .lotw, error: error)
             return (updated: 0, created: 0)
         }
     }
@@ -235,7 +198,6 @@ extension DashboardView {
 
     func clearQRZData() async {
         isSyncing = true
-        qrzSyncResult = "Clearing..."
         defer { isSyncing = false }
 
         do {
@@ -246,15 +208,13 @@ extension DashboardView {
                 modelContext.delete(qso)
             }
             try modelContext.save()
-            qrzSyncResult = "Cleared \(qrzQSOs.count) QSOs"
         } catch {
-            qrzSyncResult = "Error: \(error.localizedDescription)"
+            syncService.storeErrorReport(service: .qrz, error: error)
         }
     }
 
     func clearLoFiData() async {
         isSyncing = true
-        lofiSyncResult = "Clearing..."
         defer { isSyncing = false }
 
         do {
@@ -268,61 +228,52 @@ extension DashboardView {
 
             // Reset sync timestamp so QSOs can be re-downloaded
             lofiClient.resetSyncTimestamp()
-
-            lofiSyncResult = "Cleared \(lofiQSOs.count) QSOs"
         } catch {
-            lofiSyncResult = "Error: \(error.localizedDescription)"
+            syncService.storeErrorReport(service: .lofi, error: error)
         }
     }
 
     func syncFromHAMRS() async {
         isSyncing = true
         syncingService = .hamrs
-        hamrsSyncResult = "Syncing..."
         defer {
             isSyncing = false
             syncingService = nil
         }
 
         do {
-            let count = try await syncService.syncHAMRS()
-            hamrsSyncResult = count > 0 ? "+\(count) QSOs" : "Already in sync"
+            _ = try await syncService.syncHAMRS()
         } catch {
-            hamrsSyncResult = "Error: \(error.localizedDescription)"
+            syncService.storeErrorReport(service: .hamrs, error: error)
         }
     }
 
     func clearHAMRSCredentials() {
         hamrsClient.clearCredentials()
-        hamrsSyncResult = nil
         refreshServiceStatus()
     }
 
     func syncFromLoTW() async {
         isSyncing = true
         syncingService = .lotw
-        lotwSyncResult = "Syncing..."
         defer {
             isSyncing = false
             syncingService = nil
         }
 
         do {
-            let count = try await syncService.syncLoTW()
-            lotwSyncResult = count > 0 ? "+\(count) QSLs" : "Already in sync"
+            _ = try await syncService.syncLoTW()
         } catch {
-            lotwSyncResult = "Error: \(error.localizedDescription)"
+            syncService.storeErrorReport(service: .lotw, error: error)
         }
     }
 
     func clearLoTWData() {
         isSyncing = true
-        lotwSyncResult = "Clearing..."
         defer { isSyncing = false }
 
         // Clear LoTW timestamps to allow re-download
         lotwClient.clearCredentials()
-        lotwSyncResult = "Cleared"
         refreshServiceStatus()
     }
 

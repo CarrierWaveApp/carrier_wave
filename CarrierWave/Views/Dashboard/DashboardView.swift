@@ -29,21 +29,9 @@ struct DashboardView: View {
     @State var isSyncing = false
     @State var syncingService: ServiceType?
     @State var lastSyncDate: Date?
-    @State var lofiSyncResult: String?
-
     // QRZ state
     @State var qrzCallsign: String?
     @State var qrzIsConfigured: Bool = false
-    @State var qrzSyncResult: String?
-
-    /// POTA state
-    @State var potaSyncResult: String?
-
-    /// HAMRS state
-    @State var hamrsSyncResult: String?
-
-    /// LoTW state
-    @State var lotwSyncResult: String?
 
     // Service configuration state (refreshed on appear)
     @State var lofiIsConfigured: Bool = false

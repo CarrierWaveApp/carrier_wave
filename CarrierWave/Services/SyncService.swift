@@ -22,6 +22,7 @@ class SyncService: ObservableObject {
         self.lofiClient = lofiClient ?? LoFiClient.appDefault()
         self.hamrsClient = hamrsClient ?? HAMRSClient()
         self.lotwClient = lotwClient ?? LoTWClient()
+        loadPersistedReports()
     }
 
     // MARK: Internal
@@ -34,6 +35,7 @@ class SyncService: ObservableObject {
     @Published var lastSyncDate: Date?
     @Published var syncPhase: SyncPhase?
     @Published var syncProgress = SyncProgress()
+    @Published var lastSyncResults: [ServiceType: ServiceSyncReport] = [:]
 
     let modelContext: ModelContext
     let qrzClient: QRZClient
@@ -100,35 +102,10 @@ class SyncService: ObservableObject {
             await processActivities(newQSOs: createdQSOs)
         }
 
-        // PHASE 2.5b: Reconcile QRZ presence (full sync only — incremental is incomplete)
-        if !qrzWasIncremental {
-            let qrzDownloadedKeys = Set(
-                allFetched.filter { $0.source == .qrz }.map(\.deduplicationKey)
-            )
-            if !qrzDownloadedKeys.isEmpty {
-                try await reconcileQRZPresenceAsync(downloadedKeys: qrzDownloadedKeys)
-            }
-        }
-
-        // PHASE 2.5c: Reconcile POTA presence against job log
-        await reconcilePOTAPresenceAsync()
-
-        // PHASE 2.5d: Repair orphaned QSOs (logged when services weren't configured)
-        if qrzClient.hasApiKey() {
-            await repairOrphanedQSOsAsync(for: .qrz)
-        }
-
-        // PHASE 2.5e: Clear upload flags on metadata pseudo-modes (WEATHER, SOLAR, NOTE)
-        await clearMetadataUploadFlagsAsync()
-
-        // PHASE 2.5f: Clear upload flags on QSOs from non-primary callsigns
-        await clearNonPrimaryCallsignUploadFlagsAsync()
-
-        // PHASE 2.5g: Repair missing DXCC from rawADIF
-        await repairMissingDXCCAsync()
-
-        // Refresh main context to pick up changes from background actor
-        modelContext.rollback()
+        // PHASE 2.5: Reconcile and repair data
+        let (qrzResetCount, potaReconcileResult) = try await performReconciliation(
+            allFetched: allFetched, qrzWasIncremental: qrzWasIncremental
+        )
 
         // PHASE 3: Upload to all destinations in parallel (unless read-only mode)
         await performUploadsIfEnabled(into: &result, debugLog: debugLog)
@@ -137,6 +114,13 @@ class SyncService: ObservableObject {
         if modelContext.hasChanges {
             try modelContext.save()
         }
+
+        // Build per-service sync reports
+        buildFullSyncReports(
+            result: result,
+            qrzResetCount: qrzResetCount,
+            potaReconcileResult: potaReconcileResult
+        )
 
         return result
     }
@@ -186,20 +170,7 @@ class SyncService: ObservableObject {
             try await reconcileQRZPresenceAsync(downloadedKeys: qrzDownloadedKeys)
         }
 
-        // Repair orphaned QSOs (logged when QRZ wasn't configured)
-        await repairOrphanedQSOsAsync(for: .qrz)
-
-        // Clear upload flags on metadata pseudo-modes (WEATHER, SOLAR, NOTE)
-        await clearMetadataUploadFlagsAsync()
-
-        // Clear upload flags on QSOs from non-primary callsigns
-        await clearNonPrimaryCallsignUploadFlagsAsync()
-
-        // Repair missing DXCC from rawADIF
-        await repairMissingDXCCAsync()
-
-        // Refresh main context to pick up changes from background actor
-        modelContext.rollback()
+        await performDataRepairs()
 
         // Upload with timeout (unless read-only mode)
         if !isReadOnlyMode {
@@ -215,7 +186,17 @@ class SyncService: ObservableObject {
             }
         }
 
-        return QRZSyncResult(downloaded: downloaded, uploaded: uploaded, skipped: skipped)
+        let qrzResult = QRZSyncResult(downloaded: downloaded, uploaded: uploaded, skipped: skipped)
+
+        storeReport(buildReport(
+            service: .qrz,
+            downloaded: fetched.count,
+            created: downloaded,
+            merged: processResult.merged,
+            uploaded: uploaded
+        ))
+
+        return qrzResult
     }
 
     /// Sync only with POTA (download then upload)
@@ -253,7 +234,7 @@ class SyncService: ObservableObject {
         }
 
         // Reconcile POTA presence against job log
-        await reconcilePOTAPresenceAsync()
+        let potaReconcileResult = await reconcilePOTAPresenceAsync()
 
         // Refresh main context to pick up changes from background actor
         modelContext.rollback()
@@ -271,6 +252,15 @@ class SyncService: ObservableObject {
                 try modelContext.save()
             }
         }
+
+        storeReport(buildReport(
+            service: .pota,
+            downloaded: fetched.count,
+            created: downloaded,
+            merged: processResult.merged,
+            uploaded: uploaded,
+            reconciliation: reconciliationReport(potaResult: potaReconcileResult)
+        ))
 
         return (downloaded, uploaded)
     }
@@ -317,6 +307,15 @@ class SyncService: ObservableObject {
             await processActivities(newQSOs: createdQSOs)
         }
 
+        let skippedCount = qsos.count - fetched.count
+        storeReport(buildReport(
+            service: .lofi,
+            downloaded: qsos.count,
+            skipped: skippedCount,
+            created: processResult.created,
+            merged: processResult.merged
+        ))
+
         return processResult.created
     }
 
@@ -344,6 +343,15 @@ class SyncService: ObservableObject {
         if !createdQSOs.isEmpty {
             await processActivities(newQSOs: createdQSOs)
         }
+
+        let skippedCount = qsos.count - fetched.count
+        storeReport(buildReport(
+            service: .hamrs,
+            downloaded: qsos.count,
+            skipped: skippedCount,
+            created: processResult.created,
+            merged: processResult.merged
+        ))
 
         return processResult.created
     }
@@ -378,122 +386,15 @@ class SyncService: ObservableObject {
             try lotwClient.saveLastQSORxDate(lastQSORx)
         }
 
+        storeReport(buildReport(
+            service: .lotw,
+            downloaded: fetched.count,
+            created: processResult.created,
+            merged: processResult.merged
+        ))
+
         return processResult.created
     }
 }
 
-// MARK: - SyncService Helpers
-
-extension SyncService {
-    /// Download from all sources without uploading (debug mode)
-    func downloadOnly() async throws -> SyncResult {
-        isSyncing = true
-        syncProgress.reset()
-        let debugLog = SyncDebugLog.shared
-        debugLog.info("Starting download-only sync")
-
-        defer {
-            isSyncing = false
-            syncPhase = nil
-            syncProgress.reset()
-            lastSyncDate = Date()
-            debugLog.info("Download-only sync complete")
-        }
-
-        var result = SyncResult(
-            downloaded: [:], uploaded: [:], errors: [], newQSOs: 0, mergedQSOs: 0,
-            potaMaintenanceSkipped: false
-        )
-
-        // PHASE 1: Download from all sources in parallel
-        let downloadResults = await downloadFromAllSources()
-
-        var allFetched: [FetchedQSO] = []
-        for (service, fetchResult) in downloadResults {
-            switch fetchResult {
-            case let .success(qsos):
-                result.downloaded[service] = qsos.count
-                // Note: syncProgress is updated in downloadFrom* methods for real-time updates
-                allFetched.append(contentsOf: qsos)
-            case let .failure(error):
-                result.errors.append(
-                    "\(service.displayName) download: \(error.localizedDescription)"
-                )
-            }
-        }
-
-        // PHASE 2: Process and deduplicate (on background thread)
-        syncPhase = .processing
-        let processResult = try await processDownloadedQSOsAsync(allFetched)
-        result.newQSOs = processResult.created
-        result.mergedQSOs = processResult.merged
-
-        // Process activities for newly created QSOs
-        let createdQSOs = processResult.fetchCreatedQSOs(from: modelContext)
-        if !createdQSOs.isEmpty {
-            await processActivities(newQSOs: createdQSOs)
-        }
-
-        // Skip upload phase
-        return result
-    }
-
-    func collectDownloadResults(
-        _ downloadResults: [ServiceType: Result<[FetchedQSO], Error>],
-        into result: inout SyncResult
-    ) -> [FetchedQSO] {
-        var allFetched: [FetchedQSO] = []
-        for (service, fetchResult) in downloadResults {
-            switch fetchResult {
-            case let .success(qsos):
-                result.downloaded[service] = qsos.count
-                // Note: syncProgress is updated in downloadFrom* methods for real-time updates
-                allFetched.append(contentsOf: qsos)
-            case let .failure(error):
-                result.errors.append(
-                    "\(service.displayName) download: \(error.localizedDescription)"
-                )
-            }
-        }
-        return allFetched
-    }
-
-    func notifyNewQSOsIfNeeded(count: Int) {
-        guard count > 0 else {
-            return
-        }
-        NotificationCenter.default.post(
-            name: .didSyncQSOs,
-            object: nil,
-            userInfo: ["newQSOCount": count]
-        )
-    }
-
-    func performUploadsIfEnabled(
-        into result: inout SyncResult,
-        debugLog: SyncDebugLog
-    ) async {
-        if isReadOnlyMode {
-            debugLog.info("Read-only mode enabled, skipping uploads")
-            return
-        }
-
-        let (uploadResults, potaSkipped) = await uploadToAllDestinations()
-        result.potaMaintenanceSkipped = potaSkipped
-
-        if potaSkipped {
-            debugLog.info("POTA skipped due to maintenance window (0000-0400 UTC)", service: .pota)
-        }
-
-        for (service, uploadResult) in uploadResults {
-            switch uploadResult {
-            case let .success(count):
-                result.uploaded[service] = count
-            case let .failure(error):
-                result.errors.append(
-                    "\(service.displayName) upload: \(error.localizedDescription)"
-                )
-            }
-        }
-    }
-}
+// MARK: - SyncService Helpers are in SyncService+Helpers.swift

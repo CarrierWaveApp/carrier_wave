@@ -14,7 +14,7 @@ struct ServiceDetailSheet: View {
     let syncedCount: Int
     let pendingCount: Int
     let confirmedCount: Int?
-    let lastSyncResult: String?
+    let lastSyncReport: ServiceSyncReport?
     let isSyncing: Bool
     let debugMode: Bool
 
@@ -110,15 +110,9 @@ struct ServiceDetailSheet: View {
                     }
                 }
 
-                // Last sync result
-                if let result = lastSyncResult {
-                    Section("Last Sync") {
-                        Text(result)
-                            .font(.subheadline)
-                            .foregroundStyle(
-                                result.starts(with: "Error") ? .red : .secondary
-                            )
-                    }
+                // Last sync report
+                if let report = lastSyncReport {
+                    SyncReportSection(report: report)
                 }
 
                 // Actions section
@@ -257,7 +251,17 @@ struct ServiceDetailSheet: View {
         syncedCount: 312,
         pendingCount: 5,
         confirmedCount: 45,
-        lastSyncResult: "Synced 5 new QSOs",
+        lastSyncReport: ServiceSyncReport(
+            service: .qrz,
+            timestamp: Date().addingTimeInterval(-180),
+            status: .success,
+            downloaded: 312,
+            skipped: 0,
+            created: 5,
+            merged: 12,
+            uploaded: 8,
+            reconciliation: nil
+        ),
         isSyncing: false,
         debugMode: true,
         isInMaintenance: false,

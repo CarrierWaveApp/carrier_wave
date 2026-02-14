@@ -72,12 +72,13 @@ extension SyncService {
 
     /// Reconcile QRZ presence records against what QRZ actually returned.
     /// Now runs on background thread to avoid blocking UI.
-    func reconcileQRZPresenceAsync(downloadedKeys: Set<String>) async throws {
-        // Get user's callsign aliases for matching
+    /// Returns the number of presence records reset to needsUpload.
+    @discardableResult
+    func reconcileQRZPresenceAsync(downloadedKeys: Set<String>) async throws -> Int {
         let aliasService = CallsignAliasService.shared
         let userCallsigns = aliasService.getAllUserCallsigns()
 
-        try await Self.processingActor.reconcileQRZPresence(
+        return try await Self.processingActor.reconcileQRZPresence(
             downloadedKeys: downloadedKeys,
             userCallsigns: userCallsigns,
             container: modelContext.container
@@ -89,12 +90,16 @@ extension SyncService {
     /// - isPresent=true with no completed job → reset to needsUpload=true
     /// - isSubmitted=true with completed job → confirm as uploaded
     /// - isSubmitted=true with failed job → reset to needsUpload=true
-    func reconcilePOTAPresenceAsync() async {
+    /// Returns the POTA reconciliation result, or nil if skipped/failed.
+    @discardableResult
+    func reconcilePOTAPresenceAsync() async
+        -> QSOProcessingActor.POTAReconcileResult?
+    {
         let debugLog = SyncDebugLog.shared
 
         guard potaAuthService.isConfigured else {
             debugLog.debug("POTA reconciliation skipped: not configured", service: .pota)
-            return
+            return nil
         }
 
         do {
@@ -135,10 +140,12 @@ extension SyncService {
             )
 
             logPOTAReconcileResult(result)
+            return result
         } catch {
             debugLog.error(
                 "POTA reconciliation failed: \(error.localizedDescription)", service: .pota
             )
+            return nil
         }
     }
 

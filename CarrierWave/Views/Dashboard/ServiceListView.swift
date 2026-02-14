@@ -127,6 +127,12 @@ struct ServiceRow: View {
                                 .font(.caption)
                                 .foregroundStyle(.tertiary)
                         }
+
+                        if let tertiary = service.tertiaryInfo {
+                            Text(tertiary)
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
+                        }
                     }
 
                     if service.showWarning {

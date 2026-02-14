@@ -131,7 +131,11 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `SyncService.swift` | Main sync orchestrator |
 | `SyncService+Upload.swift` | Upload logic for all services |
 | `SyncService+Download.swift` | Download/import logic |
+| `SyncService+ForceRedownload.swift` | Force re-download all QSOs from each service |
 | `SyncService+Process.swift` | QSO processing during sync |
+| `SyncService+Report.swift` | Per-service sync report building |
+| `SyncService+Helpers.swift` | Sync helpers (reconciliation, uploads, data repair) |
+| `SyncModels.swift` | Sync result types, progress tracking, service sync reports |
 | `QSOProcessingActor.swift` | Background actor for QSO processing without blocking UI |
 | `QSOProcessingActor+OrphanRepair.swift` | Repair QSOs missing ServicePresence records |
 | `QSOProcessingActor+POTAReconcile.swift` | Reconcile POTA ServicePresence against upload job log |
@@ -313,6 +317,8 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `StatsComputationActor+Extensions.swift` | Extensions for activations and favorites computation |
 | `ServiceListView.swift` | Vertical stacked service list with status indicators |
 | `ServiceDetailSheet.swift` | Service detail sheet for tap-through actions |
+| `SyncReportViews.swift` | Sync report header, stat chips, status badge, step row |
+| `SyncFunnelDetailView.swift` | Expandable sync funnel timeline, reconciliation, warnings |
 | `StatDetailView.swift` | Drilldown view for stat categories |
 | `StatItemRow.swift` | Individual stat row with expandable QSOs |
 | `StreakDetailView.swift` | Streak statistics detail view with mode/band breakdowns |

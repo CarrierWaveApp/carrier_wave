@@ -391,11 +391,13 @@ actor QSOProcessingActor {
 
 extension QSOProcessingActor {
     /// Reconcile QRZ presence against downloaded keys on background thread.
+    /// Returns the number of presence records reset to needsUpload.
+    @discardableResult
     func reconcileQRZPresence(
         downloadedKeys: Set<String>,
         userCallsigns: Set<String>,
         container: ModelContainer
-    ) async throws {
+    ) async throws -> Int {
         let context = ModelContext(container)
         context.autosaveEnabled = false
 
@@ -446,6 +448,8 @@ extension QSOProcessingActor {
         if modifiedCount > 0 {
             try context.save()
         }
+
+        return modifiedCount
     }
 
     /// Check if a QSO is present in the downloaded set, considering callsign aliases.
