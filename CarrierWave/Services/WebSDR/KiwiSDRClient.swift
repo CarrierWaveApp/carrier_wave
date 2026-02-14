@@ -174,9 +174,10 @@ actor KiwiSDRClient {
     }
 
     private func tune(frequencyKHz: Double, mode: KiwiSDRMode) async throws {
+        let carrierKHz = frequencyKHz - mode.carrierOffsetKHz
         let cmd = "SET mod=\(mode.kiwiName) "
             + "low_cut=\(mode.lowCut) high_cut=\(mode.highCut) "
-            + "freq=\(String(format: "%.3f", frequencyKHz))"
+            + "freq=\(String(format: "%.3f", carrierKHz))"
         try await send(cmd)
     }
 

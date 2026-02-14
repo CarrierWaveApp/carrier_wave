@@ -57,6 +57,23 @@ nonisolated enum KiwiSDRMode: Sendable {
         }
     }
 
+    /// Offset in kHz to subtract from operating frequency to get the
+    /// KiwiSDR carrier frequency. For CW, the operating frequency is
+    /// the signal frequency; the receiver must tune below it so the
+    /// signal lands in the center of the audio passband.
+    var carrierOffsetKHz: Double {
+        switch self {
+        case .cw:
+            // Center of CW passband: (300 + 800) / 2 = 550 Hz = 0.550 kHz
+            Double(lowCut + highCut) / 2.0 / 1_000.0
+        case .usb,
+             .lsb,
+             .am,
+             .nbfm:
+            0
+        }
+    }
+
     /// Bandwidth in Hz
     var bandwidthHz: Int {
         highCut - lowCut
