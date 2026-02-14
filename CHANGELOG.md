@@ -5,6 +5,7 @@ All notable changes to Carrier Wave will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Add rich share card preview sheet with ShareLink (proper thumbnail in share sheet) and Save to Photos button
 - Add sync report UI — structured per-service reports with visual funnel (fetched → validated → changes applied → uploaded), status badges, and reconciliation details; persisted across app launches via UserDefaults; populated by both normal sync and force re-download
 - Add WebSDR tuning info display — show current frequency, mode, and filter bandwidth in WebSDR panel
 - Add WebSDR browser link — open the connected KiwiSDR in Safari with current tuning settings

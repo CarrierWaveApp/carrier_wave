@@ -6,7 +6,6 @@
 import CarrierWaveCore
 import SwiftData
 import SwiftUI
-import UIKit
 
 // MARK: - Subviews
 
@@ -458,34 +457,10 @@ extension POTAActivationsContentView {
             return
         }
 
-        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-              let window = windowScene.windows.first,
-              let rootVC = window.rootViewController
-        else {
-            return
-        }
-
-        var topVC = rootVC
-        while let presented = topVC.presentedViewController {
-            topVC = presented
-        }
-
-        let activityVC = UIActivityViewController(
-            activityItems: [image],
-            applicationActivities: nil
+        sharePreviewData = SharePreviewData(
+            image: image,
+            activation: activation,
+            parkName: parkName(for: activation.parkReference)
         )
-
-        if let popover = activityVC.popoverPresentationController {
-            popover.sourceView = topVC.view
-            popover.sourceRect = CGRect(
-                x: topVC.view.bounds.midX,
-                y: topVC.view.bounds.midY,
-                width: 0,
-                height: 0
-            )
-            popover.permittedArrowDirections = []
-        }
-
-        topVC.present(activityVC, animated: true)
     }
 }

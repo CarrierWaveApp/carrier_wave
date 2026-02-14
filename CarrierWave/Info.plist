@@ -15,6 +15,8 @@
 	<string>Carrier Wave uses the microphone to decode CW (Morse code) audio from your radio.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Carrier Wave uses your location to determine your grid square for QSO logging.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Carrier Wave saves activation share cards to your photo library.</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict/>

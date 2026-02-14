@@ -350,6 +350,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `ActivationMetadataEditSheet.swift` | Edit activation metadata (title, park, watts, radio) after completion |
 | `ActivationShareCardView.swift` | Shareable activation card with map and stats |
 | `ActivationShareCardComponents.swift` | Reusable component views for share cards (header, footer, stats, park info) |
+| `ActivationSharePreviewSheet.swift` | Share preview sheet with ShareLink and Save to Photos |
 | `ActivationShareRenderer.swift` | Render activation card to UIImage for sharing |
 | `ADIFExportSheet.swift` | ADIF export sheet with share, save, copy options |
 | `ActivationMapHelpers.swift` | Map utilities for activation share cards (region, geodesic paths) and activation stats helper |

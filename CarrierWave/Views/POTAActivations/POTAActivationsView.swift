@@ -26,6 +26,7 @@ struct POTAActivationsContentView: View {
     @State var activationToMap: POTAActivation?
     @State var activationToEdit: POTAActivation?
     @State var isGeneratingShareImage = false
+    @State var sharePreviewData: SharePreviewData?
     @State var maintenanceTimeRemaining: String?
     @State var maintenanceTimer: Timer?
     @State var cachedParkNames: [String: String] = [:]
@@ -205,6 +206,12 @@ struct POTAActivationsContentView: View {
                 onCancel: { activationToEdit = nil }
             )
         }
+        .sheet(item: $sharePreviewData) { data in
+            ActivationSharePreviewSheet(
+                data: data,
+                onDismiss: { sharePreviewData = nil }
+            )
+        }
         .confirmationDialog(
             "Reject \(selectedActivationsWithPendingCount) Activations?",
             isPresented: $showBulkRejectConfirmation,
@@ -262,9 +269,7 @@ struct POTAActivationsContentView: View {
             await loadCachedParkNames()
         }
         .onAppear { startMaintenanceTimer() }
-        .onDisappear {
-            stopMaintenanceTimer()
-        }
+        .onDisappear { stopMaintenanceTimer() }
     }
 
     // MARK: Private
@@ -274,9 +279,7 @@ struct POTAActivationsContentView: View {
 
     @AppStorage("debugMode") private var debugMode = false
     @AppStorage("bypassPOTAMaintenance") private var bypassMaintenance = false
-
     @State private var isLoadingQSOs = false
-
     @State private var showBulkRejectConfirmation = false
 
     // MARK: - Bulk Selection Computed Properties
