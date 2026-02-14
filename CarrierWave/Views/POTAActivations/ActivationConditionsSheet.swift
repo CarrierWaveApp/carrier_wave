@@ -257,7 +257,7 @@ extension ActivationConditionsSheet {
         return ["0\u{00B0}F", "Cold", "Hot", "110\u{00B0}F"]
     }
 
-    // Wind: 8 segments (0-40+ mph), green→red (calmer is better)
+    // Wind: 10 segments (0-50+ mph), green→red (calmer is better)
     static let windColors: [Color] = [
         .green, .green,
         Color(red: 0.5, green: 0.8, blue: 0.3),
@@ -265,6 +265,8 @@ extension ActivationConditionsSheet {
         Color(red: 1.0, green: 0.4, blue: 0.4),
         Color(red: 1.0, green: 0.2, blue: 0.2),
         Color(red: 0.8, green: 0.0, blue: 0.0),
+        Color(red: 0.6, green: 0.0, blue: 0.0),
+        Color(red: 0.4, green: 0.0, blue: 0.2),
     ]
 
     static var windScaleLabels: [String] {
@@ -290,7 +292,7 @@ extension ActivationConditionsSheet {
     static let sfiBoundaries: [Double] = [36, 71, 81, 91, 101, 121, 151, 201, 251]
     static let sunspotBoundaries: [Double] = [26, 51, 76, 101, 126, 151, 176, 201, 251]
     static let tempBoundaries: [Double] = [11, 21, 33, 46, 56, 71, 81, 91, 101]
-    static let windBoundaries: [Double] = [6, 11, 16, 21, 26, 31, 36]
+    static let windBoundaries: [Double] = [6, 11, 16, 21, 26, 31, 36, 41, 46]
     static let humidityBoundaries: [Double] = [11, 21, 31, 41, 51, 61, 71, 81, 91]
 
     /// Map a value to a segment index using boundary thresholds.
