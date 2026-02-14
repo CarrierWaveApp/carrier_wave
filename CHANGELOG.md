@@ -6,6 +6,7 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ### Added
 - Enhance park selector with GPS-based nearby parks, activation/QSO counts per park, and unified search by number or name
+- Track SDR parameter changes (frequency/mode) during WebSDR recordings with timestamps and offsets, enabling accurate segment reconstruction for playback rendering
 
 ## [1.30.0] - 2026-02-13
 

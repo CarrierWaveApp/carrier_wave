@@ -246,6 +246,10 @@ extension WebSDRSession {
         )
 
         if let recording = try? modelContext.fetch(descriptor).first {
+            // Persist parameter change events before finishing
+            if !parameterChanges.isEmpty {
+                recording.parameterChanges = parameterChanges
+            }
             recording.finish()
             try? modelContext.save()
         }

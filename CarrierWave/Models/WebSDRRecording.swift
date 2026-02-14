@@ -45,6 +45,65 @@ final class WebSDRRecording {
     /// Whether the recording completed successfully
     var isComplete: Bool = false
 
+    /// Serialized SDR parameter change events (frequency/mode changes during recording)
+    var parameterChangesData: Data?
+
+    /// SDR parameter change events that occurred during this recording
+    var parameterChanges: [SDRParameterEvent] {
+        get {
+            guard let data = parameterChangesData else {
+                return []
+            }
+            return (try? JSONDecoder().decode(
+                [SDRParameterEvent].self, from: data
+            )) ?? []
+        }
+        set {
+            parameterChangesData = try? JSONEncoder().encode(newValue)
+        }
+    }
+
+    /// Contiguous recording segments derived from initial parameters and change events.
+    /// Each segment has a consistent frequency and mode.
+    var segments: [SDRRecordingSegment] {
+        var result: [SDRRecordingSegment] = []
+        var currentFreq = frequencyKHz
+        var currentMode = mode
+        var segmentStart: TimeInterval = 0
+
+        for event in parameterChanges.sorted(by: { $0.offsetSeconds < $1.offsetSeconds }) {
+            // Close the current segment at this event's offset
+            result.append(SDRRecordingSegment(
+                startOffset: segmentStart,
+                endOffset: event.offsetSeconds,
+                frequencyKHz: currentFreq,
+                mode: currentMode
+            ))
+
+            // Apply the change
+            switch event.type {
+            case .frequency:
+                if let newFreq = Double(event.newValue) {
+                    currentFreq = newFreq
+                }
+            case .mode:
+                currentMode = event.newValue
+            }
+
+            segmentStart = event.offsetSeconds
+        }
+
+        // Final segment (open-ended, closed by recording duration)
+        result.append(SDRRecordingSegment(
+            startOffset: segmentStart,
+            endOffset: nil,
+            frequencyKHz: currentFreq,
+            mode: currentMode
+        ))
+
+        return result
+    }
+
     /// Full file URL resolved from relative path
     var fileURL: URL? {
         guard !relativeFilePath.isEmpty else {

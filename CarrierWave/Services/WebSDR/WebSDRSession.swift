@@ -96,6 +96,12 @@ final class WebSDRSession {
     var effectiveHost: String?
     var effectivePort: Int?
 
+    /// Accumulated parameter change events for the current recording
+    var parameterChanges: [SDRParameterEvent] = []
+
+    /// When the current recording started (for computing offsets)
+    var recordingStartDate: Date?
+
     /// Buffer fill ratio for UI indicator (0.0 to 1.0)
     var bufferFillRatio: Double {
         audioEngine?.fillRatio ?? 0
@@ -134,6 +140,8 @@ final class WebSDRSession {
         lastMode = mode
         effectiveHost = nil
         effectivePort = nil
+        parameterChanges = []
+        recordingStartDate = Date()
 
         let frequencyKHz = frequencyMHz * 1_000
         let kiwiMode = KiwiSDRMode.from(
@@ -206,6 +214,8 @@ final class WebSDRSession {
         isMuted = false
         effectiveHost = nil
         effectivePort = nil
+        parameterChanges = []
+        recordingStartDate = nil
     }
 
     /// Pause recording (keeps WebSDR connection alive)
@@ -240,17 +250,64 @@ final class WebSDRSession {
 
     /// Retune to a new frequency (follows session frequency changes)
     func retune(frequencyMHz: Double) async {
+        let oldFreqKHz = lastFrequencyMHz * 1_000
+        let newFreqKHz = frequencyMHz * 1_000
         lastFrequencyMHz = frequencyMHz
-        let frequencyKHz = frequencyMHz * 1_000
-        try? await client?.retune(frequencyKHz: frequencyKHz)
+        try? await client?.retune(frequencyKHz: newFreqKHz)
+
+        recordParameterChange(
+            type: .frequency,
+            oldValue: String(format: "%.3f", oldFreqKHz),
+            newValue: String(format: "%.3f", newFreqKHz)
+        )
+    }
+
+    // MARK: - Parameter Change Tracking
+
+    /// Record a parameter change event with timestamp and offset
+    private func recordParameterChange(
+        type: SDRParameterEvent.ChangeType,
+        oldValue: String,
+        newValue: String
+    ) {
+        let now = Date()
+        let offset = recordingStartDate.map { now.timeIntervalSince($0) } ?? 0
+
+        let event = SDRParameterEvent(
+            type: type,
+            timestamp: now,
+            offsetSeconds: offset,
+            oldValue: oldValue,
+            newValue: newValue
+        )
+        parameterChanges.append(event)
     }
 
     /// Change mode (follows session mode changes)
     func changeMode(_ mode: String, frequencyMHz: Double?) async {
+        let oldMode = lastMode
         lastMode = mode
-        if let frequencyMHz {
+
+        if let frequencyMHz, frequencyMHz != lastFrequencyMHz {
+            let oldFreqKHz = lastFrequencyMHz * 1_000
+            lastFrequencyMHz = frequencyMHz
+            recordParameterChange(
+                type: .frequency,
+                oldValue: String(format: "%.3f", oldFreqKHz),
+                newValue: String(format: "%.3f", frequencyMHz * 1_000)
+            )
+        } else if let frequencyMHz {
             lastFrequencyMHz = frequencyMHz
         }
+
+        if oldMode != mode {
+            recordParameterChange(
+                type: .mode,
+                oldValue: oldMode,
+                newValue: mode
+            )
+        }
+
         let kiwiMode = KiwiSDRMode.from(
             carrierWaveMode: mode,
             frequencyMHz: frequencyMHz
