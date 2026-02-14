@@ -278,6 +278,10 @@ extension SyncService {
         let descriptor = FetchDescriptor<QSO>()
         let allQSOs = try modelContext.fetch(descriptor)
         return allQSOs.filter { qso in
+            // Never upload hidden (soft-deleted) QSOs
+            guard !qso.isHidden else {
+                return false
+            }
             // Must have at least one service needing upload
             guard qso.servicePresence.contains(where: \.needsUpload) else {
                 return false

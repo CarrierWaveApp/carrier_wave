@@ -86,6 +86,10 @@ extension QSOProcessingActor {
         guard let qso = presence.qso else {
             return
         }
+        // Skip hidden (soft-deleted) QSOs — they should never be uploaded
+        guard !qso.isHidden else {
+            return
+        }
         guard qso.importSource != .pota else {
             return
         }

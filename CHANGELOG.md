@@ -19,6 +19,7 @@ All notable changes to Carrier Wave will be documented in this file.
 - Add photo count badge to sessions list rows
 
 ### Fixed
+- Fix hidden/deleted QSOs being uploaded during sync — `fetchQSOsNeedingUpload` now filters hidden QSOs, hiding a QSO clears its upload flags, POTA reconciliation skips hidden QSOs, and a data repair step cleans up pre-existing dirty state
 - Fix social activity not appearing for live-logged QSOs — activity detection now triggers immediately when logging a QSO, not only during sync downloads
 - Fix activity feed not auto-refreshing — feed now polls every 60 seconds while Activity tab is visible
 - Fix third-party callsigns being sent to server for DX contact activities — workedCallsign is now only uploaded for worked-friend events where both parties are app users

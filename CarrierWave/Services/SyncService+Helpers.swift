@@ -97,6 +97,9 @@ extension SyncService {
             await repairOrphanedQSOsAsync(for: .qrz)
         }
 
+        // Clear upload flags on hidden (soft-deleted) QSOs
+        await clearHiddenQSOUploadFlagsAsync()
+
         // Clear upload flags on metadata pseudo-modes (WEATHER, SOLAR, NOTE)
         await clearMetadataUploadFlagsAsync()
 
