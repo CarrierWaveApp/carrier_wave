@@ -41,15 +41,23 @@ struct ContentView: View {
 
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
 
+    /// Locked layout mode — set once on first appearance, never changes.
+    /// Prevents size class transitions (e.g., orientation change on iPad or iPhone Max)
+    /// from destroying the entire view hierarchy and resetting @State in child views.
+    @State private var lockedSizeClass: UserInterfaceSizeClass?
+
     var body: some View {
         Group {
-            if horizontalSizeClass == .regular {
+            if (lockedSizeClass ?? horizontalSizeClass) == .regular {
                 iPadNavigation
             } else {
                 iPhoneNavigation
             }
         }
         .onAppear {
+            if lockedSizeClass == nil {
+                lockedSizeClass = horizontalSizeClass
+            }
             iCloudMonitor.startMonitoring()
             if syncService == nil {
                 syncService = SyncService(
