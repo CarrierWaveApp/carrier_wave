@@ -42,6 +42,11 @@ struct DailySummaryView: View {
                 ShareActivitySheet(image: image)
             }
         }
+        .sheet(item: $editingQSO) { qso in
+            QSOEditSheet(qso: qso) {
+                loadDayQSOs()
+            }
+        }
         .task {
             loadDayQSOs()
         }
@@ -69,8 +74,10 @@ struct DailySummaryView: View {
     @State private var selectedDate = Date()
     @State private var dayQSOs: [QSO] = []
     @State private var showingShareSheet = false
+    @State private var editingQSO: QSO?
 
     @ScaledMetric(relativeTo: .caption) private var timeColumnWidth: CGFloat = 44
+    @ScaledMetric(relativeTo: .subheadline) private var rowHeight: CGFloat = 44
 
     private var shareCardImage: UIImage? {
         let callsign = manager.activeLog?.myCallsign ?? ""
@@ -123,16 +130,29 @@ struct DailySummaryView: View {
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
 
-            LazyVStack(spacing: 0) {
+            List {
                 ForEach(dayQSOs) { qso in
-                    dailyQSORow(qso)
-
-                    if qso.id != dayQSOs.last?.id {
-                        Divider()
-                            .padding(.leading, 60)
+                    Button {
+                        editingQSO = qso
+                    } label: {
+                        dailyQSORow(qso)
+                    }
+                    .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                    .listRowBackground(Color.clear)
+                    .listRowSeparatorTint(.secondary.opacity(0.3))
+                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                        Button(role: .destructive) {
+                            deleteQSO(qso)
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
                     }
                 }
             }
+            .listStyle(.plain)
+            .scrollDisabled(true)
+            .scrollContentBackground(.hidden)
+            .frame(height: rowHeight * CGFloat(dayQSOs.count))
         }
         .background(Color(.secondarySystemGroupedBackground))
         .clipShape(RoundedRectangle(cornerRadius: 12))
@@ -199,7 +219,8 @@ struct DailySummaryView: View {
                 .foregroundStyle(.secondary)
         }
         .padding(.horizontal, 12)
-        .padding(.vertical, 6)
+        .frame(minHeight: rowHeight)
+        .contentShape(Rectangle())
     }
 
     private func bandModeBadge(band: String, mode: String) -> some View {
@@ -214,6 +235,12 @@ struct DailySummaryView: View {
 
     private func formatTime(_ date: Date) -> String {
         Self.timeFormatter.string(from: date)
+    }
+
+    private func deleteQSO(_ qso: QSO) {
+        qso.isHidden = true
+        try? modelContext.save()
+        loadDayQSOs()
     }
 
     private func loadDayQSOs() {

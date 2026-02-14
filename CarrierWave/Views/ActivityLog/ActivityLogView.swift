@@ -156,7 +156,14 @@ struct ActivityLogView: View {
     }
 
     private var recentQSOsSection: some View {
-        RecentQSOsSection(recentQSOs: recentQSOs, manager: manager)
+        RecentQSOsSection(
+            recentQSOs: recentQSOs,
+            manager: manager,
+            onQSOChanged: {
+                recentQSOs = manager.fetchRecentQSOs()
+                manager.refreshTodayStats()
+            }
+        )
     }
 
     private func handleQuickLog(_ data: QuickLogData) {

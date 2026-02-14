@@ -1,3 +1,4 @@
+import SwiftData
 import SwiftUI
 
 // MARK: - RecentQSOsSection
@@ -9,6 +10,7 @@ struct RecentQSOsSection: View {
 
     let recentQSOs: [QSO]
     var manager: ActivityLogManager?
+    var onQSOChanged: (() -> Void)?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -23,6 +25,8 @@ struct RecentQSOsSection: View {
                     .font(.caption)
                 }
             }
+            .padding(.horizontal)
+            .padding(.top)
 
             if recentQSOs.isEmpty {
                 Text("No QSOs logged today")
@@ -30,18 +34,19 @@ struct RecentQSOsSection: View {
                     .foregroundStyle(.tertiary)
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.vertical, 12)
+                    .padding(.horizontal)
             } else {
-                ForEach(recentQSOs) { qso in
-                    recentQSORow(qso)
-                    if qso.id != recentQSOs.last?.id {
-                        Divider()
-                    }
-                }
+                qsoListContent
             }
         }
-        .padding()
+        .padding(.bottom)
         .background(Color(.systemGray6))
         .clipShape(RoundedRectangle(cornerRadius: 12))
+        .sheet(item: $editingQSO) { qso in
+            QSOEditSheet(qso: qso) {
+                onQSOChanged?()
+            }
+        }
     }
 
     // MARK: Private
@@ -52,6 +57,38 @@ struct RecentQSOsSection: View {
         formatter.timeZone = TimeZone(identifier: "UTC")
         return formatter
     }()
+
+    @Environment(\.modelContext) private var modelContext
+
+    @State private var editingQSO: QSO?
+
+    @ScaledMetric(relativeTo: .subheadline) private var rowHeight: CGFloat = 44
+
+    private var qsoListContent: some View {
+        List {
+            ForEach(recentQSOs) { qso in
+                Button {
+                    editingQSO = qso
+                } label: {
+                    recentQSORow(qso)
+                }
+                .listRowInsets(EdgeInsets(top: 0, leading: 12, bottom: 0, trailing: 12))
+                .listRowBackground(Color.clear)
+                .listRowSeparatorTint(.secondary.opacity(0.3))
+                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                    Button(role: .destructive) {
+                        deleteQSO(qso)
+                    } label: {
+                        Label("Delete", systemImage: "trash")
+                    }
+                }
+            }
+        }
+        .listStyle(.plain)
+        .scrollDisabled(true)
+        .scrollContentBackground(.hidden)
+        .frame(height: rowHeight * CGFloat(recentQSOs.count))
+    }
 
     private func recentQSORow(_ qso: QSO) -> some View {
         HStack(spacing: 8) {
@@ -89,10 +126,17 @@ struct RecentQSOsSection: View {
                 .font(.caption2.monospaced())
                 .foregroundStyle(.secondary)
         }
-        .padding(.vertical, 2)
+        .frame(minHeight: rowHeight)
+        .contentShape(Rectangle())
     }
 
     private func formattedTime(_ date: Date) -> String {
         Self.timeFormatter.string(from: date)
+    }
+
+    private func deleteQSO(_ qso: QSO) {
+        qso.isHidden = true
+        try? modelContext.save()
+        onQSOChanged?()
     }
 }
