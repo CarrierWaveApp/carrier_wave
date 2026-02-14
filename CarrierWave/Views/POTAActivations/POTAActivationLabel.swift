@@ -61,9 +61,9 @@ struct ActivationLabel: View {
                         .background(Color.blue.opacity(0.15))
                         .cornerRadius(4)
                 }
-                if let meta = metadata {
-                    ConditionsGaugeRow(metadata: meta, showingSheet: $showingConditions)
-                }
+            }
+            if let meta = metadata, meta.hasSolarData || meta.hasWeatherData {
+                ConditionsGaugeRow(metadata: meta, showingSheet: $showingConditions)
             }
         }
         .sheet(isPresented: $showingConditions) {

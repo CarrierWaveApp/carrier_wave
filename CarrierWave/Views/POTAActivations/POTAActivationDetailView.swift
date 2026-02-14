@@ -55,14 +55,8 @@ struct POTAActivationDetailView: View {
         }
         .task {
             await loadRecording()
+            loadSession()
         }
-    }
-
-    // MARK: - Helpers
-
-    func statBadge(_ text: String, icon: String) -> some View {
-        Label(text, systemImage: icon)
-            .lineLimit(1)
     }
 
     // MARK: Private
@@ -74,6 +68,7 @@ struct POTAActivationDetailView: View {
     @State private var showingConditions = false
     @State private var qsoToDelete: QSO?
     @State private var hiddenQSOIds: Set<UUID> = []
+    @State private var activationSession: LoggingSession?
 
     private var hasCompletedJob: Bool {
         matchingJobs.contains { $0.status == .completed }
@@ -93,10 +88,8 @@ struct POTAActivationDetailView: View {
         activation.qsos.compactMap(\.myRig).first
     }
 
-    private var hasMetadata: Bool {
-        metadata?.watts != nil || metadata?.averageWPM != nil
-            || activationRadio != nil
-            || metadata?.hasSolarData == true || metadata?.hasWeatherData == true
+    private var hasConditions: Bool {
+        metadata?.hasSolarData == true || metadata?.hasWeatherData == true
             || (metadata?.weather != nil && !(metadata?.weather?.isEmpty ?? true))
             || (metadata?.solarConditions != nil && !(metadata?.solarConditions?.isEmpty ?? true))
     }
@@ -119,68 +112,35 @@ struct POTAActivationDetailView: View {
                     .foregroundStyle(.secondary)
             }
 
-            statsRow
+            activationMetadataGrid
 
             QSOTimelineView(qsos: activation.qsos)
 
-            if hasMetadata {
-                metadataRow
+            if hasConditions {
+                conditionsRow
             }
         }
     }
 
-    private var statsRow: some View {
-        HStack(spacing: 12) {
-            statBadge(
-                "\(activation.qsoCount) QSO\(activation.qsoCount == 1 ? "" : "s")",
-                icon: "antenna.radiowaves.left.and.right"
-            )
-            if activation.duration > 0 {
-                statBadge(activation.formattedDuration, icon: "clock")
-            }
-            if !activation.uniqueBands.isEmpty {
-                statBadge(
-                    activation.uniqueBands.sorted().joined(separator: ", "),
-                    icon: "dial.medium.fill"
-                )
-            }
-            if !activation.uniqueModes.isEmpty {
-                statBadge(
-                    activation.uniqueModes.sorted().joined(separator: ", "),
-                    icon: "waveform"
-                )
+    private var activationMetadataGrid: some View {
+        let items = buildMetadataItems()
+        return LazyVGrid(
+            columns: [GridItem(.flexible(), alignment: .leading),
+                      GridItem(.flexible(), alignment: .leading)],
+            alignment: .leading,
+            spacing: 6
+        ) {
+            ForEach(items, id: \.label) { item in
+                Label(item.label, systemImage: item.icon)
+                    .lineLimit(1)
             }
         }
         .font(.caption)
         .foregroundStyle(.secondary)
     }
 
-    private var metadataRow: some View {
-        HStack(spacing: 8) {
-            if let watts = metadata?.watts {
-                Text("\(watts)W")
-                    .font(.caption)
-                    .padding(.horizontal, 5)
-                    .padding(.vertical, 1)
-                    .background(Color.purple.opacity(0.15))
-                    .cornerRadius(4)
-            }
-            if let radio = activationRadio {
-                Text(radio)
-                    .font(.caption)
-                    .padding(.horizontal, 5)
-                    .padding(.vertical, 1)
-                    .background(Color.orange.opacity(0.15))
-                    .cornerRadius(4)
-            }
-            if let wpm = metadata?.averageWPM {
-                Text("\(wpm) WPM")
-                    .font(.caption)
-                    .padding(.horizontal, 5)
-                    .padding(.vertical, 1)
-                    .background(Color.blue.opacity(0.15))
-                    .cornerRadius(4)
-            }
+    private var conditionsRow: some View {
+        HStack {
             if let meta = metadata {
                 ConditionsGaugeRow(metadata: meta, showingSheet: $showingConditions)
             }
@@ -344,4 +304,63 @@ struct POTAActivationDetailView: View {
             Image(systemName: "ellipsis.circle")
         }
     }
+
+    private func buildMetadataItems() -> [MetadataItem] {
+        var items: [MetadataItem] = []
+        // Activity stats
+        let qsoLabel = "\(activation.qsoCount) QSO\(activation.qsoCount == 1 ? "" : "s")"
+        items.append(MetadataItem(icon: "antenna.radiowaves.left.and.right", label: qsoLabel))
+        if activation.duration > 0 {
+            items.append(MetadataItem(icon: "clock", label: activation.formattedDuration))
+        }
+        if !activation.uniqueBands.isEmpty {
+            let bands = activation.uniqueBands.sorted().joined(separator: ", ")
+            items.append(MetadataItem(icon: "dial.medium.fill", label: bands))
+        }
+        if !activation.uniqueModes.isEmpty {
+            let modes = activation.uniqueModes.sorted().joined(separator: ", ")
+            items.append(MetadataItem(icon: "waveform", label: modes))
+        }
+        // Equipment
+        if let watts = metadata?.watts {
+            items.append(MetadataItem(icon: "bolt.fill", label: "\(watts)W"))
+        }
+        if let wpm = metadata?.averageWPM {
+            items.append(MetadataItem(icon: "metronome", label: "\(wpm) WPM"))
+        }
+        if let radio = activationRadio {
+            items.append(MetadataItem(icon: "radio", label: radio))
+        }
+        if let antenna = activationSession?.myAntenna {
+            items.append(MetadataItem(icon: "antenna.radiowaves.left.and.right", label: antenna))
+        }
+        if let key = activationSession?.myKey {
+            items.append(MetadataItem(icon: "pianokeys", label: key))
+        }
+        if let mic = activationSession?.myMic {
+            items.append(MetadataItem(icon: "mic", label: mic))
+        }
+        return items
+    }
+}
+
+// MARK: - Session Lookup
+
+extension POTAActivationDetailView {
+    func loadSession() {
+        guard let sessionId = activation.qsos.compactMap(\.loggingSessionId).first else {
+            return
+        }
+        let predicate = #Predicate<LoggingSession> { $0.id == sessionId }
+        var descriptor = FetchDescriptor<LoggingSession>(predicate: predicate)
+        descriptor.fetchLimit = 1
+        activationSession = try? modelContext.fetch(descriptor).first
+    }
+}
+
+// MARK: - MetadataItem
+
+private struct MetadataItem {
+    let icon: String
+    let label: String
 }

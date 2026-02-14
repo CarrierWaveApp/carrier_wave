@@ -90,7 +90,8 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `ActivityItem.swift` | Activity feed item model |
 | `CWConversation.swift` | CW conversation and message models for chat display |
 | `CallsignInfo.swift` | Callsign lookup result with name, note, emoji, source |
-| `LoggingSession.swift` | Logging session model with activation type, frequency, mode |
+| `LoggingSession.swift` | Logging session model with activation type, frequency, mode, equipment |
+| `LoggingSession+Frequencies.swift` | Static frequency maps, band derivation, computed display properties |
 | `LoggerCommand.swift` | Command enum for logger input (FREQ, MODE, SPOT, RBN, POTA, P2P, SOLAR, WEATHER, MAP, WEBSDR) |
 | `WebSDRRecording.swift` | WebSDR recording metadata (host, file path, duration, session link) |
 | `CallsignNotesSource.swift` | SwiftData model for user-configured callsign notes file sources |
@@ -188,8 +189,9 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `CallsignLookupService.swift` | Two-tier callsign lookup (Polo notes cache, then QRZ API) |
 | `CallsignNotesCache.swift` | Persistent cache for Polo notes (loads from disk, refreshes daily) |
 | `CWSuggestionEngine.swift` | Word suggestion engine with dictionaries and settings |
-| `LoggingSessionManager.swift` | Session lifecycle management (start, end, log QSO, hide QSO) |
+| `LoggingSessionManager.swift` | Session lifecycle management (start, end, log QSO, hide QSO, photos) |
 | `LoggingSessionManager+Conditions.swift` | Auto-record solar/weather conditions at POTA session start |
+| `LoggingSessionManager+Spotting.swift` | POTA spot timer, posting, comments polling, monitoring |
 | `RBNClient.swift` | Vail ReRBN API client for reverse beacon network spots |
 | `NOAAClient.swift` | NOAA API client for solar conditions and weather |
 | `POTAClient+Spot.swift` | POTA self-spotting extension |
@@ -241,8 +243,10 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 ## Views - Sessions (`CarrierWave/Views/Sessions/`)
 | File | Purpose |
 |------|---------|
-| `SessionsView.swift` | Sessions list with month grouping and recording indicators |
-| `SessionDetailView.swift` | Non-POTA session detail (QSO list, metadata) |
+| `SessionsView.swift` | Sessions list with month grouping, recording and photo indicators |
+| `SessionDetailView.swift` | Session detail with equipment, photos, notes, QSO list, edit button |
+| `SessionMetadataEditSheet.swift` | Unified edit sheet for all session types (equipment, photos, notes) |
+| `PhotoViewer.swift` | Full-screen photo viewer with pinch-to-zoom |
 
 ## Views - Components (`CarrierWave/Views/Components/`)
 
@@ -257,8 +261,10 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `LoggerView.swift` | Main logger view with session header, callsign input, QSO form |
 | `CallsignTextField.swift` | UITextField wrapper for callsign entry with proper cursor handling |
 | `LoggerCallsignCard.swift` | Callsign info display card for logger |
-| `SessionStartSheet.swift` | Session wizard for mode, frequency, activation type |
-| `SessionStartSheet+Sections.swift` | Callsign section views extracted from SessionStartSheet |
+| `SessionStartSheet.swift` | Session wizard for mode, frequency, activation type, equipment |
+| `SessionStartSheet+Sections.swift` | Callsign and activation section views |
+| `SessionStartSheet+Equipment.swift` | Equipment, attendees, and notes sections for session start |
+| `EquipmentPickerSheet.swift` | Generic equipment picker (antenna, key, mic) with user-managed list |
 | `SessionStartHelperViews.swift` | Helper views and validation for session start (CallsignBreakdown, ActivationSection, FrequencySuggestions) |
 | `LiveActivitySuggestionsView.swift` | Unified FrequencyBandView: static band frequencies + live POTA spots + nestled clear-frequency recommendations |
 | `BandPlanSheet.swift` | Interactive band plan reference with segments, license requirements, and activity frequencies |
@@ -348,7 +354,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `POTALogEntryRow.swift` | Individual POTA log entry display (legacy) |
 | `ActivationConditionsComponents.swift` | Compact solar gauge and weather badge components for activation rows |
 | `ActivationConditionsSheet.swift` | Detail sheet showing full solar/weather conditions for an activation |
-| `ActivationMetadataEditSheet.swift` | Edit activation metadata (title, park, watts, radio) after completion |
+| `ActivationMetadataEditSheet.swift` | Thin wrapper bridging activation editing to SessionMetadataEditSheet |
 | `ActivationShareCardView.swift` | Shareable activation card with map and stats |
 | `ActivationShareCardComponents.swift` | Reusable component views for share cards (header, footer, stats, park info) |
 | `ActivationSharePreviewSheet.swift` | Share preview sheet with ShareLink and Save to Photos |
@@ -473,6 +479,8 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `MaidenheadConverter.swift` | Grid square to coordinate conversion (and reverse) |
 | `SunlightMode.swift` | Sunlight mode environment key and view modifier for outdoor visibility |
 | `UnitFormatter.swift` | Centralized imperial/metric unit formatting (distance, temperature, wind, watts/distance) |
+| `EquipmentStorage.swift` | Generic UserDefaults-backed equipment list storage (antenna, key, mic) |
+| `SessionPhotoManager.swift` | Session photo file save/load/delete (JPEG in Documents/SessionPhotos/) |
 
 ## Tests (`CarrierWaveTests/`)
 | File | Purpose |
@@ -492,6 +500,8 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `QuickEntryParserIntegrationTests.swift` | Quick entry parser integration tests (full parsing, token preview) |
 | `WebSDRRecordingTests.swift` | WebSDR recording query helper tests |
 | `SDRParameterTrackingTests.swift` | SDR parameter change tracking, segment computation, and persistence tests |
+| `EquipmentStorageTests.swift` | Equipment storage CRUD and isolation tests |
+| `SessionPhotoManagerTests.swift` | Session photo file management tests |
 | `Helpers/QSOFactory.swift` | Synthetic QSO generator for testing (duplicates, metadata, edge cases) |
 | `Helpers/TestModelContainer.swift` | Shared test infrastructure for SwiftData tests |
 | `BandPlanServiceTests.swift` | Band plan validation tests (license class privileges) |

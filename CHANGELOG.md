@@ -6,6 +6,12 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ### Added
 - Add swipe-to-delete on individual QSOs in POTA activation detail view with confirmation dialog
+- Add expanded session metadata: antenna, CW key, microphone, attendees, photos, and extra equipment fields on logging sessions
+- Add generic equipment picker with user-managed lists for antenna, key, and microphone
+- Add unified session edit sheet replacing activation-only edit — works for all session types with equipment, photos, and notes editing
+- Add photo attachment and viewing for sessions with full-screen pinch-to-zoom viewer
+- Add equipment badges (antenna, key, mic) to POTA activation detail metadata row
+- Add photo count badge to sessions list rows
 
 ### Changed
 - Rename "Edit Metadata" to "Edit Info" in POTA activation detail toolbar menu

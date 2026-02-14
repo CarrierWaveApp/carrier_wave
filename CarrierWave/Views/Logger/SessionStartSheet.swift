@@ -28,6 +28,18 @@ struct SessionStartSheet: View {
     @State var customSuffix = ""
 
     @State var showRadioPicker = false
+    @State var showAntennaPicker = false
+    @State var showKeyPicker = false
+    @State var showMicPicker = false
+    @State var showMoreEquipment = false
+
+    // Equipment
+    @State var selectedAntenna: String?
+    @State var selectedKey: String?
+    @State var selectedMic: String?
+    @State var extraEquipmentText = ""
+    @State var attendeesText = ""
+    @State var sessionNotes = ""
 
     /// The full constructed callsign (prefix/base/suffix)
     var fullCallsign: String {
@@ -78,8 +90,10 @@ struct SessionStartSheet: View {
                 modeSection
                 frequencySection
                 powerSection
-                radioSection
+                equipmentSection
                 activationSection
+                attendeesSection
+                notesSection
                 optionsSection
             }
             .task {
@@ -96,6 +110,15 @@ struct SessionStartSheet: View {
                 }
                 if selectedRadio == nil, !defaultRadio.isEmpty {
                     selectedRadio = defaultRadio
+                }
+                if selectedAntenna == nil, !defaultAntenna.isEmpty {
+                    selectedAntenna = defaultAntenna
+                }
+                if selectedKey == nil, !defaultKey.isEmpty {
+                    selectedKey = defaultKey
+                }
+                if selectedMic == nil, !defaultMic.isEmpty {
+                    selectedMic = defaultMic
                 }
                 if let savedActivationType = ActivationType(rawValue: defaultActivationType) {
                     activationType = savedActivationType
@@ -133,6 +156,24 @@ struct SessionStartSheet: View {
                 RadioPickerSheet(selection: $selectedRadio)
                     .presentationDetents([.medium, .large])
             }
+            .sheet(isPresented: $showAntennaPicker) {
+                EquipmentPickerSheet(
+                    equipmentType: .antenna, selection: $selectedAntenna
+                )
+                .presentationDetents([.medium, .large])
+            }
+            .sheet(isPresented: $showKeyPicker) {
+                EquipmentPickerSheet(
+                    equipmentType: .key, selection: $selectedKey
+                )
+                .presentationDetents([.medium, .large])
+            }
+            .sheet(isPresented: $showMicPicker) {
+                EquipmentPickerSheet(
+                    equipmentType: .mic, selection: $selectedMic
+                )
+                .presentationDetents([.medium, .large])
+            }
             .navigationTitle("Start Session")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -157,6 +198,9 @@ struct SessionStartSheet: View {
     @AppStorage("loggerDefaultParkReference") private var defaultParkReference = ""
     @AppStorage("loggerDefaultPower") private var defaultPower = ""
     @AppStorage("loggerDefaultRadio") private var defaultRadio = ""
+    @AppStorage("loggerDefaultAntenna") private var defaultAntenna = ""
+    @AppStorage("loggerDefaultKey") private var defaultKey = ""
+    @AppStorage("loggerDefaultMic") private var defaultMic = ""
 
     /// UI state
     @State private var showSavedConfirmation = false
@@ -268,8 +312,16 @@ struct SessionStartSheet: View {
             Text("Defaults are used when starting a new session")
         }
     }
+}
 
-    private func startSession() {
+// MARK: - Actions
+
+extension SessionStartSheet {
+    func startSession() {
+        let trimmedEquipment = extraEquipmentText.trimmingCharacters(in: .whitespaces)
+        let trimmedAttendees = attendeesText.trimmingCharacters(in: .whitespaces)
+        let trimmedNotes = sessionNotes.trimmingCharacters(in: .whitespaces)
+
         sessionManager?.startSession(
             myCallsign: fullCallsign,
             mode: selectedMode,
@@ -279,16 +331,29 @@ struct SessionStartSheet: View {
             sotaReference: activationType == .sota ? sotaReference.uppercased() : nil,
             myGrid: myGrid.isEmpty ? nil : myGrid.uppercased(),
             power: parsedPower,
-            myRig: selectedRadio
+            myRig: selectedRadio,
+            myAntenna: selectedAntenna,
+            myKey: selectedMode == "CW" ? selectedKey : nil,
+            myMic: ["SSB", "USB", "LSB", "AM", "FM"].contains(selectedMode) ? selectedMic : nil,
+            extraEquipment: trimmedEquipment.isEmpty ? nil : trimmedEquipment,
+            attendees: trimmedAttendees.isEmpty ? nil : trimmedAttendees
         )
+
+        // Store initial notes if provided
+        if !trimmedNotes.isEmpty {
+            sessionManager?.appendNote(trimmedNotes)
+        }
 
         onDismiss()
     }
 
-    private func saveDefaults() {
+    func saveDefaults() {
         defaultMode = selectedMode
         defaultPower = powerText
         defaultRadio = selectedRadio ?? ""
+        defaultAntenna = selectedAntenna ?? ""
+        defaultKey = selectedKey ?? ""
+        defaultMic = selectedMic ?? ""
         if !myGrid.isEmpty {
             defaultGrid = myGrid.uppercased()
         }

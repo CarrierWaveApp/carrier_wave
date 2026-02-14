@@ -1,20 +1,49 @@
 // Activation Metadata Edit Sheet
 //
-// Form for editing activation metadata (title, park reference, watts)
-// after an activation is completed.
+// Thin wrapper around SessionMetadataEditSheet for POTA activation editing.
+// Finds the matching LoggingSession and delegates to the unified edit sheet.
 
 import CarrierWaveCore
+import SwiftData
 import SwiftUI
 
 // MARK: - ActivationMetadataEditResult
 
-/// Result of editing activation metadata
+/// Result of editing activation metadata (bridges to SessionMetadataEditResult)
 struct ActivationMetadataEditResult {
+    // MARK: Lifecycle
+
+    /// Create from a SessionMetadataEditResult
+    init(from result: SessionMetadataEditResult) {
+        title = result.title
+        watts = result.watts
+        radio = result.radio
+        antenna = result.antenna
+        key = result.key
+        mic = result.mic
+        extraEquipment = result.extraEquipment
+        attendees = result.attendees
+        notes = result.notes
+        newParkReference = result.newParkReference
+        addedPhotos = result.addedPhotos
+        deletedPhotoFilenames = result.deletedPhotoFilenames
+    }
+
+    // MARK: Internal
+
     let title: String?
     let watts: Int?
     let radio: String?
+    let antenna: String?
+    let key: String?
+    let mic: String?
+    let extraEquipment: String?
+    let attendees: String?
+    let notes: String?
     /// New park reference, if changed (nil means no change)
     let newParkReference: String?
+    let addedPhotos: [UIImage]
+    let deletedPhotoFilenames: [String]
 }
 
 // MARK: - ActivationMetadataEditSheet
@@ -30,158 +59,73 @@ struct ActivationMetadataEditSheet: View {
         onCancel: @escaping () -> Void
     ) {
         self.activation = activation
+        self.metadata = metadata
         self.userGrid = userGrid
         self.onSave = onSave
         self.onCancel = onCancel
-
-        _title = State(initialValue: metadata?.title ?? "")
-        _wattsText = State(initialValue: metadata?.watts.map { String($0) } ?? "")
-        _radio = State(initialValue: activation.qsos.compactMap(\.myRig).first)
-        _parkReference = State(initialValue: activation.parkReference)
-        originalParkReference = activation.parkReference
     }
 
     // MARK: Internal
 
     var body: some View {
-        NavigationStack {
-            Form {
-                Section {
-                    TextField("Activation title", text: $title)
-                        .textInputAutocapitalization(.words)
-                } header: {
-                    Text("Title")
-                } footer: {
-                    Text("Optional name for this activation (e.g., \"Field Day at Blue Ridge\")")
-                }
-
-                Section {
-                    TextField("Watts", text: $wattsText)
-                        .keyboardType(.numberPad)
-                } header: {
-                    Text("Power")
-                } footer: {
-                    Text("Typical transmit power in watts during this activation")
-                }
-
-                Section {
-                    Button {
-                        showRadioPicker = true
-                    } label: {
-                        HStack {
-                            Text("Radio")
-                                .foregroundStyle(.primary)
-                            Spacer()
-                            Text(radio ?? "None")
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                } header: {
-                    Text("Radio")
-                }
-
-                Section {
-                    ParkEntryField(
-                        parkReference: $parkReference,
-                        label: "Park Reference",
-                        placeholder: "K-1234",
-                        userGrid: userGrid,
-                        defaultCountry: "US"
-                    )
-                } header: {
-                    Text("Park")
-                } footer: {
-                    if parkChanged {
-                        Label(
-                            "Changing the park will update all QSOs and clear POTA upload status.",
-                            systemImage: "exclamationmark.triangle"
-                        )
-                        .foregroundStyle(.orange)
-                    }
-                }
-            }
-            .navigationTitle("Edit Activation")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { onCancel() }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") { save() }
-                }
-            }
-            .confirmationDialog(
-                "Change Park Reference",
-                isPresented: $showParkChangeConfirmation,
-                titleVisibility: .visible
-            ) {
-                Button("Change Park", role: .destructive) {
-                    commitSave(confirmParkChange: true)
-                }
-                Button("Cancel", role: .cancel) {}
-            } message: {
-                Text(
-                    """
-                    This will update all \(activation.qsoCount) QSO(s) from \
-                    \(originalParkReference) to \(normalizedParkReference) \
-                    and clear their POTA upload status.
-                    """
+        Group {
+            if let session {
+                SessionMetadataEditSheet(
+                    session: session,
+                    metadata: metadata,
+                    userGrid: userGrid,
+                    onSave: { result in
+                        onSave(ActivationMetadataEditResult(from: result))
+                    },
+                    onCancel: onCancel
                 )
+            } else {
+                ProgressView("Loading session...")
             }
         }
-        .sheet(isPresented: $showRadioPicker) {
-            RadioPickerSheet(selection: $radio)
-                .presentationDetents([.medium])
+        .task {
+            await findSession()
         }
-        .presentationDetents([.medium, .large])
     }
 
     // MARK: Private
 
-    @State private var title: String
-    @State private var wattsText: String
-    @State private var radio: String?
-    @State private var parkReference: String
-    @State private var showParkChangeConfirmation = false
-    @State private var showRadioPicker = false
+    @Environment(\.modelContext) private var modelContext
+
+    @State private var session: LoggingSession?
 
     private let activation: POTAActivation
+    private let metadata: ActivationMetadata?
     private let userGrid: String?
     private let onSave: (ActivationMetadataEditResult) -> Void
     private let onCancel: () -> Void
-    private let originalParkReference: String
 
-    private var parsedWatts: Int? {
-        guard !wattsText.isEmpty else {
-            return nil
+    private func findSession() async {
+        // Try to find session via QSO's loggingSessionId
+        if let sessionId = activation.qsos.compactMap(\.loggingSessionId).first {
+            let predicate = #Predicate<LoggingSession> { $0.id == sessionId }
+            var descriptor = FetchDescriptor<LoggingSession>(predicate: predicate)
+            descriptor.fetchLimit = 1
+            if let found = try? modelContext.fetch(descriptor).first {
+                session = found
+                return
+            }
         }
-        return Int(wattsText)
-    }
 
-    private var normalizedParkReference: String {
-        ParkReference.sanitizeMulti(parkReference) ?? parkReference.uppercased()
-    }
-
-    private var parkChanged: Bool {
-        normalizedParkReference != originalParkReference
-    }
-
-    private func save() {
-        if parkChanged {
-            showParkChangeConfirmation = true
-        } else {
-            commitSave(confirmParkChange: false)
-        }
-    }
-
-    private func commitSave(confirmParkChange: Bool) {
-        let trimmedTitle = title.trimmingCharacters(in: .whitespaces)
-        let result = ActivationMetadataEditResult(
-            title: trimmedTitle.isEmpty ? nil : trimmedTitle,
-            watts: parsedWatts,
-            radio: radio,
-            newParkReference: confirmParkChange ? normalizedParkReference : nil
+        // Fallback: create a temporary session from activation data
+        let tempSession = LoggingSession(
+            myCallsign: activation.callsign,
+            startedAt: activation.qsos.map(\.timestamp).min() ?? Date(),
+            mode: activation.qsos.first?.mode ?? "CW",
+            activationType: .pota,
+            parkReference: activation.parkReference,
+            myGrid: activation.qsos.first?.myGrid,
+            power: metadata?.watts,
+            myRig: activation.qsos.compactMap(\.myRig).first
         )
-        onSave(result)
+        tempSession.endedAt = activation.qsos.map(\.timestamp).max()
+        tempSession.customTitle = metadata?.title
+        tempSession.qsoCount = activation.qsoCount
+        session = tempSession
     }
 }

@@ -65,7 +65,6 @@ struct SessionsView: View {
 
     private func sessionRow(_ session: LoggingSession) -> some View {
         let recording = recordingsBySessionId[session.id]
-        let hasRecording = recording != nil
 
         return NavigationLink {
             if let recording {
@@ -77,42 +76,57 @@ struct SessionsView: View {
                 SessionDetailView(session: session)
             }
         } label: {
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    Image(systemName: session.activationType.icon)
-                        .foregroundStyle(.secondary)
-                    Text(session.displayTitle)
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-                        .lineLimit(1)
-                    Spacer()
-                    Text(session.startedAt.formatted(
-                        date: .abbreviated, time: .omitted
-                    ))
+            sessionRowLabel(session, hasRecording: recording != nil)
+        }
+    }
+
+    private func sessionRowLabel(
+        _ session: LoggingSession, hasRecording: Bool
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Image(systemName: session.activationType.icon)
+                    .foregroundStyle(.secondary)
+                Text(session.displayTitle)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .lineLimit(1)
+                Spacer()
+                Text(session.startedAt.formatted(
+                    date: .abbreviated, time: .omitted
+                ))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+
+            HStack(spacing: 8) {
+                Text(
+                    "\(session.qsoCount) QSO\(session.qsoCount == 1 ? "" : "s")"
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+                Text(session.formattedDuration)
                     .font(.caption)
                     .foregroundStyle(.secondary)
+
+                if hasRecording {
+                    Label("Recording", systemImage: "waveform.circle.fill")
+                        .font(.caption2)
+                        .foregroundStyle(.red)
                 }
 
-                HStack(spacing: 8) {
-                    Text(
-                        "\(session.qsoCount) QSO\(session.qsoCount == 1 ? "" : "s")"
+                if !session.photoFilenames.isEmpty {
+                    Label(
+                        "\(session.photoFilenames.count)",
+                        systemImage: "photo"
                     )
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-
-                    Text(session.formattedDuration)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-
-                    if hasRecording {
-                        Label("Recording", systemImage: "waveform.circle.fill")
-                            .font(.caption2)
-                            .foregroundStyle(.red)
-                    }
+                    .font(.caption2)
+                    .foregroundStyle(.blue)
                 }
             }
-            .padding(.vertical, 2)
         }
+        .padding(.vertical, 2)
     }
 
     private func engineFor(_ sessionId: UUID) -> RecordingPlaybackEngine {

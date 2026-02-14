@@ -85,6 +85,29 @@ final class LoggingSessionManagerTests: XCTestCase {
     }
 
     @MainActor
+    func testStartSession_WithEquipment() {
+        // When
+        sessionManager.startSession(
+            myCallsign: "N0TEST",
+            mode: "CW",
+            frequency: 14.060,
+            activationType: .casual,
+            myAntenna: "EFHW 49:1",
+            myKey: "Begali Traveller",
+            myMic: nil,
+            extraEquipment: "Battery pack",
+            attendees: "KI7QCF"
+        )
+
+        // Then
+        XCTAssertEqual(sessionManager.activeSession?.myAntenna, "EFHW 49:1")
+        XCTAssertEqual(sessionManager.activeSession?.myKey, "Begali Traveller")
+        XCTAssertNil(sessionManager.activeSession?.myMic)
+        XCTAssertEqual(sessionManager.activeSession?.extraEquipment, "Battery pack")
+        XCTAssertEqual(sessionManager.activeSession?.attendees, "KI7QCF")
+    }
+
+    @MainActor
     func testStartSession_EndsExistingSession() throws {
         // Given - first session
         sessionManager.startSession(myCallsign: "N0TEST", mode: "CW")

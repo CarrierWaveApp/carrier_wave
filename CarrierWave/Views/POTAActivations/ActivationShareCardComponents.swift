@@ -91,6 +91,7 @@ struct ActivationShareCardStats: View {
     var maxDistanceKm: Double?
     var wattsPerMile: Double?
     var radio: String?
+    var antenna: String?
 
     var body: some View {
         // swiftlint:disable:next redundant_discardable_let
@@ -124,7 +125,7 @@ struct ActivationShareCardStats: View {
     @AppStorage("useMetricUnits") private var useMetricUnits = false
 
     private var hasDetailRow: Bool {
-        watts != nil || avgDistanceKm != nil || radio != nil
+        watts != nil || avgDistanceKm != nil || radio != nil || antenna != nil
     }
 
     @ViewBuilder
@@ -145,6 +146,9 @@ struct ActivationShareCardStats: View {
         }
         if let radio {
             detailBadge(radio)
+        }
+        if let antenna {
+            detailBadge(antenna)
         }
     }
 

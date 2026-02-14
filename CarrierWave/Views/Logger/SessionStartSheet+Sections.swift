@@ -104,53 +104,6 @@ extension SessionStartSheet {
         }
     }
 
-    var powerSection: some View {
-        Section {
-            HStack {
-                TextField("100", text: $powerText)
-                    .keyboardType(.numberPad)
-                    .font(.title3.monospaced())
-
-                Text("W")
-                    .foregroundStyle(.secondary)
-            }
-
-            if let warning = powerWarning {
-                Label(warning, systemImage: "exclamationmark.triangle.fill")
-                    .font(.caption)
-                    .foregroundStyle(.orange)
-            }
-        } header: {
-            Text("Power")
-        } footer: {
-            Text("Transmit power in watts (optional). US max is 1,500W.")
-        }
-    }
-
-    var radioSection: some View {
-        Section {
-            Button {
-                showRadioPicker = true
-            } label: {
-                HStack {
-                    Label(
-                        selectedRadio ?? "None",
-                        systemImage: "radio"
-                    )
-                    .foregroundStyle(selectedRadio != nil ? .primary : .secondary)
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
-                }
-            }
-        } header: {
-            Text("Radio")
-        } footer: {
-            Text("Your radio for this session (optional)")
-        }
-    }
-
     var activationSection: some View {
         ActivationSectionView(
             activationType: $activationType,

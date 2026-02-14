@@ -286,7 +286,9 @@ extension POTAActivationsContentView {
             "uploadPark: uploading \(pendingQSOs.count) QSO(s) to park \(park)",
             service: .pota
         )
-        logPendingParkQSOs(pendingQSOs, park: park)
+        debugLog.debug(
+            "uploadPark: \(pendingQSOs.count) QSO(s) pending for \(park)", service: .pota
+        )
 
         do {
             let result = try await client.uploadActivationWithRecording(
@@ -313,14 +315,6 @@ extension POTAActivationsContentView {
             )
             return error.localizedDescription
         }
-    }
-
-    /// Log summary of pending QSOs before upload
-    func logPendingParkQSOs(_ qsos: [QSO], park: String) {
-        let debugLog = SyncDebugLog.shared
-        debugLog.debug(
-            "uploadPark: \(qsos.count) QSO(s) pending for \(park)", service: .pota
-        )
     }
 
     /// Mark QSOs as submitted to a park
@@ -427,6 +421,11 @@ extension POTAActivationsContentView {
         meta.title = result.title
         meta.watts = result.watts
 
+        // Apply equipment to the matching LoggingSession and QSOs
+        if let session = findSession(for: activation) {
+            applySessionEdits(result, to: session)
+        }
+
         // Apply radio to all QSOs in the activation
         for qso in activation.qsos {
             qso.myRig = result.radio
@@ -440,27 +439,41 @@ extension POTAActivationsContentView {
         }
     }
 
-    func generateAndShare(activation: POTAActivation) async {
-        isGeneratingShareImage = true
-        activationToShare = nil
+    /// Apply equipment, attendees, notes, and photos from edit result to a session
+    private func applySessionEdits(
+        _ result: ActivationMetadataEditResult, to session: LoggingSession
+    ) {
+        session.myRig = result.radio
+        session.myAntenna = result.antenna
+        session.myKey = result.key
+        session.myMic = result.mic
+        session.extraEquipment = result.extraEquipment
+        session.attendees = result.attendees
+        session.notes = result.notes
 
-        let image = await ActivationShareRenderer.renderWithMap(
-            activation: activation,
-            parkName: parkName(for: activation.parkReference),
-            myGrid: activation.qsos.first?.myGrid,
-            metadata: metadata(for: activation)
-        )
-
-        isGeneratingShareImage = false
-
-        guard let image else {
-            return
+        for photo in result.addedPhotos {
+            if let filename = try? SessionPhotoManager.savePhoto(
+                photo, sessionID: session.id
+            ) {
+                session.photoFilenames.append(filename)
+            }
         }
+        for filename in result.deletedPhotoFilenames {
+            try? SessionPhotoManager.deletePhoto(
+                filename: filename, sessionID: session.id
+            )
+            session.photoFilenames.removeAll { $0 == filename }
+        }
+    }
 
-        sharePreviewData = SharePreviewData(
-            image: image,
-            activation: activation,
-            parkName: parkName(for: activation.parkReference)
-        )
+    /// Find the LoggingSession matching an activation via QSO loggingSessionId
+    private func findSession(for activation: POTAActivation) -> LoggingSession? {
+        guard let sessionId = activation.qsos.compactMap(\.loggingSessionId).first else {
+            return nil
+        }
+        let predicate = #Predicate<LoggingSession> { $0.id == sessionId }
+        var descriptor = FetchDescriptor<LoggingSession>(predicate: predicate)
+        descriptor.fetchLimit = 1
+        return try? modelContext.fetch(descriptor).first
     }
 }
