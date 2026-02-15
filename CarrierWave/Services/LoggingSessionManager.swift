@@ -546,6 +546,17 @@ final class LoggingSessionManager {
             // Continue with session deletion even if QSO hiding fails
         }
 
+        // Clean up session spots
+        let spotPredicate = #Predicate<SessionSpot> { spot in
+            spot.loggingSessionId == sessionId
+        }
+        let spotDescriptor = FetchDescriptor<SessionSpot>(predicate: spotPredicate)
+        if let spots = try? modelContext.fetch(spotDescriptor) {
+            for spot in spots {
+                modelContext.delete(spot)
+            }
+        }
+
         // Clean up session photos
         try? SessionPhotoManager.deleteAllPhotos(for: session.id)
 

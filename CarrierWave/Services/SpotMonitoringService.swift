@@ -27,6 +27,9 @@ final class SpotMonitoringService {
     /// Last error message (cleared on successful fetch)
     private(set) var lastError: String?
 
+    /// Callback fired when new enriched spots are received (for persistence)
+    var onSpotsReceived: (([EnrichedSpot]) -> Void)?
+
     /// Whether in hunter mode (fetches ALL spots, not just self-spots)
     private(set) var isHunterMode = false
 
@@ -99,6 +102,7 @@ final class SpotMonitoringService {
         summary = .empty
         hunterSpots = []
         lastError = nil
+        onSpotsReceived = nil
     }
 
     /// Force an immediate refresh
@@ -193,6 +197,9 @@ final class SpotMonitoringService {
         hunterSpots = enriched
         summary = buildSummary(from: enriched)
         lastError = nil
+
+        // Notify listener for persistence
+        onSpotsReceived?(enriched)
     }
 
     /// Fetch all RBN spots (not per-callsign) for hunter mode
@@ -302,6 +309,9 @@ final class SpotMonitoringService {
             // Build summary
             summary = buildSummary(from: enrichedSpots)
             lastError = nil
+
+            // Notify listener for persistence
+            onSpotsReceived?(enrichedSpots)
         } catch {
             lastError = error.localizedDescription
             // Keep existing summary on error

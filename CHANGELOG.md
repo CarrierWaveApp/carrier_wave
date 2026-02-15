@@ -4,6 +4,9 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Persist RBN and POTA spots during active sessions and display them in session detail view with POTA spots highlighted and RBN spots collapsed by region
+
 ## [1.32.1] - 2026-02-14
 
 ### Added

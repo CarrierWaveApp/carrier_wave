@@ -20,6 +20,7 @@ struct SessionDetailView: View {
             if !session.photoFilenames.isEmpty {
                 photosSection
             }
+            SessionSpotsSection(session: session)
             qsoSection
         }
         .navigationTitle(session.displayTitle)

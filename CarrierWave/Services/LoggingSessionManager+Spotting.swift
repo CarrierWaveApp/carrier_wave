@@ -161,11 +161,48 @@ extension LoggingSessionManager {
         // Include POTA spots only for POTA activations
         let includePOTA = session.activationType == .pota
 
+        // Wire up spot persistence callback before starting
+        spotMonitoringService.onSpotsReceived = { [weak self] enrichedSpots in
+            self?.recordSpots(enrichedSpots)
+        }
+
         spotMonitoringService.startMonitoring(
             callsign: callsign,
             myGrid: session.myGrid,
             includePOTA: includePOTA
         )
+    }
+
+    /// Persist enriched spots to SwiftData, deduplicating against existing records
+    func recordSpots(_ enrichedSpots: [EnrichedSpot]) {
+        guard let session = activeSession else {
+            return
+        }
+
+        let sessionId = session.id
+
+        // Fetch existing spots for this session to build dedup set
+        let predicate = #Predicate<SessionSpot> { spot in
+            spot.loggingSessionId == sessionId
+        }
+        let descriptor = FetchDescriptor<SessionSpot>(predicate: predicate)
+        let existing = (try? modelContext.fetch(descriptor)) ?? []
+        let existingKeys = Set(existing.map(\.dedupKey))
+
+        // Insert only new spots
+        var inserted = 0
+        for enriched in enrichedSpots {
+            let candidate = SessionSpot.from(enriched, loggingSessionId: sessionId)
+            guard !existingKeys.contains(candidate.dedupKey) else {
+                continue
+            }
+            modelContext.insert(candidate)
+            inserted += 1
+        }
+
+        if inserted > 0 {
+            try? modelContext.save()
+        }
     }
 
     /// Post spots to POTA for all parks in the session (supports n-fer)

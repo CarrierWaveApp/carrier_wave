@@ -100,6 +100,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `BandPlan.swift` | US amateur radio band plan data with license class privileges |
 | `BandPlan+Activities.swift` | Frequency activity data (QRP, SSTV, FT8, CWT, nets) and time windows |
 | `UserProfile.swift` | User's amateur radio profile (callsign, name, QTH, grid, license) |
+| `SessionSpot.swift` | Persisted RBN/POTA spot recorded during a logging session |
 | `SpotRegion.swift` | Geographic region classification for spots (SpotRegion, EnrichedSpot, SpotSummary) |
 | `ActivityLog.swift` | Activity log SwiftData model for persistent hunter workflow |
 | `SDRParameterEvent.swift` | SDR parameter change event and recording segment types for tracking freq/mode changes |
@@ -251,7 +252,8 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `SessionsView.swift` | Unified sessions list merging POTA activations and all sessions, with rich content |
 | `SessionsView+Actions.swift` | Data loading, POTA actions, and helpers for SessionsView |
 | `SessionRow.swift` | Unified rich session row: timeline, conditions, badges, upload status |
-| `SessionDetailView.swift` | Session detail with equipment, photos, notes, QSO list, edit button |
+| `SessionDetailView.swift` | Session detail with equipment, photos, notes, spots, QSO list, edit button |
+| `SessionSpotsSection.swift` | Persisted spots display section for session detail (POTA highlighted, RBN collapsed) |
 | `SessionMetadataEditSheet.swift` | Unified edit sheet for all session types (equipment, photos, notes) |
 | `PhotoViewer.swift` | Full-screen photo viewer with pinch-to-zoom |
 
