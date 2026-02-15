@@ -29,6 +29,20 @@ final class AsyncQSOStatistics {
     private(set) var activityLogActivityByDate: [Date: Int]?
     private(set) var dailyStreak: StreakInfo?
     private(set) var potaActivationStreak: StreakInfo?
+    private(set) var hunterStreak: StreakInfo?
+    private(set) var cwStreak: StreakInfo?
+    private(set) var phoneStreak: StreakInfo?
+    private(set) var digitalStreak: StreakInfo?
+
+    // Count metrics
+    private(set) var qsosThisWeek: Int = 0
+    private(set) var qsosThisMonth: Int = 0
+    private(set) var qsosThisYear: Int = 0
+    private(set) var activationsThisMonth: Int = 0
+    private(set) var activationsThisYear: Int = 0
+    private(set) var huntsThisWeek: Int = 0
+    private(set) var huntsThisMonth: Int = 0
+    private(set) var newDXCCThisYear: Int = 0
 
     // MARK: - Service stats
 
@@ -93,6 +107,40 @@ final class AsyncQSOStatistics {
         stats
     }
 
+    /// Get the display value for a dashboard metric type
+    func metricValue(for type: DashboardMetricType) -> MetricDisplayValue {
+        switch type {
+        case .onAir:
+            .streak(dailyStreak)
+        case .activation:
+            .streak(potaActivationStreak)
+        case .hunter:
+            .streak(hunterStreak)
+        case .cw:
+            .streak(cwStreak)
+        case .phone:
+            .streak(phoneStreak)
+        case .digital:
+            .streak(digitalStreak)
+        case .qsosWeek:
+            .count(qsosThisWeek)
+        case .qsosMonth:
+            .count(qsosThisMonth)
+        case .qsosYear:
+            .count(qsosThisYear)
+        case .activationsMonth:
+            .count(activationsThisMonth)
+        case .activationsYear:
+            .count(activationsThisYear)
+        case .huntsWeek:
+            .count(huntsThisWeek)
+        case .huntsMonth:
+            .count(huntsThisMonth)
+        case .newDXCCYear:
+            .count(newDXCCThisYear)
+        }
+    }
+
     /// Cancel any in-flight computation.
     func cancel() {
         computeTask?.cancel()
@@ -116,6 +164,18 @@ final class AsyncQSOStatistics {
         activityLogActivityByDate = nil
         dailyStreak = nil
         potaActivationStreak = nil
+        hunterStreak = nil
+        cwStreak = nil
+        phoneStreak = nil
+        digitalStreak = nil
+        qsosThisWeek = 0
+        qsosThisMonth = 0
+        qsosThisYear = 0
+        activationsThisMonth = 0
+        activationsThisYear = 0
+        huntsThisWeek = 0
+        huntsThisMonth = 0
+        newDXCCThisYear = 0
         qrzConfirmedCount = 0
         lotwConfirmedCount = 0
         icloudImportedCount = 0
@@ -183,6 +243,24 @@ final class AsyncQSOStatistics {
     }
 
     private func applyResults(_ computed: ComputedStats) {
+        applyBasicStats(computed)
+        applyStreakStats(computed)
+        applyCountMetrics(computed)
+        applyServiceStats(computed)
+        applyFavorites(computed)
+
+        // NOTE: We intentionally do NOT clear `stats` here.
+        // Keeping old stats available prevents UI hangs when navigating to drill-down views.
+        // The stats will be slightly stale until the user navigates to a detail view,
+        // which is acceptable since the summary values above are already updated.
+
+        progress = 1.0
+        progressPhase = ""
+        isComputing = false
+        hasComputed = true
+    }
+
+    private func applyBasicStats(_ computed: ComputedStats) {
         totalQSOs = computed.totalQSOs
         uniqueBands = computed.uniqueBands
         uniqueGrids = computed.uniqueGrids
@@ -192,8 +270,9 @@ final class AsyncQSOStatistics {
         activityByDate = computed.activityByDate
         activationActivityByDate = computed.activationActivityByDate
         activityLogActivityByDate = computed.activityLogActivityByDate
+    }
 
-        // Convert streak data to StreakInfo
+    private func applyStreakStats(_ computed: ComputedStats) {
         dailyStreak = StreakInfo(
             id: "daily",
             category: .daily,
@@ -218,28 +297,87 @@ final class AsyncQSOStatistics {
             lastActiveDate: computed.potaStreakLastActive
         )
 
+        applyModeStreaks(computed)
+        applyHunterStreak(computed)
+    }
+
+    private func applyModeStreaks(_ computed: ComputedStats) {
+        cwStreak = StreakInfo(
+            id: "cw",
+            category: .mode,
+            subcategory: "CW",
+            currentStreak: computed.cwStreakCurrent,
+            longestStreak: computed.cwStreakLongest,
+            currentStartDate: computed.cwStreakCurrentStart,
+            longestStartDate: computed.cwStreakLongestStart,
+            longestEndDate: computed.cwStreakLongestEnd,
+            lastActiveDate: computed.cwStreakLastActive
+        )
+
+        phoneStreak = StreakInfo(
+            id: "phone",
+            category: .mode,
+            subcategory: "Phone",
+            currentStreak: computed.phoneStreakCurrent,
+            longestStreak: computed.phoneStreakLongest,
+            currentStartDate: computed.phoneStreakCurrentStart,
+            longestStartDate: computed.phoneStreakLongestStart,
+            longestEndDate: computed.phoneStreakLongestEnd,
+            lastActiveDate: computed.phoneStreakLastActive
+        )
+
+        digitalStreak = StreakInfo(
+            id: "digital",
+            category: .mode,
+            subcategory: "Digital",
+            currentStreak: computed.digitalStreakCurrent,
+            longestStreak: computed.digitalStreakLongest,
+            currentStartDate: computed.digitalStreakCurrentStart,
+            longestStartDate: computed.digitalStreakLongestStart,
+            longestEndDate: computed.digitalStreakLongestEnd,
+            lastActiveDate: computed.digitalStreakLastActive
+        )
+    }
+
+    private func applyHunterStreak(_ computed: ComputedStats) {
+        hunterStreak = StreakInfo(
+            id: "hunter",
+            category: .hunter,
+            subcategory: nil,
+            currentStreak: computed.hunterStreakCurrent,
+            longestStreak: computed.hunterStreakLongest,
+            currentStartDate: computed.hunterStreakCurrentStart,
+            longestStartDate: computed.hunterStreakLongestStart,
+            longestEndDate: computed.hunterStreakLongestEnd,
+            lastActiveDate: computed.hunterStreakLastActive
+        )
+    }
+
+    private func applyCountMetrics(_ computed: ComputedStats) {
+        qsosThisWeek = computed.qsosThisWeek
+        qsosThisMonth = computed.qsosThisMonth
+        qsosThisYear = computed.qsosThisYear
+        activationsThisMonth = computed.activationsThisMonth
+        activationsThisYear = computed.activationsThisYear
+        huntsThisWeek = computed.huntsThisWeek
+        huntsThisMonth = computed.huntsThisMonth
+        newDXCCThisYear = computed.newDXCCThisYear
+    }
+
+    private func applyServiceStats(_ computed: ComputedStats) {
         qrzConfirmedCount = computed.qrzConfirmedCount
         lotwConfirmedCount = computed.lotwConfirmedCount
         icloudImportedCount = computed.icloudImportedCount
         uniqueMyCallsigns = computed.uniqueMyCallsigns
+    }
 
-        // Favorites
+    private func applyFavorites(_ computed: ComputedStats) {
         topFrequency = computed.topFrequency
         topFrequencyCount = computed.topFrequencyCount
         topFriend = computed.topFriend
         topFriendCount = computed.topFriendCount
         topHunter = computed.topHunter
         topHunterCount = computed.topHunterCount
-
-        // NOTE: We intentionally do NOT clear `stats` here.
-        // Keeping old stats available prevents UI hangs when navigating to drill-down views.
-        // The stats will be slightly stale until the user navigates to a detail view,
-        // which is acceptable since the summary values above are already updated.
-
-        progress = 1.0
-        progressPhase = ""
-        isComputing = false
-        hasComputed = true
     }
 
     private func cleanup() {
