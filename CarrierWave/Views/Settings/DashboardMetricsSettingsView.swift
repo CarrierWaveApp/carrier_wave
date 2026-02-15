@@ -111,11 +111,17 @@ private struct MetricSelectionList: View {
 
     private func metricRow(type: DashboardMetricType) -> some View {
         Button {
+            UISelectionFeedbackGenerator().selectionChanged()
             selection = type.rawValue
         } label: {
             HStack {
-                Text(type.displayName)
-                    .foregroundStyle(.primary)
+                VStack(alignment: .leading) {
+                    Text(type.displayName)
+                        .foregroundStyle(.primary)
+                    Text(type.subtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
                 Spacer()
                 if selection == type.rawValue {
                     Image(systemName: "checkmark")
@@ -123,5 +129,6 @@ private struct MetricSelectionList: View {
                 }
             }
         }
+        .accessibilityAddTraits(selection == type.rawValue ? .isSelected : [])
     }
 }
