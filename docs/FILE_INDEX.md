@@ -146,6 +146,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `SyncService+Helpers.swift` | Sync helpers (reconciliation, uploads, data repair) |
 | `SyncModels.swift` | Sync result types, progress tracking, service sync reports |
 | `QSOProcessingActor.swift` | Background actor for QSO processing without blocking UI |
+| `QSOProcessingActor+Merge.swift` | QSO merge, creation, and park reference extraction helpers |
 | `QSOProcessingActor+OrphanRepair.swift` | Repair QSOs missing ServicePresence records |
 | `QSOProcessingActor+POTAReconcile.swift` | Reconcile POTA ServicePresence against upload job log |
 | `SyncDebugLog.swift` | Sync debugging utilities |

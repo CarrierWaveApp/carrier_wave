@@ -10,6 +10,9 @@ All notable changes to Carrier Wave will be documented in this file.
 - Add park detail sheet showing POTA stats, top activators/hunters leaderboard, and recent activations
 - Park chips and park picker rows now open park detail sheet on tap/info button
 
+### Fixed
+- Extract park references from ADIF comment fields when MY_SIG_INFO is missing (affects QRZ sync, LoFi sync, and all service downloads)
+
 ### Changed
 - Enlarge touch targets in park picker and park chips to meet HIG 44x44pt minimum
 - Move session duration from row 2 capsule to row 1 (next to QSO count) to free horizontal space
