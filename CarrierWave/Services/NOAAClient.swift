@@ -277,7 +277,7 @@ actor NOAAClient {
         else {
             return nil
         }
-        return String(xml[valueRange])
+        return String(xml[valueRange]).trimmingCharacters(in: .whitespaces)
     }
 
     private func performRequest(_ url: URL) async throws -> (Data, URLResponse) {

@@ -6,6 +6,7 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ### Fixed
 - Fix crash when opening map view — computed property in SwiftData `#Predicate` caused runtime assertion failure
+- Fix K-index always showing as 0 — HamQSL XML returns values with leading whitespace that Swift's numeric initializers reject
 
 ## [1.32.0] - 2026-02-14
 
