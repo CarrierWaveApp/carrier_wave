@@ -1,6 +1,16 @@
 import Foundation
 import SwiftData
 
+// MARK: - FetchedConditions
+
+/// Fetched solar/weather conditions from NOAA
+private struct FetchedConditions {
+    var solarText: String?
+    var weatherText: String?
+    var solarData: SolarConditions?
+    var weatherData: WeatherConditions?
+}
+
 /// Extension for auto-recording solar/weather conditions at session start
 extension LoggingSessionManager {
     /// Auto-record solar and weather conditions for the current session (all types)
@@ -17,59 +27,59 @@ extension LoggingSessionManager {
         let isPOTA = session.activationType == .pota && parkRef != nil && !parkRef!.isEmpty
 
         Task {
-            let noaaClient = NOAAClient()
+            let conditions = await fetchConditions(grid: grid)
 
-            // Fetch solar conditions
-            var solarText: String?
-            var solarData: SolarConditions?
-            do {
-                let conditions = try await noaaClient.fetchSolarConditions()
-                solarText = conditions.description
-                solarData = conditions
-            } catch {
-                // Solar fetch failed, continue with weather
-            }
-
-            // Fetch weather if grid is available
-            var weatherText: String?
-            var weatherData: WeatherConditions?
-            if let grid, !grid.isEmpty {
-                do {
-                    let conditions = try await noaaClient.fetchWeather(grid: grid)
-                    weatherText = Self.formatWeatherForMetadata(conditions)
-                    weatherData = conditions
-                } catch {
-                    // Weather fetch failed, continue with what we have
-                }
-            }
-
-            guard solarText != nil || weatherText != nil else {
+            guard conditions.solarText != nil || conditions.weatherText != nil else {
                 return
             }
 
             await MainActor.run {
-                // Store conditions on the session itself (all session types)
                 storeConditionsOnSession(
                     session: session,
-                    solar: solarText,
-                    weather: weatherText,
-                    solarData: solarData,
-                    weatherData: weatherData
+                    solar: conditions.solarText,
+                    weather: conditions.weatherText,
+                    solarData: conditions.solarData,
+                    weatherData: conditions.weatherData
                 )
 
-                // For POTA sessions, also store into ActivationMetadata
                 if isPOTA, let parkRef {
                     storeConditionsMetadata(
                         parkRef: parkRef,
                         date: sessionDate,
-                        solar: solarText,
-                        weather: weatherText,
-                        solarData: solarData,
-                        weatherData: weatherData
+                        solar: conditions.solarText,
+                        weather: conditions.weatherText,
+                        solarData: conditions.solarData,
+                        weatherData: conditions.weatherData
                     )
                 }
             }
         }
+    }
+
+    /// Fetch solar and weather conditions from NOAA
+    private func fetchConditions(grid: String?) async -> FetchedConditions {
+        let noaaClient = NOAAClient()
+        var result = FetchedConditions()
+
+        do {
+            let solar = try await noaaClient.fetchSolarConditions()
+            result.solarText = solar.description
+            result.solarData = solar
+        } catch {
+            // Solar fetch failed, continue with weather
+        }
+
+        if let grid, !grid.isEmpty {
+            do {
+                let weather = try await noaaClient.fetchWeather(grid: grid)
+                result.weatherText = Self.formatWeatherForMetadata(weather)
+                result.weatherData = weather
+            } catch {
+                // Weather fetch failed, continue with what we have
+            }
+        }
+
+        return result
     }
 
     // MARK: - Private Helpers

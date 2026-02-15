@@ -54,11 +54,15 @@
 		};
 		CF8DD1BF2F2098950021A936 /* CarrierWaveTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
 			path = CarrierWaveTests;
 			sourceTree = "<group>";
 		};
 		CF8DD1C92F2098950021A936 /* CarrierWaveUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
 			path = CarrierWaveUITests;
 			sourceTree = "<group>";
 		};
@@ -153,8 +157,6 @@
 				CF8DD1BF2F2098950021A936 /* CarrierWaveTests */,
 			);
 			name = CarrierWaveTests;
-			packageProductDependencies = (
-			);
 			productName = CarrierWaveTests;
 			productReference = CF8DD1BC2F2098950021A936 /* CarrierWaveTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
@@ -176,8 +178,6 @@
 				CF8DD1C92F2098950021A936 /* CarrierWaveUITests */,
 			);
 			name = CarrierWaveUITests;
-			packageProductDependencies = (
-			);
 			productName = CarrierWaveUITests;
 			productReference = CF8DD1C62F2098950021A936 /* CarrierWaveUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";

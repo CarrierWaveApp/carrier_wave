@@ -329,24 +329,9 @@ extension WebSDRSession {
         effectiveHost = nil
         effectivePort = nil
 
-        // Track parameter changes from the reconnection
-        let oldFreqKHz = lastFrequencyMHz * 1_000
-        let newFreqKHz = frequencyMHz * 1_000
-        lastFrequencyMHz = frequencyMHz
-
-        if lastMode != mode {
-            recordParameterChange(type: .mode, oldValue: lastMode, newValue: mode)
-            lastMode = mode
-        }
-        if oldFreqKHz != newFreqKHz {
-            recordParameterChange(
-                type: .frequency,
-                oldValue: String(format: "%.3f", oldFreqKHz),
-                newValue: String(format: "%.3f", newFreqKHz)
-            )
-        }
-
-        let frequencyKHz = newFreqKHz
+        let frequencyKHz = trackParameterChanges(
+            frequencyMHz: frequencyMHz, mode: mode
+        )
         let kiwiMode = KiwiSDRMode.from(
             carrierWaveMode: mode,
             frequencyMHz: frequencyMHz
@@ -394,6 +379,28 @@ extension WebSDRSession {
     }
 
     // MARK: - Private Helpers
+
+    private func trackParameterChanges(
+        frequencyMHz: Double, mode: String
+    ) -> Double {
+        let oldFreqKHz = lastFrequencyMHz * 1_000
+        let newFreqKHz = frequencyMHz * 1_000
+        lastFrequencyMHz = frequencyMHz
+
+        if lastMode != mode {
+            recordParameterChange(type: .mode, oldValue: lastMode, newValue: mode)
+            lastMode = mode
+        }
+        if oldFreqKHz != newFreqKHz {
+            recordParameterChange(
+                type: .frequency,
+                oldValue: String(format: "%.3f", oldFreqKHz),
+                newValue: String(format: "%.3f", newFreqKHz)
+            )
+        }
+
+        return newFreqKHz
+    }
 
     private func createRecordingModel(
         loggingSessionId: UUID,
