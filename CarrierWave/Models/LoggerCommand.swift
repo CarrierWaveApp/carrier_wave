@@ -50,6 +50,9 @@ enum LoggerCommand: Equatable {
     /// Show band picker with recommended frequencies
     case band
 
+    /// Open outing checklists in CW Field Guide
+    case checklist
+
     // MARK: Internal
 
     /// Help text listing all available commands
@@ -74,6 +77,7 @@ enum LoggerCommand: Equatable {
         HIDDEN          - Show deleted QSOs
         NOTE <text>     - Add a note to the session log
         MANUAL          - Open radio manual (or MAN)
+        CHECKLIST       - Open outing checklists (or CL)
         WEBSDR          - Record from a nearby WebSDR (or SDR)
         HELP            - Show this help (or ?)
 
@@ -118,6 +122,8 @@ enum LoggerCommand: Equatable {
             "Add note: \"\(text)\""
         case .manual:
             "Open radio manual"
+        case .checklist:
+            "Open outing checklists"
         case .websdr:
             "Record from WebSDR"
         case .band:
@@ -154,6 +160,8 @@ enum LoggerCommand: Equatable {
             "note.text"
         case .manual:
             "book.closed"
+        case .checklist:
+            "checklist"
         case .websdr:
             "radio"
         case .band:
@@ -314,6 +322,9 @@ enum LoggerCommand: Equatable {
         case "MANUAL",
              "MAN":
             .manual
+        case "CHECKLIST",
+             "CL":
+            .checklist
         case "WEBSDR",
              "SDR":
             .websdr
@@ -429,6 +440,11 @@ extension LoggerCommand {
         CommandSuggestion(
             command: "MANUAL", description: "Open radio manual",
             icon: "book.closed", prefixes: ["MAN"]
+        ),
+        // CHECKLIST
+        CommandSuggestion(
+            command: "CHECKLIST", description: "Open outing checklists",
+            icon: "checklist", prefixes: ["CH", "CL"]
         ),
         // WEBSDR
         CommandSuggestion(

@@ -17,15 +17,33 @@ struct QueryParserTests {
         #expect(result.isEmpty)
     }
 
-    @Test("Parse bare term")
+    @Test("Parse bare term as callsign prefix")
     func parseBareTerm() throws {
         let result = try QueryParser.parse("W1AW").get()
         #expect(!result.isEmpty)
 
         if case let .term(term) = result.expression {
-            #expect(term.field == nil) // bare term has no field
-            if case let .contains(v) = term.condition {
+            #expect(term.field == .callsign)
+            if case let .prefix(v) = term.condition {
                 #expect(v == "W1AW")
+            } else {
+                Issue.record("Expected prefix condition, got \(term.condition)")
+            }
+        } else {
+            Issue.record("Expected term expression")
+        }
+    }
+
+    @Test("Parse bare term is uppercased")
+    func parseBareTermUppercased() throws {
+        let result = try QueryParser.parse("w1aw").get()
+
+        if case let .term(term) = result.expression {
+            #expect(term.field == .callsign)
+            if case let .prefix(v) = term.condition {
+                #expect(v == "W1AW")
+            } else {
+                Issue.record("Expected prefix condition, got \(term.condition)")
             }
         } else {
             Issue.record("Expected term expression")
@@ -76,12 +94,31 @@ struct QueryParserTests {
 
         if case let .not(inner) = result.expression {
             if case let .term(term) = inner {
-                if case let .contains(v) = term.condition {
+                #expect(term.field == .callsign)
+                if case let .prefix(v) = term.condition {
                     #expect(v == "W1AW")
+                } else {
+                    Issue.record("Expected prefix condition, got \(term.condition)")
                 }
             }
         } else {
             Issue.record("Expected NOT expression")
+        }
+    }
+
+    @Test("Parse bare wildcard still searches multiple fields")
+    func parseBareWildcard() throws {
+        let result = try QueryParser.parse("W1*").get()
+
+        if case let .term(term) = result.expression {
+            #expect(term.field == nil) // wildcard bare terms search across fields
+            if case let .prefix(v) = term.condition {
+                #expect(v == "W1")
+            } else {
+                Issue.record("Expected prefix condition, got \(term.condition)")
+            }
+        } else {
+            Issue.record("Expected term expression")
         }
     }
 

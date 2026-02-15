@@ -360,9 +360,9 @@ final class ActivityLogManager {
             (try? KeychainHelper.shared.readString(
                 for: KeychainHelper.Keys.clublogEmail
             )) != nil
-                && (try? KeychainHelper.shared.readString(
-                    for: KeychainHelper.Keys.clublogApiKey
-                )) != nil
+            && (try? KeychainHelper.shared.readString(
+                for: KeychainHelper.Keys.clublogApiKey
+            )) != nil
     }
 
     /// Load active log from persisted ID

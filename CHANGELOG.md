@@ -4,8 +4,17 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.32.3] - 2026-02-15
+
+### Changed
+- Bare search text in log search is now treated as callsign prefix search (uppercased, implicit `callsign:<text>*`) instead of multi-field contains
+- Add info note to log search when using implicit callsign search
+
+## [1.32.2] - 2026-02-15
+
 ### Added
 - Persist RBN and POTA spots during active sessions and display them in session detail view with POTA spots highlighted and RBN spots collapsed by region
+- Add CHECKLIST logger command to deep link to CW Field Guide outing checklists (aliases: CL)
 
 ## [1.32.1] - 2026-02-14
 

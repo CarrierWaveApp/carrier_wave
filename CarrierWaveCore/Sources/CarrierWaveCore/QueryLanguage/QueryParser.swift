@@ -255,7 +255,17 @@ public struct QueryParser {
             }
         }
 
-        // Determine what type of bare term this is
+        // Bare terms without wildcards or ranges are implicit callsign prefix searches
+        if endValue == nil, !value.contains("*") {
+            let uppercased = value.uppercased()
+            return .success(
+                .term(
+                    QueryTerm(field: .callsign, condition: .prefix(uppercased), position: position)
+                )
+            )
+        }
+
+        // Wildcards and ranges use multi-field bare term matching
         let condition = buildBareTermCondition(value: value, endValue: endValue)
         return .success(.term(QueryTerm(field: nil, condition: condition, position: position)))
     }

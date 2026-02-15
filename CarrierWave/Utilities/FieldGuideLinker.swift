@@ -32,6 +32,18 @@ enum FieldGuideLinker {
         }
     }
 
+    /// Open the outing checklists tab in CW Field Guide
+    static func openChecklists() {
+        guard let url = URL(string: "cwfieldguide://checklist") else {
+            return
+        }
+        UIApplication.shared.open(url) { success in
+            if !success {
+                ToastManager.shared.warning("CW Field Guide is not installed")
+            }
+        }
+    }
+
     // MARK: Private
 
     /// Lookup table mapping normalized name variants to Field Guide radio IDs

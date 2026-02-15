@@ -49,6 +49,19 @@ struct LogsListContentView: View {
                 )
             }
 
+            // Implicit callsign search hint
+            if hasActiveQuery, isImplicitCallsignSearch {
+                Label(
+                    "Plain text searches callsigns by prefix. Use field:value for other filters.",
+                    systemImage: "info.circle"
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .padding(.horizontal)
+                .padding(.vertical, 6)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
             // Main list
             List {
                 if isSearching {
@@ -96,7 +109,7 @@ struct LogsListContentView: View {
                 }
             }
         }
-        .searchable(text: $queryText, prompt: "Search: W1AW, K-1234, band:20m, after:30d...")
+        .searchable(text: $queryText, prompt: "Search callsign, or use band:20m, after:30d...")
         .task {
             await loadInitialQSOs()
         }
@@ -219,6 +232,12 @@ struct LogsListContentView: View {
         !queryText.trimmingCharacters(in: .whitespaces).isEmpty
     }
 
+    /// True when the query text has no field qualifiers (e.g., "W1AW" not "band:20m")
+    private var isImplicitCallsignSearch: Bool {
+        let trimmed = queryText.trimmingCharacters(in: .whitespaces)
+        return !trimmed.isEmpty && !trimmed.contains(":") && !trimmed.contains("*")
+    }
+
     private func deleteQSOs(at offsets: IndexSet) {
         // Collect QSOs to delete BEFORE any mutations to avoid index invalidation
         let qsosToDelete = offsets.compactMap { index -> QSO? in
@@ -260,8 +279,12 @@ struct LogsListContentView: View {
             clublog: ClubLogClient().isConfigured
         )
     }
+}
 
-    private func loadInitialQSOs() async {
+// MARK: - Data Loading & Query Execution
+
+extension LogsListContentView {
+    func loadInitialQSOs() async {
         // Skip if already loaded to avoid re-fetching on tab switch
         guard qsos.isEmpty else {
             isLoadingInitial = false
@@ -285,7 +308,7 @@ struct LogsListContentView: View {
         isLoadingInitial = false
     }
 
-    private func loadMoreQSOs() async {
+    func loadMoreQSOs() async {
         guard !isLoadingMore, hasMoreQSOs else {
             return
         }
@@ -307,12 +330,12 @@ struct LogsListContentView: View {
         isLoadingMore = false
     }
 
-    private func refreshQSOCount() async {
+    func refreshQSOCount() async {
         let countDescriptor = FetchDescriptor<QSO>(predicate: #Predicate { !$0.isHidden })
         totalQSOCount = (try? modelContext.fetchCount(countDescriptor)) ?? 0
     }
 
-    private func executeQuery() async {
+    func executeQuery() async {
         let trimmed = debouncedQueryText.trimmingCharacters(in: .whitespaces)
 
         // Empty query - show all loaded QSOs
@@ -361,7 +384,7 @@ struct LogsListContentView: View {
         }
     }
 
-    private func searchWithCompiledQuery(_ compiled: CompiledQuery) async {
+    func searchWithCompiledQuery(_ compiled: CompiledQuery) async {
         // Build descriptor using the compiled predicate if available
         // This pushes filtering to the database for indexed fields
         var descriptor =
@@ -405,7 +428,7 @@ struct LogsListContentView: View {
         cachedFilteredQSOs = results
     }
 
-    private func addSuggestedFilter(_ suggestion: String) {
+    func addSuggestedFilter(_ suggestion: String) {
         if queryText.isEmpty {
             queryText = suggestion
         } else {

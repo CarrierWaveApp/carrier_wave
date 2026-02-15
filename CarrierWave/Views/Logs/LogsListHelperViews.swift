@@ -76,9 +76,9 @@ struct QueryHelpSheet: View {
         NavigationStack {
             List {
                 Section("Basic Search") {
-                    helpRow("W1AW", "Find contacts with W1AW")
-                    helpRow("K-1234", "Find contacts at park K-1234")
-                    helpRow("W1*", "Callsigns starting with W1")
+                    helpRow("W1AW", "Callsigns starting with W1AW")
+                    helpRow("call:W1AW", "Exact callsign match")
+                    helpRow("W1*", "Wildcard: callsigns, parks, SOTA starting with W1")
                 }
 
                 Section("Field Filters") {

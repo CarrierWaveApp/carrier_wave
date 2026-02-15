@@ -1633,17 +1633,25 @@ struct LoggerView: View {
         case let .mode(newMode): executeModeCommand(newMode)
         case let .spot(comment): Task { await postSpot(comment: comment) }
         case let .rbn(callsign): executeRBNCommand(callsign)
-        case .pota: showPOTAPanel = true
         case .p2p: executeP2PCommand()
-        case .solar: showSolarPanel = true
-        case .weather: showWeatherPanel = true
         case .map: executeMapCommand()
-        case .hidden: showHiddenQSOsSheet = true
-        case .help: showHelpSheet = true
         case let .note(text): executeNoteCommand(text)
         case .manual: executeManualCommand()
+        case .checklist: FieldGuideLinker.openChecklists()
+        default: executeSheetCommand(command)
+        }
+    }
+
+    private func executeSheetCommand(_ command: LoggerCommand) {
+        switch command {
+        case .pota: showPOTAPanel = true
+        case .solar: showSolarPanel = true
+        case .weather: showWeatherPanel = true
+        case .hidden: showHiddenQSOsSheet = true
+        case .help: showHelpSheet = true
         case .websdr: showWebSDRPanel = true
         case .band: showBandEditSheet = true
+        default: break
         }
     }
 
