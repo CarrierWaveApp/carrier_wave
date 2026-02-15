@@ -57,13 +57,15 @@ extension SessionsView {
         var descriptor = FetchDescriptor<QSO>(
             predicate: #Predicate { $0.parkReference != nil && !$0.isHidden }
         )
-        descriptor.fetchLimit = 5000
+        descriptor.fetchLimit = 5_000
         let parkQSOs = (try? modelContext.fetch(descriptor)) ?? []
 
         let sessionIds = Set(sessions.map(\.id))
 
         let orphanQSOs = parkQSOs.filter { qso in
-            guard let sid = qso.loggingSessionId else { return true }
+            guard let sid = qso.loggingSessionId else {
+                return true
+            }
             return !sessionIds.contains(sid)
         }
 
@@ -76,7 +78,9 @@ extension SessionsView {
 
     func loadRecordings() async {
         let sessionIds = sessions.map(\.id)
-        guard !sessionIds.isEmpty else { return }
+        guard !sessionIds.isEmpty else {
+            return
+        }
 
         let recordings = (try? WebSDRRecording.findRecordings(
             forSessionIds: sessionIds, in: modelContext
@@ -125,7 +129,9 @@ extension SessionsView {
 
 extension SessionsView {
     func refreshJobs() async {
-        guard isAuthenticated, let potaClient else { return }
+        guard isAuthenticated, let potaClient else {
+            return
+        }
         isLoadingJobs = true
         errorMessage = nil
 
@@ -158,15 +164,21 @@ extension SessionsView {
     func performUploadReturningErrors(
         for activation: POTAActivation
     ) async -> [String: String] {
-        guard let potaClient else { return ["": "POTA client not available"] }
+        guard let potaClient else {
+            return ["": "POTA client not available"]
+        }
 
         let parksToUpload = activation.parksNeedingUpload
-        guard !parksToUpload.isEmpty else { return [:] }
+        guard !parksToUpload.isEmpty else {
+            return [:]
+        }
 
         var errors: [String: String] = [:]
         for park in parksToUpload {
             let pendingQSOs = activation.pendingQSOs(forPark: park)
-            guard !pendingQSOs.isEmpty else { continue }
+            guard !pendingQSOs.isEmpty else {
+                continue
+            }
 
             do {
                 let result = try await potaClient.uploadActivationWithRecording(
@@ -222,7 +234,9 @@ extension SessionsView {
         var changed = false
         for activation in allActivations {
             let matching = jobsByActivationId[activation.id] ?? []
-            guard !matching.isEmpty else { continue }
+            guard !matching.isEmpty else {
+                continue
+            }
 
             let hasCompleted = matching.contains { $0.status == .completed }
             let hasFailed = !hasCompleted && matching.contains { $0.status.isFailure }
@@ -241,7 +255,9 @@ extension SessionsView {
                 }
             }
         }
-        if changed { try? modelContext.save() }
+        if changed {
+            try? modelContext.save()
+        }
         return changed
     }
 
@@ -390,11 +406,11 @@ extension SessionsView {
         let meta = activationMetadata(for: activation)
         let name = parkName(for: activation.parkReference)
 
-        let renderer = ActivationShareRenderer()
-        if let image = await renderer.render(
+        if let image = await ActivationShareRenderer.renderWithMap(
             activation: activation,
-            metadata: meta,
-            parkName: name
+            parkName: name,
+            myGrid: activation.qsos.first?.myGrid,
+            metadata: meta
         ) {
             sharePreviewData = SharePreviewData(
                 image: image,

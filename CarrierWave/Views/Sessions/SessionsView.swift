@@ -12,11 +12,101 @@ import SwiftUI
 // MARK: - SessionsView
 
 struct SessionsView: View {
-    // MARK: Internal
+    // MARK: - Unified Row List
+
+    /// A display item: either a real session or an orphan POTA activation
+    enum ListItem: Identifiable {
+        case session(LoggingSession)
+        case orphanActivation(POTAActivation)
+
+        // MARK: Internal
+
+        var id: String {
+            switch self {
+            case let .session(session): "session-\(session.id)"
+            case let .orphanActivation(activation): "orphan-\(activation.id)"
+            }
+        }
+
+        var date: Date {
+            switch self {
+            case let .session(session): session.startedAt
+            case let .orphanActivation(activation): activation.utcDate
+            }
+        }
+    }
 
     let potaClient: POTAClient?
     let potaAuth: POTAAuthService
     let tourState: TourState
+
+    // MARK: - Shared State (accessed by +Actions extension)
+
+    @Environment(\.modelContext) var modelContext
+
+    @State var sessions: [LoggingSession] = []
+    @State var qsosBySessionId: [UUID: [QSO]] = [:]
+    @State var recordingsBySessionId: [UUID: WebSDRRecording] = [:]
+    @State var engines: [UUID: RecordingPlaybackEngine] = [:]
+
+    @State var orphanActivations: [POTAActivation] = []
+    @State var activationsBySessionId: [UUID: POTAActivation] = [:]
+    @State var metadataByKey: [String: ActivationMetadata] = [:]
+    @State var cachedParkNames: [String: String] = [:]
+    @State var jobs: [POTAJob] = []
+    @State var jobsByActivationId: [String: [POTAJob]] = [:]
+    @State var isLoadingJobs = false
+    @State var errorMessage: String?
+    @State var maintenanceTimeRemaining: String?
+    @State var maintenanceTimer: Timer?
+
+    @State var activationToReject: POTAActivation?
+    @State var activationToShare: POTAActivation?
+    @State var activationToExport: POTAActivation?
+    @State var activationToMap: POTAActivation?
+    @State var activationToEdit: POTAActivation?
+    @State var isGeneratingShareImage = false
+    @State var sharePreviewData: SharePreviewData?
+
+    @AppStorage("debugMode") var debugMode = false
+    @AppStorage("bypassPOTAMaintenance") var bypassMaintenance = false
+
+    var isInMaintenance: Bool {
+        if debugMode, bypassMaintenance {
+            return false
+        }
+        return POTAClient.isInMaintenanceWindow()
+    }
+
+    var isAuthenticated: Bool {
+        potaAuth.isConfigured
+    }
+
+    var allActivations: [POTAActivation] {
+        Array(activationsBySessionId.values) + orphanActivations
+    }
+
+    var allItems: [ListItem] {
+        var items: [ListItem] = sessions
+            .filter { (qsosBySessionId[$0.id] ?? []).isEmpty == false }
+            .map { .session($0) }
+        items.append(contentsOf: orphanActivations.map { .orphanActivation($0) })
+        return items.sorted { $0.date > $1.date }
+    }
+
+    var itemsByMonth: [(month: String, items: [ListItem])] {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMMM yyyy"
+        formatter.timeZone = TimeZone(identifier: "UTC")
+
+        let grouped = Dictionary(grouping: allItems) { item in
+            formatter.string(from: item.date)
+        }
+
+        return grouped
+            .sorted { $0.value[0].date > $1.value[0].date }
+            .map { (month: $0.key, items: $0.value) }
+    }
 
     var body: some View {
         Group {
@@ -48,7 +138,11 @@ struct SessionsView: View {
             "Reject Upload",
             isPresented: Binding(
                 get: { activationToReject != nil },
-                set: { if !$0 { activationToReject = nil } }
+                set: { newValue in
+                    if !newValue {
+                        activationToReject = nil
+                    }
+                }
             ),
             titleVisibility: .visible
         ) {
@@ -124,92 +218,6 @@ struct SessionsView: View {
         }
         .onAppear { startMaintenanceTimer() }
         .onDisappear { stopMaintenanceTimer() }
-    }
-
-    // MARK: - Shared State (accessed by +Actions extension)
-
-    @Environment(\.modelContext) var modelContext
-
-    @State var sessions: [LoggingSession] = []
-    @State var qsosBySessionId: [UUID: [QSO]] = [:]
-    @State var recordingsBySessionId: [UUID: WebSDRRecording] = [:]
-    @State var engines: [UUID: RecordingPlaybackEngine] = [:]
-
-    @State var orphanActivations: [POTAActivation] = []
-    @State var activationsBySessionId: [UUID: POTAActivation] = [:]
-    @State var metadataByKey: [String: ActivationMetadata] = [:]
-    @State var cachedParkNames: [String: String] = [:]
-    @State var jobs: [POTAJob] = []
-    @State var jobsByActivationId: [String: [POTAJob]] = [:]
-    @State var isLoadingJobs = false
-    @State var errorMessage: String?
-    @State var maintenanceTimeRemaining: String?
-    @State var maintenanceTimer: Timer?
-
-    @State var activationToReject: POTAActivation?
-    @State var activationToShare: POTAActivation?
-    @State var activationToExport: POTAActivation?
-    @State var activationToMap: POTAActivation?
-    @State var activationToEdit: POTAActivation?
-    @State var isGeneratingShareImage = false
-    @State var sharePreviewData: SharePreviewData?
-
-    @AppStorage("debugMode") var debugMode = false
-    @AppStorage("bypassPOTAMaintenance") var bypassMaintenance = false
-
-    var isInMaintenance: Bool {
-        if debugMode, bypassMaintenance { return false }
-        return POTAClient.isInMaintenanceWindow()
-    }
-
-    var isAuthenticated: Bool {
-        potaAuth.isConfigured
-    }
-
-    var allActivations: [POTAActivation] {
-        Array(activationsBySessionId.values) + orphanActivations
-    }
-
-    // MARK: - Unified Row List
-
-    /// A display item: either a real session or an orphan POTA activation
-    enum ListItem: Identifiable {
-        case session(LoggingSession)
-        case orphanActivation(POTAActivation)
-
-        var id: String {
-            switch self {
-            case let .session(s): "session-\(s.id)"
-            case let .orphanActivation(a): "orphan-\(a.id)"
-            }
-        }
-
-        var date: Date {
-            switch self {
-            case let .session(s): s.startedAt
-            case let .orphanActivation(a): a.utcDate
-            }
-        }
-    }
-
-    var allItems: [ListItem] {
-        var items: [ListItem] = sessions.map { .session($0) }
-        items.append(contentsOf: orphanActivations.map { .orphanActivation($0) })
-        return items.sorted { $0.date > $1.date }
-    }
-
-    var itemsByMonth: [(month: String, items: [ListItem])] {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMMM yyyy"
-        formatter.timeZone = TimeZone(identifier: "UTC")
-
-        let grouped = Dictionary(grouping: allItems) { item in
-            formatter.string(from: item.date)
-        }
-
-        return grouped
-            .sorted { $0.value[0].date > $1.value[0].date }
-            .map { (month: $0.key, items: $0.value) }
     }
 }
 
@@ -311,9 +319,7 @@ extension SessionsView {
         }
     }
 
-    @ViewBuilder
-    func sessionNavigationRow(_ session: LoggingSession) -> some View {
-        let recording = recordingsBySessionId[session.id]
+    func sessionRowContent(_ session: LoggingSession) -> SessionRow {
         let activation = activationsBySessionId[session.id]
         let qsos = qsosBySessionId[session.id] ?? []
         let meta = activation.flatMap { activationMetadata(for: $0) }
@@ -321,13 +327,13 @@ extension SessionsView {
             jobsByActivationId[$0.id]
         } ?? []
 
-        let rowContent = SessionRow(
+        return SessionRow(
             session: session,
             qsos: qsos,
             activation: activation,
             metadata: meta,
             parkName: activation.flatMap { parkName(for: $0.parkReference) },
-            hasRecording: recording != nil,
+            hasRecording: recordingsBySessionId[session.id] != nil,
             hasFailedJob: sessionJobs.contains { $0.status.isFailure },
             hasCompletedJob: sessionJobs.contains {
                 $0.status == .completed
@@ -353,6 +359,13 @@ extension SessionsView {
                 { activationToEdit = act }
             }
         )
+    }
+
+    @ViewBuilder
+    func sessionNavigationRow(_ session: LoggingSession) -> some View {
+        let rowContent = sessionRowContent(session)
+        let activation = activationsBySessionId[session.id]
+        let recording = recordingsBySessionId[session.id]
 
         if let activation {
             NavigationLink(value: activation) { rowContent }

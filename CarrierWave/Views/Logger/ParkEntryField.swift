@@ -154,7 +154,9 @@ struct ParkEntryField: View {
 
     private func commitTextEntry() {
         let trimmed = textEntry.trimmingCharacters(in: .whitespaces).uppercased()
-        guard !trimmed.isEmpty else { return }
+        guard !trimmed.isEmpty else {
+            return
+        }
 
         // Try to resolve via cache (handles shorthand like "1234" -> "US-1234")
         if let park = POTAParksCache.shared.lookupPark(
@@ -178,7 +180,9 @@ struct ParkEntryField: View {
     private func addPark(_ reference: String) {
         let normalized = reference.uppercased()
         var parks = selectedParks
-        guard !parks.contains(normalized) else { return }
+        guard !parks.contains(normalized) else {
+            return
+        }
         parks.append(normalized)
         parkReference = parks.joined(separator: ", ")
     }
@@ -222,73 +226,6 @@ struct ParkChip: View {
         .padding(.vertical, 4)
         .background(Color.green.opacity(0.1))
         .clipShape(Capsule())
-    }
-}
-
-// MARK: - FlowLayout
-
-/// Simple flow layout that wraps items to the next line when they exceed width
-struct FlowLayout: Layout {
-    var spacing: CGFloat = 6
-
-    func sizeThatFits(
-        proposal: ProposedViewSize,
-        subviews: Subviews,
-        cache _: inout ()
-    ) -> CGSize {
-        let result = computeLayout(proposal: proposal, subviews: subviews)
-        return result.size
-    }
-
-    func placeSubviews(
-        in bounds: CGRect,
-        proposal: ProposedViewSize,
-        subviews: Subviews,
-        cache _: inout ()
-    ) {
-        let result = computeLayout(proposal: proposal, subviews: subviews)
-        for (index, position) in result.positions.enumerated() {
-            subviews[index].place(
-                at: CGPoint(
-                    x: bounds.minX + position.x,
-                    y: bounds.minY + position.y
-                ),
-                proposal: .unspecified
-            )
-        }
-    }
-
-    private func computeLayout(
-        proposal: ProposedViewSize,
-        subviews: Subviews
-    ) -> (size: CGSize, positions: [CGPoint]) {
-        let maxWidth = proposal.width ?? .infinity
-        var positions: [CGPoint] = []
-        var x: CGFloat = 0
-        var y: CGFloat = 0
-        var rowHeight: CGFloat = 0
-        var totalHeight: CGFloat = 0
-
-        for subview in subviews {
-            let size = subview.sizeThatFits(.unspecified)
-
-            if x + size.width > maxWidth, x > 0 {
-                // Wrap to next line
-                x = 0
-                y += rowHeight + spacing
-                rowHeight = 0
-            }
-
-            positions.append(CGPoint(x: x, y: y))
-            x += size.width + spacing
-            rowHeight = max(rowHeight, size.height)
-            totalHeight = y + rowHeight
-        }
-
-        return (
-            size: CGSize(width: maxWidth, height: totalHeight),
-            positions: positions
-        )
     }
 }
 

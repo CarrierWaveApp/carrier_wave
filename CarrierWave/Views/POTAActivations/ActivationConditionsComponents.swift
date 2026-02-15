@@ -32,8 +32,21 @@ protocol ConditionsData {
     var solarConditions: String? { get }
 }
 
+// MARK: - ActivationMetadata + ConditionsData
+
 extension ActivationMetadata: ConditionsData {}
+
+// MARK: - LoggingSession + ConditionsData
+
 extension LoggingSession: ConditionsData {}
+
+// MARK: - SolarConditionGauge
+
+private let solarGaugeSegmentColors: [Color] = [
+    Color(red: 0.8, green: 0.0, blue: 0.0), // Poor - red
+    .yellow, // Fair - yellow
+    .green, // Good - green
+]
 
 // MARK: - SolarConditionGauge
 
@@ -62,12 +75,6 @@ struct SolarConditionGauge<C: ConditionsData>: View {
 
     // MARK: Private
 
-    private static let segmentColors: [Color] = [
-        Color(red: 0.8, green: 0.0, blue: 0.0), // Poor - red
-        .yellow, // Fair - yellow
-        .green, // Good - green
-    ]
-
     private var activeSegmentIndex: Int {
         switch metadata.solarPropagationRating {
         case "Excellent",
@@ -81,7 +88,7 @@ struct SolarConditionGauge<C: ConditionsData>: View {
         HStack(spacing: 1) {
             ForEach(0 ..< 3, id: \.self) { index in
                 RoundedRectangle(cornerRadius: 1)
-                    .fill(Self.segmentColors[index].opacity(index == activeSegmentIndex ? 1.0 : 0.3))
+                    .fill(solarGaugeSegmentColors[index].opacity(index == activeSegmentIndex ? 1.0 : 0.3))
                     .frame(width: 8, height: 6)
             }
         }

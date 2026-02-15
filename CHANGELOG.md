@@ -4,6 +4,12 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- Hide sessions with zero QSOs from the Sessions list
+- Fix build errors: static stored property in generic type, duplicate FlowLayout definition, ActivationShareRenderer instantiation
+
+## [1.31.0] - 2026-02-14
+
 ### Added
 - Merge POTA Activations and Sessions into a single unified Sessions list — every session (POTA, SOTA, casual) now shows rich content including QSO timeline, upload status, conditions, and equipment badges
 - Record solar/weather conditions at the start of every session type, not just POTA — conditions display on session cards when available
