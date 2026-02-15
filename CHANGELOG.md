@@ -2,6 +2,11 @@
 
 All notable changes to Carrier Wave will be documented in this file.
 
+## [Unreleased]
+
+### Fixed
+- Fix crash when opening map view — computed property in SwiftData `#Predicate` caused runtime assertion failure
+
 ## [1.32.0] - 2026-02-14
 
 ### Added
