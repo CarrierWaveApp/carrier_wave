@@ -124,10 +124,11 @@ struct ParkEntryField: View {
                 Image(systemName: "magnifyingglass")
                     .font(.title3)
                     .foregroundStyle(.blue)
-                    .padding(4)
+                    .frame(minWidth: 44, minHeight: 44)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Search parks")
 
             if !textEntry.isEmpty {
                 Button {
@@ -136,10 +137,11 @@ struct ParkEntryField: View {
                     Image(systemName: "plus.circle.fill")
                         .font(.title3)
                         .foregroundStyle(.green)
-                        .padding(4)
+                        .frame(minWidth: 44, minHeight: 44)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Add park \(textEntry)")
             }
         }
         .padding(12)

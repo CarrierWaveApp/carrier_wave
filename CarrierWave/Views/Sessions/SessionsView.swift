@@ -132,6 +132,7 @@ struct SessionsView: View {
                         }
                     }
                     .disabled(isLoadingJobs)
+                    .accessibilityLabel("Refresh upload status")
                 }
             }
         }
@@ -271,6 +272,7 @@ extension SessionsView {
                     .ultraThinMaterial,
                     in: RoundedRectangle(cornerRadius: 16)
                 )
+                .accessibilityLabel("Generating share image")
             }
         }
     }

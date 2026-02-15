@@ -213,8 +213,8 @@ struct SpotFilterSheet: View {
         Button(action: action) {
             Text(label)
                 .font(.caption.weight(.medium))
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 12)
                 .foregroundStyle(isSelected ? .blue : .secondary)
                 .background(
                     isSelected
