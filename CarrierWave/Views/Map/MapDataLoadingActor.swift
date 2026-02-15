@@ -287,10 +287,9 @@ actor MapDataLoadingActor {
         context: ModelContext
     ) -> [String: SessionEquipment] {
         let predicate = #Predicate<LoggingSession> {
-            $0.activationReference != nil
+            $0.parkReference != nil || $0.sotaReference != nil
         }
-        var descriptor = FetchDescriptor<LoggingSession>(predicate: predicate)
-        descriptor.propertiesToFetch = []
+        let descriptor = FetchDescriptor<LoggingSession>(predicate: predicate)
         let sessions = (try? context.fetch(descriptor)) ?? []
 
         let formatter = DateFormatter()
