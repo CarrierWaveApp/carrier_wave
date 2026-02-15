@@ -92,6 +92,7 @@ struct DashboardView: View {
                         summaryCard
                     }
                     favoritesCard
+                    conditionsCard
                     servicesList
                 }
                 .padding()
