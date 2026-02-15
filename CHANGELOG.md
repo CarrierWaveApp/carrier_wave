@@ -4,7 +4,10 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.32.1] - 2026-02-14
+
 ### Added
+- Extract park references from ADIF comment field when MY_SIG_INFO is missing (WSJT-X compatibility)
 - Add QSOs/hr rate to brag sheet stats row (always shown when rate available)
 - Add Professional Statistician Mode toggle in POTA settings
 - Statistician mode: charts on activation detail (band distribution, QSO rate over time, cumulative distance CDF, cumulative timing CDF)
