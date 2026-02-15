@@ -199,6 +199,7 @@ enum SettingsDestination: Hashable {
     case lofi
     case hamrs
     case lotw
+    case clublog
     case icloud
 }
 

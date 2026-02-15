@@ -28,6 +28,7 @@ extension DashboardView {
             potaServiceInfo(inMaintenance: potaInMaintenance),
             hamrsServiceInfo,
             lotwServiceInfo,
+            clublogServiceInfo,
             icloudServiceInfo,
         ]
 
@@ -108,6 +109,22 @@ extension DashboardView {
         )
     }
 
+    private var clublogServiceInfo: ServiceInfo {
+        ServiceInfo(
+            id: .service(.clublog),
+            name: "Club Log",
+            status: clublogIsConfigured ? .connected : .notConfigured,
+            primaryStat: clublogIsConfigured
+                ? "\(uploadedCount(for: .clublog)) synced" : nil,
+            secondaryStat: pendingCount(for: .clublog) > 0
+                ? "\(pendingCount(for: .clublog)) pending" : nil,
+            tertiaryInfo: clublogIsConfigured
+                ? syncService.lastSyncResults[.clublog]?.summaryText : "Not configured",
+            showWarning: pendingCount(for: .clublog) > 0,
+            isSyncing: syncService.isSyncing
+        )
+    }
+
     private var icloudServiceInfo: ServiceInfo {
         ServiceInfo(
             id: .icloud,
@@ -169,6 +186,8 @@ extension DashboardView {
                 hamrsDetailSheet
             case .lotw:
                 lotwDetailSheet
+            case .clublog:
+                clublogDetailSheet
             }
         case .icloud:
             icloudDetailSheet
@@ -315,6 +334,34 @@ extension DashboardView {
             onConfigure: {
                 selectedService = nil
                 settingsDestination = .lotw
+                selectedTab = .more
+            }
+        )
+    }
+
+    var clublogDetailSheet: some View {
+        ServiceDetailSheet(
+            serviceId: .service(.clublog),
+            isConfigured: clublogIsConfigured,
+            callsign: clublogCallsign,
+            syncedCount: uploadedCount(for: .clublog),
+            pendingCount: pendingCount(for: .clublog),
+            confirmedCount: nil,
+            lastSyncReport: syncService.lastSyncResults[.clublog],
+            isSyncing: isSyncing,
+            debugMode: debugMode,
+            isInMaintenance: false,
+            sessionExpiringSoon: false,
+            sessionExpiryDate: nil,
+            importedCount: nil,
+            pendingFiles: nil,
+            isMonitoring: nil,
+            onSync: { await syncFromClubLog() },
+            onForceRedownload: { await performClubLogForceRedownload() },
+            onClearData: { clearClubLogData() },
+            onConfigure: {
+                selectedService = nil
+                settingsDestination = .clublog
                 selectedTab = .more
             }
         )

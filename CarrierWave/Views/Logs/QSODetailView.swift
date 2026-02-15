@@ -291,6 +291,7 @@ struct QSODetailView: View {
         case .pota: "POTA"
         case .hamrs: "HAMRS"
         case .lotw: "LoTW"
+        case .clublog: "Club Log"
         case .logger: "Logger"
         }
     }

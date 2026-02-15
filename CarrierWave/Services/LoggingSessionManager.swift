@@ -645,6 +645,7 @@ final class LoggingSessionManager {
     private var qrzConfigured = false
     private var potaConfigured = false
     private var lofiConfigured = false
+    private var clublogConfigured = false
 
     /// Key for storing active session ID in UserDefaults
     private let activeSessionIdKey = "activeLoggingSessionId"
@@ -729,6 +730,11 @@ final class LoggingSessionManager {
             (try? KeychainHelper.shared.readString(for: KeychainHelper.Keys.potaUsername)) != nil
                 && (try? KeychainHelper.shared.readString(for: KeychainHelper.Keys.potaPassword)) != nil
         lofiConfigured = UserDefaults.standard.bool(forKey: "lofi.deviceLinked")
+        clublogConfigured =
+            (try? KeychainHelper.shared.readString(for: KeychainHelper.Keys.clublogEmail)) != nil
+                && (try? KeychainHelper.shared.readString(
+                    for: KeychainHelper.Keys.clublogApiKey
+                )) != nil
     }
 
     /// Detect and report notable activities for a newly logged QSO.
@@ -783,6 +789,11 @@ final class LoggingSessionManager {
         // LoFi (use cached value)
         if lofiConfigured {
             qso.markNeedsUpload(to: .lofi, context: modelContext)
+        }
+
+        // Club Log (use cached value)
+        if clublogConfigured {
+            qso.markNeedsUpload(to: .clublog, context: modelContext)
         }
     }
 }

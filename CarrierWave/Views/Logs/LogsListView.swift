@@ -11,6 +11,7 @@ struct ServiceConfiguration {
     var lofi: Bool = false
     var hamrs: Bool = false
     var lotw: Bool = false
+    var clublog: Bool = false
 
     func isConfigured(_ serviceType: ServiceType) -> Bool {
         switch serviceType {
@@ -19,6 +20,7 @@ struct ServiceConfiguration {
         case .lofi: lofi
         case .hamrs: hamrs
         case .lotw: lotw
+        case .clublog: clublog
         }
     }
 }
@@ -254,7 +256,8 @@ struct LogsListContentView: View {
             pota: potaAuth.isConfigured,
             lofi: lofiClient.isConfigured && lofiClient.isLinked,
             hamrs: hamrsClient.isConfigured,
-            lotw: lotwClient.isConfigured
+            lotw: lotwClient.isConfigured,
+            clublog: ClubLogClient().isConfigured
         )
     }
 

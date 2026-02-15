@@ -131,6 +131,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `HAMRSClient.swift` | HAMRS sync client |
 | `HAMRSModels.swift` | HAMRS API models |
 | `HAMRSError.swift` | HAMRS-specific errors |
+| `ClubLogClient.swift` | Club Log API client (email/password + API key auth, bidirectional ADIF sync) |
 | `SyncService.swift` | Main sync orchestrator |
 | `SyncService+Upload.swift` | Upload logic for all services |
 | `SyncService+Download.swift` | Download/import logic |
@@ -447,6 +448,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `CloudSettingsViews.swift` | iCloud sync settings |
 | `HAMRSSettingsView.swift` | HAMRS connection settings |
 | `LoTWSettingsView.swift` | LoTW login configuration |
+| `ClubLogSettingsView.swift` | Club Log connection settings (email, app password, API key) |
 | `ActivitiesSettingsView.swift` | Activities feature settings |
 | `POTAAuthWebView.swift` | POTA OAuth WebView |
 | `SyncDebugView.swift` | Sync debugging interface |

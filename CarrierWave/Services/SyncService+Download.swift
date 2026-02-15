@@ -19,6 +19,7 @@ extension SyncService {
         let lofiReady = lofiClient.isConfigured && lofiClient.isLinked
         let hamrsReady = hamrsClient.isConfigured
         let lotwHasCreds = lotwClient.hasCredentials()
+        let clublogReady = clublogClient.isConfigured
 
         return await withTaskGroup(of: (ServiceType, Result<[FetchedQSO], Error>).self) { group in
             // QRZ download
@@ -55,6 +56,13 @@ extension SyncService {
             if lotwHasCreds {
                 group.addTask {
                     await self.downloadFromLoTW(timeout: extendedTimeout)
+                }
+            }
+
+            // Club Log download
+            if clublogReady {
+                group.addTask {
+                    await self.downloadFromClubLog(timeout: timeout)
                 }
             }
 
@@ -382,6 +390,55 @@ extension SyncService {
         } catch {
             debugLog.error("LoTW download failed: \(error.localizedDescription)", service: .lotw)
             return (.lotw, .failure(error))
+        }
+    }
+
+    private func downloadFromClubLog(timeout: TimeInterval) async -> (
+        ServiceType, Result<[FetchedQSO], Error>
+    ) {
+        await MainActor.run { self.syncPhase = .downloading(service: .clublog) }
+        let debugLog = SyncDebugLog.shared
+
+        let lastDownload = clublogClient.getLastDownloadDate()
+        let syncStartTime = Date()
+
+        if let lastDownload {
+            let formatter = DateFormatter()
+            formatter.dateStyle = .medium
+            formatter.timeStyle = .short
+            debugLog.info(
+                "Starting incremental Club Log download "
+                    + "(since \(formatter.string(from: lastDownload)))",
+                service: .clublog
+            )
+        } else {
+            debugLog.info(
+                "Starting full Club Log download (no previous sync)", service: .clublog
+            )
+        }
+
+        do {
+            let qsos = try await withTimeout(seconds: timeout, service: .clublog) {
+                try await self.clublogClient.fetchQSOs(since: lastDownload)
+            }
+            debugLog.info(
+                "Downloaded \(qsos.count) QSOs from Club Log", service: .clublog
+            )
+            let fetched = qsos.map { FetchedQSO.fromClubLog($0) }
+
+            // Save sync timestamp on success
+            clublogClient.saveLastDownloadDate(syncStartTime)
+
+            await MainActor.run {
+                self.syncProgress.addDownloaded(fetched.count, for: .clublog)
+            }
+            return (.clublog, .success(fetched))
+        } catch {
+            debugLog.error(
+                "Club Log download failed: \(error.localizedDescription)",
+                service: .clublog
+            )
+            return (.clublog, .failure(error))
         }
     }
 }

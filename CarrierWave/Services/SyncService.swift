@@ -13,7 +13,8 @@ class SyncService: ObservableObject {
         modelContext: ModelContext, potaAuthService: POTAAuthService,
         lofiClient: LoFiClient? = nil,
         hamrsClient: HAMRSClient? = nil,
-        lotwClient: LoTWClient? = nil
+        lotwClient: LoTWClient? = nil,
+        clublogClient: ClubLogClient? = nil
     ) {
         self.modelContext = modelContext
         qrzClient = QRZClient()
@@ -22,6 +23,7 @@ class SyncService: ObservableObject {
         self.lofiClient = lofiClient ?? LoFiClient.appDefault()
         self.hamrsClient = hamrsClient ?? HAMRSClient()
         self.lotwClient = lotwClient ?? LoTWClient()
+        self.clublogClient = clublogClient ?? ClubLogClient()
         loadPersistedReports()
     }
 
@@ -44,6 +46,7 @@ class SyncService: ObservableObject {
     let lofiClient: LoFiClient
     let hamrsClient: HAMRSClient
     let lotwClient: LoTWClient
+    let clublogClient: ClubLogClient
 
     // Activity detection (internal for extension access)
     var activityDetector: ActivityDetector?
@@ -394,6 +397,72 @@ class SyncService: ObservableObject {
         ))
 
         return processResult.created
+    }
+    /// Sync only with Club Log (download then upload)
+    func syncClubLog(forceFullSync: Bool = false) async throws -> (downloaded: Int, uploaded: Int) {
+        isSyncing = true
+        defer {
+            isSyncing = false
+            syncPhase = nil
+            lastSyncDate = Date()
+        }
+
+        var downloaded = 0
+        var uploaded = 0
+
+        // Use incremental sync unless forced full
+        let lastDownload = forceFullSync ? nil : clublogClient.getLastDownloadDate()
+        let syncStartTime = Date()
+
+        // Download with timeout
+        syncPhase = .downloading(service: .clublog)
+        let qsos = try await withTimeout(seconds: syncTimeoutSeconds, service: .clublog) {
+            try await self.clublogClient.fetchQSOs(since: lastDownload)
+        }
+        let fetched = qsos.map { FetchedQSO.fromClubLog($0) }
+
+        // Save sync timestamp on success
+        clublogClient.saveLastDownloadDate(syncStartTime)
+
+        syncPhase = .processing
+        let processResult = try await processDownloadedQSOsAsync(fetched)
+        downloaded = processResult.created
+
+        // Process activities for newly created QSOs
+        let createdQSOs = processResult.fetchCreatedQSOs(from: modelContext)
+        if !createdQSOs.isEmpty {
+            await processActivities(newQSOs: createdQSOs)
+        }
+
+        await performDataRepairs()
+
+        // Upload with timeout (unless read-only mode)
+        if !isReadOnlyMode {
+            syncPhase = .uploading(service: .clublog)
+            let qsosToUpload = try fetchQSOsNeedingUpload()
+                .filter { $0.needsUpload(to: .clublog) }
+            if !qsosToUpload.isEmpty {
+                let uploadResult = try await withTimeout(
+                    seconds: syncTimeoutSeconds, service: .clublog
+                ) {
+                    try await self.uploadToClubLog(qsos: qsosToUpload)
+                }
+                uploaded = uploadResult.uploaded
+                if modelContext.hasChanges {
+                    try modelContext.save()
+                }
+            }
+        }
+
+        storeReport(buildReport(
+            service: .clublog,
+            downloaded: fetched.count,
+            created: downloaded,
+            merged: processResult.merged,
+            uploaded: uploaded
+        ))
+
+        return (downloaded, uploaded)
     }
 }
 

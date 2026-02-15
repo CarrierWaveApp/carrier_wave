@@ -2,6 +2,14 @@
 
 All notable changes to Carrier Wave will be documented in this file.
 
+## [Unreleased]
+
+### Added
+- Add Club Log as an optional sync service — bidirectional ADIF sync with batch upload (putlogs.php), download (getadif.php), incremental date-based sync, and real-time single-QSO upload support
+- Club Log settings view with email, app password, callsign, and API key configuration
+- Club Log service row on dashboard with sync status, pending counts, and detail sheet
+- Club Log integration in query language (filter QSOs by `source:clublog`)
+
 ## [1.32.0] - 2026-02-14
 
 ### Added

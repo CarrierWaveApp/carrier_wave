@@ -14,6 +14,7 @@ enum ImportSource: String, Codable, Sendable {
     case pota
     case hamrs
     case lotw
+    case clublog
     case logger
 }
 
@@ -28,6 +29,7 @@ extension ServiceType {
         case .lofi: .lofi
         case .hamrs: .hamrs
         case .lotw: .lotw
+        case .clublog: .clublog
         }
     }
 }

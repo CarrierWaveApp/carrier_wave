@@ -159,6 +159,13 @@ extension KeychainHelper {
         nonisolated static let lotwLastQSL = "lotw.last.qsl"
         nonisolated static let lotwLastQSORx = "lotw.last.qso.rx"
 
+        /// Club Log
+        nonisolated static let clublogApiKey = "clublog.api.key"
+        nonisolated static let clublogEmail = "clublog.email"
+        nonisolated static let clublogPassword = "clublog.password"
+        nonisolated static let clublogCallsign = "clublog.callsign"
+        nonisolated static let clublogLastDownloadDate = "clublog.last.download.date"
+
         /// Callsign Aliases
         nonisolated static let currentCallsign = "user.current.callsign"
         nonisolated static let previousCallsigns = "user.previous.callsigns" // JSON array

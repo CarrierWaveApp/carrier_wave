@@ -39,6 +39,8 @@ struct DashboardView: View {
     @State var lofiCallsign: String?
     @State var hamrsIsConfigured: Bool = false
     @State var lotwIsConfigured: Bool = false
+    @State var clublogIsConfigured: Bool = false
+    @State var clublogCallsign: String?
 
     /// Service detail sheet state
     @State var selectedService: ServiceIdentifier?
@@ -65,6 +67,7 @@ struct DashboardView: View {
     let qrzClient = QRZClient()
     let hamrsClient = HAMRSClient()
     let lotwClient = LoTWClient()
+    let clublogClient = ClubLogClient()
 
     let aliasService = CallsignAliasService.shared
 

@@ -18,6 +18,8 @@ extension DashboardView {
         lofiCallsign = lofiClient.getCallsign()
         hamrsIsConfigured = hamrsClient.isConfigured
         lotwIsConfigured = lotwClient.isConfigured
+        clublogIsConfigured = clublogClient.isConfigured
+        clublogCallsign = clublogClient.getCallsign()
     }
 
     func performFullSync() async {
@@ -274,6 +276,42 @@ extension DashboardView {
 
         // Clear LoTW timestamps to allow re-download
         lotwClient.clearCredentials()
+        refreshServiceStatus()
+    }
+
+    func syncFromClubLog() async {
+        isSyncing = true
+        syncingService = .clublog
+        defer {
+            isSyncing = false
+            syncingService = nil
+        }
+
+        do {
+            _ = try await syncService.syncClubLog()
+        } catch {
+            syncService.storeErrorReport(service: .clublog, error: error)
+        }
+    }
+
+    func performClubLogForceRedownload() async -> (updated: Int, created: Int) {
+        isSyncing = true
+        defer {
+            isSyncing = false
+            asyncStats.recompute(from: modelContext)
+            presenceCounts.recompute(from: modelContext)
+        }
+        do {
+            let result = try await syncService.syncClubLog(forceFullSync: true)
+            return (updated: 0, created: result.downloaded)
+        } catch {
+            syncService.storeErrorReport(service: .clublog, error: error)
+            return (updated: 0, created: 0)
+        }
+    }
+
+    func clearClubLogData() {
+        clublogClient.logout()
         refreshServiceStatus()
     }
 

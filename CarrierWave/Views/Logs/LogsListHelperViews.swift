@@ -297,7 +297,8 @@ struct ServicePresenceBadge: View {
         switch presence.serviceType {
         case .qrz,
              .pota,
-             .hamrs:
+             .hamrs,
+             .clublog:
             true
         case .lofi,
              .lotw:
