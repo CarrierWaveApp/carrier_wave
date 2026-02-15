@@ -5,8 +5,16 @@ All notable changes to Carrier Wave will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Add one-time background repair to extract park references from ADIF comment fields on existing QSOs imported before the extraction logic was added
 - Add active sessions list to logger tab: paused sessions appear with Continue/Finish actions when no session is active
 - Starting a new session now pauses (instead of ending) the previous session, allowing it to be resumed later
+
+## [1.33.1] - 2026-02-15
+
+### Changed
+- Redesign dashboard metrics settings with navigation-push pattern for clearer UX
+- Add metric subtitles, selection haptic, and VoiceOver selected trait to metric picker
+- Prevent selecting the same metric in both primary and secondary slots
 
 ## [1.33.0] - 2026-02-15
 
