@@ -10,6 +10,7 @@ public typealias StreakCalculator = CarrierWaveCore.StreakCalculator
 enum StreakCategory: String, Identifiable, CaseIterable {
     case daily = "Daily QSOs"
     case pota = "POTA Activations"
+    case hunter = "Park Hunts"
     case mode = "Mode"
     case band = "Band"
 
@@ -23,6 +24,7 @@ enum StreakCategory: String, Identifiable, CaseIterable {
         switch self {
         case .daily: "flame.fill"
         case .pota: "leaf.fill"
+        case .hunter: "binoculars.fill"
         case .mode: "waveform.path"
         case .band: "antenna.radiowaves.left.and.right"
         }
