@@ -55,4 +55,8 @@ extension DashboardView {
             .clipShape(RoundedRectangle(cornerRadius: 12))
         }
     }
+
+    var conditionsCard: some View {
+        ConditionsCard(tourState: tourState)
+    }
 }

@@ -207,6 +207,8 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `UserProfileService.swift` | Persists and retrieves user profile data |
 | `QuickEntryParser.swift` | Parses quick entry strings (e.g., "AJ7CM 579 WA US-0189") into structured data |
 | `ActivityLogManager.swift` | Activity log lifecycle management (create, activate, log QSO, daily stats) |
+| `EnvironmentalSnapshot.swift` | Sendable snapshot struct for environmental conditions charting |
+| `EnvironmentalDataActor.swift` | Background actor for loading conditions from LoggingSession + ActivationMetadata |
 
 ## Services - WebSDR (`CarrierWave/Services/WebSDR/`)
 
@@ -249,6 +251,14 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `SessionDetailView.swift` | Session detail with equipment, photos, notes, QSO list, edit button |
 | `SessionMetadataEditSheet.swift` | Unified edit sheet for all session types (equipment, photos, notes) |
 | `PhotoViewer.swift` | Full-screen photo viewer with pinch-to-zoom |
+
+## Views - Conditions (`CarrierWave/Views/Conditions/`)
+| File | Purpose |
+|------|---------|
+| `ConditionsCard.swift` | Dashboard card with sparkline and latest metrics, links to full history |
+| `ConditionsHistoryView.swift` | Full-screen conditions history with timeline/location tabs and date range |
+| `ConditionsHistoryChartView.swift` | Time-series line chart for solar/weather metrics with Swift Charts |
+| `ConditionsByLocationView.swift` | Bar chart comparing conditions across grid squares |
 
 ## Views - Components (`CarrierWave/Views/Components/`)
 
