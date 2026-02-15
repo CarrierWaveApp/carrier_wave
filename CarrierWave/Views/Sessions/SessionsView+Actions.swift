@@ -407,12 +407,23 @@ extension SessionsView {
         let name = parkName(for: activation.parkReference)
         let equipmentList = buildEquipmentList(for: activation)
 
+        let statisticianMode = UserDefaults.standard.bool(
+            forKey: "statisticianMode"
+        )
+        let advancedStats: ActivationStatistics? =
+            if statisticianMode {
+                ActivationStatistics.compute(from: activation, metadata: meta)
+            } else {
+                nil
+            }
+
         if let image = await ActivationShareRenderer.renderWithMap(
             activation: activation,
             parkName: name,
             myGrid: activation.qsos.first?.myGrid,
             metadata: meta,
-            equipment: equipmentList
+            equipment: equipmentList,
+            statisticianStats: advancedStats
         ) {
             sharePreviewData = SharePreviewData(
                 image: image,

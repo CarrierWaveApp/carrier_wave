@@ -4,6 +4,13 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Add QSOs/hr rate to brag sheet stats row (always shown when rate available)
+- Add Professional Statistician Mode toggle in POTA settings
+- Statistician mode: charts on activation detail (band distribution, QSO rate over time, distance histogram)
+- Statistician mode: two-column stats summary on activation detail (distance, timing, RST, entities)
+- Statistician mode: extra section on brag sheet (box plot, peak rate badges, band/mode distributions, entity counts, p < 0.05 badge)
+
 ### Fixed
 - Fix crash when opening map view — computed property in SwiftData `#Predicate` caused runtime assertion failure
 - Fix K-index always showing as 0 — HamQSL XML returns values with leading whitespace that Swift's numeric initializers reject

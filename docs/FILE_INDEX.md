@@ -71,6 +71,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `POTAUploadAttempt.swift` | POTA upload attempt history and status |
 | `ServicePresence.swift` | Service connection status tracking |
 | `ActivationMetadata.swift` | Activation-level metadata storage |
+| `ActivationStatistics.swift` | Pure stats computation for POTA activations (distance, timing, distribution, RST, entities) |
 | `StatCategoryItem.swift` | Individual stat item for dashboard display |
 | `StatCategoryType.swift` | Stat category enum (band, mode, DXCC, etc.) |
 | `Types.swift` | Shared type definitions |
@@ -372,6 +373,9 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `ActivationShareCardComponents.swift` | Reusable component views for share cards (header, footer, stats, park info) |
 | `ActivationSharePreviewSheet.swift` | Share preview sheet with ShareLink and Save to Photos |
 | `ActivationShareRenderer.swift` | Render activation card to UIImage for sharing |
+| `ShareCardStatisticianSection.swift` | Extra brag sheet section for Professional Statistician Mode (box plot, badges, distributions) |
+| `ActivationStatsChartsView.swift` | Swift Charts for activation detail (band distribution, QSO rate, distance histogram) |
+| `ActivationStatsSummaryView.swift` | Two-column stats summary grid for activation detail |
 | `ADIFExportSheet.swift` | ADIF export sheet with share, save, copy options |
 | `ActivationMapHelpers.swift` | Map utilities for activation share cards (region, geodesic paths) and activation stats helper |
 | `ActivationMapView.swift` | Full-screen activation map with RST-based contact coloring |

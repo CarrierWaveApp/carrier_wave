@@ -27,17 +27,19 @@ enum ActivationShareRenderer {
         parkName: String?,
         myGrid: String?,
         metadata: ActivationMetadata? = nil,
-        equipment: [ShareCardEquipmentItem] = []
+        equipment: [ShareCardEquipmentItem] = [],
+        statisticianStats: ActivationStatistics? = nil
     ) -> UIImage? {
-        // For synchronous rendering, use nil map (will show placeholder)
         let view = ActivationShareCardForExport(
             activation: activation,
             parkName: parkName,
             mapImage: nil,
             metadata: metadata,
-            equipment: equipment
+            equipment: equipment,
+            statisticianStats: statisticianStats
         )
-        return renderToImage(view)
+        let height: CGFloat = statisticianStats != nil ? 880 : 640
+        return renderToImage(view, height: height)
     }
 
     /// Render an activation share card with map snapshot (async)
@@ -46,45 +48,12 @@ enum ActivationShareRenderer {
         parkName: String?,
         myGrid: String?,
         metadata: ActivationMetadata? = nil,
-        equipment: [ShareCardEquipmentItem] = []
+        equipment: [ShareCardEquipmentItem] = [],
+        statisticianStats: ActivationStatistics? = nil
     ) async -> UIImage? {
-        // Capture minimal data and RST colors on main thread (trivially fast)
-        let qsoData: [(grid: String, rstColor: UIColor)] =
-            activation.mappableQSOs.compactMap { qso in
-                guard let grid = qso.theirGrid else {
-                    return nil
-                }
-                return (
-                    grid,
-                    RSTColorHelper.uiColor(
-                        rstSent: qso.rstSent,
-                        rstReceived: qso.rstReceived
-                    )
-                )
-            }
-        let capturedMyGrid = myGrid
-
-        // Yield to let UI update (show spinner) before heavy computation
-        await Task.yield()
-
-        // Compute coordinates off main thread
-        let (qsoMarkers, myCoordinate) = await Task.detached {
-            let markers: [ShareMapMarker] = qsoData.compactMap { item in
-                guard let coord = MaidenheadConverter.coordinate(from: item.grid) else {
-                    return nil
-                }
-                return ShareMapMarker(coordinate: coord, rstColor: item.rstColor)
-            }
-
-            let myCoord: CLLocationCoordinate2D? =
-                if let grid = capturedMyGrid, grid.count >= 4 {
-                    MaidenheadConverter.coordinate(from: grid)
-                } else {
-                    nil
-                }
-
-            return (markers, myCoord)
-        }.value
+        let (qsoMarkers, myCoordinate) = await computeMapMarkers(
+            activation: activation, myGrid: myGrid
+        )
 
         // Generate map snapshot if we have coordinates
         let mapImage: UIImage? =
@@ -104,17 +73,60 @@ enum ActivationShareRenderer {
                 parkName: parkName,
                 mapImage: mapImage,
                 metadata: metadata,
-                equipment: equipment
+                equipment: equipment,
+                statisticianStats: statisticianStats
             )
-            return renderToImage(view)
+            let height: CGFloat = statisticianStats != nil ? 880 : 640
+            return renderToImage(view, height: height)
         }
     }
 
     // MARK: Private
 
+    /// Extract QSO marker data and compute coordinates off the main thread
+    private static func computeMapMarkers(
+        activation: POTAActivation,
+        myGrid: String?
+    ) async -> ([ShareMapMarker], CLLocationCoordinate2D?) {
+        let qsoData: [(grid: String, rstColor: UIColor)] =
+            activation.mappableQSOs.compactMap { qso in
+                guard let grid = qso.theirGrid else {
+                    return nil
+                }
+                return (
+                    grid,
+                    RSTColorHelper.uiColor(
+                        rstSent: qso.rstSent,
+                        rstReceived: qso.rstReceived
+                    )
+                )
+            }
+        let capturedMyGrid = myGrid
+
+        await Task.yield()
+
+        return await Task.detached {
+            let markers: [ShareMapMarker] = qsoData.compactMap { item in
+                guard let coord = MaidenheadConverter.coordinate(from: item.grid) else {
+                    return nil
+                }
+                return ShareMapMarker(coordinate: coord, rstColor: item.rstColor)
+            }
+            let myCoord: CLLocationCoordinate2D? =
+                if let grid = capturedMyGrid, grid.count >= 4 {
+                    MaidenheadConverter.coordinate(from: grid)
+                } else {
+                    nil
+                }
+            return (markers, myCoord)
+        }.value
+    }
+
     @MainActor
-    private static func renderToImage(_ view: some View) -> UIImage? {
-        let wrappedView = view.frame(width: 400, height: 640)
+    private static func renderToImage(
+        _ view: some View, height: CGFloat = 640
+    ) -> UIImage? {
+        let wrappedView = view.frame(width: 400, height: height)
 
         let renderer = ImageRenderer(content: wrappedView)
         renderer.scale = 2.0 // Retina scale for crisp edges
