@@ -272,6 +272,82 @@ extension SessionsView {
         jobsByActivationId = index
     }
 
+    // MARK: - Session Deletion
+
+    var deleteConfirmationMessage: String {
+        guard let item = itemToDelete else {
+            return "This action cannot be undone."
+        }
+        switch item {
+        case let .session(session):
+            let count = qsosBySessionId[session.id]?.count ?? 0
+            return "Delete this session and hide \(count) QSO(s)? "
+                + "Hidden QSOs will not be synced or counted in statistics."
+        case let .orphanActivation(activation):
+            return "Delete activation \(activation.parkReference) "
+                + "and hide \(activation.qsos.count) QSO(s)? "
+                + "Hidden QSOs will not be synced or counted in statistics."
+        }
+    }
+
+    func deleteItem(_ item: ListItem) {
+        switch item {
+        case let .session(session):
+            deleteSession(session)
+        case let .orphanActivation(activation):
+            deleteOrphanActivation(activation)
+        }
+    }
+
+    private func deleteSession(_ session: LoggingSession) {
+        let sessionId = session.id
+
+        // Hide all QSOs in this session
+        if let qsos = qsosBySessionId[sessionId] {
+            for qso in qsos {
+                qso.isHidden = true
+                for presence in qso.servicePresence where presence.needsUpload {
+                    presence.needsUpload = false
+                }
+            }
+        }
+
+        // Clean up session spots
+        let spotPredicate = #Predicate<SessionSpot> { $0.loggingSessionId == sessionId }
+        if let spots = try? modelContext.fetch(FetchDescriptor(predicate: spotPredicate)) {
+            for spot in spots {
+                modelContext.delete(spot)
+            }
+        }
+
+        // Clean up session photos
+        try? SessionPhotoManager.deleteAllPhotos(for: sessionId)
+
+        // Delete the session
+        modelContext.delete(session)
+        try? modelContext.save()
+
+        Task {
+            await loadSessions()
+            await loadOrphanActivations()
+        }
+    }
+
+    private func deleteOrphanActivation(_ activation: POTAActivation) {
+        for qso in activation.qsos {
+            qso.isHidden = true
+            for presence in qso.servicePresence where presence.needsUpload {
+                presence.needsUpload = false
+            }
+        }
+        try? modelContext.save()
+
+        Task {
+            await loadSessions()
+            await loadOrphanActivations()
+        }
+    }
+
     // MARK: - Helpers
 
     func parkName(for reference: String) -> String? {
@@ -395,81 +471,5 @@ extension SessionsView {
 
     func updateMaintenanceTime() {
         maintenanceTimeRemaining = POTAClient.formatMaintenanceTimeRemaining()
-    }
-}
-
-// MARK: - Brag Sheet Generation
-
-extension SessionsView {
-    func generateAndShare(activation: POTAActivation) async {
-        isGeneratingShareImage = true
-        let meta = activationMetadata(for: activation)
-        let name = parkName(for: activation.parkReference)
-        let equipmentList = buildEquipmentList(for: activation)
-
-        let statisticianMode = UserDefaults.standard.bool(
-            forKey: "statisticianMode"
-        )
-        let advancedStats: ActivationStatistics? =
-            if statisticianMode {
-                ActivationStatistics.compute(from: activation, metadata: meta)
-            } else {
-                nil
-            }
-
-        if let image = await ActivationShareRenderer.renderWithMap(
-            activation: activation,
-            parkName: name,
-            myGrid: activation.qsos.first?.myGrid,
-            metadata: meta,
-            equipment: equipmentList,
-            statisticianStats: advancedStats
-        ) {
-            sharePreviewData = SharePreviewData(
-                image: image,
-                activation: activation,
-                parkName: name
-            )
-        }
-        isGeneratingShareImage = false
-        activationToShare = nil
-    }
-
-    private func buildEquipmentList(
-        for activation: POTAActivation
-    ) -> [ShareCardEquipmentItem] {
-        let includeEquipment = UserDefaults.standard.object(
-            forKey: "shareCardIncludeEquipment"
-        ) as? Bool ?? true
-        guard includeEquipment else {
-            return []
-        }
-
-        guard let session = findSession(for: activation) else {
-            return []
-        }
-
-        var items: [ShareCardEquipmentItem] = []
-        if let antenna = session.myAntenna, !antenna.isEmpty {
-            items.append(ShareCardEquipmentItem(
-                icon: "antenna.radiowaves.left.and.right", text: antenna
-            ))
-        }
-        if let key = session.myKey, !key.isEmpty {
-            items.append(ShareCardEquipmentItem(
-                icon: "pianokeys", text: key
-            ))
-        }
-        if let mic = session.myMic, !mic.isEmpty {
-            items.append(ShareCardEquipmentItem(
-                icon: "mic.fill", text: mic
-            ))
-        }
-        if let extra = session.extraEquipment, !extra.isEmpty {
-            items.append(ShareCardEquipmentItem(
-                icon: "wrench.and.screwdriver", text: extra
-            ))
-        }
-        return items
     }
 }

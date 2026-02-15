@@ -60,6 +60,7 @@ struct SessionsView: View {
     @State var maintenanceTimeRemaining: String?
     @State var maintenanceTimer: Timer?
 
+    @State var itemToDelete: ListItem?
     @State var activationToReject: POTAActivation?
     @State var activationToShare: POTAActivation?
     @State var activationToExport: POTAActivation?
@@ -162,6 +163,29 @@ struct SessionsView: View {
                         + "from POTA uploads."
                 )
             }
+        }
+        .alert(
+            "Delete Session",
+            isPresented: Binding(
+                get: { itemToDelete != nil },
+                set: { newValue in
+                    if !newValue {
+                        itemToDelete = nil
+                    }
+                }
+            )
+        ) {
+            Button("Delete", role: .destructive) {
+                if let item = itemToDelete {
+                    deleteItem(item)
+                }
+                itemToDelete = nil
+            }
+            Button("Cancel", role: .cancel) {
+                itemToDelete = nil
+            }
+        } message: {
+            Text(deleteConfirmationMessage)
         }
         .overlay { shareImageOverlay }
         .onChange(of: activationToShare) { _, newValue in
@@ -276,6 +300,13 @@ extension SessionsView {
                 Section(group.month) {
                     ForEach(group.items) { item in
                         listItemRow(item)
+                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                Button(role: .destructive) {
+                                    itemToDelete = item
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                            }
                     }
                 }
             }

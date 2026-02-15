@@ -254,7 +254,8 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | File | Purpose |
 |------|---------|
 | `SessionsView.swift` | Unified sessions list merging POTA activations and all sessions, with rich content |
-| `SessionsView+Actions.swift` | Data loading, POTA actions, and helpers for SessionsView |
+| `SessionsView+Actions.swift` | Data loading, POTA actions, session deletion, and helpers for SessionsView |
+| `SessionsView+Share.swift` | Brag sheet generation and equipment list building for share cards |
 | `SessionRow.swift` | Unified rich session row: timeline, conditions, badges, upload status |
 | `SessionDetailView.swift` | Session detail with equipment, photos, notes, spots, QSO list, edit button |
 | `SessionSpotsSection.swift` | Persisted spots display section for session detail (POTA highlighted, RBN collapsed) |
