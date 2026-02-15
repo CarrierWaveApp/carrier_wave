@@ -36,6 +36,22 @@ extension QSOStatistics {
         return info
     }
 
+    /// Hunter streak (UTC dates, QSOs with park hunts)
+    var hunterStreak: StreakInfo {
+        if let cached = cachedHunterStreak {
+            return cached
+        }
+        let hunterDates = Set(
+            cachedRealQSOs
+                .filter { $0.theirParkReference != nil && !$0.theirParkReference!.isEmpty }
+                .map(\.utcDateOnly)
+        )
+        let result = StreakCalculator.calculateStreak(from: hunterDates, useUTC: true)
+        let info = makeStreakInfo(id: "hunter", category: .hunter, result: result)
+        cachedHunterStreak = info
+        return info
+    }
+
     /// All mode streaks sorted by current streak length (UTC dates)
     var modeStreaks: [StreakInfo] {
         if let cached = cachedModeStreaks {

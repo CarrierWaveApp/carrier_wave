@@ -33,6 +33,12 @@ struct StreakDetailView: View {
                 Text("POTA Activations")
             }
 
+            Section {
+                StreakRow(streak: stats.hunterStreak)
+            } header: {
+                Text("Park Hunts")
+            }
+
             if !stats.modeStreaks.isEmpty {
                 Section {
                     ForEach(stats.modeStreaks.prefix(5)) { streak in
@@ -65,6 +71,7 @@ struct StreakDetailView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Label("All streaks use UTC dates", systemImage: "globe")
                     Label("POTA activations require 10+ QSOs", systemImage: "leaf")
+                    Label("Park hunts are QSOs with their park reference", systemImage: "binoculars")
                 }
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -139,6 +146,7 @@ struct StreakRow: View {
         switch streak.category {
         case .daily: .orange
         case .pota: .green
+        case .hunter: .teal
         case .mode: .blue
         case .band: .purple
         }

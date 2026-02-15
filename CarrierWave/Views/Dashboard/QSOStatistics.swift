@@ -20,6 +20,7 @@ final class QSOStatistics {
     // Streak cache storage (set by extension)
     var cachedDailyStreak: StreakInfo?
     var cachedPotaActivationStreak: StreakInfo?
+    var cachedHunterStreak: StreakInfo?
     var cachedModeStreaks: [StreakInfo]?
     var cachedBandStreaks: [StreakInfo]?
 

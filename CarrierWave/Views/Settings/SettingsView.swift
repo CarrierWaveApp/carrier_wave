@@ -289,6 +289,12 @@ struct SettingsMainView: View {
                 }
             }
 
+            NavigationLink {
+                DashboardMetricsSettingsView()
+            } label: {
+                Label("Dashboard Metrics", systemImage: "gauge.with.dots.needle.33percent")
+            }
+
             Picker("Appearance", selection: $appearanceMode) {
                 Text("System").tag("system")
                 Text("Light").tag("light")
