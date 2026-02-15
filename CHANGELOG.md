@@ -4,6 +4,13 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.33.1] - 2026-02-15
+
+### Changed
+- Redesign dashboard metrics settings with navigation-push pattern for clearer UX
+- Add metric subtitles, selection haptic, and VoiceOver selected trait to metric picker
+- Prevent selecting the same metric in both primary and secondary slots
+
 ## [1.33.0] - 2026-02-15
 
 ### Added
