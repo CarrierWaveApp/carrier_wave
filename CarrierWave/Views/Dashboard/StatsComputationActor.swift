@@ -17,6 +17,7 @@ struct StatsQSOSnapshot: Sendable {
     let myCallsign: String
     let theirGrid: String?
     let parkReference: String?
+    let theirParkReference: String?
     let importSource: ImportSource
     let qrzConfirmed: Bool
     let lotwConfirmed: Bool
@@ -52,6 +53,48 @@ struct ComputedStats: Sendable {
     var potaStreakLongestStart: Date?
     var potaStreakLongestEnd: Date?
     var potaStreakLastActive: Date?
+
+    // Hunter streak
+    var hunterStreakCurrent: Int = 0
+    var hunterStreakLongest: Int = 0
+    var hunterStreakCurrentStart: Date?
+    var hunterStreakLongestStart: Date?
+    var hunterStreakLongestEnd: Date?
+    var hunterStreakLastActive: Date?
+
+    // CW streak
+    var cwStreakCurrent: Int = 0
+    var cwStreakLongest: Int = 0
+    var cwStreakCurrentStart: Date?
+    var cwStreakLongestStart: Date?
+    var cwStreakLongestEnd: Date?
+    var cwStreakLastActive: Date?
+
+    // Phone streak
+    var phoneStreakCurrent: Int = 0
+    var phoneStreakLongest: Int = 0
+    var phoneStreakCurrentStart: Date?
+    var phoneStreakLongestStart: Date?
+    var phoneStreakLongestEnd: Date?
+    var phoneStreakLastActive: Date?
+
+    // Digital streak
+    var digitalStreakCurrent: Int = 0
+    var digitalStreakLongest: Int = 0
+    var digitalStreakCurrentStart: Date?
+    var digitalStreakLongestStart: Date?
+    var digitalStreakLongestEnd: Date?
+    var digitalStreakLastActive: Date?
+
+    // Count metrics
+    var qsosThisWeek: Int = 0
+    var qsosThisMonth: Int = 0
+    var qsosThisYear: Int = 0
+    var activationsThisMonth: Int = 0
+    var activationsThisYear: Int = 0
+    var huntsThisWeek: Int = 0
+    var huntsThisMonth: Int = 0
+    var newDXCCThisYear: Int = 0
 
     var qrzConfirmedCount: Int = 0
     var lotwConfirmedCount: Int = 0
@@ -219,6 +262,7 @@ actor StatsComputationActor {
                     myCallsign: qso.myCallsign,
                     theirGrid: qso.theirGrid,
                     parkReference: qso.parkReference,
+                    theirParkReference: qso.theirParkReference,
                     importSource: qso.importSource,
                     qrzConfirmed: qso.qrzConfirmed,
                     lotwConfirmed: qso.lotwConfirmed,
@@ -262,8 +306,11 @@ actor StatsComputationActor {
             onProgress: onProgress
         )
 
-        // Phase 3: Streaks
+        // Phase 3: Streaks (moved to Extensions for line count management)
         try await computeStreaks(into: &stats, from: realQSOs, onProgress: onProgress)
+
+        // Phase 4: Count metrics
+        try await computeCountMetrics(into: &stats, from: realQSOs, onProgress: onProgress)
 
         onProgress(1.0, "")
         return stats
@@ -315,165 +362,6 @@ actor StatsComputationActor {
         computeTopFavorites(into: &stats, from: realQSOs)
 
         return stats
-    }
-
-    private func computeStreaks(
-        into stats: inout ComputedStats,
-        from realQSOs: [StatsQSOSnapshot],
-        onProgress: @escaping @Sendable (Double, String) -> Void
-    ) async throws {
-        onProgress(0.85, "Computing daily streak...")
-
-        try Task.checkCancellation()
-        let dailyResult = computeDailyStreak(from: realQSOs)
-        stats.dailyStreakCurrent = dailyResult.current
-        stats.dailyStreakLongest = dailyResult.longest
-        stats.dailyStreakCurrentStart = dailyResult.currentStart
-        stats.dailyStreakLongestStart = dailyResult.longestStart
-        stats.dailyStreakLongestEnd = dailyResult.longestEnd
-        stats.dailyStreakLastActive = dailyResult.lastActive
-        onProgress(0.92, "Computing POTA streak...")
-
-        try Task.checkCancellation()
-        // Get activation groups for POTA streak
-        let parksOnly = realQSOs.filter { $0.parkReference != nil && !$0.parkReference!.isEmpty }
-        let activationGroups = Dictionary(grouping: parksOnly) { qso in
-            "\(qso.parkReference!)|\(Self.utcDateOnly(from: qso.timestamp).timeIntervalSince1970)"
-        }
-        let potaResult = computePOTAStreak(from: activationGroups)
-        stats.potaStreakCurrent = potaResult.current
-        stats.potaStreakLongest = potaResult.longest
-        stats.potaStreakCurrentStart = potaResult.currentStart
-        stats.potaStreakLongestStart = potaResult.longestStart
-        stats.potaStreakLongestEnd = potaResult.longestEnd
-        stats.potaStreakLastActive = potaResult.lastActive
-    }
-
-    private func computeDailyStreak(from qsos: [StatsQSOSnapshot]) -> StreakResult {
-        guard !qsos.isEmpty else {
-            return StreakResult(
-                current: 0, longest: 0, currentStart: nil,
-                longestStart: nil, longestEnd: nil, lastActive: nil
-            )
-        }
-
-        let calendar = Calendar.current
-        let uniqueDates = Set(qsos.map { calendar.startOfDay(for: $0.timestamp) }).sorted()
-
-        guard !uniqueDates.isEmpty else {
-            return StreakResult(
-                current: 0, longest: 0, currentStart: nil,
-                longestStart: nil, longestEnd: nil, lastActive: nil
-            )
-        }
-
-        let streakData = computeStreakFromDates(uniqueDates, using: calendar)
-        return StreakResult(
-            current: streakData.current,
-            longest: streakData.longest,
-            currentStart: streakData.currentStart,
-            longestStart: streakData.longestStart,
-            longestEnd: streakData.longestEnd,
-            lastActive: uniqueDates.last
-        )
-    }
-
-    private func computePOTAStreak(from activationGroups: [String: [StatsQSOSnapshot]])
-        -> StreakResult
-    {
-        // Get successful activations (10+ QSOs) and their dates
-        let successfulDates = activationGroups.values
-            .filter { $0.count >= 10 }
-            .compactMap { group -> Date? in
-                guard let first = group.first else {
-                    return nil
-                }
-                return Self.utcDateOnly(from: first.timestamp)
-            }
-
-        guard !successfulDates.isEmpty else {
-            return StreakResult(
-                current: 0, longest: 0, currentStart: nil,
-                longestStart: nil, longestEnd: nil, lastActive: nil
-            )
-        }
-
-        var calendar = Calendar.current
-        calendar.timeZone = TimeZone(identifier: "UTC")!
-
-        let uniqueDates = Set(successfulDates).sorted()
-
-        let streakData = computeStreakFromDates(uniqueDates, using: calendar)
-        return StreakResult(
-            current: streakData.current,
-            longest: streakData.longest,
-            currentStart: streakData.currentStart,
-            longestStart: streakData.longestStart,
-            longestEnd: streakData.longestEnd,
-            lastActive: uniqueDates.last
-        )
-    }
-
-    /// Shared streak computation logic for sorted unique dates
-    /// Matches the logic in StreakCalculator.findAllStreaks
-    private func computeStreakFromDates(_ uniqueDates: [Date], using calendar: Calendar)
-        -> StreakResult
-    {
-        var currentStreak = 0
-        var longestStreak = 0
-        var streakStart: Date?
-        var longestStreakStart: Date?
-        var longestStreakEnd: Date?
-        var previousDate: Date?
-
-        for date in uniqueDates {
-            if let prev = previousDate {
-                let daysDiff = calendar.dateComponents([.day], from: prev, to: date).day ?? 0
-                if daysDiff == 1 {
-                    // Consecutive day - extend streak
-                    currentStreak += 1
-                } else if daysDiff > 1 {
-                    // Gap found - save current streak if longest, then reset
-                    if currentStreak > longestStreak {
-                        longestStreak = currentStreak
-                        longestStreakStart = streakStart
-                        longestStreakEnd = prev
-                    }
-                    currentStreak = 1
-                    streakStart = date
-                }
-                // daysDiff == 0 means same day (shouldn't happen with Set dedup) - ignore
-            } else {
-                currentStreak = 1
-                streakStart = date
-            }
-            previousDate = date
-        }
-
-        if currentStreak > longestStreak {
-            longestStreak = currentStreak
-            longestStreakStart = streakStart
-            longestStreakEnd = previousDate
-        }
-
-        // Check if current streak is active (includes today or yesterday)
-        let today = calendar.startOfDay(for: Date())
-        let yesterday = calendar.date(byAdding: .day, value: -1, to: today)!
-        // Use calendar comparison instead of direct equality for robustness
-        let isActive =
-            previousDate.map {
-                calendar.isDate($0, inSameDayAs: today)
-                    || calendar.isDate($0, inSameDayAs: yesterday)
-            } ?? false
-
-        return StreakResult(
-            current: isActive ? currentStreak : 0,
-            longest: longestStreak,
-            currentStart: isActive ? streakStart : nil,
-            longestStart: longestStreakStart,
-            longestEnd: longestStreakEnd,
-            lastActive: previousDate
-        )
     }
 }
 
