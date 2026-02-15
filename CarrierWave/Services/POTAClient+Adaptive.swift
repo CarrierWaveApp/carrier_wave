@@ -19,6 +19,7 @@ struct POTADownloadState {
     var consecutiveSuccesses: Int = 0
     var consecutiveFailures: Int = 0
     var allFetched: [POTAFetchedQSO] = []
+    var remoteQSOMap: POTARemoteQSOMap = [:]
 }
 
 // MARK: - POTAClient Adaptive Download
@@ -37,6 +38,13 @@ extension POTAClient {
             let qsos = try await fetchActivationWithTimeout(activation)
             let fetched = qsos.compactMap { convertToFetchedQSO($0, activation: activation) }
             state.processedKeys.insert(key)
+
+            // Build dedup keys from raw remote QSOs for gap repair
+            let activationKey = buildActivationKeyForRemote(activation)
+            let dedupKeys = Set(qsos.compactMap { buildRemoteDedupKey($0) })
+            if !dedupKeys.isEmpty {
+                state.remoteQSOMap[activationKey] = dedupKeys
+            }
 
             debugLog.debug(
                 "Fetched \(activation.reference) \(activation.date): \(qsos.count) QSOs",
@@ -149,6 +157,50 @@ extension POTAClient {
             "Timeout/rate limit for \(ref) \(date) after \(elapsedStr)s: \(errorDesc)",
             service: .pota
         )
+    }
+}
+
+// MARK: - Remote Dedup Key Helpers
+
+extension POTAClient {
+    /// Build an activation key from a remote activation for gap repair matching.
+    /// Format: "PARKREF|CALLSIGN|YYYY-MM-DD"
+    func buildActivationKeyForRemote(_ activation: POTARemoteActivation) -> String {
+        "\(activation.reference.uppercased())|\(activation.callsign.uppercased())|\(activation.date)"
+    }
+
+    /// Build a dedup key from a remote QSO for gap repair comparison.
+    /// Format: "WORKEDCALL|BAND|MODE|HHMM" where HHMM is 2-minute bucketed.
+    func buildRemoteDedupKey(_ qso: POTARemoteQSO) -> String? {
+        guard let band = qso.band, let mode = qso.mode else {
+            return nil
+        }
+        let call = qso.workedCallsign.uppercased().trimmingCharacters(in: .whitespaces)
+        let bandStr = band.uppercased().trimmingCharacters(in: .whitespaces)
+        let modeStr = mode.uppercased().trimmingCharacters(in: .whitespaces)
+
+        // Parse qsoDateTime ("yyyy-MM-dd'T'HH:mm:ss") to extract HH:MM bucketed
+        let time = bucketRemoteTime(qso.qsoDateTime)
+        return "\(call)|\(bandStr)|\(modeStr)|\(time)"
+    }
+
+    /// Bucket a remote QSO datetime string to 2-minute resolution.
+    /// Input format: "yyyy-MM-dd'T'HH:mm:ss". Returns "HHMM".
+    private func bucketRemoteTime(_ dateTimeStr: String) -> String {
+        // Extract HH:mm from the datetime string (chars 11-15)
+        let components = dateTimeStr.split(separator: "T")
+        guard components.count == 2 else {
+            return "0000"
+        }
+        let timeParts = components[1].split(separator: ":")
+        guard timeParts.count >= 2,
+              let hour = Int(timeParts[0]),
+              let minute = Int(timeParts[1])
+        else {
+            return "0000"
+        }
+        let bucketed = minute - (minute % 2)
+        return String(format: "%02d%02d", hour, bucketed)
     }
 }
 

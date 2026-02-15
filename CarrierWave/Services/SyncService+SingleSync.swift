@@ -96,9 +96,10 @@ extension SyncService {
 
         // Download with timeout
         syncPhase = .downloading(service: .pota)
-        let qsos = try await withTimeout(seconds: syncTimeoutSeconds, service: .pota) {
+        let (qsos, remoteMap) = try await withTimeout(seconds: syncTimeoutSeconds, service: .pota) {
             try await self.potaClient.fetchAllQSOs()
         }
+        potaRemoteQSOMap = remoteMap
         let fetched = qsos.map { FetchedQSO.fromPOTA($0) }
 
         syncPhase = .processing

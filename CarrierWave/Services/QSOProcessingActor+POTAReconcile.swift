@@ -72,7 +72,7 @@ extension QSOProcessingActor {
         }
     }
 
-    private func fetchPOTAPresenceRecords(context: ModelContext) throws -> [ServicePresence] {
+    func fetchPOTAPresenceRecords(context: ModelContext) throws -> [ServicePresence] {
         let descriptor = FetchDescriptor<ServicePresence>()
         let allPresence = try context.fetch(descriptor)
         return allPresence.filter { $0.serviceType == .pota }

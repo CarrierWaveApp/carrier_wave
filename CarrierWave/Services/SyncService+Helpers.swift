@@ -141,6 +141,11 @@ extension SyncService {
         // Reconcile POTA presence against job log
         let potaReconcileResult = await reconcilePOTAPresenceAsync()
 
+        // POTA QSO-level gap repair: compare local QSOs against remote per-activation data
+        if let remoteMap = potaRemoteQSOMap, !remoteMap.isEmpty {
+            await repairPOTAGapsAsync(remoteQSOMap: remoteMap)
+        }
+
         // Common repair and refresh
         await performDataRepairs()
 

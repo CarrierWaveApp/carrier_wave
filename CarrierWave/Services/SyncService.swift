@@ -48,6 +48,9 @@ class SyncService: ObservableObject {
     let lotwClient: LoTWClient
     let clublogClient: ClubLogClient
 
+    /// Remote QSO map from the most recent POTA download, used for gap repair.
+    var potaRemoteQSOMap: POTARemoteQSOMap?
+
     // Activity detection (internal for extension access)
     var activityDetector: ActivityDetector?
     var activityReporter: ActivityReporter?

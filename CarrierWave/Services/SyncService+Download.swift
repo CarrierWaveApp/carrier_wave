@@ -141,9 +141,10 @@ extension SyncService {
         }
 
         do {
-            let qsos = try await withTimeout(seconds: timeout, service: .pota) {
+            let (qsos, remoteMap) = try await withTimeout(seconds: timeout, service: .pota) {
                 try await self.potaClient.fetchAllQSOs()
             }
+            potaRemoteQSOMap = remoteMap
             debugLog.info("Downloaded \(qsos.count) QSOs from POTA", service: .pota)
             let fetched = qsos.map { FetchedQSO.fromPOTA($0) }
             for (index, qso) in fetched.prefix(5).enumerated() {

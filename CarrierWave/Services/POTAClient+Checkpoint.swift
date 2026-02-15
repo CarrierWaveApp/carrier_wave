@@ -95,7 +95,7 @@ extension POTAClient {
     /// On first sync: processes all activations
     /// On subsequent syncs: only processes new activations not in saved state
     /// Adjusts batch size based on timeouts and API responsiveness
-    func fetchAllQSOs() async throws -> [POTAFetchedQSO] {
+    func fetchAllQSOs() async throws -> (qsos: [POTAFetchedQSO], remoteQSOMap: POTARemoteQSOMap) {
         let debugLog = SyncDebugLog.shared
         let activations = try await fetchActivations()
 
@@ -110,7 +110,7 @@ extension POTAClient {
         guard !remainingActivations.isEmpty else {
             debugLog.info("No new activations to process (incremental sync)", service: .pota)
             clearDownloadCheckpoint()
-            return mutableState.allFetched
+            return (qsos: mutableState.allFetched, remoteQSOMap: mutableState.remoteQSOMap)
         }
 
         debugLog.info("Processing \(remainingActivations.count) new activations", service: .pota)
@@ -118,7 +118,7 @@ extension POTAClient {
         try await processAllBatches(remainingActivations, state: &mutableState)
         finalizeDownload(state: mutableState, newActivationCount: remainingActivations.count)
 
-        return mutableState.allFetched
+        return (qsos: mutableState.allFetched, remoteQSOMap: mutableState.remoteQSOMap)
     }
 
     /// Initialize download state by merging persistent sync state with any in-progress checkpoint
