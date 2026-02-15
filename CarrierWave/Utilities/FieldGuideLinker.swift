@@ -32,9 +32,15 @@ enum FieldGuideLinker {
         }
     }
 
-    /// Open the outing checklists tab in CW Field Guide
-    static func openChecklists() {
-        guard let url = URL(string: "cwfieldguide://checklist") else {
+    /// Open the outing checklists tab in CW Field Guide, optionally pre-selecting a radio
+    static func openChecklists(radioName: String? = nil) {
+        var components = URLComponents()
+        components.scheme = "cwfieldguide"
+        components.host = "checklist"
+        if let radioName, let radioID = fieldGuideID(for: radioName) {
+            components.queryItems = [URLQueryItem(name: "radio", value: radioID)]
+        }
+        guard let url = components.url else {
             return
         }
         UIApplication.shared.open(url) { success in

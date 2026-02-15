@@ -184,6 +184,32 @@ struct LoggerView: View {
                 )
                 .presentationDetents([.height(280)])
             }
+            .sheet(isPresented: $showRigEditSheet) {
+                SessionEquipmentEditSheet(
+                    radio: Binding(
+                        get: { sessionManager?.activeSession?.myRig },
+                        set: { sessionManager?.activeSession?.myRig = $0 }
+                    ),
+                    antenna: Binding(
+                        get: { sessionManager?.activeSession?.myAntenna },
+                        set: { sessionManager?.activeSession?.myAntenna = $0 }
+                    ),
+                    key: Binding(
+                        get: { sessionManager?.activeSession?.myKey },
+                        set: { sessionManager?.activeSession?.myKey = $0 }
+                    ),
+                    mic: Binding(
+                        get: { sessionManager?.activeSession?.myMic },
+                        set: { sessionManager?.activeSession?.myMic = $0 }
+                    ),
+                    extraEquipment: Binding(
+                        get: { sessionManager?.activeSession?.extraEquipment },
+                        set: { sessionManager?.activeSession?.extraEquipment = $0 }
+                    ),
+                    mode: sessionManager?.activeSession?.mode ?? "CW"
+                )
+                .presentationDetents([.medium, .large])
+            }
             .sheet(isPresented: $showHiddenQSOsSheet) {
                 HiddenQSOsSheet(sessionId: sessionManager?.activeSession?.id)
             }
@@ -348,9 +374,11 @@ struct LoggerView: View {
     @State private var showParkEditSheet = false
     @State private var editingParkReference = ""
 
-    // Session band/mode editing
+    // Session band/mode/rig editing
     @State private var showBandEditSheet = false
     @State private var showModeEditSheet = false
+    @State private var showRigEditSheet = false
+    @State private var showParkInfoPopover = false
 
     /// Session end/delete confirmation
     @State private var showEndSessionConfirmation = false
@@ -1134,6 +1162,10 @@ struct LoggerView: View {
 
                 Spacer()
 
+                Text(session.formattedDuration)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.secondary)
+
                 Text("\(displayQSOs.count) QSOs")
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(.green)
@@ -1181,85 +1213,10 @@ struct LoggerView: View {
 
             HStack {
                 if session.activationType == .pota {
-                    Button {
-                        editingParkReference = session.parkReference ?? ""
-                        showParkEditSheet = true
-                    } label: {
-                        HStack(spacing: 2) {
-                            parkHeaderLabel(session.parkReference)
-                            Image(systemName: "pencil")
-                                .font(.system(size: 8))
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    .buttonStyle(.plain)
+                    parkHeaderView(session)
                 }
 
-                if let freq = session.frequency {
-                    Text(FrequencyFormatter.formatWithUnit(freq))
-                        .font(.caption.monospaced())
-
-                    Button {
-                        showBandEditSheet = true
-                    } label: {
-                        HStack(spacing: 2) {
-                            if let band = session.band {
-                                Text(band)
-                            } else {
-                                Text("Band")
-                                    .foregroundStyle(.secondary)
-                            }
-                            Image(systemName: "chevron.up.chevron.down")
-                                .font(.system(size: 8))
-                                .foregroundStyle(.secondary)
-                        }
-                        .font(.caption.weight(.medium))
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(Color.blue.opacity(0.2))
-                        .clipShape(Capsule())
-                    }
-                    .buttonStyle(.plain)
-                } else if session.activationType == .pota
-                    || session.activationType == .sota
-                {
-                    // Hunt-first: orange "Set Freq" capsule for POTA/SOTA without frequency
-                    Button {
-                        showBandEditSheet = true
-                    } label: {
-                        HStack(spacing: 2) {
-                            Text("Set Freq")
-                            Image(systemName: "chevron.up.chevron.down")
-                                .font(.system(size: 8))
-                                .foregroundStyle(.secondary)
-                        }
-                        .font(.caption.weight(.medium))
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(Color.orange.opacity(0.2))
-                        .clipShape(Capsule())
-                    }
-                    .buttonStyle(.plain)
-                } else {
-                    // Casual session without frequency: standard blue band picker
-                    Button {
-                        showBandEditSheet = true
-                    } label: {
-                        HStack(spacing: 2) {
-                            Text("Band")
-                                .foregroundStyle(.secondary)
-                            Image(systemName: "chevron.up.chevron.down")
-                                .font(.system(size: 8))
-                                .foregroundStyle(.secondary)
-                        }
-                        .font(.caption.weight(.medium))
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(Color.blue.opacity(0.2))
-                        .clipShape(Capsule())
-                    }
-                    .buttonStyle(.plain)
-                }
+                freqBandCapsule(session)
 
                 Button {
                     showModeEditSheet = true
@@ -1278,12 +1235,7 @@ struct LoggerView: View {
                 }
                 .buttonStyle(.plain)
 
-                Text(session.formattedDuration)
-                    .font(.caption.weight(.medium))
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Color.blue.opacity(0.2))
-                    .clipShape(Capsule())
+                equipmentCapsule(session)
 
                 Spacer()
 
@@ -1305,39 +1257,152 @@ struct LoggerView: View {
         .background(Color(.secondarySystemGroupedBackground))
     }
 
-    /// Build a compact label for park(s) in the session header
+    /// Park header: tappable ref(s) for info popover with edit option
     @ViewBuilder
-    private func parkHeaderLabel(_ parkRef: String?) -> some View {
+    private func parkHeaderView(_ session: LoggingSession) -> some View {
+        let parkRef = session.parkReference
+        Button {
+            showParkInfoPopover = true
+        } label: {
+            parkRefLabels(parkRef)
+        }
+        .buttonStyle(.plain)
+        .popover(isPresented: $showParkInfoPopover) {
+            parkInfoContent(parkRef)
+        }
+    }
+
+    /// Park reference label(s) — always shows ref numbers
+    @ViewBuilder
+    private func parkRefLabels(_ parkRef: String?) -> some View {
         if let parkRef, !parkRef.isEmpty {
             let parks = ParkReference.split(parkRef)
-            if parks.count > 1 {
-                // Multi-park: show refs as compact chips
-                HStack(spacing: 4) {
-                    ForEach(parks, id: \.self) { park in
-                        Text(park)
-                            .font(.caption.monospaced().weight(.medium))
-                            .foregroundStyle(.green)
-                            .padding(.horizontal, 4)
-                            .padding(.vertical, 1)
-                            .background(Color.green.opacity(0.1))
-                            .clipShape(Capsule())
-                    }
+            HStack(spacing: 4) {
+                ForEach(parks, id: \.self) { park in
+                    Text(park)
+                        .font(.caption.monospaced().weight(.medium))
+                        .foregroundStyle(.green)
+                        .padding(.horizontal, 4)
+                        .padding(.vertical, 1)
+                        .background(Color.green.opacity(0.1))
+                        .clipShape(Capsule())
                 }
-            } else if let name = lookupParkName(parkRef) {
-                Text(name)
-                    .font(.caption)
-                    .foregroundStyle(.green)
-                    .lineLimit(1)
-            } else {
-                Text(parkRef)
-                    .font(.caption.monospaced())
-                    .foregroundStyle(.green)
             }
         } else {
             Text("No park")
                 .font(.caption)
                 .foregroundStyle(.orange)
         }
+    }
+
+    /// Popover content showing park name(s) with edit button
+    @ViewBuilder
+    private func parkInfoContent(_ parkRef: String?) -> some View {
+        if let parkRef, !parkRef.isEmpty {
+            let parks = ParkReference.split(parkRef)
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(parks, id: \.self) { ref in
+                    HStack(spacing: 6) {
+                        Text(ref)
+                            .font(.caption.monospaced().weight(.semibold))
+                            .foregroundStyle(.green)
+                        if let name = POTAParksCache.shared.nameSync(for: ref) {
+                            Text(name)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+
+                Divider()
+
+                Button {
+                    showParkInfoPopover = false
+                    editingParkReference = parkRef
+                    showParkEditSheet = true
+                } label: {
+                    Label("Edit Parks", systemImage: "pencil")
+                        .font(.caption.weight(.medium))
+                }
+            }
+            .padding()
+            .presentationCompactAdaptation(.popover)
+        }
+    }
+
+    /// Merged frequency + band capsule (or "Set Freq" / "Band" when unset)
+    @ViewBuilder
+    private func freqBandCapsule(_ session: LoggingSession) -> some View {
+        if let freq = session.frequency {
+            bandCapsule(color: .blue) {
+                Text(FrequencyFormatter.format(freq)).fontDesign(.monospaced)
+                if let band = session.band {
+                    Text(band)
+                }
+            }
+        } else if session.activationType == .pota || session.activationType == .sota {
+            bandCapsule(color: .orange) { Text("Set Freq") }
+        } else {
+            bandCapsule(color: .blue) { Text("Band").foregroundStyle(.secondary) }
+        }
+    }
+
+    private func bandCapsule(
+        color: Color, @ViewBuilder content: () -> some View
+    ) -> some View {
+        Button { showBandEditSheet = true } label: {
+            HStack(spacing: 4) {
+                content()
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.system(size: 8))
+                    .foregroundStyle(.secondary)
+            }
+            .font(.caption.weight(.medium))
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(color.opacity(0.2))
+            .clipShape(Capsule())
+        }
+        .buttonStyle(.plain)
+    }
+
+    /// Equipment capsule — shows radio name, equipment count, or placeholder
+    private func equipmentCapsule(_ session: LoggingSession) -> some View {
+        Button {
+            showRigEditSheet = true
+        } label: {
+            HStack(spacing: 2) {
+                Text(equipmentCapsuleLabel(session))
+                    .lineLimit(1)
+                    .foregroundStyle(hasAnyEquipment(session) ? .primary : .secondary)
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.system(size: 8))
+                    .foregroundStyle(.secondary)
+            }
+            .font(.caption.weight(.medium))
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(Color.blue.opacity(0.2))
+            .clipShape(Capsule())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func hasAnyEquipment(_ session: LoggingSession) -> Bool {
+        [session.myRig, session.myAntenna, session.myKey, session.myMic]
+            .contains { $0 != nil && !$0!.isEmpty }
+    }
+
+    private func equipmentCapsuleLabel(_ session: LoggingSession) -> String {
+        if let rig = session.myRig, !rig.isEmpty {
+            let extras = [session.myAntenna, session.myKey, session.myMic]
+                .compactMap { $0 }.filter { !$0.isEmpty }.count
+            return extras > 0 ? "\(rig) +\(extras)" : rig
+        }
+        if hasAnyEquipment(session) {
+            return "Equipment"
+        }
+        return "Equip"
     }
 
     private func formatWebSDRDuration(_ duration: TimeInterval) -> String {
@@ -1637,7 +1702,7 @@ struct LoggerView: View {
         case .map: executeMapCommand()
         case let .note(text): executeNoteCommand(text)
         case .manual: executeManualCommand()
-        case .checklist: FieldGuideLinker.openChecklists()
+        case .checklist: FieldGuideLinker.openChecklists(radioName: sessionManager?.activeSession?.myRig)
         default: executeSheetCommand(command)
         }
     }
@@ -1651,6 +1716,7 @@ struct LoggerView: View {
         case .help: showHelpSheet = true
         case .websdr: showWebSDRPanel = true
         case .band: showBandEditSheet = true
+        case .rig: showRigEditSheet = true
         default: break
         }
     }

@@ -50,6 +50,9 @@ enum LoggerCommand: Equatable {
     /// Show band picker with recommended frequencies
     case band
 
+    /// Change radio/rig
+    case rig
+
     /// Open outing checklists in CW Field Guide
     case checklist
 
@@ -63,6 +66,7 @@ enum LoggerCommand: Equatable {
         FREQ <freq>     - Set frequency
                           e.g., 14.060, 14060 kHz, 14.060 MHz
         BAND            - Pick band with recommended frequencies
+        RIG             - Change equipment (radio, antenna, key)
         <mode>          - Set mode (CW, SSB, FT8, etc.)
         SPOT [comment]  - Self-spot to POTA
                           e.g., SPOT QRT, SPOT QSY
@@ -128,6 +132,8 @@ enum LoggerCommand: Equatable {
             "Record from WebSDR"
         case .band:
             "Pick band with recommended frequencies"
+        case .rig:
+            "Change equipment"
         }
     }
 
@@ -166,6 +172,8 @@ enum LoggerCommand: Equatable {
             "radio"
         case .band:
             "list.bullet.rectangle.portrait"
+        case .rig:
+            "radio"
         }
     }
 
@@ -309,6 +317,8 @@ enum LoggerCommand: Equatable {
         switch upper {
         case "BAND":
             .band
+        case "RIG":
+            .rig
         case "SOLAR":
             .solar
         case "WEATHER",
@@ -357,6 +367,11 @@ extension LoggerCommand {
         CommandSuggestion(
             command: "BAND", description: "Pick band with live spots",
             icon: "list.bullet.rectangle.portrait", prefixes: ["BA"], exact: ["B"]
+        ),
+        // Rig
+        CommandSuggestion(
+            command: "RIG", description: "Change equipment",
+            icon: "radio", prefixes: ["RI"]
         ),
         // Modes
         CommandSuggestion(

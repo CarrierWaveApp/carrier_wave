@@ -4,6 +4,15 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Add RIG logger command to edit equipment (radio, antenna, key, mic) during an active session
+- Add tappable equipment capsule to logger session header row 2
+
+### Changed
+- Move session duration from row 2 capsule to row 1 (next to QSO count) to free horizontal space
+- Merge frequency and band into a single capsule (e.g., "14.060 20m") instead of separate text + chip
+- CHECKLIST logger command now passes the session's radio to CW Field Guide, pre-selecting radio-specific checklist items
+
 ## [1.32.3] - 2026-02-15
 
 ### Changed
