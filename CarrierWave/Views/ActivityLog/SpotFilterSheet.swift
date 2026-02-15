@@ -240,8 +240,12 @@ struct FlowLayout: Layout {
         subviews: Subviews,
         cache _: inout ()
     ) -> CGSize {
-        let result = layout(subviews: subviews, width: proposal.width ?? 0)
-        return result.size
+        let maxWidth = proposal.width ?? .infinity
+        let result = layout(subviews: subviews, width: maxWidth)
+        return CGSize(
+            width: min(result.size.width, maxWidth),
+            height: result.size.height
+        )
     }
 
     func placeSubviews(
@@ -250,11 +254,12 @@ struct FlowLayout: Layout {
         subviews: Subviews,
         cache _: inout ()
     ) {
-        let result = layout(subviews: subviews, width: proposal.width ?? bounds.width)
+        let result = layout(subviews: subviews, width: bounds.width)
         for (index, position) in result.positions.enumerated() {
+            let remainingWidth = bounds.width - position.x
             subviews[index].place(
                 at: CGPoint(x: bounds.minX + position.x, y: bounds.minY + position.y),
-                proposal: ProposedViewSize(subviews[index].sizeThatFits(.unspecified))
+                proposal: ProposedViewSize(width: remainingWidth, height: nil)
             )
         }
     }
@@ -274,18 +279,19 @@ struct FlowLayout: Layout {
         var maxWidth: CGFloat = 0
 
         for subview in subviews {
-            let size = subview.sizeThatFits(.unspecified)
+            let idealSize = subview.sizeThatFits(.unspecified)
+            let itemWidth = min(idealSize.width, width)
 
-            if currentX + size.width > width, currentX > 0 {
+            if currentX + itemWidth > width, currentX > 0 {
                 currentX = 0
                 currentY += lineHeight + spacing
                 lineHeight = 0
             }
 
             positions.append(CGPoint(x: currentX, y: currentY))
-            lineHeight = max(lineHeight, size.height)
-            currentX += size.width + spacing
-            maxWidth = max(maxWidth, currentX - spacing)
+            lineHeight = max(lineHeight, idealSize.height)
+            currentX += itemWidth + spacing
+            maxWidth = max(maxWidth, min(currentX - spacing, width))
         }
 
         return LayoutResult(
