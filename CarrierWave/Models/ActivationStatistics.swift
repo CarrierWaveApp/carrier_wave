@@ -15,7 +15,6 @@ struct ActivationStatistics {
     let modeDistribution: [ModeDistribution]
     let rst: RSTStatistics?
     let uniqueStates: Int
-    let uniqueDXCC: Int
     let uniqueGrids: Int
 
     static func compute(
@@ -35,7 +34,6 @@ struct ActivationStatistics {
             modeDistribution: computeModeDistribution(qsos),
             rst: RSTStatistics.compute(from: qsos),
             uniqueStates: Set(qsos.compactMap(\.state)).count,
-            uniqueDXCC: Set(qsos.compactMap(\.dxcc)).count,
             uniqueGrids: Set(
                 qsos.compactMap(\.theirGrid)
                     .map { String($0.prefix(4)) }
@@ -108,6 +106,10 @@ struct TimingStatistics {
     let meanIntervalSeconds: Double
     let medianIntervalSeconds: Double
     let stdDevIntervalSeconds: Double
+    let minIntervalSeconds: Double
+    let p25IntervalSeconds: Double
+    let p75IntervalSeconds: Double
+    let maxIntervalSeconds: Double
     let peak15MinRate: Double // QSOs in best 15-min window
 
     static func compute(
@@ -127,6 +129,10 @@ struct TimingStatistics {
             meanIntervalSeconds: mean,
             medianIntervalSeconds: percentile(sorted, at: 0.5),
             stdDevIntervalSeconds: sqrt(variance),
+            minIntervalSeconds: sorted.first ?? 0,
+            p25IntervalSeconds: percentile(sorted, at: 0.25),
+            p75IntervalSeconds: percentile(sorted, at: 0.75),
+            maxIntervalSeconds: sorted.last ?? 0,
             peak15MinRate: computePeak15MinRate(qsos: qsos)
         )
     }
@@ -174,31 +180,74 @@ struct ModeDistribution: Identifiable {
     }
 }
 
+// MARK: - RSTComponentBucket
+
+struct RSTComponentBucket: Identifiable {
+    let value: Int
+    let count: Int
+
+    var id: Int {
+        value
+    }
+}
+
+// MARK: - ParsedRST
+
+private struct ParsedRST {
+    let readability: Int // 1-5
+    let signal: Int // 1-9
+    let tone: Int? // 1-9, CW only
+}
+
 // MARK: - RSTStatistics
 
 struct RSTStatistics {
-    let avgSent: Double?
-    let medianSent: Double?
-    let avgReceived: Double?
-    let medianReceived: Double?
+    // MARK: Internal
+
+    let sentR: [RSTComponentBucket]
+    let sentS: [RSTComponentBucket]
+    let sentT: [RSTComponentBucket] // CW only; empty for phone
+    let receivedR: [RSTComponentBucket]
+    let receivedS: [RSTComponentBucket]
+    let receivedT: [RSTComponentBucket]
 
     static func compute(from qsos: [QSO]) -> RSTStatistics? {
-        let sentValues = qsos.compactMap {
-            $0.rstSent.flatMap { Double($0) }
-        }
-        let recvValues = qsos.compactMap {
-            $0.rstReceived.flatMap { Double($0) }
-        }
-        guard !sentValues.isEmpty || !recvValues.isEmpty else {
+        let sentParsed = qsos.compactMap { $0.rstSent.flatMap(parseRST) }
+        let recvParsed = qsos.compactMap { $0.rstReceived.flatMap(parseRST) }
+        guard !sentParsed.isEmpty || !recvParsed.isEmpty else {
             return nil
         }
         return RSTStatistics(
-            avgSent: sentValues.isEmpty ? nil : sentValues.reduce(0, +) / Double(sentValues.count),
-            medianSent: sentValues.isEmpty ? nil : percentile(sentValues.sorted(), at: 0.5),
-            avgReceived: recvValues.isEmpty
-                ? nil : recvValues.reduce(0, +) / Double(recvValues.count),
-            medianReceived: recvValues.isEmpty ? nil : percentile(recvValues.sorted(), at: 0.5)
+            sentR: bucketize(sentParsed.map(\.readability)),
+            sentS: bucketize(sentParsed.map(\.signal)),
+            sentT: bucketize(sentParsed.compactMap(\.tone)),
+            receivedR: bucketize(recvParsed.map(\.readability)),
+            receivedS: bucketize(recvParsed.map(\.signal)),
+            receivedT: bucketize(recvParsed.compactMap(\.tone))
         )
+    }
+
+    // MARK: Private
+
+    private static func parseRST(_ rst: String) -> ParsedRST? {
+        let digits = rst.compactMap(\.wholeNumberValue)
+        guard digits.count >= 2 else {
+            return nil
+        }
+        let tone = digits.count >= 3 ? digits[2] : nil
+        return ParsedRST(readability: digits[0], signal: digits[1], tone: tone)
+    }
+
+    private static func bucketize(_ values: [Int]) -> [RSTComponentBucket] {
+        guard !values.isEmpty else {
+            return []
+        }
+        var counts: [Int: Int] = [:]
+        for val in values {
+            counts[val, default: 0] += 1
+        }
+        return counts.map { RSTComponentBucket(value: $0.key, count: $0.value) }
+            .sorted { $0.value > $1.value }
     }
 }
 

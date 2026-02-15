@@ -334,7 +334,7 @@ extension POTAActivationDetailView {
         }
     }
 
-    func buildMetadataItems() -> [MetadataItem] {
+    private func buildMetadataItems() -> [MetadataItem] {
         var items: [MetadataItem] = []
         // Activity stats
         let qsoLabel = "\(activation.qsoCount) QSO\(activation.qsoCount == 1 ? "" : "s")"

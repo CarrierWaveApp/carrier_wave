@@ -92,7 +92,7 @@ struct ActivationShareCardStats: View {
     let qsoCount: Int
     let duration: String
     let bandsCount: Int
-    let modesCount: Int
+    let modes: [String]
     var qsoRate: Double?
     var watts: Int?
     var avgDistanceKm: Double?
@@ -120,8 +120,8 @@ struct ActivationShareCardStats: View {
                     label: bandsCount == 1 ? "Band" : "Bands"
                 )
                 ShareCardStatItem(
-                    value: "\(modesCount)",
-                    label: modesCount == 1 ? "Mode" : "Modes"
+                    value: modes.joined(separator: " "),
+                    label: modes.count == 1 ? "Mode" : "Modes"
                 )
             }
             if hasDetailRow {

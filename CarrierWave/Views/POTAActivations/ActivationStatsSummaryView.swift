@@ -84,31 +84,94 @@ private extension ActivationStatsSummaryView {
     }
 
     func rstSection(_ rst: RSTStatistics) -> some View {
-        StatSection(title: "RST") {
-            if let avg = rst.avgSent {
-                StatRow(
-                    label: "Avg sent",
-                    value: String(format: "%.0f", avg)
-                )
+        VStack(alignment: .leading, spacing: 4) {
+            Text("RST")
+                .font(.caption)
+                .fontWeight(.semibold)
+                .foregroundStyle(.secondary)
+            if !rst.sentR.isEmpty {
+                rstComponentRow("Sent R", buckets: rst.sentR)
+                rstComponentRow("Sent S", buckets: rst.sentS)
             }
-            if let med = rst.medianSent {
-                StatRow(
-                    label: "Median sent",
-                    value: String(format: "%.0f", med)
-                )
+            if !rst.sentT.isEmpty {
+                rstComponentRow("Sent T", buckets: rst.sentT)
             }
-            if let avg = rst.avgReceived {
-                StatRow(
-                    label: "Avg rcvd",
-                    value: String(format: "%.0f", avg)
-                )
+            if !rst.receivedR.isEmpty {
+                rstComponentRow("Rcvd R", buckets: rst.receivedR)
+                rstComponentRow("Rcvd S", buckets: rst.receivedS)
             }
-            if let med = rst.medianReceived {
-                StatRow(
-                    label: "Median rcvd",
-                    value: String(format: "%.0f", med)
-                )
+            if !rst.receivedT.isEmpty {
+                rstComponentRow("Rcvd T", buckets: rst.receivedT)
             }
+        }
+    }
+
+    func rstComponentRow(
+        _ label: String,
+        buckets: [RSTComponentBucket]
+    ) -> some View {
+        let sorted = Array(
+            buckets.sorted { $0.value > $1.value }.prefix(6)
+        )
+        let total = sorted.reduce(0) { $0 + $1.count }
+        let radius: CGFloat = 4
+        return HStack(spacing: 4) {
+            Text(label)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .frame(width: 48, alignment: .leading)
+            GeometryReader { geo in
+                HStack(spacing: 0) {
+                    ForEach(
+                        Array(sorted.enumerated()),
+                        id: \.element.id
+                    ) { idx, bucket in
+                        let fraction = CGFloat(bucket.count)
+                            / CGFloat(max(total, 1))
+                        let isFirst = idx == 0
+                        let isLast = idx == sorted.count - 1
+                        Text("\(bucket.value)")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundStyle(.white)
+                            .frame(
+                                width: max(
+                                    fraction * geo.size.width, 20
+                                ),
+                                height: 18
+                            )
+                            .background(
+                                rstBarColor(bucket.value)
+                                    .opacity(0.7)
+                            )
+                            .clipShape(
+                                UnevenRoundedRectangle(
+                                    topLeadingRadius: isFirst
+                                        ? radius : 0,
+                                    bottomLeadingRadius: isFirst
+                                        ? radius : 0,
+                                    bottomTrailingRadius: isLast
+                                        ? radius : 0,
+                                    topTrailingRadius: isLast
+                                        ? radius : 0
+                                )
+                            )
+                    }
+                }
+            }
+            .frame(height: 18)
+        }
+    }
+
+    func rstBarColor(_ value: Int) -> Color {
+        switch value {
+        case 9: .green
+        case 8: .teal
+        case 7: .blue
+        case 6: .indigo
+        case 5: .purple
+        case 4: .orange
+        case 3: .red
+        default: .gray
         }
     }
 
@@ -116,9 +179,6 @@ private extension ActivationStatsSummaryView {
         StatSection(title: "Entities") {
             if stats.uniqueStates > 0 {
                 StatRow(label: "States", value: "\(stats.uniqueStates)")
-            }
-            if stats.uniqueDXCC > 0 {
-                StatRow(label: "DXCC", value: "\(stats.uniqueDXCC)")
             }
             if stats.uniqueGrids > 0 {
                 StatRow(label: "Grids", value: "\(stats.uniqueGrids)")
