@@ -4,7 +4,10 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.32.1] - 2026-02-14
+
 ### Added
+- Extract park references from ADIF comment field when MY_SIG_INFO is missing (WSJT-X compatibility)
 - Add Club Log as an optional sync service — bidirectional ADIF sync with batch upload (putlogs.php), download (getadif.php), incremental date-based sync, and real-time single-QSO upload support
 - Club Log settings view with email, app password, callsign, and API key configuration
 - Club Log service row on dashboard with sync status, pending counts, and detail sheet

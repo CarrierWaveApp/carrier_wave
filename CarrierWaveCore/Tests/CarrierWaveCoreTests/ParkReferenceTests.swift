@@ -174,4 +174,44 @@ struct ParkReferenceTests {
         #expect(ParkReference.sanitizeMulti("3687, 11027") == nil)
         #expect(ParkReference.sanitizeMulti("") == nil)
     }
+
+    // MARK: - Free Text Extraction Tests
+
+    @Test("Extract park reference from WSJT-X style comment")
+    func extractFromCommentSimple() {
+        #expect(ParkReference.extractFromFreeText("K-1234") == "K-1234")
+        #expect(ParkReference.extractFromFreeText("POTA K-1234") == "K-1234")
+        #expect(ParkReference.extractFromFreeText("at US-0189") == "US-0189")
+    }
+
+    @Test("Extract park reference embedded in longer text")
+    func extractFromCommentEmbedded() {
+        #expect(ParkReference.extractFromFreeText("Activating K-1234 today") == "K-1234")
+        #expect(ParkReference.extractFromFreeText("POTA US-0189 FT8") == "US-0189")
+    }
+
+    @Test("Extract multiple park references from comment (two-fer)")
+    func extractFromCommentMultiple() {
+        let result = ParkReference.extractFromFreeText("K-1234, US-0189")
+        #expect(result == "K-1234, US-0189")
+    }
+
+    @Test("Extract deduplicates repeated park references")
+    func extractFromCommentDedup() {
+        let result = ParkReference.extractFromFreeText("K-1234 K-1234")
+        #expect(result == "K-1234")
+    }
+
+    @Test("Extract returns nil when no park references found")
+    func extractFromCommentNone() {
+        #expect(ParkReference.extractFromFreeText("just a normal comment") == nil)
+        #expect(ParkReference.extractFromFreeText("W1AW on 20m") == nil)
+        #expect(ParkReference.extractFromFreeText("") == nil)
+    }
+
+    @Test("Extract is case insensitive")
+    func extractFromCommentCaseInsensitive() {
+        #expect(ParkReference.extractFromFreeText("pota k-1234") == "K-1234")
+        #expect(ParkReference.extractFromFreeText("us-0189") == "US-0189")
+    }
 }

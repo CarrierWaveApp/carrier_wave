@@ -77,6 +77,30 @@ public enum ParkReference: Sendable {
         return nil
     }
 
+    /// Extract park references from free-text (e.g., ADIF comment fields).
+    /// WSJT-X and other loggers sometimes put park info in the comment rather than
+    /// MY_SIG_INFO. Returns a sanitized multi-park string if any valid refs found.
+    public static func extractFromFreeText(_ text: String) -> String? {
+        let upper = text.uppercased()
+        let pattern = #"\b([A-Z]{1,2}-\d{4,5})\b"#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else {
+            return nil
+        }
+        let nsString = upper as NSString
+        let matches = regex.matches(in: upper, range: NSRange(location: 0, length: nsString.length))
+        var seen = Set<String>()
+        var valid: [String] = []
+        for match in matches {
+            let ref = nsString.substring(with: match.range(at: 1))
+            guard isValid(ref), !seen.contains(ref) else {
+                continue
+            }
+            seen.insert(ref)
+            valid.append(ref)
+        }
+        return valid.isEmpty ? nil : valid.joined(separator: ", ")
+    }
+
     /// Sanitize a potentially multi-park reference, fixing each individual park.
     /// Drops parks that can't be sanitized.
     public static func sanitizeMulti(_ parkRef: String) -> String? {
