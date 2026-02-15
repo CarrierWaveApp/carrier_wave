@@ -1305,6 +1305,41 @@ struct LoggerView: View {
         .background(Color(.secondarySystemGroupedBackground))
     }
 
+    /// Build a compact label for park(s) in the session header
+    @ViewBuilder
+    private func parkHeaderLabel(_ parkRef: String?) -> some View {
+        if let parkRef, !parkRef.isEmpty {
+            let parks = ParkReference.split(parkRef)
+            if parks.count > 1 {
+                // Multi-park: show refs as compact chips
+                HStack(spacing: 4) {
+                    ForEach(parks, id: \.self) { park in
+                        Text(park)
+                            .font(.caption.monospaced().weight(.medium))
+                            .foregroundStyle(.green)
+                            .padding(.horizontal, 4)
+                            .padding(.vertical, 1)
+                            .background(Color.green.opacity(0.1))
+                            .clipShape(Capsule())
+                    }
+                }
+            } else if let name = lookupParkName(parkRef) {
+                Text(name)
+                    .font(.caption)
+                    .foregroundStyle(.green)
+                    .lineLimit(1)
+            } else {
+                Text(parkRef)
+                    .font(.caption.monospaced())
+                    .foregroundStyle(.green)
+            }
+        } else {
+            Text("No park")
+                .font(.caption)
+                .foregroundStyle(.orange)
+        }
+    }
+
     private func formatWebSDRDuration(_ duration: TimeInterval) -> String {
         let total = Int(duration)
         let minutes = total / 60
@@ -2094,41 +2129,6 @@ struct LoggerView: View {
         return POTAParksCache.shared.nameSync(for: firstPark)
     }
 
-    /// Build a compact label for park(s) in the session header
-    @ViewBuilder
-    private func parkHeaderLabel(_ parkRef: String?) -> some View {
-        if let parkRef, !parkRef.isEmpty {
-            let parks = ParkReference.split(parkRef)
-            if parks.count > 1 {
-                // Multi-park: show refs as compact chips
-                HStack(spacing: 4) {
-                    ForEach(parks, id: \.self) { park in
-                        Text(park)
-                            .font(.caption.monospaced().weight(.medium))
-                            .foregroundStyle(.green)
-                            .padding(.horizontal, 4)
-                            .padding(.vertical, 1)
-                            .background(Color.green.opacity(0.1))
-                            .clipShape(Capsule())
-                    }
-                }
-            } else if let name = lookupParkName(parkRef) {
-                Text(name)
-                    .font(.caption)
-                    .foregroundStyle(.green)
-                    .lineLimit(1)
-            } else {
-                Text(parkRef)
-                    .font(.caption.monospaced())
-                    .foregroundStyle(.green)
-            }
-        } else {
-            Text("No park")
-                .font(.caption)
-                .foregroundStyle(.orange)
-        }
-    }
-
     // MARK: - Session End Handling
 
     /// Handle end session action - checks for POTA upload prompt first
@@ -2905,8 +2905,6 @@ struct SessionTitleEditSheet: View {
 
 /// Sheet for editing parks on an active POTA session (supports n-fer)
 struct SessionParkEditSheet: View {
-    // MARK: Internal
-
     @Binding var parkReference: String
 
     let userGrid: String?

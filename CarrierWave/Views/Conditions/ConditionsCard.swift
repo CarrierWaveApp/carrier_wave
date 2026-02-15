@@ -30,7 +30,23 @@ struct ConditionsCard: View {
 
     private let dataActor = EnvironmentalDataActor()
 
-    @ViewBuilder
+    private var kIndexData: [(date: Date, value: Double)] {
+        snapshots.compactMap { snapshot in
+            guard let k = snapshot.solarKIndex else {
+                return nil
+            }
+            return (date: snapshot.timestamp, value: k)
+        }
+    }
+
+    private var latestSolarSnapshot: EnvironmentalSnapshot? {
+        snapshots.last { $0.hasSolarData }
+    }
+
+    private var latestWeatherSnapshot: EnvironmentalSnapshot? {
+        snapshots.last { $0.hasWeatherData }
+    }
+
     private var cardContent: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
@@ -114,21 +130,6 @@ struct ConditionsCard: View {
         .chartXAxis(.hidden)
         .chartYAxis(.hidden)
         .chartYScale(domain: 0 ... max(kIndexData.map(\.value).max() ?? 5, 5))
-    }
-
-    private var kIndexData: [(date: Date, value: Double)] {
-        snapshots.compactMap { snapshot in
-            guard let k = snapshot.solarKIndex else { return nil }
-            return (date: snapshot.timestamp, value: k)
-        }
-    }
-
-    private var latestSolarSnapshot: EnvironmentalSnapshot? {
-        snapshots.last { $0.hasSolarData }
-    }
-
-    private var latestWeatherSnapshot: EnvironmentalSnapshot? {
-        snapshots.last { $0.hasWeatherData }
     }
 
     private var timestampFooter: some View {

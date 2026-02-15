@@ -234,7 +234,7 @@ struct SessionRow: View {
 
                     ForEach(
                         uploadErrors.sorted(by: { $0.key < $1.key }), id: \.key
-                    ) { park, error in
+                    ) { _, error in
                         HStack(alignment: .top, spacing: 6) {
                             Image(systemName: "exclamationmark.triangle.fill")
                                 .foregroundStyle(.orange)
@@ -263,7 +263,7 @@ struct SessionRow: View {
                 Label("Export ADIF", systemImage: "doc.text")
             }
             Button { onShareTapped?() } label: {
-                Label("Share Card", systemImage: "square.and.arrow.up")
+                Label("Brag Sheet", systemImage: "square.and.arrow.up")
             }
             if shouldShowUpload {
                 Divider()

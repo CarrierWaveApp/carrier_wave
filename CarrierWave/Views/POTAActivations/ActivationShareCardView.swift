@@ -15,6 +15,7 @@ struct ActivationShareCardView: View {
     let parkName: String?
     let myGrid: String?
     var metadata: ActivationMetadata?
+    var equipment: [ShareCardEquipmentItem] = []
 
     var body: some View {
         VStack(spacing: 0) {
@@ -198,7 +199,8 @@ struct ActivationShareCardView: View {
             avgDistanceKm: stats.averageDistanceKm,
             maxDistanceKm: stats.longestDistanceKm,
             wattsPerMile: stats.wattsPerMile,
-            radio: activationRadio
+            radio: activationRadio,
+            equipment: equipment
         )
     }
 
@@ -219,6 +221,7 @@ struct ActivationShareCardForExport: View {
     let parkName: String?
     let mapImage: UIImage?
     var metadata: ActivationMetadata?
+    var equipment: [ShareCardEquipmentItem] = []
 
     var body: some View {
         VStack(spacing: 0) {
@@ -270,7 +273,8 @@ struct ActivationShareCardForExport: View {
             avgDistanceKm: stats.averageDistanceKm,
             maxDistanceKm: stats.longestDistanceKm,
             wattsPerMile: stats.wattsPerMile,
-            radio: radio
+            radio: radio,
+            equipment: equipment
         )
     }
 

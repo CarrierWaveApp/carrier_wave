@@ -2,12 +2,15 @@
 
 All notable changes to Carrier Wave will be documented in this file.
 
-## [Unreleased]
+## [1.32.0] - 2026-02-14
 
 ### Added
 - Configurable dashboard metrics card — choose 1-2 metrics from streaks (On-Air, Activation, Hunter, CW, Phone, Digital) and counts (QSOs/activations/hunts per week/month/year, new DXCC)
 - Hunter streak tracking — consecutive days working POTA activators
 - Dashboard Metrics settings screen for metric selection
+- Rename "Share Card" to "Brag Sheet" across all activation share actions
+- Add equipment to brag sheet — antenna, key, mic, and extra equipment shown as badges when enabled
+- Add "Include equipment on brag sheet" toggle in POTA settings (on by default)
 
 ### Fixed
 - Hide sessions with zero QSOs from the Sessions list

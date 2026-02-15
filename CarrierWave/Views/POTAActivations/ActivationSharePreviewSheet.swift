@@ -37,7 +37,7 @@ struct ActivationSharePreviewSheet: View {
                     .padding()
                     .background(.bar)
             }
-            .navigationTitle("Share Card")
+            .navigationTitle("Brag Sheet")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

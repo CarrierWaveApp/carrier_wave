@@ -26,14 +26,16 @@ enum ActivationShareRenderer {
         activation: POTAActivation,
         parkName: String?,
         myGrid: String?,
-        metadata: ActivationMetadata? = nil
+        metadata: ActivationMetadata? = nil,
+        equipment: [ShareCardEquipmentItem] = []
     ) -> UIImage? {
         // For synchronous rendering, use nil map (will show placeholder)
         let view = ActivationShareCardForExport(
             activation: activation,
             parkName: parkName,
             mapImage: nil,
-            metadata: metadata
+            metadata: metadata,
+            equipment: equipment
         )
         return renderToImage(view)
     }
@@ -43,7 +45,8 @@ enum ActivationShareRenderer {
         activation: POTAActivation,
         parkName: String?,
         myGrid: String?,
-        metadata: ActivationMetadata? = nil
+        metadata: ActivationMetadata? = nil,
+        equipment: [ShareCardEquipmentItem] = []
     ) async -> UIImage? {
         // Capture minimal data and RST colors on main thread (trivially fast)
         let qsoData: [(grid: String, rstColor: UIColor)] =
@@ -100,7 +103,8 @@ enum ActivationShareRenderer {
                 activation: activation,
                 parkName: parkName,
                 mapImage: mapImage,
-                metadata: metadata
+                metadata: metadata,
+                equipment: equipment
             )
             return renderToImage(view)
         }

@@ -77,6 +77,13 @@ struct ActivationShareCardParkInfo: View {
     }
 }
 
+// MARK: - ShareCardEquipmentItem
+
+struct ShareCardEquipmentItem: Hashable {
+    let icon: String
+    let text: String
+}
+
 // MARK: - ActivationShareCardStats
 
 struct ActivationShareCardStats: View {
@@ -91,7 +98,7 @@ struct ActivationShareCardStats: View {
     var maxDistanceKm: Double?
     var wattsPerMile: Double?
     var radio: String?
-    var antenna: String?
+    var equipment: [ShareCardEquipmentItem] = []
 
     var body: some View {
         // swiftlint:disable:next redundant_discardable_let
@@ -112,6 +119,9 @@ struct ActivationShareCardStats: View {
             if hasDetailRow {
                 detailRows
             }
+            if !allEquipment.isEmpty {
+                equipmentGrid
+            }
         }
         .padding(.vertical, 12)
         .padding(.horizontal, 16)
@@ -125,10 +135,19 @@ struct ActivationShareCardStats: View {
     @AppStorage("useMetricUnits") private var useMetricUnits = false
 
     private var hasDetailRow: Bool {
-        watts != nil || avgDistanceKm != nil || radio != nil || antenna != nil
+        watts != nil || avgDistanceKm != nil
     }
 
-    @ViewBuilder
+    /// Radio merged with equipment for the grid display
+    private var allEquipment: [ShareCardEquipmentItem] {
+        var items: [ShareCardEquipmentItem] = []
+        if let radio {
+            items.append(ShareCardEquipmentItem(icon: "radio", text: radio))
+        }
+        items.append(contentsOf: equipment)
+        return items
+    }
+
     private var detailRows: some View {
         HStack(spacing: 12) {
             if let watts {
@@ -144,12 +163,38 @@ struct ActivationShareCardStats: View {
                 detailBadge(compactDistance(max, label: "max"))
             }
         }
-        if let radio {
-            detailBadge(radio)
+    }
+
+    private var equipmentGrid: some View {
+        let rows = stride(from: 0, to: allEquipment.count, by: 2).map { i in
+            let end = min(i + 2, allEquipment.count)
+            return Array(allEquipment[i ..< end])
         }
-        if let antenna {
-            detailBadge(antenna)
+        return VStack(spacing: 4) {
+            ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
+                HStack(spacing: 8) {
+                    ForEach(row, id: \.self) { item in
+                        equipmentBadge(icon: item.icon, text: item.text)
+                    }
+                }
+            }
         }
+    }
+
+    private func equipmentBadge(icon: String, text: String) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: icon)
+                .font(.caption2)
+            Text(text)
+                .font(.caption2)
+                .fontWeight(.medium)
+                .lineLimit(1)
+        }
+        .foregroundStyle(.white.opacity(0.9))
+        .padding(.horizontal, 8)
+        .padding(.vertical, 3)
+        .background(Color.white.opacity(0.15))
+        .clipShape(Capsule())
     }
 
     private func detailBadge(_ text: String) -> some View {

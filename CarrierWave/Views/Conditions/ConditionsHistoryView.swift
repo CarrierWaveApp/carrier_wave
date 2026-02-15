@@ -11,7 +11,9 @@ enum ConditionsDateRange: String, CaseIterable, Identifiable {
 
     // MARK: Internal
 
-    var id: String { rawValue }
+    var id: String {
+        rawValue
+    }
 
     var startDate: Date? {
         let calendar = Calendar.current
@@ -34,9 +36,11 @@ private enum ConditionsTab: String, CaseIterable, Identifiable {
     case timeline = "Timeline"
     case location = "By Location"
 
-    // MARK: Fileprivate
+    // MARK: Internal
 
-    var id: String { rawValue }
+    var id: String {
+        rawValue
+    }
 }
 
 // MARK: - ConditionsHistoryView

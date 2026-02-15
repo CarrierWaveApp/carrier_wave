@@ -68,6 +68,7 @@ struct SettingsMainView: View {
     @AppStorage("potaQSYSpotEnabled") private var potaQSYSpotEnabled = true
     @AppStorage("potaQRTSpotEnabled") private var potaQRTSpotEnabled = true
     @AppStorage("autoRecordConditions") private var autoRecordConditions = true
+    @AppStorage("shareCardIncludeEquipment") private var shareCardIncludeEquipment = true
     @AppStorage("loggerAutoModeSwitch") private var autoModeSwitch = true
     @AppStorage("callsignNotesDisplayMode") private var notesDisplayMode = "emoji"
     @AppStorage("useMetricUnits") private var useMetricUnits = false
@@ -417,6 +418,7 @@ struct SettingsMainView: View {
             Toggle("Prompt for QSY spots", isOn: $potaQSYSpotEnabled)
             Toggle("Post QRT when ending session", isOn: $potaQRTSpotEnabled)
             Toggle("Record solar & weather at start", isOn: $autoRecordConditions)
+            Toggle("Include equipment on brag sheet", isOn: $shareCardIncludeEquipment)
         } header: {
             Text("POTA Activations")
         } footer: {
@@ -424,7 +426,8 @@ struct SettingsMainView: View {
                 "Auto-spot posts your frequency to POTA every 10 minutes. "
                     + "QSY spots prompt after frequency or mode changes. "
                     + "QRT spot notifies hunters when you end your activation. "
-                    + "Solar & weather records current conditions when starting a session."
+                    + "Solar & weather records current conditions when starting a session. "
+                    + "Equipment on brag sheet shows radio, antenna, key, and other gear."
             )
         }
     }
@@ -576,7 +579,7 @@ struct SettingsMainView: View {
             HStack {
                 Text("Version")
                 Spacer()
-                Text("1.31.0")
+                Text("1.32.0")
                     .foregroundStyle(.secondary)
             }
 

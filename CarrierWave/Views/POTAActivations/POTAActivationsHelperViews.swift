@@ -118,7 +118,7 @@ struct ActivationRow: View {
             Button {
                 onShareTapped()
             } label: {
-                Label("Share Card", systemImage: "square.and.arrow.up")
+                Label("Brag Sheet", systemImage: "square.and.arrow.up")
             }
             if shouldShowUpload {
                 Divider()

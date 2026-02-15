@@ -14,7 +14,9 @@ enum ConditionsMetric: String, CaseIterable, Identifiable {
 
     // MARK: Internal
 
-    var id: String { rawValue }
+    var id: String {
+        rawValue
+    }
 
     var icon: String {
         switch self {
@@ -40,7 +42,9 @@ enum ConditionsMetric: String, CaseIterable, Identifiable {
 
     var isSolar: Bool {
         switch self {
-        case .kIndex, .solarFlux, .sunspots: true
+        case .kIndex,
+             .solarFlux,
+             .sunspots: true
         default: false
         }
     }
@@ -103,10 +107,27 @@ struct ConditionsHistoryChartView: View {
 
     private var filteredData: [(date: Date, value: Double)] {
         snapshots.compactMap { snapshot in
-            guard let value = selectedMetric.value(from: snapshot) else { return nil }
+            guard let value = selectedMetric.value(from: snapshot) else {
+                return nil
+            }
             return (date: snapshot.timestamp, value: value)
         }
         .sorted { $0.date < $1.date }
+    }
+
+    /// Only show metrics that have data in the snapshots.
+    private var availableMetrics: [ConditionsMetric] {
+        ConditionsMetric.allCases.filter { metric in
+            snapshots.contains { metric.value(from: $0) != nil }
+        }
+    }
+
+    private var averageValue: Double? {
+        guard !filteredData.isEmpty else {
+            return nil
+        }
+        let sum = filteredData.reduce(0.0) { $0 + $1.value }
+        return sum / Double(filteredData.count)
     }
 
     private var metricPicker: some View {
@@ -133,13 +154,6 @@ struct ConditionsHistoryChartView: View {
                     .buttonStyle(.plain)
                 }
             }
-        }
-    }
-
-    /// Only show metrics that have data in the snapshots.
-    private var availableMetrics: [ConditionsMetric] {
-        ConditionsMetric.allCases.filter { metric in
-            snapshots.contains { metric.value(from: $0) != nil }
         }
     }
 
@@ -188,12 +202,6 @@ struct ConditionsHistoryChartView: View {
         }
     }
 
-    private var averageValue: Double? {
-        guard !filteredData.isEmpty else { return nil }
-        let sum = filteredData.reduce(0.0) { $0 + $1.value }
-        return sum / Double(filteredData.count)
-    }
-
     private var statsRow: some View {
         HStack(spacing: 16) {
             if let minVal = filteredData.map(\.value).min() {
@@ -223,17 +231,6 @@ struct ConditionsHistoryChartView: View {
         }
     }
 
-    private func miniStat(label: String, value: String) -> some View {
-        VStack(spacing: 2) {
-            Text(value)
-                .font(.caption)
-                .fontWeight(.semibold)
-            Text(label)
-                .font(.system(size: 9))
-                .foregroundStyle(.secondary)
-        }
-    }
-
     private var emptyState: some View {
         VStack(spacing: 8) {
             Image(systemName: selectedMetric.icon)
@@ -244,5 +241,16 @@ struct ConditionsHistoryChartView: View {
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, minHeight: 120)
+    }
+
+    private func miniStat(label: String, value: String) -> some View {
+        VStack(spacing: 2) {
+            Text(value)
+                .font(.caption)
+                .fontWeight(.semibold)
+            Text(label)
+                .font(.system(size: 9))
+                .foregroundStyle(.secondary)
+        }
     }
 }

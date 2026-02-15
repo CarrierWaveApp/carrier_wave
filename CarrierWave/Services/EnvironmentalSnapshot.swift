@@ -7,7 +7,7 @@ struct EnvironmentalSnapshot: Sendable, Identifiable {
     let id: UUID
     let timestamp: Date
 
-    // Location context
+    /// Location context
     let gridSquare: String? // 4- or 6-char Maidenhead grid
 
     // Source info
@@ -28,6 +28,11 @@ struct EnvironmentalSnapshot: Sendable, Identifiable {
     let weatherWindDirection: String?
     let weatherDescription: String?
 
-    var hasSolarData: Bool { solarKIndex != nil }
-    var hasWeatherData: Bool { weatherTemperatureF != nil }
+    var hasSolarData: Bool {
+        solarKIndex != nil
+    }
+
+    var hasWeatherData: Bool {
+        weatherTemperatureF != nil
+    }
 }

@@ -251,13 +251,6 @@ enum ConditionsConstants {
         Color(red: 0.8, green: 0.0, blue: 0.0),
     ]
 
-    static var tempScaleLabels: [String] {
-        if UnitFormatter.useMetric {
-            return ["-18\u{00B0}C", "Cold", "Hot", "43\u{00B0}C"]
-        }
-        return ["0\u{00B0}F", "Cold", "Hot", "110\u{00B0}F"]
-    }
-
     // Wind: 10 segments (0-50+ mph), green→red (calmer is better)
     static let windColors: [Color] = [
         .green, .green,
@@ -269,13 +262,6 @@ enum ConditionsConstants {
         Color(red: 0.6, green: 0.0, blue: 0.0),
         Color(red: 0.4, green: 0.0, blue: 0.2),
     ]
-
-    static var windScaleLabels: [String] {
-        if UnitFormatter.useMetric {
-            return ["0", "Calm", "Strong", "80+"]
-        }
-        return ["0", "Calm", "Strong", "50+"]
-    }
 
     // Humidity: 10 segments (0-100%), orange→green→red (mid-range is best)
     static let humidityColors: [Color] = [
@@ -295,6 +281,20 @@ enum ConditionsConstants {
     static let tempBoundaries: [Double] = [11, 21, 33, 46, 56, 71, 81, 91, 101]
     static let windBoundaries: [Double] = [6, 11, 16, 21, 26, 31, 36, 41, 46]
     static let humidityBoundaries: [Double] = [11, 21, 31, 41, 51, 61, 71, 81, 91]
+
+    static var tempScaleLabels: [String] {
+        if UnitFormatter.useMetric {
+            return ["-18\u{00B0}C", "Cold", "Hot", "43\u{00B0}C"]
+        }
+        return ["0\u{00B0}F", "Cold", "Hot", "110\u{00B0}F"]
+    }
+
+    static var windScaleLabels: [String] {
+        if UnitFormatter.useMetric {
+            return ["0", "Calm", "Strong", "80+"]
+        }
+        return ["0", "Calm", "Strong", "50+"]
+    }
 
     /// Map a value to a segment index using boundary thresholds.
     static func segmentIndex(value: Double, boundaries: [Double]) -> Int {

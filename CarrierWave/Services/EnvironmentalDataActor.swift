@@ -4,6 +4,8 @@ import SwiftData
 /// Background actor for loading environmental condition data from LoggingSession
 /// and ActivationMetadata. Creates snapshots off the main thread for chart rendering.
 actor EnvironmentalDataActor {
+    // MARK: Internal
+
     /// Fetch all condition snapshots within a date range, optionally filtered by grid.
     func fetchSnapshots(
         from startDate: Date,
@@ -29,7 +31,9 @@ actor EnvironmentalDataActor {
 
         // Merge: prefer session data when both exist for same park/date
         let sessionKeys = Set(sessionSnapshots.compactMap { snapshot -> String? in
-            guard let park = snapshot.parkReference else { return nil }
+            guard let park = snapshot.parkReference else {
+                return nil
+            }
             let day = Self.dayKey(snapshot.timestamp)
             return "\(park)|\(day)"
         })
@@ -37,7 +41,9 @@ actor EnvironmentalDataActor {
         for snapshot in metadataSnapshots {
             if let park = snapshot.parkReference {
                 let key = "\(park)|\(Self.dayKey(snapshot.timestamp))"
-                if sessionKeys.contains(key) { continue }
+                if sessionKeys.contains(key) {
+                    continue
+                }
             }
             snapshots.append(snapshot)
         }
@@ -57,14 +63,16 @@ actor EnvironmentalDataActor {
 
         var grouped: [String: [EnvironmentalSnapshot]] = [:]
         for snapshot in all {
-            guard let grid = snapshot.gridSquare, grid.count >= 4 else { continue }
+            guard let grid = snapshot.gridSquare, grid.count >= 4 else {
+                continue
+            }
             let key = String(grid.prefix(4)).uppercased()
             grouped[key, default: []].append(snapshot)
         }
         return grouped
     }
 
-    // MARK: - Private
+    // MARK: Private
 
     private static func dayKey(_ date: Date) -> String {
         let formatter = DateFormatter()
@@ -90,12 +98,16 @@ actor EnvironmentalDataActor {
         let sessions = (try? context.fetch(descriptor)) ?? []
 
         return sessions.compactMap { session in
-            guard session.hasSolarData || session.hasWeatherData else { return nil }
+            guard session.hasSolarData || session.hasWeatherData else {
+                return nil
+            }
 
             if let filterGrid = grid, let sessionGrid = session.myGrid {
                 let filterPrefix = String(filterGrid.prefix(4)).uppercased()
                 let sessionPrefix = String(sessionGrid.prefix(4)).uppercased()
-                if filterPrefix != sessionPrefix { return nil }
+                if filterPrefix != sessionPrefix {
+                    return nil
+                }
             }
 
             return EnvironmentalSnapshot(
@@ -135,10 +147,14 @@ actor EnvironmentalDataActor {
         let metadata = (try? context.fetch(descriptor)) ?? []
 
         return metadata.compactMap { meta in
-            guard meta.hasSolarData || meta.hasWeatherData else { return nil }
+            guard meta.hasSolarData || meta.hasWeatherData else {
+                return nil
+            }
 
             // ActivationMetadata doesn't store grid, so grid filtering skips these
-            if grid != nil { return nil }
+            if grid != nil {
+                return nil
+            }
 
             return EnvironmentalSnapshot(
                 id: UUID(),

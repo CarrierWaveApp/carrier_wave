@@ -29,21 +29,26 @@ struct ConditionsByLocationView: View {
 
     // MARK: Private
 
-    @State private var selectedMetric: ConditionsMetric = .kIndex
-
     private struct LocationStat: Identifiable {
         let grid: String
         let average: Double
         let min: Double
         let max: Double
         let count: Int
-        var id: String { grid }
+
+        var id: String {
+            grid
+        }
     }
+
+    @State private var selectedMetric: ConditionsMetric = .kIndex
 
     private var locationData: [LocationStat] {
         groupedSnapshots.compactMap { grid, snapshots in
             let values = snapshots.compactMap { selectedMetric.value(from: $0) }
-            guard !values.isEmpty else { return nil }
+            guard !values.isEmpty else {
+                return nil
+            }
             let avg = values.reduce(0, +) / Double(values.count)
             return LocationStat(
                 grid: grid,
@@ -58,6 +63,14 @@ struct ConditionsByLocationView: View {
 
     private var chartHeight: CGFloat {
         CGFloat(max(locationData.count * 40, 100))
+    }
+
+    private var availableMetrics: [ConditionsMetric] {
+        ConditionsMetric.allCases.filter { metric in
+            groupedSnapshots.values.contains { snapshots in
+                snapshots.contains { metric.value(from: $0) != nil }
+            }
+        }
     }
 
     private var metricPicker: some View {
@@ -83,14 +96,6 @@ struct ConditionsByLocationView: View {
                     }
                     .buttonStyle(.plain)
                 }
-            }
-        }
-    }
-
-    private var availableMetrics: [ConditionsMetric] {
-        ConditionsMetric.allCases.filter { metric in
-            groupedSnapshots.values.contains { snapshots in
-                snapshots.contains { metric.value(from: $0) != nil }
             }
         }
     }
@@ -147,6 +152,22 @@ struct ConditionsByLocationView: View {
         }
     }
 
+    private var emptyState: some View {
+        VStack(spacing: 8) {
+            Image(systemName: "map")
+                .font(.title2)
+                .foregroundStyle(.tertiary)
+            Text("No location data available")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Text("Conditions recorded with a grid square will appear here")
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity, minHeight: 120)
+    }
+
     private func rangeBadge(_ stat: LocationStat) -> some View {
         HStack(spacing: 4) {
             Text(selectedMetric.formatValue(stat.min))
@@ -163,21 +184,5 @@ struct ConditionsByLocationView: View {
         .padding(.vertical, 2)
         .background(Color(.systemGray5))
         .clipShape(Capsule())
-    }
-
-    private var emptyState: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "map")
-                .font(.title2)
-                .foregroundStyle(.tertiary)
-            Text("No location data available")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            Text("Conditions recorded with a grid square will appear here")
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
-                .multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity, minHeight: 120)
     }
 }
