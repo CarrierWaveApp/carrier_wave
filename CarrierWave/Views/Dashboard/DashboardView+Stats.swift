@@ -106,15 +106,4 @@ extension DashboardView {
             }
         }
     }
-
-    func streakRow(title: String, streak: StreakInfo?) -> some View {
-        HStack(spacing: 12) {
-            Text(title)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .frame(width: 40, alignment: .leading)
-            StreakStatBox(streak: streak ?? .placeholder)
-        }
-        .opacity(streak == nil ? 0.6 : 1.0)
-    }
 }

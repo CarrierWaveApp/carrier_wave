@@ -114,40 +114,96 @@ struct StreakStatBox: View {
     }
 }
 
-// MARK: - StreaksCard
+// MARK: - CountStatBox
 
-struct StreaksCard: View {
-    let dailyStreak: StreakInfo?
-    let potaStreak: StreakInfo?
+struct CountStatBox: View {
+    let value: Int
+    let subtitle: String
 
     var body: some View {
+        VStack(spacing: 4) {
+            Text("\(value)")
+                .font(.title)
+                .fontWeight(.bold)
+            Text(subtitle)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 8)
+        .background(Color(.systemGray5))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+}
+
+// MARK: - MetricsCard
+
+struct MetricsCard: View {
+    // MARK: Internal
+
+    let asyncStats: AsyncQSOStatistics
+
+    var body: some View {
+        // swiftlint:disable:next redundant_discardable_let
+        let _ = metric1RawValue
+        // swiftlint:disable:next redundant_discardable_let
+        let _ = metric2RawValue
+
         VStack(alignment: .leading, spacing: 12) {
-            Text("Streaks")
+            Text(cardTitle)
                 .font(.headline)
 
             HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Daily QSOs")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                    StreakStatBox(streak: dailyStreak ?? .placeholder)
-                }
-                .opacity(dailyStreak == nil ? 0.6 : 1.0)
+                metricColumn(for: metric1)
 
-                Divider()
-
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("POTA Activations")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                    StreakStatBox(streak: potaStreak ?? .placeholder)
+                if let m2 = metric2 {
+                    Divider()
+                    metricColumn(for: m2)
                 }
-                .opacity(potaStreak == nil ? 0.6 : 1.0)
             }
         }
         .padding()
         .background(Color(.systemGray6))
         .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+
+    // MARK: Private
+
+    @AppStorage("dashboardMetric1") private var metric1RawValue =
+        DashboardMetricType.onAir.rawValue
+    @AppStorage("dashboardMetric2") private var metric2RawValue =
+        DashboardMetricType.activation.rawValue
+
+    private var metric1: DashboardMetricType {
+        DashboardMetricType(rawValue: metric1RawValue) ?? .onAir
+    }
+
+    private var metric2: DashboardMetricType? {
+        metric2RawValue.isEmpty ? nil : DashboardMetricType(rawValue: metric2RawValue)
+    }
+
+    private var cardTitle: String {
+        let types = [metric1, metric2].compactMap { $0 }
+        if types.allSatisfy(\.isStreak) {
+            return "Streaks"
+        }
+        return "Metrics"
+    }
+
+    private func metricColumn(for type: DashboardMetricType) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(type.displayName)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            switch asyncStats.metricValue(for: type) {
+            case let .streak(info):
+                StreakStatBox(streak: info ?? .placeholder)
+                    .opacity(info == nil ? 0.6 : 1.0)
+            case let .count(value):
+                CountStatBox(value: value, subtitle: type.subtitle)
+            }
+        }
     }
 }
 

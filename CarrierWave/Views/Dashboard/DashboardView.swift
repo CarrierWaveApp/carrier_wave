@@ -304,9 +304,7 @@ struct DashboardView: View {
         NavigationLink {
             LazyStreakDetailView(asyncStats: asyncStats, tourState: tourState)
         } label: {
-            StreaksCard(
-                dailyStreak: asyncStats.dailyStreak, potaStreak: asyncStats.potaActivationStreak
-            )
+            MetricsCard(asyncStats: asyncStats)
         }
         .buttonStyle(.plain)
     }
@@ -341,15 +339,7 @@ struct DashboardView: View {
             NavigationLink {
                 LazyStreakDetailView(asyncStats: asyncStats, tourState: tourState)
             } label: {
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Streaks")
-                        .font(.headline)
-
-                    VStack(spacing: 12) {
-                        streakRow(title: "Daily", streak: asyncStats.dailyStreak)
-                        streakRow(title: "POTA", streak: asyncStats.potaActivationStreak)
-                    }
-                }
+                MetricsCard(asyncStats: asyncStats)
             }
             .buttonStyle(.plain)
 
