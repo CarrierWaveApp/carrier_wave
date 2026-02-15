@@ -30,7 +30,8 @@ extension SyncService {
         potaClient.clearDownloadCheckpoint()
         potaClient.clearSyncState()
 
-        let qsos = try await potaClient.fetchAllQSOs()
+        let (qsos, remoteMap) = try await potaClient.fetchAllQSOs()
+        potaRemoteQSOMap = remoteMap
         let fetched = qsos.map { FetchedQSO.fromPOTA($0) }
 
         debugLog.info("Fetched \(fetched.count) QSOs from POTA", service: .pota)

@@ -5,6 +5,7 @@ All notable changes to Carrier Wave will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Add POTA QSO-level gap repair: during sync, compare local QSOs against POTA's per-activation remote data and flag missing QSOs for re-upload
 - Add RIG logger command to edit equipment (radio, antenna, key, mic) during an active session
 - Add tappable equipment capsule to logger session header row 2
 - Add park detail sheet showing POTA stats, top activators/hunters leaderboard, and recent activations

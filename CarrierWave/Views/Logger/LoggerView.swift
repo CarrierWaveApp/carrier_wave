@@ -378,7 +378,6 @@ struct LoggerView: View {
     @State private var showBandEditSheet = false
     @State private var showModeEditSheet = false
     @State private var showRigEditSheet = false
-    @State private var showParkInfoPopover = false
 
     /// Session end/delete confirmation
     @State private var showEndSessionConfirmation = false
@@ -1257,19 +1256,17 @@ struct LoggerView: View {
         .background(Color(.secondarySystemGroupedBackground))
     }
 
-    /// Park header: tappable ref(s) for info sheet with edit option
+    /// Park header: tappable ref(s) that open the park editor directly
     @ViewBuilder
     private func parkHeaderView(_ session: LoggingSession) -> some View {
         let parkRef = session.parkReference
         Button {
-            showParkInfoPopover = true
+            editingParkReference = parkRef ?? ""
+            showParkEditSheet = true
         } label: {
             parkRefLabels(parkRef)
         }
         .buttonStyle(.plain)
-        .sheet(isPresented: $showParkInfoPopover) {
-            parkInfoContent(parkRef)
-        }
     }
 
     /// Park reference label(s) — always shows ref numbers
@@ -1292,46 +1289,6 @@ struct LoggerView: View {
             Text("No park")
                 .font(.caption)
                 .foregroundStyle(.orange)
-        }
-    }
-
-    /// Sheet content showing park name(s) with edit button
-    @ViewBuilder
-    private func parkInfoContent(_ parkRef: String?) -> some View {
-        if let parkRef, !parkRef.isEmpty {
-            let parks = ParkReference.split(parkRef)
-            VStack(alignment: .leading, spacing: 12) {
-                ForEach(parks, id: \.self) { ref in
-                    HStack(spacing: 8) {
-                        Text(ref)
-                            .font(.subheadline.monospaced().weight(.semibold))
-                            .foregroundStyle(.green)
-                        if let name = POTAParksCache.shared.nameSync(for: ref) {
-                            Text(name)
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(2)
-                        }
-                    }
-                }
-
-                Button {
-                    showParkInfoPopover = false
-                    editingParkReference = parkRef
-                    showParkEditSheet = true
-                } label: {
-                    Label("Edit Parks", systemImage: "pencil")
-                        .font(.subheadline.weight(.medium))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .background(Color(.tertiarySystemFill))
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
-                }
-                .buttonStyle(.plain)
-            }
-            .padding(20)
-            .presentationDetents([.height(160)])
-            .presentationDragIndicator(.visible)
         }
     }
 
@@ -2992,26 +2949,19 @@ struct SessionParkEditSheet: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 12) {
-                ParkEntryField(
-                    parkReference: $parkReference,
-                    label: "Parks",
-                    placeholder: "K-1234",
-                    userGrid: userGrid,
-                    defaultCountry: "US"
-                )
-                .padding(16)
-                .background(Color(.secondarySystemGroupedBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-
-                Text("Add or remove parks for this n-fer activation")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-
-                Spacer()
+            List {
+                Section {
+                    ParkEntryField(
+                        parkReference: $parkReference,
+                        label: "Parks",
+                        placeholder: "K-1234",
+                        userGrid: userGrid,
+                        defaultCountry: "US"
+                    )
+                } footer: {
+                    Text("Add or remove parks for this n-fer activation")
+                }
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
             .navigationTitle("Edit Parks")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

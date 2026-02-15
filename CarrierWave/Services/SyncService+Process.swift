@@ -244,6 +244,31 @@ extension SyncService {
         }
     }
 
+    /// Compare local POTA QSOs against what POTA's API returned per-activation.
+    /// Flags missing QSOs as needsUpload=true for re-upload.
+    func repairPOTAGapsAsync(remoteQSOMap: POTARemoteQSOMap) async {
+        do {
+            let result = try await Self.processingActor.repairPOTAGaps(
+                remoteQSOMap: remoteQSOMap,
+                container: modelContext.container
+            )
+            if result.gapsFound > 0 {
+                SyncDebugLog.shared.warning(
+                    "POTA gap repair: checked \(result.activationsChecked) activations, "
+                        + "found \(result.gapsFound) missing QSOs — flagged for re-upload",
+                    service: .pota
+                )
+            } else {
+                SyncDebugLog.shared.debug(
+                    "POTA gap repair: checked \(result.activationsChecked) activations, no gaps",
+                    service: .pota
+                )
+            }
+        } catch {
+            SyncDebugLog.shared.error("POTA gap repair failed: \(error)", service: .pota)
+        }
+    }
+
     /// Detect and repair QSOs missing ServicePresence records for a service.
     func repairOrphanedQSOsAsync(for service: ServiceType) async {
         let debugLog = SyncDebugLog.shared

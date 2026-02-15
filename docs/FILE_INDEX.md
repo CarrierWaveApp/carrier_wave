@@ -149,6 +149,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `QSOProcessingActor+Merge.swift` | QSO merge, creation, and park reference extraction helpers |
 | `QSOProcessingActor+OrphanRepair.swift` | Repair QSOs missing ServicePresence records |
 | `QSOProcessingActor+POTAReconcile.swift` | Reconcile POTA ServicePresence against upload job log |
+| `QSOProcessingActor+POTAGapRepair.swift` | Compare local QSOs against POTA remote data, flag missing for re-upload |
 | `SyncDebugLog.swift` | Sync debugging utilities |
 | `ImportService.swift` | ADIF parsing, deduplication, QSO creation |
 | `ImportService+External.swift` | External file import handling |
