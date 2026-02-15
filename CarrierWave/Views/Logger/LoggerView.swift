@@ -142,7 +142,7 @@ struct LoggerView: View {
                         showParkEditSheet = false
                     }
                 )
-                .presentationDetents([.height(280)])
+                .presentationDetents([.height(340)])
             }
             .sheet(isPresented: $showBandEditSheet) {
                 SessionBandEditSheet(
@@ -1257,7 +1257,7 @@ struct LoggerView: View {
         .background(Color(.secondarySystemGroupedBackground))
     }
 
-    /// Park header: tappable ref(s) for info popover with edit option
+    /// Park header: tappable ref(s) for info sheet with edit option
     @ViewBuilder
     private func parkHeaderView(_ session: LoggingSession) -> some View {
         let parkRef = session.parkReference
@@ -1267,7 +1267,7 @@ struct LoggerView: View {
             parkRefLabels(parkRef)
         }
         .buttonStyle(.plain)
-        .popover(isPresented: $showParkInfoPopover) {
+        .sheet(isPresented: $showParkInfoPopover) {
             parkInfoContent(parkRef)
         }
     }
@@ -1295,26 +1295,25 @@ struct LoggerView: View {
         }
     }
 
-    /// Popover content showing park name(s) with edit button
+    /// Sheet content showing park name(s) with edit button
     @ViewBuilder
     private func parkInfoContent(_ parkRef: String?) -> some View {
         if let parkRef, !parkRef.isEmpty {
             let parks = ParkReference.split(parkRef)
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 12) {
                 ForEach(parks, id: \.self) { ref in
-                    HStack(spacing: 6) {
+                    HStack(spacing: 8) {
                         Text(ref)
-                            .font(.caption.monospaced().weight(.semibold))
+                            .font(.subheadline.monospaced().weight(.semibold))
                             .foregroundStyle(.green)
                         if let name = POTAParksCache.shared.nameSync(for: ref) {
                             Text(name)
-                                .font(.caption)
+                                .font(.subheadline)
                                 .foregroundStyle(.secondary)
+                                .lineLimit(2)
                         }
                     }
                 }
-
-                Divider()
 
                 Button {
                     showParkInfoPopover = false
@@ -1322,11 +1321,17 @@ struct LoggerView: View {
                     showParkEditSheet = true
                 } label: {
                     Label("Edit Parks", systemImage: "pencil")
-                        .font(.caption.weight(.medium))
+                        .font(.subheadline.weight(.medium))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(Color(.tertiarySystemFill))
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
                 }
+                .buttonStyle(.plain)
             }
-            .padding()
-            .presentationCompactAdaptation(.popover)
+            .padding(20)
+            .presentationDetents([.height(160)])
+            .presentationDragIndicator(.visible)
         }
     }
 
@@ -2987,7 +2992,7 @@ struct SessionParkEditSheet: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 16) {
+            VStack(spacing: 12) {
                 ParkEntryField(
                     parkReference: $parkReference,
                     label: "Parks",
@@ -2995,6 +3000,9 @@ struct SessionParkEditSheet: View {
                     userGrid: userGrid,
                     defaultCountry: "US"
                 )
+                .padding(16)
+                .background(Color(.secondarySystemGroupedBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
 
                 Text("Add or remove parks for this n-fer activation")
                     .font(.caption)
@@ -3002,7 +3010,8 @@ struct SessionParkEditSheet: View {
 
                 Spacer()
             }
-            .padding()
+            .padding(.horizontal, 20)
+            .padding(.top, 8)
             .navigationTitle("Edit Parks")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

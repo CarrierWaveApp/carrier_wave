@@ -418,10 +418,11 @@ struct ParkRow: View {
 
                     if isSelected {
                         Image(systemName: "checkmark.circle.fill")
+                            .font(.title3)
                             .foregroundStyle(.green)
                     } else {
                         Image(systemName: "plus.circle")
-                            .font(.caption)
+                            .font(.title3)
                             .foregroundStyle(.blue)
                     }
                 }
@@ -431,11 +432,15 @@ struct ParkRow: View {
 
             Button { showDetail = true } label: {
                 Image(systemName: "info.circle")
+                    .font(.body)
                     .foregroundStyle(.secondary)
+                    .padding(12)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Details for \(park.reference)")
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 2)
         .sheet(isPresented: $showDetail) {
             ParkDetailSheet(reference: park.reference)
         }

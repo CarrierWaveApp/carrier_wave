@@ -38,16 +38,16 @@ struct ParkEntryField: View {
     let defaultCountry: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 10) {
             // Label with count for multi-park
             HStack {
                 Text(label)
-                    .font(.caption)
+                    .font(.subheadline)
                     .foregroundStyle(.secondary)
 
                 if selectedParks.count > 1 {
                     Text("(\(selectedParks.count)-fer)")
-                        .font(.caption.weight(.medium))
+                        .font(.subheadline.weight(.medium))
                         .foregroundStyle(.green)
                 }
             }
@@ -93,7 +93,7 @@ struct ParkEntryField: View {
     }
 
     private var parkChips: some View {
-        FlowLayout(spacing: 6) {
+        FlowLayout(spacing: 8) {
             ForEach(selectedParks, id: \.self) { park in
                 ParkChip(
                     reference: park,
@@ -122,7 +122,10 @@ struct ParkEntryField: View {
                 showPicker = true
             } label: {
                 Image(systemName: "magnifyingglass")
+                    .font(.title3)
                     .foregroundStyle(.blue)
+                    .padding(4)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
 
@@ -131,14 +134,17 @@ struct ParkEntryField: View {
                     commitTextEntry()
                 } label: {
                     Image(systemName: "plus.circle.fill")
+                        .font(.title3)
                         .foregroundStyle(.green)
+                        .padding(4)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
             }
         }
-        .padding(10)
-        .background(Color(.tertiarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .padding(12)
+        .background(Color(.tertiarySystemFill))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 
     private func handleTextInput(_ input: String) {
@@ -206,7 +212,7 @@ struct ParkChip: View {
     let onRemove: () -> Void
 
     var body: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: 0) {
             Button { showDetail = true } label: {
                 HStack(spacing: 4) {
                     Text(reference)
@@ -218,20 +224,25 @@ struct ParkChip: View {
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
+                            .layoutPriority(-1)
                     }
                 }
+                .padding(.leading, 10)
+                .padding(.vertical, 8)
             }
             .buttonStyle(.plain)
 
             Button(action: onRemove) {
                 Image(systemName: "xmark.circle.fill")
-                    .font(.caption2)
+                    .font(.subheadline)
                     .foregroundStyle(.secondary)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 8)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Remove \(reference)")
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
         .background(Color.green.opacity(0.1))
         .clipShape(Capsule())
         .sheet(isPresented: $showDetail) {

@@ -11,6 +11,7 @@ All notable changes to Carrier Wave will be documented in this file.
 - Park chips and park picker rows now open park detail sheet on tap/info button
 
 ### Changed
+- Enlarge touch targets in park picker and park chips to meet HIG 44x44pt minimum
 - Move session duration from row 2 capsule to row 1 (next to QSO count) to free horizontal space
 - Merge frequency and band into a single capsule (e.g., "14.060 20m") instead of separate text + chip
 - CHECKLIST logger command now passes the session's radio to CW Field Guide, pre-selecting radio-specific checklist items
