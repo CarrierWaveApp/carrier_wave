@@ -4,6 +4,8 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.33.0] - 2026-02-15
+
 ### Added
 - Add swipe-to-delete on sessions list with confirmation dialog (hides QSOs, cleans up spots and photos)
 - Add POTA QSO-level gap repair: during sync, compare local QSOs against POTA's per-activation remote data and flag missing QSOs for re-upload
