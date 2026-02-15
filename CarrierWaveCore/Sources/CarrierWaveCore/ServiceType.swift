@@ -24,11 +24,11 @@ public enum ServiceType: String, Codable, CaseIterable, Sendable {
     public var supportsUpload: Bool {
         switch self {
         case .qrz,
-             .pota,
-             .hamrs:
+             .pota:
             true
         case .lofi,
-             .lotw:
+             .lotw,
+             .hamrs:
             false
         }
     }

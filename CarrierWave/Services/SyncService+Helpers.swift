@@ -97,6 +97,12 @@ extension SyncService {
             await repairOrphanedQSOsAsync(for: .qrz)
         }
 
+        // Clear bogus HAMRS upload flags (HAMRS doesn't support uploads)
+        await clearBogusHamrsUploadFlagsAsync()
+
+        // Repair QRZ dead-state QSOs (isPresent=false, needsUpload=false)
+        await repairQRZDeadStateAsync()
+
         // Clear upload flags on hidden (soft-deleted) QSOs
         await clearHiddenQSOUploadFlagsAsync()
 

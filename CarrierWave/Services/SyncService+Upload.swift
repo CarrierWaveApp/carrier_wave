@@ -1,3 +1,5 @@
+// swiftlint:disable file_length
+
 import CarrierWaveCore
 import Foundation
 import SwiftData
@@ -314,6 +316,7 @@ extension SyncService {
                     let matches = qsoCallsign.isEmpty || qsoCallsign == accountCallsign
                     if matches, let presence = qso.presence(for: .qrz) {
                         presence.needsUpload = false
+                        presence.isSubmitted = true
                     } else {
                         // Log why this QSO wasn't marked as uploaded
                         let dateStr = Self.debugDateFormatter.string(from: qso.timestamp)

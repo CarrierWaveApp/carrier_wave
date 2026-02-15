@@ -7,6 +7,9 @@ All notable changes to Carrier Wave will be documented in this file.
 ### Fixed
 - Hide sessions with zero QSOs from the Sessions list
 - Fix build errors: static stored property in generic type, duplicate FlowLayout definition, ActivationShareRenderer instantiation
+- Fix HAMRS incorrectly marked as supporting uploads, creating permanent phantom pending upload records that inflate sync counts
+- Fix QRZ upload clearing needsUpload without confirmation, causing QSOs to get stuck in dead state (never uploaded, no recovery path)
+- Add data repair steps to clean up existing bogus HAMRS upload flags and QRZ dead-state QSOs
 
 ## [1.31.0] - 2026-02-14
 

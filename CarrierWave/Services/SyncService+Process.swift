@@ -336,6 +336,40 @@ extension SyncService {
         }
     }
 
+    /// Clear bogus HAMRS needsUpload flags created when supportsUpload was incorrectly true.
+    func clearBogusHamrsUploadFlagsAsync() async {
+        do {
+            let result = try await Self.processingActor.clearBogusHamrsUploadFlags(
+                container: modelContext.container
+            )
+            if result.clearedCount > 0 {
+                SyncDebugLog.shared.warning(
+                    "Cleared \(result.clearedCount) bogus HAMRS needsUpload flag(s)"
+                )
+            }
+        } catch {
+            SyncDebugLog.shared.error("Failed to clear HAMRS upload flags: \(error)")
+        }
+    }
+
+    /// Repair QRZ ServicePresence records stuck in dead state
+    /// (isPresent=false, needsUpload=false, not submitted, not rejected).
+    func repairQRZDeadStateAsync() async {
+        do {
+            let result = try await Self.processingActor.repairQRZDeadStateQSOs(
+                container: modelContext.container
+            )
+            if result.repairedCount > 0 {
+                SyncDebugLog.shared.warning(
+                    "Repaired \(result.repairedCount) QRZ dead-state QSO(s) "
+                        + "(reset to needsUpload=true)"
+                )
+            }
+        } catch {
+            SyncDebugLog.shared.error("Failed to repair QRZ dead-state QSOs: \(error)")
+        }
+    }
+
     /// Repair QSOs that have DXCC in rawADIF but not in the dxcc column.
     /// This backfills DXCC data for QSOs imported before the fix was applied.
     func repairMissingDXCCAsync() async {
