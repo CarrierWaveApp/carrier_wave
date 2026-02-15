@@ -69,6 +69,7 @@ struct SettingsMainView: View {
     @AppStorage("potaQRTSpotEnabled") private var potaQRTSpotEnabled = true
     @AppStorage("autoRecordConditions") private var autoRecordConditions = true
     @AppStorage("shareCardIncludeEquipment") private var shareCardIncludeEquipment = true
+    @AppStorage("statisticianMode") private var statisticianMode = false
     @AppStorage("loggerAutoModeSwitch") private var autoModeSwitch = true
     @AppStorage("callsignNotesDisplayMode") private var notesDisplayMode = "emoji"
     @AppStorage("useMetricUnits") private var useMetricUnits = false
@@ -428,6 +429,7 @@ struct SettingsMainView: View {
             Toggle("Post QRT when ending session", isOn: $potaQRTSpotEnabled)
             Toggle("Record solar & weather at start", isOn: $autoRecordConditions)
             Toggle("Include equipment on brag sheet", isOn: $shareCardIncludeEquipment)
+            Toggle("Professional Statistician Mode", isOn: $statisticianMode)
         } header: {
             Text("POTA Activations")
         } footer: {
@@ -436,7 +438,9 @@ struct SettingsMainView: View {
                     + "QSY spots prompt after frequency or mode changes. "
                     + "QRT spot notifies hunters when you end your activation. "
                     + "Solar & weather records current conditions when starting a session. "
-                    + "Equipment on brag sheet shows radio, antenna, key, and other gear."
+                    + "Equipment on brag sheet shows radio, antenna, key, and other gear. "
+                    + "Statistician mode adds charts to activation details "
+                    + "and extra stats to brag sheets."
             )
         }
     }

@@ -319,11 +319,24 @@ struct ActivationMapView: View {
     private func generateAndShare() async {
         isGeneratingShare = true
 
+        let statisticianMode = UserDefaults.standard.bool(
+            forKey: "statisticianMode"
+        )
+        let advancedStats: ActivationStatistics? =
+            if statisticianMode {
+                ActivationStatistics.compute(
+                    from: activation, metadata: metadata
+                )
+            } else {
+                nil
+            }
+
         let image = await ActivationShareRenderer.renderWithMap(
             activation: activation,
             parkName: parkName,
             myGrid: activation.qsos.first?.myGrid,
-            metadata: metadata
+            metadata: metadata,
+            statisticianStats: advancedStats
         )
 
         isGeneratingShare = false

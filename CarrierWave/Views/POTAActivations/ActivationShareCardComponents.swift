@@ -93,8 +93,10 @@ struct ActivationShareCardStats: View {
     let duration: String
     let bandsCount: Int
     let modesCount: Int
+    var qsoRate: Double?
     var watts: Int?
     var avgDistanceKm: Double?
+    var medianDistanceKm: Double?
     var maxDistanceKm: Double?
     var wattsPerMile: Double?
     var radio: String?
@@ -104,9 +106,15 @@ struct ActivationShareCardStats: View {
         // swiftlint:disable:next redundant_discardable_let
         let _ = useMetricUnits // Trigger re-render when unit preference changes
         VStack(spacing: 8) {
-            HStack(spacing: 24) {
+            HStack(spacing: 16) {
                 ShareCardStatItem(value: "\(qsoCount)", label: "QSOs")
                 ShareCardStatItem(value: duration, label: "Duration")
+                if let rate = qsoRate {
+                    ShareCardStatItem(
+                        value: String(format: "%.1f", rate),
+                        label: "QSOs/hr"
+                    )
+                }
                 ShareCardStatItem(
                     value: "\(bandsCount)",
                     label: bandsCount == 1 ? "Band" : "Bands"
@@ -135,7 +143,7 @@ struct ActivationShareCardStats: View {
     @AppStorage("useMetricUnits") private var useMetricUnits = false
 
     private var hasDetailRow: Bool {
-        watts != nil || avgDistanceKm != nil
+        watts != nil || avgDistanceKm != nil || medianDistanceKm != nil
     }
 
     /// Radio merged with equipment for the grid display
@@ -156,7 +164,9 @@ struct ActivationShareCardStats: View {
             if let wpm = wattsPerMile {
                 detailBadge(UnitFormatter.wattsPerDistance(wpm))
             }
-            if let avg = avgDistanceKm {
+            if let median = medianDistanceKm {
+                detailBadge(compactDistance(median, label: "p50"))
+            } else if let avg = avgDistanceKm {
                 detailBadge(compactDistance(avg, label: "avg"))
             }
             if let max = maxDistanceKm {

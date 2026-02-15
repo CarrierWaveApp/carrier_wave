@@ -33,8 +33,19 @@ struct POTAActivationDetailView: View {
     @State var engine = RecordingPlaybackEngine()
 
     var body: some View {
+        // swiftlint:disable:next redundant_discardable_let
+        let _ = statisticianMode
         List {
             activationInfoSection
+            if let advancedStats = activationStatistics, statisticianMode {
+                Section("Statistics") {
+                    ActivationStatsChartsView(
+                        stats: advancedStats,
+                        qsos: activation.qsos
+                    )
+                    ActivationStatsSummaryView(stats: advancedStats)
+                }
+            }
             if let recording {
                 recordingSection(recording)
             }
@@ -56,12 +67,27 @@ struct POTAActivationDetailView: View {
         .task {
             await loadRecording()
             loadSession()
+            if statisticianMode {
+                activationStatistics = ActivationStatistics.compute(
+                    from: activation, metadata: metadata
+                )
+            }
+        }
+        .onChange(of: statisticianMode) { _, newValue in
+            if newValue {
+                activationStatistics = ActivationStatistics.compute(
+                    from: activation, metadata: metadata
+                )
+            } else {
+                activationStatistics = nil
+            }
         }
     }
 
     // MARK: Private
 
     @AppStorage("debugMode") private var debugMode = false
+    @AppStorage("statisticianMode") private var statisticianMode = false
     @State private var isUploading = false
     @State private var uploadErrors: [String: String] = [:]
 
@@ -69,6 +95,7 @@ struct POTAActivationDetailView: View {
     @State private var qsoToDelete: QSO?
     @State private var hiddenQSOIds: Set<UUID> = []
     @State private var activationSession: LoggingSession?
+    @State private var activationStatistics: ActivationStatistics?
 
     private var hasCompletedJob: Bool {
         matchingJobs.contains { $0.status == .completed }
@@ -259,10 +286,12 @@ struct POTAActivationDetailView: View {
             }
         }
     }
+}
 
-    // MARK: - Toolbar Menu
+// MARK: - Toolbar & Metadata
 
-    private var actionsMenu: some View {
+extension POTAActivationDetailView {
+    var actionsMenu: some View {
         Menu {
             Button {
                 onEdit()
@@ -305,7 +334,7 @@ struct POTAActivationDetailView: View {
         }
     }
 
-    private func buildMetadataItems() -> [MetadataItem] {
+    func buildMetadataItems() -> [MetadataItem] {
         var items: [MetadataItem] = []
         // Activity stats
         let qsoLabel = "\(activation.qsoCount) QSO\(activation.qsoCount == 1 ? "" : "s")"

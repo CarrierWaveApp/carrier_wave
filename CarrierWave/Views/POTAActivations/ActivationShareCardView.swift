@@ -16,6 +16,7 @@ struct ActivationShareCardView: View {
     let myGrid: String?
     var metadata: ActivationMetadata?
     var equipment: [ShareCardEquipmentItem] = []
+    var statisticianStats: ActivationStatistics?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -23,12 +24,16 @@ struct ActivationShareCardView: View {
             mapSection
             parkInfoSection
             statsSection
+            if let advancedStats = statisticianStats {
+                ShareCardStatisticianSection(stats: advancedStats)
+                    .padding(.top, 6)
+            }
             ShareCardTimelineView(qsos: activation.qsos)
                 .padding(.top, 8)
                 .padding(.horizontal, 16)
             footer
         }
-        .frame(width: 400, height: 640)
+        .frame(width: 400, height: statisticianStats != nil ? 880 : 640)
         .background(
             LinearGradient(
                 colors: [
@@ -195,8 +200,10 @@ struct ActivationShareCardView: View {
             duration: activation.formattedDuration,
             bandsCount: activation.uniqueBands.count,
             modesCount: activation.uniqueModes.count,
+            qsoRate: stats.qsoRate,
             watts: activationWatts,
             avgDistanceKm: stats.averageDistanceKm,
+            medianDistanceKm: statisticianStats?.distance?.median,
             maxDistanceKm: stats.longestDistanceKm,
             wattsPerMile: stats.wattsPerMile,
             radio: activationRadio,
@@ -222,6 +229,7 @@ struct ActivationShareCardForExport: View {
     let mapImage: UIImage?
     var metadata: ActivationMetadata?
     var equipment: [ShareCardEquipmentItem] = []
+    var statisticianStats: ActivationStatistics?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -234,12 +242,16 @@ struct ActivationShareCardForExport: View {
                 title: metadata?.title
             )
             exportStatsSection
+            if let advancedStats = statisticianStats {
+                ShareCardStatisticianSection(stats: advancedStats)
+                    .padding(.top, 6)
+            }
             ShareCardTimelineView(qsos: activation.qsos)
                 .padding(.top, 8)
                 .padding(.horizontal, 16)
             ActivationShareCardFooter(callsign: activation.callsign)
         }
-        .frame(width: 400, height: 640)
+        .frame(width: 400, height: statisticianStats != nil ? 880 : 640)
         .background(
             LinearGradient(
                 colors: [
@@ -269,8 +281,10 @@ struct ActivationShareCardForExport: View {
             duration: activation.formattedDuration,
             bandsCount: activation.uniqueBands.count,
             modesCount: activation.uniqueModes.count,
+            qsoRate: stats.qsoRate,
             watts: watts,
             avgDistanceKm: stats.averageDistanceKm,
+            medianDistanceKm: statisticianStats?.distance?.median,
             maxDistanceKm: stats.longestDistanceKm,
             wattsPerMile: stats.wattsPerMile,
             radio: radio,
