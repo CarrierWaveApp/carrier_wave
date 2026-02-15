@@ -50,6 +50,24 @@ extension SyncService {
         }
         potaMaintenanceSkipped = potaResult.maintenanceSkipped
 
+        // Club Log upload
+        if clublogClient.isConfigured {
+            let clublogQSOs = qsosNeedingUpload?
+                .filter { $0.needsUpload(to: .clublog) } ?? []
+            if !clublogQSOs.isEmpty {
+                let (validQSOs, invalidQSOs) = partitionQSOsByValidity(clublogQSOs)
+                await logQSOsWithMissingFields(invalidQSOs, service: .clublog)
+
+                if !validQSOs.isEmpty {
+                    await logPendingQSOs(validQSOs, service: .clublog)
+                    let (service, result) = await uploadClubLogBatch(
+                        qsos: validQSOs, timeout: timeout
+                    )
+                    results[service] = result
+                }
+            }
+        }
+
         return (results: results, potaMaintenanceSkipped: potaMaintenanceSkipped)
     }
 
@@ -503,5 +521,49 @@ extension SyncService {
                 + "message=\(result.message ?? "nil")",
             service: .pota
         )
+    }
+
+    // MARK: - Club Log Upload
+
+    private func uploadClubLogBatch(qsos: [QSO], timeout: TimeInterval) async -> (
+        ServiceType, Result<Int, Error>
+    ) {
+        await MainActor.run { self.syncPhase = .uploading(service: .clublog) }
+        do {
+            let result = try await withTimeout(seconds: timeout, service: .clublog) {
+                try await self.uploadToClubLog(qsos: qsos)
+            }
+            return (.clublog, .success(result.uploaded))
+        } catch {
+            return (.clublog, .failure(error))
+        }
+    }
+
+    func uploadToClubLog(qsos: [QSO]) async throws -> ClubLogUploadResult {
+        let uploadResult = try await clublogClient.uploadQSOs(qsos)
+
+        // Mark uploaded QSOs
+        let accountCallsign = clublogClient.getCallsign()?.uppercased()
+        await MainActor.run {
+            for qso in qsos {
+                let qsoCallsign = qso.myCallsign.uppercased()
+                let matches = qsoCallsign.isEmpty || qsoCallsign == accountCallsign
+                if matches, let presence = qso.presence(for: .clublog) {
+                    presence.needsUpload = false
+                    presence.isPresent = true
+                    presence.lastConfirmedAt = Date()
+                }
+            }
+        }
+
+        await MainActor.run {
+            SyncDebugLog.shared.info(
+                "Club Log upload complete: \(uploadResult.uploaded) uploaded, "
+                    + "\(uploadResult.skipped) skipped",
+                service: .clublog
+            )
+        }
+
+        return uploadResult
     }
 }

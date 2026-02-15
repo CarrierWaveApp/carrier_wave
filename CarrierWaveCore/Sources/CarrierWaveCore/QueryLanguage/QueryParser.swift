@@ -409,10 +409,13 @@ public struct QueryParser {
             return .success(.service(.lofi))
         case "hamrs":
             return .success(.service(.hamrs))
+        case "clublog",
+             "club log":
+            return .success(.service(.clublog))
         default:
             return .failure(
                 QueryError.unexpectedToken(
-                    expected: "yes/no or service name (lotw, qrz, pota, lofi, hamrs)",
+                    expected: "yes/no or service name (lotw, qrz, pota, lofi, hamrs, clublog)",
                     got: value,
                     position: position
                 )
@@ -439,13 +442,16 @@ public struct QueryParser {
             return .success(.service(.lofi))
         case "hamrs":
             return .success(.service(.hamrs))
+        case "clublog",
+             "club log":
+            return .success(.service(.clublog))
         case "manual",
              "local":
             return .success(.equals("manual"))
         default:
             return .failure(
                 QueryError.unexpectedToken(
-                    expected: "source name (lotw, qrz, pota, lofi, hamrs, manual)",
+                    expected: "source name (lotw, qrz, pota, lofi, hamrs, clublog, manual)",
                     got: value,
                     position: position
                 )

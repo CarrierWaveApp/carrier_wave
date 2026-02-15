@@ -320,6 +320,7 @@ final class ActivityLogManager {
     /// Cached service configuration
     private var qrzConfigured = false
     private var lofiConfigured = false
+    private var clublogConfigured = false
 
     private func todayStartUTC() -> Date {
         var calendar = Calendar.current
@@ -343,6 +344,10 @@ final class ActivityLogManager {
         if lofiConfigured {
             qso.markNeedsUpload(to: .lofi, context: modelContext)
         }
+
+        if clublogConfigured {
+            qso.markNeedsUpload(to: .clublog, context: modelContext)
+        }
     }
 
     /// Cache service configuration to avoid Keychain reads per-QSO
@@ -351,6 +356,13 @@ final class ActivityLogManager {
             for: KeychainHelper.Keys.qrzApiKey
         )) != nil
         lofiConfigured = UserDefaults.standard.bool(forKey: "lofi.deviceLinked")
+        clublogConfigured =
+            (try? KeychainHelper.shared.readString(
+                for: KeychainHelper.Keys.clublogEmail
+            )) != nil
+                && (try? KeychainHelper.shared.readString(
+                    for: KeychainHelper.Keys.clublogApiKey
+                )) != nil
     }
 
     /// Load active log from persisted ID

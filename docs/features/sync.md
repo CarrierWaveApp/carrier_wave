@@ -9,6 +9,7 @@ Carrier Wave syncs QSO logs to multiple cloud services.
 | QRZ | ✓ | ✓ | Bidirectional |
 | POTA | ✓ | ✓ | Bidirectional |
 | HAMRS | ✓ | ✓ | Bidirectional |
+| Club Log | ✓ | ✓ | Bidirectional |
 | LoFi | | ✓ | Download only |
 | LoTW | | ✓ | Download only (upload requires TQSL) |
 
@@ -34,6 +35,18 @@ Carrier Wave syncs QSO logs to multiple cloud services.
 - **Uses**: `synced_since_millis` for incremental sync
 - **Keychain keys**: `lofi_*`
 
+### Club Log
+
+- **Auth**: Email + Application Password + API key
+- **Upload**: Batch ADIF via multipart `putlogs.php`, or single QSO via `realtime.php`
+- **Download**: Full ADIF log via `getadif.php` (supports date range filtering)
+- **Keychain keys**: `clublog.api.key`, `clublog.email`, `clublog.password`, `clublog.callsign`
+- **Special handling**:
+  - No delta/changelog API — downloads full log (or date range) and diffs locally
+  - Duplicate detection is built-in on the server side
+  - On HTTP 403: immediately stop all further requests (aggressive IP firewall)
+  - Upload is queued server-side, not instant (5–60 seconds processing)
+
 ### ARRL LoTW
 
 - **Auth**: Username/password via query params
@@ -52,7 +65,7 @@ incorrect upload/presence state and phantom uploads.
 
 ### Phase 1: Download from all services (parallel)
 
-Download QSOs from all configured services (QRZ, POTA, LoFi, HAMRS, LoTW) in parallel.
+Download QSOs from all configured services (QRZ, POTA, LoFi, HAMRS, LoTW, Club Log) in parallel.
 Also download POTA upload jobs (`/user/jobs`) — this happens in Phase 2.5c but the data
 is fetched from the POTA API.
 

@@ -302,4 +302,37 @@ extension FetchedQSO {
             source: .lotw
         )
     }
+
+    /// Create from Club Log fetched QSO
+    static func fromClubLog(_ clublog: ClubLogFetchedQSO) -> FetchedQSO {
+        FetchedQSO(
+            callsign: clublog.callsign,
+            band: clublog.band,
+            mode: clublog.mode,
+            frequency: clublog.frequency,
+            timestamp: clublog.timestamp,
+            rstSent: clublog.rstSent,
+            rstReceived: clublog.rstReceived,
+            myCallsign: clublog.myCallsign ?? "",
+            myGrid: clublog.myGrid,
+            theirGrid: clublog.theirGrid,
+            parkReference: clublog.parkReference.flatMap { ParkReference.sanitizeMulti($0) },
+            theirParkReference: clublog.theirParkReference.flatMap { ParkReference.sanitize($0) },
+            notes: clublog.notes,
+            rawADIF: clublog.rawADIF,
+            name: nil,
+            qth: nil,
+            state: nil,
+            country: nil,
+            power: nil,
+            myRig: nil,
+            sotaRef: nil,
+            qrzLogId: nil,
+            qrzConfirmed: false,
+            lotwConfirmedDate: nil,
+            lotwConfirmed: false,
+            dxcc: clublog.dxcc,
+            source: .clublog
+        )
+    }
 }

@@ -397,6 +397,8 @@ enum QueryCompiler {
                     .hamrs
                 case .lotw:
                     .lotw
+                case .clublog:
+                    .clublog
                 }
             return { $0.importSource == importSource }
 

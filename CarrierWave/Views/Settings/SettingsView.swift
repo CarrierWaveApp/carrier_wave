@@ -96,6 +96,9 @@ struct SettingsMainView: View {
     @State private var lotwIsConfigured = false
     @State private var lotwUsername: String?
 
+    @State private var clublogIsConfigured = false
+    @State private var clublogCallsign: String?
+
     @State private var userProfile: UserProfile?
 
     @Query(sort: \ChallengeSource.name) private var challengeSources: [ChallengeSource]
@@ -104,6 +107,7 @@ struct SettingsMainView: View {
     private let qrzClient = QRZClient()
     private let hamrsClient = HAMRSClient()
     private let lotwClient = LoTWClient()
+    private let clublogClient = ClubLogClient()
 
     /// Summary text for keyboard row settings
     private var keyboardRowSummary: String {
@@ -143,11 +147,14 @@ struct SettingsMainView: View {
                 qrzClient: qrzClient,
                 hamrsClient: hamrsClient,
                 lotwClient: lotwClient,
+                clublogClient: clublogClient,
                 iCloudMonitor: iCloudMonitor,
                 qrzIsConfigured: qrzIsConfigured,
                 qrzCallsign: qrzCallsign,
                 lotwIsConfigured: lotwIsConfigured,
                 lotwUsername: lotwUsername,
+                clublogIsConfigured: clublogIsConfigured,
+                clublogCallsign: clublogCallsign,
                 challengeSources: challengeSources,
                 tourState: tourState
             )
@@ -168,6 +175,8 @@ struct SettingsMainView: View {
                 HAMRSSettingsView(syncService: syncService)
             case .lotw:
                 LoTWSettingsView(syncService: syncService)
+            case .clublog:
+                ClubLogSettingsView(syncService: syncService)
             case .icloud:
                 ICloudSettingsView()
             }
@@ -684,6 +693,9 @@ struct SettingsMainView: View {
                 lotwUsername = creds.username
             }
         }
+
+        clublogIsConfigured = clublogClient.isConfigured
+        clublogCallsign = clublogClient.getCallsign()
 
         userProfile = UserProfileService.shared.getProfile()
     }

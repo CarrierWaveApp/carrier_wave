@@ -8,6 +8,7 @@ public enum ServiceType: String, Codable, CaseIterable, Sendable {
     case lofi
     case hamrs
     case lotw
+    case clublog
 
     // MARK: Public
 
@@ -18,13 +19,15 @@ public enum ServiceType: String, Codable, CaseIterable, Sendable {
         case .lofi: "LoFi"
         case .hamrs: "HAMRS"
         case .lotw: "LoTW"
+        case .clublog: "Club Log"
         }
     }
 
     public var supportsUpload: Bool {
         switch self {
         case .qrz,
-             .pota:
+             .pota,
+             .clublog:
             true
         case .lofi,
              .lotw,
