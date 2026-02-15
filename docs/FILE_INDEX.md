@@ -134,7 +134,9 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `HAMRSModels.swift` | HAMRS API models |
 | `HAMRSError.swift` | HAMRS-specific errors |
 | `ClubLogClient.swift` | Club Log API client (email/password + API key auth, bidirectional ADIF sync) |
+| `ClubLogClient+Helpers.swift` | Club Log ADIF parsing/generation, network helpers, multipart body builder |
 | `SyncService.swift` | Main sync orchestrator |
+| `SyncService+SingleSync.swift` | Per-service sync methods (syncQRZ, syncPOTA, syncLoFi, etc.) |
 | `SyncService+Upload.swift` | Upload logic for all services |
 | `SyncService+Download.swift` | Download/import logic |
 | `SyncService+ForceRedownload.swift` | Force re-download all QSOs from each service |
