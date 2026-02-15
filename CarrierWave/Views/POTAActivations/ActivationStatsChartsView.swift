@@ -2,7 +2,7 @@
 //
 // Swift Charts for the activation detail view when Professional
 // Statistician Mode is enabled. Shows band distribution, QSO rate
-// over time, and distance distribution.
+// over time, cumulative distance, and cumulative timing.
 
 import Charts
 import CoreLocation
@@ -22,8 +22,11 @@ struct ActivationStatsChartsView: View {
             if qsos.count >= 2 {
                 rateChart
             }
-            if let distance = stats.distance, distance.count >= 3 {
-                distanceChart
+            if sortedDistances.count >= 3 {
+                cumulativeDistanceChart
+            }
+            if sortedIntervals.count >= 3 {
+                cumulativeTimingChart
             }
         }
     }
@@ -149,43 +152,55 @@ private extension ActivationStatsChartsView {
     }
 }
 
-// MARK: - Distance Distribution Chart
+// MARK: - Cumulative Distance Chart
 
 private extension ActivationStatsChartsView {
-    var distanceChart: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("Distance Distribution")
+    var sortedDistances: [Double] {
+        computeDistancesForChart().sorted()
+    }
+
+    var cumulativeDistanceChart: some View {
+        let distances = sortedDistances
+        let points = distances.enumerated().map { i, dist in
+            CumulativePoint(
+                index: i,
+                value: dist,
+                cumulative: Double(i + 1) / Double(distances.count) * 100
+            )
+        }
+        return VStack(alignment: .leading, spacing: 4) {
+            Text("Distance CDF")
                 .font(.caption)
                 .fontWeight(.semibold)
                 .foregroundStyle(.secondary)
-            Chart(distanceBuckets) { bucket in
-                BarMark(
-                    x: .value("Distance", bucket.label),
-                    y: .value("Count", bucket.count)
+            Chart(points) { point in
+                LineMark(
+                    x: .value("Distance (km)", point.value),
+                    y: .value("% of QSOs", point.cumulative)
                 )
-                .foregroundStyle(.teal.gradient)
+                .foregroundStyle(.teal)
+                .interpolationMethod(.stepEnd)
+                AreaMark(
+                    x: .value("Distance (km)", point.value),
+                    y: .value("% of QSOs", point.cumulative)
+                )
+                .foregroundStyle(.teal.opacity(0.15))
+                .interpolationMethod(.stepEnd)
             }
-            .chartXAxis {
-                AxisMarks { value in
-                    AxisValueLabel {
-                        if let label = value.as(String.self) {
-                            Text(label)
-                                .font(.system(size: 8))
-                                .rotationEffect(.degrees(-45))
-                        }
-                    }
-                }
-            }
+            .chartYAxisLabel("%")
+            .chartXAxisLabel("km")
             .frame(height: 120)
         }
     }
 
-    var distanceBuckets: [DistanceBucket] {
-        let distances = qsos.compactMap { qso -> Double? in
+    func computeDistancesForChart() -> [Double] {
+        qsos.compactMap { qso -> Double? in
             guard let myGrid = qso.myGrid, myGrid.count >= 4,
                   let theirGrid = qso.theirGrid, theirGrid.count >= 4,
                   let myCoord = MaidenheadConverter.coordinate(from: myGrid),
-                  let theirCoord = MaidenheadConverter.coordinate(from: theirGrid)
+                  let theirCoord = MaidenheadConverter.coordinate(
+                      from: theirGrid
+                  )
             else {
                 return nil
             }
@@ -197,26 +212,58 @@ private extension ActivationStatsChartsView {
             )
             return fromLoc.distance(from: toLoc) / 1_000.0
         }
-        guard !distances.isEmpty else {
+    }
+}
+
+// MARK: - Cumulative Timing Chart
+
+private extension ActivationStatsChartsView {
+    var sortedIntervals: [Double] {
+        computeIntervalsForChart().sorted()
+    }
+
+    var cumulativeTimingChart: some View {
+        let intervals = sortedIntervals
+        let points = intervals.enumerated().map { i, interval in
+            CumulativePoint(
+                index: i,
+                value: interval,
+                cumulative: Double(i + 1) / Double(intervals.count) * 100
+            )
+        }
+        return VStack(alignment: .leading, spacing: 4) {
+            Text("QSO Interval CDF")
+                .font(.caption)
+                .fontWeight(.semibold)
+                .foregroundStyle(.secondary)
+            Chart(points) { point in
+                LineMark(
+                    x: .value("Interval (s)", point.value),
+                    y: .value("% of Intervals", point.cumulative)
+                )
+                .foregroundStyle(.orange)
+                .interpolationMethod(.stepEnd)
+                AreaMark(
+                    x: .value("Interval (s)", point.value),
+                    y: .value("% of Intervals", point.cumulative)
+                )
+                .foregroundStyle(.orange.opacity(0.15))
+                .interpolationMethod(.stepEnd)
+            }
+            .chartYAxisLabel("%")
+            .chartXAxisLabel("seconds")
+            .frame(height: 120)
+        }
+    }
+
+    func computeIntervalsForChart() -> [TimeInterval] {
+        let sorted = qsos.sorted { $0.timestamp < $1.timestamp }
+        guard sorted.count >= 2 else {
             return []
         }
-
-        let maxDist = distances.max() ?? 1
-        let bucketCount = min(8, max(3, distances.count / 2))
-        let bucketSize = maxDist / Double(bucketCount)
-        guard bucketSize > 0 else {
-            return []
+        return zip(sorted, sorted.dropFirst()).map {
+            $1.timestamp.timeIntervalSince($0.timestamp)
         }
-
-        var buckets: [DistanceBucket] = []
-        for i in 0 ..< bucketCount {
-            let low = Double(i) * bucketSize
-            let high = Double(i + 1) * bucketSize
-            let count = distances.filter { $0 >= low && $0 < high }.count
-            let label = "\(Int(low))-\(Int(high))km"
-            buckets.append(DistanceBucket(label: label, count: count))
-        }
-        return buckets
     }
 }
 
@@ -231,13 +278,14 @@ private struct RatePoint: Identifiable {
     }
 }
 
-// MARK: - DistanceBucket
+// MARK: - CumulativePoint
 
-private struct DistanceBucket: Identifiable {
-    let label: String
-    let count: Int
+private struct CumulativePoint: Identifiable {
+    let index: Int
+    let value: Double
+    let cumulative: Double
 
-    var id: String {
-        label
+    var id: Int {
+        index
     }
 }

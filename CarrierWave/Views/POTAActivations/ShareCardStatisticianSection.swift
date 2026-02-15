@@ -14,10 +14,14 @@ struct ShareCardStatisticianSection: View {
         VStack(spacing: 8) {
             sectionHeader
             if let distance = stats.distance {
-                boxPlotRow(distance)
+                boxPlotRow("Distance (km)", distance: distance)
+            }
+            if let timing = stats.timing {
+                timingBoxPlotRow(timing)
             }
             badgesRow
             distributionRow
+            modesRow
             entityRow
             significanceBadge
         }
@@ -44,20 +48,44 @@ private extension ShareCardStatisticianSection {
         .foregroundStyle(.white.opacity(0.6))
     }
 
-    // MARK: - ASCII Box Plot
+    // MARK: - Box Plots
 
-    func boxPlotRow(_ distance: DistanceStatistics) -> some View {
+    func boxPlotRow(
+        _ title: String,
+        distance dist: DistanceStatistics
+    ) -> some View {
         VStack(spacing: 2) {
-            Text("Distance Distribution (km)")
+            Text(title)
                 .font(.system(size: 8))
                 .foregroundStyle(.white.opacity(0.5))
-            boxPlotGraphic(distance)
+            genericBoxPlot(
+                min: dist.min, p25: dist.p25,
+                median: dist.median, p75: dist.p75, max: dist.max
+            )
         }
     }
 
-    func boxPlotGraphic(_ dist: DistanceStatistics) -> some View {
+    func timingBoxPlotRow(_ timing: TimingStatistics) -> some View {
+        VStack(spacing: 2) {
+            Text("Time Between QSOs (s)")
+                .font(.system(size: 8))
+                .foregroundStyle(.white.opacity(0.5))
+            genericBoxPlot(
+                min: timing.minIntervalSeconds,
+                p25: timing.p25IntervalSeconds,
+                median: timing.medianIntervalSeconds,
+                p75: timing.p75IntervalSeconds,
+                max: timing.maxIntervalSeconds
+            )
+        }
+    }
+
+    func genericBoxPlot(
+        min: Double, p25: Double, median: Double,
+        p75: Double, max: Double
+    ) -> some View {
         let totalWidth: CGFloat = 320
-        let range = dist.max - dist.min
+        let range = max - min
         guard range > 0 else {
             return AnyView(
                 Text("No variance")
@@ -67,7 +95,7 @@ private extension ShareCardStatisticianSection {
         }
 
         func xPos(_ value: Double) -> CGFloat {
-            CGFloat((value - dist.min) / range) * totalWidth
+            CGFloat((value - min) / range) * totalWidth
         }
 
         return AnyView(
@@ -76,22 +104,19 @@ private extension ShareCardStatisticianSection {
                 Rectangle()
                     .fill(.white.opacity(0.3))
                     .frame(width: totalWidth, height: 1)
-
                 // IQR box: p25 to p75
                 Rectangle()
                     .fill(.purple.opacity(0.5))
                     .frame(
-                        width: max(xPos(dist.p75) - xPos(dist.p25), 2),
+                        width: Swift.max(xPos(p75) - xPos(p25), 2),
                         height: 14
                     )
-                    .offset(x: xPos(dist.p25))
-
+                    .offset(x: xPos(p25))
                 // Median line
                 Rectangle()
                     .fill(.white)
                     .frame(width: 2, height: 14)
-                    .offset(x: xPos(dist.median))
-
+                    .offset(x: xPos(median))
                 // Min/max caps
                 Rectangle()
                     .fill(.white.opacity(0.5))
@@ -111,8 +136,8 @@ private extension ShareCardStatisticianSection {
         HStack(spacing: 6) {
             if let timing = stats.timing {
                 statBadge(
-                    String(format: "%.0f", timing.peak15MinRate),
-                    label: "peak 15m"
+                    String(format: "%.0f QSOs", timing.peak15MinRate),
+                    label: "best 15-min"
                 )
                 statBadge(
                     formatInterval(timing.medianIntervalSeconds),
@@ -122,7 +147,7 @@ private extension ShareCardStatisticianSection {
             if let cv = stats.distance?.coefficientOfVariation {
                 statBadge(
                     String(format: "%.2f", cv),
-                    label: "CV"
+                    label: "dist. CV"
                 )
             }
         }
@@ -140,13 +165,24 @@ private extension ShareCardStatisticianSection {
                     }
                 )
             }
+        }
+    }
+
+    // MARK: - Modes Row
+
+    var modesRow: some View {
+        Group {
             if !stats.modeDistribution.isEmpty {
-                distributionColumn(
-                    title: "Modes",
-                    items: stats.modeDistribution.prefix(4).map {
-                        ($0.mode, $0.percentage)
+                HStack(spacing: 6) {
+                    Text("Modes")
+                        .font(.system(size: 8))
+                        .foregroundStyle(.white.opacity(0.5))
+                    ForEach(stats.modeDistribution, id: \.mode) { item in
+                        Text("\(item.mode) \(item.count)")
+                            .font(.system(size: 9, design: .monospaced))
+                            .foregroundStyle(.white.opacity(0.9))
                     }
-                )
+                }
             }
         }
     }
@@ -180,12 +216,6 @@ private extension ShareCardStatisticianSection {
                 entityBadge(
                     "\(stats.uniqueStates)",
                     label: stats.uniqueStates == 1 ? "state" : "states"
-                )
-            }
-            if stats.uniqueDXCC > 0 {
-                entityBadge(
-                    "\(stats.uniqueDXCC)",
-                    label: "DXCC"
                 )
             }
             if stats.uniqueGrids > 0 {

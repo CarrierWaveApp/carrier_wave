@@ -7,9 +7,19 @@ All notable changes to Carrier Wave will be documented in this file.
 ### Added
 - Add QSOs/hr rate to brag sheet stats row (always shown when rate available)
 - Add Professional Statistician Mode toggle in POTA settings
-- Statistician mode: charts on activation detail (band distribution, QSO rate over time, distance histogram)
-- Statistician mode: two-column stats summary on activation detail (distance, timing, RST, entities)
-- Statistician mode: extra section on brag sheet (box plot, peak rate badges, band/mode distributions, entity counts, p < 0.05 badge)
+- Statistician mode: charts on activation detail (band distribution, QSO rate over time, cumulative distance CDF, cumulative timing CDF)
+- Statistician mode: two-column stats summary on activation detail (distance, timing, RST bucketed by R/S/T, entities)
+- Statistician mode: brag sheet section with distance and timing box plots, peak rate badges, band/mode distributions, entity counts
+- Statistician mode: modes used shown on brag sheet
+
+### Changed
+- Replace distance histogram chart with cumulative distribution (CDF) chart for readability
+- Add cumulative timing CDF chart alongside QSO rate chart
+- RST statistics now bucketed by R (readability), S (signal), T (tone) instead of averaging the whole number
+- Clarify brag sheet badge labels: "best 15-min" for peak window, "dist. CV" for coefficient of variation
+
+### Removed
+- Remove DXCC from statistician views (unreliable data)
 
 ### Fixed
 - Fix crash when opening map view — computed property in SwiftData `#Predicate` caused runtime assertion failure
