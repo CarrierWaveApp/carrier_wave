@@ -4,6 +4,11 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Configurable dashboard metrics card — choose 1-2 metrics from streaks (On-Air, Activation, Hunter, CW, Phone, Digital) and counts (QSOs/activations/hunts per week/month/year, new DXCC)
+- Hunter streak tracking — consecutive days working POTA activators
+- Dashboard Metrics settings screen for metric selection
+
 ### Fixed
 - Hide sessions with zero QSOs from the Sessions list
 - Fix build errors: static stored property in generic type, duplicate FlowLayout definition, ActivationShareRenderer instantiation

@@ -83,6 +83,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `POTAActivation.swift` | POTA activation grouping view model |
 | `TourState.swift` | UserDefaults-backed tour progress tracking |
 | `StreakInfo.swift` | Streak data model and calculation utilities |
+| `DashboardMetricType.swift` | Dashboard metric type enum, display properties, MetricDisplayValue |
 | `ActivityType.swift` | Activity type enum with icons and display names |
 | `Friendship.swift` | Friend connection model with status tracking |
 | `FriendSuggestion.swift` | Friend suggestion models (DismissedSuggestion, FriendSuggestion, DTO) |
@@ -457,6 +458,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `CallsignNotesSettingsView.swift` | Manage callsign notes file sources (URL + title) |
 | `KeyboardRowSettingsView.swift` | Configure number row symbols above keyboard |
 | `CommandRowSettingsView.swift` | Configure command row buttons above keyboard |
+| `DashboardMetricsSettingsView.swift` | Configure which metrics appear on dashboard card |
 | `WebSDRRecordingsView.swift` | List of all WebSDR recordings with delete, share, and details |
 
 ## Documentation (`docs/`)
