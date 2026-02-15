@@ -118,6 +118,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `POTAClient+GridLookup.swift` | POTA grid square lookup |
 | `POTAClient+Checkpoint.swift` | POTA resumable download checkpoints and incremental sync state |
 | `POTAClient+Adaptive.swift` | POTA adaptive batch processing for rate limiting |
+| `POTAClient+ParkDetail.swift` | Public POTA park stats, leaderboard, and activations API models + loader |
 | `POTAParksCache.swift` | POTA park reference to name lookup cache |
 | `POTAAuthService.swift` | POTA OAuth flow handling (main service) |
 | `POTAAuthService+JavaScript.swift` | JavaScript helpers for POTA WebView auth |
@@ -291,6 +292,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `SessionEquipmentEditSheet.swift` | Compact equipment editor (radio, antenna, key, mic) for active sessions |
 | `ParkPickerSheet.swift` | Multi-select park search/nearby sheet for n-fer |
 | `ParkEntryField.swift` | Multi-park entry with chips, search picker, and shorthand |
+| `ParkDetailSheet.swift` | Park detail sheet with stats, leaderboard (top activators/hunters), and recent activations from POTA API |
 | `LoggerSettingsView.swift` | (Deprecated) Logger settings moved to main SettingsView |
 | `RBNPanelView.swift` | Combined RBN/POTA spots panel with mini-map |
 | `SpotsMiniMapView.swift` | Map view showing spotter locations with arcs to target |

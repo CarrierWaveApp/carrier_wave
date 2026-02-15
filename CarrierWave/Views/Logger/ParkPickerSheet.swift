@@ -378,61 +378,73 @@ struct ParkRow: View {
     var body: some View {
         // swiftlint:disable:next redundant_discardable_let
         let _ = useMetricUnits // Trigger re-render when unit preference changes
-        Button(action: onSelect) {
-            HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(park.reference)
-                        .font(.subheadline.monospaced().weight(.semibold))
-                        .foregroundStyle(.green)
+        HStack(spacing: 12) {
+            Button(action: onSelect) {
+                HStack(spacing: 12) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(park.reference)
+                            .font(.subheadline.monospaced().weight(.semibold))
+                            .foregroundStyle(.green)
 
-                    Text(park.name)
-                        .font(.body)
-                        .foregroundStyle(.primary)
-                        .lineLimit(2)
+                        Text(park.name)
+                            .font(.body)
+                            .foregroundStyle(.primary)
+                            .lineLimit(2)
 
-                    HStack(spacing: 8) {
-                        if let state = park.state {
-                            Text(state)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
+                        HStack(spacing: 8) {
+                            if let state = park.state {
+                                Text(state)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
 
-                        if let stats, stats.qsoCount > 0 {
-                            statsBadge(stats)
+                            if let stats, stats.qsoCount > 0 {
+                                statsBadge(stats)
+                            }
                         }
                     }
-                }
 
-                Spacer()
+                    Spacer()
 
-                if let distance {
-                    Text(formatDistance(distance))
-                        .font(.caption.monospacedDigit())
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color(.tertiarySystemFill))
-                        .clipShape(Capsule())
-                }
+                    if let distance {
+                        Text(formatDistance(distance))
+                            .font(.caption.monospacedDigit())
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Color(.tertiarySystemFill))
+                            .clipShape(Capsule())
+                    }
 
-                if isSelected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(.green)
-                } else {
-                    Image(systemName: "plus.circle")
-                        .font(.caption)
-                        .foregroundStyle(.blue)
+                    if isSelected {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(.green)
+                    } else {
+                        Image(systemName: "plus.circle")
+                            .font(.caption)
+                            .foregroundStyle(.blue)
+                    }
                 }
             }
-            .padding(.vertical, 4)
+            .buttonStyle(.plain)
+            .disabled(isSelected)
+
+            Button { showDetail = true } label: {
+                Image(systemName: "info.circle")
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
         }
-        .buttonStyle(.plain)
-        .disabled(isSelected)
+        .padding(.vertical, 4)
+        .sheet(isPresented: $showDetail) {
+            ParkDetailSheet(reference: park.reference)
+        }
     }
 
     // MARK: Private
 
     @AppStorage("useMetricUnits") private var useMetricUnits = false
+    @State private var showDetail = false
 
     private func statsBadge(_ stats: ParkStats) -> some View {
         HStack(spacing: 4) {

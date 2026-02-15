@@ -196,24 +196,32 @@ struct ParkEntryField: View {
 
 // MARK: - ParkChip
 
-/// Removable chip showing a park reference and optional name
+/// Removable chip showing a park reference and optional name.
+/// Tapping the chip (not the remove button) shows park details.
 struct ParkChip: View {
+    // MARK: Internal
+
     let reference: String
     var name: String?
     let onRemove: () -> Void
 
     var body: some View {
         HStack(spacing: 4) {
-            Text(reference)
-                .font(.caption.monospaced().weight(.semibold))
-                .foregroundStyle(.green)
+            Button { showDetail = true } label: {
+                HStack(spacing: 4) {
+                    Text(reference)
+                        .font(.caption.monospaced().weight(.semibold))
+                        .foregroundStyle(.green)
 
-            if let name {
-                Text(name)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                    if let name {
+                        Text(name)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                }
             }
+            .buttonStyle(.plain)
 
             Button(action: onRemove) {
                 Image(systemName: "xmark.circle.fill")
@@ -226,7 +234,14 @@ struct ParkChip: View {
         .padding(.vertical, 4)
         .background(Color.green.opacity(0.1))
         .clipShape(Capsule())
+        .sheet(isPresented: $showDetail) {
+            ParkDetailSheet(reference: reference)
+        }
     }
+
+    // MARK: Private
+
+    @State private var showDetail = false
 }
 
 // MARK: - Preview

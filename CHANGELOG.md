@@ -7,6 +7,8 @@ All notable changes to Carrier Wave will be documented in this file.
 ### Added
 - Add RIG logger command to edit equipment (radio, antenna, key, mic) during an active session
 - Add tappable equipment capsule to logger session header row 2
+- Add park detail sheet showing POTA stats, top activators/hunters leaderboard, and recent activations
+- Park chips and park picker rows now open park detail sheet on tap/info button
 
 ### Changed
 - Move session duration from row 2 capsule to row 1 (next to QSO count) to free horizontal space
