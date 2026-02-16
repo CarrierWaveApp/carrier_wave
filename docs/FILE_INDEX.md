@@ -537,5 +537,6 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `SessionPhotoManagerTests.swift` | Session photo file management tests |
 | `Helpers/QSOFactory.swift` | Synthetic QSO generator for testing (duplicates, metadata, edge cases) |
 | `Helpers/TestModelContainer.swift` | Shared test infrastructure for SwiftData tests |
+| `CommentParkRefRepairServiceTests.swift` | Comment park ref backfill predicate regression and logic tests |
 | `BandPlanServiceTests.swift` | Band plan validation tests (license class privileges) |
 | `PerformanceTests/QSOStatisticsPerformanceTests.swift` | Performance regression tests (50k/500k QSOs) |

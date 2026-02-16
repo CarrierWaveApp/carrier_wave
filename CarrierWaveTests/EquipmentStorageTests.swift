@@ -2,6 +2,7 @@ import XCTest
 @testable import CarrierWave
 
 /// Tests for EquipmentStorage - UserDefaults-backed equipment list management
+@MainActor
 final class EquipmentStorageTests: XCTestCase {
     override func setUp() {
         super.setUp()
