@@ -8,6 +8,14 @@ All notable changes to Carrier Wave will be documented in this file.
 - Add one-time background repair to extract park references from ADIF comment fields on existing QSOs imported before the extraction logic was added
 - Add active sessions list to logger tab: paused sessions appear with Continue/Finish actions when no session is active
 - Starting a new session now pauses (instead of ending) the previous session, allowing it to be resumed later
+- Add data repair for callsign whitespace: trims leading/trailing spaces and merges resulting duplicates
+- Add data repair for QRZ isSubmitted state: promotes stuck records to isPresent
+
+### Fixed
+- Fix QRZ upload marking QSOs as isSubmitted instead of isPresent, leaving them invisible to reconciliation
+- Fix logger saving callsigns with trailing whitespace, causing duplicate QSOs that fail deduplication
+- Add defense-in-depth trimming to deduplication key and QSOSnapshot normalizedCallsign
+- Clear isSubmitted flag in markPresent to prevent stale submitted state
 
 ## [1.33.1] - 2026-02-15
 

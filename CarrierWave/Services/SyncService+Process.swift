@@ -413,6 +413,42 @@ extension SyncService {
         }
     }
 
+    /// Repair QSOs with leading/trailing whitespace in callsigns.
+    /// Trims whitespace, then merges any resulting duplicates.
+    func repairCallsignWhitespaceAsync() async {
+        do {
+            let result = try await Self.processingActor.repairCallsignWhitespace(
+                container: modelContext.container
+            )
+            if result.trimmedCount > 0 || result.mergedCount > 0 {
+                SyncDebugLog.shared.warning(
+                    "Callsign whitespace repair: trimmed \(result.trimmedCount), "
+                        + "merged \(result.mergedCount), deleted \(result.deletedCount)"
+                )
+            }
+        } catch {
+            SyncDebugLog.shared.error("Failed to repair callsign whitespace: \(error)")
+        }
+    }
+
+    /// Repair QRZ ServicePresence records stuck in isSubmitted=true state.
+    /// QRZ uploads are synchronous — isSubmitted should have been isPresent.
+    func repairQRZSubmittedStateAsync() async {
+        do {
+            let result = try await Self.processingActor.repairQRZSubmittedState(
+                container: modelContext.container
+            )
+            if result.repairedCount > 0 {
+                SyncDebugLog.shared.warning(
+                    "Repaired \(result.repairedCount) QRZ ServicePresence record(s) "
+                        + "stuck in isSubmitted state (promoted to isPresent)"
+                )
+            }
+        } catch {
+            SyncDebugLog.shared.error("Failed to repair QRZ submitted state: \(error)")
+        }
+    }
+
     // MARK: - Legacy Synchronous Methods
 
     /// Synchronous version - prefer processDownloadedQSOsAsync for better UI responsiveness.

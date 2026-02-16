@@ -334,7 +334,8 @@ extension SyncService {
                     let matches = qsoCallsign.isEmpty || qsoCallsign == accountCallsign
                     if matches, let presence = qso.presence(for: .qrz) {
                         presence.needsUpload = false
-                        presence.isSubmitted = true
+                        presence.isPresent = true
+                        presence.lastConfirmedAt = Date()
                     } else {
                         // Log why this QSO wasn't marked as uploaded
                         let dateStr = Self.debugDateFormatter.string(from: qso.timestamp)

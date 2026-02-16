@@ -127,7 +127,8 @@ final class QSO {
     nonisolated var deduplicationKey: String {
         let roundedTimestamp = timestamp.timeIntervalSince1970
         let rounded = Int(roundedTimestamp / 120) * 120 // 2 minute buckets
-        return "\(callsign.uppercased())|\(band.uppercased())|\(mode.uppercased())|\(rounded)"
+        let trimmedCallsign = callsign.trimmingCharacters(in: .whitespaces).uppercased()
+        return "\(trimmedCallsign)|\(band.uppercased())|\(mode.uppercased())|\(rounded)"
     }
 
     /// Extract callsign prefix (for display/grouping)
@@ -277,6 +278,7 @@ final class QSO {
         if let existing = presence(for: service) {
             existing.isPresent = true
             existing.needsUpload = false
+            existing.isSubmitted = false
             existing.lastConfirmedAt = Date()
         } else {
             let newPresence = ServicePresence.downloaded(from: service, qso: self)
