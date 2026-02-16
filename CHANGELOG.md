@@ -4,7 +4,15 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Add A-index display to conditions dashboard card and history chart
+- Add real HF band conditions (day/night) from HamQSL to solar panel, replacing estimated values
+- Store A-index and band conditions from HamQSL on sessions and activation metadata
+
 ### Fixed
+- Fix corrupted K-index data: one-time repair clears K-index=0 values from before the HamQSL XML whitespace parsing fix (Feb 14, 2026), preserving valid SFI and sunspot data
+- Fix `hasSolarData` to check all three solar fields (K-index, SFI, sunspots) instead of only K-index, preventing data loss when K-index is cleared
+- Average same-day solar/weather data points in conditions charts to reduce clutter from multiple sessions
 - Fix crash-on-launch in CommentParkRefRepairService: replace `(parkReference ?? "").isEmpty` with direct `== ""` comparison in SwiftData predicate to avoid CoreData NSPredicate translation assertion
 - Fix crash-on-launch in CommentParkRefRepairService: remove propertiesToFetch that omitted predicate-referenced isHidden field, causing CoreData assertion; add batched fetching with fetchLimit
 

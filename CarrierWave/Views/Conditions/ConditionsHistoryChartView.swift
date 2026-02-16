@@ -6,6 +6,7 @@ import SwiftUI
 /// Which metric to display in the conditions chart.
 enum ConditionsMetric: String, CaseIterable, Identifiable {
     case kIndex = "K-Index"
+    case aIndex = "A-Index"
     case solarFlux = "SFI"
     case sunspots = "Sunspots"
     case temperature = "Temp"
@@ -21,6 +22,7 @@ enum ConditionsMetric: String, CaseIterable, Identifiable {
     var icon: String {
         switch self {
         case .kIndex: "waveform"
+        case .aIndex: "waveform.path"
         case .solarFlux: "sun.max.fill"
         case .sunspots: "circle.dotted"
         case .temperature: "thermometer.medium"
@@ -32,6 +34,7 @@ enum ConditionsMetric: String, CaseIterable, Identifiable {
     var color: Color {
         switch self {
         case .kIndex: .orange
+        case .aIndex: .purple
         case .solarFlux: .yellow
         case .sunspots: .orange
         case .temperature: .red
@@ -43,6 +46,7 @@ enum ConditionsMetric: String, CaseIterable, Identifiable {
     var isSolar: Bool {
         switch self {
         case .kIndex,
+             .aIndex,
              .solarFlux,
              .sunspots: true
         default: false
@@ -52,6 +56,7 @@ enum ConditionsMetric: String, CaseIterable, Identifiable {
     func value(from snapshot: EnvironmentalSnapshot) -> Double? {
         switch self {
         case .kIndex: snapshot.solarKIndex
+        case .aIndex: snapshot.solarAIndex.map(Double.init)
         case .solarFlux: snapshot.solarFlux
         case .sunspots: snapshot.solarSunspots.map(Double.init)
         case .temperature: snapshot.weatherTemperatureF
@@ -63,6 +68,7 @@ enum ConditionsMetric: String, CaseIterable, Identifiable {
     func formatValue(_ value: Double) -> String {
         switch self {
         case .kIndex: String(format: "%.1f", value)
+        case .aIndex: "\(Int(value))"
         case .solarFlux: "\(Int(value))"
         case .sunspots: "\(Int(value))"
         case .temperature: UnitFormatter.temperature(value)
@@ -105,14 +111,32 @@ struct ConditionsHistoryChartView: View {
 
     @State private var selectedMetric: ConditionsMetric = .kIndex
 
+    /// Data points averaged per calendar day (UTC) to reduce clutter from
+    /// multiple sessions on the same day. Plotted at noon UTC for each day.
     private var filteredData: [(date: Date, value: Double)] {
-        snapshots.compactMap { snapshot in
+        let raw = snapshots.compactMap { snapshot -> (key: String, value: Double)? in
             guard let value = selectedMetric.value(from: snapshot) else {
                 return nil
             }
-            return (date: snapshot.timestamp, value: value)
+            return (key: Self.dayKey(snapshot.timestamp), value: value)
+        }
+
+        // Group by day and average
+        var grouped: [String: [Double]] = [:]
+        for point in raw {
+            grouped[point.key, default: []].append(point.value)
+        }
+
+        return grouped.map { key, values in
+            let avg = values.reduce(0, +) / Double(values.count)
+            return (date: Self.dateFromDayKey(key), value: avg)
         }
         .sorted { $0.date < $1.date }
+    }
+
+    /// Raw sample count for the selected metric (before day-averaging).
+    private var rawSampleCount: Int {
+        snapshots.filter { selectedMetric.value(from: $0) != nil }.count
     }
 
     /// Only show metrics that have data in the snapshots.
@@ -225,7 +249,7 @@ struct ConditionsHistoryChartView: View {
 
             Spacer()
 
-            Text("\(filteredData.count) samples")
+            Text("\(rawSampleCount) samples")
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
         }
@@ -252,5 +276,23 @@ struct ConditionsHistoryChartView: View {
                 .font(.system(size: 9))
                 .foregroundStyle(.secondary)
         }
+    }
+
+    // MARK: - Day Averaging Helpers
+
+    private static func dayKey(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.timeZone = TimeZone(identifier: "UTC")
+        return formatter.string(from: date)
+    }
+
+    private static func dateFromDayKey(_ key: String) -> Date {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.timeZone = TimeZone(identifier: "UTC")
+        let startOfDay = formatter.date(from: key) ?? Date()
+        // Plot at noon UTC for visual centering
+        return startOfDay.addingTimeInterval(12 * 3_600)
     }
 }

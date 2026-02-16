@@ -19,6 +19,8 @@ struct EnvironmentalSnapshot: Sendable, Identifiable {
     let solarFlux: Double?
     let solarSunspots: Int?
     let solarPropagationRating: String?
+    let solarAIndex: Int?
+    let solarBandConditions: String?
 
     // Weather fields
     let weatherTemperatureF: Double?
@@ -29,7 +31,7 @@ struct EnvironmentalSnapshot: Sendable, Identifiable {
     let weatherDescription: String?
 
     var hasSolarData: Bool {
-        solarKIndex != nil
+        solarKIndex != nil || solarFlux != nil || solarSunspots != nil
     }
 
     var hasWeatherData: Bool {

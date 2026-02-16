@@ -127,6 +127,7 @@ struct DashboardView: View {
                 await backfillWPMIfNeeded()
                 await backfillConditionsIfNeeded()
                 await backfillCommentParkRefsIfNeeded()
+                await repairKIndexIfNeeded()
             }
             .onChange(of: syncService.lastSyncDate) { _, _ in
                 // Recompute stats after sync completes

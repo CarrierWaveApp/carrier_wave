@@ -52,6 +52,8 @@ final class ActivationMetadata {
     var solarSunspots: Int?
     /// "Excellent", "Good", "Fair", "Poor", or "Very Poor"
     var solarPropagationRating: String?
+    var solarAIndex: Int?
+    var solarBandConditions: String?
     var solarTimestamp: Date?
 
     // MARK: - Structured Weather Fields
@@ -66,7 +68,7 @@ final class ActivationMetadata {
 
     /// Whether structured solar data is available
     var hasSolarData: Bool {
-        solarKIndex != nil
+        solarKIndex != nil || solarFlux != nil || solarSunspots != nil
     }
 
     /// Whether structured weather data is available
