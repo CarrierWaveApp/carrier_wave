@@ -4,6 +4,8 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.34.0] - 2026-02-16
+
 ### Added
 - Add A-index display to conditions dashboard card and history chart
 - Add real HF band conditions (day/night) from HamQSL to solar panel, replacing estimated values
@@ -19,6 +21,7 @@ All notable changes to Carrier Wave will be documented in this file.
 - Fix corrupted K-index data: one-time repair clears K-index=0 values from before the HamQSL XML whitespace parsing fix (Feb 14, 2026), preserving valid SFI and sunspot data
 - Fix `hasSolarData` to check all three solar fields (K-index, SFI, sunspots) instead of only K-index, preventing data loss when K-index is cleared
 - Average same-day solar/weather data points in conditions charts to reduce clutter from multiple sessions
+
 ## [1.33.4] - 2026-02-15
 
 ### Fixed
