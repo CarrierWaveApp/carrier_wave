@@ -333,6 +333,8 @@ struct LoggerView: View {
     @State private var activeSessionQSOCounts: [UUID: Int] = [:]
     /// Finish confirmation for an active session
     @State private var sessionToFinish: LoggingSession?
+    /// Delete confirmation for an active session
+    @State private var sessionToDelete: LoggingSession?
 
     // Input fields
     @State private var callsignInput = ""
@@ -834,7 +836,11 @@ struct LoggerView: View {
             "Finish Session",
             isPresented: Binding(
                 get: { sessionToFinish != nil },
-                set: { if !$0 { sessionToFinish = nil } }
+                set: {
+                    if !$0 {
+                        sessionToFinish = nil
+                    }
+                }
             ),
             titleVisibility: .visible
         ) {
@@ -852,6 +858,37 @@ struct LoggerView: View {
                 Text(
                     "Finish \"\(session.displayTitle)\"? "
                         + "It will move to your Sessions list."
+                )
+            }
+        }
+        .alert(
+            "Delete Session",
+            isPresented: Binding(
+                get: { sessionToDelete != nil },
+                set: {
+                    if !$0 {
+                        sessionToDelete = nil
+                    }
+                }
+            )
+        ) {
+            Button("Delete", role: .destructive) {
+                if let session = sessionToDelete {
+                    sessionManager?.deleteSession(session)
+                    refreshActiveSessions()
+                }
+                sessionToDelete = nil
+            }
+            Button("Cancel", role: .cancel) {
+                sessionToDelete = nil
+            }
+        } message: {
+            if let session = sessionToDelete {
+                let count = activeSessionQSOCounts[session.id] ?? 0
+                Text(
+                    "Delete \"\(session.displayTitle)\" and hide "
+                        + "\(count) QSO(s)? Hidden QSOs will not be "
+                        + "synced or counted in statistics."
                 )
             }
         }
@@ -875,8 +912,15 @@ struct LoggerView: View {
                         refreshSessionQSOs()
                         refreshActiveSessions()
                     },
+                    onPause: {
+                        sessionManager?.pauseOtherSession(session)
+                        refreshActiveSessions()
+                    },
                     onFinish: {
                         sessionToFinish = session
+                    },
+                    onDelete: {
+                        sessionToDelete = session
                     }
                 )
             }
@@ -1244,20 +1288,24 @@ struct LoggerView: View {
                     callsignFieldFocused = false
                     showEndSessionConfirmation = true
                 } label: {
-                    Text("END")
+                    Image(systemName: "ellipsis")
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
-                        .background(Color.red)
+                        .background(Color(.systemGray4))
                         .clipShape(RoundedRectangle(cornerRadius: 6))
                 }
                 .buttonStyle(.plain)
                 .confirmationDialog(
-                    "End Session",
+                    "Session Actions",
                     isPresented: $showEndSessionConfirmation,
                     titleVisibility: .visible
                 ) {
+                    Button("Pause Session") {
+                        sessionManager?.pauseSession()
+                        refreshActiveSessions()
+                    }
                     Button("End Session") {
                         handleEndSession()
                     }
@@ -1268,13 +1316,15 @@ struct LoggerView: View {
                 } message: {
                     if session.frequency == nil, !displayQSOs.isEmpty {
                         Text(
-                            "End keeps your \(displayQSOs.count) QSOs for sync. "
+                            "Pause keeps the session active for later. "
+                                + "End keeps your \(displayQSOs.count) QSOs for sync. "
                                 + "QSOs were logged without a frequency and will show as \"Unknown\" band. "
                                 + "Delete hides them permanently."
                         )
                     } else {
                         Text(
-                            "End keeps your \(displayQSOs.count) QSOs for sync. "
+                            "Pause keeps the session active for later. "
+                                + "End keeps your \(displayQSOs.count) QSOs for sync. "
                                 + "Delete hides them permanently."
                         )
                     }
