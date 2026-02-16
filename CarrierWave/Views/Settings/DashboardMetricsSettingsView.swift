@@ -126,6 +126,7 @@ private struct MetricSelectionList: View {
                 if selection == type.rawValue {
                     Image(systemName: "checkmark")
                         .foregroundStyle(.tint)
+                        .accessibilityHidden(true)
                 }
             }
         }
