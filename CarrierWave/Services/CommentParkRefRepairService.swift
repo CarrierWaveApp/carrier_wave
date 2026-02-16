@@ -22,38 +22,54 @@ actor CommentParkRefRepairService {
 
     let container: ModelContainer
 
-    /// Run the backfill. Returns counts of QSOs scanned and updated.
+    /// Run the backfill in batches. Returns counts of QSOs scanned and updated.
     func backfill() throws -> BackfillResult {
         let context = ModelContext(container)
         context.autosaveEnabled = false
 
-        // Fetch QSOs that have notes but no park reference
-        var descriptor = FetchDescriptor<QSO>(
-            predicate: #Predicate<QSO> { qso in
-                (qso.parkReference == nil || (qso.parkReference ?? "").isEmpty)
-                    && qso.notes != nil
-                    && !qso.isHidden
-            }
-        )
-        descriptor.propertiesToFetch = [\.parkReference, \.notes]
+        let batchSize = 500
+        var totalScanned = 0
+        var totalUpdated = 0
+        var offset = 0
 
-        let candidates = try context.fetch(descriptor)
-        var updated = 0
+        while true {
+            var descriptor = FetchDescriptor<QSO>(
+                predicate: #Predicate<QSO> { qso in
+                    (qso.parkReference == nil || (qso.parkReference ?? "").isEmpty)
+                        && qso.notes != nil
+                        && !qso.isHidden
+                }
+            )
+            descriptor.fetchLimit = batchSize
+            descriptor.fetchOffset = offset
 
-        for qso in candidates {
-            guard let notes = qso.notes,
-                  let extracted = ParkReference.extractFromFreeText(notes)
-            else {
-                continue
+            let candidates = try context.fetch(descriptor)
+            if candidates.isEmpty {
+                break
             }
-            qso.parkReference = extracted
-            updated += 1
+
+            totalScanned += candidates.count
+
+            for qso in candidates {
+                guard let notes = qso.notes,
+                      let extracted = ParkReference.extractFromFreeText(notes)
+                else {
+                    continue
+                }
+                qso.parkReference = extracted
+                totalUpdated += 1
+            }
+
+            if totalUpdated > 0 {
+                try context.save()
+            }
+
+            if candidates.count < batchSize {
+                break
+            }
+            offset += batchSize
         }
 
-        if updated > 0 {
-            try context.save()
-        }
-
-        return BackfillResult(scanned: candidates.count, updated: updated)
+        return BackfillResult(scanned: totalScanned, updated: totalUpdated)
     }
 }
