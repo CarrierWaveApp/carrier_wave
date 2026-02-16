@@ -4,10 +4,14 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
-## [1.33.3] - 2026-02-15
+## [1.33.4] - 2026-02-15
 
 ### Fixed
 - Fix crash-on-launch in CommentParkRefRepairService: replace `(parkReference ?? "").isEmpty` with direct `== ""` comparison in SwiftData predicate to avoid CoreData NSPredicate translation assertion
+
+## [1.33.3] - 2026-02-15
+
+### Fixed
 - Fix crash-on-launch in CommentParkRefRepairService: remove propertiesToFetch that omitted predicate-referenced isHidden field, causing CoreData assertion; add batched fetching with fetchLimit
 
 ## [1.33.2] - 2026-02-15
