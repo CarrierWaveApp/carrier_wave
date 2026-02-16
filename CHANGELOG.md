@@ -5,6 +5,7 @@ All notable changes to Carrier Wave will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Add one-time background repair to extract park references from ADIF comment fields on existing QSOs imported before the extraction logic was added
 - Add active sessions list to logger tab: paused sessions appear with Continue/Finish actions when no session is active
 - Starting a new session now pauses (instead of ending) the previous session, allowing it to be resumed later
 
