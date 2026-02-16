@@ -184,6 +184,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `WPMBackfillService.swift` | One-time backfill of average WPM from stored spot comments into ActivationMetadata |
 | `ConditionsBackfillService.swift` | One-time backfill parsing text solar/weather into structured ActivationMetadata fields |
 | `TwoferDuplicateRepairService.swift` | Detect and merge duplicate QSOs from two-fer park reference mismatches |
+| `CommentParkRefRepairService.swift` | One-time backfill extracting park references from ADIF comment/notes fields |
 | `CWError.swift` | CW transcription error types |
 | `CWAudioCapture.swift` | AVAudioEngine microphone capture for CW decoding |
 | `CWSignalProcessorProtocol.swift` | Protocol for signal processors, CWSignalResult struct |

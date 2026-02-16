@@ -459,4 +459,27 @@ extension DashboardView {
             print("Conditions backfill failed: \(error)")
         }
     }
+
+    // MARK: - Comment Park Reference Backfill
+
+    private static let commentParkRefBackfillKey = "commentParkRefBackfillCompleted"
+
+    /// One-time backfill: extract park references from ADIF comment fields.
+    /// Runs silently on background thread, only once.
+    func backfillCommentParkRefsIfNeeded() async {
+        guard !UserDefaults.standard.bool(forKey: Self.commentParkRefBackfillKey) else {
+            return
+        }
+
+        let service = CommentParkRefRepairService(container: modelContext.container)
+        do {
+            let result = try await service.backfill()
+            if result.updated > 0 {
+                print("Comment park ref backfill: updated \(result.updated) of \(result.scanned) QSOs")
+            }
+            UserDefaults.standard.set(true, forKey: Self.commentParkRefBackfillKey)
+        } catch {
+            print("Comment park ref backfill failed: \(error)")
+        }
+    }
 }
