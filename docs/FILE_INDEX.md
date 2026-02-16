@@ -186,6 +186,9 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `ConditionsBackfillService.swift` | One-time backfill parsing text solar/weather into structured ActivationMetadata fields |
 | `TwoferDuplicateRepairService.swift` | Detect and merge duplicate QSOs from two-fer park reference mismatches |
 | `CommentParkRefRepairService.swift` | One-time backfill extracting park references from ADIF comment/notes fields |
+| `KIndexRepairService.swift` | One-time repair clearing corrupted K-index=0 data from before HamQSL XML fix |
+| `ActivityLogQSORepairService.swift` | One-time repair flagging activity log QSOs and fixing misplaced parkReference |
+| `PhoneSSBDuplicateRepairService.swift` | One-time repair merging duplicate QSOs from PHONE vs SSB mode mismatch |
 | `CWError.swift` | CW transcription error types |
 | `CWAudioCapture.swift` | AVAudioEngine microphone capture for CW decoding |
 | `CWSignalProcessorProtocol.swift` | Protocol for signal processors, CWSignalResult struct |
@@ -341,6 +344,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `ActivityGridView.swift` | GitHub-style activity grid with horizontal scrolling |
 | `DashboardView.swift` | Main dashboard with stats grid and services list |
 | `DashboardView+Actions.swift` | Dashboard action handlers (sync, clear data) |
+| `DashboardView+Repairs.swift` | One-time backfill and repair jobs (WPM, conditions, park refs, K-index) |
 | `DashboardView+Services.swift` | Services list builder and detail sheet builders |
 | `DashboardView+Stats.swift` | Stats grid and streak row components |
 | `DashboardHelperViews.swift` | Reusable dashboard components (StatBox, StatBoxDeferred, ActivityGrid, StreaksCard) |
@@ -538,5 +542,6 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `Helpers/QSOFactory.swift` | Synthetic QSO generator for testing (duplicates, metadata, edge cases) |
 | `Helpers/TestModelContainer.swift` | Shared test infrastructure for SwiftData tests |
 | `CommentParkRefRepairServiceTests.swift` | Comment park ref backfill predicate regression and logic tests |
+| `KIndexRepairServiceTests.swift` | K-index repair service tests (cutoff date, field preservation) |
 | `BandPlanServiceTests.swift` | Band plan validation tests (license class privileges) |
 | `PerformanceTests/QSOStatisticsPerformanceTests.swift` | Performance regression tests (50k/500k QSOs) |

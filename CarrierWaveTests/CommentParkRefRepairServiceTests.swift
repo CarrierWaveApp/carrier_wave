@@ -150,6 +150,24 @@ final class CommentParkRefRepairServiceTests: XCTestCase {
         XCTAssertEqual(result.scanned, 0, "Hidden QSOs should be excluded by predicate")
     }
 
+    /// Activity log QSOs are skipped even if they have notes with park refs.
+    func testBackfillSkipsActivityLogQSOs() async throws {
+        let qso = QSO(
+            callsign: "W1AW", band: "20m", mode: "CW",
+            timestamp: Date(), myCallsign: "N0TEST",
+            parkReference: nil, notes: "POTA US-0001 activation",
+            importSource: .logger
+        )
+        qso.isActivityLogQSO = true
+        context.insert(qso)
+        try context.save()
+
+        let service = CommentParkRefRepairService(container: container)
+        let result = try await service.backfill()
+
+        XCTAssertEqual(result.scanned, 0, "Activity log QSOs should be excluded by predicate")
+    }
+
     /// Notes that don't contain a valid park reference are scanned but not updated.
     func testBackfillDoesNotUpdateWhenNoValidParkRefInNotes() async throws {
         let qso = QSO(

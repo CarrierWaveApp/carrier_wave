@@ -235,8 +235,9 @@ struct ADIFExportSheet: View {
 
 /// ADIF file type helper - enum to avoid MainActor isolation on static property
 enum ADIFFileType {
-    /// ADIF UTType - accessible from any isolation context
-    nonisolated static let utType = UTType(filenameExtension: "adi", conformingTo: .plainText)!
+    /// ADIF UTType - prefer registered type from Info.plist, fall back to runtime declaration
+    nonisolated static let utType = UTType("org.adif.adi")
+        ?? UTType(filenameExtension: "adi", conformingTo: .plainText)!
 }
 
 // MARK: - ShareableADIF

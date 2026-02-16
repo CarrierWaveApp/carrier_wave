@@ -127,6 +127,8 @@ extension LoggingSessionManager {
             session.solarFlux = solarData.solarFlux
             session.solarSunspots = solarData.sunspots
             session.solarPropagationRating = solarData.propagationRating
+            session.solarAIndex = solarData.aIndex
+            session.solarBandConditions = solarData.bandConditions
             session.solarTimestamp = solarData.timestamp
         }
 
@@ -183,6 +185,8 @@ extension LoggingSessionManager {
             metadata.solarFlux = solarData.solarFlux
             metadata.solarSunspots = solarData.sunspots
             metadata.solarPropagationRating = solarData.propagationRating
+            metadata.solarAIndex = solarData.aIndex
+            metadata.solarBandConditions = solarData.bandConditions
             metadata.solarTimestamp = solarData.timestamp
         }
 

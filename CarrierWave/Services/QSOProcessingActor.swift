@@ -312,6 +312,7 @@ extension QSOProcessingActor {
     ) -> String {
         let roundedTimestamp = timestamp.timeIntervalSince1970
         let rounded = Int(roundedTimestamp / 120) * 120 // 2 minute buckets
-        return "\(callsign.uppercased())|\(band.uppercased())|\(mode.uppercased())|\(rounded)"
+        let canonicalMode = ModeEquivalence.canonicalName(mode).uppercased()
+        return "\(callsign.uppercased())|\(band.uppercased())|\(canonicalMode)|\(rounded)"
     }
 }

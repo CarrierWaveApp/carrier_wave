@@ -159,6 +159,8 @@ final class LoggingSession {
     var solarFlux: Double?
     var solarSunspots: Int?
     var solarPropagationRating: String?
+    var solarAIndex: Int?
+    var solarBandConditions: String?
     var solarTimestamp: Date?
     var solarConditions: String?
     var weatherTemperatureF: Double?
@@ -172,7 +174,7 @@ final class LoggingSession {
 
     /// Whether structured solar data is available
     var hasSolarData: Bool {
-        solarKIndex != nil
+        solarKIndex != nil || solarFlux != nil || solarSunspots != nil
     }
 
     /// Whether structured weather data is available

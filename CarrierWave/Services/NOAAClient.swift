@@ -40,6 +40,7 @@ struct SolarConditions: Sendable {
     let aIndex: Int?
     let solarFlux: Double?
     let sunspots: Int?
+    let bandConditions: String?
     let timestamp: Date
 
     /// Propagation rating based on K-index
@@ -255,13 +256,60 @@ actor NOAAClient {
         let solarFlux = extractXMLValue(from: xmlString, tag: "solarflux").flatMap { Double($0) }
         let sunspots = extractXMLValue(from: xmlString, tag: "sunspots").flatMap { Int($0) }
 
+        let bandConditions = extractBandConditions(from: xmlString)
+
         return SolarConditions(
             kIndex: kIndex,
             aIndex: aIndex,
             solarFlux: solarFlux,
             sunspots: sunspots,
+            bandConditions: bandConditions,
             timestamp: Date()
         )
+    }
+
+    /// Extract HF band conditions from HamQSL XML.
+    /// Returns a JSON string like `{"80m-40m":{"day":"Poor","night":"Good"},...}`
+    /// or nil if no band data found.
+    private func extractBandConditions(from xml: String) -> String? {
+        let pattern = #"<band name="([^"]+)" time="([^"]+)">([^<]+)</band>"#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else {
+            return nil
+        }
+
+        let matches = regex.matches(
+            in: xml, options: [],
+            range: NSRange(xml.startIndex..., in: xml)
+        )
+
+        guard !matches.isEmpty else {
+            return nil
+        }
+
+        var bands: [String: [String: String]] = [:]
+        for match in matches {
+            guard let nameRange = Range(match.range(at: 1), in: xml),
+                  let timeRange = Range(match.range(at: 2), in: xml),
+                  let valueRange = Range(match.range(at: 3), in: xml)
+            else {
+                continue
+            }
+            let name = String(xml[nameRange]).trimmingCharacters(in: .whitespaces)
+            let time = String(xml[timeRange]).trimmingCharacters(in: .whitespaces)
+            let value = String(xml[valueRange]).trimmingCharacters(in: .whitespaces)
+            bands[name, default: [:]][time] = value
+        }
+
+        guard !bands.isEmpty,
+              let data = try? JSONSerialization.data(
+                  withJSONObject: bands, options: [.sortedKeys]
+              ),
+              let json = String(data: data, encoding: .utf8)
+        else {
+            return nil
+        }
+
+        return json
     }
 
     /// Extract a value from XML by tag name

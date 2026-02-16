@@ -30,13 +30,25 @@ struct ConditionsCard: View {
 
     private let dataActor = EnvironmentalDataActor()
 
+    /// K-index data averaged per calendar day (UTC) to reduce sparkline clutter.
     private var kIndexData: [(date: Date, value: Double)] {
-        snapshots.compactMap { snapshot in
+        let raw = snapshots.compactMap { snapshot -> (key: String, value: Double)? in
             guard let k = snapshot.solarKIndex else {
                 return nil
             }
-            return (date: snapshot.timestamp, value: k)
+            return (key: Self.dayKey(snapshot.timestamp), value: k)
         }
+
+        var grouped: [String: [Double]] = [:]
+        for point in raw {
+            grouped[point.key, default: []].append(point.value)
+        }
+
+        return grouped.map { key, values in
+            let avg = values.reduce(0, +) / Double(values.count)
+            return (date: Self.dateFromDayKey(key), value: avg)
+        }
+        .sorted { $0.date < $1.date }
     }
 
     private var latestSolarSnapshot: EnvironmentalSnapshot? {
@@ -94,6 +106,14 @@ struct ConditionsCard: View {
                         label: "SFI",
                         value: "\(Int(sfi))",
                         color: .orange
+                    )
+                }
+                if let aIndex = latest.solarAIndex {
+                    metricPill(
+                        icon: "waveform.path",
+                        label: "A",
+                        value: "\(aIndex)",
+                        color: .purple
                     )
                 }
             }
@@ -171,6 +191,23 @@ struct ConditionsCard: View {
         .padding(.vertical, 3)
         .background(color.opacity(0.1))
         .clipShape(Capsule())
+    }
+
+    // MARK: - Day Averaging Helpers
+
+    private static func dayKey(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.timeZone = TimeZone(identifier: "UTC")
+        return formatter.string(from: date)
+    }
+
+    private static func dateFromDayKey(_ key: String) -> Date {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.timeZone = TimeZone(identifier: "UTC")
+        let startOfDay = formatter.date(from: key) ?? Date()
+        return startOfDay.addingTimeInterval(12 * 3_600)
     }
 
     private func kIndexColor(_ k: Double) -> Color {

@@ -57,6 +57,10 @@ struct DashboardView: View {
     @State var twoferDuplicateCount = 0
     @State var showingTwoferRepairAlert = false
 
+    /// PHONE/SSB duplicate QSO repair state
+    @State var phoneSSBDuplicateCount = 0
+    @State var showingPhoneSSBRepairAlert = false
+
     /// Progressive statistics - computes expensive stats in background for large datasets
     @State var asyncStats = AsyncQSOStatistics()
 
@@ -127,6 +131,9 @@ struct DashboardView: View {
                 await backfillWPMIfNeeded()
                 await backfillConditionsIfNeeded()
                 await backfillCommentParkRefsIfNeeded()
+                await repairKIndexIfNeeded()
+                await repairActivityLogQSOsIfNeeded()
+                await repairPhoneSSBDuplicatesIfNeeded()
             }
             .onChange(of: syncService.lastSyncDate) { _, _ in
                 // Recompute stats after sync completes
@@ -167,6 +174,11 @@ struct DashboardView: View {
                 duplicateCount: $twoferDuplicateCount,
                 showingAlert: $showingTwoferRepairAlert,
                 onRepair: { await repairTwoferDuplicates() }
+            )
+            .phoneSSBDuplicateRepairAlert(
+                duplicateCount: $phoneSSBDuplicateCount,
+                showingAlert: $showingPhoneSSBRepairAlert,
+                onRepair: { await performPhoneSSBDuplicateRepair() }
             )
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {

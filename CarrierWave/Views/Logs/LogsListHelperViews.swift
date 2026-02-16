@@ -247,8 +247,14 @@ struct QSORow: View {
         Self.utcFormatter.string(from: qso.timestamp) + "Z"
     }
 
+    /// Only show pills for configured services or services with actual data
     private var sortedPresence: [ServicePresence] {
-        qso.servicePresence.sorted { $0.serviceType.rawValue < $1.serviceType.rawValue }
+        qso.servicePresence
+            .filter { presence in
+                let configured = serviceConfig.isConfigured(presence.serviceType)
+                return configured || presence.isPresent || presence.isSubmitted
+            }
+            .sorted { $0.serviceType.rawValue < $1.serviceType.rawValue }
     }
 
     /// Count all-time QSOs with a callsign (excludes hidden and metadata modes)
@@ -282,8 +288,10 @@ struct ServicePresenceBadge: View {
         HStack(spacing: 2) {
             Image(systemName: iconName)
             Text(presence.serviceType.displayName)
+                .lineLimit(1)
         }
         .font(.caption2)
+        .fixedSize()
         .padding(.horizontal, 6)
         .padding(.vertical, 2)
         .background(backgroundColor.opacity(0.2))

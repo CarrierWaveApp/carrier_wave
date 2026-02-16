@@ -117,6 +117,10 @@ final class QSO {
     /// Soft delete flag - QSOs are never truly deleted, only hidden
     var isHidden: Bool = false
 
+    /// Whether this QSO was created via the activity log (hunter workflow).
+    /// Activity log QSOs should never have parkReference set (that's the activator field).
+    var isActivityLogQSO: Bool = false
+
     /// Logging session this QSO belongs to (optional - older QSOs won't have this)
     var loggingSessionId: UUID?
 
@@ -128,7 +132,8 @@ final class QSO {
         let roundedTimestamp = timestamp.timeIntervalSince1970
         let rounded = Int(roundedTimestamp / 120) * 120 // 2 minute buckets
         let trimmedCallsign = callsign.trimmingCharacters(in: .whitespaces).uppercased()
-        return "\(trimmedCallsign)|\(band.uppercased())|\(mode.uppercased())|\(rounded)"
+        let canonicalMode = ModeEquivalence.canonicalName(mode).uppercased()
+        return "\(trimmedCallsign)|\(band.uppercased())|\(canonicalMode)|\(rounded)"
     }
 
     /// Extract callsign prefix (for display/grouping)

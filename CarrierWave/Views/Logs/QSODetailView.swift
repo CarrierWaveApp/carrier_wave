@@ -61,8 +61,14 @@ struct QSODetailView: View {
         return parts.isEmpty ? nil : parts.joined(separator: ", ")
     }
 
+    /// Only show pills for configured services or services with actual data
     private var sortedPresence: [ServicePresence] {
-        qso.servicePresence.sorted { $0.serviceType.rawValue < $1.serviceType.rawValue }
+        qso.servicePresence
+            .filter { presence in
+                let configured = serviceConfig.isConfigured(presence.serviceType)
+                return configured || presence.isPresent || presence.isSubmitted
+            }
+            .sorted { $0.serviceType.rawValue < $1.serviceType.rawValue }
     }
 
     // MARK: - Header

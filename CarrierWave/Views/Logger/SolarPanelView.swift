@@ -6,6 +6,19 @@
 
 import SwiftUI
 
+// MARK: - BandCondition
+
+/// Parsed HF band condition for a band group (e.g. "80m-40m").
+private struct BandCondition: Identifiable {
+    let name: String
+    let day: String
+    let night: String
+
+    var id: String {
+        name
+    }
+}
+
 // MARK: - SolarPanelView
 
 struct SolarPanelView: View {
@@ -209,31 +222,95 @@ struct SolarPanelView: View {
 
     private func bandConditionsSummary(_ conditions: SolarConditions) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("HF Band Outlook")
+            Text("HF Band Conditions")
                 .font(.caption)
                 .fontWeight(.medium)
                 .foregroundStyle(.secondary)
 
-            HStack(spacing: 4) {
-                ForEach(["80m", "40m", "20m", "15m", "10m"], id: \.self) { band in
-                    bandIndicator(band: band, conditions: conditions)
+            if let parsed = parseBandConditions(conditions.bandConditions) {
+                bandConditionsGrid(parsed)
+            } else {
+                Text("Band conditions unavailable")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                    .frame(maxWidth: .infinity, alignment: .center)
+            }
+        }
+    }
+
+    private func bandConditionsGrid(_ bands: [BandCondition]) -> some View {
+        VStack(spacing: 4) {
+            // Header row
+            HStack(spacing: 0) {
+                Text("")
+                    .frame(width: 60, alignment: .leading)
+                Text("Day")
+                    .font(.system(size: 9, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity)
+                Text("Night")
+                    .font(.system(size: 9, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity)
+            }
+
+            ForEach(bands) { band in
+                HStack(spacing: 0) {
+                    Text(band.name)
+                        .font(.system(size: 10, weight: .medium))
+                        .frame(width: 60, alignment: .leading)
+                    bandRatingDot(band.day)
+                        .frame(maxWidth: .infinity)
+                    bandRatingDot(band.night)
+                        .frame(maxWidth: .infinity)
                 }
             }
         }
     }
 
-    private func bandIndicator(band: String, conditions: SolarConditions) -> some View {
-        let quality = bandQuality(band: band, kIndex: conditions.kIndex, sfi: conditions.solarFlux)
-
-        return VStack(spacing: 2) {
+    private func bandRatingDot(_ rating: String) -> some View {
+        HStack(spacing: 3) {
             Circle()
-                .fill(qualityColor(quality))
-                .frame(width: 8, height: 8)
-            Text(band)
+                .fill(bandRatingColor(rating))
+                .frame(width: 6, height: 6)
+            Text(rating)
                 .font(.system(size: 9))
                 .foregroundStyle(.secondary)
         }
-        .frame(maxWidth: .infinity)
+    }
+
+    private func bandRatingColor(_ rating: String) -> Color {
+        switch rating {
+        case "Excellent": .green
+        case "Good": .blue
+        case "Fair": .yellow
+        case "Poor": .orange
+        default: .red
+        }
+    }
+
+    /// Parse band conditions JSON string into display-ready models.
+    private func parseBandConditions(_ json: String?) -> [BandCondition]? {
+        guard let json,
+              let data = json.data(using: .utf8),
+              let dict = try? JSONSerialization.jsonObject(with: data) as? [String: [String: String]]
+        else {
+            return nil
+        }
+
+        let order = ["80m-40m", "30m-20m", "17m-15m", "12m-10m"]
+        var result: [BandCondition] = []
+        for key in order {
+            guard let times = dict[key] else {
+                continue
+            }
+            result.append(BandCondition(
+                name: key,
+                day: times["day"] ?? "--",
+                night: times["night"] ?? "--"
+            ))
+        }
+        return result.isEmpty ? nil : result
     }
 
     // MARK: - Helpers
@@ -264,44 +341,6 @@ struct SolarPanelView: View {
         case 100...: .blue
         case 70...: .yellow
         default: .orange
-        }
-    }
-
-    private func bandQuality(band: String, kIndex: Double, sfi: Double?) -> Int {
-        // Simplified band quality estimation
-        // Returns 0 (poor) to 3 (excellent)
-        let flux = sfi ?? 100
-
-        let baseQuality: Int =
-            switch band {
-            case "80m",
-                 "40m":
-                // Lower bands better at night, less affected by K-index
-                kIndex < 4 ? 2 : 1
-            case "20m":
-                // 20m is usually reliable
-                flux > 100 ? 3 : 2
-            case "15m":
-                // Needs higher SFI
-                flux > 120 ? 3 : (flux > 90 ? 2 : 1)
-            case "10m":
-                // Very sensitive to solar conditions
-                flux > 140 ? 3 : (flux > 110 ? 2 : (flux > 80 ? 1 : 0))
-            default:
-                2
-            }
-
-        // Reduce quality if K-index is high
-        let kPenalty = kIndex >= 5 ? 2 : (kIndex >= 4 ? 1 : 0)
-        return max(0, baseQuality - kPenalty)
-    }
-
-    private func qualityColor(_ quality: Int) -> Color {
-        switch quality {
-        case 3: .green
-        case 2: .blue
-        case 1: .yellow
-        default: .red
         }
     }
 

@@ -37,8 +37,9 @@ actor CommentParkRefRepairService {
                 predicate: #Predicate<QSO> { qso in
                     // Using == "" instead of .isEmpty: SwiftData's #Predicate translates
                     // ?? + .isEmpty to an invalid NSPredicate, causing a CoreData assertion (SIGABRT).
-                    // swiftlint:disable:next empty_string
-                    (qso.parkReference == nil || qso.parkReference == "")
+                    !qso.isActivityLogQSO
+                        // swiftlint:disable:next empty_string
+                        && (qso.parkReference == nil || qso.parkReference == "")
                         && qso.notes != nil
                         && !qso.isHidden
                 }

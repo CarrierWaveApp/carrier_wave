@@ -44,7 +44,8 @@ struct FetchedQSO: Sendable {
     var deduplicationKey: String {
         let roundedTimestamp = timestamp.timeIntervalSince1970
         let rounded = Int(roundedTimestamp / 120) * 120
-        return "\(callsign.uppercased())|\(band.uppercased())|\(mode.uppercased())|\(rounded)"
+        let canonicalMode = ModeEquivalence.canonicalName(mode).uppercased()
+        return "\(callsign.uppercased())|\(band.uppercased())|\(canonicalMode)|\(rounded)"
     }
 
     /// Debug dictionary for logging
