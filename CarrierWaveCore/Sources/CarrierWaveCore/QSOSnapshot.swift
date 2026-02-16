@@ -131,9 +131,9 @@ public struct QSOSnapshot: Sendable, Equatable, Identifiable {
         return score
     }
 
-    /// Normalized callsign (uppercase)
+    /// Normalized callsign (uppercase, trimmed)
     public var normalizedCallsign: String {
-        callsign.uppercased()
+        callsign.trimmingCharacters(in: .whitespaces).uppercased()
     }
 
     /// Normalized band (uppercase, trimmed)

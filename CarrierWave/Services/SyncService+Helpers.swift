@@ -115,6 +115,12 @@ extension SyncService {
         // Repair missing DXCC from rawADIF
         await repairMissingDXCCAsync()
 
+        // Repair callsigns with leading/trailing whitespace (and merge resulting dupes)
+        await repairCallsignWhitespaceAsync()
+
+        // Repair QRZ records stuck in isSubmitted state (should be isPresent)
+        await repairQRZSubmittedStateAsync()
+
         // Refresh main context to pick up changes from background actor
         modelContext.rollback()
     }

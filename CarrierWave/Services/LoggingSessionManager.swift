@@ -468,7 +468,7 @@ final class LoggingSessionManager {
             }
 
         let qso = QSO(
-            callsign: callsign.uppercased(),
+            callsign: callsign.trimmingCharacters(in: .whitespaces).uppercased(),
             band: band,
             mode: session.mode,
             frequency: session.frequency,
