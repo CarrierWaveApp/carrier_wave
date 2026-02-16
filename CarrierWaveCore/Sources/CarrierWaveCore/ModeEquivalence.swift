@@ -95,4 +95,38 @@ public enum ModeEquivalence: Sendable {
     public static func isGeneric(_ mode: String) -> Bool {
         genericModes.contains(mode.uppercased())
     }
+
+    /// Returns a canonical display name for a mode, normalizing generic modes
+    /// to their preferred specific form (e.g., PHONE → SSB, DATA → DATA).
+    /// Specific modes (USB, LSB, FT8, etc.) are kept as-is.
+    public static func canonicalName(_ mode: String) -> String {
+        let upper = mode.uppercased()
+        if upper == "PHONE" {
+            return "SSB"
+        }
+        return mode
+    }
+
+    /// Deduplicates a collection of mode strings by mode family,
+    /// preferring specific modes over generic ones.
+    /// e.g., ["PHONE", "SSB", "CW"] → ["SSB", "CW"]
+    public static func deduplicatedModes(_ modes: [String]) -> [String] {
+        var familySeen: [ModeFamily: String] = [:]
+        var otherModes: [String] = []
+
+        for mode in modes {
+            let fam = family(for: mode)
+            if fam == .other {
+                if !otherModes.contains(mode.uppercased()) {
+                    otherModes.append(mode.uppercased())
+                }
+            } else if let existing = familySeen[fam] {
+                familySeen[fam] = moreSpecific(existing, mode)
+            } else {
+                familySeen[fam] = canonicalName(mode)
+            }
+        }
+
+        return familySeen.values.sorted() + otherModes.sorted()
+    }
 }

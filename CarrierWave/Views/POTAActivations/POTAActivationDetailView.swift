@@ -354,7 +354,7 @@ extension POTAActivationDetailView {
             items.append(MetadataItem(icon: "dial.medium.fill", label: bands))
         }
         if !activation.uniqueModes.isEmpty {
-            let modes = activation.uniqueModes.sorted().joined(separator: ", ")
+            let modes = activation.uniqueModes.joined(separator: ", ")
             items.append(MetadataItem(icon: "waveform", label: modes))
         }
         // Equipment

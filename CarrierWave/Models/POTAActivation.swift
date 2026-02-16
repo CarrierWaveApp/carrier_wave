@@ -144,9 +144,9 @@ struct POTAActivation: Identifiable, Equatable, Hashable {
         Set(qsos.map(\.band))
     }
 
-    /// Unique modes used during this activation
-    var uniqueModes: Set<String> {
-        Set(qsos.map(\.mode))
+    /// Unique modes used during this activation (deduped by mode family)
+    var uniqueModes: [String] {
+        ModeEquivalence.deduplicatedModes(qsos.map(\.mode))
     }
 
     /// QSOs that have valid grid squares for mapping

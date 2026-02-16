@@ -101,4 +101,59 @@ struct ModeEquivalenceTests {
         #expect(!ModeEquivalence.isGeneric("FT8"))
         #expect(!ModeEquivalence.isGeneric("CW"))
     }
+
+    // MARK: - Canonical Name Tests
+
+    @Test("PHONE normalizes to SSB")
+    func phoneCanonicalName() {
+        #expect(ModeEquivalence.canonicalName("PHONE") == "SSB")
+        #expect(ModeEquivalence.canonicalName("phone") == "SSB")
+    }
+
+    @Test("Specific modes keep their names")
+    func specificCanonicalNames() {
+        #expect(ModeEquivalence.canonicalName("SSB") == "SSB")
+        #expect(ModeEquivalence.canonicalName("USB") == "USB")
+        #expect(ModeEquivalence.canonicalName("CW") == "CW")
+        #expect(ModeEquivalence.canonicalName("FT8") == "FT8")
+        #expect(ModeEquivalence.canonicalName("DATA") == "DATA")
+    }
+
+    // MARK: - Deduplicated Modes Tests
+
+    @Test("PHONE and SSB dedup to SSB")
+    func deduplicatePhoneAndSSB() {
+        let result = ModeEquivalence.deduplicatedModes(["PHONE", "SSB"])
+        #expect(result == ["SSB"])
+    }
+
+    @Test("PHONE alone becomes SSB")
+    func deduplicatePhoneAlone() {
+        let result = ModeEquivalence.deduplicatedModes(["PHONE"])
+        #expect(result == ["SSB"])
+    }
+
+    @Test("Mixed modes dedup correctly")
+    func deduplicateMixedModes() {
+        let result = ModeEquivalence.deduplicatedModes(["PHONE", "SSB", "CW", "FT8"])
+        #expect(result == ["CW", "FT8", "SSB"])
+    }
+
+    @Test("SSB preferred over PHONE in dedup")
+    func deduplicatePreferSpecific() {
+        let result = ModeEquivalence.deduplicatedModes(["PHONE", "SSB", "CW"])
+        #expect(result == ["CW", "SSB"])
+    }
+
+    @Test("Digital modes dedup by family")
+    func deduplicateDigitalModes() {
+        let result = ModeEquivalence.deduplicatedModes(["DATA", "FT8"])
+        #expect(result == ["FT8"])
+    }
+
+    @Test("No duplicates when already unique")
+    func deduplicateAlreadyUnique() {
+        let result = ModeEquivalence.deduplicatedModes(["CW", "SSB", "FT8"])
+        #expect(result == ["CW", "FT8", "SSB"])
+    }
 }

@@ -314,7 +314,8 @@ private func computeModeDistribution(_ qsos: [QSO]) -> [ModeDistribution] {
     }
     var counts: [String: Int] = [:]
     for qso in qsos {
-        counts[qso.mode, default: 0] += 1
+        let canonical = ModeEquivalence.canonicalName(qso.mode)
+        counts[canonical, default: 0] += 1
     }
     return counts.map { mode, count in
         ModeDistribution(
