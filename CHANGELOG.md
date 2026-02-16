@@ -4,6 +4,8 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.33.3] - 2026-02-15
+
 ### Fixed
 - Fix crash-on-launch in CommentParkRefRepairService: remove propertiesToFetch that omitted predicate-referenced isHidden field, causing CoreData assertion; add batched fetching with fetchLimit
 
