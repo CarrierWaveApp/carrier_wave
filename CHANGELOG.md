@@ -4,6 +4,10 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Add active sessions list to logger tab: paused sessions appear with Continue/Finish actions when no session is active
+- Starting a new session now pauses (instead of ending) the previous session, allowing it to be resumed later
+
 ## [1.33.0] - 2026-02-15
 
 ### Added
