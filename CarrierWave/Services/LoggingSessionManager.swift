@@ -172,18 +172,28 @@ final class LoggingSessionManager {
         try? modelContext.save()
     }
 
-    /// Pause the current session
+    /// Pause the current session and return to the session listing
     func pauseSession() {
         guard let session = activeSession else {
             return
         }
         session.pause()
 
+        // Save spot comments to session before clearing
+        let comments = spotCommentsService.comments
+        session.spotComments = comments
+
+        // Clear active session so UI navigates back to listing
+        activeSession = nil
+        clearActiveSessionId()
+
         // Stop auto-spot timer while paused
         stopAutoSpotTimer()
 
         // Pause spot comments polling
         spotCommentsService.stopPolling()
+        spotCommentsService.clear()
+        attachedSpotCommentIds = []
 
         // Pause spot monitoring
         spotMonitoringService.stopMonitoring()
@@ -192,6 +202,9 @@ final class LoggingSessionManager {
         if webSDRSession.state == .recording {
             Task { await webSDRSession.pause() }
         }
+
+        // Re-enable screen timeout
+        UIApplication.shared.isIdleTimerDisabled = false
 
         try? modelContext.save()
     }
@@ -611,6 +624,18 @@ final class LoggingSessionManager {
         return sessions.filter { $0.id != activeId }
     }
 
+    /// Pause a specific non-active session (e.g., from the active sessions list)
+    func pauseOtherSession(_ session: LoggingSession) {
+        guard session.id != activeSession?.id else {
+            // Use normal pauseSession flow for the current active session
+            pauseSession()
+            return
+        }
+
+        session.pause()
+        try? modelContext.save()
+    }
+
     /// Finish (complete) a specific session that is active or paused
     func finishSession(_ session: LoggingSession) {
         if session.id == activeSession?.id {
@@ -621,6 +646,41 @@ final class LoggingSessionManager {
 
         // Finish a non-active (paused) session
         session.end()
+        try? modelContext.save()
+    }
+
+    /// Delete a specific session, hiding its QSOs and cleaning up associated data
+    func deleteSession(_ session: LoggingSession) {
+        if session.id == activeSession?.id {
+            endSession()
+        }
+
+        let sessionId = session.id
+
+        // Hide all QSOs in this session
+        let predicate = #Predicate<QSO> { $0.loggingSessionId == sessionId }
+        if let qsos = try? modelContext.fetch(FetchDescriptor(predicate: predicate)) {
+            for qso in qsos {
+                qso.isHidden = true
+                for presence in qso.servicePresence where presence.needsUpload {
+                    presence.needsUpload = false
+                }
+            }
+        }
+
+        // Clean up session spots
+        let spotPredicate = #Predicate<SessionSpot> { $0.loggingSessionId == sessionId }
+        if let spots = try? modelContext.fetch(FetchDescriptor(predicate: spotPredicate)) {
+            for spot in spots {
+                modelContext.delete(spot)
+            }
+        }
+
+        // Clean up session photos
+        try? SessionPhotoManager.deleteAllPhotos(for: sessionId)
+
+        // Delete the session
+        modelContext.delete(session)
         try? modelContext.save()
     }
 
