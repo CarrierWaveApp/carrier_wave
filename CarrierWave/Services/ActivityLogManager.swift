@@ -216,6 +216,7 @@ final class ActivityLogManager {
 
         // Link QSO to this activity log via loggingSessionId
         qso.loggingSessionId = log.id
+        qso.isActivityLogQSO = true
 
         modelContext.insert(qso)
         markForUpload(qso)

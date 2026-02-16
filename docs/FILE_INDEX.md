@@ -187,6 +187,8 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `TwoferDuplicateRepairService.swift` | Detect and merge duplicate QSOs from two-fer park reference mismatches |
 | `CommentParkRefRepairService.swift` | One-time backfill extracting park references from ADIF comment/notes fields |
 | `KIndexRepairService.swift` | One-time repair clearing corrupted K-index=0 data from before HamQSL XML fix |
+| `ActivityLogQSORepairService.swift` | One-time repair flagging activity log QSOs and fixing misplaced parkReference |
+| `PhoneSSBDuplicateRepairService.swift` | One-time repair merging duplicate QSOs from PHONE vs SSB mode mismatch |
 | `CWError.swift` | CW transcription error types |
 | `CWAudioCapture.swift` | AVAudioEngine microphone capture for CW decoding |
 | `CWSignalProcessorProtocol.swift` | Protocol for signal processors, CWSignalResult struct |

@@ -19,60 +19,68 @@ extension QSOProcessingActor {
         }
 
         for fetched in fetchedGroup {
-            // Merge fields (richest data wins)
-            existing.frequency = existing.frequency ?? fetched.frequency
-            existing.rstSent = existing.rstSent.nonEmpty ?? fetched.rstSent
-            existing.rstReceived = existing.rstReceived.nonEmpty ?? fetched.rstReceived
-            existing.myGrid = existing.myGrid.nonEmpty ?? fetched.myGrid
-            existing.theirGrid = existing.theirGrid.nonEmpty ?? fetched.theirGrid
-            // Combine explicit park references; also check fetched notes for embedded refs
+            mergeFields(from: fetched, into: existing)
+            markPresent(qso: existing, service: fetched.source, context: context)
+        }
+
+        // After merging all sources, try extracting park ref from notes if still missing
+        // Skip for activity log QSOs — they are hunter QSOs and should never get parkReference
+        if !existing.isActivityLogQSO,
+           existing.parkReference?.isEmpty ?? true,
+           let notes = existing.notes,
+           let extracted = ParkReference.extractFromFreeText(notes)
+        {
+            existing.parkReference = extracted
+        }
+    }
+
+    /// Merge fields from a fetched QSO into an existing QSO (richest data wins).
+    private func mergeFields(from fetched: FetchedQSO, into existing: QSO) {
+        existing.frequency = existing.frequency ?? fetched.frequency
+        existing.rstSent = existing.rstSent.nonEmpty ?? fetched.rstSent
+        existing.rstReceived = existing.rstReceived.nonEmpty ?? fetched.rstReceived
+        existing.myGrid = existing.myGrid.nonEmpty ?? fetched.myGrid
+        existing.theirGrid = existing.theirGrid.nonEmpty ?? fetched.theirGrid
+
+        // Combine explicit park references; also check fetched notes for embedded refs
+        // Skip for activity log QSOs — they are hunter QSOs and should never get parkReference
+        if !existing.isActivityLogQSO {
             let fetchedPark = fetched.parkReference.flatMap { ParkReference.sanitizeMulti($0) }
                 ?? fetched.notes.flatMap { ParkReference.extractFromFreeText($0) }
             existing.parkReference = FetchedQSO.combineParkReferences(
                 existing.parkReference,
                 fetchedPark
             )
-            existing.theirParkReference =
-                existing.theirParkReference.nonEmpty
-                    ?? fetched.theirParkReference.flatMap { ParkReference.sanitize($0) }
-            existing.notes = existing.notes.nonEmpty ?? fetched.notes
-            existing.rawADIF = existing.rawADIF.nonEmpty ?? fetched.rawADIF
-            existing.name = existing.name.nonEmpty ?? fetched.name
-            existing.qth = existing.qth.nonEmpty ?? fetched.qth
-            existing.state = existing.state.nonEmpty ?? fetched.state
-            existing.country = existing.country.nonEmpty ?? fetched.country
-            existing.power = existing.power ?? fetched.power
-            existing.sotaRef = existing.sotaRef.nonEmpty ?? fetched.sotaRef
-
-            // QRZ-specific
-            if fetched.source == .qrz {
-                existing.qrzLogId = existing.qrzLogId ?? fetched.qrzLogId
-                existing.qrzConfirmed = existing.qrzConfirmed || fetched.qrzConfirmed
-                existing.lotwConfirmedDate = existing.lotwConfirmedDate ?? fetched.lotwConfirmedDate
-                // DXCC from QRZ if we don't have one yet
-                existing.dxcc = existing.dxcc ?? fetched.dxcc
-            }
-
-            // LoTW-specific
-            if fetched.source == .lotw {
-                if fetched.lotwConfirmed {
-                    existing.lotwConfirmed = true
-                    existing.lotwConfirmedDate =
-                        existing.lotwConfirmedDate ?? fetched.lotwConfirmedDate
-                }
-                existing.dxcc = existing.dxcc ?? fetched.dxcc
-            }
-
-            // Update or create ServicePresence
-            markPresent(qso: existing, service: fetched.source, context: context)
         }
 
-        // After merging all sources, try extracting park ref from notes if still missing
-        if existing.parkReference?.isEmpty ?? true,
-           let notes = existing.notes,
-           let extracted = ParkReference.extractFromFreeText(notes)
-        {
-            existing.parkReference = extracted
+        existing.theirParkReference =
+            existing.theirParkReference.nonEmpty
+                ?? fetched.theirParkReference.flatMap { ParkReference.sanitize($0) }
+        existing.notes = existing.notes.nonEmpty ?? fetched.notes
+        existing.rawADIF = existing.rawADIF.nonEmpty ?? fetched.rawADIF
+        existing.name = existing.name.nonEmpty ?? fetched.name
+        existing.qth = existing.qth.nonEmpty ?? fetched.qth
+        existing.state = existing.state.nonEmpty ?? fetched.state
+        existing.country = existing.country.nonEmpty ?? fetched.country
+        existing.power = existing.power ?? fetched.power
+        existing.sotaRef = existing.sotaRef.nonEmpty ?? fetched.sotaRef
+
+        // QRZ-specific
+        if fetched.source == .qrz {
+            existing.qrzLogId = existing.qrzLogId ?? fetched.qrzLogId
+            existing.qrzConfirmed = existing.qrzConfirmed || fetched.qrzConfirmed
+            existing.lotwConfirmedDate = existing.lotwConfirmedDate ?? fetched.lotwConfirmedDate
+            existing.dxcc = existing.dxcc ?? fetched.dxcc
+        }
+
+        // LoTW-specific
+        if fetched.source == .lotw {
+            if fetched.lotwConfirmed {
+                existing.lotwConfirmed = true
+                existing.lotwConfirmedDate =
+                    existing.lotwConfirmedDate ?? fetched.lotwConfirmedDate
+            }
+            existing.dxcc = existing.dxcc ?? fetched.dxcc
         }
     }
 

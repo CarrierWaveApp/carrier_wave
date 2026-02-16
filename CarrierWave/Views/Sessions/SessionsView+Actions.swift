@@ -55,7 +55,9 @@ extension SessionsView {
     /// Load POTA activations that don't have a matching LoggingSession
     func loadOrphanActivations() async {
         var descriptor = FetchDescriptor<QSO>(
-            predicate: #Predicate { $0.parkReference != nil && !$0.isHidden }
+            predicate: #Predicate {
+                $0.parkReference != nil && !$0.isHidden && !$0.isActivityLogQSO
+            }
         )
         descriptor.fetchLimit = 5_000
         let parkQSOs = (try? modelContext.fetch(descriptor)) ?? []

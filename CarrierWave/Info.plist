@@ -25,5 +25,26 @@
 	<array>
 		<string>googlegmail</string>
 	</array>
+	<key>UTExportedTypeDeclarations</key>
+	<array>
+		<dict>
+			<key>UTTypeIdentifier</key>
+			<string>org.adif.adi</string>
+			<key>UTTypeDescription</key>
+			<string>ADIF Log File</string>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.plain-text</string>
+			</array>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>adi</string>
+					<string>adif</string>
+				</array>
+			</dict>
+		</dict>
+	</array>
 </dict>
 </plist>

@@ -10,6 +10,12 @@ All notable changes to Carrier Wave will be documented in this file.
 - Store A-index and band conditions from HamQSL on sessions and activation metadata
 
 ### Fixed
+- Fix PHONE/SSB mode mismatch causing duplicate QSOs: POTA imports as "PHONE" while QRZ imports as "SSB", producing different deduplication keys; now normalizes via `ModeEquivalence.canonicalName()` so voice QSOs merge correctly
+- One-time repair merges existing PHONE/SSB duplicate pairs, preserving all sync status and service presence data
+- Service presence pills now only show for configured services or services with actual sync data, reducing visual noise
+- Fix service presence pill text overflow with `lineLimit(1)` and `fixedSize()`
+- Fix activity log (hunter) QSOs incorrectly treated as POTA activations: add `isActivityLogQSO` flag to prevent park reference extraction, orphan activation display, and incorrect ADIF export with `MY_SIG=POTA`; one-time repair migrates existing data
+- Fix AirDrop sharing of ADIF files renaming .adi to .txt by registering UTType export declaration for `org.adif.adi`
 - Fix corrupted K-index data: one-time repair clears K-index=0 values from before the HamQSL XML whitespace parsing fix (Feb 14, 2026), preserving valid SFI and sunspot data
 - Fix `hasSolarData` to check all three solar fields (K-index, SFI, sunspots) instead of only K-index, preventing data loss when K-index is cleared
 - Average same-day solar/weather data points in conditions charts to reduce clutter from multiple sessions
