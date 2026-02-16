@@ -408,6 +408,48 @@ extension View {
             )
         )
     }
+
+    func phoneSSBDuplicateRepairAlert(
+        duplicateCount: Binding<Int>,
+        showingAlert: Binding<Bool>,
+        onRepair: @escaping () async -> Void
+    ) -> some View {
+        modifier(
+            PhoneSSBDuplicateRepairAlert(
+                duplicateCount: duplicateCount,
+                showingAlert: showingAlert,
+                onRepair: onRepair
+            )
+        )
+    }
+}
+
+// MARK: - PhoneSSBDuplicateRepairAlert
+
+struct PhoneSSBDuplicateRepairAlert: ViewModifier {
+    @Binding var duplicateCount: Int
+    @Binding var showingAlert: Bool
+
+    let onRepair: () async -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .alert("PHONE/SSB Duplicates Found", isPresented: $showingAlert) {
+                Button("Merge Duplicates") {
+                    Task { await onRepair() }
+                }
+                Button("Not Now", role: .cancel) {}
+            } message: {
+                Text(
+                    """
+                    Found \(duplicateCount) duplicate QSO pair(s) where POTA recorded \
+                    the mode as "PHONE" and QRZ recorded it as "SSB".
+
+                    Tap "Merge Duplicates" to combine them and preserve all sync status.
+                    """
+                )
+            }
+    }
 }
 
 // MARK: - TwoferDuplicateRepairAlert
