@@ -3,6 +3,7 @@ import XCTest
 @testable import CarrierWave
 
 /// Tests for SessionPhotoManager - file-based session photo storage
+@MainActor
 final class SessionPhotoManagerTests: XCTestCase {
     // MARK: Internal
 

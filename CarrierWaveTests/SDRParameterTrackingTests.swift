@@ -4,20 +4,19 @@ import XCTest
 
 // MARK: - SDRParameterTrackingTests
 
+@MainActor
 final class SDRParameterTrackingTests: XCTestCase {
     // MARK: Internal
 
     var modelContainer: ModelContainer!
     var modelContext: ModelContext!
 
-    @MainActor
     override func setUp() async throws {
         let (container, context) = try TestModelContainer.createWithContext()
         modelContainer = container
         modelContext = context
     }
 
-    @MainActor
     override func tearDown() async throws {
         modelContext = nil
         modelContainer = nil
@@ -113,7 +112,6 @@ final class SDRParameterTrackingTests: XCTestCase {
 
     // MARK: - WebSDRRecording Parameter Storage Tests
 
-    @MainActor
     func testRecordingParameterChangesRoundTrip() throws {
         let sessionId = UUID()
         let recording = WebSDRRecording(
@@ -157,7 +155,6 @@ final class SDRParameterTrackingTests: XCTestCase {
         XCTAssertEqual(fetched?.parameterChanges[1].type, .mode)
     }
 
-    @MainActor
     func testRecordingEmptyParameterChanges() {
         let recording = WebSDRRecording(
             loggingSessionId: UUID(),
@@ -173,7 +170,6 @@ final class SDRParameterTrackingTests: XCTestCase {
 
     // MARK: - Segment Computation: Tuning Changes
 
-    @MainActor
     func testSegmentsNoChanges() {
         let recording = makeRecording()
         let segments = recording.segments
@@ -186,7 +182,6 @@ final class SDRParameterTrackingTests: XCTestCase {
         XCTAssertFalse(segments[0].isSilence)
     }
 
-    @MainActor
     func testSegmentsWithFrequencyChange() {
         let recording = makeRecording()
         recording.parameterChanges = [
@@ -207,7 +202,6 @@ final class SDRParameterTrackingTests: XCTestCase {
         XCTAssertFalse(segments[1].isSilence)
     }
 
-    @MainActor
     func testSegmentsWithModeChange() {
         let recording = makeRecording()
         recording.parameterChanges = [
@@ -222,7 +216,6 @@ final class SDRParameterTrackingTests: XCTestCase {
         XCTAssertEqual(segments[1].frequencyKHz, 14_060)
     }
 
-    @MainActor
     func testSegmentsMultipleChanges() {
         let recording = makeRecording()
         recording.parameterChanges = [
@@ -278,7 +271,6 @@ final class SDRParameterTrackingTests: XCTestCase {
 // MARK: - Silence Gap & Duration Tests
 
 extension SDRParameterTrackingTests {
-    @MainActor
     func testSegmentsWithPauseResume() {
         let recording = makeRecording()
         recording.parameterChanges = [
@@ -302,7 +294,6 @@ extension SDRParameterTrackingTests {
         XCTAssertEqual(segments[2].startOffset, 900)
     }
 
-    @MainActor
     func testSegmentsWithDisconnectReconnect() {
         let recording = makeRecording()
         recording.parameterChanges = [
@@ -325,7 +316,6 @@ extension SDRParameterTrackingTests {
         XCTAssertEqual(segments[2].startOffset, 1_200)
     }
 
-    @MainActor
     func testSegmentsMixedTuningAndSilence() {
         let recording = makeRecording()
         recording.parameterChanges = [
@@ -354,7 +344,6 @@ extension SDRParameterTrackingTests {
         XCTAssertNil(segments[6].endOffset)
     }
 
-    @MainActor
     func testSegmentPreservesTuningAcrossSilence() {
         let recording = makeRecording()
         recording.parameterChanges = [
@@ -372,7 +361,6 @@ extension SDRParameterTrackingTests {
         XCTAssertEqual(segments[3].frequencyKHz, 7_030)
     }
 
-    @MainActor
     func testSegmentDuration() {
         let segment = SDRRecordingSegment(
             startOffset: 100,
@@ -383,7 +371,6 @@ extension SDRParameterTrackingTests {
         XCTAssertEqual(segment.duration(recordingDuration: 1_000), 300)
     }
 
-    @MainActor
     func testSegmentDurationOpenEnded() {
         let segment = SDRRecordingSegment(
             startOffset: 100,
@@ -394,7 +381,6 @@ extension SDRParameterTrackingTests {
         XCTAssertEqual(segment.duration(recordingDuration: 1_000), 900)
     }
 
-    @MainActor
     func testSilenceSegmentDuration() {
         let segment = SDRRecordingSegment(
             startOffset: 300,
@@ -407,21 +393,18 @@ extension SDRParameterTrackingTests {
         XCTAssertTrue(segment.isSilence)
     }
 
-    @MainActor
     func testDormantStateIsActive() {
         let state = WebSDRSession.State.dormant
         XCTAssertTrue(state.isActive)
         XCTAssertFalse(state.isStreaming)
     }
 
-    @MainActor
     func testRecordingStateIsStreaming() {
         let state = WebSDRSession.State.recording
         XCTAssertTrue(state.isActive)
         XCTAssertTrue(state.isStreaming)
     }
 
-    @MainActor
     func testIdleStateNotActive() {
         let state = WebSDRSession.State.idle
         XCTAssertFalse(state.isActive)
