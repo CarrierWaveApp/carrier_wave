@@ -296,6 +296,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `ParkPickerSheet.swift` | Multi-select park search/nearby sheet for n-fer |
 | `ParkEntryField.swift` | Multi-park entry with chips, search picker, and shorthand |
 | `ParkDetailSheet.swift` | Park detail sheet with stats, leaderboard (top activators/hunters), and recent activations from POTA API |
+| `ActiveSessionRow.swift` | Compact row for active/paused sessions with Continue/Finish actions |
 | `LoggerSettingsView.swift` | (Deprecated) Logger settings moved to main SettingsView |
 | `RBNPanelView.swift` | Combined RBN/POTA spots panel with mini-map |
 | `SpotsMiniMapView.swift` | Map view showing spotter locations with arcs to target |

@@ -219,6 +219,7 @@ struct LoggerView: View {
                 }
                 // Load session QSOs after session manager is ready
                 refreshSessionQSOs()
+                refreshActiveSessions()
 
                 // Fetch POTA spots for nearby frequency detection
                 Task {
@@ -250,6 +251,7 @@ struct LoggerView: View {
             }
             .onChange(of: sessionManager?.activeSession?.id) { _, _ in
                 refreshSessionQSOs()
+                refreshActiveSessions()
             }
             .overlay(alignment: .bottom) {
                 panelOverlays
@@ -324,6 +326,13 @@ struct LoggerView: View {
     @State private var sessionManager: LoggingSessionManager?
 
     @State private var showSessionSheet = false
+
+    /// Active/paused sessions available to continue or finish
+    @State private var activeSessions: [LoggingSession] = []
+    /// QSO counts for active sessions (keyed by session ID)
+    @State private var activeSessionQSOCounts: [UUID: Int] = [:]
+    /// Finish confirmation for an active session
+    @State private var sessionToFinish: LoggingSession?
 
     // Input fields
     @State private var callsignInput = ""
@@ -790,27 +799,93 @@ struct LoggerView: View {
     }
 
     private var noSessionHeader: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 2) {
-                Text("No Active Session")
-                    .font(.headline)
-                Text("Start a session to begin logging")
+        VStack(spacing: 0) {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("No Active Session")
+                        .font(.headline)
+                    Text(
+                        activeSessions.isEmpty
+                            ? "Start a session to begin logging"
+                            : "Continue a session or start a new one"
+                    )
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                Button {
+                    showSessionSheet = true
+                } label: {
+                    Label("New", systemImage: "plus")
+                        .font(.subheadline.weight(.medium))
+                }
+                .buttonStyle(.borderedProminent)
             }
+            .padding()
+            .background(Color(.secondarySystemGroupedBackground))
 
-            Spacer()
+            if !activeSessions.isEmpty {
+                activeSessionsList
+            }
+        }
+        .confirmationDialog(
+            "Finish Session",
+            isPresented: Binding(
+                get: { sessionToFinish != nil },
+                set: {
+                    if !$0 {
+                        sessionToFinish = nil
+                    }
+                }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button("Finish Session") {
+                if let session = sessionToFinish {
+                    sessionManager?.finishSession(session)
+                    refreshActiveSessions()
+                }
+            }
+            Button("Cancel", role: .cancel) {
+                sessionToFinish = nil
+            }
+        } message: {
+            if let session = sessionToFinish {
+                Text(
+                    "Finish \"\(session.displayTitle)\"? "
+                        + "It will move to your Sessions list."
+                )
+            }
+        }
+    }
 
-            Button {
-                showSessionSheet = true
-            } label: {
-                Label("Start", systemImage: "play.fill")
+    private var activeSessionsList: some View {
+        VStack(spacing: 8) {
+            HStack {
+                Text("Active Sessions")
                     .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.secondary)
+                Spacer()
             }
-            .buttonStyle(.borderedProminent)
+
+            ForEach(activeSessions, id: \.id) { session in
+                ActiveSessionRow(
+                    session: session,
+                    qsoCount: activeSessionQSOCounts[session.id] ?? 0,
+                    onContinue: {
+                        sessionManager?.resumeSession(session)
+                        refreshSessionQSOs()
+                        refreshActiveSessions()
+                    },
+                    onFinish: {
+                        sessionToFinish = session
+                    }
+                )
+            }
         }
         .padding()
-        .background(Color(.secondarySystemGroupedBackground))
     }
 
     // MARK: - Callsign Input
@@ -1563,6 +1638,29 @@ struct LoggerView: View {
         } catch {
             sessionQSOs = []
         }
+    }
+
+    /// Refresh the list of active/paused sessions (for the no-session view)
+    private func refreshActiveSessions() {
+        guard let manager = sessionManager else {
+            activeSessions = []
+            activeSessionQSOCounts = [:]
+            return
+        }
+
+        activeSessions = manager.fetchActiveSessions()
+
+        // Load QSO counts for each active session
+        var counts: [UUID: Int] = [:]
+        for session in activeSessions {
+            let sessionId = session.id
+            var descriptor = FetchDescriptor<QSO>(
+                predicate: #Predicate { $0.loggingSessionId == sessionId && !$0.isHidden }
+            )
+            descriptor.fetchLimit = 500
+            counts[sessionId] = (try? modelContext.fetch(descriptor))?.count ?? 0
+        }
+        activeSessionQSOCounts = counts
     }
 
     /// Refresh POTA spots for nearby frequency detection

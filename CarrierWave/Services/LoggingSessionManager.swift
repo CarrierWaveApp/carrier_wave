@@ -76,9 +76,9 @@ final class LoggingSessionManager {
         extraEquipment: String? = nil,
         attendees: String? = nil
     ) {
-        // End any existing session first
-        if let existing = activeSession {
-            existing.end()
+        // Pause any existing session first (keeps it available to resume later)
+        if activeSession != nil {
+            pauseSession()
         }
 
         let session = LoggingSession(
@@ -227,11 +227,9 @@ final class LoggingSessionManager {
 
     /// Resume a specific session by ID
     func resumeSession(_ session: LoggingSession) {
-        // End any existing active session
+        // Pause any existing active session (keeps it available to resume later)
         if let existing = activeSession, existing.id != session.id {
-            existing.end()
-            stopAutoSpotTimer()
-            spotCommentsService.stopPolling()
+            pauseSession()
         }
 
         session.resume()
@@ -596,6 +594,34 @@ final class LoggingSessionManager {
         } catch {
             return []
         }
+    }
+
+    /// Get all active or paused sessions (not completed), excluding the current active session
+    func fetchActiveSessions() -> [LoggingSession] {
+        var descriptor = FetchDescriptor<LoggingSession>(
+            predicate: #Predicate {
+                $0.statusRawValue == "active" || $0.statusRawValue == "paused"
+            },
+            sortBy: [SortDescriptor(\.startedAt, order: .reverse)]
+        )
+        descriptor.fetchLimit = 50
+
+        let sessions = (try? modelContext.fetch(descriptor)) ?? []
+        let activeId = activeSession?.id
+        return sessions.filter { $0.id != activeId }
+    }
+
+    /// Finish (complete) a specific session that is active or paused
+    func finishSession(_ session: LoggingSession) {
+        if session.id == activeSession?.id {
+            // Finishing the current active session - use normal endSession flow
+            endSession()
+            return
+        }
+
+        // Finish a non-active (paused) session
+        session.end()
+        try? modelContext.save()
     }
 
     /// Get QSOs for the current session
