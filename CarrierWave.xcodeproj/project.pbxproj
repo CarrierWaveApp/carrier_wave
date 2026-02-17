@@ -64,6 +64,13 @@
 			);
 			target = CF8DD1AC2F2098940021A936 /* CarrierWave */;
 		};
+		CFA000102F500010007A0358 /* Exceptions for "CarrierWaveWidgets" folder in "CarrierWaveWidgets" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = CFA000062F500006007A0358 /* CarrierWaveWidgets */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -77,21 +84,18 @@
 		};
 		CF8DD1BF2F2098950021A936 /* CarrierWaveTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = CarrierWaveTests;
 			sourceTree = "<group>";
 		};
 		CF8DD1C92F2098950021A936 /* CarrierWaveUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = CarrierWaveUITests;
 			sourceTree = "<group>";
 		};
 		CFA000022F500002007A0358 /* CarrierWaveWidgets */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
+				CFA000102F500010007A0358 /* Exceptions for "CarrierWaveWidgets" folder in "CarrierWaveWidgets" target */,
 			);
 			path = CarrierWaveWidgets;
 			sourceTree = "<group>";
@@ -656,11 +660,13 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = CarrierWaveWidgets/CarrierWaveWidgets.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 46;
 				DEVELOPMENT_TEAM = 7UE4RDLUSX;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Carrier Wave Widgets";
+				INFOPLIST_FILE = CarrierWaveWidgets/Info.plist;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -671,6 +677,7 @@
 				MARKETING_VERSION = 1.36.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jsvana.FullDuplex.Widgets;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
@@ -685,11 +692,13 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = CarrierWaveWidgets/CarrierWaveWidgets.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 46;
 				DEVELOPMENT_TEAM = 7UE4RDLUSX;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Carrier Wave Widgets";
+				INFOPLIST_FILE = CarrierWaveWidgets/Info.plist;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -700,6 +709,7 @@
 				MARKETING_VERSION = 1.36.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jsvana.FullDuplex.Widgets;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SKIP_INSTALL = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;

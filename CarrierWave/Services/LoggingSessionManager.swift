@@ -610,7 +610,7 @@ final class LoggingSessionManager {
 
         try? modelContext.save()
 
-        writeSessionToWidget(session, lastCallsign: qso.theirCallsign)
+        writeSessionToWidget(session, lastCallsign: qso.callsign)
 
         // Detect and report social activities async (non-blocking)
         Task { [weak self] in
@@ -844,24 +844,6 @@ final class LoggingSessionManager {
 
     // MARK: Private
 
-    private func writeSessionToWidget(
-        _ session: LoggingSession, lastCallsign: String? = nil
-    ) {
-        let freqString = session.frequency.map { String(format: "%.3f", $0) }
-        WidgetDataWriter.writeSession(WidgetSessionSnapshot(
-            isActive: true,
-            parkReference: session.parkReference,
-            parkName: nil,
-            frequency: freqString,
-            mode: session.mode,
-            qsoCount: session.qsoCount,
-            startedAt: session.startedAt,
-            lastCallsign: lastCallsign,
-            activationType: session.activationType.rawValue,
-            updatedAt: Date()
-        ))
-    }
-
     /// Modes that represent activation metadata, not actual QSOs (from Ham2K PoLo)
     /// These should never be synced to any service
     private static let metadataModes: Set<String> = ["WEATHER", "SOLAR", "NOTE"]
@@ -882,6 +864,24 @@ final class LoggingSessionManager {
             return true
         }
         return UserDefaults.standard.bool(forKey: "loggerKeepScreenOn")
+    }
+
+    private func writeSessionToWidget(
+        _ session: LoggingSession, lastCallsign: String? = nil
+    ) {
+        let freqString = session.frequency.map { String(format: "%.3f", $0) }
+        WidgetDataWriter.writeSession(WidgetSessionSnapshot(
+            isActive: true,
+            parkReference: session.parkReference,
+            parkName: nil,
+            frequency: freqString,
+            mode: session.mode,
+            qsoCount: session.qsoCount,
+            startedAt: session.startedAt,
+            lastCallsign: lastCallsign,
+            activationType: session.activationType.rawValue,
+            updatedAt: Date()
+        ))
     }
 
     /// Load active session from persisted ID

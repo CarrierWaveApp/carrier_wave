@@ -9,7 +9,9 @@ enum SpotSourceFilter: String, CaseIterable, AppEnum {
     case pota
     case rbn
 
-    static var typeDisplayRepresentation = TypeDisplayRepresentation(name: "Source")
+    // MARK: Internal
+
+    static let typeDisplayRepresentation = TypeDisplayRepresentation(name: "Source")
 
     static var caseDisplayRepresentations: [SpotSourceFilter: DisplayRepresentation] {
         [
@@ -41,8 +43,12 @@ struct WidgetSpot: Identifiable, Sendable {
 
     var timeAgo: String {
         let seconds = Date().timeIntervalSince(timestamp)
-        if seconds < 60 { return "\(Int(seconds))s" }
-        if seconds < 3_600 { return "\(Int(seconds / 60))m" }
+        if seconds < 60 {
+            return "\(Int(seconds))s"
+        }
+        if seconds < 3_600 {
+            return "\(Int(seconds / 60))m"
+        }
         return "\(Int(seconds / 3_600))h"
     }
 
@@ -68,8 +74,7 @@ struct WidgetSpot: Identifiable, Sendable {
 
 /// Fetches POTA and RBN spots directly from public APIs
 enum SpotsFetcher {
-    private static let potaSpotsURL = "https://api.pota.app/spot/activator"
-    private static let rbnBaseURL = "https://vailrerbn.com/api/v1"
+    // MARK: Internal
 
     static func fetch(source: SpotSourceFilter) async -> [WidgetSpot] {
         var spots: [WidgetSpot] = []
@@ -86,14 +91,22 @@ enum SpotsFetcher {
             }
         }
 
-        return spots
-            .sorted { $0.timestamp > $1.timestamp }
-            .prefix(10)
-            .map { $0 }
+        return Array(
+            spots
+                .sorted { $0.timestamp > $1.timestamp }
+                .prefix(10)
+        )
     }
 
+    // MARK: Private
+
+    private static let potaSpotsURL = "https://api.pota.app/spot/activator"
+    private static let rbnBaseURL = "https://vailrerbn.com/api/v1"
+
     private static func fetchPOTASpots() async -> [WidgetSpot]? {
-        guard let url = URL(string: potaSpotsURL) else { return nil }
+        guard let url = URL(string: potaSpotsURL) else {
+            return nil
+        }
 
         var request = URLRequest(url: url)
         request.timeoutInterval = 15
@@ -121,9 +134,13 @@ enum SpotsFetcher {
 
         let cutoff = Date().addingTimeInterval(-30 * 60)
         return dtos.compactMap { dto in
-            guard let freqKHz = Double(dto.frequency) else { return nil }
+            guard let freqKHz = Double(dto.frequency) else {
+                return nil
+            }
             let timestamp = parseSpotTime(dto.spotTime) ?? Date()
-            guard timestamp > cutoff else { return nil }
+            guard timestamp > cutoff else {
+                return nil
+            }
             return WidgetSpot(
                 id: "pota-\(dto.spotId)", callsign: dto.activator,
                 frequencyKHz: freqKHz, mode: dto.mode,
@@ -134,7 +151,9 @@ enum SpotsFetcher {
     }
 
     private static func fetchRBNSpots() async -> [WidgetSpot]? {
-        guard let url = URL(string: "\(rbnBaseURL)/spots?limit=20") else { return nil }
+        guard let url = URL(string: "\(rbnBaseURL)/spots?limit=20") else {
+            return nil
+        }
 
         var request = URLRequest(url: url)
         request.timeoutInterval = 15
@@ -185,9 +204,13 @@ enum SpotsFetcher {
     private static func parseSpotTime(_ spotTime: String) -> Date? {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        if let date = formatter.date(from: spotTime) { return date }
+        if let date = formatter.date(from: spotTime) {
+            return date
+        }
         formatter.formatOptions = [.withInternetDateTime]
-        if let date = formatter.date(from: spotTime) { return date }
+        if let date = formatter.date(from: spotTime) {
+            return date
+        }
         // POTA sometimes omits Z suffix
         formatter.formatOptions = [.withFullDate, .withTime, .withColonSeparatorInTime]
         formatter.timeZone = TimeZone(identifier: "UTC")
@@ -198,8 +221,8 @@ enum SpotsFetcher {
 // MARK: - SpotsWidgetIntent
 
 struct SpotsWidgetIntent: WidgetConfigurationIntent {
-    static var title: LocalizedStringResource = "Spots Widget"
-    static var description: IntentDescription = "Show live POTA and RBN spots."
+    static let title: LocalizedStringResource = "Spots Widget"
+    static let description: IntentDescription = "Show live POTA and RBN spots."
 
     @Parameter(title: "Source", default: .both)
     var source: SpotSourceFilter
@@ -241,6 +264,8 @@ struct SpotsTimelineProvider: AppIntentTimelineProvider {
 // MARK: - SpotsWidgetMediumView
 
 struct SpotsWidgetMediumView: View {
+    // MARK: Internal
+
     let entry: SpotsEntry
 
     var body: some View {
@@ -283,6 +308,8 @@ struct SpotsWidgetMediumView: View {
         .padding()
     }
 
+    // MARK: Private
+
     private var sourceLabel: String {
         switch entry.source {
         case .both: "POTA + RBN"
@@ -322,6 +349,8 @@ struct SpotsWidgetMediumView: View {
 // MARK: - SpotsWidgetLargeView
 
 struct SpotsWidgetLargeView: View {
+    // MARK: Internal
+
     let entry: SpotsEntry
 
     var body: some View {
@@ -367,6 +396,8 @@ struct SpotsWidgetLargeView: View {
         }
         .padding()
     }
+
+    // MARK: Private
 
     private var sourceLabel: String {
         switch entry.source {

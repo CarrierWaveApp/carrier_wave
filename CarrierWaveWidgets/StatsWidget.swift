@@ -20,7 +20,9 @@ enum StatsMetricType: String, CaseIterable, AppEnum {
     case huntsMonth
     case newDXCCYear
 
-    static var typeDisplayRepresentation = TypeDisplayRepresentation(name: "Metric")
+    // MARK: Internal
+
+    static let typeDisplayRepresentation = TypeDisplayRepresentation(name: "Metric")
 
     static var caseDisplayRepresentations: [StatsMetricType: DisplayRepresentation] {
         [
@@ -49,18 +51,26 @@ enum StatsMetricType: String, CaseIterable, AppEnum {
         case .cwStreak: "waveform.path"
         case .phoneStreak: "mic.fill"
         case .digitalStreak: "desktopcomputer"
-        case .qsosWeek, .qsosMonth, .qsosYear:
+        case .qsosWeek,
+             .qsosMonth,
+             .qsosYear:
             "antenna.radiowaves.left.and.right"
-        case .activationsMonth, .activationsYear: "leaf"
-        case .huntsWeek, .huntsMonth: "binoculars"
+        case .activationsMonth,
+             .activationsYear: "leaf"
+        case .huntsWeek,
+             .huntsMonth: "binoculars"
         case .newDXCCYear: "globe"
         }
     }
 
     var isStreak: Bool {
         switch self {
-        case .onAirStreak, .activationStreak, .hunterStreak,
-             .cwStreak, .phoneStreak, .digitalStreak:
+        case .onAirStreak,
+             .activationStreak,
+             .hunterStreak,
+             .cwStreak,
+             .phoneStreak,
+             .digitalStreak:
             true
         default:
             false
@@ -90,8 +100,8 @@ enum StatsMetricType: String, CaseIterable, AppEnum {
 // MARK: - StatsWidgetIntent
 
 struct StatsWidgetIntent: WidgetConfigurationIntent {
-    static var title: LocalizedStringResource = "Stats Widget"
-    static var description: IntentDescription = "Choose which metric to display."
+    static let title: LocalizedStringResource = "Stats Widget"
+    static let description: IntentDescription = "Choose which metric to display."
 
     @Parameter(title: "Metric", default: .onAirStreak)
     var metric: StatsMetricType
@@ -110,6 +120,8 @@ struct StatsEntry: TimelineEntry {
 // MARK: - StatsTimelineProvider
 
 struct StatsTimelineProvider: AppIntentTimelineProvider {
+    // MARK: Internal
+
     func placeholder(in _: Context) -> StatsEntry {
         StatsEntry(
             date: Date(), metric: .onAirStreak,
@@ -132,17 +144,25 @@ struct StatsTimelineProvider: AppIntentTimelineProvider {
         return Timeline(entries: [entry], policy: .after(nextUpdate))
     }
 
+    // MARK: Private
+
+    private struct ResolvedMetric {
+        let value: Int
+        let secondary: Int?
+        let atRisk: Bool
+    }
+
     private func readEntry(for metric: StatsMetricType) -> StatsEntry {
         let streaks = WidgetDataReader.readStreaks()
         let counts = WidgetDataReader.readCounts()
 
-        let (value, secondary, atRisk) = resolveMetric(
+        let resolved = resolveMetric(
             metric, streaks: streaks, counts: counts
         )
 
         return StatsEntry(
             date: Date(), metric: metric,
-            value: value, secondaryValue: secondary, isAtRisk: atRisk
+            value: resolved.value, secondaryValue: resolved.secondary, isAtRisk: resolved.atRisk
         )
     }
 
@@ -150,38 +170,39 @@ struct StatsTimelineProvider: AppIntentTimelineProvider {
         _ metric: StatsMetricType,
         streaks: WidgetStreakSnapshot?,
         counts: WidgetCountSnapshot?
-    ) -> (Int, Int?, Bool) {
+    ) -> ResolvedMetric {
         switch metric {
         case .onAirStreak:
-            (streaks?.onAirCurrent ?? 0, streaks?.onAirLongest, streaks?.onAirAtRisk ?? false)
+            ResolvedMetric(value: streaks?.onAirCurrent ?? 0, secondary: streaks?.onAirLongest,
+                           atRisk: streaks?.onAirAtRisk ?? false)
         case .activationStreak:
-            (streaks?.activationCurrent ?? 0, streaks?.activationLongest,
-             streaks?.activationAtRisk ?? false)
+            ResolvedMetric(value: streaks?.activationCurrent ?? 0, secondary: streaks?.activationLongest,
+                           atRisk: streaks?.activationAtRisk ?? false)
         case .hunterStreak:
-            (streaks?.hunterCurrent ?? 0, streaks?.hunterLongest,
-             streaks?.hunterAtRisk ?? false)
+            ResolvedMetric(value: streaks?.hunterCurrent ?? 0, secondary: streaks?.hunterLongest,
+                           atRisk: streaks?.hunterAtRisk ?? false)
         case .cwStreak:
-            (streaks?.cwCurrent ?? 0, nil, false)
+            ResolvedMetric(value: streaks?.cwCurrent ?? 0, secondary: nil, atRisk: false)
         case .phoneStreak:
-            (streaks?.phoneCurrent ?? 0, nil, false)
+            ResolvedMetric(value: streaks?.phoneCurrent ?? 0, secondary: nil, atRisk: false)
         case .digitalStreak:
-            (streaks?.digitalCurrent ?? 0, nil, false)
+            ResolvedMetric(value: streaks?.digitalCurrent ?? 0, secondary: nil, atRisk: false)
         case .qsosWeek:
-            (counts?.qsosWeek ?? 0, nil, false)
+            ResolvedMetric(value: counts?.qsosWeek ?? 0, secondary: nil, atRisk: false)
         case .qsosMonth:
-            (counts?.qsosMonth ?? 0, nil, false)
+            ResolvedMetric(value: counts?.qsosMonth ?? 0, secondary: nil, atRisk: false)
         case .qsosYear:
-            (counts?.qsosYear ?? 0, nil, false)
+            ResolvedMetric(value: counts?.qsosYear ?? 0, secondary: nil, atRisk: false)
         case .activationsMonth:
-            (counts?.activationsMonth ?? 0, nil, false)
+            ResolvedMetric(value: counts?.activationsMonth ?? 0, secondary: nil, atRisk: false)
         case .activationsYear:
-            (counts?.activationsYear ?? 0, nil, false)
+            ResolvedMetric(value: counts?.activationsYear ?? 0, secondary: nil, atRisk: false)
         case .huntsWeek:
-            (counts?.huntsWeek ?? 0, nil, false)
+            ResolvedMetric(value: counts?.huntsWeek ?? 0, secondary: nil, atRisk: false)
         case .huntsMonth:
-            (counts?.huntsMonth ?? 0, nil, false)
+            ResolvedMetric(value: counts?.huntsMonth ?? 0, secondary: nil, atRisk: false)
         case .newDXCCYear:
-            (counts?.newDXCCYear ?? 0, nil, false)
+            ResolvedMetric(value: counts?.newDXCCYear ?? 0, secondary: nil, atRisk: false)
         }
     }
 }
