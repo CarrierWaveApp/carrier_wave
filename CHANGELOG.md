@@ -13,6 +13,7 @@ All notable changes to Carrier Wave will be documented in this file.
 - Add App Group (`group.com.jsvana.FullDuplex`) for widget data sharing
 - Add haptic feedback (success) when logging a QSO
 - Add accessibility labels to filter button (Map), settings menu (CW Transcription), and refresh button (POTA Activations)
+- Share sync debug log as text from Sync Debug view toolbar menu
 
 ### Changed
 - Add sync debug logging for QRZ uploads: HTTP response, ADIF size, PARTIAL result details (CAR-92)
@@ -23,6 +24,7 @@ All notable changes to Carrier Wave will be documented in this file.
 - Respect Reduce Motion setting for cursor blink animation and sync spinner
 - Ensure full tap area on activity grid cells via contentShape
 - Show NavigationSplitView sidebar toggle button on Logger tab on iPad (CAR-91)
+- Fix conditions card metric pills wrapping/overlapping on narrow displays
 
 ## [1.36.0] - 2026-02-16
 
