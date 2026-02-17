@@ -8,5 +8,6 @@ struct CarrierWaveWidgetBundle: WidgetBundle {
         StatsWidget()
         SpotsWidget()
         ActiveSessionWidget()
+        LoggingSessionLiveActivity()
     }
 }

@@ -4,6 +4,15 @@ import SwiftUI
 // MARK: - DashboardView Services List
 
 extension DashboardView {
+    /// Derived counts from ServicePresence (computed in background)
+    func uploadedCount(for service: ServiceType) -> Int {
+        presenceCounts.uploadedCount(for: service)
+    }
+
+    func pendingCount(for service: ServiceType) -> Int {
+        presenceCounts.pendingCount(for: service)
+    }
+
     // MARK: - Services List View
 
     var servicesList: some View {

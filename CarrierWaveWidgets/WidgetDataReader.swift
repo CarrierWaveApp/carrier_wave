@@ -1,11 +1,8 @@
 import Foundation
 
-// MARK: - Shared Constants (must stay in sync with WidgetDataWriter in main app)
+// MARK: - WidgetShared
 
 enum WidgetShared {
-    static let appGroupID = "group.com.jsvana.FullDuplex"
-    static let suiteName = appGroupID
-
     enum Key {
         static let streakData = "widget.streakData"
         static let countData = "widget.countData"
@@ -17,9 +14,12 @@ enum WidgetShared {
         static let dashboard = "carrierwave://dashboard"
         static let logger = "carrierwave://logger"
     }
+
+    static let appGroupID = "group.com.jsvana.FullDuplex"
+    static let suiteName = appGroupID
 }
 
-// MARK: - Shared Codable Types (must stay in sync with WidgetDataWriter)
+// MARK: - WidgetStreakSnapshot
 
 struct WidgetStreakSnapshot: Codable, Sendable {
     let onAirCurrent: Int
@@ -37,6 +37,8 @@ struct WidgetStreakSnapshot: Codable, Sendable {
     let updatedAt: Date
 }
 
+// MARK: - WidgetCountSnapshot
+
 struct WidgetCountSnapshot: Codable, Sendable {
     let qsosWeek: Int
     let qsosMonth: Int
@@ -48,6 +50,8 @@ struct WidgetCountSnapshot: Codable, Sendable {
     let newDXCCYear: Int
     let updatedAt: Date
 }
+
+// MARK: - WidgetSessionSnapshot
 
 struct WidgetSessionSnapshot: Codable, Sendable {
     let isActive: Bool
@@ -65,9 +69,7 @@ struct WidgetSessionSnapshot: Codable, Sendable {
 // MARK: - WidgetDataReader
 
 enum WidgetDataReader {
-    private static var defaults: UserDefaults? {
-        UserDefaults(suiteName: WidgetShared.suiteName)
-    }
+    // MARK: Internal
 
     static func readStreaks() -> WidgetStreakSnapshot? {
         guard let data = defaults?.data(forKey: WidgetShared.Key.streakData) else {
@@ -88,5 +90,11 @@ enum WidgetDataReader {
             return nil
         }
         return try? JSONDecoder().decode(WidgetSessionSnapshot.self, from: data)
+    }
+
+    // MARK: Private
+
+    private static var defaults: UserDefaults? {
+        UserDefaults(suiteName: WidgetShared.suiteName)
     }
 }

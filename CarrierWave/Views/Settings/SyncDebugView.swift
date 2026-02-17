@@ -36,14 +36,21 @@ struct SyncDebugView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Menu {
-                    Button("Clear All") {
-                        debugLog.clearAll()
+                    ShareLink(item: formatLogForSharing()) {
+                        Label("Share Log", systemImage: "square.and.arrow.up")
                     }
+                    .disabled(debugLog.logEntries.isEmpty)
+
+                    Divider()
+
                     Button("Clear Logs Only") {
                         debugLog.clearLogs()
                     }
+                    Button("Clear All", role: .destructive) {
+                        debugLog.clearAll()
+                    }
                 } label: {
-                    Image(systemName: "trash")
+                    Image(systemName: "ellipsis.circle")
                 }
             }
         }
@@ -197,6 +204,22 @@ struct SyncDebugView: View {
             }
         }
         serviceCounts = counts
+    }
+
+    private func formatLogForSharing() -> String {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
+        dateFormatter.timeZone = TimeZone(identifier: "UTC")
+
+        var lines: [String] = ["Carrier Wave Sync Debug Log", "Exported: \(dateFormatter.string(from: Date())) UTC", ""]
+
+        for entry in debugLog.logEntries.reversed() {
+            let ts = dateFormatter.string(from: entry.timestamp)
+            let svc = entry.service.map { "[\($0.displayName)] " } ?? ""
+            lines.append("[\(entry.level.rawValue)] \(ts) \(svc)\(entry.message)")
+        }
+
+        return lines.joined(separator: "\n")
     }
 
     private func loadJobs() async {

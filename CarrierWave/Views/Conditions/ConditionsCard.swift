@@ -90,7 +90,7 @@ struct ConditionsCard: View {
     }
 
     private var metricsRow: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: 8) {
             if let latest = latestSolarSnapshot {
                 if let k = latest.solarKIndex {
                     metricPill(
@@ -187,6 +187,7 @@ struct ConditionsCard: View {
                 .font(.caption)
                 .fontWeight(.semibold)
         }
+        .fixedSize()
         .padding(.horizontal, 6)
         .padding(.vertical, 3)
         .background(color.opacity(0.1))

@@ -28,6 +28,7 @@ struct CarrierWaveApp: App {
             CallsignNotesSource.self,
             DismissedSuggestion.self,
             SessionSpot.self,
+            SolarSnapshot.self,
         ])
         let modelConfiguration = ModelConfiguration(
             schema: schema,
@@ -52,6 +53,9 @@ struct CarrierWaveApp: App {
                 .sunlightMode(isSunlightMode)
                 .preferredColorScheme(colorScheme)
                 .task {
+                    // Start hourly solar conditions polling
+                    SolarPollingService.shared.configure(container: sharedModelContainer)
+
                     // Preload caches on app launch (loads from disk, refreshes in background)
                     await POTAParksCache.shared.ensureLoaded()
                     // Fetch sources on main actor, then pass to cache actor
@@ -103,6 +107,19 @@ struct CarrierWaveApp: App {
            url.pathComponents.count >= 2, url.pathComponents[1] == "invite"
         {
             handleFriendInviteURL(url)
+            return
+        }
+
+        // Check for widget deep links (carrierwave://activitylog, dashboard, logger)
+        if url.scheme == "carrierwave",
+           let host = url.host,
+           ["activitylog", "dashboard", "logger"].contains(host)
+        {
+            NotificationCenter.default.post(
+                name: .didReceiveWidgetDeepLink,
+                object: nil,
+                userInfo: ["target": host]
+            )
             return
         }
 
@@ -190,6 +207,7 @@ extension Notification.Name {
     static let didReceiveADIFFile = Notification.Name("didReceiveADIFFile")
     static let didReceiveChallengeInvite = Notification.Name("didReceiveChallengeInvite")
     static let didReceiveFriendInvite = Notification.Name("didReceiveFriendInvite")
+    static let didReceiveWidgetDeepLink = Notification.Name("didReceiveWidgetDeepLink")
     static let didSyncQSOs = Notification.Name("didSyncQSOs")
     static let didDetectActivities = Notification.Name("didDetectActivities")
     static let didClearQSOs = Notification.Name("didClearQSOs")

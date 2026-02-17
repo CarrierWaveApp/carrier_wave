@@ -17,6 +17,7 @@ struct DashboardView: View {
     @Binding var selectedTab: AppTab?
     @Binding var settingsDestination: SettingsDestination?
     let tourState: TourState
+    @Binding var navigateToActivityLog: Bool
 
     @AppStorage("debugMode") var debugMode = false
     @AppStorage("bypassPOTAMaintenance") var bypassPOTAMaintenance = false
@@ -191,16 +192,12 @@ struct DashboardView: View {
             .sheet(isPresented: $showingActivityLogSetup) {
                 ActivityLogSetupSheet(manager: activityLogManager)
             }
+            .navigationDestination(isPresented: $navigateToActivityLog) {
+                if let manager = activityLogManager {
+                    ActivityLogView(manager: manager)
+                }
+            }
         }
-    }
-
-    /// Derived counts from ServicePresence (computed in background)
-    func uploadedCount(for service: ServiceType) -> Int {
-        presenceCounts.uploadedCount(for: service)
-    }
-
-    func pendingCount(for service: ServiceType) -> Int {
-        presenceCounts.pendingCount(for: service)
     }
 
     // MARK: Private

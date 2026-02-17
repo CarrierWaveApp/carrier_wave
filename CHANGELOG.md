@@ -4,21 +4,60 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.37.0] - 2026-02-17
+
+### Changed
+- Redesign Solar widget with circular arc gauges for K, A, and SFI (arc fill + color = propagation quality)
+- Show all 4 band conditions in Solar widget as a 2x2 color-coded grid instead of single configured band
+- Color-code propagation rating and band condition text in Solar widget for at-a-glance readability
+- Fix band name wrapping in Solar widget by using shorter display labels (e.g. "30-20m" instead of "30m-20m")
+- Show 5 spots instead of 4 in medium Spots widget to reduce empty space
+- Increase minimum font size in Spots widget from 9pt to caption2 for readability and Dynamic Type scaling
+- Move source label next to mode in Spots widget rows, eliminating the large gap between data columns
+- Abbreviate source filter in Spots widget header ("All" instead of "POTA + RBN") to reduce truncation
+
 ### Added
 - Add swipe-to-delete on QSOs in logger session log
+- Add Live Activity for logging sessions: shows QSO count, frequency, mode, park reference, and last callsign on lock screen and Dynamic Island
+- Live Activity updates in real time as QSOs are logged, frequency/mode changes, or session is paused/resumed
+- Live Activity reconnects automatically after app relaunch during active session
+- Add widget deep link navigation: tapping Spots widget opens Activity Log, other widgets navigate to Dashboard or Logger
+- Add multi-select band and mode filters to Spots widget via long-press configuration (160m–2m, CW/SSB/FT8/FT4/Digital)
+- Show "+N more" indicator on Spots widget when more spots are available than fit on screen
 - Add iOS widgets: Solar Conditions, Stats & Streaks, Radio Spots (POTA + RBN), and Active Session
 - Solar widget shows K-index, SFI, A-index with propagation rating (small + Lock Screen)
 - Stats widget is configurable via long-press to show any streak or count metric (small + Lock Screen)
 - Spots widget shows live POTA/RBN spots with configurable source filter; taps open Activity Log (medium + large)
 - Active Session widget shows current logging session with QSO count, park ref, and elapsed time (small + medium + Lock Screen)
 - Add App Group (`group.com.jsvana.FullDuplex`) for widget data sharing
+- Add hourly solar conditions polling in background, filling in conditions history continuously without requiring an active session (toggle in Settings > POTA Activations)
 - Add haptic feedback (success) when logging a QSO
 - Add accessibility labels to filter button (Map), settings menu (CW Transcription), and refresh button (POTA Activations)
+- Share sync debug log as text from Sync Debug view toolbar menu
+
+### Changed
+- Redesign Solar widget home screen view: K/A side-by-side with gauges, SFI and band side-by-side with 10-segment and 3-segment stoplight gauges, right-aligned values, no text coloring or condition labels
+- Add configurable band selection to Solar widget (80m-40m, 30m-20m, 17m-15m, 12m-10m) with day/night propagation conditions from HamQSL
+- Parse band-specific conditions from HamQSL XML `<calculatedconditions>` section
+- Switch Solar widget from StaticConfiguration to AppIntentConfiguration for band selection
+- Add per-metric descriptions to Solar widget (K: Quiet/Unsettled/Active/Storm, SFI: Poor/Low/Good/Very Good/Excellent, A: Quiet/Unsettled/Active/Storm/Severe)
+- Fix Solar widget lock screen circular view readability with heavier rounded font weight
+- Fix Solar widget lock screen rectangular view with K and A together, band conditions on line 3
+- Add Solar widget inline (lock screen top) showing K value and band condition
+- Fix Solar widget family dispatch to use @Environment(\.widgetFamily) instead of broken preview extension
+- Redesign Spots widget with aligned table layout: fixed-width columns for callsign, frequency, mode, source, and age
+- Reduce Spots widget refresh interval from 15 minutes to 5 minutes for more current data
+- Show active band/mode filter badges in Spots widget header
+- Add sync debug logging for QRZ uploads: HTTP response, ADIF size, PARTIAL result details (CAR-92)
+- Log error when fetchQSOsNeedingUpload fails instead of silently returning nil (CAR-92)
+- Log when QRZ upload batch is empty (no QSOs need upload) (CAR-92)
 
 ### Fixed
 - Fix delete confirmation in QSO edit sheet to anchor near the delete button instead of screen center
 - Respect Reduce Motion setting for cursor blink animation and sync spinner
 - Ensure full tap area on activity grid cells via contentShape
+- Show NavigationSplitView sidebar toggle button on Logger tab on iPad (CAR-91)
+- Fix conditions card metric pills wrapping/overlapping on narrow displays
 
 ## [1.36.0] - 2026-02-16
 

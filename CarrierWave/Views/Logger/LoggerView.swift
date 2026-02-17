@@ -107,7 +107,8 @@ struct LoggerView: View {
                     }
                 }
             }
-            .navigationBarHidden(true)
+            .navigationBarHidden(horizontalSizeClass != .regular)
+            .toolbarTitleDisplayMode(.inline)
             .sheet(isPresented: $showSessionSheet) {
                 SessionStartSheet(
                     sessionManager: sessionManager,
@@ -328,6 +329,7 @@ struct LoggerView: View {
 
     // MARK: Private
 
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.modelContext) private var modelContext
 
     @AppStorage("userLicenseClass") private var licenseClassRaw: String = LicenseClass.extra

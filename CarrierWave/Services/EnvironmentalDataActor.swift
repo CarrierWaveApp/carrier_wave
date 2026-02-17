@@ -48,6 +48,12 @@ actor EnvironmentalDataActor {
             snapshots.append(snapshot)
         }
 
+        // Load from SolarSnapshot (hourly polling data)
+        let solarSnapshots = try fetchFromSolarSnapshots(
+            context: context, from: startDate, to: endDate
+        )
+        snapshots.append(contentsOf: solarSnapshots)
+
         return snapshots.sorted { $0.timestamp < $1.timestamp }
     }
 
@@ -128,6 +134,47 @@ actor EnvironmentalDataActor {
                 weatherWindSpeed: session.weatherWindSpeed,
                 weatherWindDirection: session.weatherWindDirection,
                 weatherDescription: session.weatherDescription
+            )
+        }
+    }
+
+    private func fetchFromSolarSnapshots(
+        context: ModelContext,
+        from startDate: Date,
+        to endDate: Date
+    ) throws -> [EnvironmentalSnapshot] {
+        var descriptor = FetchDescriptor<SolarSnapshot>(
+            predicate: #Predicate<SolarSnapshot> {
+                $0.timestamp >= startDate && $0.timestamp <= endDate
+            },
+            sortBy: [SortDescriptor(\.timestamp)]
+        )
+        descriptor.fetchLimit = 500
+
+        let snapshots = (try? context.fetch(descriptor)) ?? []
+
+        return snapshots.compactMap { snap in
+            guard snap.hasSolarData else {
+                return nil
+            }
+            return EnvironmentalSnapshot(
+                id: UUID(),
+                timestamp: snap.timestamp,
+                gridSquare: nil,
+                sessionId: nil,
+                parkReference: nil,
+                solarKIndex: snap.kIndex,
+                solarFlux: snap.solarFlux,
+                solarSunspots: snap.sunspots,
+                solarPropagationRating: snap.propagationRating,
+                solarAIndex: snap.aIndex,
+                solarBandConditions: snap.bandConditions,
+                weatherTemperatureF: nil,
+                weatherTemperatureC: nil,
+                weatherHumidity: nil,
+                weatherWindSpeed: nil,
+                weatherWindDirection: nil,
+                weatherDescription: nil
             )
         }
     }

@@ -1,3 +1,4 @@
+import AppIntents
 import SwiftUI
 import WidgetKit
 
@@ -5,15 +6,23 @@ import WidgetKit
 
 /// Lightweight solar conditions fetched directly by the widget
 struct SolarData: Sendable {
+    static let placeholder = SolarData(
+        kIndex: 2.0, aIndex: 5, solarFlux: 150, sunspots: 80,
+        bandConditions: [
+            "80m-40m": BandCondition(day: "Good", night: "Fair"),
+            "30m-20m": BandCondition(day: "Good", night: "Fair"),
+            "17m-15m": BandCondition(day: "Good", night: "Poor"),
+            "12m-10m": BandCondition(day: "Fair", night: "Poor"),
+        ],
+        timestamp: Date()
+    )
+
     let kIndex: Double
     let aIndex: Int?
     let solarFlux: Double?
     let sunspots: Int?
+    let bandConditions: [String: BandCondition]
     let timestamp: Date
-
-    static let placeholder = SolarData(
-        kIndex: 2.0, aIndex: 5, solarFlux: 150, sunspots: 80, timestamp: Date()
-    )
 
     var propagationRating: String {
         switch kIndex {
@@ -25,13 +34,38 @@ struct SolarData: Sendable {
         }
     }
 
-    var propagationColor: Color {
+    var kDescription: String {
         switch kIndex {
-        case 0 ..< 2: .green
-        case 2 ..< 3: .blue
-        case 3 ..< 4: .yellow
-        case 4 ..< 5: .orange
-        default: .red
+        case 0 ..< 3: "Quiet"
+        case 3 ..< 4: "Unsettled"
+        case 4 ..< 5: "Active"
+        default: "Storm"
+        }
+    }
+
+    var sfiDescription: String {
+        guard let sfi = solarFlux else {
+            return "N/A"
+        }
+        switch sfi {
+        case 0 ..< 70: return "Poor"
+        case 70 ..< 90: return "Low"
+        case 90 ..< 120: return "Good"
+        case 120 ..< 200: return "Very Good"
+        default: return "Excellent"
+        }
+    }
+
+    var aIndexDescription: String {
+        guard let aIdx = aIndex else {
+            return "N/A"
+        }
+        switch aIdx {
+        case 0 ..< 7: return "Quiet"
+        case 7 ..< 15: return "Unsettled"
+        case 15 ..< 30: return "Active"
+        case 30 ..< 50: return "Storm"
+        default: return "Severe"
         }
     }
 }
@@ -40,10 +74,12 @@ struct SolarData: Sendable {
 
 /// Fetches solar conditions from HamQSL XML API
 enum SolarFetcher {
-    private static let hamQSLURL = "https://www.hamqsl.com/solarxml.php"
+    // MARK: Internal
 
     static func fetch() async -> SolarData? {
-        guard let url = URL(string: hamQSLURL) else { return nil }
+        guard let url = URL(string: hamQSLURL) else {
+            return nil
+        }
 
         var request = URLRequest(url: url)
         request.timeoutInterval = 15
@@ -61,12 +97,17 @@ enum SolarFetcher {
         let aIndex = extractValue(from: xml, tag: "aindex").flatMap { Int($0) }
         let solarFlux = extractValue(from: xml, tag: "solarflux").flatMap { Double($0) }
         let sunspots = extractValue(from: xml, tag: "sunspots").flatMap { Int($0) }
+        let bandConditions = extractBandConditions(from: xml)
 
         return SolarData(
             kIndex: kIndex, aIndex: aIndex, solarFlux: solarFlux,
-            sunspots: sunspots, timestamp: Date()
+            sunspots: sunspots, bandConditions: bandConditions, timestamp: Date()
         )
     }
+
+    // MARK: Private
+
+    private static let hamQSLURL = "https://www.hamqsl.com/solarxml.php"
 
     private static func extractValue(from xml: String, tag: String) -> String? {
         let pattern = "<\(tag)>([^<]*)</\(tag)>"
@@ -81,6 +122,42 @@ enum SolarFetcher {
         }
         return String(xml[range]).trimmingCharacters(in: .whitespaces)
     }
+
+    private static func extractBandConditions(from xml: String) -> [String: BandCondition] {
+        let pattern = #"<band\s+name="([^"]*)"\s+time="([^"]*)">([^<]*)</band>"#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else {
+            return [:]
+        }
+
+        var days: [String: String] = [:]
+        var nights: [String: String] = [:]
+        let range = NSRange(xml.startIndex..., in: xml)
+
+        regex.enumerateMatches(in: xml, options: [], range: range) { match, _, _ in
+            guard let result = match,
+                  let nr = Range(result.range(at: 1), in: xml),
+                  let tr = Range(result.range(at: 2), in: xml),
+                  let cr = Range(result.range(at: 3), in: xml)
+            else {
+                return
+            }
+            let name = String(xml[nr])
+            let cond = String(xml[cr]).trimmingCharacters(in: .whitespaces)
+            if String(xml[tr]) == "day" {
+                days[name] = cond
+            } else {
+                nights[name] = cond
+            }
+        }
+
+        var result: [String: BandCondition] = [:]
+        for name in Set(days.keys).union(nights.keys) {
+            result[name] = BandCondition(
+                day: days[name] ?? "N/A", night: nights[name] ?? "N/A"
+            )
+        }
+        return result
+    }
 }
 
 // MARK: - SolarEntry
@@ -88,91 +165,137 @@ enum SolarFetcher {
 struct SolarEntry: TimelineEntry {
     let date: Date
     let solar: SolarData?
+    let band: SolarBand
 }
 
 // MARK: - SolarTimelineProvider
 
-struct SolarTimelineProvider: TimelineProvider {
+struct SolarTimelineProvider: AppIntentTimelineProvider {
     func placeholder(in _: Context) -> SolarEntry {
-        SolarEntry(date: Date(), solar: .placeholder)
+        SolarEntry(date: Date(), solar: .placeholder, band: .band30m20m)
     }
 
-    func getSnapshot(in _: Context, completion: @escaping (SolarEntry) -> Void) {
-        Task {
-            let solar = await SolarFetcher.fetch()
-            completion(SolarEntry(date: Date(), solar: solar ?? .placeholder))
-        }
+    func snapshot(
+        for configuration: SolarWidgetIntent, in _: Context
+    ) async -> SolarEntry {
+        let solar = await SolarFetcher.fetch()
+        return SolarEntry(date: Date(), solar: solar ?? .placeholder, band: configuration.band)
     }
 
-    func getTimeline(in _: Context, completion: @escaping (Timeline<SolarEntry>) -> Void) {
-        Task {
-            let solar = await SolarFetcher.fetch()
-            let entry = SolarEntry(date: Date(), solar: solar)
-            // Refresh every 30 minutes
-            let nextUpdate = Date().addingTimeInterval(30 * 60)
-            completion(Timeline(entries: [entry], policy: .after(nextUpdate)))
-        }
+    func timeline(
+        for configuration: SolarWidgetIntent, in _: Context
+    ) async -> Timeline<SolarEntry> {
+        let solar = await SolarFetcher.fetch()
+        let entry = SolarEntry(date: Date(), solar: solar, band: configuration.band)
+        let nextUpdate = Date().addingTimeInterval(30 * 60)
+        return Timeline(entries: [entry], policy: .after(nextUpdate))
     }
 }
 
 // MARK: - SolarWidgetSmallView
 
 struct SolarWidgetSmallView: View {
+    // MARK: Internal
+
     let solar: SolarData?
+    let band: SolarBand
 
     var body: some View {
         if let solar {
             VStack(spacing: 6) {
-                HStack(spacing: 4) {
-                    Image(systemName: "sun.max.fill")
-                        .font(.caption)
-                        .foregroundStyle(solar.propagationColor)
-                    Text("Solar")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                }
-
-                VStack(spacing: 8) {
-                    metricRow("K", value: String(format: "%.0f", solar.kIndex),
-                              color: solar.propagationColor)
-                    if let sfi = solar.solarFlux {
-                        metricRow("SFI", value: "\(Int(sfi))", color: .blue)
-                    }
-                    if let aIdx = solar.aIndex {
-                        metricRow("A", value: "\(aIdx)", color: .blue)
-                    }
-                }
-
+                headerRow(solar)
+                gaugeRow(solar)
                 Spacer(minLength: 0)
-
-                Text(solar.propagationRating)
-                    .font(.caption2.weight(.medium))
-                    .foregroundStyle(solar.propagationColor)
+                allBandsGrid(solar)
             }
-            .padding()
+            .padding(4)
         } else {
-            VStack(spacing: 8) {
-                Image(systemName: "sun.max.trianglebadge.exclamationmark")
-                    .font(.title2)
-                    .foregroundStyle(.secondary)
-                Text("No Data")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            .padding()
+            noDataView
         }
     }
 
-    private func metricRow(_ label: String, value: String, color: Color) -> some View {
-        HStack {
-            Text(label)
-                .font(.caption2.weight(.medium))
+    // MARK: Private
+
+    private var noDataView: some View {
+        VStack(spacing: 8) {
+            Image(systemName: "sun.max.trianglebadge.exclamationmark")
+                .font(.title2)
                 .foregroundStyle(.secondary)
-                .frame(width: 24, alignment: .leading)
+            Text("No Data")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .padding()
+    }
+
+    private func headerRow(_ solar: SolarData) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: "sun.max.fill")
+                .font(.caption)
+                .foregroundStyle(.yellow)
+            Text("Solar")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
             Spacer()
-            Text(value)
-                .font(.title3.weight(.bold).monospaced())
-                .foregroundStyle(color)
+            Text(solar.propagationRating)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(PropagationLevel.rating(solar.propagationRating))
+        }
+    }
+
+    private func gaugeRow(_ solar: SolarData) -> some View {
+        HStack(spacing: 0) {
+            let k = PropagationLevel.kIndex(solar.kIndex)
+            CircularMetricGauge(
+                label: "K", value: String(format: "%.0f", solar.kIndex),
+                level: k.level, color: k.color
+            )
+
+            if let aIdx = solar.aIndex {
+                Spacer()
+                let aLevel = PropagationLevel.aIndex(aIdx)
+                CircularMetricGauge(
+                    label: "A", value: "\(aIdx)",
+                    level: aLevel.level, color: aLevel.color
+                )
+            }
+
+            if let sfi = solar.solarFlux {
+                Spacer()
+                let sfiLevel = PropagationLevel.sfi(sfi)
+                CircularMetricGauge(
+                    label: "SFI", value: "\(Int(sfi))",
+                    level: sfiLevel.level, color: sfiLevel.color
+                )
+            }
+        }
+    }
+
+    private func allBandsGrid(_ solar: SolarData) -> some View {
+        Grid(alignment: .leading, horizontalSpacing: 4, verticalSpacing: 2) {
+            GridRow {
+                bandCell(.band80m40m, solar)
+                bandCell(.band30m20m, solar)
+            }
+            GridRow {
+                bandCell(.band17m15m, solar)
+                bandCell(.band12m10m, solar)
+            }
+        }
+    }
+
+    private func bandCell(_ band: SolarBand, _ solar: SolarData) -> some View {
+        HStack(spacing: 4) {
+            Circle()
+                .fill(
+                    solar.bandConditions[band.rawValue]
+                        .map { PropagationLevel.condition($0.day) } ?? .secondary
+                )
+                .frame(width: 7, height: 7)
+            Text(band.displayLabel)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
         }
     }
 }
@@ -188,7 +311,7 @@ struct SolarWidgetAccessoryCircularView: View {
                 Text("K")
             } currentValueLabel: {
                 Text(String(format: "%.0f", solar.kIndex))
-                    .font(.title3.weight(.bold))
+                    .font(.system(.title3, design: .rounded, weight: .heavy))
             }
             .gaugeStyle(.accessoryCircular)
         } else {
@@ -202,29 +325,92 @@ struct SolarWidgetAccessoryCircularView: View {
 
 struct SolarWidgetAccessoryRectangularView: View {
     let solar: SolarData?
+    let band: SolarBand
 
     var body: some View {
         if let solar {
-            HStack(spacing: 8) {
-                VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 1) {
+                HStack {
                     Text("Solar")
-                        .font(.caption2.weight(.semibold))
+                        .fontWeight(.bold)
+                    Spacer()
                     Text(solar.propagationRating)
-                        .font(.caption2)
+                        .fontWeight(.semibold)
                 }
-                Spacer()
-                VStack(alignment: .trailing, spacing: 2) {
+                .font(.headline)
+
+                HStack {
                     Text("K \(String(format: "%.0f", solar.kIndex))")
-                        .font(.caption.weight(.bold).monospaced())
+                        .fontWeight(.bold)
+                    if let aIdx = solar.aIndex {
+                        Text("A \(aIdx)")
+                            .fontWeight(.bold)
+                    }
+                    Spacer()
                     if let sfi = solar.solarFlux {
                         Text("SFI \(Int(sfi))")
-                            .font(.caption2.monospaced())
+                            .fontWeight(.bold)
                     }
                 }
+                .font(.caption.monospacedDigit())
+
+                HStack {
+                    Text(band.displayLabel)
+                        .fontWeight(.semibold)
+                    Spacer()
+                    if let cond = solar.bandConditions[band.rawValue] {
+                        Text("\(cond.day) / \(cond.night)")
+                            .fontWeight(.semibold)
+                    }
+                }
+                .font(.caption)
             }
         } else {
             Text("Solar: --")
-                .font(.caption)
+                .font(.caption.weight(.semibold))
+        }
+    }
+}
+
+// MARK: - SolarWidgetAccessoryInlineView
+
+struct SolarWidgetAccessoryInlineView: View {
+    let solar: SolarData?
+    let band: SolarBand
+
+    var body: some View {
+        if let solar {
+            let k = String(format: "%.0f", solar.kIndex)
+            if let cond = solar.bandConditions[band.rawValue] {
+                Text("\u{2600} K \(k) \u{00B7} \(band.displayLabel) \(cond.day)")
+            } else if let sfi = solar.solarFlux {
+                Text("\u{2600} K \(k) \u{00B7} SFI \(Int(sfi))")
+            } else {
+                Text("\u{2600} K \(k) \u{00B7} \(solar.propagationRating)")
+            }
+        } else {
+            Text("\u{2600} Solar: --")
+        }
+    }
+}
+
+// MARK: - SolarWidgetEntryView
+
+struct SolarWidgetEntryView: View {
+    @Environment(\.widgetFamily) var widgetFamily
+
+    let entry: SolarEntry
+
+    var body: some View {
+        switch widgetFamily {
+        case .accessoryCircular:
+            SolarWidgetAccessoryCircularView(solar: entry.solar)
+        case .accessoryRectangular:
+            SolarWidgetAccessoryRectangularView(solar: entry.solar, band: entry.band)
+        case .accessoryInline:
+            SolarWidgetAccessoryInlineView(solar: entry.solar, band: entry.band)
+        default:
+            SolarWidgetSmallView(solar: entry.solar, band: entry.band)
         }
     }
 }
@@ -235,30 +421,18 @@ struct SolarWidget: Widget {
     let kind = "SolarWidget"
 
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: kind, provider: SolarTimelineProvider()) { entry in
-            Group {
-                switch entry.widgetFamily {
-                case .accessoryCircular:
-                    SolarWidgetAccessoryCircularView(solar: entry.solar)
-                case .accessoryRectangular:
-                    SolarWidgetAccessoryRectangularView(solar: entry.solar)
-                default:
-                    SolarWidgetSmallView(solar: entry.solar)
-                }
-            }
-            .containerBackground(.fill.tertiary, for: .widget)
+        AppIntentConfiguration(
+            kind: kind, intent: SolarWidgetIntent.self,
+            provider: SolarTimelineProvider()
+        ) { entry in
+            SolarWidgetEntryView(entry: entry)
+                .containerBackground(.fill.tertiary, for: .widget)
         }
         .configurationDisplayName("Solar Conditions")
         .description("Current K-index, SFI, and propagation rating.")
-        .supportedFamilies([.systemSmall, .accessoryCircular, .accessoryRectangular])
-    }
-}
-
-// MARK: - Preview
-
-private extension SolarEntry {
-    var widgetFamily: WidgetFamily {
-        // Default for preview
-        .systemSmall
+        .supportedFamilies([
+            .systemSmall, .accessoryCircular,
+            .accessoryRectangular, .accessoryInline,
+        ])
     }
 }
