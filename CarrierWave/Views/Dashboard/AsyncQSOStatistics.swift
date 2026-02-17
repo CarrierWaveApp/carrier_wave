@@ -248,6 +248,7 @@ final class AsyncQSOStatistics {
         applyCountMetrics(computed)
         applyServiceStats(computed)
         applyFavorites(computed)
+        writeWidgetData(computed)
 
         // NOTE: We intentionally do NOT clear `stats` here.
         // Keeping old stats available prevents UI hangs when navigating to drill-down views.
@@ -258,6 +259,45 @@ final class AsyncQSOStatistics {
         progressPhase = ""
         isComputing = false
         hasComputed = true
+    }
+
+    private func writeWidgetData(_ computed: ComputedStats) {
+        let yesterday = Calendar.current.date(
+            byAdding: .day, value: -1, to: Calendar.current.startOfDay(for: Date())
+        )
+        let isAtRisk = { (lastActive: Date?, current: Int) -> Bool in
+            guard current > 0, let last = lastActive, let cutoff = yesterday else {
+                return false
+            }
+            return last < cutoff
+        }
+
+        WidgetDataWriter.writeStreaks(WidgetStreakSnapshot(
+            onAirCurrent: computed.dailyStreakCurrent,
+            onAirLongest: computed.dailyStreakLongest,
+            onAirAtRisk: isAtRisk(computed.dailyStreakLastActive, computed.dailyStreakCurrent),
+            activationCurrent: computed.potaStreakCurrent,
+            activationLongest: computed.potaStreakLongest,
+            activationAtRisk: isAtRisk(computed.potaStreakLastActive, computed.potaStreakCurrent),
+            hunterCurrent: computed.hunterStreakCurrent,
+            hunterLongest: computed.hunterStreakLongest,
+            hunterAtRisk: isAtRisk(computed.hunterStreakLastActive, computed.hunterStreakCurrent),
+            cwCurrent: computed.cwStreakCurrent,
+            phoneCurrent: computed.phoneStreakCurrent,
+            digitalCurrent: computed.digitalStreakCurrent,
+            updatedAt: Date()
+        ))
+        WidgetDataWriter.writeCounts(WidgetCountSnapshot(
+            qsosWeek: computed.qsosThisWeek,
+            qsosMonth: computed.qsosThisMonth,
+            qsosYear: computed.qsosThisYear,
+            activationsMonth: computed.activationsThisMonth,
+            activationsYear: computed.activationsThisYear,
+            huntsWeek: computed.huntsThisWeek,
+            huntsMonth: computed.huntsThisMonth,
+            newDXCCYear: computed.newDXCCThisYear,
+            updatedAt: Date()
+        ))
     }
 
     private func applyBasicStats(_ computed: ComputedStats) {

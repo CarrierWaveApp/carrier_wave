@@ -136,6 +136,8 @@ final class LoggingSessionManager {
         recordConditions()
 
         try? modelContext.save()
+
+        writeSessionToWidget(session)
     }
 
     /// Advance to the next park stop in a rove session
@@ -264,6 +266,8 @@ final class LoggingSessionManager {
         UIApplication.shared.isIdleTimerDisabled = false
 
         try? modelContext.save()
+
+        WidgetDataWriter.clearSession()
     }
 
     /// Pause the current session and return to the session listing
@@ -606,6 +610,8 @@ final class LoggingSessionManager {
 
         try? modelContext.save()
 
+        writeSessionToWidget(session, lastCallsign: qso.theirCallsign)
+
         // Detect and report social activities async (non-blocking)
         Task { [weak self] in
             await self?.processActivityForQSO(qso)
@@ -837,6 +843,24 @@ final class LoggingSessionManager {
     }
 
     // MARK: Private
+
+    private func writeSessionToWidget(
+        _ session: LoggingSession, lastCallsign: String? = nil
+    ) {
+        let freqString = session.frequency.map { String(format: "%.3f", $0) }
+        WidgetDataWriter.writeSession(WidgetSessionSnapshot(
+            isActive: true,
+            parkReference: session.parkReference,
+            parkName: nil,
+            frequency: freqString,
+            mode: session.mode,
+            qsoCount: session.qsoCount,
+            startedAt: session.startedAt,
+            lastCallsign: lastCallsign,
+            activationType: session.activationType.rawValue,
+            updatedAt: Date()
+        ))
+    }
 
     /// Modes that represent activation metadata, not actual QSOs (from Ham2K PoLo)
     /// These should never be synced to any service
