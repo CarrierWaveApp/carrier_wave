@@ -22,6 +22,7 @@ struct ActivityLogSpotsList: View {
 
     let maxAgeMinutes: Int
     let proximityRadiusMiles: Int
+    let huntedBehavior: HuntedSpotBehavior
     let workedBeforeCache: WorkedBeforeCache
     let manager: ActivityLogManager
     let container: ModelContainer
@@ -79,7 +80,8 @@ struct ActivityLogSpotsList: View {
         )
     }
 
-    /// Dedup by callsign+band, preferring POTA over RBN and newest timestamp
+    /// Dedup by callsign+band, preferring POTA over RBN and newest timestamp.
+    /// When huntedBehavior is .hide, filters out spots already worked today on same band.
     private var dedupedSpots: [EnrichedSpot] {
         var best: [String: EnrichedSpot] = [:]
         for spot in filteredSpots {
@@ -95,7 +97,16 @@ struct ActivityLogSpotsList: View {
                 best[key] = spot
             }
         }
-        return Array(best.values)
+
+        var results = Array(best.values)
+        if huntedBehavior == .hide {
+            results = results.filter { spot in
+                let callKey = spot.spot.callsign.uppercased()
+                let result = workedResults[callKey] ?? .notWorked
+                return !result.isDupe(on: spot.spot.band)
+            }
+        }
+        return results
     }
 
     private var sortedSpots: [EnrichedSpot] {
@@ -204,6 +215,7 @@ struct ActivityLogSpotsList: View {
                 spot: spot,
                 workedResult: workedResults[spot.spot.callsign.uppercased()]
                     ?? .notWorked,
+                huntedBehavior: huntedBehavior,
                 onTap: { selectedSpot = spot }
             )
 

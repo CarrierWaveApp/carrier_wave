@@ -10,6 +10,7 @@ struct ActivityLogSpotRow: View {
 
     let spot: EnrichedSpot
     let workedResult: WorkedBeforeResult
+    let huntedBehavior: HuntedSpotBehavior
     let onTap: () -> Void
 
     var body: some View {
@@ -22,6 +23,7 @@ struct ActivityLogSpotRow: View {
             }
             .padding(.vertical, 8)
             .padding(.horizontal, 12)
+            .opacity(isHunted ? 0.5 : 1.0)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -32,6 +34,10 @@ struct ActivityLogSpotRow: View {
     // MARK: - Frequency Column
 
     @ScaledMetric(relativeTo: .subheadline) private var frequencyColumnWidth: CGFloat = 80
+
+    private var isHunted: Bool {
+        huntedBehavior == .crossOut && workedResult.isDupe(on: spot.spot.band)
+    }
 
     private var frequencyColumn: some View {
         VStack(alignment: .trailing, spacing: 2) {
@@ -63,6 +69,7 @@ struct ActivityLogSpotRow: View {
         HStack(spacing: 4) {
             Text(spot.spot.callsign)
                 .font(.subheadline.weight(.semibold).monospaced())
+                .strikethrough(isHunted)
 
             if spot.spot.source == .rbn {
                 Text("RBN")

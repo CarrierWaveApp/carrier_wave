@@ -11,6 +11,7 @@ struct ActivityLogSettingsView: View {
         Form {
             stationProfilesSection
             spotFilteringSection
+            huntedSpotSection
             uploadSection
             dailyGoalSection
         }
@@ -24,6 +25,7 @@ struct ActivityLogSettingsView: View {
     private static let ageOptions = [5, 10, 12, 15, 20, 30]
     private static let radiusOptions = [100, 250, 500, 1_000, 1_500, 2_000]
 
+    @AppStorage("huntedSpotBehavior") private var huntedSpotBehaviorRaw = HuntedSpotBehavior.crossOut.rawValue
     @AppStorage("activityLogDailyGoalEnabled") private var dailyGoalEnabled = false
     @AppStorage("activityLogDailyGoal") private var dailyGoal = 10
     @AppStorage("spotMaxAgeMinutes") private var spotMaxAgeMinutes = 12
@@ -49,6 +51,21 @@ struct ActivityLogSettingsView: View {
             Text(
                 "Spots older than the max age are hidden. " +
                     "Proximity radius applies when \"Heard Nearby\" is enabled in the spot filter."
+            )
+        }
+    }
+
+    private var huntedSpotSection: some View {
+        Section {
+            Picker("Hunted Spots", selection: $huntedSpotBehaviorRaw) {
+                ForEach(HuntedSpotBehavior.allCases, id: \.rawValue) { behavior in
+                    Text(behavior.label).tag(behavior.rawValue)
+                }
+            }
+        } footer: {
+            Text(
+                "When you work a spotted station on the same band, " +
+                    "it can be crossed out or hidden from the list."
             )
         }
     }

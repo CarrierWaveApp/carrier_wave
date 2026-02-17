@@ -9,8 +9,9 @@ import UIKit
 struct QuickLogSection: View {
     // MARK: Internal
 
-    let currentMode: String
-    let currentFrequency: Double?
+    @Binding var currentMode: String
+    @Binding var currentFrequency: Double?
+
     let onLog: (QuickLogData) -> Void
 
     var body: some View {
@@ -60,6 +61,10 @@ struct QuickLogSection: View {
         callsignInput.trimmingCharacters(in: .whitespaces).isEmpty
     }
 
+    private var detectedCommand: LoggerCommand? {
+        LoggerCommand.parse(callsignInput)
+    }
+
     // MARK: - Callsign Row (matches Logger callsignInputSection)
 
     private var callsignRow: some View {
@@ -70,8 +75,9 @@ struct QuickLogSection: View {
                     text: $callsignInput,
                     isFocused: $callsignFocused,
                     fontSize: 15,
-                    showCommands: false,
-                    onSubmit: { logFromInput() }
+                    showCommands: true,
+                    onSubmit: { logFromInput() },
+                    onCommand: { command in executeCommand(command) }
                 )
 
                 Button {
@@ -199,6 +205,13 @@ struct QuickLogSection: View {
             return
         }
 
+        // Check for commands first
+        if let command = LoggerCommand.parse(trimmed) {
+            executeCommand(command)
+            callsignInput = ""
+            return
+        }
+
         var data = QuickLogData()
 
         // Try quick entry parse first
@@ -242,6 +255,18 @@ struct QuickLogSection: View {
         callsignInput = ""
         rstSent = ""
         rstReceived = ""
+    }
+
+    private func executeCommand(_ command: LoggerCommand) {
+        switch command {
+        case let .frequency(freq):
+            currentFrequency = freq
+        case let .mode(newMode):
+            currentMode = newMode
+        default:
+            // Other commands (SPOT, RBN, etc.) not applicable in activity log
+            break
+        }
     }
 
     private func effectiveRST(_ value: String) -> String {

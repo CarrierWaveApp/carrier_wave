@@ -116,6 +116,7 @@ struct ActivityLogView: View {
 
     @AppStorage("spotMaxAgeMinutes") private var spotMaxAgeMinutes = 12
     @AppStorage("spotProximityRadiusMiles") private var proximityRadiusMiles = 500
+    @AppStorage("huntedSpotBehavior") private var huntedSpotBehaviorRaw = HuntedSpotBehavior.crossOut.rawValue
 
     @State private var showingProfilePicker = false
     @State private var showingFilterSheet = false
@@ -129,6 +130,10 @@ struct ActivityLogView: View {
     @State private var spotMonitor = SpotMonitoringService()
     @State private var workedBeforeCache = WorkedBeforeCache()
     @State private var locationService = GridLocationService()
+
+    private var huntedBehavior: HuntedSpotBehavior {
+        HuntedSpotBehavior(rawValue: huntedSpotBehaviorRaw) ?? .crossOut
+    }
 
     private var headerSection: some View {
         ActivityLogHeader(
@@ -149,6 +154,7 @@ struct ActivityLogView: View {
             filters: $spotFilters,
             maxAgeMinutes: spotMaxAgeMinutes,
             proximityRadiusMiles: proximityRadiusMiles,
+            huntedBehavior: huntedBehavior,
             workedBeforeCache: workedBeforeCache,
             manager: manager,
             container: modelContext.container,
@@ -159,8 +165,8 @@ struct ActivityLogView: View {
 
     private var quickLogSection: some View {
         QuickLogSection(
-            currentMode: currentMode,
-            currentFrequency: currentFrequency
+            currentMode: $currentMode,
+            currentFrequency: $currentFrequency
         ) { data in
             handleQuickLog(data)
         }

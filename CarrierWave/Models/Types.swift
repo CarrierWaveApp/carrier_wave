@@ -34,6 +34,22 @@ extension ServiceType {
     }
 }
 
+// MARK: - HuntedSpotBehavior
+
+enum HuntedSpotBehavior: String, CaseIterable {
+    case crossOut
+    case hide
+
+    // MARK: Internal
+
+    var label: String {
+        switch self {
+        case .crossOut: "Cross Out"
+        case .hide: "Hide"
+        }
+    }
+}
+
 // MARK: - String Helpers
 
 extension String {
