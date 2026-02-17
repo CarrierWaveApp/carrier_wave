@@ -159,7 +159,7 @@ struct QSORow: View {
 
                 if let name = displayName {
                     Text(name)
-                        .font(.subheadline)
+                        .font(isRegularWidth ? .body : .subheadline)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
@@ -176,7 +176,7 @@ struct QSORow: View {
                 Spacer()
 
                 Text(formattedTimestamp)
-                    .font(.caption)
+                    .font(isRegularWidth ? .subheadline : .caption)
                     .foregroundStyle(.secondary)
             }
 
@@ -200,7 +200,7 @@ struct QSORow: View {
 
                 Spacer()
             }
-            .font(.caption)
+            .font(isRegularWidth ? .subheadline : .caption)
             .foregroundStyle(.secondary)
 
             HStack(spacing: 8) {
@@ -213,7 +213,7 @@ struct QSORow: View {
                 }
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, isRegularWidth ? 8 : 4)
         .task {
             if let park = qso.parkReference {
                 parkName = await POTAParksCache.shared.name(for: park)
@@ -232,11 +232,16 @@ struct QSORow: View {
         return formatter
     }()
 
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.modelContext) private var modelContext
 
     @State private var parkName: String?
     @State private var callsignInfo: CallsignInfo?
     @State private var totalContactCount: Int = 0
+
+    private var isRegularWidth: Bool {
+        horizontalSizeClass == .regular
+    }
 
     /// Display name from callsign notes (prefers nickname), fallback to QSO stored name
     private var displayName: String? {
@@ -290,7 +295,7 @@ struct ServicePresenceBadge: View {
             Text(presence.serviceType.displayName)
                 .lineLimit(1)
         }
-        .font(.caption2)
+        .font(isRegularWidth ? .caption : .caption2)
         .fixedSize()
         .padding(.horizontal, 6)
         .padding(.vertical, 2)
@@ -300,6 +305,12 @@ struct ServicePresenceBadge: View {
     }
 
     // MARK: Private
+
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+
+    private var isRegularWidth: Bool {
+        horizontalSizeClass == .regular
+    }
 
     private var isBidirectional: Bool {
         switch presence.serviceType {

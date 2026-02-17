@@ -2606,11 +2606,16 @@ struct LoggerQSORow: View {
         return formatter
     }()
 
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.modelContext) private var modelContext
 
     @State private var callsignInfo: CallsignInfo?
     @State private var showEditSheet = false
     @State private var totalContactCount: Int = 0
+
+    private var isRegularWidth: Bool {
+        horizontalSizeClass == .regular
+    }
 
     /// Display name from callsign lookup (prefers nickname), fallback to QSO stored name
     private var displayName: String? {
@@ -2683,9 +2688,9 @@ struct LoggerQSORow: View {
     private var rowContent: some View {
         HStack(spacing: 12) {
             Text(Self.utcTimeFormatter.string(from: qso.timestamp))
-                .font(.caption.monospaced())
+                .font(isRegularWidth ? .subheadline.monospaced() : .caption.monospaced())
                 .foregroundStyle(.secondary)
-                .frame(width: 50, alignment: .leading)
+                .frame(width: isRegularWidth ? 60 : 50, alignment: .leading)
 
             HStack(spacing: 4) {
                 // Callsign is tappable for quick edit
@@ -2693,7 +2698,11 @@ struct LoggerQSORow: View {
                     onEditCallsign?(qso)
                 } label: {
                     Text(qso.callsign)
-                        .font(.subheadline.weight(.semibold).monospaced())
+                        .font(
+                            isRegularWidth
+                                ? .headline.weight(.semibold).monospaced()
+                                : .subheadline.weight(.semibold).monospaced()
+                        )
                         .foregroundStyle(callsignColor)
                         .fixedSize(horizontal: true, vertical: false)
                 }
@@ -2715,23 +2724,23 @@ struct LoggerQSORow: View {
                 HStack(spacing: 4) {
                     if let name = displayName {
                         Text(name)
-                            .font(.caption)
+                            .font(isRegularWidth ? .subheadline : .caption)
                             .lineLimit(1)
                     }
                     if totalContactCount > 1 {
                         Text("×\(totalContactCount)")
-                            .font(.caption2.weight(.medium))
+                            .font(isRegularWidth ? .caption.weight(.medium) : .caption2.weight(.medium))
                             .foregroundStyle(.secondary)
                     }
                 }
                 if let note = callsignInfo?.note, !note.isEmpty {
                     Text(note)
-                        .font(.caption2)
+                        .font(isRegularWidth ? .caption : .caption2)
                         .foregroundStyle(.blue)
                         .lineLimit(1)
                 } else if let location = displayLocation {
                     Text(location)
-                        .font(.caption2)
+                        .font(isRegularWidth ? .caption : .caption2)
                         .foregroundStyle(.secondary)
                 }
             }
@@ -2742,20 +2751,20 @@ struct LoggerQSORow: View {
                 // Frequency or band
                 if let freq = qso.frequency {
                     Text(FrequencyFormatter.format(freq))
-                        .font(.caption.monospaced())
+                        .font(isRegularWidth ? .subheadline.monospaced() : .caption.monospaced())
                         .foregroundStyle(.secondary)
                 } else {
                     Text(qso.band)
-                        .font(.caption.monospaced())
+                        .font(isRegularWidth ? .subheadline.monospaced() : .caption.monospaced())
                         .foregroundStyle(.secondary)
                 }
 
                 Text("\(qso.rstSent ?? "599")/\(qso.rstReceived ?? "599")")
-                    .font(.caption2.monospaced())
+                    .font(isRegularWidth ? .caption.monospaced() : .caption2.monospaced())
                     .foregroundStyle(.tertiary)
             }
         }
-        .padding(.vertical, 6)
+        .padding(.vertical, isRegularWidth ? 10 : 6)
     }
 
     /// Badge showing POTA status
@@ -2766,7 +2775,7 @@ struct LoggerQSORow: View {
             EmptyView()
         case let .newBand(previousBands):
             Text("NEW BAND")
-                .font(.caption2.weight(.bold))
+                .font(isRegularWidth ? .caption.weight(.bold) : .caption2.weight(.bold))
                 .padding(.horizontal, 4)
                 .padding(.vertical, 1)
                 .background(Color.blue)
@@ -2775,7 +2784,7 @@ struct LoggerQSORow: View {
                 .help("Previously worked on: \(previousBands.joined(separator: ", "))")
         case .duplicateBand:
             Text("DUPE")
-                .font(.caption2.weight(.bold))
+                .font(isRegularWidth ? .caption.weight(.bold) : .caption2.weight(.bold))
                 .padding(.horizontal, 4)
                 .padding(.vertical, 1)
                 .background(Color.orange)

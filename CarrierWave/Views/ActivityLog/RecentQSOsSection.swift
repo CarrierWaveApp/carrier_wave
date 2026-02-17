@@ -83,6 +83,7 @@ struct RecentQSOsSection: View {
         return formatter
     }()
 
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.modelContext) private var modelContext
 
     @State private var editingQSO: QSO?
@@ -90,6 +91,10 @@ struct RecentQSOsSection: View {
 
     @ScaledMetric(relativeTo: .subheadline) private var rowHeight: CGFloat = 44
     @ScaledMetric(relativeTo: .caption) private var dividerHeight: CGFloat = 28
+
+    private var isRegularWidth: Bool {
+        horizontalSizeClass == .regular
+    }
 
     private var dividerCount: Int {
         recentQSOs.indices.filter { shouldShowDivider(at: $0) }.count
@@ -159,20 +164,24 @@ struct RecentQSOsSection: View {
         HStack(spacing: 8) {
             // Time (UTC)
             Text(formattedTime(qso.timestamp))
-                .font(.caption.monospaced())
+                .font(isRegularWidth ? .subheadline.monospaced() : .caption.monospaced())
                 .foregroundStyle(.secondary)
-                .frame(width: 42, alignment: .leading)
+                .frame(width: isRegularWidth ? 56 : 42, alignment: .leading)
 
             // Callsign
             Text(qso.callsign)
-                .font(.subheadline.weight(.semibold).monospaced())
+                .font(
+                    isRegularWidth
+                        ? .headline.weight(.semibold).monospaced()
+                        : .subheadline.weight(.semibold).monospaced()
+                )
                 .lineLimit(1)
 
             Spacer()
 
             // Band + Mode badge
             Text("\(qso.band) \(qso.mode)")
-                .font(.caption.weight(.medium))
+                .font(isRegularWidth ? .subheadline.weight(.medium) : .caption.weight(.medium))
                 .padding(.horizontal, 6)
                 .padding(.vertical, 2)
                 .background(Color.blue.opacity(0.2))
@@ -181,14 +190,14 @@ struct RecentQSOsSection: View {
             // Their park reference if present
             if let park = qso.theirParkReference, !park.isEmpty {
                 Text(park)
-                    .font(.caption.monospaced())
+                    .font(isRegularWidth ? .subheadline.monospaced() : .caption.monospaced())
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
 
             // RST sent
             Text(qso.rstSent ?? "599")
-                .font(.caption2.monospaced())
+                .font(isRegularWidth ? .caption.monospaced() : .caption2.monospaced())
                 .foregroundStyle(.secondary)
         }
         .frame(minHeight: rowHeight)
