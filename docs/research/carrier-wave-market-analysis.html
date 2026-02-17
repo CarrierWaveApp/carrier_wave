@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Carrier Wave — Market Analysis & Feature Gap Report</title>
+<style>
+  @page {
+    size: letter;
+    margin: 0.9in 0.85in;
+    @top-center {
+      content: "Carrier Wave — Market Analysis";
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      font-size: 8pt;
+      color: #999;
+    }
+    @bottom-center {
+      content: counter(page);
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      font-size: 8pt;
+      color: #999;
+    }
+  }
+  @page :first {
+    @top-center { content: none; }
+  }
+
+  body {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 10.5pt;
+    line-height: 1.55;
+    color: #1a1a1a;
+    max-width: 100%;
+  }
+
+  /* Cover */
+  .cover {
+    text-align: center;
+    padding-top: 2.2in;
+    page-break-after: always;
+  }
+  .cover h1 {
+    font-size: 28pt;
+    font-weight: 700;
+    color: #0a3d62;
+    margin-bottom: 0.15in;
+    letter-spacing: -0.5px;
+  }
+  .cover .subtitle {
+    font-size: 14pt;
+    color: #555;
+    font-weight: 400;
+    margin-bottom: 0.6in;
+  }
+  .cover .meta {
+    font-size: 10pt;
+    color: #888;
+    margin-top: 1.5in;
+  }
+
+  /* Headings */
+  h2 {
+    font-size: 16pt;
+    font-weight: 700;
+    color: #0a3d62;
+    margin-top: 0.4in;
+    margin-bottom: 0.12in;
+    padding-bottom: 4px;
+    border-bottom: 2px solid #0a3d62;
+    page-break-after: avoid;
+  }
+  h3 {
+    font-size: 12.5pt;
+    font-weight: 600;
+    color: #1e5f8a;
+    margin-top: 0.25in;
+    margin-bottom: 0.08in;
+    page-break-after: avoid;
+  }
+  h4 {
+    font-size: 11pt;
+    font-weight: 600;
+    color: #333;
+    margin-top: 0.15in;
+    margin-bottom: 0.06in;
+    page-break-after: avoid;
+  }
+
+  p { margin: 0.06in 0; }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0.12in 0 0.18in 0;
+    font-size: 9.5pt;
+    page-break-inside: avoid;
+  }
+  th {
+    background: #0a3d62;
+    color: white;
+    font-weight: 600;
+    text-align: left;
+    padding: 5px 8px;
+  }
+  td {
+    padding: 4px 8px;
+    border-bottom: 1px solid #ddd;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td { background: #f7f9fb; }
+
+  /* Lists */
+  ul, ol { margin: 0.06in 0; padding-left: 0.25in; }
+  li { margin-bottom: 3px; }
+
+  /* Callout boxes */
+  .callout {
+    background: #eef4fa;
+    border-left: 4px solid #0a3d62;
+    padding: 10px 14px;
+    margin: 0.12in 0;
+    border-radius: 0 4px 4px 0;
+    page-break-inside: avoid;
+  }
+  .callout.green {
+    background: #eef8ee;
+    border-left-color: #2d8a4e;
+  }
+  .callout.amber {
+    background: #fef8ec;
+    border-left-color: #c48800;
+  }
+  .callout strong { color: inherit; }
+
+  /* Tags */
+  .tag {
+    display: inline-block;
+    font-size: 8pt;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 3px;
+    margin-right: 3px;
+    vertical-align: middle;
+  }
+  .tag-high { background: #fde8e8; color: #991b1b; }
+  .tag-med { background: #fef3c7; color: #92400e; }
+  .tag-low { background: #e0f2fe; color: #075985; }
+
+  /* Quote */
+  blockquote {
+    border-left: 3px solid #ccc;
+    margin: 0.1in 0;
+    padding: 0.04in 0.15in;
+    color: #555;
+    font-style: italic;
+    page-break-inside: avoid;
+  }
+
+  /* Section break */
+  .section-break {
+    page-break-before: always;
+  }
+
+  /* Compact priority table */
+  .priority-num {
+    font-weight: 700;
+    color: #0a3d62;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<!-- Cover Page -->
+<div class="cover">
+  <h1>Carrier Wave</h1>
+  <div class="subtitle">Market Analysis &amp; Feature Gap Report</div>
+  <p style="font-size: 11pt; color: #666;">Amateur Radio Mobile Logging &amp; Operations Landscape</p>
+  <div class="meta">
+    February 2026<br>
+    Competitive research &bull; User sentiment analysis &bull; Feature recommendations
+  </div>
+</div>
+
+<!-- Executive Summary -->
+<h2>Executive Summary</h2>
+
+<p>Carrier Wave is a SwiftUI/SwiftData iOS app for amateur radio QSO logging with cloud sync to QRZ, POTA, Ham2K LoFi, LoTW, Club Log, and HAMRS. This report analyzes the competitive landscape, user sentiment across major amateur radio communities, and emerging trends to identify high-impact feature gaps and strategic opportunities.</p>
+
+<div class="callout green">
+  <strong>Key finding:</strong> Carrier Wave already leads the market in CW transcription, WebSDR recording, activation statistics depth, and sync service breadth. The highest-ROI opportunities are in <strong>hunter award tracking</strong>, <strong>contest logging</strong>, <strong>propagation-aware band suggestions</strong>, and <strong>offline callsign lookup</strong> — features no mobile competitor does well.
+</div>
+
+<h3>Current Competitive Position</h3>
+<table>
+  <tr><th>Strength</th><th>Details</th></tr>
+  <tr><td>CW transcription &amp; chat display</td><td>No competitor has anything close — real-time decode with chat bubbles, callsign extraction, adaptive frequency detection</td></tr>
+  <tr><td>WebSDR recording</td><td>Unique: record activations with QSO-synced playback, waveform visualization, clip sharing</td></tr>
+  <tr><td>Professional statistician mode</td><td>CDF charts, box plots, RST distributions, watts/mile — far beyond any mobile logger</td></tr>
+  <tr><td>Rove mode</td><td>GPS-aware multi-park activation with per-stop tracking and automatic transitions</td></tr>
+  <tr><td>Command system</td><td>Elegant power-user interface — type FREQ, MODE, SPOT, RBN, P2P, MAP directly in callsign field</td></tr>
+  <tr><td>Six sync services</td><td>Broadest sync coverage on mobile (QRZ, POTA, LoFi, LoTW, Club Log, HAMRS)</td></tr>
+  <tr><td>Social layer</td><td>Friends, clubs, challenges, activity feed — only World Radio League competes here</td></tr>
+</table>
+
+<!-- Competitive Landscape -->
+<div class="section-break"></div>
+<h2>1. Competitive Landscape</h2>
+
+<h3>Primary Mobile Competitors</h3>
+
+<h4>Ham2K PoLo (Portable Logger)</h4>
+<p><strong>Platforms:</strong> iOS, Android (React Native, open source) &nbsp;|&nbsp; <strong>Price:</strong> Free</p>
+<p>Fastest-growing app in the POTA/SOTA community. Supports POTA, SOTA, WWFF, GMA, Field Day, and World Castles simultaneously. Auto self-spotting every 10 minutes, excellent P2P/S2S workflow, offline park/summit data, multi-language (7+ languages). Cloud sync (LoFi) still in alpha. Strong developer-community engagement.</p>
+<blockquote>"I've run 1000s of contacts through half a dozen logging apps and nothing compares with the simplicity and feature-rich logging experience of PoLo."</blockquote>
+<p><strong>Weaknesses:</strong> No desktop version. Cloud sync alpha-quality. No LoTW integration. No rig control. No contest scoring. Limited award tracking.</p>
+
+<h4>HAMRS / HAMRS Pro</h4>
+<p><strong>Platforms:</strong> iOS, macOS, Windows, Linux &nbsp;|&nbsp; <strong>Price:</strong> $4.99 + $2/month (Pro sync)</p>
+<p>Multi-platform with templates for POTA, SOTA, Field Day. FLRig integration for CAT control. WSJT-X integration. Long track record as the original POTA logger. Removed from Google Play (Android) in 2025.</p>
+<p><strong>Weaknesses:</strong> Stalled development periods. No LoTW. QSO map reported broken. Many users migrating to PoLo.</p>
+
+<h4>World Radio League (WRL)</h4>
+<p><strong>Platforms:</strong> iOS, Android, Web &nbsp;|&nbsp; <strong>Price:</strong> Free</p>
+<p>Modern UI targeting new/young operators. Cloud sync, offline-capable. Auto-generated QSL cards for every contact. WRTC 2026 partnership for live contest scoring. 200k+ user reach via Ham Radio Prep pipeline.</p>
+<p><strong>Weaknesses:</strong> Limited award tracking. No rig control. No LoTW. No SOTA-specific features.</p>
+
+<h4>HamLog (Pignology)</h4>
+<p><strong>Platforms:</strong> iOS, Android, Web &nbsp;|&nbsp; <strong>Price:</strong> $0.99</p>
+<p>Longest track record on iOS. Extensive built-in tools (maps, band plans, calculators, DX cluster). Rig control via Pigtail hardware. UI feels dated. Not designed for rapid activation logging.</p>
+
+<h3>Feature Comparison Matrix</h3>
+<table>
+  <tr><th>Feature</th><th>PoLo</th><th>HAMRS</th><th>WRL</th><th>HamLog</th><th>Carrier Wave</th></tr>
+  <tr><td>POTA activation</td><td>Excellent</td><td>Good</td><td>Good</td><td>Basic</td><td><strong>Excellent</strong></td></tr>
+  <tr><td>SOTA support</td><td>Excellent</td><td>Good</td><td>Basic</td><td>None</td><td>Good</td></tr>
+  <tr><td>WWFF / GMA</td><td>Yes</td><td>No</td><td>No</td><td>No</td><td><strong>No</strong></td></tr>
+  <tr><td>Self-spotting</td><td>Auto (10 min)</td><td>Manual</td><td>Auto</td><td>No</td><td><strong>Auto</strong></td></tr>
+  <tr><td>Cloud sync</td><td>Alpha</td><td>$2/mo</td><td>Built-in</td><td>CloudSync</td><td><strong>6 services</strong></td></tr>
+  <tr><td>P2P auto-fill</td><td>Yes</td><td>No</td><td>No</td><td>No</td><td><strong>Yes</strong></td></tr>
+  <tr><td>Multi-park (n-fer)</td><td>Yes</td><td>Limited</td><td>No</td><td>No</td><td><strong>Yes</strong></td></tr>
+  <tr><td>Contest scoring</td><td>No</td><td>No</td><td>Yes (live)</td><td>No</td><td><strong>No</strong></td></tr>
+  <tr><td>Rig control</td><td>No</td><td>FLRig</td><td>No</td><td>Pigtail</td><td><strong>No</strong></td></tr>
+  <tr><td>CW decode</td><td>No</td><td>No</td><td>No</td><td>No</td><td><strong>Yes</strong></td></tr>
+  <tr><td>WebSDR recording</td><td>No</td><td>No</td><td>No</td><td>No</td><td><strong>Yes</strong></td></tr>
+  <tr><td>Social features</td><td>No</td><td>No</td><td>Yes</td><td>No</td><td><strong>Yes</strong></td></tr>
+  <tr><td>Multi-language</td><td>7+</td><td>English</td><td>English</td><td>English</td><td><strong>English</strong></td></tr>
+  <tr><td>Open source</td><td>Yes</td><td>No</td><td>No</td><td>No</td><td>No</td></tr>
+  <tr><td>Price</td><td>Free</td><td>$4.99+</td><td>Free</td><td>$0.99</td><td>—</td></tr>
+</table>
+
+<h3>Desktop &amp; Specialized Competitors</h3>
+<p>Desktop loggers (N1MM, Log4OM, HRD, RUMlogNG, MacLoggerDX) dominate contesting and award tracking but have no mobile presence. <strong>Wavelog</strong> (self-hosted web, open source) is growing among technically inclined operators who want data ownership. <strong>HunterLog</strong> (desktop) is purpose-built for POTA/SOTA hunters with CAT control. <strong>FT HAM</strong> (iOS) is a breakthrough — full FT8/FT4 decode on iPhone.</p>
+
+<!-- User Sentiment -->
+<div class="section-break"></div>
+<h2>2. User Sentiment &amp; Wishlists</h2>
+
+<p>Aggregated from Reddit (r/amateurradio, r/pota), QRZ Forums, eHam reviews, app store reviews, and ham radio blogs.</p>
+
+<h3>Top User Complaints Across All Apps</h3>
+<table>
+  <tr><th>#</th><th>Complaint</th><th>Details</th></tr>
+  <tr><td>1</td><td>No cloud sync / multi-device</td><td>Single most requested feature across all apps. HAMRS lacked sync for years, driving users to PoLo.</td></tr>
+  <tr><td>2</td><td>Fragmented upload workflow</td><td>"Logging then uploading to POTA seems more complicated than it should be." Users want one-tap submission to all services.</td></tr>
+  <tr><td>3</td><td>Dated UX</td><td>"Many logging programs seem like relics from 1995." Younger operators expect modern, intuitive interfaces.</td></tr>
+  <tr><td>4</td><td>No LoTW on mobile</td><td>Universal pain point. TQSL is desktop-only. No mobile app uploads to LoTW.</td></tr>
+  <tr><td>5</td><td>Poor offline behavior</td><td>Apps requiring internet for callsign lookups are useless at remote parks/summits.</td></tr>
+  <tr><td>6</td><td>US-centric design</td><td>International operators report apps assume US callsign formats, FCC band plans, and US-only regulations.</td></tr>
+  <tr><td>7</td><td>Small screen usability</td><td>Logging in bright sunlight with gloves. Cramped interfaces on smaller devices.</td></tr>
+  <tr><td>8</td><td>No radio interface on mobile</td><td>Frequency/mode/power must be entered manually on most mobile apps, leading to errors.</td></tr>
+  <tr><td>9</td><td>QRZ subscription required</td><td>Many apps need paid QRZ for lookups. Free alternatives (HamQTH, HamDB) often not integrated.</td></tr>
+  <tr><td>10</td><td>Stagnating development</td><td>Popular apps that stop receiving updates leave users with bugs and missing features.</td></tr>
+</table>
+
+<h3>Most-Requested Features (Across Communities)</h3>
+<ol>
+  <li>One-tap multi-service upload (POTA + QRZ + LoTW + eQSL + ClubLog)</li>
+  <li>Cloud sync with offline-first architecture</li>
+  <li>Auto self-spotting with periodic respot</li>
+  <li>Direct log submission to POTA/SOTA (not export-then-upload)</li>
+  <li>Hunter mode with needed-reference tracking and auto-fill from spots</li>
+  <li>Auto-generated QSL cards</li>
+  <li>Modern UI readable in bright sunlight and low light</li>
+  <li>Voice input for hands-free callsign entry</li>
+  <li>Propagation data integrated into the logging screen</li>
+  <li>Contest scoring for portable contests (Field Day, WFD, state QSO parties)</li>
+</ol>
+
+<h3>What Drives App Switching</h3>
+<ul>
+  <li><strong>Stagnating development</strong> — HAMRS → PoLo migration driven by slow updates</li>
+  <li><strong>Better POTA/SOTA workflow</strong> — generic loggers lose to purpose-built tools</li>
+  <li><strong>Cloud sync availability</strong> — local-only apps lose users to synced alternatives</li>
+  <li><strong>Price model</strong> — subscription fatigue (HAMRS Pro) pushes users to free alternatives</li>
+  <li><strong>Developer responsiveness</strong> — PoLo's real-time community engagement cited repeatedly</li>
+</ul>
+
+<!-- Feature Gap Analysis -->
+<div class="section-break"></div>
+<h2>3. Critical Feature Gaps</h2>
+
+<h3>3.1 &nbsp; Contest Logging Templates</h3>
+<p><span class="tag tag-high">HIGH IMPACT</span> <span class="tag tag-med">MEDIUM EFFORT</span></p>
+
+<p>No mobile logger does this well. Field Day, Winter Field Day, and state QSO parties are massive participation events — many operators activate POTA parks during them simultaneously.</p>
+
+<p><strong>Required capabilities:</strong></p>
+<ul>
+  <li>Session templates for Field Day (1D/2D class + ARRL section exchange), WFD, state QSO parties</li>
+  <li>Dupe checking per contest rules (band/mode combinations vary by contest)</li>
+  <li>Exchange fields (serial number, section, county, etc.)</li>
+  <li>Score calculation and summary display</li>
+  <li>Cabrillo export alongside ADIF</li>
+</ul>
+
+<p>WRL has live contest leaderboards via their WRTC 2026 partnership but no real scoring engine. N1MM dominates desktop but has zero mobile presence. <strong>This is wide open on mobile.</strong></p>
+
+<h3>3.2 &nbsp; WWFF / GMA / Additional Activity Programs</h3>
+<p><span class="tag tag-med">MEDIUM-HIGH IMPACT</span> <span class="tag tag-low">LOW EFFORT</span></p>
+
+<p>Ham2K PoLo supports WWFF (World Wide Flora &amp; Fauna), GMA (Global Mountain Activity), and World Castles Awards. International operators expect this. The architecture for park-based activations already exists in Carrier Wave — extending to WWFF references and GMA summits is incremental work on the data model and lookup services.</p>
+
+<h3>3.3 &nbsp; eQSL Integration</h3>
+<p><span class="tag tag-med">MEDIUM IMPACT</span> <span class="tag tag-low">LOW EFFORT</span></p>
+
+<p>Not currently in the sync services. eQSL has a large user base, especially among casual operators and those who value visual QSL cards. The upload API is a straightforward ADIF POST request.</p>
+
+<h3>3.4 &nbsp; LoTW Upload (Not Just Download)</h3>
+<p><span class="tag tag-high">VERY HIGH IMPACT</span> <span class="tag tag-high">HIGH EFFORT</span></p>
+
+<p>The single biggest universal gap in mobile logging. No mobile app uploads to LoTW — TQSL is desktop-only and requires private key signing. ARRL has shown no interest in a mobile API.</p>
+
+<p><strong>Possible approaches:</strong></p>
+<ul>
+  <li>Queue uploads and push through a companion Mac/PC agent</li>
+  <li>Embed TQSL signing logic in iOS (TQSL source is open source — investigate feasibility)</li>
+  <li>Partner with ARRL on a mobile signing flow</li>
+</ul>
+<p>Even a partial solution would be a headline feature and significant competitive advantage.</p>
+
+<h3>3.5 &nbsp; Needed References Tracker (Hunter Award Chasing)</h3>
+<p><span class="tag tag-high">HIGH IMPACT</span> <span class="tag tag-med">MEDIUM EFFORT</span></p>
+
+<p>The hunter side is underserved across all apps. Operators chasing awards (all 50 states, DXCC, all POTA parks in a state) need:</p>
+<ul>
+  <li>A "needed" list showing which parks/states/entities/grids they still lack</li>
+  <li>Spot alerts filtered to "I need this one" (think HamAlert-style integration)</li>
+  <li>Visual progress toward specific awards (POTA Kilo, All States, DXCC, etc.)</li>
+  <li>Badge on spots when a station is in a needed park/state/entity</li>
+</ul>
+
+<p>The Activity Log already has spots and worked-before badges. Adding a "needed" dimension would transform it into a proper hunter tool.</p>
+
+<h3>3.6 &nbsp; Propagation-Aware Band Suggestions</h3>
+<p><span class="tag tag-med">MEDIUM-HIGH IMPACT</span> <span class="tag tag-med">MEDIUM EFFORT</span></p>
+
+<p>Carrier Wave already displays solar conditions (K-index, SFI, A-index, band outlook from HamQSL). The next step is <strong>actionable advice</strong> in the logging screen:</p>
+<ul>
+  <li>"20m open to EU right now" based on real-time conditions and operator location</li>
+  <li>Band recommendation when starting a session based on time of day + solar conditions</li>
+  <li>Color-code bands in the band picker by current propagation quality</li>
+  <li>Leverage existing spot data — "12 stations spotted on 20m in last 10 min, 0 on 40m"</li>
+</ul>
+
+<h3>3.7 &nbsp; Offline Callsign Database</h3>
+<p><span class="tag tag-high">HIGH IMPACT</span> <span class="tag tag-med">MEDIUM EFFORT</span></p>
+
+<p>Remote parks and all SOTA summits typically have no cell service. The current callsign lookup is two-tier (Polo notes + QRZ API), but QRZ requires network. Shipping a compressed FCC ULS database (or HamDB/HamQTH dump) for offline lookup would ensure the callsign card always populates. The full FCC database is ~2M records but compresses well — or offer a regional/national subset download.</p>
+
+<h3>3.8 &nbsp; Satellite Operation Logging</h3>
+<p><span class="tag tag-low">LOW-MEDIUM IMPACT</span> <span class="tag tag-low">LOW EFFORT</span></p>
+
+<p>A small but dedicated community. Required: OSCAR designator field, uplink/downlink frequency pair, satellite name/number. Ham2K PoLo has this. Low effort to add the fields to the existing QSO model.</p>
+
+<!-- Adjustments -->
+<div class="section-break"></div>
+<h2>4. Adjustments to Existing Features</h2>
+
+<h3>4.1 &nbsp; Internationalization</h3>
+<p><span class="tag tag-high">HIGH IMPACT (GROWTH)</span> <span class="tag tag-high">HIGH EFFORT</span></p>
+
+<p>PoLo has 7+ language translations and growing international adoption. Carrier Wave's band plan and license class validation appear US-centric (Technician/General/Extra). International operators need:</p>
+<ul>
+  <li>IARU Region 1/2/3 band plans</li>
+  <li>Country-specific license class validation</li>
+  <li>Localized UI strings (start with Spanish, German, Japanese — largest non-English ham populations)</li>
+  <li>Non-US callsign format handling in validation</li>
+  <li>Support for regional activation programs (VKFF in Australia, BOTA in UK, etc.)</li>
+</ul>
+
+<h3>4.2 &nbsp; Home Screen &amp; Lock Screen Widgets</h3>
+<p><span class="tag tag-med">MEDIUM IMPACT</span> <span class="tag tag-med">MEDIUM EFFORT</span></p>
+
+<p>HAM-Toolbox (iOS) proves operator demand for glanceable data. WidgetKit targets:</p>
+<ul>
+  <li>Solar conditions (SFI / K-index / A-index) — small widget</li>
+  <li>Current streak count — small widget</li>
+  <li>Daily QSO counter — small widget</li>
+  <li>"Band conditions right now" — medium widget</li>
+  <li>Next POTA spot timer — Lock Screen complication</li>
+</ul>
+
+<h3>4.3 &nbsp; Voice Input for Callsign Entry</h3>
+<p><span class="tag tag-med">MEDIUM-HIGH IMPACT</span> <span class="tag tag-med">MEDIUM EFFORT</span></p>
+
+<p>Repeatedly requested across communities. Operating with cold hands, holding a mic, or managing antennas makes typing difficult. iOS Speech framework supports continuous dictation. The challenge is mapping NATO phonetic alphabet to characters ("Whiskey Six Juliet Sierra Victor" → W6JSV). A phonetic-to-character mapper or fine-tuned recognition model would enable hands-free logging.</p>
+
+<h3>4.4 &nbsp; Apple Watch Companion</h3>
+<p><span class="tag tag-med">MEDIUM IMPACT</span> <span class="tag tag-med">MEDIUM-HIGH EFFORT</span></p>
+
+<p>Quick-glance information during field operations: current frequency/mode, QSO count, last logged call, streak status, and a "log contact" complication for the simplest QSOs. Useful when the phone is in a pocket or mounted away from the operator.</p>
+
+<!-- Emerging Opportunities -->
+<div class="section-break"></div>
+<h2>5. Emerging Opportunities</h2>
+
+<h3>5.1 &nbsp; Meshtastic Integration for Offline Spotting</h3>
+<p><span class="tag tag-low">NICHE BUT GROWING</span> <span class="tag tag-med">MEDIUM EFFORT</span></p>
+
+<p>Meshtastic (LoRa mesh networking) is exploding in the ham community. At field events and remote activations, a Meshtastic mesh could serve as a spotting backchannel when cell service is unavailable. SOTAmāt already encodes spots as audio tones — Meshtastic over Bluetooth LE is more elegant.</p>
+<p><strong>Use cases:</strong> Coordinate with nearby activators, share spots in group activations, emergency status communication.</p>
+
+<h3>5.2 &nbsp; AI-Assisted Logging from Audio</h3>
+<p><span class="tag tag-high">HIGH FUTURE IMPACT</span> <span class="tag tag-high">HIGH EFFORT</span></p>
+
+<p>No competitor does this. The building blocks exist within Carrier Wave:</p>
+<ul>
+  <li>CW transcription already extracts callsigns from audio</li>
+  <li>Extend to SSB voice: iOS speech recognition → callsign extraction → auto-populate log fields</li>
+  <li>"Hearing" the other station say their callsign, grid, name, and RST could auto-fill the QSO form</li>
+  <li>Even partial automation (suggest callsign, operator confirms) saves significant keystrokes</li>
+</ul>
+<p>This is R&amp;D territory but would be a generational feature — no competitor is close.</p>
+
+<h3>5.3 &nbsp; CAT / Rig Control via Bluetooth or WiFi</h3>
+<p><span class="tag tag-high">HIGH IMPACT</span> <span class="tag tag-high">HIGH EFFORT</span></p>
+
+<p>The IC-705 (WiFi), KX2/KX3 (Bluetooth), and Yaesu FT-710 (USB) are the most popular portable rigs. Auto-populating frequency/mode/power from the radio eliminates manual entry errors. SDR-Control Mobile (iOS, $45) proves rig control works on iPhone. Even supporting just the IC-705 via WiFi would cover a large portion of portable operators.</p>
+
+<h3>5.4 &nbsp; FT8/FT4 Decode Integration</h3>
+<p><span class="tag tag-med">MEDIUM-HIGH IMPACT</span> <span class="tag tag-high">VERY HIGH EFFORT</span></p>
+
+<p>FT HAM (iOS) proves native FT8 decoding is possible on iPhone. This is a major engineering effort but would make Carrier Wave the first app combining traditional logging + CW decode + digital mode decode. A more practical near-term step: import from WSJT-X via network (UDP) when operating portable with a laptop + phone setup.</p>
+
+<!-- Accessibility -->
+<div class="section-break"></div>
+<h2>6. Accessibility &amp; Underserved Demographics</h2>
+
+<h3>Visually Impaired &amp; Blind Operators</h3>
+<p>An active community exists (Blind Hams Network, CQ Blind Hams podcast, Courage Kenny Handiham Program). Radio equipment is "surprisingly accessible, even for totally blind operators" but <strong>software is the weak link</strong>. The WSJT-X accessibility initiative (2025–2026) aims to make digital modes usable for blind operators. Ham2K PoLo recently added accessibility improvements.</p>
+
+<div class="callout">
+  <strong>Opportunity:</strong> Comprehensive VoiceOver support, high-contrast modes, large touch targets, and audio feedback for log entry confirmation. This is a differentiator almost no competitor invests in meaningfully.
+</div>
+
+<h3>Motor Disabilities</h3>
+<p>19.9 million Americans have difficulty lifting or grasping. Voice input for logging is the most-requested accessibility feature. Large touch targets, simplified field entry, and Switch Control support (iOS Accessibility framework) would serve this population directly.</p>
+
+<h3>New &amp; Young Operators</h3>
+<p>Common complaint from younger operators about logging software: "So feature dense, developed in vacuums, hard to use, buggy, and lacking in UX." World Radio League specifically targets this demographic through Ham Radio Prep (200k+ reach). Young operators want modern UI, social features, gamification, quick setup, no jargon.</p>
+<p>Carrier Wave's tours and onboarding system is already strong — continue investing in progressive disclosure and guided first experiences.</p>
+
+<h3>International Operators</h3>
+<p>US-centric design is a top-10 complaint. Band plans, callsign formats, and regulatory assumptions vary by country. Multi-language support (PoLo leads with 7+) and IARU region-aware band plans are table stakes for international growth.</p>
+
+<!-- Priority Matrix -->
+<div class="section-break"></div>
+<h2>7. Priority Recommendations</h2>
+
+<table>
+  <tr><th style="width:35px">#</th><th>Feature</th><th style="width:80px">Impact</th><th style="width:80px">Effort</th><th>Rationale</th></tr>
+  <tr><td class="priority-num">1</td><td>Needed references tracker &amp; hunter alerts</td><td><span class="tag tag-high">High</span></td><td><span class="tag tag-med">Medium</span></td><td>Extends existing Activity Log + spots into a proper hunter tool. No competitor does this on mobile.</td></tr>
+  <tr><td class="priority-num">2</td><td>Contest templates (Field Day, WFD, QSO parties)</td><td><span class="tag tag-high">High</span></td><td><span class="tag tag-med">Medium</span></td><td>Massive participation events with no good mobile logger. Extends session system.</td></tr>
+  <tr><td class="priority-num">3</td><td>Propagation-aware band suggestions</td><td><span class="tag tag-med">Med-High</span></td><td><span class="tag tag-med">Medium</span></td><td>Builds on existing solar/weather data. Actionable advice &gt; raw numbers.</td></tr>
+  <tr><td class="priority-num">4</td><td>Offline callsign database</td><td><span class="tag tag-high">High</span></td><td><span class="tag tag-med">Medium</span></td><td>Essential for remote field operations. Fills gap when QRZ API unreachable.</td></tr>
+  <tr><td class="priority-num">5</td><td>WWFF / GMA activity programs</td><td><span class="tag tag-med">Med-High</span></td><td><span class="tag tag-low">Low</span></td><td>Incremental on existing park architecture. Unlocks international user growth.</td></tr>
+  <tr><td class="priority-num">6</td><td>eQSL sync</td><td><span class="tag tag-med">Medium</span></td><td><span class="tag tag-low">Low</span></td><td>Simple ADIF POST. Rounds out sync service portfolio.</td></tr>
+  <tr><td class="priority-num">7</td><td>Home screen widgets</td><td><span class="tag tag-med">Medium</span></td><td><span class="tag tag-med">Medium</span></td><td>Proven demand (HAM-Toolbox). Keeps app top-of-mind.</td></tr>
+  <tr><td class="priority-num">8</td><td>Voice input for callsigns</td><td><span class="tag tag-med">Med-High</span></td><td><span class="tag tag-med">Medium</span></td><td>Accessibility + field usability. NATO phonetic mapping needed.</td></tr>
+  <tr><td class="priority-num">9</td><td>Internationalization</td><td><span class="tag tag-high">High</span></td><td><span class="tag tag-high">High</span></td><td>Required for growth outside US. PoLo leading here.</td></tr>
+  <tr><td class="priority-num">10</td><td>Satellite QSO fields</td><td><span class="tag tag-low">Low-Med</span></td><td><span class="tag tag-low">Low</span></td><td>Small community but very low effort. OSCAR designator + uplink/downlink fields.</td></tr>
+  <tr><td class="priority-num">11</td><td>LoTW upload from mobile</td><td><span class="tag tag-high">Very High</span></td><td><span class="tag tag-high">High</span></td><td>Universal gap. First-mover advantage if solvable. Investigate TQSL source.</td></tr>
+  <tr><td class="priority-num">12</td><td>CAT / rig control (IC-705)</td><td><span class="tag tag-high">High</span></td><td><span class="tag tag-high">High</span></td><td>Eliminates manual frequency/mode entry. Start with IC-705 WiFi.</td></tr>
+  <tr><td class="priority-num">13</td><td>Apple Watch companion</td><td><span class="tag tag-med">Medium</span></td><td><span class="tag tag-med">Med-High</span></td><td>Glanceable ops info. Differentiator but not core.</td></tr>
+  <tr><td class="priority-num">14</td><td>Meshtastic offline spotting</td><td><span class="tag tag-low">Niche</span></td><td><span class="tag tag-med">Medium</span></td><td>Growing fast. Solves real problem at remote activations.</td></tr>
+  <tr><td class="priority-num">15</td><td>AI voice-to-log</td><td><span class="tag tag-high">High</span></td><td><span class="tag tag-high">Very High</span></td><td>Generational feature. Builds on CW transcription foundation.</td></tr>
+  <tr><td class="priority-num">16</td><td>FT8/FT4 decode</td><td><span class="tag tag-med">Med-High</span></td><td><span class="tag tag-high">Very High</span></td><td>FT HAM proves feasibility. Near-term: WSJT-X UDP import.</td></tr>
+</table>
+
+<div class="callout green" style="margin-top: 0.25in;">
+  <strong>Recommended first cluster (highest ROI):</strong> Items 1–6 represent the best return on investment. They build on existing architecture, fill real user-reported gaps, and differentiate against all mobile competitors. Items 11–16 are transformative but require significant engineering investment or depend on external factors.
+</div>
+
+<!-- Integration Ecosystem -->
+<div class="section-break"></div>
+<h2>8. Integration Ecosystem Gaps</h2>
+
+<h3>External Services</h3>
+<table>
+  <tr><th>Service</th><th>What It Does</th><th>Current State</th><th>Opportunity</th></tr>
+  <tr><td>eQSL.cc</td><td>Electronic QSL cards</td><td>Not integrated</td><td>Auto-upload + card display</td></tr>
+  <tr><td>HamAlert</td><td>Real-time spot notifications</td><td>Not integrated</td><td>In-app alerts for needed parks/summits</td></tr>
+  <tr><td>PSK Reporter</td><td>FT8/digital spot reporting</td><td>Not integrated</td><td>Show who's hearing you on digital modes</td></tr>
+  <tr><td>SOTAdata</td><td>Summit logs &amp; stats</td><td>SOTA session type exists</td><td>Direct API submission</td></tr>
+  <tr><td>WWFF</td><td>Flora/fauna logs</td><td>Not supported</td><td>Direct submission</td></tr>
+  <tr><td>DX Cluster</td><td>Real-time DX spots</td><td>RBN integrated</td><td>Full DX cluster telnet integration</td></tr>
+</table>
+
+<h3>Hardware Integration Opportunities</h3>
+<table>
+  <tr><th>Hardware</th><th>Connection</th><th>Portable Popularity</th><th>Notes</th></tr>
+  <tr><td>Icom IC-705</td><td>WiFi</td><td>Very High</td><td>Most popular portable rig. SDR-Control proves iOS WiFi CAT works.</td></tr>
+  <tr><td>Elecraft KX2/KX3</td><td>USB / Bluetooth</td><td>Very High</td><td>Premium portable. Bluetooth via Digirig adapter.</td></tr>
+  <tr><td>Yaesu FT-891/FT-710</td><td>USB</td><td>High</td><td>USB-OTG to Lightning/USB-C adapter.</td></tr>
+  <tr><td>Xiegu X6100/G90</td><td>USB</td><td>Growing</td><td>Budget portable segment growing fast.</td></tr>
+  <tr><td>Meshtastic nodes</td><td>Bluetooth LE</td><td>Growing fast</td><td>Spotting/messaging backchannel for field ops.</td></tr>
+  <tr><td>Bluetooth CW keyers</td><td>Bluetooth</td><td>Niche</td><td>Integrated CW keyer in logger app.</td></tr>
+</table>
+
+<h3>Desired Integration Patterns</h3>
+<ol>
+  <li><strong>Rig → Logger:</strong> Automatic frequency/mode/power population from connected radio</li>
+  <li><strong>Logger → Spot networks:</strong> One-tap spot to POTA, SOTA, WWFF, DX cluster simultaneously</li>
+  <li><strong>Logger → QSL services:</strong> Batch upload to QRZ + LoTW + eQSL + ClubLog post-activation</li>
+  <li><strong>Spot networks → Logger:</strong> Click a spot to auto-fill QSO fields (already implemented)</li>
+  <li><strong>Propagation → Logger:</strong> Real-time band suggestions based on conditions + location</li>
+  <li><strong>Audio → Logger:</strong> Speech-to-text callsign entry for hands-free operation</li>
+</ol>
+
+<!-- Conclusion -->
+<div class="section-break"></div>
+<h2>9. Strategic Summary</h2>
+
+<p>Carrier Wave occupies a strong position in the mobile amateur radio logging market. Its CW transcription, WebSDR recording, professional statistics, and six-service sync portfolio are genuine differentiators that no competitor matches.</p>
+
+<p>The primary growth vectors are:</p>
+
+<div class="callout">
+  <strong>Near-term (high ROI):</strong> Hunter award tracking, contest templates, propagation-aware suggestions, offline callsign database, WWFF/GMA support, eQSL sync. These build on existing architecture and fill the most-reported user gaps.
+</div>
+
+<div class="callout amber">
+  <strong>Medium-term (growth):</strong> Internationalization, widgets, voice input, Apple Watch. These expand the addressable market and improve field usability.
+</div>
+
+<div class="callout green">
+  <strong>Long-term (transformative):</strong> LoTW mobile upload, IC-705 rig control, AI voice-to-log, FT8 decode. These require significant investment but would establish category leadership.
+</div>
+
+<p>The competitive landscape is fragmented — PoLo leads on simplicity and international support, WRL on modern UI and social, HAMRS on cross-platform reach. No single app excels across all dimensions. Carrier Wave's depth-first approach (professional statistics, CW decode, WebSDR) is a viable differentiation strategy, especially when combined with the breadth additions recommended above.</p>
+
+<p style="margin-top: 0.3in; padding-top: 0.1in; border-top: 1px solid #ddd; font-size: 9pt; color: #999;">
+  Research compiled February 2026. Sources include Reddit (r/amateurradio, r/pota), QRZ Forums, eHam reviews, app store listings, developer documentation, and amateur radio publications. Competitive information reflects publicly available data.
+</p>
+
+</body>
+</html>
