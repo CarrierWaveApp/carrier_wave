@@ -88,14 +88,14 @@ struct SpotsWidgetMediumView: View {
             if entry.spots.isEmpty {
                 spotsEmptyState(font: .caption, iconFont: .title3)
             } else {
-                let displayCount = min(entry.spots.count, 4)
+                let displayCount = min(entry.spots.count, 5)
                 ForEach(entry.spots.prefix(displayCount), id: \.id) { spot in
                     spotRow(spot)
                 }
                 if entry.totalSpotCount > displayCount {
                     moreIndicator(
                         remaining: entry.totalSpotCount - displayCount,
-                        font: .system(size: 9)
+                        font: .caption2
                     )
                 }
                 Spacer(minLength: 0)
@@ -108,7 +108,7 @@ struct SpotsWidgetMediumView: View {
 
     private var sourceLabel: String {
         switch entry.source {
-        case .both: "POTA + RBN"
+        case .both: "All"
         case .pota: "POTA"
         case .rbn: "RBN"
         }
@@ -123,7 +123,7 @@ struct SpotsWidgetMediumView: View {
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
             Spacer()
-            filterBadges(font: .system(size: 9))
+            filterBadges(font: .caption2)
         }
     }
 
@@ -145,21 +145,20 @@ struct SpotsWidgetMediumView: View {
                 .frame(width: 52, alignment: .trailing)
 
             Text(spot.mode)
-                .font(.system(size: 9).monospaced())
+                .font(.caption2.monospaced())
                 .foregroundStyle(.secondary)
-                .frame(width: 28, alignment: .center)
-
-            Spacer(minLength: 2)
+                .padding(.horizontal, 4)
 
             Text(spot.sourceLabel)
-                .font(.system(size: 9))
+                .font(.caption2)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
+
+            Spacer(minLength: 0)
 
             Text(spot.timeAgo)
                 .font(.caption2.monospaced())
                 .foregroundStyle(.tertiary)
-                .frame(width: 24, alignment: .trailing)
         }
     }
 
@@ -225,7 +224,7 @@ struct SpotsWidgetLargeView: View {
 
     private var sourceLabel: String {
         switch entry.source {
-        case .both: "POTA + RBN"
+        case .both: "All"
         case .pota: "POTA"
         case .rbn: "RBN"
         }
@@ -288,19 +287,18 @@ struct SpotsWidgetLargeView: View {
             Text(spot.mode)
                 .font(.caption2.monospaced())
                 .foregroundStyle(.secondary)
-                .frame(width: 32, alignment: .center)
-
-            Spacer(minLength: 4)
+                .padding(.horizontal, 6)
 
             Text(spot.sourceLabel)
                 .font(.caption2)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
 
+            Spacer(minLength: 0)
+
             Text(spot.timeAgo)
                 .font(.caption2.monospaced())
                 .foregroundStyle(.tertiary)
-                .frame(width: 28, alignment: .trailing)
         }
         .padding(.vertical, 1)
     }

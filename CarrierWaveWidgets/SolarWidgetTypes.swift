@@ -22,6 +22,16 @@ enum SolarBand: String, CaseIterable, AppEnum {
             .band12m10m: "12m-10m",
         ]
     }
+
+    /// Shorter label for constrained widget display
+    var displayLabel: String {
+        switch self {
+        case .band80m40m: "80-40m"
+        case .band30m20m: "30-20m"
+        case .band17m15m: "17-15m"
+        case .band12m10m: "12-10m"
+        }
+    }
 }
 
 // MARK: - SolarWidgetIntent
@@ -41,99 +51,95 @@ struct BandCondition: Sendable {
     let night: String
 }
 
-// MARK: - WidgetSegmentGauge
+// MARK: - CircularMetricGauge
 
-/// 10-segment horizontal gauge bar with per-metric color gradients
-struct WidgetSegmentGauge: View {
+/// Circular arc gauge with value inside — more filled = better propagation
+struct CircularMetricGauge: View {
     // MARK: Internal
 
-    enum Metric {
-        case kIndex(Double)
-        case sfi(Double)
-        case aIndex(Int)
-    }
-
-    let metric: Metric
+    let label: String
+    let value: String
+    let level: Int // 1-5, where 5 = best
+    let color: Color
 
     var body: some View {
-        HStack(spacing: 1) {
-            ForEach(0 ..< 10, id: \.self) { index in
-                RoundedRectangle(cornerRadius: 1)
-                    .fill(colorForSegment(index))
-                    .opacity(index == activeSegment ? 1.0 : 0.3)
+        VStack(spacing: 2) {
+            ZStack {
+                Circle()
+                    .stroke(Color.secondary.opacity(0.15), lineWidth: 3.5)
+                Circle()
+                    .trim(from: 0, to: fraction)
+                    .stroke(color, style: StrokeStyle(lineWidth: 3.5, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+                Text(value)
+                    .font(.system(.caption2, design: .rounded, weight: .bold))
+                    .monospacedDigit()
             }
+            .frame(width: 40, height: 40)
+
+            Text(label)
+                .font(.caption2.weight(.medium))
+                .foregroundStyle(.secondary)
         }
-        .frame(height: 6)
     }
 
     // MARK: Private
 
-    private var activeSegment: Int {
-        switch metric {
-        case let .kIndex(k):
-            min(max(Int(k), 0), 9)
-        case let .sfi(sfi):
-            segmentIndex(sfi, thresholds: [35, 70, 80, 90, 100, 120, 150, 200, 250, 300])
-        case let .aIndex(aIdx):
-            segmentIndex(Double(aIdx), thresholds: [7, 15, 20, 30, 40, 50, 70, 100, 200, 400])
-        }
-    }
-
-    private func segmentIndex(_ value: Double, thresholds: [Double]) -> Int {
-        for (index, threshold) in thresholds.enumerated() where value < threshold {
-            return index
-        }
-        return 9
-    }
-
-    private func colorForSegment(_ index: Int) -> Color {
-        switch metric {
-        case .kIndex,
-             .aIndex:
-            // Green (segment 0) -> Red (segment 9)
-            Color(hue: 0.333 * (1.0 - Double(index) / 9.0), saturation: 0.85, brightness: 0.85)
-        case .sfi:
-            // Red (segment 0) -> Green (segment 9)
-            Color(hue: 0.333 * Double(index) / 9.0, saturation: 0.85, brightness: 0.85)
-        }
+    private var fraction: Double {
+        Double(level) / 5.0
     }
 }
 
-// MARK: - BandStoplightGauge
+// MARK: - PropagationLevel
 
-/// 3-segment stoplight gauge for band conditions (Good/Fair/Poor)
-struct BandStoplightGauge: View {
-    // MARK: Internal
-
-    let condition: String
-
-    var body: some View {
-        HStack(spacing: 1) {
-            ForEach(0 ..< 3, id: \.self) { index in
-                RoundedRectangle(cornerRadius: 1)
-                    .fill(colors[index])
-                    .opacity(index == activeIndex ? 1.0 : 0.3)
-            }
+/// Maps solar metric values to propagation quality (level 1-5 + color)
+enum PropagationLevel {
+    static func kIndex(_ k: Double) -> (level: Int, color: Color) {
+        switch k {
+        case ..<2: (5, .green)
+        case ..<3: (4, .green)
+        case ..<4: (3, .yellow)
+        case ..<5: (2, .orange)
+        default: (1, .red)
         }
-        .frame(height: 6)
     }
 
-    // MARK: Private
+    static func aIndex(_ aIdx: Int) -> (level: Int, color: Color) {
+        switch aIdx {
+        case ..<7: (5, .green)
+        case ..<15: (4, .green)
+        case ..<30: (3, .yellow)
+        case ..<50: (2, .orange)
+        default: (1, .red)
+        }
+    }
 
-    private var activeIndex: Int {
-        switch condition.lowercased() {
+    static func sfi(_ sfi: Double) -> (level: Int, color: Color) {
+        switch sfi {
+        case ..<70: (1, .red)
+        case ..<90: (2, .orange)
+        case ..<120: (3, .yellow)
+        case ..<200: (4, .green)
+        default: (5, .green)
+        }
+    }
+
+    static func condition(_ cond: String) -> Color {
+        switch cond.lowercased() {
         case "good",
-             "excellent": 0
-        case "fair": 1
-        default: 2
+             "excellent": .green
+        case "fair": .yellow
+        default: .red
         }
     }
 
-    private var colors: [Color] {
-        [
-            Color(hue: 0.333, saturation: 0.85, brightness: 0.85),
-            Color(hue: 0.167, saturation: 0.85, brightness: 0.85),
-            Color(hue: 0.0, saturation: 0.85, brightness: 0.85),
-        ]
+    static func rating(_ rating: String) -> Color {
+        switch rating {
+        case "Excellent": .green
+        case "Good": .green
+        case "Fair": .yellow
+        case "Poor": .orange
+        default: .red
+        }
     }
 }

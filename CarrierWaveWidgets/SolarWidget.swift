@@ -202,11 +202,11 @@ struct SolarWidgetSmallView: View {
 
     var body: some View {
         if let solar {
-            VStack(spacing: 4) {
+            VStack(spacing: 6) {
                 headerRow(solar)
-                kaRow(solar)
-                sfiBandRow(solar)
+                gaugeRow(solar)
                 Spacer(minLength: 0)
+                allBandsGrid(solar)
             }
             .padding(4)
         } else {
@@ -237,71 +237,65 @@ struct SolarWidgetSmallView: View {
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
             Spacer()
-            if let condition = solar.bandConditions[band.rawValue] {
-                Text(condition.day)
-                    .font(.caption.weight(.semibold))
-            }
+            Text(solar.propagationRating)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(PropagationLevel.rating(solar.propagationRating))
         }
     }
 
-    private func kaRow(_ solar: SolarData) -> some View {
-        HStack(spacing: 8) {
-            halfMetric(
+    private func gaugeRow(_ solar: SolarData) -> some View {
+        HStack(spacing: 0) {
+            let k = PropagationLevel.kIndex(solar.kIndex)
+            CircularMetricGauge(
                 label: "K", value: String(format: "%.0f", solar.kIndex),
-                gauge: .kIndex(solar.kIndex)
+                level: k.level, color: k.color
             )
+
             if let aIdx = solar.aIndex {
-                halfMetric(
+                Spacer()
+                let aLevel = PropagationLevel.aIndex(aIdx)
+                CircularMetricGauge(
                     label: "A", value: "\(aIdx)",
-                    gauge: .aIndex(aIdx)
+                    level: aLevel.level, color: aLevel.color
+                )
+            }
+
+            if let sfi = solar.solarFlux {
+                Spacer()
+                let sfiLevel = PropagationLevel.sfi(sfi)
+                CircularMetricGauge(
+                    label: "SFI", value: "\(Int(sfi))",
+                    level: sfiLevel.level, color: sfiLevel.color
                 )
             }
         }
     }
 
-    private func halfMetric(
-        label: String, value: String,
-        gauge: WidgetSegmentGauge.Metric
-    ) -> some View {
-        VStack(spacing: 2) {
-            HStack {
-                Text(label)
-                    .font(.caption2.weight(.medium))
-                    .foregroundStyle(.secondary)
-                Spacer()
-                Text(value)
-                    .font(.caption.weight(.bold).monospacedDigit())
+    private func allBandsGrid(_ solar: SolarData) -> some View {
+        Grid(alignment: .leading, horizontalSpacing: 4, verticalSpacing: 2) {
+            GridRow {
+                bandCell(.band80m40m, solar)
+                bandCell(.band30m20m, solar)
             }
-            WidgetSegmentGauge(metric: gauge)
+            GridRow {
+                bandCell(.band17m15m, solar)
+                bandCell(.band12m10m, solar)
+            }
         }
     }
 
-    private func sfiBandRow(_ solar: SolarData) -> some View {
-        HStack(spacing: 8) {
-            if let sfi = solar.solarFlux {
-                VStack(spacing: 2) {
-                    HStack {
-                        Text("SFI")
-                            .font(.caption2.weight(.medium))
-                            .foregroundStyle(.secondary)
-                        Spacer()
-                        Text("\(Int(sfi))")
-                            .font(.caption.weight(.bold).monospacedDigit())
-                    }
-                    WidgetSegmentGauge(metric: .sfi(sfi))
-                }
-            }
-            if let condition = solar.bandConditions[band.rawValue] {
-                VStack(spacing: 2) {
-                    HStack {
-                        Text(band.rawValue)
-                            .font(.caption2.weight(.medium))
-                            .foregroundStyle(.secondary)
-                        Spacer()
-                    }
-                    BandStoplightGauge(condition: condition.day)
-                }
-            }
+    private func bandCell(_ band: SolarBand, _ solar: SolarData) -> some View {
+        HStack(spacing: 4) {
+            Circle()
+                .fill(
+                    solar.bandConditions[band.rawValue]
+                        .map { PropagationLevel.condition($0.day) } ?? .secondary
+                )
+                .frame(width: 7, height: 7)
+            Text(band.displayLabel)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
         }
     }
 }
@@ -361,7 +355,7 @@ struct SolarWidgetAccessoryRectangularView: View {
                 .font(.caption.monospacedDigit())
 
                 HStack {
-                    Text(band.rawValue)
+                    Text(band.displayLabel)
                         .fontWeight(.semibold)
                     Spacer()
                     if let cond = solar.bandConditions[band.rawValue] {
@@ -388,7 +382,7 @@ struct SolarWidgetAccessoryInlineView: View {
         if let solar {
             let k = String(format: "%.0f", solar.kIndex)
             if let cond = solar.bandConditions[band.rawValue] {
-                Text("\u{2600} K \(k) \u{00B7} \(band.rawValue) \(cond.day)")
+                Text("\u{2600} K \(k) \u{00B7} \(band.displayLabel) \(cond.day)")
             } else if let sfi = solar.solarFlux {
                 Text("\u{2600} K \(k) \u{00B7} SFI \(Int(sfi))")
             } else {

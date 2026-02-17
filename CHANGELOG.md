@@ -4,6 +4,16 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- Redesign Solar widget with circular arc gauges for K, A, and SFI (arc fill + color = propagation quality)
+- Show all 4 band conditions in Solar widget as a 2x2 color-coded grid instead of single configured band
+- Color-code propagation rating and band condition text in Solar widget for at-a-glance readability
+- Fix band name wrapping in Solar widget by using shorter display labels (e.g. "30-20m" instead of "30m-20m")
+- Show 5 spots instead of 4 in medium Spots widget to reduce empty space
+- Increase minimum font size in Spots widget from 9pt to caption2 for readability and Dynamic Type scaling
+- Move source label next to mode in Spots widget rows, eliminating the large gap between data columns
+- Abbreviate source filter in Spots widget header ("All" instead of "POTA + RBN") to reduce truncation
+
 ### Added
 - Add Live Activity for logging sessions: shows QSO count, frequency, mode, park reference, and last callsign on lock screen and Dynamic Island
 - Live Activity updates in real time as QSOs are logged, frequency/mode changes, or session is paused/resumed
