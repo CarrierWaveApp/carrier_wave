@@ -141,6 +141,7 @@ extension POTAActivationsContentView {
             parkName: parkName(for: activation.parkReference),
             hasFailedJob: jobs.contains { $0.status.isFailure },
             hasCompletedJob: jobs.contains { $0.status == .completed },
+            isPartOfRove: isPartOfRove(activation),
             isSelecting: isSelecting,
             isSelected: selectedActivationIds.contains(activation.id),
             onSelectionToggled: {
@@ -192,6 +193,25 @@ extension POTAActivationsContentView {
 
     func metadata(for activation: POTAActivation) -> ActivationMetadata? {
         metadataByKey["\(activation.parkReference)|\(activation.utcDateString)"]
+    }
+
+    /// Check if an activation's QSOs belong to a rove session
+    func isPartOfRove(_ activation: POTAActivation) -> Bool {
+        guard !roveSessionIds.isEmpty else { return false }
+        return activation.qsos.contains { qso in
+            guard let sessionId = qso.loggingSessionId else { return false }
+            return roveSessionIds.contains(sessionId)
+        }
+    }
+
+    /// Load IDs of all rove sessions for badge display
+    func loadRoveSessionIds() {
+        var descriptor = FetchDescriptor<LoggingSession>(
+            predicate: #Predicate { $0.isRove == true }
+        )
+        descriptor.fetchLimit = 500
+        let sessions = (try? modelContext.fetch(descriptor)) ?? []
+        roveSessionIds = Set(sessions.map(\.id))
     }
 
     func rejectMessage(for parkDisplay: String, pendingCount: Int) -> String {

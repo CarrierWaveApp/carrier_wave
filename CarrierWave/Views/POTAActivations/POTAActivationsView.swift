@@ -36,6 +36,8 @@ struct POTAActivationsContentView: View {
     @State var jobsByActivationId: [String: [POTAJob]] = [:]
     /// Activation metadata keyed by "parkReference|yyyy-MM-dd"
     @State var metadataByKey: [String: ActivationMetadata] = [:]
+    /// Session IDs that are rove sessions (for "Part of rove" badge)
+    @State var roveSessionIds: Set<UUID> = []
 
     // MARK: - Bulk Selection State
 
@@ -263,6 +265,7 @@ struct POTAActivationsContentView: View {
         }
         .task {
             await loadParkQSOs()
+            loadRoveSessionIds()
             if isAuthenticated, potaClient != nil, jobs.isEmpty {
                 await refreshJobs()
             }

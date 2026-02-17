@@ -700,7 +700,10 @@ struct LoggerView: View {
                     SessionMapPanelView(
                         sessionQSOs: sessionQSOs,
                         myGrid: sessionManager?.activeSession?.myGrid
-                            ?? UserDefaults.standard.string(forKey: "loggerDefaultGrid")
+                            ?? UserDefaults.standard.string(forKey: "loggerDefaultGrid"),
+                        roveStops: sessionManager?.activeSession?.isRove == true
+                            ? (sessionManager?.activeSession?.roveStops ?? [])
+                            : []
                     ) {
                         showMapPanel = false
                     }

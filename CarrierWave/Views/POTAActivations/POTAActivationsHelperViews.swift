@@ -25,6 +25,8 @@ struct ActivationRow: View {
     var parkName: String?
     var hasFailedJob: Bool = false
     var hasCompletedJob: Bool = false
+    /// Whether this activation is part of a rove session
+    var isPartOfRove: Bool = false
     /// Whether multi-select mode is active
     var isSelecting: Bool = false
     /// Whether this row is selected in multi-select mode
@@ -62,7 +64,8 @@ struct ActivationRow: View {
                 ActivationLabel(
                     activation: activation,
                     metadata: metadata,
-                    showParkReference: true
+                    showParkReference: true,
+                    isPartOfRove: isPartOfRove
                 )
             }
             .padding(.vertical, 4)
@@ -81,7 +84,8 @@ struct ActivationRow: View {
             ActivationLabel(
                 activation: activation,
                 metadata: metadata,
-                showParkReference: true
+                showParkReference: true,
+                isPartOfRove: isPartOfRove
             )
 
             if hasFailedJob {

@@ -13,6 +13,7 @@ struct NextRoveStopSheet: View {
     @State private var postQRTSpot = true
     @State private var autoSpotNewPark = true
     @State private var showFinishConfirmation = false
+    @State private var gridService = GridLocationService()
 
     var body: some View {
         NavigationStack {
@@ -44,13 +45,22 @@ struct NextRoveStopSheet: View {
                 Text("End the rove and finish this session?")
             }
             .task {
-                // Pre-fill grid from session
-                if let grid = sessionManager?.activeSession?.myGrid {
-                    myGrid = grid
-                }
                 // Read spotting defaults from settings
                 postQRTSpot = sessionManager?.potaQRTSpotEnabled ?? true
                 autoSpotNewPark = sessionManager?.potaAutoSpotEnabled ?? true
+
+                // Request GPS grid (will auto-fill when available)
+                gridService.requestGrid()
+
+                // Pre-fill grid from session while waiting for GPS
+                if let grid = sessionManager?.activeSession?.myGrid {
+                    myGrid = grid
+                }
+            }
+            .onChange(of: gridService.currentGrid) { _, newGrid in
+                if let newGrid, !newGrid.isEmpty {
+                    myGrid = newGrid
+                }
             }
         }
     }
@@ -75,10 +85,19 @@ struct NextRoveStopSheet: View {
                 Text("Grid")
                     .foregroundStyle(.secondary)
                 Spacer()
+                if gridService.isLocating {
+                    ProgressView()
+                        .controlSize(.small)
+                        .padding(.trailing, 4)
+                }
                 TextField("FN31", text: $myGrid)
                     .textInputAutocapitalization(.characters)
                     .multilineTextAlignment(.trailing)
                     .font(.subheadline.monospaced())
+            }
+        } footer: {
+            if gridService.currentGrid != nil {
+                Text("Auto-filled from GPS")
             }
         }
     }
