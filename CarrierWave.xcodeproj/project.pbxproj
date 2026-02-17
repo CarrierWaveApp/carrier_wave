@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		CF8DE7EC2F344AED007A0358 /* CarrierWaveCore in Frameworks */ = {isa = PBXBuildFile; productRef = CFCORE0022F4B00000021A936 /* CarrierWaveCore */; };
+		CFA0000D2F50000D007A0358 /* CarrierWaveWidgets.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = CFA000012F500001007A0358 /* CarrierWaveWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -25,12 +26,34 @@
 			remoteGlobalIDString = CF8DD1AC2F2098940021A936;
 			remoteInfo = CarrierWave;
 		};
+		CFA0000A2F50000A007A0358 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = CF8DD1A52F2098940021A936 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = CFA000062F500006007A0358;
+			remoteInfo = CarrierWaveWidgets;
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		CFA0000C2F50000C007A0358 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				CFA0000D2F50000D007A0358 /* CarrierWaveWidgets.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		CF8DD1AD2F2098940021A936 /* CarrierWave.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CarrierWave.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CF8DD1BC2F2098950021A936 /* CarrierWaveTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CarrierWaveTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		CF8DD1C62F2098950021A936 /* CarrierWaveUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CarrierWaveUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		CFA000012F500001007A0358 /* CarrierWaveWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CarrierWaveWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -66,6 +89,13 @@
 			path = CarrierWaveUITests;
 			sourceTree = "<group>";
 		};
+		CFA000022F500002007A0358 /* CarrierWaveWidgets */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
+			path = CarrierWaveWidgets;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -91,6 +121,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		CFA000032F500003007A0358 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -98,6 +135,7 @@
 			isa = PBXGroup;
 			children = (
 				CF8DD1AF2F2098940021A936 /* CarrierWave */,
+				CFA000022F500002007A0358 /* CarrierWaveWidgets */,
 				CF8DD1BF2F2098950021A936 /* CarrierWaveTests */,
 				CF8DD1C92F2098950021A936 /* CarrierWaveUITests */,
 				CF8DD1AE2F2098940021A936 /* Products */,
@@ -108,6 +146,7 @@
 			isa = PBXGroup;
 			children = (
 				CF8DD1AD2F2098940021A936 /* CarrierWave.app */,
+				CFA000012F500001007A0358 /* CarrierWaveWidgets.appex */,
 				CF8DD1BC2F2098950021A936 /* CarrierWaveTests.xctest */,
 				CF8DD1C62F2098950021A936 /* CarrierWaveUITests.xctest */,
 			);
@@ -124,10 +163,12 @@
 				CF8DD1A92F2098940021A936 /* Sources */,
 				CF8DD1AA2F2098940021A936 /* Frameworks */,
 				CF8DD1AB2F2098940021A936 /* Resources */,
+				CFA0000C2F50000C007A0358 /* Embed App Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				CFA0000B2F50000B007A0358 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				CF8DD1AF2F2098940021A936 /* CarrierWave */,
@@ -182,6 +223,26 @@
 			productReference = CF8DD1C62F2098950021A936 /* CarrierWaveUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		CFA000062F500006007A0358 /* CarrierWaveWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CFA000092F500009007A0358 /* Build configuration list for PBXNativeTarget "CarrierWaveWidgets" */;
+			buildPhases = (
+				CFA000042F500004007A0358 /* Sources */,
+				CFA000032F500003007A0358 /* Frameworks */,
+				CFA000052F500005007A0358 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				CFA000022F500002007A0358 /* CarrierWaveWidgets */,
+			);
+			name = CarrierWaveWidgets;
+			productName = CarrierWaveWidgets;
+			productReference = CFA000012F500001007A0358 /* CarrierWaveWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -203,6 +264,9 @@
 						CreatedOnToolsVersion = 26.2;
 						TestTargetID = CF8DD1AC2F2098940021A936;
 					};
+					CFA000062F500006007A0358 = {
+						CreatedOnToolsVersion = 26.2;
+					};
 				};
 			};
 			buildConfigurationList = CF8DD1A82F2098940021A936 /* Build configuration list for PBXProject "CarrierWave" */;
@@ -223,6 +287,7 @@
 			projectRoot = "";
 			targets = (
 				CF8DD1AC2F2098940021A936 /* CarrierWave */,
+				CFA000062F500006007A0358 /* CarrierWaveWidgets */,
 				CF8DD1BB2F2098950021A936 /* CarrierWaveTests */,
 				CF8DD1C52F2098950021A936 /* CarrierWaveUITests */,
 			);
@@ -245,6 +310,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		CF8DD1C42F2098950021A936 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CFA000052F500005007A0358 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -275,6 +347,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		CFA000042F500004007A0358 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -287,6 +366,11 @@
 			isa = PBXTargetDependency;
 			target = CF8DD1AC2F2098940021A936 /* CarrierWave */;
 			targetProxy = CF8DD1C72F2098950021A936 /* PBXContainerItemProxy */;
+		};
+		CFA0000B2F50000B007A0358 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = CFA000062F500006007A0358 /* CarrierWaveWidgets */;
+			targetProxy = CFA0000A2F50000A007A0358 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -419,6 +503,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = CarrierWave/CarrierWave.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 46;
 				DEVELOPMENT_TEAM = 7UE4RDLUSX;
@@ -453,6 +538,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = CarrierWave/CarrierWave.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 46;
 				DEVELOPMENT_TEAM = 7UE4RDLUSX;
@@ -566,6 +652,64 @@
 			};
 			name = Release;
 		};
+		CFA000072F500007007A0358 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = CarrierWaveWidgets/CarrierWaveWidgets.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 46;
+				DEVELOPMENT_TEAM = 7UE4RDLUSX;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Carrier Wave Widgets";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.36.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jsvana.FullDuplex.Widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		CFA000082F500008007A0358 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = CarrierWaveWidgets/CarrierWaveWidgets.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 46;
+				DEVELOPMENT_TEAM = 7UE4RDLUSX;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Carrier Wave Widgets";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.36.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jsvana.FullDuplex.Widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -601,6 +745,15 @@
 			buildConfigurations = (
 				CF8DD1D72F2098950021A936 /* Debug */,
 				CF8DD1D82F2098950021A936 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CFA000092F500009007A0358 /* Build configuration list for PBXNativeTarget "CarrierWaveWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CFA000072F500007007A0358 /* Debug */,
+				CFA000082F500008007A0358 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

@@ -5,6 +5,12 @@ All notable changes to Carrier Wave will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Add iOS widgets: Solar Conditions, Stats & Streaks, Radio Spots (POTA + RBN), and Active Session
+- Solar widget shows K-index, SFI, A-index with propagation rating (small + Lock Screen)
+- Stats widget is configurable via long-press to show any streak or count metric (small + Lock Screen)
+- Spots widget shows live POTA/RBN spots with configurable source filter; taps open Activity Log (medium + large)
+- Active Session widget shows current logging session with QSO count, park ref, and elapsed time (small + medium + Lock Screen)
+- Add App Group (`group.com.jsvana.FullDuplex`) for widget data sharing
 - Add haptic feedback (success) when logging a QSO
 - Add accessibility labels to filter button (Map), settings menu (CW Transcription), and refresh button (POTA Activations)
 

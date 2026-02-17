@@ -224,6 +224,19 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `ActivityLogManager.swift` | Activity log lifecycle management (create, activate, log QSO, daily stats) |
 | `EnvironmentalSnapshot.swift` | Sendable snapshot struct for environmental conditions charting |
 | `EnvironmentalDataActor.swift` | Background actor for loading conditions from LoggingSession + ActivationMetadata |
+| `WidgetDataWriter.swift` | Writes pre-computed stats/session data to App Group UserDefaults for widget consumption |
+
+## Widget Extension (`CarrierWaveWidgets/`)
+
+| File | Purpose |
+|------|---------|
+| `CarrierWaveWidgetBundle.swift` | WidgetBundle entry point registering all four widgets |
+| `WidgetDataReader.swift` | Reads shared data from App Group UserDefaults + shared Codable types |
+| `SolarWidget.swift` | Solar conditions widget (K-index, SFI, A-index) - fetches directly from HamQSL |
+| `StatsWidget.swift` | Configurable streaks/counts widget with AppIntent configuration |
+| `SpotsWidget.swift` | POTA + RBN spots widget (configurable source filter) - fetches from APIs |
+| `ActiveSessionWidget.swift` | Active logging session widget showing QSO count and session info |
+| `CarrierWaveWidgets.entitlements` | App Group entitlement for shared data access |
 
 ## Services - WebSDR (`CarrierWave/Services/WebSDR/`)
 
