@@ -20,6 +20,14 @@ extension ActivityView {
         }
     }
 
+    func syncFeedQuietly() async {
+        guard let feedService = feedSyncService else {
+            return
+        }
+        try? await feedService.syncFeed(sourceURL: "https://activities.carrierwave.app")
+        loadActivityItems()
+    }
+
     func syncFriendsQuietly() async {
         if friendsSyncService == nil {
             friendsSyncService = FriendsSyncService(modelContext: modelContext)

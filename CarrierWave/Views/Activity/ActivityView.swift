@@ -287,6 +287,8 @@ struct ActivityView: View {
             loadActivityItems()
             // Sync friends and pending requests from server
             await syncFriendsQuietly()
+            // Sync feed from server immediately (don't wait for periodic refresh)
+            await syncFeedQuietly()
             // One-time cleanup of duplicate activities (after UI is shown)
             await deduplicateActivitiesIfNeeded()
             // Show community features prompt for existing users who haven't been asked
@@ -381,6 +383,13 @@ extension ActivityView {
 
             // Sync friends and pending requests from server
             await syncFriendsQuietly()
+
+            // Sync clubs
+            if let clubsService = clubsSyncService {
+                try? await clubsService.syncClubs(
+                    sourceURL: "https://activities.carrierwave.app"
+                )
+            }
 
             // Sync activity feed from server
             if let feedService = feedSyncService {

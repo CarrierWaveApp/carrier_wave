@@ -4,6 +4,10 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- Sync activity feed immediately on Activity tab appearance instead of waiting 60 seconds
+- Add club sync to Activity tab refresh action
+
 ## [1.37.0] - 2026-02-17
 
 ### Changed
