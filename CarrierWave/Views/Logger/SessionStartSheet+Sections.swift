@@ -130,6 +130,7 @@ extension SessionStartSheet {
             activationType: $activationType,
             parkReference: $parkReference,
             sotaReference: $sotaReference,
+            isRove: $isRove,
             userGrid: myGrid.isEmpty ? defaultGrid : myGrid,
             defaultCountry: "US"
         )

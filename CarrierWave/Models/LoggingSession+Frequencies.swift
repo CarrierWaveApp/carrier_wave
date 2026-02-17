@@ -99,6 +99,12 @@ extension LoggingSession {
     var defaultTitle: String {
         switch activationType {
         case .pota:
+            if isRove {
+                let count = roveStopCount
+                return count > 0
+                    ? "\(myCallsign) Rove (\(count) \(count == 1 ? "park" : "parks"))"
+                    : "\(myCallsign) POTA Rove"
+            }
             if let park = parkReference {
                 return "\(myCallsign) at \(park)"
             }

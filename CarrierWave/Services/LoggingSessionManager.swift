@@ -74,7 +74,8 @@ final class LoggingSessionManager {
         myKey: String? = nil,
         myMic: String? = nil,
         extraEquipment: String? = nil,
-        attendees: String? = nil
+        attendees: String? = nil,
+        isRove: Bool = false
     ) {
         // Pause any existing session first (keeps it available to resume later)
         if activeSession != nil {
@@ -98,6 +99,17 @@ final class LoggingSessionManager {
             extraEquipment: extraEquipment,
             attendees: attendees
         )
+
+        // Set up rove mode with first stop
+        if isRove, activationType == .pota, let park = session.parkReference {
+            session.isRove = true
+            let firstStop = RoveStop(
+                parkReference: park,
+                startedAt: session.startedAt,
+                myGrid: myGrid
+            )
+            session.roveStops = [firstStop]
+        }
 
         modelContext.insert(session)
         activeSession = session
@@ -126,10 +138,91 @@ final class LoggingSessionManager {
         try? modelContext.save()
     }
 
+    /// Advance to the next park stop in a rove session
+    func nextRoveStop(
+        parkReference: String,
+        myGrid: String?,
+        postQRTSpot: Bool,
+        autoSpotNewPark: Bool
+    ) {
+        guard let session = activeSession, session.isRove else {
+            return
+        }
+
+        let sanitizedPark = ParkReference.sanitizeMulti(parkReference) ?? parkReference
+
+        // Close the current stop
+        var stops = session.roveStops
+        if let lastIndex = stops.indices.last, stops[lastIndex].endedAt == nil {
+            stops[lastIndex].endedAt = Date()
+        }
+
+        // Create new stop
+        let newStop = RoveStop(
+            parkReference: sanitizedPark,
+            startedAt: Date(),
+            myGrid: myGrid
+        )
+        stops.append(newStop)
+        session.roveStops = stops
+
+        // Capture old park for QRT spot before updating
+        let oldParkRef = session.parkReference
+
+        // Update session to the new park
+        session.parkReference = sanitizedPark
+        if let grid = myGrid {
+            session.myGrid = grid
+        }
+
+        try? modelContext.save()
+
+        // Post QRT spot for the old park (fire and forget)
+        if postQRTSpot, let oldPark = oldParkRef {
+            Task {
+                await postQRTSpotForPark(oldPark, session: session)
+            }
+        }
+
+        // Restart spot comments polling for the new park
+        spotCommentsService.stopPolling()
+        spotCommentsService.clear()
+        attachedSpotCommentIds = []
+        startSpotCommentsPolling()
+
+        // Post initial spot for the new park
+        if autoSpotNewPark {
+            Task {
+                await postSpot()
+            }
+        }
+    }
+
+    /// Increment the current rove stop's QSO count
+    func incrementCurrentRoveStopQSOCount() {
+        guard let session = activeSession, session.isRove else {
+            return
+        }
+        var stops = session.roveStops
+        if let lastIndex = stops.indices.last, stops[lastIndex].endedAt == nil {
+            stops[lastIndex].qsoCount += 1
+            session.roveStops = stops
+        }
+    }
+
     /// End the current session
     func endSession() {
         guard let session = activeSession else {
             return
+        }
+
+        // Close the current rove stop if active
+        if session.isRove {
+            var stops = session.roveStops
+            if let lastIndex = stops.indices.last, stops[lastIndex].endedAt == nil {
+                stops[lastIndex].endedAt = Date()
+            }
+            session.roveStops = stops
         }
 
         // Post QRT spot before cleanup (fire and forget)
@@ -496,6 +589,9 @@ final class LoggingSessionManager {
 
         modelContext.insert(qso)
         session.incrementQSOCount()
+
+        // Increment per-stop QSO count for rove sessions
+        incrementCurrentRoveStopQSOCount()
 
         // Mark for upload to configured services
         markForUpload(qso)

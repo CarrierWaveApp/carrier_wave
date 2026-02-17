@@ -4,6 +4,9 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- POTA rove mode: activate multiple parks in a single session with "Next Stop" transitions, rove progress bar, per-stop QSO tracking, and automatic QRT/spot posting on park changes
+
 ## [1.34.0] - 2026-02-16
 
 ### Added

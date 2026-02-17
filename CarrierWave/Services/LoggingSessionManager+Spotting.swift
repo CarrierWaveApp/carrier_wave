@@ -260,6 +260,39 @@ extension LoggingSessionManager {
         }
     }
 
+    /// Post QRT spot for a specific park reference (used during rove stop transitions)
+    func postQRTSpotForPark(_ parkRef: String, session: LoggingSession) async {
+        guard potaQRTSpotEnabled,
+              let freq = session.frequency,
+              !session.myCallsign.isEmpty
+        else {
+            return
+        }
+
+        let parks = ParkReference.split(parkRef)
+        let potaClient = POTAClient(authService: POTAAuthService())
+
+        for park in parks {
+            do {
+                _ = try await potaClient.postSpot(
+                    callsign: session.myCallsign,
+                    reference: park,
+                    frequency: freq * 1_000,
+                    mode: session.mode,
+                    comments: "QRT"
+                )
+                SyncDebugLog.shared.info(
+                    "QRT spot posted for \(park) (rove stop change)", service: .pota
+                )
+            } catch {
+                SyncDebugLog.shared.warning(
+                    "Failed to post QRT spot for \(park): \(error.localizedDescription)",
+                    service: .pota
+                )
+            }
+        }
+    }
+
     /// Post QRT spots for all parks if enabled and the session had spots
     func postQRTSpotIfNeeded(for session: LoggingSession) async {
         guard potaQRTSpotEnabled,

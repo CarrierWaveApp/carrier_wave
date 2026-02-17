@@ -18,6 +18,7 @@ struct SessionStartSheet: View {
     @State var activationType: ActivationType = .casual
     @State var parkReference = ""
     @State var sotaReference = ""
+    @State var isRove = false
     @State var myGrid = ""
     @State var powerText = ""
     @State var selectedRadio: String?
@@ -349,7 +350,8 @@ extension SessionStartSheet {
             myKey: selectedMode == "CW" ? selectedKey : nil,
             myMic: ["SSB", "USB", "LSB", "AM", "FM"].contains(selectedMode) ? selectedMic : nil,
             extraEquipment: trimmedEquipment.isEmpty ? nil : trimmedEquipment,
-            attendees: trimmedAttendees.isEmpty ? nil : trimmedAttendees
+            attendees: trimmedAttendees.isEmpty ? nil : trimmedAttendees,
+            isRove: isRove
         )
 
         // Store initial notes if provided
