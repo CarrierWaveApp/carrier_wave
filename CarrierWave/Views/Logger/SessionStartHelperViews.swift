@@ -52,6 +52,7 @@ struct ActivationSectionView: View {
     @Binding var activationType: ActivationType
     @Binding var parkReference: String
     @Binding var sotaReference: String
+    @Binding var isRove: Bool
 
     /// User's grid square for nearby parks
     var userGrid: String?
@@ -76,6 +77,16 @@ struct ActivationSectionView: View {
                     userGrid: userGrid,
                     defaultCountry: defaultCountry
                 )
+
+                Toggle(isOn: $isRove) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("This is a rove")
+                            .font(.subheadline.weight(.medium))
+                        Text("Visit multiple parks in one session")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
             }
 
             if activationType == .sota {
@@ -88,6 +99,11 @@ struct ActivationSectionView: View {
                         .multilineTextAlignment(.trailing)
                         .font(.subheadline.monospaced())
                 }
+            }
+        }
+        .onChange(of: activationType) { _, newValue in
+            if newValue != .pota {
+                isRove = false
             }
         }
     }

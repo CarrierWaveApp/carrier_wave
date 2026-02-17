@@ -144,6 +144,26 @@ struct LoggerView: View {
                 )
                 .presentationDetents([.height(340)])
             }
+            .sheet(isPresented: $showNextStopSheet) {
+                NextRoveStopSheet(
+                    sessionManager: sessionManager,
+                    onDismiss: {
+                        showNextStopSheet = false
+                        refreshSessionQSOs()
+                    }
+                )
+                .presentationDetents([.medium, .large])
+            }
+            .popover(
+                isPresented: Binding(
+                    get: { selectedRoveStop != nil },
+                    set: { if !$0 { selectedRoveStop = nil } }
+                )
+            ) {
+                if let stop = selectedRoveStop {
+                    RoveStopPopover(stop: stop)
+                }
+            }
             .sheet(isPresented: $showBandEditSheet) {
                 SessionBandEditSheet(
                     currentFrequency: sessionManager?.activeSession?.frequency,
@@ -384,6 +404,10 @@ struct LoggerView: View {
     // Session park editing
     @State private var showParkEditSheet = false
     @State private var editingParkReference = ""
+
+    // Rove
+    @State private var showNextStopSheet = false
+    @State private var selectedRoveStop: RoveStop?
 
     // Session band/mode/rig editing
     @State private var showBandEditSheet = false
@@ -1331,8 +1355,18 @@ struct LoggerView: View {
                 }
             }
 
+            // Rove bar or standard park + controls
+            if session.isRove {
+                RoveProgressBar(
+                    stops: session.roveStops,
+                    currentStopId: session.currentRoveStop?.id,
+                    onNextStop: { showNextStopSheet = true },
+                    onTapStop: { stop in selectedRoveStop = stop }
+                )
+            }
+
             HStack {
-                if session.activationType == .pota {
+                if session.activationType == .pota, !session.isRove {
                     parkHeaderView(session)
                 }
 
@@ -1815,7 +1849,12 @@ struct LoggerView: View {
 
     private func executeSheetCommand(_ command: LoggerCommand) {
         switch command {
-        case .pota: showPOTAPanel = true
+        case .pota:
+            if sessionManager?.activeSession?.isRove == true {
+                showNextStopSheet = true
+            } else {
+                showPOTAPanel = true
+            }
         case .solar: showSolarPanel = true
         case .weather: showWeatherPanel = true
         case .hidden: showHiddenQSOsSheet = true

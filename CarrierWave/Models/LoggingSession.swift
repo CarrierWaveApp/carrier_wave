@@ -129,6 +129,14 @@ final class LoggingSession {
     /// Serialized spot comments JSON (stored as Data for SwiftData compatibility)
     var spotCommentsData: Data?
 
+    // MARK: - Rove
+
+    /// Whether this session is a POTA rove (multiple park stops)
+    var isRove: Bool = false
+
+    /// Serialized rove stops JSON (stored as Data for SwiftData compatibility)
+    var roveStopsData: Data?
+
     // MARK: - Equipment
 
     /// Antenna used (e.g., "EFHW", "Buddipole")
@@ -205,6 +213,32 @@ final class LoggingSession {
         set {
             spotCommentsData = try? JSONEncoder().encode(newValue)
         }
+    }
+
+    /// Rove stops (decoded from JSON data)
+    var roveStops: [RoveStop] {
+        get {
+            guard let data = roveStopsData else { return [] }
+            return (try? JSONDecoder().decode([RoveStop].self, from: data)) ?? []
+        }
+        set {
+            roveStopsData = try? JSONEncoder().encode(newValue)
+        }
+    }
+
+    /// The currently active rove stop (last one without an endedAt)
+    var currentRoveStop: RoveStop? {
+        roveStops.last { $0.endedAt == nil } ?? roveStops.last
+    }
+
+    /// Number of rove stops
+    var roveStopCount: Int {
+        roveStops.count
+    }
+
+    /// Total QSOs across all rove stops
+    var roveTotalQSOCount: Int {
+        roveStops.reduce(0) { $0 + $1.qsoCount }
     }
 
     /// Whether the session is currently active

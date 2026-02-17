@@ -94,6 +94,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `CallsignInfo.swift` | Callsign lookup result with name, note, emoji, source |
 | `LoggingSession.swift` | Logging session model with activation type, frequency, mode, equipment |
 | `LoggingSession+Frequencies.swift` | Static frequency maps, band derivation, computed display properties |
+| `RoveStop.swift` | Codable model for individual park stops within a POTA rove session |
 | `LoggerCommand.swift` | Command enum for logger input (FREQ, BAND, MODE, SPOT, RBN, POTA, P2P, SOLAR, WEATHER, MAP, WEBSDR) |
 | `WebSDRRecording.swift` | WebSDR recording metadata (host, file path, duration, session link) |
 | `CallsignNotesSource.swift` | SwiftData model for user-configured callsign notes file sources |
@@ -318,6 +319,8 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `POTASpotsHelperViews.swift` | Helper views for POTA spots (filter sheet, loading, empty, error states) |
 | `P2PPanelView.swift` | Park-to-park opportunities panel with SNR display |
 | `SessionMapPanelView.swift` | Map panel showing session QSOs for MAP command |
+| `NextRoveStopSheet.swift` | Half-sheet for transitioning to next park stop in a rove |
+| `RoveProgressBar.swift` | Horizontally scrolling rove stop pills for session header |
 | `POTAUploadPromptSheet.swift` | Post-session modal prompting POTA upload |
 | `SpotFilters.swift` | Band and mode filter enums for spots |
 | `QuickEntryPreview.swift` | Quick entry token display with color-coded badges |
@@ -530,6 +533,8 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `QRZClientTests.swift` | QRZ client tests |
 | `LoggingSessionManagerTests.swift` | Session lifecycle, QSO logging, notes management tests |
 | `LoggingSessionTests.swift` | LoggingSession model tests (state, band derivation, duration) |
+| `LoggingSessionRoveTests.swift` | LoggingSession rove accessor and lifecycle tests |
+| `RoveStopTests.swift` | RoveStop Codable round-trip and computed property tests |
 | `ServicePresenceTests.swift` | Service presence and upload marking edge case tests |
 | `MetadataModeTests.swift` | WEATHER/SOLAR/NOTE metadata mode filtering tests |
 | `DXCCTests.swift` | DXCC extraction, QRZ import, and repair task tests |

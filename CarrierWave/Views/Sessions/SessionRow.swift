@@ -78,7 +78,9 @@ struct SessionRow: View {
                 .font(.headline)
                 .lineLimit(1)
                 .layoutPriority(1)
-            if let ref = session.activationReference {
+            if session.isRove {
+                roveRefSummary
+            } else if let ref = session.activationReference {
                 Text(ref)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
@@ -89,6 +91,20 @@ struct SessionRow: View {
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
         }
+    }
+
+    @ViewBuilder
+    private var roveRefSummary: some View {
+        let stops = session.roveStops
+        let parks = stops.map {
+            ParkReference.split($0.parkReference).first ?? $0.parkReference
+        }
+        let display = parks.prefix(3).joined(separator: " \u{2192} ")
+        let suffix = parks.count > 3 ? " +\(parks.count - 3)" : ""
+        Text(display + suffix)
+            .font(.caption.monospaced())
+            .foregroundStyle(.green)
+            .lineLimit(1)
     }
 
     // MARK: - Title

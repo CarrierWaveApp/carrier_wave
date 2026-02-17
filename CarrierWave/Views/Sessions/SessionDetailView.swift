@@ -13,6 +13,9 @@ struct SessionDetailView: View {
     var body: some View {
         List {
             infoSection
+            if session.isRove {
+                roveStopsSection
+            }
             equipmentSection
             if session.attendees != nil || session.notes != nil {
                 notesSection
@@ -104,6 +107,14 @@ struct SessionDetailView: View {
                 LabeledContent("Power") {
                     Text("\(power)W")
                 }
+            }
+        }
+    }
+
+    private var roveStopsSection: some View {
+        Section("Rove Stops (\(session.roveStopCount))") {
+            ForEach(session.roveStops) { stop in
+                RoveStopDetailRow(stop: stop)
             }
         }
     }
@@ -249,6 +260,74 @@ struct SessionDetailView: View {
         }
 
         try? modelContext.save()
+    }
+}
+
+// MARK: - RoveStopDetailRow
+
+/// Timeline row showing a single rove stop with park, time range, QSO count, and grid
+private struct RoveStopDetailRow: View {
+    let stop: RoveStop
+
+    private static let timeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm"
+        formatter.timeZone = TimeZone(identifier: "UTC")
+        return formatter
+    }()
+
+    var body: some View {
+        HStack(spacing: 12) {
+            // Timeline indicator
+            Circle()
+                .fill(stop.isActive ? Color.green : Color(.systemGray3))
+                .frame(width: 10, height: 10)
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 4) {
+                // Park reference + resolved name
+                let parks = ParkReference.split(stop.parkReference)
+                ForEach(parks, id: \.self) { park in
+                    HStack(spacing: 6) {
+                        Text(park)
+                            .font(.subheadline.monospaced().weight(.semibold))
+                            .foregroundStyle(.green)
+                        if let name = POTAParksCache.shared.nameSync(for: park) {
+                            Text(name)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                        }
+                    }
+                }
+
+                // Time range + stats
+                HStack(spacing: 8) {
+                    Text(timeRange)
+                        .font(.caption.monospaced())
+                        .foregroundStyle(.secondary)
+
+                    Text("\(stop.qsoCount) QSOs")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    if let grid = stop.myGrid {
+                        Text(grid)
+                            .font(.caption.monospaced())
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+        }
+    }
+
+    private var timeRange: String {
+        let start = Self.timeFormatter.string(from: stop.startedAt)
+        if let endedAt = stop.endedAt {
+            let end = Self.timeFormatter.string(from: endedAt)
+            return "\(start)\u{2013}\(end) UTC"
+        }
+        return "\(start)\u{2013}now UTC"
     }
 }
 
