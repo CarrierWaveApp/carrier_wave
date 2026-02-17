@@ -84,8 +84,6 @@ struct QRZFetchedQSO {
 
 @MainActor
 final class QRZClient {
-    // MARK: Internal
-
     // MARK: Internal (for extension access)
 
     let baseURL = "https://logbook.qrz.com/api"
@@ -262,6 +260,13 @@ final class QRZClient {
         )
 
         guard !matchingQSOs.isEmpty else {
+            await MainActor.run {
+                SyncDebugLog.shared.info(
+                    "QRZ upload: all \(qsos.count) QSO(s) filtered out "
+                        + "(callsign mismatch with account \(accountCallsign ?? "nil"))",
+                    service: .qrz
+                )
+            }
             return QRZUploadResult(uploaded: 0, duplicates: 0, skipped: skippedCount)
         }
 
@@ -272,13 +277,10 @@ final class QRZClient {
         let request = try buildUploadRequest(
             apiKey: apiKey, adifContent: adifContent, bookId: bookId
         )
-        let (data, _) = try await URLSession.shared.data(for: request)
-
-        guard let responseString = String(data: data, encoding: .utf8) else {
-            throw QRZError.invalidResponse("Cannot decode response as UTF-8, \(data.count) bytes")
-        }
-
-        let result = try parseUploadResponse(responseString)
+        let result = try await executeQRZUpload(
+            request: request, adifChars: adifContent.count,
+            qsoCount: matchingQSOs.count, bookId: bookId
+        )
         return QRZUploadResult(
             uploaded: result.uploaded, duplicates: result.duplicates, skipped: skippedCount
         )
@@ -375,77 +377,8 @@ final class QRZClient {
         try? keychain.delete(for: KeychainHelper.Keys.qrzLastUploadDate)
         try? keychain.delete(for: KeychainHelper.Keys.qrzLastDownloadDate)
     }
-
-    // MARK: Private
-
-    /// Filter QSOs to only those matching the QRZ account callsign
-    private func filterQSOsForUpload(
-        _ qsos: [QSO], accountCallsign: String?
-    ) -> (matching: [QSO], skippedCount: Int) {
-        guard let accountCallsign else {
-            // No account callsign configured, upload all
-            return (qsos, 0)
-        }
-
-        var matching: [QSO] = []
-        var skipped = 0
-
-        for qso in qsos {
-            let qsoCallsign = qso.myCallsign.uppercased()
-            if qsoCallsign.isEmpty || qsoCallsign == accountCallsign {
-                matching.append(qso)
-            } else {
-                skipped += 1
-            }
-        }
-
-        return (matching, skipped)
-    }
-
-    /// Build the upload request with proper headers and form data
-    private func buildUploadRequest(
-        apiKey: String, adifContent: String, bookId: String?
-    ) throws -> URLRequest {
-        guard let url = URL(string: baseURL) else {
-            throw QRZError.invalidResponse("Invalid URL")
-        }
-
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue(userAgent, forHTTPHeaderField: "User-Agent")
-        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
-
-        var formData = [
-            "KEY": apiKey, "ACTION": "INSERT", "OPTION": "REPLACE", "ADIF": adifContent,
-        ]
-        if let bookId {
-            formData["BOOKID"] = bookId
-        }
-        request.httpBody = formEncode(formData).data(using: .utf8)
-        return request
-    }
-
-    /// Parse the upload response and return counts or throw appropriate error
-    private func parseUploadResponse(_ responseString: String) throws -> (
-        uploaded: Int, duplicates: Int
-    ) {
-        let parsed = Self.parseResponse(responseString)
-
-        if parsed["RESULT"] == "AUTH" {
-            throw QRZError.sessionExpired
-        }
-
-        let result = parsed["RESULT"] ?? ""
-        guard result == "OK" || result == "REPLACE" || result == "PARTIAL" else {
-            let reason = parsed["REASON"] ?? "Response: \(responseString.prefix(200))"
-            throw QRZError.uploadFailed(reason)
-        }
-
-        let count = Int(parsed["COUNT"] ?? "0") ?? 0
-        let dupes = Int(parsed["DUPES"] ?? "0") ?? 0
-        return (uploaded: count, duplicates: dupes)
-    }
 }
 
+// Upload helper methods are in QRZClient+Upload.swift
 // Fetch helper methods are in QRZClient+Fetch.swift
 // ADIF helper methods are in QRZClient+ADIF.swift

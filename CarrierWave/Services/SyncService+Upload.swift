@@ -10,7 +10,19 @@ extension SyncService {
     func uploadToAllDestinations() async -> (
         results: [ServiceType: Result<Int, Error>], potaMaintenanceSkipped: Bool
     ) {
-        let qsosNeedingUpload = try? fetchQSOsNeedingUpload()
+        let qsosNeedingUpload: [QSO]?
+        do {
+            qsosNeedingUpload = try fetchQSOsNeedingUpload()
+        } catch {
+            await MainActor.run {
+                SyncDebugLog.shared.error(
+                    "Failed to fetch QSOs needing upload: \(error.localizedDescription)",
+                    service: nil
+                )
+            }
+            qsosNeedingUpload = nil
+        }
+
         let timeout = syncTimeoutSeconds
         var potaMaintenanceSkipped = false
         var results: [ServiceType: Result<Int, Error>] = [:]
@@ -26,19 +38,10 @@ extension SyncService {
         }
 
         // QRZ upload
-        if qrzClient.hasApiKey() {
-            let qrzQSOs = qsosNeedingUpload?.filter { $0.needsUpload(to: .qrz) } ?? []
-            if !qrzQSOs.isEmpty {
-                // Separate valid QSOs from those with missing required fields
-                let (validQSOs, invalidQSOs) = partitionQSOsByValidity(qrzQSOs)
-                await logQSOsWithMissingFields(invalidQSOs, service: .qrz)
-
-                if !validQSOs.isEmpty {
-                    await logPendingQSOs(validQSOs, service: .qrz)
-                    let (service, result) = await uploadQRZBatch(qsos: validQSOs, timeout: timeout)
-                    results[service] = result
-                }
-            }
+        if let qrzResult = await uploadQRZIfConfigured(
+            qsosNeedingUpload: qsosNeedingUpload, timeout: timeout
+        ) {
+            results[.qrz] = qrzResult
         }
 
         // POTA upload
@@ -51,24 +54,70 @@ extension SyncService {
         potaMaintenanceSkipped = potaResult.maintenanceSkipped
 
         // Club Log upload
-        if clublogClient.isConfigured {
-            let clublogQSOs = qsosNeedingUpload?
-                .filter { $0.needsUpload(to: .clublog) } ?? []
-            if !clublogQSOs.isEmpty {
-                let (validQSOs, invalidQSOs) = partitionQSOsByValidity(clublogQSOs)
-                await logQSOsWithMissingFields(invalidQSOs, service: .clublog)
-
-                if !validQSOs.isEmpty {
-                    await logPendingQSOs(validQSOs, service: .clublog)
-                    let (service, result) = await uploadClubLogBatch(
-                        qsos: validQSOs, timeout: timeout
-                    )
-                    results[service] = result
-                }
-            }
+        if let clublogResult = await uploadClubLogIfConfigured(
+            qsosNeedingUpload: qsosNeedingUpload, timeout: timeout
+        ) {
+            results[.clublog] = clublogResult
         }
 
         return (results: results, potaMaintenanceSkipped: potaMaintenanceSkipped)
+    }
+
+    /// Upload to QRZ if configured, with debug logging
+    private func uploadQRZIfConfigured(
+        qsosNeedingUpload: [QSO]?, timeout: TimeInterval
+    ) async -> Result<Int, Error>? {
+        guard qrzClient.hasApiKey() else {
+            return nil
+        }
+
+        let qrzQSOs = qsosNeedingUpload?.filter { $0.needsUpload(to: .qrz) } ?? []
+        guard !qrzQSOs.isEmpty else {
+            await MainActor.run {
+                SyncDebugLog.shared.debug(
+                    "QRZ upload skipped: no QSOs need upload",
+                    service: .qrz
+                )
+            }
+            return nil
+        }
+
+        let (validQSOs, invalidQSOs) = partitionQSOsByValidity(qrzQSOs)
+        await logQSOsWithMissingFields(invalidQSOs, service: .qrz)
+
+        guard !validQSOs.isEmpty else {
+            return nil
+        }
+
+        await logPendingQSOs(validQSOs, service: .qrz)
+        let (_, result) = await uploadQRZBatch(qsos: validQSOs, timeout: timeout)
+        return result
+    }
+
+    /// Upload to Club Log if configured
+    private func uploadClubLogIfConfigured(
+        qsosNeedingUpload: [QSO]?, timeout: TimeInterval
+    ) async -> Result<Int, Error>? {
+        guard clublogClient.isConfigured else {
+            return nil
+        }
+
+        let clublogQSOs = qsosNeedingUpload?
+            .filter { $0.needsUpload(to: .clublog) } ?? []
+        guard !clublogQSOs.isEmpty else {
+            return nil
+        }
+
+        let (validQSOs, invalidQSOs) = partitionQSOsByValidity(clublogQSOs)
+        await logQSOsWithMissingFields(invalidQSOs, service: .clublog)
+
+        guard !validQSOs.isEmpty else {
+            return nil
+        }
+
+        await logPendingQSOs(validQSOs, service: .clublog)
+        let (_, result) = await uploadClubLogBatch(qsos: validQSOs, timeout: timeout)
+        return result
     }
 
     /// Upload to POTA if configured, with detailed debug logging

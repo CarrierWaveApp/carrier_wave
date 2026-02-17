@@ -14,6 +14,11 @@ All notable changes to Carrier Wave will be documented in this file.
 - Add haptic feedback (success) when logging a QSO
 - Add accessibility labels to filter button (Map), settings menu (CW Transcription), and refresh button (POTA Activations)
 
+### Changed
+- Add sync debug logging for QRZ uploads: HTTP response, ADIF size, PARTIAL result details (CAR-92)
+- Log error when fetchQSOsNeedingUpload fails instead of silently returning nil (CAR-92)
+- Log when QRZ upload batch is empty (no QSOs need upload) (CAR-92)
+
 ### Fixed
 - Respect Reduce Motion setting for cursor blink animation and sync spinner
 - Ensure full tap area on activity grid cells via contentShape

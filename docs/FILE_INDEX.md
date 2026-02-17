@@ -112,6 +112,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 |------|---------|
 | `QRZClient.swift` | QRZ.com API client (session auth) |
 | `QRZClient+ADIF.swift` | QRZ ADIF upload extension |
+| `QRZClient+Upload.swift` | QRZ upload execution, response logging, PARTIAL result handling |
 | `QRZClient+Fetch.swift` | QRZ fetch helpers (request building, pagination, decoding) |
 | `POTAClient.swift` | POTA API client (bearer token auth) |
 | `POTAClient+Upload.swift` | POTA multipart ADIF upload |
