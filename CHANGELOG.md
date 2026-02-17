@@ -17,6 +17,7 @@ All notable changes to Carrier Wave will be documented in this file.
 - Abbreviate source filter in Spots widget header ("All" instead of "POTA + RBN") to reduce truncation
 
 ### Added
+- Add swipe-to-delete on QSOs in logger session log
 - Add Live Activity for logging sessions: shows QSO count, frequency, mode, park reference, and last callsign on lock screen and Dynamic Island
 - Live Activity updates in real time as QSOs are logged, frequency/mode changes, or session is paused/resumed
 - Live Activity reconnects automatically after app relaunch during active session
@@ -52,6 +53,7 @@ All notable changes to Carrier Wave will be documented in this file.
 - Log when QRZ upload batch is empty (no QSOs need upload) (CAR-92)
 
 ### Fixed
+- Fix delete confirmation in QSO edit sheet to anchor near the delete button instead of screen center
 - Respect Reduce Motion setting for cursor blink animation and sync spinner
 - Ensure full tap area on activity grid cells via contentShape
 - Show NavigationSplitView sidebar toggle button on Logger tab on iPad (CAR-91)

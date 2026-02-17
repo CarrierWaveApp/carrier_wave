@@ -431,6 +431,9 @@ struct LoggerView: View {
     /// QSO being edited (for tap-to-edit callsign feature)
     @State private var editingQSO: QSO?
 
+    /// QSO pending swipe-to-delete confirmation
+    @State private var qsoToDelete: QSO?
+
     // QSY spot confirmation
     @State private var showQSYSpotConfirmation = false
     @State private var qsyNewFrequency: Double?
@@ -1145,29 +1148,75 @@ struct LoggerView: View {
                         .frame(maxWidth: .infinity, alignment: .center)
                         .padding(.vertical, 20)
                 } else {
-                    ForEach(sessionLogEntries.prefix(15)) { entry in
-                        switch entry {
-                        case let .qso(qso):
-                            LoggerQSORow(
-                                qso: qso,
-                                sessionQSOs: displayQSOs,
-                                isPOTASession: sessionManager?.activeSession?.activationType
-                                    == .pota,
-                                isRove: sessionManager?.activeSession?.isRove ?? false,
-                                onQSODeleted: refreshSessionQSOs,
-                                onEditCallsign: { qsoToEdit in
-                                    startEditingCallsign(qsoToEdit)
+                    let entries = Array(sessionLogEntries.prefix(15))
+                    List {
+                        ForEach(entries) { entry in
+                            switch entry {
+                            case let .qso(qso):
+                                LoggerQSORow(
+                                    qso: qso,
+                                    sessionQSOs: displayQSOs,
+                                    isPOTASession: sessionManager?.activeSession?
+                                        .activationType == .pota,
+                                    isRove: sessionManager?.activeSession?.isRove
+                                        ?? false,
+                                    onQSODeleted: refreshSessionQSOs,
+                                    onEditCallsign: { qsoToEdit in
+                                        startEditingCallsign(qsoToEdit)
+                                    }
+                                )
+                                .swipeActions(
+                                    edge: .trailing,
+                                    allowsFullSwipe: false
+                                ) {
+                                    Button(role: .destructive) {
+                                        qsoToDelete = qso
+                                    } label: {
+                                        Label("Delete", systemImage: "trash")
+                                    }
                                 }
-                            )
-                        case let .note(note):
-                            LoggerNoteRow(note: note)
+                            case let .note(note):
+                                LoggerNoteRow(note: note)
+                            }
                         }
+                        .listRowInsets(
+                            EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
+                        )
+                        .listRowBackground(Color.clear)
+                        .listRowSeparatorTint(.secondary.opacity(0.2))
                     }
+                    .listStyle(.plain)
+                    .scrollDisabled(true)
+                    .scrollContentBackground(.hidden)
+                    .frame(height: CGFloat(entries.count) * 44)
                 }
             }
             .padding()
             .background(Color(.secondarySystemGroupedBackground))
             .clipShape(RoundedRectangle(cornerRadius: 12))
+            .alert(
+                "Delete QSO",
+                isPresented: Binding(
+                    get: { qsoToDelete != nil },
+                    set: { if !$0 { qsoToDelete = nil } }
+                )
+            ) {
+                Button("Delete", role: .destructive) {
+                    if let qso = qsoToDelete {
+                        qso.isHidden = true
+                        try? modelContext.save()
+                        refreshSessionQSOs()
+                    }
+                    qsoToDelete = nil
+                }
+                Button("Cancel", role: .cancel) {
+                    qsoToDelete = nil
+                }
+            } message: {
+                if let qso = qsoToDelete {
+                    Text("Delete QSO with \(qso.callsign)?")
+                }
+            }
         }
     }
 
@@ -2977,6 +3026,20 @@ struct QSOEditSheet: View {
                             Spacer()
                         }
                     }
+                    .confirmationDialog(
+                        "Delete QSO?",
+                        isPresented: $showDeleteConfirmation,
+                        titleVisibility: .visible
+                    ) {
+                        Button("Delete", role: .destructive) {
+                            hideQSO()
+                        }
+                        Button("Cancel", role: .cancel) {}
+                    } message: {
+                        Text(
+                            "This QSO will be hidden and won't sync to any services."
+                        )
+                    }
                 }
             }
             .navigationTitle("Edit QSO")
@@ -2996,18 +3059,6 @@ struct QSOEditSheet: View {
             }
             .onAppear {
                 loadQSOData()
-            }
-            .confirmationDialog(
-                "Delete QSO?",
-                isPresented: $showDeleteConfirmation,
-                titleVisibility: .visible
-            ) {
-                Button("Delete", role: .destructive) {
-                    hideQSO()
-                }
-                Button("Cancel", role: .cancel) {}
-            } message: {
-                Text("This QSO will be hidden and won't sync to any services.")
             }
         }
     }
