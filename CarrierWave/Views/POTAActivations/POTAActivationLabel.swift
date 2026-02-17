@@ -10,6 +10,7 @@ struct ActivationLabel: View {
     let activation: POTAActivation
     let metadata: ActivationMetadata?
     let showParkReference: Bool
+    var isPartOfRove: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -28,6 +29,9 @@ struct ActivationLabel: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
+                if isPartOfRove {
+                    roveBadge
+                }
             }
             if let title = metadata?.title, !title.isEmpty {
                 Text(title)
@@ -74,6 +78,16 @@ struct ActivationLabel: View {
     // MARK: Private
 
     @State private var showingConditions = false
+
+    private var roveBadge: some View {
+        Text("Rove")
+            .font(.caption2.weight(.medium))
+            .foregroundStyle(.green)
+            .padding(.horizontal, 5)
+            .padding(.vertical, 1)
+            .background(Color.green.opacity(0.15))
+            .clipShape(Capsule())
+    }
 
     @ViewBuilder
     private var conditionsRow: some View {

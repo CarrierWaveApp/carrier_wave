@@ -1,6 +1,7 @@
 // Session Map Panel View for Logger
 //
 // Displays a map of QSOs from the current logging session.
+// For rove sessions, also shows route lines between park stops.
 
 import MapKit
 import SwiftUI
@@ -13,6 +14,8 @@ struct SessionMapPanelView: View {
     /// QSOs for the current session (passed in to avoid full table scan with @Query)
     let sessionQSOs: [QSO]
     let myGrid: String?
+    /// Rove stops for route display (empty for non-rove sessions)
+    var roveStops: [RoveStop] = []
     let onDismiss: () -> Void
 
     var body: some View {
@@ -20,7 +23,7 @@ struct SessionMapPanelView: View {
             header
             Divider()
 
-            if sessionQSOs.isEmpty {
+            if sessionQSOs.isEmpty, roveStopCoordinates.isEmpty {
                 emptyView
             } else {
                 mapContent
@@ -53,6 +56,22 @@ struct SessionMapPanelView: View {
         return MaidenheadConverter.coordinate(from: grid)
     }
 
+    /// Coordinates for rove stops that have grid squares
+    private var roveStopCoordinates: [(stop: RoveStop, coordinate: CLLocationCoordinate2D)] {
+        roveStops.compactMap { stop in
+            guard let grid = stop.myGrid, grid.count >= 4,
+                  let coord = MaidenheadConverter.coordinate(from: grid)
+            else {
+                return nil
+            }
+            return (stop: stop, coordinate: coord)
+        }
+    }
+
+    private var isRove: Bool {
+        !roveStops.isEmpty
+    }
+
     // MARK: - Header
 
     private var header: some View {
@@ -60,10 +79,16 @@ struct SessionMapPanelView: View {
             Image(systemName: "map.fill")
                 .foregroundStyle(.blue)
 
-            Text("Session Map")
+            Text(isRove ? "Rove Map" : "Session Map")
                 .font(.headline)
 
             Spacer()
+
+            if isRove {
+                Text("\(roveStops.count) stops")
+                    .font(.caption)
+                    .foregroundStyle(.green)
+            }
 
             Text("\(mappableQSOs.count) QSOs")
                 .font(.caption)
@@ -106,14 +131,16 @@ struct SessionMapPanelView: View {
                         anchor: .bottom
                     ) {
                         VStack(spacing: 2) {
-                            Image(systemName: "antenna.radiowaves.left.and.right.circle.fill")
-                                .font(.title2)
-                                .foregroundStyle(.green)
-                                .background(
-                                    Circle()
-                                        .fill(.white)
-                                        .frame(width: 24, height: 24)
-                                )
+                            Image(
+                                systemName: "antenna.radiowaves.left.and.right.circle.fill"
+                            )
+                            .font(.title2)
+                            .foregroundStyle(.green)
+                            .background(
+                                Circle()
+                                    .fill(.white)
+                                    .frame(width: 24, height: 24)
+                            )
 
                             Text(qso.callsign)
                                 .font(.caption2.weight(.bold))
@@ -126,20 +153,73 @@ struct SessionMapPanelView: View {
                 }
             }
 
+            // Rove stop markers
+            ForEach(
+                Array(roveStopCoordinates.enumerated()), id: \.element.stop.id
+            ) { index, item in
+                Annotation(
+                    item.stop.parkReference,
+                    coordinate: item.coordinate,
+                    anchor: .bottom
+                ) {
+                    roveStopMarker(item.stop, index: index)
+                }
+            }
+
+            // Route line between rove stops
+            if roveStopCoordinates.count >= 2 {
+                let coords = roveStopCoordinates.map(\.coordinate)
+                MapPolyline(coordinates: coords)
+                    .stroke(.green, style: StrokeStyle(
+                        lineWidth: 3,
+                        dash: [8, 4]
+                    ))
+            }
+
             // Draw geodesic paths from my location to each QSO
             if let myCoord = myCoordinate {
                 ForEach(mappableQSOs) { qso in
                     if let grid = qso.theirGrid,
-                       let theirCoord = MaidenheadConverter.coordinate(from: grid)
+                       let theirCoord = MaidenheadConverter.coordinate(
+                           from: grid
+                       )
                     {
-                        MapPolyline(coordinates: geodesicPath(from: myCoord, to: theirCoord))
-                            .stroke(.blue.opacity(0.5), lineWidth: 2)
+                        MapPolyline(
+                            coordinates: geodesicPath(
+                                from: myCoord, to: theirCoord
+                            )
+                        )
+                        .stroke(.blue.opacity(0.5), lineWidth: 2)
                     }
                 }
             }
         }
         .mapStyle(.standard(elevation: .realistic))
         .frame(height: 250)
+    }
+
+    /// Marker for a rove stop showing park reference and stop number
+    private func roveStopMarker(_ stop: RoveStop, index: Int) -> some View {
+        let primaryPark = ParkReference.split(stop.parkReference).first
+            ?? stop.parkReference
+
+        return VStack(spacing: 2) {
+            ZStack {
+                Circle()
+                    .fill(stop.isActive ? Color.green : Color(.systemGray3))
+                    .frame(width: 28, height: 28)
+                Text("\(index + 1)")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(.white)
+            }
+
+            Text(primaryPark)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.green)
+                .padding(.horizontal, 4)
+                .padding(.vertical, 2)
+                .background(.ultraThinMaterial, in: Capsule())
+        }
     }
 
     /// Generate a geodesic (great circle) path between two coordinates
@@ -166,11 +246,15 @@ struct SessionMapPanelView: View {
 
         for i in 0 ... segments {
             let fraction = Double(i) / Double(segments)
-            let coeffA = sin((1 - fraction) * angularDistance) / sin(angularDistance)
-            let coeffB = sin(fraction * angularDistance) / sin(angularDistance)
+            let coeffA = sin((1 - fraction) * angularDistance)
+                / sin(angularDistance)
+            let coeffB = sin(fraction * angularDistance)
+                / sin(angularDistance)
 
-            let x = coeffA * cos(lat1) * cos(lon1) + coeffB * cos(lat2) * cos(lon2)
-            let y = coeffA * cos(lat1) * sin(lon1) + coeffB * cos(lat2) * sin(lon2)
+            let x = coeffA * cos(lat1) * cos(lon1)
+                + coeffB * cos(lat2) * cos(lon2)
+            let y = coeffA * cos(lat1) * sin(lon1)
+                + coeffB * cos(lat2) * sin(lon2)
             let z = coeffA * sin(lat1) + coeffB * sin(lat2)
 
             let lat = atan2(z, sqrt(x * x + y * y)) * 180 / .pi
