@@ -23,6 +23,15 @@ All notable changes to Carrier Wave will be documented in this file.
 - Share sync debug log as text from Sync Debug view toolbar menu
 
 ### Changed
+- Redesign Solar widget home screen view: K/A side-by-side with gauges, SFI and band side-by-side with 10-segment and 3-segment stoplight gauges, right-aligned values, no text coloring or condition labels
+- Add configurable band selection to Solar widget (80m-40m, 30m-20m, 17m-15m, 12m-10m) with day/night propagation conditions from HamQSL
+- Parse band-specific conditions from HamQSL XML `<calculatedconditions>` section
+- Switch Solar widget from StaticConfiguration to AppIntentConfiguration for band selection
+- Add per-metric descriptions to Solar widget (K: Quiet/Unsettled/Active/Storm, SFI: Poor/Low/Good/Very Good/Excellent, A: Quiet/Unsettled/Active/Storm/Severe)
+- Fix Solar widget lock screen circular view readability with heavier rounded font weight
+- Fix Solar widget lock screen rectangular view with K and A together, band conditions on line 3
+- Add Solar widget inline (lock screen top) showing K value and band condition
+- Fix Solar widget family dispatch to use @Environment(\.widgetFamily) instead of broken preview extension
 - Redesign Spots widget with aligned table layout: fixed-width columns for callsign, frequency, mode, source, and age
 - Reduce Spots widget refresh interval from 15 minutes to 5 minutes for more current data
 - Show active band/mode filter badges in Spots widget header

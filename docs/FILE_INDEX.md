@@ -239,6 +239,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `CarrierWaveWidgetBundle.swift` | WidgetBundle entry point registering all widgets and Live Activity |
 | `WidgetDataReader.swift` | Reads shared data from App Group UserDefaults + shared Codable types |
 | `SolarWidget.swift` | Solar conditions widget (K-index, SFI, A-index) - fetches directly from HamQSL |
+| `SolarWidgetTypes.swift` | Solar widget types: SolarBand AppEnum, SolarWidgetIntent, BandCondition, WidgetSegmentGauge |
 | `StatsWidget.swift` | Configurable streaks/counts widget with AppIntent configuration |
 | `SpotsWidget.swift` | POTA + RBN spots widget views, intent, timeline provider |
 | `SpotsWidgetTypes.swift` | Spots widget filter enums (source, band, mode), WidgetSpot model, SpotsFetcher |
