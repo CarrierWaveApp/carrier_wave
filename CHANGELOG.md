@@ -17,6 +17,7 @@ All notable changes to Carrier Wave will be documented in this file.
 ### Fixed
 - Respect Reduce Motion setting for cursor blink animation and sync spinner
 - Ensure full tap area on activity grid cells via contentShape
+- Show NavigationSplitView sidebar toggle button on Logger tab on iPad (CAR-91)
 
 ## [1.36.0] - 2026-02-16
 
