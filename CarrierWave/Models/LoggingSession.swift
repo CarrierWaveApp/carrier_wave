@@ -218,7 +218,9 @@ final class LoggingSession {
     /// Rove stops (decoded from JSON data)
     var roveStops: [RoveStop] {
         get {
-            guard let data = roveStopsData else { return [] }
+            guard let data = roveStopsData else {
+                return []
+            }
             return (try? JSONDecoder().decode([RoveStop].self, from: data)) ?? []
         }
         set {

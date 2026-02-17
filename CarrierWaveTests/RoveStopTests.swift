@@ -70,8 +70,6 @@ final class RoveStopTests: XCTestCase {
         XCTAssertEqual(decoded[2].parkReference, "US-0003")
     }
 
-    // MARK: - Computed Properties
-
     func testIsActive_noEndedAt_returnsTrue() {
         let stop = RoveStop(parkReference: "US-1234", startedAt: Date())
         XCTAssertTrue(stop.isActive)

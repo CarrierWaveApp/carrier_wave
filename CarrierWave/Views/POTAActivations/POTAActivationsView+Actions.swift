@@ -1,8 +1,3 @@
-// POTA Activations View - Actions and Subviews
-//
-// Extensions containing subview builders, helper methods, and action methods
-// for POTAActivationsContentView.
-
 import CarrierWaveCore
 import SwiftData
 import SwiftUI
@@ -197,9 +192,13 @@ extension POTAActivationsContentView {
 
     /// Check if an activation's QSOs belong to a rove session
     func isPartOfRove(_ activation: POTAActivation) -> Bool {
-        guard !roveSessionIds.isEmpty else { return false }
+        guard !roveSessionIds.isEmpty else {
+            return false
+        }
         return activation.qsos.contains { qso in
-            guard let sessionId = qso.loggingSessionId else { return false }
+            guard let sessionId = qso.loggingSessionId else {
+                return false
+            }
             return roveSessionIds.contains(sessionId)
         }
     }

@@ -8,7 +8,7 @@ import Foundation
 /// (same pattern as `spotCommentsData`). This avoids a SwiftData
 /// relationship and preserves insertion order naturally.
 struct RoveStop: Codable, Identifiable, Sendable {
-    var id: UUID = UUID()
+    var id: UUID = .init()
 
     /// Park reference(s) for this stop (e.g. "US-1234" or "US-1234, US-5678" for n-fer)
     var parkReference: String
