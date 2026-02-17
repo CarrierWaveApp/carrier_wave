@@ -16,7 +16,7 @@ struct SpotSummaryView: View {
     var body: some View {
         // swiftlint:disable:next redundant_discardable_let
         let _ = useMetricUnits // Trigger re-render when unit preference changes
-        if monitoringService.isMonitoring {
+        if monitoringService.isMonitoring, summary.totalCount > 0 {
             VStack(spacing: 0) {
                 summaryBanner
                     .onTapGesture {

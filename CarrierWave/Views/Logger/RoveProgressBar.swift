@@ -5,8 +5,6 @@ import SwiftUI
 
 /// Horizontally scrolling bar showing all rove stops with the current stop highlighted
 struct RoveProgressBar: View {
-    // MARK: Internal
-
     let stops: [RoveStop]
     let currentStopId: UUID?
     /// Park reference being viewed (nil = viewing current active stop)
@@ -15,14 +13,20 @@ struct RoveProgressBar: View {
     let onTapStop: (RoveStop) -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            // Header
-            HStack {
-                Text(headerText)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-
-                Spacer()
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(stops) { stop in
+                    let isActive = stop.id == currentStopId
+                    let isViewed = viewingPark != nil
+                        ? stop.parkReference == viewingPark
+                        : isActive
+                    RoveStopPill(
+                        stop: stop,
+                        isActive: isActive,
+                        isViewed: isViewed,
+                        onTap: { onTapStop(stop) }
+                    )
+                }
 
                 Button {
                     onNextStop()
@@ -35,40 +39,9 @@ struct RoveProgressBar: View {
                 .controlSize(.small)
                 .accessibilityLabel("Advance to next park stop")
             }
-
-            // Stop pills
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(stops) { stop in
-                        let isActive = stop.id == currentStopId
-                        let isViewed = viewingPark != nil
-                            ? stop.parkReference == viewingPark
-                            : isActive
-                        RoveStopPill(
-                            stop: stop,
-                            isActive: isActive,
-                            isViewed: isViewed,
-                            onTap: { onTapStop(stop) }
-                        )
-                    }
-                }
-            }
         }
         .padding(.horizontal)
-        .padding(.vertical, 8)
-    }
-
-    // MARK: Private
-
-    private var totalQSOs: Int {
-        stops.reduce(0) { $0 + $1.qsoCount }
-    }
-
-    private var headerText: String {
-        let stopIndex = stops.firstIndex { $0.id == currentStopId }
-        let current = stopIndex.map { $0 + 1 } ?? stops.count
-        let total = stops.count
-        return "Rove: Stop \(current) of \(total) \u{00B7} \(totalQSOs) QSOs total"
+        .padding(.vertical, 4)
     }
 }
 

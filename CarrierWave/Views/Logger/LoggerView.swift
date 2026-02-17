@@ -52,14 +52,6 @@ struct LoggerView: View {
                         }
                     )
 
-                    // Hunting mode banner for POTA/SOTA sessions without a frequency
-                    if let session = sessionManager?.activeSession,
-                       session.frequency == nil,
-                       session.activationType == .pota || session.activationType == .sota
-                    {
-                        huntingBanner
-                    }
-
                     ScrollView {
                         VStack(spacing: 12) {
                             UnderConstructionBanner()
@@ -1201,47 +1193,6 @@ struct LoggerView: View {
         }
     }
 
-    private var huntingBanner: some View {
-        HStack(spacing: 12) {
-            Image(systemName: "scope")
-                .font(.system(size: 20))
-                .foregroundStyle(.blue)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Hunting Mode")
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
-                Text("Log hunted QSOs now. Type BAND to pick your run frequency.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            Spacer()
-
-            Button {
-                showBandEditSheet = true
-            } label: {
-                Text("Set Freq")
-                    .font(.caption.weight(.medium))
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(Color.blue)
-                    .foregroundStyle(Color(.systemBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 6))
-            }
-            .buttonStyle(.plain)
-        }
-        .padding()
-        .background(Color.blue.opacity(0.1))
-        .clipShape(RoundedRectangle(cornerRadius: 10))
-        .overlay(
-            RoundedRectangle(cornerRadius: 10)
-                .stroke(Color.blue.opacity(0.3), lineWidth: 1)
-        )
-        .padding(.horizontal)
-        .padding(.top, 8)
-    }
-
     private func viewingPastStopBanner(_ parkRef: String) -> some View {
         HStack(spacing: 8) {
             Image(systemName: "clock.arrow.circlepath")
@@ -1458,7 +1409,8 @@ struct LoggerView: View {
                 }
             }
         }
-        .padding()
+        .padding([.horizontal, .top])
+        .padding(.bottom, session.isRove ? 8 : 16)
         .background(Color(.secondarySystemGroupedBackground))
     }
 
