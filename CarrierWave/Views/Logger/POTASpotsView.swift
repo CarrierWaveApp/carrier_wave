@@ -1,4 +1,5 @@
 import CarrierWaveCore
+import SwiftData
 import SwiftUI
 
 // MARK: - POTASpotsView
@@ -61,13 +62,16 @@ struct POTASpotsView: View {
 
     // MARK: Private
 
+    @Environment(\.modelContext) private var modelContext
+
     @State private var allSpots: [POTASpot] = []
     @State private var isLoading = true
     @State private var errorMessage: String?
     @State private var bandFilter: BandFilter
     @State private var modeFilter: ModeFilter
     @State private var showFilterSheet = false
-    @State private var showAutomatedSpots = false
+    @State private var workedBeforeCache = WorkedBeforeCache()
+    @State private var workedResults: [String: WorkedBeforeResult] = [:]
 
     private var filteredSpots: [POTASpot] {
         allSpots.filter { spot in
@@ -85,22 +89,8 @@ struct POTASpotsView: View {
         }
     }
 
-    /// Human-generated spots (highlighted, shown first)
-    private var humanSpots: [POTASpot] {
-        filteredSpots.filter(\.isHumanSpot)
-    }
-
-    /// Automated spots from RBN (collapsed by default)
-    private var automatedSpots: [POTASpot] {
-        filteredSpots.filter(\.isAutomatedSpot)
-    }
-
     private var spotsByBand: [(band: String, spots: [POTASpot])] {
-        Self.groupSpotsByBand(humanSpots)
-    }
-
-    private var automatedSpotsByBand: [(band: String, spots: [POTASpot])] {
-        Self.groupSpotsByBand(automatedSpots)
+        Self.groupSpotsByBand(filteredSpots)
     }
 
     private var filterDisplayText: String {
@@ -173,16 +163,9 @@ struct POTASpotsView: View {
 
             Spacer()
 
-            // Show human/total breakdown
-            if automatedSpots.isEmpty {
-                Text("\(filteredSpots.count) spots")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            } else {
-                Text("\(humanSpots.count) + \(automatedSpots.count) RBN")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
+            Text("\(filteredSpots.count) spots")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
         .padding(.horizontal)
         .padding(.bottom, 6)
@@ -193,13 +176,19 @@ struct POTASpotsView: View {
     private var spotsList: some View {
         ScrollView {
             LazyVStack(spacing: 0, pinnedViews: .sectionHeaders) {
-                // Human spots first (by band)
                 ForEach(spotsByBand, id: \.band) { section in
                     Section {
                         ForEach(section.spots) { spot in
-                            POTASpotRow(spot: spot, userCallsign: userCallsign) {
+                            let result = workedResults[spot.activator.uppercased()]
+                                ?? .notWorked
+                            POTASpotRow(
+                                spot: spot,
+                                userCallsign: userCallsign,
+                                workedResult: result
+                            ) {
                                 onSelectSpot?(spot)
                             }
+                            .opacity(spot.isAutomatedSpot ? 0.7 : 1.0)
                             Divider()
                                 .padding(.leading, 92)
                         }
@@ -207,23 +196,14 @@ struct POTASpotsView: View {
                         POTASpotsBandHeader(band: section.band)
                     }
                 }
-
-                // Collapsible automated spots section
-                if !automatedSpots.isEmpty {
-                    AutomatedSpotsSection(
-                        automatedSpots: automatedSpots,
-                        automatedSpotsByBand: automatedSpotsByBand,
-                        userCallsign: userCallsign,
-                        onSelectSpot: onSelectSpot,
-                        isExpanded: $showAutomatedSpots
-                    )
-                }
             }
         }
         .frame(maxHeight: 400)
     }
 
-    private static func groupSpotsByBand(_ spots: [POTASpot]) -> [(band: String, spots: [POTASpot])] {
+    private static func groupSpotsByBand(
+        _ spots: [POTASpot]
+    ) -> [(band: String, spots: [POTASpot])] {
         let grouped = Dictionary(grouping: spots) { spot -> String in
             BandUtilities.deriveBand(from: spot.frequencyKHz) ?? "Other"
         }
@@ -234,7 +214,13 @@ struct POTASpotsView: View {
         }.map {
             (
                 band: $0.key,
-                spots: $0.value.sorted { ($0.frequencyKHz ?? 0) < ($1.frequencyKHz ?? 0) }
+                // Human spots first, then RBN; secondary sort by frequency
+                spots: $0.value.sorted { lhs, rhs in
+                    if lhs.isHumanSpot != rhs.isHumanSpot {
+                        return lhs.isHumanSpot
+                    }
+                    return (lhs.frequencyKHz ?? 0) < (rhs.frequencyKHz ?? 0)
+                }
             )
         }
     }
@@ -249,11 +235,31 @@ struct POTASpotsView: View {
             let client = POTAClient(authService: POTAAuthService())
             allSpots = try await client.fetchActiveSpots()
             isLoading = false
+            await loadWorkedBefore()
         } catch {
             errorMessage = error.localizedDescription
             allSpots = []
             isLoading = false
         }
+    }
+
+    private func loadWorkedBefore() async {
+        let container = modelContext.container
+        await workedBeforeCache.loadToday(container: container)
+
+        let callsigns = allSpots.map(\.activator)
+        await workedBeforeCache.checkCallsigns(callsigns, container: container)
+
+        var results: [String: WorkedBeforeResult] = [:]
+        for spot in allSpots {
+            let upper = spot.activator.uppercased()
+            let band = BandUtilities.deriveBand(from: spot.frequencyKHz) ?? ""
+            results[upper] = await workedBeforeCache.result(
+                for: upper,
+                band: band
+            )
+        }
+        workedResults = results
     }
 }
 

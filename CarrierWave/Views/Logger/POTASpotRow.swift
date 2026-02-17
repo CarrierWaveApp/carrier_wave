@@ -9,6 +9,7 @@ struct POTASpotRow: View {
 
     let spot: POTASpot
     let userCallsign: String?
+    var workedResult: WorkedBeforeResult = .notWorked
     let onTap: () -> Void
 
     var body: some View {
@@ -25,6 +26,7 @@ struct POTASpotRow: View {
                 VStack(alignment: .leading, spacing: 2) {
                     callsignRow
                     parkInfoRow
+                    workedBeforeBadges
                 }
 
                 Spacer()
@@ -36,12 +38,21 @@ struct POTASpotRow: View {
             }
             .padding(.vertical, 8)
             .padding(.horizontal, 12)
+            .opacity(isDupe ? 0.5 : 1.0)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
 
     // MARK: Private
+
+    private var spotBand: String {
+        BandUtilities.deriveBand(from: spot.frequencyKHz) ?? ""
+    }
+
+    private var isDupe: Bool {
+        workedResult.isDupe(on: spotBand)
+    }
 
     private var parkDisplayText: String {
         var parts: [String] = [spot.reference]
@@ -100,6 +111,7 @@ struct POTASpotRow: View {
             Text(spot.activator)
                 .font(.subheadline.weight(.semibold).monospaced())
                 .foregroundStyle(spot.isHumanSpot ? .primary : .secondary)
+                .strikethrough(isDupe)
 
             if let userCallsign, spot.isSelfSpot(userCallsign: userCallsign) {
                 Text("SELF")
@@ -135,6 +147,59 @@ struct POTASpotRow: View {
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
         }
+    }
+
+    // MARK: - Worked Before Badges
+
+    @ViewBuilder
+    private var workedBeforeBadges: some View {
+        if isDupe {
+            dupeBadge
+        } else if !workedResult.todayBands.isEmpty {
+            todayWorkedBadge
+        } else if !workedResult.previousBands.isEmpty {
+            previousWorkedBadge
+        }
+    }
+
+    private var dupeBadge: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.caption2)
+            Text("DUPE \(spotBand) \(spot.mode)")
+                .font(.caption2.weight(.semibold))
+        }
+        .foregroundStyle(.orange)
+        .padding(.horizontal, 6)
+        .padding(.vertical, 2)
+        .background(Color.orange.opacity(0.15))
+        .clipShape(Capsule())
+    }
+
+    private var todayWorkedBadge: some View {
+        HStack(spacing: 2) {
+            Image(systemName: "checkmark")
+                .font(.caption2)
+            Text(workedResult.todayBands.sorted().joined(separator: " "))
+                .font(.caption2.weight(.medium))
+        }
+        .foregroundStyle(.orange)
+        .padding(.horizontal, 6)
+        .padding(.vertical, 2)
+        .background(Color.orange.opacity(0.15))
+        .clipShape(Capsule())
+    }
+
+    private var previousWorkedBadge: some View {
+        HStack(spacing: 2) {
+            Image(systemName: "checkmark")
+                .font(.caption2)
+            Text(workedResult.previousBands.sorted().joined(separator: " "))
+                .font(.caption2.weight(.medium))
+            Text("(prev)")
+                .font(.caption2)
+        }
+        .foregroundStyle(.secondary)
     }
 
     // MARK: - Helpers

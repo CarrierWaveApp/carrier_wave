@@ -4,6 +4,16 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Worked-before indicator on POTA spots showing dupe, today, and previous badges (CAR-89)
+
+### Changed
+- Merge POTA and RBN spots into single unified list sorted by band with human spots first (CAR-90)
+
+### Fixed
+- Fix POTA auto-spot posting on hunted station's frequency when hunting before setting run frequency (CAR-88)
+- Fix QRZ info card inconsistently disappearing after logging — card now persists until next callsign is entered (CAR-87)
+
 ## [1.35.0] - 2026-02-16
 
 ### Added
