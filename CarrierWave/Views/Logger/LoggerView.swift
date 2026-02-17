@@ -1942,6 +1942,11 @@ struct LoggerView: View {
 
     /// Shared handler for spot selection from both panels and sidebar
     private func handleSpotSelection(_ selection: SpotSelection) {
+        guard sessionManager?.activeSession != nil else {
+            ToastManager.shared.warning("Start a session first")
+            return
+        }
+
         // Save session frequency before tuning to spot
         preSpotFrequency = sessionManager?.activeSession?.frequency
 

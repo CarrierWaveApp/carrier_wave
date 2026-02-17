@@ -22,7 +22,9 @@ struct LoggerSpotsSidebarView: View {
             tabPicker
             Divider()
             tabContent
+                .frame(maxHeight: .infinity)
         }
+        .frame(maxHeight: .infinity)
         .background(Color(.systemGroupedBackground))
     }
 

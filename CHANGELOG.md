@@ -14,6 +14,7 @@ All notable changes to Carrier Wave will be documented in this file.
 ### Fixed
 - Fix POTA auto-spot posting on hunted station's frequency when hunting before setting run frequency (CAR-88)
 - Fix QRZ info card inconsistently disappearing after logging — card now persists until next callsign is entered (CAR-87)
+- Prevent sidebar spot taps from attempting to load data when no logging session is active (CAR-85)
 
 ## [1.35.0] - 2026-02-16
 

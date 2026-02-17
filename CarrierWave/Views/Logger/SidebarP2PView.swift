@@ -221,7 +221,7 @@ struct SidebarP2PView: View {
                 .foregroundStyle(.tertiary)
         }
         .padding()
-        .frame(maxWidth: .infinity, minHeight: 200)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var noGridView: some View {
@@ -238,7 +238,7 @@ struct SidebarP2PView: View {
                 .multilineTextAlignment(.center)
         }
         .padding()
-        .frame(maxWidth: .infinity, minHeight: 200)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var loadingView: some View {
@@ -248,7 +248,7 @@ struct SidebarP2PView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
-        .frame(maxWidth: .infinity, minHeight: 200)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var emptyView: some View {
@@ -268,7 +268,7 @@ struct SidebarP2PView: View {
             }
         }
         .padding()
-        .frame(maxWidth: .infinity, minHeight: 200)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var opportunitiesList: some View {
@@ -306,7 +306,7 @@ struct SidebarP2PView: View {
             .buttonStyle(.bordered)
         }
         .padding()
-        .frame(maxWidth: .infinity, minHeight: 200)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private func sectionHeader(_ band: String) -> some View {

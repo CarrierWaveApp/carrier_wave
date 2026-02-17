@@ -103,7 +103,7 @@ struct SidebarRBNSpotsView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
-        .frame(maxWidth: .infinity, minHeight: 150)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var emptyView: some View {
@@ -121,7 +121,7 @@ struct SidebarRBNSpotsView: View {
             }
         }
         .padding()
-        .frame(maxWidth: .infinity, minHeight: 150)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var spotsList: some View {
@@ -174,7 +174,7 @@ struct SidebarRBNSpotsView: View {
             .buttonStyle(.bordered)
         }
         .padding()
-        .frame(maxWidth: .infinity, minHeight: 150)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     // swiftlint:disable:next function_body_length
