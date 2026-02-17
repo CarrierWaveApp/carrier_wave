@@ -4,6 +4,8 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.37.0] - 2026-02-17
+
 ### Changed
 - Redesign Solar widget with circular arc gauges for K, A, and SFI (arc fill + color = propagation quality)
 - Show all 4 band conditions in Solar widget as a 2x2 color-coded grid instead of single configured band
