@@ -5,6 +5,9 @@ All notable changes to Carrier Wave will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Add widget deep link navigation: tapping Spots widget opens Activity Log, other widgets navigate to Dashboard or Logger
+- Add multi-select band and mode filters to Spots widget via long-press configuration (160m–2m, CW/SSB/FT8/FT4/Digital)
+- Show "+N more" indicator on Spots widget when more spots are available than fit on screen
 - Add iOS widgets: Solar Conditions, Stats & Streaks, Radio Spots (POTA + RBN), and Active Session
 - Solar widget shows K-index, SFI, A-index with propagation rating (small + Lock Screen)
 - Stats widget is configurable via long-press to show any streak or count metric (small + Lock Screen)
@@ -17,6 +20,9 @@ All notable changes to Carrier Wave will be documented in this file.
 - Share sync debug log as text from Sync Debug view toolbar menu
 
 ### Changed
+- Redesign Spots widget with aligned table layout: fixed-width columns for callsign, frequency, mode, source, and age
+- Reduce Spots widget refresh interval from 15 minutes to 5 minutes for more current data
+- Show active band/mode filter badges in Spots widget header
 - Add sync debug logging for QRZ uploads: HTTP response, ADIF size, PARTIAL result details (CAR-92)
 - Log error when fetchQSOsNeedingUpload fails instead of silently returning nil (CAR-92)
 - Log when QRZ upload batch is empty (no QSOs need upload) (CAR-92)

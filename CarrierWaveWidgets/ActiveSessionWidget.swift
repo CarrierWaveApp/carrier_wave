@@ -39,6 +39,8 @@ struct SessionTimelineProvider: TimelineProvider {
 // MARK: - ActiveSessionSmallView
 
 struct ActiveSessionSmallView: View {
+    // MARK: Internal
+
     let session: WidgetSessionSnapshot?
 
     var body: some View {
@@ -47,6 +49,24 @@ struct ActiveSessionSmallView: View {
         } else {
             inactiveContent
         }
+    }
+
+    // MARK: Private
+
+    private var inactiveContent: some View {
+        VStack(spacing: 8) {
+            Image(systemName: "antenna.radiowaves.left.and.right")
+                .font(.title2)
+                .foregroundStyle(.secondary)
+            Text("No Session")
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.secondary)
+            Text("Start a session\nin the app")
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+                .multilineTextAlignment(.center)
+        }
+        .padding()
     }
 
     private func activeContent(_ session: WidgetSessionSnapshot) -> some View {
@@ -90,27 +110,13 @@ struct ActiveSessionSmallView: View {
         }
         .padding()
     }
-
-    private var inactiveContent: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "antenna.radiowaves.left.and.right")
-                .font(.title2)
-                .foregroundStyle(.secondary)
-            Text("No Session")
-                .font(.caption.weight(.medium))
-                .foregroundStyle(.secondary)
-            Text("Start a session\nin the app")
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
-                .multilineTextAlignment(.center)
-        }
-        .padding()
-    }
 }
 
 // MARK: - ActiveSessionMediumView
 
 struct ActiveSessionMediumView: View {
+    // MARK: Internal
+
     let session: WidgetSessionSnapshot?
 
     var body: some View {
@@ -121,67 +127,7 @@ struct ActiveSessionMediumView: View {
         }
     }
 
-    private func activeContent(_ session: WidgetSessionSnapshot) -> some View {
-        HStack(spacing: 16) {
-            // Left: QSO count
-            VStack(spacing: 4) {
-                Text("\(session.qsoCount)")
-                    .font(.system(.largeTitle, design: .rounded, weight: .bold))
-                Text("QSOs")
-                    .font(.caption2.weight(.medium))
-                    .foregroundStyle(.secondary)
-            }
-            .frame(maxWidth: .infinity)
-
-            // Right: session details
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 4) {
-                    Circle()
-                        .fill(.green)
-                        .frame(width: 8, height: 8)
-                    Text("On Air")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.green)
-                }
-
-                if let park = session.parkReference {
-                    Text(park)
-                        .font(.subheadline.weight(.semibold).monospaced())
-                }
-
-                if let freq = session.frequency, let mode = session.mode {
-                    Text("\(freq) MHz  \(mode)")
-                        .font(.caption.monospaced())
-                        .foregroundStyle(.secondary)
-                } else if let mode = session.mode {
-                    Text(mode)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                if let callsign = session.lastCallsign {
-                    HStack(spacing: 4) {
-                        Text("Last:")
-                            .font(.caption2)
-                            .foregroundStyle(.tertiary)
-                        Text(callsign)
-                            .font(.caption.weight(.medium).monospaced())
-                            .foregroundStyle(.secondary)
-                    }
-                }
-
-                Spacer(minLength: 0)
-
-                if let started = session.startedAt {
-                    Text(started, style: .timer)
-                        .font(.caption.monospaced())
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .padding()
-    }
+    // MARK: Private
 
     private var inactiveContent: some View {
         HStack(spacing: 12) {
@@ -199,6 +145,70 @@ struct ActiveSessionMediumView: View {
             Spacer()
         }
         .padding()
+    }
+
+    private func activeContent(_ session: WidgetSessionSnapshot) -> some View {
+        HStack(spacing: 16) {
+            VStack(spacing: 4) {
+                Text("\(session.qsoCount)")
+                    .font(.system(.largeTitle, design: .rounded, weight: .bold))
+                Text("QSOs")
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity)
+
+            sessionDetails(session)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding()
+    }
+
+    private func sessionDetails(_ session: WidgetSessionSnapshot) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 4) {
+                Circle()
+                    .fill(.green)
+                    .frame(width: 8, height: 8)
+                Text("On Air")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.green)
+            }
+
+            if let park = session.parkReference {
+                Text(park)
+                    .font(.subheadline.weight(.semibold).monospaced())
+            }
+
+            if let freq = session.frequency, let mode = session.mode {
+                Text("\(freq) MHz  \(mode)")
+                    .font(.caption.monospaced())
+                    .foregroundStyle(.secondary)
+            } else if let mode = session.mode {
+                Text(mode)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            if let callsign = session.lastCallsign {
+                HStack(spacing: 4) {
+                    Text("Last:")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                    Text(callsign)
+                        .font(.caption.weight(.medium).monospaced())
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Spacer(minLength: 0)
+
+            if let started = session.startedAt {
+                Text(started, style: .timer)
+                    .font(.caption.monospaced())
+                    .foregroundStyle(.secondary)
+            }
+        }
     }
 }
 

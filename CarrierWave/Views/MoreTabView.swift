@@ -104,7 +104,8 @@ struct MoreTabView: View {
                     syncService: syncService,
                     selectedTab: .constant(.dashboard),
                     settingsDestination: $settingsDestination,
-                    tourState: tourState
+                    tourState: tourState,
+                    navigateToActivityLog: .constant(false)
                 )
             } else {
                 Text("Dashboard unavailable")

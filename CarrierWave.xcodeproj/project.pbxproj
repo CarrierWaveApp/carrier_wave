@@ -665,8 +665,8 @@
 				CURRENT_PROJECT_VERSION = 46;
 				DEVELOPMENT_TEAM = 7UE4RDLUSX;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Carrier Wave Widgets";
 				INFOPLIST_FILE = CarrierWaveWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Carrier Wave Widgets";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -697,8 +697,8 @@
 				CURRENT_PROJECT_VERSION = 46;
 				DEVELOPMENT_TEAM = 7UE4RDLUSX;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "Carrier Wave Widgets";
 				INFOPLIST_FILE = CarrierWaveWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Carrier Wave Widgets";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
 				LD_RUNPATH_SEARCH_PATHS = (

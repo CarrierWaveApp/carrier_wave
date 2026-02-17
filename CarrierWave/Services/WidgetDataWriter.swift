@@ -6,22 +6,22 @@ import WidgetKit
 /// Shared constants and Codable types used by both the main app and widget extension.
 /// The widget extension duplicates these types — keep them in sync.
 enum WidgetShared {
-    static let appGroupID = "group.com.jsvana.FullDuplex"
-    static let suiteName = appGroupID
-
-    // UserDefaults keys
+    /// UserDefaults keys
     enum Key {
         static let streakData = "widget.streakData"
         static let countData = "widget.countData"
         static let sessionData = "widget.sessionData"
     }
 
-    // Deep link URLs
+    /// Deep link URLs
     enum DeepLink {
         static let activityLog = "carrierwave://activitylog"
         static let dashboard = "carrierwave://dashboard"
         static let logger = "carrierwave://logger"
     }
+
+    static let appGroupID = "group.com.jsvana.FullDuplex"
+    static let suiteName = appGroupID
 }
 
 // MARK: - WidgetStreakSnapshot
@@ -79,24 +79,28 @@ struct WidgetSessionSnapshot: Codable, Sendable {
 /// Writes pre-computed data to shared UserDefaults for widget consumption.
 /// Call from the main app after stats computation or session state changes.
 enum WidgetDataWriter {
-    private static var defaults: UserDefaults? {
-        UserDefaults(suiteName: WidgetShared.suiteName)
-    }
+    // MARK: Internal
 
     static func writeStreaks(_ snapshot: WidgetStreakSnapshot) {
-        guard let data = try? JSONEncoder().encode(snapshot) else { return }
+        guard let data = try? JSONEncoder().encode(snapshot) else {
+            return
+        }
         defaults?.set(data, forKey: WidgetShared.Key.streakData)
         WidgetCenter.shared.reloadTimelines(ofKind: "StatsWidget")
     }
 
     static func writeCounts(_ snapshot: WidgetCountSnapshot) {
-        guard let data = try? JSONEncoder().encode(snapshot) else { return }
+        guard let data = try? JSONEncoder().encode(snapshot) else {
+            return
+        }
         defaults?.set(data, forKey: WidgetShared.Key.countData)
         WidgetCenter.shared.reloadTimelines(ofKind: "StatsWidget")
     }
 
     static func writeSession(_ snapshot: WidgetSessionSnapshot) {
-        guard let data = try? JSONEncoder().encode(snapshot) else { return }
+        guard let data = try? JSONEncoder().encode(snapshot) else {
+            return
+        }
         defaults?.set(data, forKey: WidgetShared.Key.sessionData)
         WidgetCenter.shared.reloadTimelines(ofKind: "ActiveSessionWidget")
     }
@@ -110,5 +114,11 @@ enum WidgetDataWriter {
             updatedAt: Date()
         )
         writeSession(empty)
+    }
+
+    // MARK: Private
+
+    private static var defaults: UserDefaults? {
+        UserDefaults(suiteName: WidgetShared.suiteName)
     }
 }

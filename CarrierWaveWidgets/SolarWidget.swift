@@ -5,15 +5,15 @@ import WidgetKit
 
 /// Lightweight solar conditions fetched directly by the widget
 struct SolarData: Sendable {
+    static let placeholder = SolarData(
+        kIndex: 2.0, aIndex: 5, solarFlux: 150, sunspots: 80, timestamp: Date()
+    )
+
     let kIndex: Double
     let aIndex: Int?
     let solarFlux: Double?
     let sunspots: Int?
     let timestamp: Date
-
-    static let placeholder = SolarData(
-        kIndex: 2.0, aIndex: 5, solarFlux: 150, sunspots: 80, timestamp: Date()
-    )
 
     var propagationRating: String {
         switch kIndex {
@@ -40,10 +40,12 @@ struct SolarData: Sendable {
 
 /// Fetches solar conditions from HamQSL XML API
 enum SolarFetcher {
-    private static let hamQSLURL = "https://www.hamqsl.com/solarxml.php"
+    // MARK: Internal
 
     static func fetch() async -> SolarData? {
-        guard let url = URL(string: hamQSLURL) else { return nil }
+        guard let url = URL(string: hamQSLURL) else {
+            return nil
+        }
 
         var request = URLRequest(url: url)
         request.timeoutInterval = 15
@@ -67,6 +69,10 @@ enum SolarFetcher {
             sunspots: sunspots, timestamp: Date()
         )
     }
+
+    // MARK: Private
+
+    private static let hamQSLURL = "https://www.hamqsl.com/solarxml.php"
 
     private static func extractValue(from xml: String, tag: String) -> String? {
         let pattern = "<\(tag)>([^<]*)</\(tag)>"
@@ -118,6 +124,8 @@ struct SolarTimelineProvider: TimelineProvider {
 // MARK: - SolarWidgetSmallView
 
 struct SolarWidgetSmallView: View {
+    // MARK: Internal
+
     let solar: SolarData?
 
     var body: some View {
@@ -162,6 +170,8 @@ struct SolarWidgetSmallView: View {
             .padding()
         }
     }
+
+    // MARK: Private
 
     private func metricRow(_ label: String, value: String, color: Color) -> some View {
         HStack {

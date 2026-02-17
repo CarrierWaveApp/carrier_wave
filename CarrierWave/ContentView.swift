@@ -87,6 +87,24 @@ struct ContentView: View {
             // Navigate to More tab (Activity is now within More)
             selectedTab = .more
         }
+        .onReceive(
+            NotificationCenter.default.publisher(for: .didReceiveWidgetDeepLink)
+        ) { notification in
+            guard let target = notification.userInfo?["target"] as? String else {
+                return
+            }
+            switch target {
+            case "activitylog":
+                selectedTab = .dashboard
+                pendingActivityLogNavigation = true
+            case "dashboard":
+                selectedTab = .dashboard
+            case "logger":
+                selectedTab = .logger
+            default:
+                break
+            }
+        }
         .fullScreenCover(isPresented: $showIntroTour) {
             IntroTourView(tourState: tourState)
         }
@@ -126,6 +144,7 @@ struct ContentView: View {
     @State private var iPadTabs: [AppTab] = TabConfiguration.iPadVisibleTabs()
     @State private var iPadShowsSettings = false
     @State private var mapFilterState = MapFilterState()
+    @State private var pendingActivityLogNavigation = false
 
     @Query(
         filter: #Predicate<Friendship> { $0.statusRawValue == "pending" && $0.isOutgoing == false }
@@ -243,7 +262,8 @@ struct ContentView: View {
                     syncService: syncService,
                     selectedTab: $selectedTab,
                     settingsDestination: $settingsDestination,
-                    tourState: tourState
+                    tourState: tourState,
+                    navigateToActivityLog: $pendingActivityLogNavigation
                 )
             }
         } else {

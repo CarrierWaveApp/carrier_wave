@@ -110,6 +110,19 @@ struct CarrierWaveApp: App {
             return
         }
 
+        // Check for widget deep links (carrierwave://activitylog, dashboard, logger)
+        if url.scheme == "carrierwave",
+           let host = url.host,
+           ["activitylog", "dashboard", "logger"].contains(host)
+        {
+            NotificationCenter.default.post(
+                name: .didReceiveWidgetDeepLink,
+                object: nil,
+                userInfo: ["target": host]
+            )
+            return
+        }
+
         // Otherwise treat as ADIF file
         NotificationCenter.default.post(
             name: .didReceiveADIFFile,
@@ -194,6 +207,7 @@ extension Notification.Name {
     static let didReceiveADIFFile = Notification.Name("didReceiveADIFFile")
     static let didReceiveChallengeInvite = Notification.Name("didReceiveChallengeInvite")
     static let didReceiveFriendInvite = Notification.Name("didReceiveFriendInvite")
+    static let didReceiveWidgetDeepLink = Notification.Name("didReceiveWidgetDeepLink")
     static let didSyncQSOs = Notification.Name("didSyncQSOs")
     static let didDetectActivities = Notification.Name("didDetectActivities")
     static let didClearQSOs = Notification.Name("didClearQSOs")
