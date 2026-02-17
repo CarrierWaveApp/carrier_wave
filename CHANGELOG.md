@@ -4,12 +4,15 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.36.0] - 2026-02-16
+
 ### Added
 - iPad two-pane layout with persistent spots sidebar showing POTA spots, RBN/My Spots, and P2P tabs (CAR-85)
 - Worked-before indicator on POTA spots showing dupe, today, and previous badges (CAR-89)
 
 ### Changed
 - Merge POTA and RBN spots into single unified list sorted by band with human spots first (CAR-90)
+- Scale QSO row fonts for iPad: larger text and better space usage in logger, logs tab, and activity log (CAR-84)
 
 ### Fixed
 - Fix POTA auto-spot posting on hunted station's frequency when hunting before setting run frequency (CAR-88)
