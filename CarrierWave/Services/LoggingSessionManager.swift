@@ -157,11 +157,12 @@ final class LoggingSessionManager {
             stops[lastIndex].endedAt = Date()
         }
 
-        // Create new stop
+        // Create new stop — fall back to session grid if no grid provided
+        let stopGrid = myGrid ?? session.myGrid
         let newStop = RoveStop(
             parkReference: sanitizedPark,
             startedAt: Date(),
-            myGrid: myGrid
+            myGrid: stopGrid
         )
         stops.append(newStop)
         session.roveStops = stops

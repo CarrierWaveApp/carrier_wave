@@ -56,10 +56,11 @@ struct SessionMapPanelView: View {
         return MaidenheadConverter.coordinate(from: grid)
     }
 
-    /// Coordinates for rove stops that have grid squares
+    /// Coordinates for rove stops, falling back to session grid if stop has no grid
     private var roveStopCoordinates: [(stop: RoveStop, coordinate: CLLocationCoordinate2D)] {
         roveStops.compactMap { stop in
-            guard let grid = stop.myGrid, grid.count >= 4,
+            let grid = stop.myGrid ?? myGrid
+            guard let grid, grid.count >= 4,
                   let coord = MaidenheadConverter.coordinate(from: grid)
             else {
                 return nil

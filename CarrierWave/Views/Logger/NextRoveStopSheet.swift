@@ -5,15 +5,10 @@ import SwiftUI
 
 /// Half-sheet for transitioning to the next park stop in a rove session
 struct NextRoveStopSheet: View {
+    // MARK: Internal
+
     var sessionManager: LoggingSessionManager?
     var onDismiss: () -> Void
-
-    @State private var parkReference = ""
-    @State private var myGrid = ""
-    @State private var postQRTSpot = true
-    @State private var autoSpotNewPark = true
-    @State private var showFinishConfirmation = false
-    @State private var gridService = GridLocationService()
 
     var body: some View {
         NavigationStack {
@@ -62,6 +57,32 @@ struct NextRoveStopSheet: View {
                     myGrid = newGrid
                 }
             }
+        }
+    }
+
+    // MARK: Private
+
+    @State private var parkReference = ""
+    @State private var myGrid = ""
+    @State private var postQRTSpot = true
+    @State private var autoSpotNewPark = true
+    @State private var showFinishConfirmation = false
+    @State private var gridService = GridLocationService()
+
+    // MARK: - Logic
+
+    private var canStartStop: Bool {
+        !parkReference.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+
+    private var parkAlreadyVisited: Bool {
+        guard let session = sessionManager?.activeSession else {
+            return false
+        }
+        let newParks = Set(ParkReference.split(parkReference))
+        return session.roveStops.contains { stop in
+            let stopParks = Set(ParkReference.split(stop.parkReference))
+            return !stopParks.isDisjoint(with: newParks)
         }
     }
 
@@ -158,7 +179,7 @@ struct NextRoveStopSheet: View {
             } label: {
                 HStack {
                     Spacer()
-                    Label("Start Stop", systemImage: "play.fill")
+                    Label("Begin Activation", systemImage: "play.fill")
                         .font(.headline)
                     Spacer()
                 }
@@ -175,21 +196,6 @@ struct NextRoveStopSheet: View {
                     Spacer()
                 }
             }
-        }
-    }
-
-    // MARK: - Logic
-
-    private var canStartStop: Bool {
-        !parkReference.trimmingCharacters(in: .whitespaces).isEmpty
-    }
-
-    private var parkAlreadyVisited: Bool {
-        guard let session = sessionManager?.activeSession else { return false }
-        let newParks = Set(ParkReference.split(parkReference))
-        return session.roveStops.contains { stop in
-            let stopParks = Set(ParkReference.split(stop.parkReference))
-            return !stopParks.isDisjoint(with: newParks)
         }
     }
 

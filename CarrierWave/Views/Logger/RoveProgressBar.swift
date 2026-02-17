@@ -5,14 +5,14 @@ import SwiftUI
 
 /// Horizontally scrolling bar showing all rove stops with the current stop highlighted
 struct RoveProgressBar: View {
+    // MARK: Internal
+
     let stops: [RoveStop]
     let currentStopId: UUID?
+    /// Park reference being viewed (nil = viewing current active stop)
+    let viewingPark: String?
     let onNextStop: () -> Void
     let onTapStop: (RoveStop) -> Void
-
-    private var totalQSOs: Int {
-        stops.reduce(0) { $0 + $1.qsoCount }
-    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -40,9 +40,14 @@ struct RoveProgressBar: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     ForEach(stops) { stop in
+                        let isActive = stop.id == currentStopId
+                        let isViewed = viewingPark != nil
+                            ? stop.parkReference == viewingPark
+                            : isActive
                         RoveStopPill(
                             stop: stop,
-                            isCurrent: stop.id == currentStopId,
+                            isActive: isActive,
+                            isViewed: isViewed,
                             onTap: { onTapStop(stop) }
                         )
                     }
@@ -51,6 +56,12 @@ struct RoveProgressBar: View {
         }
         .padding(.horizontal)
         .padding(.vertical, 8)
+    }
+
+    // MARK: Private
+
+    private var totalQSOs: Int {
+        stops.reduce(0) { $0 + $1.qsoCount }
     }
 
     private var headerText: String {
@@ -65,44 +76,67 @@ struct RoveProgressBar: View {
 
 /// Individual stop capsule showing park reference and QSO count
 private struct RoveStopPill: View {
-    let stop: RoveStop
-    let isCurrent: Bool
-    let onTap: () -> Void
+    // MARK: Internal
 
-    private var primaryPark: String {
-        ParkReference.split(stop.parkReference).first ?? stop.parkReference
-    }
+    let stop: RoveStop
+    /// Whether this is the currently active rove stop (green dot)
+    let isActive: Bool
+    /// Whether this stop's QSOs are currently displayed in the logger
+    let isViewed: Bool
+    let onTap: () -> Void
 
     var body: some View {
         Button(action: onTap) {
             VStack(spacing: 2) {
                 HStack(spacing: 4) {
-                    if isCurrent {
+                    if isActive {
                         Circle()
                             .fill(Color.green)
                             .frame(width: 6, height: 6)
                             .accessibilityHidden(true)
                     }
                     Text(primaryPark)
-                        .font(.caption.monospaced().weight(isCurrent ? .bold : .regular))
-                        .foregroundStyle(isCurrent ? .green : .secondary)
+                        .font(.caption.monospaced().weight(isViewed ? .bold : .regular))
+                        .foregroundStyle(pillColor)
                 }
 
                 Text("\(stop.qsoCount)Q")
                     .font(.caption2.monospaced())
-                    .foregroundStyle(isCurrent ? .green : .tertiary)
+                    .foregroundStyle(isViewed ? pillColor : Color(uiColor: .tertiaryLabel))
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
-            .background(
-                isCurrent
-                    ? Color.green.opacity(0.12)
-                    : Color(.systemGray5)
-            )
+            .background(pillBackground)
             .clipShape(RoundedRectangle(cornerRadius: 8))
         }
         .buttonStyle(.plain)
         .accessibilityLabel("\(primaryPark), \(stop.qsoCount) QSOs")
+    }
+
+    // MARK: Private
+
+    private var primaryPark: String {
+        ParkReference.split(stop.parkReference).first ?? stop.parkReference
+    }
+
+    private var pillColor: Color {
+        if isActive {
+            return .green
+        }
+        if isViewed {
+            return .blue
+        }
+        return .secondary
+    }
+
+    private var pillBackground: Color {
+        if isActive, isViewed {
+            return Color.green.opacity(0.12)
+        }
+        if isViewed {
+            return Color.blue.opacity(0.12)
+        }
+        return Color(.systemGray5)
     }
 }
 
@@ -110,14 +144,9 @@ private struct RoveStopPill: View {
 
 /// Popover showing details for a tapped rove stop
 struct RoveStopPopover: View {
-    let stop: RoveStop
+    // MARK: Internal
 
-    private static let timeFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm"
-        formatter.timeZone = TimeZone(identifier: "UTC")
-        return formatter
-    }()
+    let stop: RoveStop
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -169,4 +198,13 @@ struct RoveStopPopover: View {
         .padding()
         .frame(minWidth: 200)
     }
+
+    // MARK: Private
+
+    private static let timeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm"
+        formatter.timeZone = TimeZone(identifier: "UTC")
+        return formatter
+    }()
 }

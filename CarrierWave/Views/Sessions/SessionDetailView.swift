@@ -75,6 +75,42 @@ struct SessionDetailView: View {
         return String(format: "%.1f", rate)
     }
 
+    /// Group QSOs by park reference, ordered by rove stop order
+    private var roveGroupedQSOs: [RoveParkGroup] {
+        let stops = session.roveStops
+        let sorted = qsos.sorted { $0.timestamp > $1.timestamp }
+
+        // Build groups in rove stop order
+        var groups: [RoveParkGroup] = []
+        var usedParks = Set<String>()
+
+        for stop in stops {
+            let park = stop.parkReference.uppercased()
+            guard !usedParks.contains(park) else {
+                continue
+            }
+            usedParks.insert(park)
+
+            let stopQSOs = sorted.filter { $0.parkReference?.uppercased() == park }
+            if !stopQSOs.isEmpty {
+                groups.append(RoveParkGroup(parkReference: stop.parkReference, qsos: stopQSOs))
+            }
+        }
+
+        // Catch any QSOs not matching a rove stop
+        let ungrouped = sorted.filter { qso in
+            guard let park = qso.parkReference?.uppercased() else {
+                return true
+            }
+            return !usedParks.contains(park)
+        }
+        if !ungrouped.isEmpty {
+            groups.append(RoveParkGroup(parkReference: "Other", qsos: ungrouped))
+        }
+
+        return groups
+    }
+
     private var infoSection: some View {
         Section("Session Info") {
             LabeledContent("Type", value: session.activationType.displayName)
@@ -191,24 +227,42 @@ struct SessionDetailView: View {
         }
     }
 
+    @ViewBuilder
     private var qsoSection: some View {
+        if session.isRove {
+            roveQSOSections
+        } else {
+            flatQSOSection
+        }
+    }
+
+    private var flatQSOSection: some View {
         Section("\(qsos.count) QSO\(qsos.count == 1 ? "" : "s")") {
             ForEach(qsos.sorted { $0.timestamp > $1.timestamp }) { qso in
+                SessionQSORow(qso: qso)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var roveQSOSections: some View {
+        let grouped = roveGroupedQSOs
+        ForEach(grouped, id: \.parkReference) { group in
+            Section {
+                ForEach(group.qsos) { qso in
+                    SessionQSORow(qso: qso)
+                }
+            } header: {
                 HStack {
-                    Text(qso.callsign)
-                        .font(.subheadline)
+                    Text(group.parkReference)
+                        .font(.subheadline.monospaced().weight(.semibold))
+                    if let name = POTAParksCache.shared.nameSync(for: group.primaryPark) {
+                        Text(name)
+                            .font(.caption)
+                    }
                     Spacer()
-                    Text(qso.band)
+                    Text("\(group.qsos.count)Q")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text(qso.mode)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text(
-                        qso.timestamp.formatted(date: .omitted, time: .shortened)
-                    )
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
                 }
             }
         }
@@ -267,14 +321,9 @@ struct SessionDetailView: View {
 
 /// Timeline row showing a single rove stop with park, time range, QSO count, and grid
 private struct RoveStopDetailRow: View {
-    let stop: RoveStop
+    // MARK: Internal
 
-    private static let timeFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm"
-        formatter.timeZone = TimeZone(identifier: "UTC")
-        return formatter
-    }()
+    let stop: RoveStop
 
     var body: some View {
         HStack(spacing: 12) {
@@ -321,6 +370,15 @@ private struct RoveStopDetailRow: View {
         }
     }
 
+    // MARK: Private
+
+    private static let timeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm"
+        formatter.timeZone = TimeZone(identifier: "UTC")
+        return formatter
+    }()
+
     private var timeRange: String {
         let start = Self.timeFormatter.string(from: stop.startedAt)
         if let endedAt = stop.endedAt {
@@ -328,6 +386,45 @@ private struct RoveStopDetailRow: View {
             return "\(start)\u{2013}\(end) UTC"
         }
         return "\(start)\u{2013}now UTC"
+    }
+}
+
+// MARK: - RoveParkGroup
+
+/// A group of QSOs at a single park within a rove
+private struct RoveParkGroup {
+    let parkReference: String
+    let qsos: [QSO]
+
+    /// First individual park ref (for name lookup when n-fer)
+    var primaryPark: String {
+        ParkReference.split(parkReference).first ?? parkReference
+    }
+}
+
+// MARK: - SessionQSORow
+
+/// Shared QSO row used in session detail
+private struct SessionQSORow: View {
+    let qso: QSO
+
+    var body: some View {
+        HStack {
+            Text(qso.callsign)
+                .font(.subheadline)
+            Spacer()
+            Text(qso.band)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Text(qso.mode)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Text(
+                qso.timestamp.formatted(date: .omitted, time: .shortened)
+            )
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        }
     }
 }
 

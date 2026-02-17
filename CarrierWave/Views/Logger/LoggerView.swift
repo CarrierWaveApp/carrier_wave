@@ -154,16 +154,6 @@ struct LoggerView: View {
                 )
                 .presentationDetents([.medium, .large])
             }
-            .popover(
-                isPresented: Binding(
-                    get: { selectedRoveStop != nil },
-                    set: { if !$0 { selectedRoveStop = nil } }
-                )
-            ) {
-                if let stop = selectedRoveStop {
-                    RoveStopPopover(stop: stop)
-                }
-            }
             .sheet(isPresented: $showBandEditSheet) {
                 SessionBandEditSheet(
                     currentFrequency: sessionManager?.activeSession?.frequency,
@@ -302,7 +292,7 @@ struct LoggerView: View {
             }
             .sheet(isPresented: $showDeleteSessionSheet) {
                 DeleteSessionConfirmationSheet(
-                    qsoCount: displayQSOs.count,
+                    qsoCount: sessionQSOs.count,
                     onConfirm: {
                         sessionManager?.deleteCurrentSession()
                         showDeleteSessionSheet = false
@@ -405,9 +395,10 @@ struct LoggerView: View {
     @State private var showParkEditSheet = false
     @State private var editingParkReference = ""
 
-    // Rove
+    /// Rove
     @State private var showNextStopSheet = false
-    @State private var selectedRoveStop: RoveStop?
+    /// When set, logger displays QSOs for this park instead of the current active stop
+    @State private var viewingParkOverride: String?
 
     // Session band/mode/rig editing
     @State private var showBandEditSheet = false
@@ -473,9 +464,21 @@ struct LoggerView: View {
         LicenseClass(rawValue: licenseClassRaw) ?? .extra
     }
 
-    /// QSOs for the current session only
+    /// QSOs to display — during roves, scoped to the viewed or current park stop
     private var displayQSOs: [QSO] {
-        sessionQSOs
+        guard let session = sessionManager?.activeSession, session.isRove else {
+            return sessionQSOs
+        }
+        let park = (viewingParkOverride ?? session.parkReference)?.uppercased()
+        guard let park else {
+            return sessionQSOs
+        }
+        return sessionQSOs.filter { $0.parkReference?.uppercased() == park }
+    }
+
+    /// Whether we're viewing a past rove stop (not the active one)
+    private var isViewingPastStop: Bool {
+        viewingParkOverride != nil
     }
 
     /// Whether the log button should be enabled
@@ -1151,6 +1154,10 @@ struct LoggerView: View {
         // Only show QSO list when there's an active session
         if sessionManager?.hasActiveSession == true {
             VStack(alignment: .leading, spacing: 8) {
+                if let viewingPark = viewingParkOverride {
+                    viewingPastStopBanner(viewingPark)
+                }
+
                 HStack {
                     Text("Session Log")
                         .font(.subheadline.weight(.semibold))
@@ -1176,6 +1183,7 @@ struct LoggerView: View {
                                 sessionQSOs: displayQSOs,
                                 isPOTASession: sessionManager?.activeSession?.activationType
                                     == .pota,
+                                isRove: sessionManager?.activeSession?.isRove ?? false,
                                 onQSODeleted: refreshSessionQSOs,
                                 onEditCallsign: { qsoToEdit in
                                     startEditingCallsign(qsoToEdit)
@@ -1232,6 +1240,34 @@ struct LoggerView: View {
         )
         .padding(.horizontal)
         .padding(.top, 8)
+    }
+
+    private func viewingPastStopBanner(_ parkRef: String) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: "clock.arrow.circlepath")
+                .font(.caption)
+                .foregroundStyle(.blue)
+
+            Text("Viewing \(ParkReference.split(parkRef).first ?? parkRef)")
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.blue)
+
+            Spacer()
+
+            Button {
+                viewingParkOverride = nil
+            } label: {
+                Text("Back to Current")
+                    .font(.caption.weight(.medium))
+            }
+            .buttonStyle(.bordered)
+            .tint(.blue)
+            .controlSize(.mini)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(Color.blue.opacity(0.1))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 
     private func webSDRMiniBadge(session: WebSDRSession) -> some View {
@@ -1341,17 +1377,17 @@ struct LoggerView: View {
                     }
                     Button("Cancel", role: .cancel) {}
                 } message: {
-                    if session.frequency == nil, !displayQSOs.isEmpty {
+                    if session.frequency == nil, !sessionQSOs.isEmpty {
                         Text(
                             "Pause keeps the session active for later. "
-                                + "End keeps your \(displayQSOs.count) QSOs for sync. "
+                                + "End keeps your \(sessionQSOs.count) QSOs for sync. "
                                 + "QSOs were logged without a frequency and will show as \"Unknown\" band. "
                                 + "Delete hides them permanently."
                         )
                     } else {
                         Text(
                             "Pause keeps the session active for later. "
-                                + "End keeps your \(displayQSOs.count) QSOs for sync. "
+                                + "End keeps your \(sessionQSOs.count) QSOs for sync. "
                                 + "Delete hides them permanently."
                         )
                     }
@@ -1363,8 +1399,20 @@ struct LoggerView: View {
                 RoveProgressBar(
                     stops: session.roveStops,
                     currentStopId: session.currentRoveStop?.id,
-                    onNextStop: { showNextStopSheet = true },
-                    onTapStop: { stop in selectedRoveStop = stop }
+                    viewingPark: viewingParkOverride,
+                    onNextStop: {
+                        viewingParkOverride = nil
+                        showNextStopSheet = true
+                    },
+                    onTapStop: { stop in
+                        let stopPark = stop.parkReference
+                        let activePark = session.parkReference
+                        if stopPark == activePark {
+                            viewingParkOverride = nil
+                        } else {
+                            viewingParkOverride = stopPark
+                        }
+                    }
                 )
             }
 
@@ -1797,8 +1845,18 @@ struct LoggerView: View {
             }
         let currentBand = session.band ?? "Unknown"
 
-        // Find all QSOs with this callsign in the current session
-        let matchingQSOs = displayQSOs.filter { $0.callsign.uppercased() == callsign }
+        // Find all QSOs with this callsign at the current park
+        // During roves, each park is a separate activation — scope to current park
+        let currentPark = session.parkReference?.uppercased()
+        let matchingQSOs = displayQSOs.filter { qso in
+            guard qso.callsign.uppercased() == callsign else {
+                return false
+            }
+            if session.isRove {
+                return qso.parkReference?.uppercased() == currentPark
+            }
+            return true
+        }
 
         if matchingQSOs.isEmpty {
             return .firstContact
@@ -2198,6 +2256,7 @@ struct LoggerView: View {
             theirLicenseClass: lookupResult?.licenseClass
         )
 
+        viewingParkOverride = nil
         refreshSessionQSOs()
         restorePreSpotFrequency()
         resetFormAfterLog()
@@ -2328,6 +2387,7 @@ struct LoggerView: View {
             lookupError = nil
             previousQSOCount = 0
             cachedPotaDuplicateStatus = nil
+            viewingParkOverride = nil
             quickEntryResult = nil
             quickEntryTokens = []
             theirGrid = ""
@@ -2366,7 +2426,7 @@ struct LoggerView: View {
            let parkRef = session.parkReference
         {
             // Find QSOs that need upload to POTA
-            let qsosNeedingUpload = displayQSOs.filter { $0.needsUpload(to: .pota) }
+            let qsosNeedingUpload = sessionQSOs.filter { $0.needsUpload(to: .pota) }
 
             if !qsosNeedingUpload.isEmpty {
                 // Store data for the prompt sheet
@@ -2393,7 +2453,7 @@ struct LoggerView: View {
 
     /// Complete the session end after any POTA upload prompt handling
     private func completeSessionEnd() {
-        let hadQSOs = !displayQSOs.isEmpty
+        let hadQSOs = !sessionQSOs.isEmpty
         sessionManager?.endSession()
         if hadQSOs {
             onSessionEnd?()
@@ -2505,6 +2565,8 @@ struct LoggerQSORow: View {
     var sessionQSOs: [QSO] = []
     /// Whether this is a POTA session
     var isPOTASession: Bool = false
+    /// Whether this session is a rove (multiple parks)
+    var isRove: Bool = false
     /// Callback when QSO is deleted (hidden)
     var onQSODeleted: (() -> Void)?
     /// Callback when callsign is tapped for quick edit
@@ -2582,8 +2644,18 @@ struct LoggerQSORow: View {
         let thisBand = qso.band
 
         // Find all previous QSOs with this callsign (before this one)
-        let previousQSOs = sessionQSOs.filter {
-            $0.callsign.uppercased() == callsign && $0.timestamp < qso.timestamp
+        // During roves, scope to the same park — each park is a separate activation
+        let qsoPark = qso.parkReference?.uppercased()
+        let previousQSOs = sessionQSOs.filter { other in
+            guard other.callsign.uppercased() == callsign,
+                  other.timestamp < qso.timestamp
+            else {
+                return false
+            }
+            if isRove {
+                return other.parkReference?.uppercased() == qsoPark
+            }
+            return true
         }
 
         if previousQSOs.isEmpty {

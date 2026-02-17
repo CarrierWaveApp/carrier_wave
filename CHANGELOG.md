@@ -6,6 +6,9 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ### Added
 - POTA rove mode: activate multiple parks in a single session with "Next Stop" transitions, rove progress bar, per-stop QSO tracking, and automatic QRT/spot posting on park changes
+
+### Fixed
+- Fix duplicate detection during POTA roves incorrectly flagging callsigns worked at previous parks
 - "Part of rove" badge on POTA activations that belong to a rove session
 - GPS grid auto-update when transitioning to next rove stop
 - Rove route display on MAP command showing numbered stop markers and dashed route line between parks
