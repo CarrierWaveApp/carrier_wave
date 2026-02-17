@@ -2249,6 +2249,8 @@ struct LoggerView: View {
             theirLicenseClass: lookupResult?.licenseClass
         )
 
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
+
         viewingParkOverride = nil
         refreshSessionQSOs()
         restorePreSpotFrequency()

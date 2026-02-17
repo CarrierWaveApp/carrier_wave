@@ -116,6 +116,9 @@ private struct CursorView: View {
             .frame(width: 2, height: 16)
             .opacity(isVisible ? 1 : 0)
             .onAppear {
+                guard !reduceMotion else {
+                    return
+                }
                 withAnimation(.easeInOut(duration: 0.5).repeatForever(autoreverses: true)) {
                     isVisible.toggle()
                 }
@@ -124,6 +127,7 @@ private struct CursorView: View {
 
     // MARK: Private
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isVisible = true
 }
 

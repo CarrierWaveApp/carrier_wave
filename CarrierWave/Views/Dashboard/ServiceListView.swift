@@ -180,6 +180,9 @@ struct SyncingIndicator: View {
         }
         .foregroundStyle(isActiveForService ? .blue : .secondary)
         .onAppear {
+            guard !reduceMotion else {
+                return
+            }
             withAnimation(.linear(duration: 1).repeatForever(autoreverses: false)) {
                 rotation = 360
             }
@@ -188,6 +191,7 @@ struct SyncingIndicator: View {
 
     // MARK: Private
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var rotation: Double = 0
 
     private var isActiveForService: Bool {

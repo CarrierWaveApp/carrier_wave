@@ -38,6 +38,9 @@ struct QSOMapView: View {
                             : "line.3.horizontal.decrease.circle"
                     )
                 }
+                .accessibilityLabel(
+                    filterState.hasActiveFilters ? "Filter (active)" : "Filter"
+                )
             }
         }
         .sheet(isPresented: $showingFilterSheet) {

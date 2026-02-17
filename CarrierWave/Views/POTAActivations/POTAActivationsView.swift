@@ -133,6 +133,7 @@ struct POTAActivationsContentView: View {
                                 }
                             }
                             .disabled(isLoading)
+                            .accessibilityLabel("Refresh upload status")
                         }
                     }
                 }

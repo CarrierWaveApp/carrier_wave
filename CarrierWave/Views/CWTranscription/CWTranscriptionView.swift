@@ -88,6 +88,7 @@ struct CWTranscriptionView: View {
                     } label: {
                         Image(systemName: "ellipsis.circle")
                     }
+                    .accessibilityLabel("Settings")
                 }
             }
         }

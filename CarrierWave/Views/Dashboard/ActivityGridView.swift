@@ -95,6 +95,7 @@ private struct ActivityGridContent: View {
                                     )
                                     .frame(width: cellSize, height: cellSize)
                                     .clipShape(RoundedRectangle(cornerRadius: 2))
+                                    .contentShape(Rectangle())
                                     .accessibilityLabel(
                                         accessibilityLabel(
                                             date: date, activation: actCount,
