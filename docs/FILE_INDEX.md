@@ -206,8 +206,11 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `CallsignLookupService.swift` | Two-tier callsign lookup (Polo notes cache, then QRZ API) |
 | `CallsignNotesCache.swift` | Persistent cache for Polo notes (loads from disk, refreshes daily) |
 | `CWSuggestionEngine.swift` | Word suggestion engine with dictionaries and settings |
+| `LiveActivityAttributes.swift` | ActivityKit attributes and ContentState for logging session Live Activity |
+| `LiveActivityService.swift` | Live Activity lifecycle management (start, update, end, reconnect, cleanup) |
 | `LoggingSessionManager.swift` | Session lifecycle management (start, end, log QSO, hide QSO, photos) |
 | `LoggingSessionManager+Conditions.swift` | Auto-record solar/weather conditions at POTA session start |
+| `LoggingSessionManager+LiveActivity.swift` | Live Activity integration hooks (start, update, end, pause, resume) |
 | `LoggingSessionManager+Spotting.swift` | POTA spot timer, posting, comments polling, monitoring |
 | `RBNClient.swift` | Vail ReRBN API client for reverse beacon network spots |
 | `NOAAClient.swift` | NOAA API client for solar conditions and weather |
@@ -233,13 +236,15 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 
 | File | Purpose |
 |------|---------|
-| `CarrierWaveWidgetBundle.swift` | WidgetBundle entry point registering all four widgets |
+| `CarrierWaveWidgetBundle.swift` | WidgetBundle entry point registering all widgets and Live Activity |
 | `WidgetDataReader.swift` | Reads shared data from App Group UserDefaults + shared Codable types |
 | `SolarWidget.swift` | Solar conditions widget (K-index, SFI, A-index) - fetches directly from HamQSL |
 | `StatsWidget.swift` | Configurable streaks/counts widget with AppIntent configuration |
 | `SpotsWidget.swift` | POTA + RBN spots widget views, intent, timeline provider |
 | `SpotsWidgetTypes.swift` | Spots widget filter enums (source, band, mode), WidgetSpot model, SpotsFetcher |
 | `ActiveSessionWidget.swift` | Active logging session widget showing QSO count and session info |
+| `LiveActivityAttributes.swift` | ActivityKit attributes mirror for widget extension compilation |
+| `LiveActivityView.swift` | Live Activity views: lock screen, Dynamic Island compact/expanded/minimal |
 | `CarrierWaveWidgets.entitlements` | App Group entitlement for shared data access |
 
 ## Services - WebSDR (`CarrierWave/Services/WebSDR/`)

@@ -34,6 +34,9 @@ final class LoggingSessionManager {
     /// Currently active session
     private(set) var activeSession: LoggingSession?
 
+    /// Service for managing Live Activity on lock screen / Dynamic Island
+    let liveActivityService = LiveActivityService()
+
     /// Service for polling POTA spot comments
     let spotCommentsService = SpotCommentsService()
 
@@ -138,6 +141,7 @@ final class LoggingSessionManager {
         try? modelContext.save()
 
         writeSessionToWidget(session)
+        startLiveActivity()
     }
 
     /// Advance to the next park stop in a rove session
@@ -179,6 +183,7 @@ final class LoggingSessionManager {
         }
 
         try? modelContext.save()
+        updateLiveActivity()
 
         // Post QRT spot for the old park (fire and forget)
         if postQRTSpot, let oldPark = oldParkRef {
@@ -218,6 +223,8 @@ final class LoggingSessionManager {
         guard let session = activeSession else {
             return
         }
+
+        endLiveActivity()
 
         // Close the current rove stop if active
         if session.isRove {
@@ -275,6 +282,7 @@ final class LoggingSessionManager {
         guard let session = activeSession else {
             return
         }
+        pauseLiveActivity()
         session.pause()
 
         // Save spot comments to session before clearing
@@ -313,6 +321,7 @@ final class LoggingSessionManager {
             return
         }
         session.resume()
+        resumeLiveActivity()
 
         // Re-enable screen timeout prevention
         if keepScreenOn {
@@ -346,6 +355,7 @@ final class LoggingSessionManager {
         session.resume()
         activeSession = session
         saveActiveSessionId(session.id)
+        startLiveActivity()
 
         // Prevent screen timeout during active session
         if keepScreenOn {
@@ -381,6 +391,7 @@ final class LoggingSessionManager {
         let isFirstSet = oldFrequency == nil
         session.updateFrequency(frequency)
         try? modelContext.save()
+        updateLiveActivity()
 
         // Retune WebSDR if recording
         if webSDRSession.state == .recording {
@@ -460,6 +471,7 @@ final class LoggingSessionManager {
         let oldMode = session.mode
         session.updateMode(mode)
         try? modelContext.save()
+        updateLiveActivity()
 
         // Retune WebSDR if recording
         if webSDRSession.state == .recording {
@@ -490,6 +502,7 @@ final class LoggingSessionManager {
 
         session.parkReference = parkReference.flatMap { ParkReference.sanitizeMulti($0) }
         try? modelContext.save()
+        updateLiveActivity()
 
         // Restart spot comments polling with new park reference
         spotCommentsService.stopPolling()
@@ -611,6 +624,7 @@ final class LoggingSessionManager {
         try? modelContext.save()
 
         writeSessionToWidget(session, lastCallsign: qso.callsign)
+        updateLiveActivity(lastCallsign: qso.callsign)
 
         // Detect and report social activities async (non-blocking)
         Task { [weak self] in
@@ -642,6 +656,8 @@ final class LoggingSessionManager {
         guard let session = activeSession else {
             return
         }
+
+        endLiveActivity()
 
         // End the session first to properly mark it as completed
         session.end()
@@ -907,6 +923,10 @@ final class LoggingSessionManager {
                 // Prevent screen timeout for restored active session
                 if keepScreenOn {
                     UIApplication.shared.isIdleTimerDisabled = true
+                }
+                // Reconnect to existing Live Activity, or start a new one
+                if !liveActivityService.reconnect() {
+                    startLiveActivity()
                 }
                 // Restart auto-spot timer for restored POTA session
                 startAutoSpotTimer()

@@ -5,6 +5,9 @@ All notable changes to Carrier Wave will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Add Live Activity for logging sessions: shows QSO count, frequency, mode, park reference, and last callsign on lock screen and Dynamic Island
+- Live Activity updates in real time as QSOs are logged, frequency/mode changes, or session is paused/resumed
+- Live Activity reconnects automatically after app relaunch during active session
 - Add widget deep link navigation: tapping Spots widget opens Activity Log, other widgets navigate to Dashboard or Logger
 - Add multi-select band and mode filters to Spots widget via long-press configuration (160m–2m, CW/SSB/FT8/FT4/Digital)
 - Show "+N more" indicator on Spots widget when more spots are available than fit on screen
