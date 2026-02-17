@@ -252,7 +252,7 @@ struct ContentView: View {
     }
 
     private var loggerTabContent: some View {
-        LoggerView(
+        LoggerContainerView(
             tourState: tourState,
             onSessionEnd: {
                 selectedTab = .logs

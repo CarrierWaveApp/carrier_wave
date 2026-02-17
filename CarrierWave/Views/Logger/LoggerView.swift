@@ -9,9 +9,16 @@ import SwiftUI
 struct LoggerView: View {
     // MARK: Lifecycle
 
-    init(tourState: TourState, onSessionEnd: (() -> Void)? = nil) {
+    init(
+        tourState: TourState,
+        onSessionEnd: (() -> Void)? = nil,
+        onSpotCommand: ((SpotCommandAction) -> Void)? = nil,
+        pendingSpotSelection: Binding<SpotSelection?>? = nil
+    ) {
         self.tourState = tourState
         self.onSessionEnd = onSessionEnd
+        self.onSpotCommand = onSpotCommand
+        _externalSpotSelection = pendingSpotSelection ?? .constant(nil)
     }
 
     // MARK: Internal
@@ -255,6 +262,12 @@ struct LoggerView: View {
                 refreshSessionQSOs()
                 refreshActiveSessions()
             }
+            .onChange(of: externalSpotSelection) { _, newValue in
+                if let selection = newValue {
+                    handleSpotSelection(selection)
+                    externalSpotSelection = nil
+                }
+            }
             .overlay(alignment: .bottom) {
                 panelOverlays
             }
@@ -431,11 +444,17 @@ struct LoggerView: View {
     /// Dismissed warning messages (to avoid re-showing dismissed warnings)
     @State private var dismissedWarnings: Set<String> = []
 
+    /// iPad sidebar: spot selected from sidebar, processed via .onChange
+    @Binding private var externalSpotSelection: SpotSelection?
+
     /// Tour state for mini-tour
     private let tourState: TourState
 
     /// Callback when session ends with QSOs logged
     private let onSessionEnd: (() -> Void)?
+
+    /// iPad sidebar: intercepts spot commands to switch sidebar tab
+    private let onSpotCommand: ((SpotCommandAction) -> Void)?
 
     // MARK: - Compact Form Fields
 
@@ -629,7 +648,7 @@ struct LoggerView: View {
     /// Callsign lookup display (card or error banner)
     @ViewBuilder
     private var callsignLookupDisplay: some View {
-        if let info = lookupResult, !callsignFieldFocused {
+        if let info = lookupResult, !callsignFieldFocused || callsignInput.isEmpty {
             LoggerCallsignCard(info: info, previousQSOCount: previousQSOCount)
                 .transition(
                     .asymmetric(
@@ -715,30 +734,8 @@ struct LoggerView: View {
                         initialMode: sessionManager?.activeSession?.mode,
                         onDismiss: { showPOTAPanel = false },
                         onSelectSpot: { spot in
-                            // Save session frequency before tuning to spot
-                            preSpotFrequency = sessionManager?.activeSession?.frequency
-
-                            // Auto-fill form fields from spot
-                            callsignInput = spot.activator
-
-                            if let freqKHz = spot.frequencyKHz {
-                                let freqMHz = freqKHz / 1_000.0
-                                _ = sessionManager?.updateFrequency(freqMHz)
-                            }
-
-                            // Build notes from park info
-                            var noteParts: [String] = [spot.reference]
-                            if let loc = spot.locationDesc {
-                                let state = loc.components(separatedBy: "-").last ?? loc
-                                noteParts.append(state)
-                            }
-                            if let parkName = spot.parkName {
-                                noteParts.append(parkName)
-                            }
-                            notes = noteParts.joined(separator: " - ")
-
+                            handleSpotSelection(.pota(spot))
                             showPOTAPanel = false
-                            ToastManager.shared.info("Loaded \(spot.activator)")
                         }
                     )
                 }
@@ -756,29 +753,8 @@ struct LoggerView: View {
                         initialMode: sessionManager?.activeSession?.mode,
                         onDismiss: { showP2PPanel = false },
                         onSelectOpportunity: { opportunity in
-                            // Save session frequency before tuning to spot
-                            preSpotFrequency = sessionManager?.activeSession?.frequency
-
-                            // Auto-fill form fields from opportunity
-                            callsignInput = opportunity.callsign
-
-                            _ = sessionManager?.updateFrequency(opportunity.frequencyMHz)
-
-                            // Build notes from park info (P2P format)
-                            var noteParts: [String] = ["P2P", opportunity.parkRef]
-                            if let loc = opportunity.locationDesc {
-                                let state = loc.components(separatedBy: "-").last ?? loc
-                                noteParts.append(state)
-                            }
-                            if let parkName = opportunity.parkName {
-                                noteParts.append(parkName)
-                            }
-                            notes = noteParts.joined(separator: " - ")
-
+                            handleSpotSelection(.p2p(opportunity))
                             showP2PPanel = false
-                            ToastManager.shared.info(
-                                "P2P: \(opportunity.callsign) @ \(opportunity.parkRef)"
-                            )
                         }
                     )
                 }
@@ -1688,7 +1664,7 @@ struct LoggerView: View {
     /// Cancel the current spot and restore session frequency
     private func cancelSpot() {
         if let freq = preSpotFrequency {
-            _ = sessionManager?.updateFrequency(freq)
+            _ = sessionManager?.updateFrequency(freq, isTuningToSpot: true)
             preSpotFrequency = nil
         }
         callsignInput = ""
@@ -1865,6 +1841,8 @@ struct LoggerView: View {
         case .pota:
             if sessionManager?.activeSession?.isRove == true {
                 showNextStopSheet = true
+            } else if let onSpotCommand {
+                onSpotCommand(.showPOTA)
             } else {
                 showPOTAPanel = true
             }
@@ -1930,8 +1908,12 @@ struct LoggerView: View {
     }
 
     private func executeRBNCommand(_ callsign: String?) {
-        rbnTargetCallsign = callsign
-        showRBNPanel = true
+        if let onSpotCommand {
+            onSpotCommand(.showRBN(callsign: callsign))
+        } else {
+            rbnTargetCallsign = callsign
+            showRBNPanel = true
+        }
     }
 
     private func executeP2PCommand() {
@@ -1951,7 +1933,59 @@ struct LoggerView: View {
             return
         }
 
-        showP2PPanel = true
+        if let onSpotCommand {
+            onSpotCommand(.showP2P)
+        } else {
+            showP2PPanel = true
+        }
+    }
+
+    /// Shared handler for spot selection from both panels and sidebar
+    private func handleSpotSelection(_ selection: SpotSelection) {
+        // Save session frequency before tuning to spot
+        preSpotFrequency = sessionManager?.activeSession?.frequency
+
+        switch selection {
+        case let .pota(spot):
+            callsignInput = spot.activator
+            if let freqKHz = spot.frequencyKHz {
+                let freqMHz = freqKHz / 1_000.0
+                _ = sessionManager?.updateFrequency(freqMHz, isTuningToSpot: true)
+            }
+            var noteParts: [String] = [spot.reference]
+            if let loc = spot.locationDesc {
+                let state = loc.components(separatedBy: "-").last ?? loc
+                noteParts.append(state)
+            }
+            if let parkName = spot.parkName {
+                noteParts.append(parkName)
+            }
+            notes = noteParts.joined(separator: " - ")
+            ToastManager.shared.info("Loaded \(spot.activator)")
+
+        case let .rbn(spot):
+            callsignInput = spot.callsign
+            _ = sessionManager?.updateFrequency(spot.frequencyMHz, isTuningToSpot: true)
+            ToastManager.shared.info("Loaded \(spot.callsign)")
+
+        case let .p2p(opportunity):
+            callsignInput = opportunity.callsign
+            _ = sessionManager?.updateFrequency(
+                opportunity.frequencyMHz, isTuningToSpot: true
+            )
+            var noteParts: [String] = ["P2P", opportunity.parkRef]
+            if let loc = opportunity.locationDesc {
+                let state = loc.components(separatedBy: "-").last ?? loc
+                noteParts.append(state)
+            }
+            if let parkName = opportunity.parkName {
+                noteParts.append(parkName)
+            }
+            notes = noteParts.joined(separator: " - ")
+            ToastManager.shared.info(
+                "P2P: \(opportunity.callsign) @ \(opportunity.parkRef)"
+            )
+        }
     }
 
     private func executeMapCommand() {
@@ -2088,38 +2122,36 @@ struct LoggerView: View {
         return parts.max(by: { $0.count < $1.count }) ?? callsign
     }
 
-    private func onCallsignChanged(_ callsign: String) {
-        lookupTask?.cancel()
-
-        // Update cached POTA duplicate status (avoids expensive computation on every render)
-        cachedPotaDuplicateStatus = computePotaDuplicateStatus()
-
+    /// Parse quick entry and determine callsign for lookup
+    private func resolveCallsignForLookup(_ callsign: String) -> String {
         let trimmed = callsign.trimmingCharacters(in: .whitespaces).uppercased()
-
-        // Check for quick entry mode (input contains spaces)
-        let isQuickEntry = callsign.contains(" ")
-        if isQuickEntry {
+        if callsign.contains(" ") {
             quickEntryResult = QuickEntryParser.parse(callsign)
             quickEntryTokens = QuickEntryParser.parseTokens(callsign)
         } else {
             quickEntryResult = nil
             quickEntryTokens = []
         }
+        return quickEntryResult?.callsign ?? trimmed
+    }
 
-        // Determine the callsign to look up
-        let callsignForLookup: String =
-            if let qeResult = quickEntryResult {
-                // In quick entry mode, use the parsed callsign
-                qeResult.callsign
-            } else {
-                trimmed
-            }
+    private func onCallsignChanged(_ callsign: String) {
+        lookupTask?.cancel()
+
+        // Update cached POTA duplicate status (avoids expensive computation on every render)
+        cachedPotaDuplicateStatus = computePotaDuplicateStatus()
+
+        let callsignForLookup = resolveCallsignForLookup(callsign)
 
         // Don't lookup if too short or looks like a command
+        // When input is empty, preserve lookupResult so the QRZ card stays visible
+        // after logging (card persists until user starts typing next callsign)
         guard callsignForLookup.count >= 3,
               LoggerCommand.parse(callsignForLookup) == nil
         else {
-            lookupResult = nil
+            if !callsignForLookup.isEmpty {
+                lookupResult = nil
+            }
             lookupError = nil
             previousQSOCount = 0
             return
@@ -2147,6 +2179,10 @@ struct LoggerView: View {
 
             let result = await service.lookupWithResult(primaryCallsign)
             let count = fetchPreviousQSOCount(for: primaryCallsign)
+
+            guard !Task.isCancelled else {
+                return
+            }
 
             await MainActor.run {
                 lookupResult = result.info
@@ -2324,7 +2360,7 @@ struct LoggerView: View {
     /// Restore frequency if we tuned away for a spot
     private func restorePreSpotFrequency() {
         if let freq = preSpotFrequency {
-            _ = sessionManager?.updateFrequency(freq)
+            _ = sessionManager?.updateFrequency(freq, isTuningToSpot: true)
             preSpotFrequency = nil
         }
     }
@@ -2335,7 +2371,7 @@ struct LoggerView: View {
         transaction.disablesAnimations = true
         withTransaction(transaction) {
             callsignInput = ""
-            lookupResult = nil
+            // Keep lookupResult — card persists until user starts typing next callsign
             lookupError = nil
             previousQSOCount = 0
             cachedPotaDuplicateStatus = nil

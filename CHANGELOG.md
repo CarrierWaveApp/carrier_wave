@@ -5,6 +5,7 @@ All notable changes to Carrier Wave will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- iPad two-pane layout with persistent spots sidebar showing POTA spots, RBN/My Spots, and P2P tabs (CAR-85)
 - Worked-before indicator on POTA spots showing dupe, today, and previous badges (CAR-89)
 
 ### Changed

@@ -287,6 +287,12 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 ## Views - Logger (`CarrierWave/Views/Logger/`)
 | File | Purpose |
 |------|---------|
+| `LoggerContainerView.swift` | iPad two-pane wrapper: HStack with logger + spots sidebar on regular, plain logger on compact |
+| `LoggerSpotsSidebarView.swift` | Tabbed sidebar with segmented picker for POTA/RBN/P2P spots |
+| `SpotSelection.swift` | SpotSelection enum, SidebarTab enum, SpotCommandAction enum for sidebar integration |
+| `SidebarPOTASpotsView.swift` | POTA spots adapted for persistent sidebar display (auto-refresh, no dismiss) |
+| `SidebarRBNSpotsView.swift` | RBN/My Spots adapted for persistent sidebar display |
+| `SidebarP2PView.swift` | P2P opportunities adapted for persistent sidebar display |
 | `LoggerView.swift` | Main logger view with session header, callsign input, QSO form |
 | `CallsignTextField.swift` | UITextField wrapper for callsign entry with proper cursor handling |
 | `LoggerCallsignCard.swift` | Callsign info display card for logger |

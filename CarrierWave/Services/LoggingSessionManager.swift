@@ -362,7 +362,11 @@ final class LoggingSessionManager {
 
     /// Update operating frequency
     /// Returns info about whether to prompt for spot and suggested mode
-    func updateFrequency(_ frequency: Double) -> FrequencyUpdateResult {
+    /// Set `isTuningToSpot` when temporarily changing frequency to work a spotted station
+    func updateFrequency(
+        _ frequency: Double,
+        isTuningToSpot: Bool = false
+    ) -> FrequencyUpdateResult {
         guard let session = activeSession else {
             return FrequencyUpdateResult(
                 shouldPromptForSpot: false, suggestedMode: nil, isFirstFrequencySet: false
@@ -380,7 +384,8 @@ final class LoggingSessionManager {
         }
 
         // If this is the first frequency set on a POTA session, trigger an initial spot
-        if isFirstSet, session.activationType == .pota {
+        // Skip if tuning to a spot — don't self-spot on the hunted station's frequency
+        if isFirstSet, session.activationType == .pota, !isTuningToSpot {
             Task {
                 await postSpot()
             }
@@ -403,10 +408,12 @@ final class LoggingSessionManager {
         // - QSY spots are disabled in settings
         // - Frequency is outside amateur bands or violates license
         // - This is the first frequency set (we already auto-spotted above)
+        // - Tuning to a spot (temporary frequency change for hunting)
         var shouldPromptForSpot = false
         if potaQSYSpotEnabled,
            session.activationType == .pota,
            !isFirstSet,
+           !isTuningToSpot,
            oldFrequency != frequency
         {
             // Get user's license class
