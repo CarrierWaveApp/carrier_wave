@@ -5,6 +5,7 @@ All notable changes to Carrier Wave will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Add swipe-to-delete on QSOs in logger session log
 - Add iOS widgets: Solar Conditions, Stats & Streaks, Radio Spots (POTA + RBN), and Active Session
 - Solar widget shows K-index, SFI, A-index with propagation rating (small + Lock Screen)
 - Stats widget is configurable via long-press to show any streak or count metric (small + Lock Screen)
@@ -15,6 +16,7 @@ All notable changes to Carrier Wave will be documented in this file.
 - Add accessibility labels to filter button (Map), settings menu (CW Transcription), and refresh button (POTA Activations)
 
 ### Fixed
+- Fix delete confirmation in QSO edit sheet to anchor near the delete button instead of screen center
 - Respect Reduce Motion setting for cursor blink animation and sync spinner
 - Ensure full tap area on activity grid cells via contentShape
 
