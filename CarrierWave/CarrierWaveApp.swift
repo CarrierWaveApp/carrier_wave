@@ -28,6 +28,7 @@ struct CarrierWaveApp: App {
             CallsignNotesSource.self,
             DismissedSuggestion.self,
             SessionSpot.self,
+            SolarSnapshot.self,
         ])
         let modelConfiguration = ModelConfiguration(
             schema: schema,
@@ -52,6 +53,9 @@ struct CarrierWaveApp: App {
                 .sunlightMode(isSunlightMode)
                 .preferredColorScheme(colorScheme)
                 .task {
+                    // Start hourly solar conditions polling
+                    SolarPollingService.shared.configure(container: sharedModelContainer)
+
                     // Preload caches on app launch (loads from disk, refreshes in background)
                     await POTAParksCache.shared.ensureLoaded()
                     // Fetch sources on main actor, then pass to cache actor

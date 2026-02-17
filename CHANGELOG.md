@@ -11,6 +11,7 @@ All notable changes to Carrier Wave will be documented in this file.
 - Spots widget shows live POTA/RBN spots with configurable source filter; taps open Activity Log (medium + large)
 - Active Session widget shows current logging session with QSO count, park ref, and elapsed time (small + medium + Lock Screen)
 - Add App Group (`group.com.jsvana.FullDuplex`) for widget data sharing
+- Add hourly solar conditions polling in background, filling in conditions history continuously without requiring an active session (toggle in Settings > POTA Activations)
 - Add haptic feedback (success) when logging a QSO
 - Add accessibility labels to filter button (Map), settings menu (CW Transcription), and refresh button (POTA Activations)
 - Share sync debug log as text from Sync Debug view toolbar menu

@@ -105,6 +105,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `SpotRegion.swift` | Geographic region classification for spots (SpotRegion, EnrichedSpot, SpotSummary) |
 | `ActivityLog.swift` | Activity log SwiftData model for persistent hunter workflow |
 | `SDRParameterEvent.swift` | SDR parameter change event and recording segment types for tracking freq/mode changes |
+| `SolarSnapshot.swift` | Hourly solar conditions snapshot from background polling |
 | `StationProfile.swift` | Station profile struct and UserDefaults-backed storage |
 
 ## Services (`CarrierWave/Services/`)
@@ -224,8 +225,9 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `QuickEntryParser.swift` | Parses quick entry strings (e.g., "AJ7CM 579 WA US-0189") into structured data |
 | `ActivityLogManager.swift` | Activity log lifecycle management (create, activate, log QSO, daily stats) |
 | `EnvironmentalSnapshot.swift` | Sendable snapshot struct for environmental conditions charting |
-| `EnvironmentalDataActor.swift` | Background actor for loading conditions from LoggingSession + ActivationMetadata |
+| `EnvironmentalDataActor.swift` | Background actor for loading conditions from LoggingSession, ActivationMetadata, and SolarSnapshot |
 | `WidgetDataWriter.swift` | Writes pre-computed stats/session data to App Group UserDefaults for widget consumption |
+| `SolarPollingService.swift` | Background hourly solar conditions polling service |
 
 ## Widget Extension (`CarrierWaveWidgets/`)
 
