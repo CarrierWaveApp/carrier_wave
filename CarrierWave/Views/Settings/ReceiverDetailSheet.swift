@@ -66,6 +66,10 @@ struct ReceiverDetailSheet: View {
                     )
                 }
                 .buttonStyle(.borderless)
+                .accessibilityLabel(
+                    isFavorite
+                        ? "Remove from favorites" : "Add to favorites"
+                )
             }
         }
     }

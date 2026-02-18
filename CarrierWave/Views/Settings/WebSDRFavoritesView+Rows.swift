@@ -29,6 +29,7 @@ extension WebSDRFavoritesView {
                     Image(systemName: "chevron.right")
                         .font(.caption2)
                         .foregroundStyle(.tertiary)
+                        .accessibilityHidden(true)
                 }
 
                 // Row 2: Location
