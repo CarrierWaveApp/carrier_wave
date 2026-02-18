@@ -4,6 +4,12 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- Fix rove upload prompt showing all QSOs against last park instead of per-park counts
+- Fix callsign/command input field growing wider than screen with long text
+- Fix Sessions tab only showing last park and its QSOs for rove sessions
+- Fix brag sheet only including last park's QSOs for rove sessions
+
 ### Changed
 - Sync activity feed immediately on Activity tab appearance instead of waiting 60 seconds
 - Add club sync to Activity tab refresh action

@@ -20,7 +20,7 @@ extension SessionsView {
 
         // Load QSOs per session
         var qsoMap: [UUID: [QSO]] = [:]
-        var activationMap: [UUID: POTAActivation] = [:]
+        var activationMap: [UUID: [POTAActivation]] = [:]
 
         for session in sessions {
             let sessionId = session.id
@@ -34,11 +34,11 @@ extension SessionsView {
             let qsos = (try? modelContext.fetch(qsoDescriptor)) ?? []
             qsoMap[sessionId] = qsos
 
-            // Build POTAActivation for POTA sessions
+            // Build POTAActivation(s) for POTA sessions
             if session.activationType == .pota, !qsos.isEmpty {
                 let grouped = POTAActivation.groupQSOs(qsos)
-                if let activation = grouped.first {
-                    activationMap[sessionId] = activation
+                if !grouped.isEmpty {
+                    activationMap[sessionId] = grouped
                 }
             }
 
@@ -72,7 +72,7 @@ extension SessionsView {
         }
 
         let allOrphan = POTAActivation.groupQSOs(orphanQSOs)
-        let sessionActivationIds = Set(activationsBySessionId.values.map(\.id))
+        let sessionActivationIds = Set(activationsBySessionId.values.flatMap { $0 }.map(\.id))
         orphanActivations = allOrphan.filter { !sessionActivationIds.contains($0.id) }
 
         rebuildJobIndex()
@@ -113,7 +113,7 @@ extension SessionsView {
 
     func loadCachedParkNames() async {
         await POTAParksCache.shared.ensureLoaded()
-        let activations = Array(activationsBySessionId.values) + orphanActivations
+        let activations = activationsBySessionId.values.flatMap { $0 } + orphanActivations
         var names: [String: String] = [:]
         for activation in activations {
             let ref = activation.parkReference.uppercased()
@@ -363,6 +363,22 @@ extension SessionsView {
 
     func activationMetadata(for activation: POTAActivation) -> ActivationMetadata? {
         metadataByKey["\(activation.parkReference)|\(activation.utcDateString)"]
+    }
+
+    /// Merge multiple park activations into one for rove brag sheet
+    func mergedRoveActivation(_ activations: [POTAActivation]) -> POTAActivation {
+        guard activations.count > 1 else {
+            return activations[0]
+        }
+        let first = activations[0]
+        let allQSOs = activations.flatMap(\.qsos).sorted { $0.timestamp < $1.timestamp }
+        let parkRefs = activations.map(\.parkReference).joined(separator: " \u{2192} ")
+        return POTAActivation(
+            parkReference: parkRefs,
+            utcDate: first.utcDate,
+            callsign: first.callsign,
+            qsos: allQSOs
+        )
     }
 
     func saveMetadataEdit(

@@ -280,6 +280,7 @@ struct LoggerView: View {
                     parkReference: pendingSessionEndParkRef ?? "",
                     parkName: pendingSessionEndParkName,
                     qsoCount: pendingSessionEndQSOCount,
+                    roveStops: pendingSessionEndRoveStops,
                     isInMaintenance: pendingSessionEndInMaintenance,
                     maintenanceTimeRemaining: pendingSessionEndMaintenanceRemaining,
                     onUpload: {
@@ -422,6 +423,7 @@ struct LoggerView: View {
     @State private var pendingSessionEndParkName: String?
     @State private var pendingSessionEndQSOCount = 0
     @State private var pendingSessionEndQSOs: [QSO] = []
+    @State private var pendingSessionEndRoveStops: [RoveUploadSummary] = []
     @State private var pendingSessionEndInMaintenance = false
     @State private var pendingSessionEndMaintenanceRemaining: String?
 
@@ -2468,18 +2470,46 @@ struct LoggerView: View {
 
         // Check if this is a POTA session with unuploaded QSOs
         if session.activationType == .pota,
-           !potaUploadPromptDisabled,
-           let parkRef = session.parkReference
+           !potaUploadPromptDisabled
         {
             // Find QSOs that need upload to POTA
             let qsosNeedingUpload = sessionQSOs.filter { $0.needsUpload(to: .pota) }
 
             if !qsosNeedingUpload.isEmpty {
-                // Store data for the prompt sheet
-                pendingSessionEndParkRef = parkRef
-                pendingSessionEndParkName = lookupParkName(parkRef)
-                pendingSessionEndQSOCount = qsosNeedingUpload.count
                 pendingSessionEndQSOs = qsosNeedingUpload
+
+                // Build rove stop summaries or single park info
+                if session.isRove {
+                    let stops = session.roveStops
+                    var summaries: [RoveUploadSummary] = []
+                    for stop in stops {
+                        let parkRef = stop.parkReference
+                        let stopQSOs = qsosNeedingUpload.filter {
+                            $0.parkReference?.uppercased() == parkRef.uppercased()
+                        }
+                        guard !stopQSOs.isEmpty else {
+                            continue
+                        }
+                        let primaryPark = ParkReference.split(parkRef).first ?? parkRef
+                        summaries.append(RoveUploadSummary(
+                            parkReference: primaryPark,
+                            parkName: lookupParkName(primaryPark),
+                            qsoCount: stopQSOs.count
+                        ))
+                    }
+                    pendingSessionEndRoveStops = summaries
+                    pendingSessionEndParkRef = session.parkReference
+                    pendingSessionEndParkName = nil
+                    pendingSessionEndQSOCount = qsosNeedingUpload.count
+                } else if let parkRef = session.parkReference {
+                    pendingSessionEndRoveStops = []
+                    pendingSessionEndParkRef = parkRef
+                    pendingSessionEndParkName = lookupParkName(parkRef)
+                    pendingSessionEndQSOCount = qsosNeedingUpload.count
+                } else {
+                    completeSessionEnd()
+                    return
+                }
 
                 // Check maintenance window status
                 pendingSessionEndInMaintenance = POTAClient.isInMaintenanceWindow()
@@ -2510,6 +2540,7 @@ struct LoggerView: View {
         pendingSessionEndParkName = nil
         pendingSessionEndQSOCount = 0
         pendingSessionEndQSOs = []
+        pendingSessionEndRoveStops = []
         pendingSessionEndInMaintenance = false
         pendingSessionEndMaintenanceRemaining = nil
     }

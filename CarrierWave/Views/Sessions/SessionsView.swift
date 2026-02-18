@@ -50,7 +50,7 @@ struct SessionsView: View {
     @State var engines: [UUID: RecordingPlaybackEngine] = [:]
 
     @State var orphanActivations: [POTAActivation] = []
-    @State var activationsBySessionId: [UUID: POTAActivation] = [:]
+    @State var activationsBySessionId: [UUID: [POTAActivation]] = [:]
     @State var metadataByKey: [String: ActivationMetadata] = [:]
     @State var cachedParkNames: [String: String] = [:]
     @State var jobs: [POTAJob] = []
@@ -84,7 +84,7 @@ struct SessionsView: View {
     }
 
     var allActivations: [POTAActivation] {
-        Array(activationsBySessionId.values) + orphanActivations
+        activationsBySessionId.values.flatMap { $0 } + orphanActivations
     }
 
     var allItems: [ListItem] {
@@ -353,19 +353,20 @@ extension SessionsView {
     }
 
     func sessionRowContent(_ session: LoggingSession) -> SessionRow {
-        let activation = activationsBySessionId[session.id]
+        let activations = activationsBySessionId[session.id] ?? []
+        let primaryActivation = activations.first
         let qsos = qsosBySessionId[session.id] ?? []
-        let meta = activation.flatMap { activationMetadata(for: $0) }
-        let sessionJobs = activation.flatMap {
-            jobsByActivationId[$0.id]
-        } ?? []
+        let meta = primaryActivation.flatMap { activationMetadata(for: $0) }
+        let sessionJobs = activations.flatMap {
+            jobsByActivationId[$0.id] ?? []
+        }
 
         return SessionRow(
             session: session,
             qsos: qsos,
-            activation: activation,
+            activations: activations,
             metadata: meta,
-            parkName: activation.flatMap { parkName(for: $0.parkReference) },
+            parkName: primaryActivation.flatMap { parkName(for: $0.parkReference) },
             hasRecording: recordingsBySessionId[session.id] != nil,
             hasFailedJob: sessionJobs.contains { $0.status.isFailure },
             hasCompletedJob: sessionJobs.contains {
@@ -373,22 +374,33 @@ extension SessionsView {
             },
             showUploadButton: isAuthenticated,
             isUploadDisabled: isInMaintenance || potaClient == nil,
-            onUploadTapped: activation.map { act in
-                { await performUploadReturningErrors(for: act) }
+            onUploadTapped: activations.isEmpty ? nil : {
+                var allErrors: [String: String] = [:]
+                for act in activations {
+                    let errors = await performUploadReturningErrors(for: act)
+                    allErrors.merge(errors) { _, new in new }
+                }
+                return allErrors
             },
-            onRejectTapped: activation.map { act in
+            onRejectTapped: primaryActivation.map { act in
                 { activationToReject = act }
             },
-            onShareTapped: activation.map { act in
-                { activationToShare = act }
+            onShareTapped: primaryActivation.map { _ in
+                {
+                    if session.isRove, activations.count > 1 {
+                        activationToShare = mergedRoveActivation(activations)
+                    } else if let act = activations.first {
+                        activationToShare = act
+                    }
+                }
             },
-            onExportTapped: activation.map { act in
+            onExportTapped: primaryActivation.map { act in
                 { activationToExport = act }
             },
-            onMapTapped: activation.map { act in
+            onMapTapped: primaryActivation.map { act in
                 { activationToMap = act }
             },
-            onEditTapped: activation.map { act in
+            onEditTapped: primaryActivation.map { act in
                 { activationToEdit = act }
             }
         )
@@ -397,10 +409,15 @@ extension SessionsView {
     @ViewBuilder
     func sessionNavigationRow(_ session: LoggingSession) -> some View {
         let rowContent = sessionRowContent(session)
-        let activation = activationsBySessionId[session.id]
+        let activations = activationsBySessionId[session.id] ?? []
         let recording = recordingsBySessionId[session.id]
 
-        if let activation {
+        if session.isRove {
+            // Rove sessions go to SessionDetailView which shows all parks
+            NavigationLink {
+                SessionDetailView(session: session)
+            } label: { rowContent }
+        } else if let activation = activations.first {
             NavigationLink(value: activation) { rowContent }
         } else if let recording {
             NavigationLink {
