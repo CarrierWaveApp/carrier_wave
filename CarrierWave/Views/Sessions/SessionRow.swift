@@ -86,7 +86,7 @@ struct SessionRow: View {
         } else {
             let totalQSOs = activations.reduce(0) { $0 + $1.qsoCount }
             let totalUploaded = activations.reduce(0) { $0 + $1.uploadedCount }
-            let allUploaded = activations.allSatisfy { $0.isFullyUploaded }
+            let allUploaded = activations.allSatisfy(\.isFullyUploaded)
             HStack(spacing: 4) {
                 Image(systemName: allUploaded ? "checkmark.circle.fill" : "arrow.up.circle")
                     .foregroundStyle(allUploaded ? .green : .gray)
@@ -192,7 +192,7 @@ struct SessionRow: View {
             }
 
             // Mode badge (non-POTA only, since POTA shows via timeline)
-            if activation == nil {
+            if activations.isEmpty {
                 Text(session.mode)
                     .font(.caption)
                     .padding(.horizontal, 5)
