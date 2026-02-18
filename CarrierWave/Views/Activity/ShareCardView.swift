@@ -136,6 +136,8 @@ extension ShareCardContent {
              .challengeCompletion,
              .personalBest:
             forAchievementActivity(item)
+        case .sessionCompleted:
+            forSessionActivity(item)
         }
     }
 
@@ -274,6 +276,34 @@ extension ShareCardContent {
                 stats: [], callsign: item.callsign, dateRange: dateString
             )
         }
+    }
+
+    // MARK: - Session Activities
+
+    private static func forSessionActivity(_ item: ActivityItem) -> ShareCardContent {
+        let details = item.details
+        let dateString = item.timestamp.formatted(date: .abbreviated, time: .omitted)
+        let qsoCount = details?.qsoCount ?? 0
+        var stats: [ShareCardStat] = [
+            ShareCardStat(label: "QSOs", value: "\(qsoCount)"),
+        ]
+        if let duration = details?.sessionDurationMinutes, duration > 0 {
+            let hours = duration / 60
+            let mins = duration % 60
+            let formatted = hours > 0 ? "\(hours)h \(mins)m" : "\(mins)m"
+            stats.append(ShareCardStat(label: "Duration", value: formatted))
+        }
+        if let bands = details?.sessionBands, !bands.isEmpty {
+            stats.append(ShareCardStat(label: "Bands", value: bands.joined(separator: ", ")))
+        }
+        return ShareCardContent(
+            iconName: "checkmark.circle.fill",
+            headline: "Session Complete!",
+            subheadline: details?.sessionActivationType,
+            stats: stats,
+            callsign: item.callsign,
+            dateRange: dateString
+        )
     }
 
     /// Create a summary card for a date range

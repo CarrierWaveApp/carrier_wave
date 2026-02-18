@@ -11,85 +11,15 @@ struct ActivityItemRow: View {
     var onCallsignTap: ((String) -> Void)?
 
     var body: some View {
-        // swiftlint:disable:next redundant_discardable_let
-        let _ = useMetricUnits // Trigger re-render when unit preference changes
-        VStack(alignment: .leading, spacing: 8) {
-            // Top row: icon, callsign, timestamp
-            HStack(alignment: .top) {
-                Image(systemName: item.activityType.icon)
-                    .font(.title3)
-                    .foregroundStyle(iconColor)
-                    .frame(width: 28)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack {
-                        if item.isOwn {
-                            Text(item.callsign)
-                                .font(.subheadline)
-                                .fontWeight(.semibold)
-
-                            Text("You")
-                                .font(.caption2)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(Color.accentColor.opacity(0.2))
-                                .clipShape(Capsule())
-                        } else if let onCallsignTap {
-                            Button {
-                                onCallsignTap(item.callsign)
-                            } label: {
-                                Text(item.callsign)
-                                    .font(.subheadline)
-                                    .fontWeight(.semibold)
-                                    .foregroundStyle(.primary)
-                            }
-                            .buttonStyle(.plain)
-                        } else {
-                            Text(item.callsign)
-                                .font(.subheadline)
-                                .fontWeight(.semibold)
-                        }
-
-                        Spacer()
-
-                        Text(item.timestamp, style: .relative)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    // Activity description
-                    Text(activityDescription)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            // Bottom row: details and share button
-            HStack {
-                if let detailText {
-                    Text(detailText)
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
-                }
-
-                Spacer()
-
-                if let onShare {
-                    Button {
-                        onShare()
-                    } label: {
-                        Image(systemName: "square.and.arrow.up")
-                            .font(.caption)
-                    }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(.secondary)
-                }
-            }
+        if item.activityType == .sessionCompleted {
+            SessionBragSheetCard(
+                item: item,
+                onCallsignTap: onCallsignTap,
+                onShare: onShare
+            )
+        } else {
+            standardRow
         }
-        .padding()
-        .background(Color(.systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
     }
 
     // MARK: Private
@@ -119,6 +49,8 @@ struct ActivityItemRow: View {
             .red
         case .workedFriend:
             .cyan
+        case .sessionCompleted:
+            .indigo
         }
     }
 
@@ -198,6 +130,12 @@ struct ActivityItemRow: View {
                 return "Worked friend \(callsign)"
             }
             return "Worked a friend"
+
+        case .sessionCompleted:
+            if let count = details?.qsoCount {
+                return "Completed a session (\(count) QSOs)"
+            }
+            return "Completed a session"
         }
     }
 
@@ -214,6 +152,88 @@ struct ActivityItemRow: View {
         }
 
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    }
+
+    private var standardRow: some View {
+        // swiftlint:disable:next redundant_discardable_let
+        let _ = useMetricUnits // Trigger re-render when unit preference changes
+        return VStack(alignment: .leading, spacing: 8) {
+            // Top row: icon, callsign, timestamp
+            HStack(alignment: .top) {
+                Image(systemName: item.activityType.icon)
+                    .font(.title3)
+                    .foregroundStyle(iconColor)
+                    .frame(width: 28)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack {
+                        if item.isOwn {
+                            Text(item.callsign)
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+
+                            Text("You")
+                                .font(.caption2)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Color.accentColor.opacity(0.2))
+                                .clipShape(Capsule())
+                        } else if let onCallsignTap {
+                            Button {
+                                onCallsignTap(item.callsign)
+                            } label: {
+                                Text(item.callsign)
+                                    .font(.subheadline)
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(.primary)
+                            }
+                            .buttonStyle(.plain)
+                        } else {
+                            Text(item.callsign)
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+                        }
+
+                        Spacer()
+
+                        Text(item.timestamp, style: .relative)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    // Activity description
+                    Text(activityDescription)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            // Bottom row: details and share button
+            HStack {
+                if let detailText {
+                    Text(detailText)
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                }
+
+                Spacer()
+
+                if let onShare {
+                    Button {
+                        onShare()
+                    } label: {
+                        Image(systemName: "square.and.arrow.up")
+                            .font(.caption)
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .padding()
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
     }
 
     private func formatDistance(_ km: Double) -> String {

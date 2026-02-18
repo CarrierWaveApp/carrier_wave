@@ -221,6 +221,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `LoggingSessionManager+Conditions.swift` | Auto-record solar/weather conditions at POTA session start |
 | `LoggingSessionManager+POTASplit.swift` | Split POTA sessions at UTC midnight so each covers one activation date |
 | `LoggingSessionManager+LiveActivity.swift` | Live Activity integration hooks (start, update, end, pause, resume) |
+| `LoggingSessionManager+SessionActivity.swift` | Report sessionCompleted activity with stats when ending a session |
 | `LoggingSessionManager+Spotting.swift` | POTA spot timer, posting, comments polling, monitoring |
 | `RBNClient.swift` | Vail ReRBN API client for reverse beacon network spots |
 | `NOAAClient.swift` | NOAA API client for solar conditions and weather |
@@ -488,6 +489,8 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 |------|---------|
 | `ActivityView.swift` | Main activity tab with challenges section and activity feed |
 | `ActivityItemRow.swift` | Individual activity feed item display |
+| `SessionBragSheetCard.swift` | Full brag sheet card for completed sessions in activity feed (map, stats, timeline) |
+| `SessionBragSheetCard+Components.swift` | Map, stats, equipment, and footer sections for session brag sheet card |
 | `FilterBar.swift` | Feed filter chips (All/Friends/Clubs) |
 | `FriendsListView.swift` | Friends list with pending requests, suggestions, and invite links |
 | `FriendSuggestionsSection.swift` | Friend suggestion rows with Add/Dismiss actions |

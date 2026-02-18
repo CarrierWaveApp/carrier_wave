@@ -62,6 +62,9 @@ final class ActivityDetector {
         case .challengeTierUnlock,
              .challengeCompletion:
             return "\(type):\(item.challengeId?.uuidString ?? "challenge")"
+        case .sessionCompleted:
+            let day = dayStringFrom(item.timestamp)
+            return "\(type):\(day)"
         }
     }
 
@@ -180,6 +183,9 @@ final class ActivityDetector {
         case .challengeTierUnlock,
              .challengeCompletion:
             return "\(type):challenge"
+        case .sessionCompleted:
+            let day = dayStringFrom(activity.timestamp)
+            return "\(type):\(day)"
         }
     }
 
@@ -236,6 +242,9 @@ final class ActivityDetector {
         case .challengeTierUnlock,
              .challengeCompletion:
             // These are handled by challenge system, not detector
+            break
+        case .sessionCompleted:
+            // Handled by LoggingSessionManager+SessionActivity, not detector
             break
         }
     }

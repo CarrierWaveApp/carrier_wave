@@ -16,6 +16,7 @@ enum ActivityType: String, Codable, CaseIterable {
     case potaDailyStreak
     case personalBest
     case workedFriend
+    case sessionCompleted
 
     // MARK: Internal
 
@@ -33,6 +34,7 @@ enum ActivityType: String, Codable, CaseIterable {
         case .potaDailyStreak: "flame.fill"
         case .personalBest: "chart.line.uptrend.xyaxis"
         case .workedFriend: "person.line.dotted.person.fill"
+        case .sessionCompleted: "checkmark.seal.fill"
         }
     }
 
@@ -50,6 +52,7 @@ enum ActivityType: String, Codable, CaseIterable {
         case .potaDailyStreak: "POTA Streak"
         case .personalBest: "Personal Best"
         case .workedFriend: "Worked Friend"
+        case .sessionCompleted: "Session Complete"
         }
     }
 }

@@ -5,6 +5,8 @@ All notable changes to Carrier Wave will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Report session completed activity to server when ending a logging session
+- Full brag sheet cards in activity feed for completed sessions (map, timeline, stats, equipment)
 - Lock screen circular widget now supports A-index and SFI metrics (configurable via "Lock Screen Metric" parameter)
 - Add search to settings: type to filter all ~55 settings by title and keywords, tap to navigate directly to the containing view
 

@@ -36,10 +36,11 @@ struct SyncDebugView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Menu {
-                    ShareLink(item: formatLogForSharing()) {
-                        Label("Share Log", systemImage: "square.and.arrow.up")
+                    if let logFileURL = createLogFile() {
+                        ShareLink(item: logFileURL) {
+                            Label("Share Log", systemImage: "square.and.arrow.up")
+                        }
                     }
-                    .disabled(debugLog.logEntries.isEmpty)
 
                     Divider()
 
@@ -220,6 +221,24 @@ struct SyncDebugView: View {
         }
 
         return lines.joined(separator: "\n")
+    }
+
+    private func createLogFile() -> URL? {
+        guard !debugLog.logEntries.isEmpty else {
+            return nil
+        }
+        let content = formatLogForSharing()
+        let filenameDateFormatter = DateFormatter()
+        filenameDateFormatter.dateFormat = "yyyy-MM-dd_HHmmss"
+        let timestamp = filenameDateFormatter.string(from: Date())
+        let filename = "carrier-wave-sync-log-\(timestamp).txt"
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
+        do {
+            try content.write(to: url, atomically: true, encoding: .utf8)
+            return url
+        } catch {
+            return nil
+        }
     }
 
     private func loadJobs() async {

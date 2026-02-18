@@ -44,25 +44,16 @@ final class ActivityFeedSyncService: ObservableObject {
     // MARK: Private
 
     private func updateLocalActivities(from items: [FeedItemDTO]) throws {
-        // Fetch existing activity items (not own)
         let descriptor = FetchDescriptor<ActivityItem>(
             predicate: #Predicate { !$0.isOwn }
         )
         let existing = try modelContext.fetch(descriptor)
         let existingById = Dictionary(uniqueKeysWithValues: existing.map { ($0.id, $0) })
 
-        var seenIds = Set<UUID>()
-
         for item in items {
-            seenIds.insert(item.id)
-
-            if existingById[item.id] != nil {
-                // Already have this item, skip
-                continue
-            }
-
-            // Create new activity item
-            guard let activityType = ActivityType(rawValue: item.activityType) else {
+            guard existingById[item.id] == nil,
+                  let activityType = ActivityType(rawValue: item.activityType)
+            else {
                 continue
             }
 
@@ -73,32 +64,41 @@ final class ActivityFeedSyncService: ObservableObject {
                 timestamp: item.timestamp,
                 isOwn: false
             )
-
-            // Convert details
-            var details = ActivityDetails()
-            details.entityName = item.details.entityName
-            details.entityCode = item.details.entityCode
-            details.band = item.details.band
-            details.mode = item.details.mode
-            details.workedCallsign = item.details.workedCallsign
-            details.distanceKm = item.details.distanceKm
-            details.parkReference = item.details.parkReference
-            details.parkName = item.details.parkName
-            details.qsoCount = item.details.qsoCount
-            details.streakDays = item.details.streakDays
-            details.challengeName = item.details.challengeName
-            details.tierName = item.details.tierName
-            details.recordType = item.details.recordType
-            details.recordValue = item.details.recordValue
-
-            activityItem.details = details
+            activityItem.details = convertDetails(from: item.details)
             modelContext.insert(activityItem)
         }
 
-        // Optionally remove old items not in the latest fetch
-        // (for now, keep them - server will handle retention)
-
         try modelContext.save()
+    }
+
+    private func convertDetails(from dto: ReportActivityDetails) -> ActivityDetails {
+        var details = ActivityDetails()
+        details.entityName = dto.entityName
+        details.entityCode = dto.entityCode
+        details.band = dto.band
+        details.mode = dto.mode
+        details.workedCallsign = dto.workedCallsign
+        details.distanceKm = dto.distanceKm
+        details.parkReference = dto.parkReference
+        details.parkName = dto.parkName
+        details.qsoCount = dto.qsoCount
+        details.streakDays = dto.streakDays
+        details.challengeName = dto.challengeName
+        details.tierName = dto.tierName
+        details.recordType = dto.recordType
+        details.recordValue = dto.recordValue
+        details.sessionDurationMinutes = dto.sessionDurationMinutes
+        details.sessionBands = dto.sessionBands
+        details.sessionModes = dto.sessionModes
+        details.sessionDXCCCount = dto.sessionDXCCCount
+        details.sessionFarthestKm = dto.sessionFarthestKm
+        details.sessionActivationType = dto.sessionActivationType
+        details.sessionMyGrid = dto.sessionMyGrid
+        details.sessionRig = dto.sessionRig
+        details.sessionAntenna = dto.sessionAntenna
+        details.sessionContactGrids = dto.sessionContactGrids
+        details.sessionTimeline = dto.sessionTimeline
+        return details
     }
 }
 

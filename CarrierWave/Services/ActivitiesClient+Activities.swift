@@ -136,6 +136,19 @@ struct ReportActivityDetails: Codable {
     var tierName: String?
     var recordType: String?
     var recordValue: String?
+
+    // Session summary fields (for sessionCompleted)
+    var sessionDurationMinutes: Int?
+    var sessionBands: [String]?
+    var sessionModes: [String]?
+    var sessionDXCCCount: Int?
+    var sessionFarthestKm: Double?
+    var sessionActivationType: String?
+    var sessionMyGrid: String?
+    var sessionRig: String?
+    var sessionAntenna: String?
+    var sessionContactGrids: [ContactGridEntry]?
+    var sessionTimeline: [TimelineEntry]?
 }
 
 // MARK: - ReportedActivityDTO

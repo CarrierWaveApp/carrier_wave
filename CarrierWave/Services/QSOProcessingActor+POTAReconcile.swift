@@ -139,8 +139,8 @@ extension QSOProcessingActor {
         counts: inout ReconcileCounts
     ) -> Bool {
         if presence.isPresent {
-            if !keys.confirmed.contains(key)
-                && !keys.nilDateConfirmed.contains(parkCallsignKey)
+            if !keys.confirmed.contains(key),
+               !keys.nilDateConfirmed.contains(parkCallsignKey)
             {
                 presence.isPresent = false
                 presence.needsUpload = true

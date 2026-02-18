@@ -31,6 +31,10 @@ final class LoggingSessionManager {
         let isFirstFrequencySet: Bool
     }
 
+    /// Modes that represent activation metadata, not actual QSOs (from Ham2K PoLo)
+    /// These should never be synced to any service
+    static let metadataModes: Set<String> = ["WEATHER", "SOLAR", "NOTE"]
+
     /// Currently active session
     private(set) var activeSession: LoggingSession?
 
@@ -279,6 +283,12 @@ final class LoggingSessionManager {
         UIApplication.shared.isIdleTimerDisabled = false
 
         try? modelContext.save()
+
+        // Report session completed activity (fire and forget)
+        let completedSession = session
+        Task { [weak self] in
+            await self?.reportSessionCompleted(completedSession)
+        }
 
         WidgetDataWriter.clearSession()
     }
@@ -870,10 +880,6 @@ final class LoggingSessionManager {
     }
 
     // MARK: Private
-
-    /// Modes that represent activation metadata, not actual QSOs (from Ham2K PoLo)
-    /// These should never be synced to any service
-    private static let metadataModes: Set<String> = ["WEATHER", "SOLAR", "NOTE"]
 
     /// Cached service configuration (checked once at session start to avoid Keychain reads per-QSO)
     private var qrzConfigured = false
