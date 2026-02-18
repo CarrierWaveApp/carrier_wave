@@ -56,6 +56,13 @@ extension DashboardView {
         }
     }
 
+    @ViewBuilder
+    var equipmentCard: some View {
+        if equipmentStats.hasComputed, equipmentStats.hasData {
+            EquipmentUsageCard(equipmentStats: equipmentStats)
+        }
+    }
+
     var conditionsCard: some View {
         ConditionsCard(tourState: tourState)
     }

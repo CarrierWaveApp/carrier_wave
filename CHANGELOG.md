@@ -5,6 +5,8 @@ All notable changes to Carrier Wave will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Add equipment usage stats card to dashboard showing top 3 favorites, QSO magnet, best combo, and gathering dust
+- Equipment detail drilldown with sortable ranked list and category filtering
 - Enrich WebSDR receiver selection with live SNR, antenna details, and band coverage from /status endpoint
 - Add WebSDR favorites that sync across devices via iCloud
 - Parse antenna descriptions showing type, bands, and directionality as badges

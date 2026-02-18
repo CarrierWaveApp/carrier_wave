@@ -65,6 +65,9 @@ struct DashboardView: View {
     /// Progressive statistics - computes expensive stats in background for large datasets
     @State var asyncStats = AsyncQSOStatistics()
 
+    /// Equipment usage statistics - computed in background from LoggingSession data
+    @State var equipmentStats = AsyncEquipmentStats()
+
     /// Service presence counts - computed in background
     @State var presenceCounts = AsyncServicePresenceCounts()
 
@@ -100,6 +103,7 @@ struct DashboardView: View {
                         summaryCard
                     }
                     favoritesCard
+                    equipmentCard
                     conditionsCard
                     servicesList
                 }
@@ -116,6 +120,7 @@ struct DashboardView: View {
             .task {
                 // Compute stats and presence counts in background on first load
                 asyncStats.compute(from: modelContext)
+                equipmentStats.compute(from: modelContext.container)
                 presenceCounts.compute(from: modelContext)
             }
             .task {
@@ -143,15 +148,18 @@ struct DashboardView: View {
                 Task {
                     try? await Task.sleep(for: .milliseconds(300))
                     asyncStats.recompute(from: modelContext)
+                    equipmentStats.recompute(from: modelContext.container)
                     presenceCounts.recompute(from: modelContext)
                 }
             }
             .onReceive(NotificationCenter.default.publisher(for: .didClearQSOs)) { _ in
                 // Reset and recompute stats after QSOs are cleared
                 asyncStats.reset()
+                equipmentStats.reset()
                 presenceCounts.recompute(from: modelContext)
                 // Recompute after reset to show zeros
                 asyncStats.compute(from: modelContext)
+                equipmentStats.compute(from: modelContext.container)
             }
             // NOTE: No .onDisappear cancellation - computation continues in background
             // when user switches tabs. This is intentional because:
