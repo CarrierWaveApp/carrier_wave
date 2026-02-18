@@ -4,6 +4,8 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.39.0] - 2026-02-18
+
 ### Added
 - Add configurable rove QRT spot message in POTA Activation settings — mid-rove park transitions use the custom message (default "QRT moving to next park") while final session QRT remains "QRT"
 - Report session completed activity to server when ending a logging session
