@@ -57,7 +57,7 @@ final class LiveActivityService {
 
         let finalContent = state.map { ActivityContent(state: $0, staleDate: nil) }
         Task {
-            await activity.end(finalContent, dismissalPolicy: .default)
+            await activity.end(finalContent, dismissalPolicy: .immediate)
             logger.info("Ended Live Activity: \(activity.id)")
         }
         currentActivity = nil
