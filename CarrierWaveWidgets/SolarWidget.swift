@@ -166,27 +166,34 @@ struct SolarEntry: TimelineEntry {
     let date: Date
     let solar: SolarData?
     let band: SolarBand
+    let metric: SolarMetric
 }
 
 // MARK: - SolarTimelineProvider
 
 struct SolarTimelineProvider: AppIntentTimelineProvider {
     func placeholder(in _: Context) -> SolarEntry {
-        SolarEntry(date: Date(), solar: .placeholder, band: .band30m20m)
+        SolarEntry(date: Date(), solar: .placeholder, band: .band30m20m, metric: .kIndex)
     }
 
     func snapshot(
         for configuration: SolarWidgetIntent, in _: Context
     ) async -> SolarEntry {
         let solar = await SolarFetcher.fetch()
-        return SolarEntry(date: Date(), solar: solar ?? .placeholder, band: configuration.band)
+        return SolarEntry(
+            date: Date(), solar: solar ?? .placeholder,
+            band: configuration.band, metric: configuration.metric
+        )
     }
 
     func timeline(
         for configuration: SolarWidgetIntent, in _: Context
     ) async -> Timeline<SolarEntry> {
         let solar = await SolarFetcher.fetch()
-        let entry = SolarEntry(date: Date(), solar: solar, band: configuration.band)
+        let entry = SolarEntry(
+            date: Date(), solar: solar,
+            band: configuration.band, metric: configuration.metric
+        )
         let nextUpdate = Date().addingTimeInterval(30 * 60)
         return Timeline(entries: [entry], policy: .after(nextUpdate))
     }
@@ -304,19 +311,66 @@ struct SolarWidgetSmallView: View {
 
 struct SolarWidgetAccessoryCircularView: View {
     let solar: SolarData?
+    let metric: SolarMetric
 
     var body: some View {
         if let solar {
-            Gauge(value: min(solar.kIndex, 9), in: 0 ... 9) {
-                Text("K")
-            } currentValueLabel: {
-                Text(String(format: "%.0f", solar.kIndex))
-                    .font(.system(.title3, design: .rounded, weight: .heavy))
+            switch metric {
+            case .kIndex:
+                accessoryGauge(
+                    label: "K",
+                    value: min(solar.kIndex, 9), range: 0 ... 9,
+                    displayValue: String(format: "%.0f", solar.kIndex)
+                )
+            case .aIndex:
+                if let aIdx = solar.aIndex {
+                    accessoryGauge(
+                        label: "A",
+                        value: min(Double(aIdx), 50), range: 0 ... 50,
+                        displayValue: "\(aIdx)"
+                    )
+                } else {
+                    noValueView(label: "A")
+                }
+            case .sfi:
+                if let sfi = solar.solarFlux {
+                    accessoryGauge(
+                        label: "SFI",
+                        value: min(sfi, 300), range: 0 ... 300,
+                        displayValue: "\(Int(sfi))"
+                    )
+                } else {
+                    noValueView(label: "SFI")
+                }
             }
-            .gaugeStyle(.accessoryCircular)
         } else {
             Image(systemName: "sun.max.fill")
                 .font(.title3)
+        }
+    }
+
+    private func accessoryGauge(
+        label: String, value: Double, range: ClosedRange<Double>,
+        displayValue: String
+    ) -> some View {
+        Gauge(value: value, in: range) {
+            Text(label)
+        } currentValueLabel: {
+            Text(displayValue)
+                .font(.system(.title3, design: .rounded, weight: .heavy))
+        }
+        .gaugeStyle(.accessoryCircular)
+    }
+
+    private func noValueView(label: String) -> some View {
+        ZStack {
+            AccessoryWidgetBackground()
+            VStack(spacing: 0) {
+                Text("--")
+                    .font(.system(.title3, design: .rounded, weight: .heavy))
+                Text(label)
+                    .font(.caption2)
+            }
         }
     }
 }
@@ -404,7 +458,7 @@ struct SolarWidgetEntryView: View {
     var body: some View {
         switch widgetFamily {
         case .accessoryCircular:
-            SolarWidgetAccessoryCircularView(solar: entry.solar)
+            SolarWidgetAccessoryCircularView(solar: entry.solar, metric: entry.metric)
         case .accessoryRectangular:
             SolarWidgetAccessoryRectangularView(solar: entry.solar, band: entry.band)
         case .accessoryInline:

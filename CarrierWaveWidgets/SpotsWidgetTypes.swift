@@ -147,6 +147,7 @@ struct WidgetSpot: Identifiable, Sendable {
     let source: Source
     let parkRef: String?
     let snr: Int?
+    let wpm: Int?
 
     var frequencyDisplay: String {
         String(format: "%.1f", frequencyKHz)
@@ -176,7 +177,12 @@ struct WidgetSpot: Identifiable, Sendable {
     var sourceLabel: String {
         switch source {
         case .pota: parkRef ?? "POTA"
-        case .rbn: snr.map { "\($0) dB" } ?? "RBN"
+        case .rbn:
+            let parts = [
+                snr.map { "\($0) dB" },
+                wpm.map { "\($0) wpm" },
+            ].compactMap { $0 }
+            return parts.isEmpty ? "RBN" : parts.joined(separator: " ")
         }
     }
 }
@@ -207,8 +213,11 @@ enum SpotsFetcher {
             }
         }
 
+        // Deduplicate by callsign, averaging SNR and WPM across spots
+        let deduped = deduplicateByCallsign(spots)
+
         // Empty array = all (no filter)
-        let filtered = spots.filter { spot in
+        let filtered = deduped.filter { spot in
             let bandMatch = bands.isEmpty || bands.contains { $0.matches(spot.frequencyKHz) }
             let modeMatch = modes.isEmpty || modes.contains { $0.matches(spot.mode) }
             return bandMatch && modeMatch
@@ -219,6 +228,34 @@ enum SpotsFetcher {
     }
 
     // MARK: Private
+
+    /// Groups spots by callsign, keeping the most recent spot and averaging SNR/WPM
+    private static func deduplicateByCallsign(_ spots: [WidgetSpot]) -> [WidgetSpot] {
+        let grouped = Dictionary(grouping: spots) { $0.callsign.uppercased() }
+        return grouped.values.compactMap { group in
+            guard let newest = group.max(by: { $0.timestamp < $1.timestamp }) else {
+                return nil
+            }
+            guard group.count > 1 else {
+                return newest
+            }
+            let snrValues = group.compactMap(\.snr)
+            let avgSNR = snrValues.isEmpty ? nil : Int(
+                (Double(snrValues.reduce(0, +)) / Double(snrValues.count)).rounded()
+            )
+            let wpmValues = group.compactMap(\.wpm)
+            let avgWPM = wpmValues.isEmpty ? nil : Int(
+                (Double(wpmValues.reduce(0, +)) / Double(wpmValues.count)).rounded()
+            )
+            return WidgetSpot(
+                id: newest.id, callsign: newest.callsign,
+                frequencyKHz: newest.frequencyKHz, mode: newest.mode,
+                timestamp: newest.timestamp, source: newest.source,
+                parkRef: newest.parkRef, snr: avgSNR ?? newest.snr,
+                wpm: avgWPM ?? newest.wpm
+            )
+        }
+    }
 
     private static let potaSpotsURL = "https://api.pota.app/spot/activator"
     private static let rbnBaseURL = "https://vailrerbn.com/api/v1"
@@ -265,7 +302,7 @@ enum SpotsFetcher {
                 id: "pota-\(dto.spotId)", callsign: dto.activator,
                 frequencyKHz: freqKHz, mode: dto.mode,
                 timestamp: timestamp, source: .pota,
-                parkRef: dto.reference, snr: nil
+                parkRef: dto.reference, snr: nil, wpm: nil
             )
         }
     }
@@ -296,6 +333,7 @@ enum SpotsFetcher {
             let mode: String
             let timestamp: Date
             let snr: Int
+            let wpm: Int?
         }
 
         let decoder = JSONDecoder()
@@ -315,7 +353,7 @@ enum SpotsFetcher {
                 id: "rbn-\(dto.id)", callsign: dto.callsign,
                 frequencyKHz: dto.frequency, mode: dto.mode,
                 timestamp: dto.timestamp, source: .rbn,
-                parkRef: nil, snr: dto.snr
+                parkRef: nil, snr: dto.snr, wpm: dto.wpm
             )
         }
     }

@@ -167,21 +167,39 @@ struct SpotsWidgetMediumView: View {
             Text(sourceLabel)
                 .font(font)
                 .foregroundStyle(.tertiary)
-            ForEach(entry.bands, id: \.self) { band in
-                Text(band.shortLabel)
+            if entry.bands.count > 2 {
+                Text("\(entry.bands.count) bands")
                     .font(font.weight(.medium))
                     .padding(.horizontal, 3)
                     .padding(.vertical, 1)
                     .background(.blue.opacity(0.15))
                     .clipShape(RoundedRectangle(cornerRadius: 3))
+            } else {
+                ForEach(entry.bands, id: \.self) { band in
+                    Text(band.shortLabel)
+                        .font(font.weight(.medium))
+                        .padding(.horizontal, 3)
+                        .padding(.vertical, 1)
+                        .background(.blue.opacity(0.15))
+                        .clipShape(RoundedRectangle(cornerRadius: 3))
+                }
             }
-            ForEach(entry.modes, id: \.self) { mode in
-                Text(mode.shortLabel)
+            if entry.modes.count > 2 {
+                Text("\(entry.modes.count) modes")
                     .font(font.weight(.medium))
                     .padding(.horizontal, 3)
                     .padding(.vertical, 1)
                     .background(.purple.opacity(0.15))
                     .clipShape(RoundedRectangle(cornerRadius: 3))
+            } else {
+                ForEach(entry.modes, id: \.self) { mode in
+                    Text(mode.shortLabel)
+                        .font(font.weight(.medium))
+                        .padding(.horizontal, 3)
+                        .padding(.vertical, 1)
+                        .background(.purple.opacity(0.15))
+                        .clipShape(RoundedRectangle(cornerRadius: 3))
+                }
             }
         }
     }
@@ -248,21 +266,39 @@ struct SpotsWidgetLargeView: View {
             Text(sourceLabel)
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
-            ForEach(entry.bands, id: \.self) { band in
-                Text(band.shortLabel)
+            if entry.bands.count > 2 {
+                Text("\(entry.bands.count) bands")
                     .font(.caption2.weight(.medium))
                     .padding(.horizontal, 4)
                     .padding(.vertical, 1)
                     .background(.blue.opacity(0.15))
                     .clipShape(RoundedRectangle(cornerRadius: 3))
+            } else {
+                ForEach(entry.bands, id: \.self) { band in
+                    Text(band.shortLabel)
+                        .font(.caption2.weight(.medium))
+                        .padding(.horizontal, 4)
+                        .padding(.vertical, 1)
+                        .background(.blue.opacity(0.15))
+                        .clipShape(RoundedRectangle(cornerRadius: 3))
+                }
             }
-            ForEach(entry.modes, id: \.self) { mode in
-                Text(mode.shortLabel)
+            if entry.modes.count > 2 {
+                Text("\(entry.modes.count) modes")
                     .font(.caption2.weight(.medium))
                     .padding(.horizontal, 4)
                     .padding(.vertical, 1)
                     .background(.purple.opacity(0.15))
                     .clipShape(RoundedRectangle(cornerRadius: 3))
+            } else {
+                ForEach(entry.modes, id: \.self) { mode in
+                    Text(mode.shortLabel)
+                        .font(.caption2.weight(.medium))
+                        .padding(.horizontal, 4)
+                        .padding(.vertical, 1)
+                        .background(.purple.opacity(0.15))
+                        .clipShape(RoundedRectangle(cornerRadius: 3))
+                }
             }
         }
     }
