@@ -158,6 +158,10 @@ extension SyncService {
         var failed = Set<String>()
         /// Activations with pending/processing jobs — maps key to submitted timestamp
         var inProgress = [String: Date]()
+        /// Park+callsign pairs with nil-date completed jobs (all QSOs were duplicates).
+        /// Format: "PARKREF|CALLSIGN". Used as fallback when no date-specific key matches
+        /// a submitted presence — prevents orphan-reset loops for all-duplicate re-uploads.
+        var nilDateConfirmed = Set<String>()
     }
 
     /// Build classified activation key sets from POTA jobs.
@@ -166,19 +170,28 @@ extension SyncService {
         var keys = POTAActivationKeys()
 
         for job in jobs {
-            guard let callsign = job.callsignUsed, let utcDate = job.utcDateString else {
+            guard let callsign = job.callsignUsed else {
                 continue
             }
-            let key = "\(job.reference.uppercased())|\(callsign.uppercased())|\(utcDate)"
 
-            if job.status == .completed || job.status == .duplicate {
-                // Completed or duplicate: POTA has this activation's QSOs
-                keys.confirmed.insert(key)
-            } else if job.status.isFailure {
-                keys.failed.insert(key)
-            } else {
-                // Pending or processing: track with submitted timestamp for staleness
-                keys.inProgress[key] = job.submitted
+            if let utcDate = job.utcDateString {
+                let key = "\(job.reference.uppercased())|\(callsign.uppercased())|\(utcDate)"
+
+                if job.status == .completed || job.status == .duplicate {
+                    keys.confirmed.insert(key)
+                } else if job.status.isFailure {
+                    keys.failed.insert(key)
+                } else {
+                    keys.inProgress[key] = job.submitted
+                }
+            } else if job.status == .completed || job.status == .duplicate {
+                // Nil-date completed jobs happen when all QSOs were duplicates
+                // (POTA returns firstQSO=nil). Track by park+callsign so the
+                // reconciliation doesn't orphan-reset submitted QSOs that POTA
+                // already has.
+                let parkCallsign =
+                    "\(job.reference.uppercased())|\(callsign.uppercased())"
+                keys.nilDateConfirmed.insert(parkCallsign)
             }
         }
 

@@ -106,7 +106,12 @@ extension QSOProcessingActor {
             let key = buildActivationKey(
                 parkRef: park, callsign: qso.myCallsign, timestamp: qso.timestamp
             )
-            if applyReconciliation(presence: presence, key: key, keys: keys, counts: &counts) {
+            let parkCallsignKey =
+                "\(park.uppercased())|\(qso.myCallsign.uppercased())"
+            if applyReconciliation(
+                presence: presence, key: key, parkCallsignKey: parkCallsignKey,
+                keys: keys, counts: &counts
+            ) {
                 return
             }
         }
@@ -129,11 +134,14 @@ extension QSOProcessingActor {
     private func applyReconciliation(
         presence: ServicePresence,
         key: String,
+        parkCallsignKey: String,
         keys: SyncService.POTAActivationKeys,
         counts: inout ReconcileCounts
     ) -> Bool {
         if presence.isPresent {
-            if !keys.confirmed.contains(key) {
+            if !keys.confirmed.contains(key)
+                && !keys.nilDateConfirmed.contains(parkCallsignKey)
+            {
                 presence.isPresent = false
                 presence.needsUpload = true
                 counts.reset += 1
@@ -141,6 +149,15 @@ extension QSOProcessingActor {
             }
         } else if presence.isSubmitted {
             if keys.confirmed.contains(key) {
+                presence.isPresent = true
+                presence.isSubmitted = false
+                presence.lastConfirmedAt = Date()
+                counts.confirmed += 1
+                return true
+            } else if keys.nilDateConfirmed.contains(parkCallsignKey) {
+                // A nil-date completed job exists for this park+callsign.
+                // This happens when all QSOs in the upload were duplicates
+                // (POTA returns firstQSO=nil). The QSOs are already in POTA.
                 presence.isPresent = true
                 presence.isSubmitted = false
                 presence.lastConfirmedAt = Date()
