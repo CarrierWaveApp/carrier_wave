@@ -392,6 +392,12 @@ struct SettingsMainView: View {
                 Label("WebSDR Recordings", systemImage: "waveform.circle")
             }
 
+            NavigationLink {
+                WebSDRFavoritesView()
+            } label: {
+                Label("WebSDR Favorites", systemImage: "star")
+            }
+
             DisclosureGroup("Always visible fields") {
                 Toggle("Their Grid", isOn: $showTheirGrid)
                 Toggle("Their Park", isOn: $showTheirPark)

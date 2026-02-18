@@ -29,6 +29,7 @@ struct CarrierWaveApp: App {
             DismissedSuggestion.self,
             SessionSpot.self,
             SolarSnapshot.self,
+            WebSDRFavorite.self,
         ])
         let modelConfiguration = ModelConfiguration(
             schema: schema,

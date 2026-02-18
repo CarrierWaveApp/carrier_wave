@@ -28,6 +28,7 @@ Pure logic library that can be tested without iOS Simulator. Run tests with `mak
 | `Sources/CarrierWaveCore/StreakCalculator.swift` | Streak calculation from date sets |
 | `Sources/CarrierWaveCore/SuggestionCategory.swift` | CW suggestion category enum |
 | `Sources/CarrierWaveCore/TwoferMatcher.swift` | Two-fer duplicate detection |
+| `Sources/CarrierWaveCore/AntennaDescriptionParser.swift` | KiwiSDR antenna description parser (type, bands, directionality) |
 | `Sources/CarrierWaveCore/QueryLanguage/QueryToken.swift` | Query token types and field definitions |
 | `Sources/CarrierWaveCore/QueryLanguage/QueryLexer.swift` | Query string tokenization |
 | `Sources/CarrierWaveCore/QueryLanguage/QueryAST.swift` | Query AST types (expression, term, condition) |
@@ -103,6 +104,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `RoveStop.swift` | Codable model for individual park stops within a POTA rove session |
 | `LoggerCommand.swift` | Command enum for logger input (FREQ, BAND, MODE, SPOT, RBN, POTA, P2P, SOLAR, WEATHER, MAP, WEBSDR) |
 | `WebSDRRecording.swift` | WebSDR recording metadata (host, file path, duration, session link) |
+| `WebSDRFavorite.swift` | Favorited KiwiSDR receiver model (iCloud synced) |
 | `CallsignNotesSource.swift` | SwiftData model for user-configured callsign notes file sources |
 | `BandPlan.swift` | US amateur radio band plan data with license class privileges |
 | `BandPlan+Activities.swift` | Frequency activity data (QRP, SSTV, FT8, CWT, nets) and time windows |
@@ -265,6 +267,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `KiwiSDRClient.swift` | KiwiSDR WebSocket client (connection, tuning, audio streaming) |
 | `KiwiSDRTypes.swift` | KiwiSDRMode (mode mapping/passbands) and KiwiSDRError types |
 | `KiwiSDRADPCM.swift` | IMA ADPCM decoder for KiwiSDR compressed audio |
+| `KiwiSDRStatusFetcher.swift` | Actor for fetching /status from individual KiwiSDR receivers |
 | `WebSDRDirectory.swift` | KiwiSDR public directory fetch, cache, and proximity search |
 | `WebSDRRecorder.swift` | Records KiwiSDR audio frames to compressed audio file |
 | `WebSDRSession.swift` | Coordinates WebSDR connection, recording, playback, and resilient reconnects |
@@ -366,7 +369,8 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `SpotSummaryView.swift` | Compact spot monitoring summary with region breakdown |
 | `WebSDRPanelView.swift` | WebSDR connection status, recording controls, level meter |
 | `WebSDRPanelView+Subviews.swift` | Extension with level meter, buffer indicator, reconnecting/error views |
-| `WebSDRPickerSheet.swift` | Nearby KiwiSDR receiver selection with distance/availability |
+| `WebSDRPickerSheet.swift` | KiwiSDR receiver selection with favorites, enrichment, and band matching |
+| `WebSDRReceiverRow.swift` | Enriched receiver row with antenna badges, SNR, band match |
 
 ## Views - CW Transcription (`CarrierWave/Views/CWTranscription/`)
 | File | Purpose |
@@ -525,6 +529,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `CommandRowSettingsView.swift` | Configure command row buttons above keyboard |
 | `DashboardMetricsSettingsView.swift` | Configure which metrics appear on dashboard card |
 | `WebSDRRecordingsView.swift` | List of all WebSDR recordings with delete, share, and details |
+| `WebSDRFavoritesView.swift` | WebSDR favorites management with manual add (advanced mode) |
 
 ## Documentation (`docs/`)
 | File | Purpose |
@@ -590,3 +595,8 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `KIndexRepairServiceTests.swift` | K-index repair service tests (cutoff date, field preservation) |
 | `BandPlanServiceTests.swift` | Band plan validation tests (license class privileges) |
 | `PerformanceTests/QSOStatisticsPerformanceTests.swift` | Performance regression tests (50k/500k QSOs) |
+
+## CarrierWaveCore Tests (`CarrierWaveCore/Tests/CarrierWaveCoreTests/`)
+| File | Purpose |
+|------|---------|
+| `AntennaDescriptionParserTests.swift` | Antenna description parsing tests (models, bands, direction) |

@@ -1,3 +1,4 @@
+import CarrierWaveCore
 import SwiftData
 import SwiftUI
 
@@ -17,6 +18,14 @@ struct WebSDRPanelView: View {
     let onDismiss: () -> Void
 
     @State var showPicker = false
+
+    /// Derive amateur band from session frequency for band-match highlighting
+    var derivedBand: String? {
+        guard let mhz = frequencyMHz else {
+            return nil
+        }
+        return BandUtilities.deriveBand(from: mhz * 1_000)
+    }
 
     var levelColor: Color {
         let level = webSDRSession.peakLevel
@@ -59,6 +68,7 @@ struct WebSDRPanelView: View {
         .sheet(isPresented: $showPicker) {
             WebSDRPickerSheet(
                 myGrid: myGrid,
+                operatingBand: derivedBand,
                 onSelect: { receiver in
                     showPicker = false
                     Task { await startRecording(receiver: receiver) }

@@ -1,13 +1,15 @@
+import SwiftData
 import SwiftUI
 
 // MARK: - WebSDRPickerSheet
 
 /// Sheet for selecting a nearby KiwiSDR receiver.
-/// Shows receivers sorted by proximity to the user's grid square.
+/// Shows favorites (if any) then receivers sorted by proximity.
 struct WebSDRPickerSheet: View {
     // MARK: Internal
 
     let myGrid: String?
+    let operatingBand: String?
     let onSelect: (KiwiSDRReceiver) -> Void
 
     var body: some View {
@@ -39,7 +41,10 @@ struct WebSDRPickerSheet: View {
     @AppStorage("useMetricUnits") private var useMetricUnits = false
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
     @State private var receivers: [KiwiSDRReceiver] = []
+    @State private var favorites: [WebSDRFavorite] = []
+    @State private var enrichments: [String: KiwiSDRStatusFetcher.ReceiverStatus] = [:]
     @State private var isLoading = true
 
     private var loadingView: some View {
@@ -71,82 +76,90 @@ struct WebSDRPickerSheet: View {
     }
 
     private var receiverList: some View {
-        List(receivers) { receiver in
-            Button {
-                onSelect(receiver)
-            } label: {
-                receiverRow(receiver)
-            }
-            .disabled(!receiver.isAvailable)
+        List {
+            favoritesSection
+            nearbySection
         }
     }
 
-    private func receiverRow(_ receiver: KiwiSDRReceiver) -> some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(receiver.name)
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-
-                Text(receiver.location)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-
-                HStack(spacing: 8) {
-                    Label(receiver.bands, systemImage: "waveform")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-
-                    Label(receiver.antenna, systemImage: "antenna.radiowaves.left.and.right")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
+    @ViewBuilder
+    private var favoritesSection: some View {
+        let favoriteReceivers = receivers.filter { isFavorite($0) }
+        if !favoriteReceivers.isEmpty {
+            Section("Favorites") {
+                ForEach(favoriteReceivers) { receiver in
+                    receiverButton(receiver)
                 }
-            }
-
-            Spacer()
-
-            VStack(alignment: .trailing, spacing: 4) {
-                if let dist = receiver.formattedDistance {
-                    Text(dist)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                availabilityBadge(receiver)
             }
         }
-        .contentShape(Rectangle())
-        .opacity(receiver.isAvailable ? 1.0 : 0.5)
     }
 
-    private func availabilityBadge(_ receiver: KiwiSDRReceiver) -> some View {
-        HStack(spacing: 4) {
-            Circle()
-                .fill(receiver.isAvailable ? .green : .red)
-                .frame(width: 6, height: 6)
-            if receiver.isAvailable {
-                Text("\(receiver.users)/\(receiver.maxUsers)")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-            } else {
-                Text("Full (\(receiver.users)/\(receiver.maxUsers))")
-                    .font(.caption2)
-                    .foregroundStyle(.red)
+    private var nearbySection: some View {
+        Section(favorites.isEmpty ? "Nearby" : "All Nearby") {
+            ForEach(receivers) { receiver in
+                receiverButton(receiver)
             }
         }
+    }
+
+    private func receiverButton(_ receiver: KiwiSDRReceiver) -> some View {
+        Button {
+            onSelect(receiver)
+        } label: {
+            WebSDRReceiverRow(
+                receiver: receiver,
+                enrichment: enrichments[receiver.id],
+                isFavorite: isFavorite(receiver),
+                operatingBand: operatingBand,
+                onToggleFavorite: { toggleFavorite(receiver) }
+            )
+        }
+        .disabled(!receiver.isAvailable)
+    }
+
+    private func isFavorite(_ receiver: KiwiSDRReceiver) -> Bool {
+        favorites.contains { $0.hostPort == receiver.id }
     }
 
     private func loadReceivers() async {
         isLoading = true
+        loadFavorites()
         await WebSDRDirectory.shared.refresh()
         receivers = await WebSDRDirectory.shared.findNearby(
             grid: myGrid,
             limit: 20
         )
         isLoading = false
+        await enrichReceivers()
+    }
+
+    private func loadFavorites() {
+        let descriptor = FetchDescriptor<WebSDRFavorite>(
+            sortBy: [SortDescriptor(\.addedDate, order: .reverse)]
+        )
+        favorites = (try? modelContext.fetch(descriptor)) ?? []
+    }
+
+    private func toggleFavorite(_ receiver: KiwiSDRReceiver) {
+        if let existing = favorites.first(where: { $0.hostPort == receiver.id }) {
+            modelContext.delete(existing)
+        } else {
+            let favorite = WebSDRFavorite(
+                hostPort: receiver.id,
+                displayName: receiver.name,
+                location: receiver.location,
+                antenna: enrichments[receiver.id]?.antenna ?? receiver.antenna
+            )
+            modelContext.insert(favorite)
+        }
+        try? modelContext.save()
+        loadFavorites()
+    }
+
+    private func enrichReceivers() async {
+        let stream = await KiwiSDRStatusFetcher.shared.fetchStatuses(for: receivers)
+        for await status in stream {
+            enrichments[status.hostPort] = status
+        }
     }
 }

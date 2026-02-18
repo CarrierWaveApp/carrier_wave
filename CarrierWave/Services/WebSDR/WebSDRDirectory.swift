@@ -1,3 +1,4 @@
+import CarrierWaveCore
 import CoreLocation
 import Foundation
 
@@ -19,6 +20,15 @@ struct KiwiSDRReceiver: Identifiable, Sendable {
 
     /// Distance from a reference point in km
     var distanceKm: Double?
+
+    // Enrichment fields from /status
+    var snrAll: Int?
+    var snrHF: Int?
+    var antConnected: Bool?
+    var grid: String?
+    var asl: Int?
+    var parsedAntenna: ParsedAntenna?
+    var enrichedAntenna: String?
 
     var coordinate: CLLocationCoordinate2D {
         CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
@@ -116,6 +126,8 @@ actor WebSDRDirectory {
         let maxUsers: Int
         let location: String
         let antenna: String
+        /// Enrichment fields (optional for backward compat with existing cache)
+        var grid: String?
     }
 
     private var receivers: [KiwiSDRReceiver] = []
