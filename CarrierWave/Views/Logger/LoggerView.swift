@@ -341,6 +341,10 @@ struct LoggerView: View {
     /// QSOs for the current session (manually fetched, not @Query to avoid full-database refresh)
     @State private var sessionQSOs: [QSO] = []
 
+    /// All QSOs for the current UTC day (across all sessions) — used for POTA duplicate detection
+    /// POTA groups contacts by band + park + UTC day, not by session
+    @State private var utcDayQSOs: [QSO] = []
+
     @State private var sessionManager: LoggingSessionManager?
 
     @State private var showSessionSheet = false
@@ -1157,11 +1161,9 @@ struct LoggerView: View {
                             case let .qso(qso):
                                 LoggerQSORow(
                                     qso: qso,
-                                    sessionQSOs: displayQSOs,
+                                    utcDayQSOs: utcDayQSOs,
                                     isPOTASession: sessionManager?.activeSession?
                                         .activationType == .pota,
-                                    isRove: sessionManager?.activeSession?.isRove
-                                        ?? false,
                                     onQSODeleted: refreshSessionQSOs,
                                     onEditCallsign: { qsoToEdit in
                                         startEditingCallsign(qsoToEdit)
@@ -1754,6 +1756,38 @@ struct LoggerView: View {
         } catch {
             sessionQSOs = []
         }
+        refreshUTCDayQSOs()
+    }
+
+    /// Refresh all QSOs for the current UTC day (for POTA duplicate detection across sessions)
+    /// POTA contacts are unique per callsign + band + park + UTC day, not per session.
+    private func refreshUTCDayQSOs() {
+        guard let session = sessionManager?.activeSession,
+              session.activationType == .pota
+        else {
+            utcDayQSOs = []
+            return
+        }
+
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "UTC")!
+        let startOfDay = calendar.startOfDay(for: Date())
+        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
+
+        let predicate = #Predicate<QSO> { qso in
+            !qso.isHidden
+                && qso.timestamp >= startOfDay
+                && qso.timestamp < endOfDay
+                && qso.parkReference != nil
+        }
+        var descriptor = FetchDescriptor<QSO>(predicate: predicate)
+        descriptor.fetchLimit = 5000
+
+        do {
+            utcDayQSOs = try modelContext.fetch(descriptor)
+        } catch {
+            utcDayQSOs = []
+        }
     }
 
     /// Refresh the list of active/paused sessions (for the no-session view)
@@ -1830,17 +1864,12 @@ struct LoggerView: View {
             }
         let currentBand = session.band ?? "Unknown"
 
-        // Find all QSOs with this callsign at the current park
-        // During roves, each park is a separate activation — scope to current park
+        // Search all QSOs for the UTC day at the current park (not just this session).
+        // POTA contacts are unique per callsign + band + park + UTC day.
         let currentPark = session.parkReference?.uppercased()
-        let matchingQSOs = displayQSOs.filter { qso in
-            guard qso.callsign.uppercased() == callsign else {
-                return false
-            }
-            if session.isRove {
-                return qso.parkReference?.uppercased() == currentPark
-            }
-            return true
+        let matchingQSOs = utcDayQSOs.filter { qso in
+            qso.callsign.uppercased() == callsign
+                && qso.parkReference?.uppercased() == currentPark
         }
 
         if matchingQSOs.isEmpty {
@@ -2642,12 +2671,10 @@ struct LoggerQSORow: View {
     // MARK: Internal
 
     let qso: QSO
-    /// All QSOs in the current session (for duplicate detection)
-    var sessionQSOs: [QSO] = []
+    /// All QSOs for the UTC day at any park (for POTA duplicate detection across sessions)
+    var utcDayQSOs: [QSO] = []
     /// Whether this is a POTA session
     var isPOTASession: Bool = false
-    /// Whether this session is a rove (multiple parks)
-    var isRove: Bool = false
     /// Callback when QSO is deleted (hidden)
     var onQSODeleted: (() -> Void)?
     /// Callback when callsign is tapped for quick edit
@@ -2729,19 +2756,13 @@ struct LoggerQSORow: View {
         let callsign = qso.callsign.uppercased()
         let thisBand = qso.band
 
-        // Find all previous QSOs with this callsign (before this one)
-        // During roves, scope to the same park — each park is a separate activation
+        // Search all QSOs for the UTC day at the same park (not just this session).
+        // POTA contacts are unique per callsign + band + park + UTC day.
         let qsoPark = qso.parkReference?.uppercased()
-        let previousQSOs = sessionQSOs.filter { other in
-            guard other.callsign.uppercased() == callsign,
-                  other.timestamp < qso.timestamp
-            else {
-                return false
-            }
-            if isRove {
-                return other.parkReference?.uppercased() == qsoPark
-            }
-            return true
+        let previousQSOs = utcDayQSOs.filter { other in
+            other.callsign.uppercased() == callsign
+                && other.timestamp < qso.timestamp
+                && other.parkReference?.uppercased() == qsoPark
         }
 
         if previousQSOs.isEmpty {
