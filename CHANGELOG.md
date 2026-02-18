@@ -4,6 +4,8 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.38.0] - 2026-02-17
+
 ### Added
 - Enrich WebSDR receiver selection with live SNR, antenna details, and band coverage from /status endpoint
 - Add WebSDR favorites that sync across devices via iCloud
@@ -31,13 +33,11 @@ All notable changes to Carrier Wave will be documented in this file.
 - Fix brag sheet only including last park's QSOs for rove sessions
 - Fix rove brag sheet showing parks in reverse date order instead of chronological visit order
 - Split POTA sessions at UTC day boundary so each session covers one activation date (fixes duplicate park entries when session spans midnight UTC)
+- Remove empty CFBundleURLTypes entry from Info.plist
 
 ### Changed
 - Sync activity feed immediately on Activity tab appearance instead of waiting 60 seconds
 - Add club sync to Activity tab refresh action
-
-### Fixed
-- Remove empty CFBundleURLTypes entry from Info.plist
 
 ## [1.37.0] - 2026-02-17
 
