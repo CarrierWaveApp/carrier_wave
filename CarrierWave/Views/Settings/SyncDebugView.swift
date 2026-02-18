@@ -33,14 +33,21 @@ struct SyncDebugView: View {
             }
         }
         .navigationTitle("Sync Debug")
+        .onChange(of: logFileURL) { _, url in
+            guard let url else {
+                return
+            }
+            presentShareSheet(for: url)
+        }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Menu {
-                    if let logFileURL = createLogFile() {
-                        ShareLink(item: logFileURL) {
-                            Label("Share Log", systemImage: "square.and.arrow.up")
-                        }
+                    Button {
+                        shareLogFile()
+                    } label: {
+                        Label("Share Log", systemImage: "square.and.arrow.up")
                     }
+                    .disabled(debugLog.logEntries.isEmpty)
 
                     Divider()
 
@@ -65,6 +72,7 @@ struct SyncDebugView: View {
     @State private var potaJobs: [POTAJob] = []
     @State private var isLoadingJobs = false
     @State private var jobsError: String?
+    @State private var logFileURL: URL?
 
     private var potaClient: POTAClient? {
         guard let potaAuth else {
@@ -223,21 +231,50 @@ struct SyncDebugView: View {
         return lines.joined(separator: "\n")
     }
 
+    private func shareLogFile() {
+        guard let url = createLogFile() else {
+            return
+        }
+        logFileURL = url
+    }
+
     private func createLogFile() -> URL? {
         guard !debugLog.logEntries.isEmpty else {
             return nil
         }
         let content = formatLogForSharing()
-        let filenameDateFormatter = DateFormatter()
-        filenameDateFormatter.dateFormat = "yyyy-MM-dd_HHmmss"
-        let timestamp = filenameDateFormatter.string(from: Date())
-        let filename = "carrier-wave-sync-log-\(timestamp).txt"
+        let fmt = DateFormatter()
+        fmt.dateFormat = "yyyy-MM-dd_HHmmss"
+        let filename = "carrier-wave-sync-log-\(fmt.string(from: Date())).log"
         let url = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
         do {
             try content.write(to: url, atomically: true, encoding: .utf8)
             return url
         } catch {
             return nil
+        }
+    }
+
+    private func presentShareSheet(for url: URL) {
+        // Delay to let the Menu dismiss before presenting
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+            let activityVC = UIActivityViewController(
+                activityItems: [url],
+                applicationActivities: nil
+            )
+            activityVC.excludedActivityTypes = [.copyToPasteboard]
+            guard let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                  let rootVC = scene.keyWindow?.rootViewController
+            else {
+                return
+            }
+            var presenter = rootVC
+            while let presented = presenter.presentedViewController {
+                presenter = presented
+            }
+            presenter.present(activityVC, animated: true) {
+                logFileURL = nil
+            }
         }
     }
 
