@@ -3,6 +3,8 @@ import SwiftUI
 // MARK: - EquipmentUsageCard
 
 struct EquipmentUsageCard: View {
+    // MARK: Internal
+
     let equipmentStats: AsyncEquipmentStats
 
     var body: some View {
@@ -91,16 +93,7 @@ struct EquipmentUsageCard: View {
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 
-    // MARK: - Helpers
-
-    private var rowDivider: some View {
-        Divider().padding(.leading, 44)
-    }
-
-    private func rankLabel(_ index: Int, category: EquipmentCategory) -> String {
-        let ordinal = index == 0 ? "Top" : (index == 1 ? "2nd" : "3rd")
-        return "\(ordinal) \(category.displayName)"
-    }
+    // MARK: Private
 
     private static let relativeDateFormatter: RelativeDateTimeFormatter = {
         let formatter = RelativeDateTimeFormatter()
@@ -108,8 +101,19 @@ struct EquipmentUsageCard: View {
         return formatter
     }()
 
+    // MARK: - Helpers
+
+    private var rowDivider: some View {
+        Divider().padding(.leading, 44)
+    }
+
     private static func relativeDate(_ date: Date) -> String {
         relativeDateFormatter.localizedString(for: date, relativeTo: Date())
+    }
+
+    private func rankLabel(_ index: Int, category: EquipmentCategory) -> String {
+        let ordinal = index == 0 ? "Top" : (index == 1 ? "2nd" : "3rd")
+        return "\(ordinal) \(category.displayName)"
     }
 }
 

@@ -470,6 +470,10 @@ VStack(alignment: isMe ? .trailing : .leading, spacing: 6) {
 
 ## Iconography
 
+### Settings Views: No Icons
+
+Settings views use plain `Text()` labels, not `Label(_, systemImage:)`. This keeps the settings list clean and scannable following the Apple Settings pattern. Status indicators (checkmark badges for connected services) are the exception.
+
 ### SF Symbols Usage
 
 All icons use SF Symbols. Common icons:

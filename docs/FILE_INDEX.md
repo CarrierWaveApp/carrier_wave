@@ -513,7 +513,19 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 ## Views - Settings (`CarrierWave/Views/Settings/`)
 | File | Purpose |
 |------|---------|
-| `SettingsView.swift` | Main settings navigation |
+| `SettingsView.swift` | Main settings navigation with search integration |
+| `SettingsView+Sections.swift` | Settings list sections (profile, general, developer, about) |
+| `SettingsView+Search.swift` | Search destination navigation handlers |
+| `SettingsHelperTypes.swift` | Helper types (ExportedFile, DatabaseExporter, ShareSheet) |
+| `SettingsSearchItem.swift` | Settings search destination enum, search item model, and static search index |
+| `SettingsSearchResultsView.swift` | Search results list component with NavigationLink rows |
+| `TabConfigurationView.swift` | Tab bar / sidebar ordering and visibility configuration |
+| `AllHiddenQSOsView.swift` | View and restore hidden (deleted) QSOs |
+| `AppearanceSettingsView.swift` | Tab bar, dashboard metrics, appearance, units settings |
+| `LoggerDetailSettingsView.swift` | Logger + activity log settings |
+| `POTAActivationSettingsView.swift` | POTA activation toggles (auto-spot, conditions, statistician) |
+| `SyncSourcesSettingsView.swift` | Standalone sync sources list wrapping SyncSourcesSection |
+| `DataToolsSettingsView.swift` | Data management (callbook, notes, external data, export) + deduplication |
 | `AboutMeView.swift` | User profile display and editing |
 | `ServiceSettingsViews.swift` | QRZ/POTA/LoFi auth configuration |
 | `CloudSettingsViews.swift` | iCloud sync settings |

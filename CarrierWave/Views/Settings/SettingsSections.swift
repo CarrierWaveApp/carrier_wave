@@ -29,7 +29,7 @@ struct SyncSourcesSection: View {
                 QRZSettingsView()
             } label: {
                 HStack {
-                    Label("QRZ Logbook", systemImage: "globe")
+                    Text("QRZ Logbook")
                     Spacer()
                     if qrzIsConfigured {
                         if let callsign = qrzCallsign {
@@ -48,7 +48,7 @@ struct SyncSourcesSection: View {
                 POTASettingsView(potaAuth: potaAuth, tourState: tourState)
             } label: {
                 HStack {
-                    Label("POTA", systemImage: "leaf")
+                    Text("POTA")
                     Spacer()
                     if let token = potaAuth.currentToken, !token.isExpired {
                         if let callsign = token.callsign {
@@ -67,7 +67,7 @@ struct SyncSourcesSection: View {
                 LoFiSettingsView(tourState: tourState)
             } label: {
                 HStack {
-                    Label("Ham2K LoFi", systemImage: "antenna.radiowaves.left.and.right")
+                    Text("Ham2K LoFi")
                     Spacer()
                     if lofiClient.isConfigured {
                         if let callsign = lofiClient.getCallsign() {
@@ -92,7 +92,7 @@ struct SyncSourcesSection: View {
                 HAMRSSettingsView()
             } label: {
                 HStack {
-                    Label("HAMRS Pro", systemImage: "rectangle.stack")
+                    Text("HAMRS Pro")
                     Spacer()
                     if hamrsClient.isConfigured {
                         Image(systemName: "checkmark.circle.fill")
@@ -107,7 +107,7 @@ struct SyncSourcesSection: View {
                 LoTWSettingsView()
             } label: {
                 HStack {
-                    Label("LoTW", systemImage: "envelope.badge.shield.half.filled")
+                    Text("LoTW")
                     Spacer()
                     if lotwIsConfigured {
                         if let username = lotwUsername {
@@ -126,7 +126,7 @@ struct SyncSourcesSection: View {
                 ClubLogSettingsView()
             } label: {
                 HStack {
-                    Label("Club Log", systemImage: "chart.bar.xaxis")
+                    Text("Club Log")
                     Spacer()
                     if clublogIsConfigured {
                         if let callsign = clublogCallsign {
@@ -145,7 +145,7 @@ struct SyncSourcesSection: View {
                 ICloudSettingsView()
             } label: {
                 HStack {
-                    Label("iCloud Folder", systemImage: "icloud")
+                    Text("iCloud Folder")
                     Spacer()
                     if iCloudMonitor.iCloudContainerURL != nil {
                         Image(systemName: "checkmark.circle.fill")
@@ -160,7 +160,7 @@ struct SyncSourcesSection: View {
                 ActivitiesSettingsView()
             } label: {
                 HStack {
-                    Label("Activities", systemImage: "flag.2.crossed")
+                    Text("Activities")
                     Spacer()
                     if challengeSources.contains(where: { $0.lastFetched != nil }) {
                         Image(systemName: "checkmark.circle.fill")
@@ -174,7 +174,7 @@ struct SyncSourcesSection: View {
             NavigationLink {
                 CallsignAliasesSettingsView()
             } label: {
-                Label("Callsign Aliases", systemImage: "person.text.rectangle")
+                Text("Callsign Aliases")
             }
         } header: {
             Text("Sync Sources")

@@ -6,8 +6,11 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ### Added
 - Lock screen circular widget now supports A-index and SFI metrics (configurable via "Lock Screen Metric" parameter)
+- Add search to settings: type to filter all ~55 settings by title and keywords, tap to navigate directly to the containing view
 
 ### Changed
+- Restructure settings with progressive disclosure: top-level shows 5 category links (Appearance, Logger, POTA Activations, Sync Sources, Data & Tools) instead of ~48 inline rows
+- Remove all icons from settings views for a cleaner, scannable layout
 - Spots widget deduplicates by callsign, averaging SNR and WPM across multiple spots for the same station
 - Spots widget band/mode filter pills collapse to "N bands" / "N modes" summary when more than 2 are selected
 - Solar metric gauge circles now fill counterclockwise from the top

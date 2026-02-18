@@ -46,7 +46,6 @@ enum EquipmentCategory: String, CaseIterable, Sendable {
 // MARK: - EquipmentItemStat
 
 struct EquipmentItemStat: Sendable, Identifiable {
-    var id: String { "\(category.rawValue):\(name)" }
     let name: String
     let category: EquipmentCategory
     let sessionCount: Int
@@ -54,15 +53,22 @@ struct EquipmentItemStat: Sendable, Identifiable {
     let avgQSOsPerSession: Double
     let firstUsed: Date
     let lastUsed: Date
+
+    var id: String {
+        "\(category.rawValue):\(name)"
+    }
 }
 
 // MARK: - EquipmentComboStat
 
 struct EquipmentComboStat: Sendable, Identifiable {
-    var id: String { description }
     let description: String
     let sessionCount: Int
     let totalQSOs: Int
+
+    var id: String {
+        description
+    }
 }
 
 // MARK: - ComputedEquipmentStats
@@ -75,18 +81,16 @@ struct ComputedEquipmentStats: Sendable {
     var allItems: [EquipmentItemStat] = []
     var comboRanking: [EquipmentComboStat] = []
 
-    var isEmpty: Bool { allItems.isEmpty }
+    var isEmpty: Bool {
+        allItems.isEmpty
+    }
 }
 
 // MARK: - EquipmentStatsActor
 
 /// Background actor for computing equipment usage statistics from LoggingSession data.
 actor EquipmentStatsActor {
-    /// Minimum sessions for QSO Magnet to avoid fluky averages from a single outing
-    private static let qsoMagnetMinSessions = 3
-
-    /// Equipment unused for this many days qualifies as "gathering dust"
-    private static let gatheringDustDays = 30
+    // MARK: Internal
 
     func computeStats(container: ModelContainer) async throws -> ComputedEquipmentStats {
         let context = ModelContext(container)
@@ -116,6 +120,24 @@ actor EquipmentStatsActor {
         try Task.checkCancellation()
         return computeFromSnapshots(snapshots)
     }
+
+    // MARK: Private
+
+    // MARK: - Helpers
+
+    private struct Accumulator {
+        var category: EquipmentCategory
+        var sessions: Int
+        var qsos: Int
+        var first: Date
+        var last: Date
+    }
+
+    /// Minimum sessions for QSO Magnet to avoid fluky averages from a single outing
+    private static let qsoMagnetMinSessions = 3
+
+    /// Equipment unused for this many days qualifies as "gathering dust"
+    private static let gatheringDustDays = 30
 
     // MARK: - Computation
 
@@ -188,7 +210,9 @@ actor EquipmentStatsActor {
         for snapshot in snapshots {
             guard let rig = snapshot.myRig, !rig.isEmpty,
                   let antenna = snapshot.myAntenna, !antenna.isEmpty
-            else { continue }
+            else {
+                continue
+            }
 
             let key = "\(rig) + \(antenna)"
             var existing = comboCounts[key] ?? (0, 0)
@@ -198,19 +222,14 @@ actor EquipmentStatsActor {
         }
 
         return comboCounts
-            .map { EquipmentComboStat(description: $0.key, sessionCount: $0.value.sessions,
-                                      totalQSOs: $0.value.qsos) }
+            .map {
+                EquipmentComboStat(
+                    description: $0.key,
+                    sessionCount: $0.value.sessions,
+                    totalQSOs: $0.value.qsos
+                )
+            }
             .sorted { $0.sessionCount > $1.sessionCount }
-    }
-
-    // MARK: - Helpers
-
-    private struct Accumulator {
-        var category: EquipmentCategory
-        var sessions: Int
-        var qsos: Int
-        var first: Date
-        var last: Date
     }
 
     private func accumulate(
@@ -219,13 +238,19 @@ actor EquipmentStatsActor {
         snapshot: EquipmentSessionSnapshot,
         into accumulators: inout [String: Accumulator]
     ) {
-        guard let name, !name.isEmpty else { return }
+        guard let name, !name.isEmpty else {
+            return
+        }
         let key = "\(category.rawValue):\(name)"
         if var existing = accumulators[key] {
             existing.sessions += 1
             existing.qsos += snapshot.qsoCount
-            if snapshot.startedAt < existing.first { existing.first = snapshot.startedAt }
-            if snapshot.startedAt > existing.last { existing.last = snapshot.startedAt }
+            if snapshot.startedAt < existing.first {
+                existing.first = snapshot.startedAt
+            }
+            if snapshot.startedAt > existing.last {
+                existing.last = snapshot.startedAt
+            }
             accumulators[key] = existing
         } else {
             accumulators[key] = Accumulator(

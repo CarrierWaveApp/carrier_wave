@@ -23,11 +23,10 @@ enum EquipmentSortMode: String, CaseIterable {
 // MARK: - EquipmentDetailView
 
 struct EquipmentDetailView: View {
+    // MARK: Internal
+
     let equipmentStats: AsyncEquipmentStats
     let initialSort: EquipmentSortMode
-
-    @State private var sortMode: EquipmentSortMode = .sessions
-    @State private var categoryFilter: EquipmentCategory?
 
     var body: some View {
         List {
@@ -48,6 +47,33 @@ struct EquipmentDetailView: View {
         }
         .onAppear {
             sortMode = initialSort
+        }
+    }
+
+    // MARK: Private
+
+    @State private var sortMode: EquipmentSortMode = .sessions
+    @State private var categoryFilter: EquipmentCategory?
+
+    private var availableCategories: [EquipmentCategory] {
+        let used = Set(equipmentStats.allItems.map(\.category))
+        return EquipmentCategory.allCases.filter { used.contains($0) }
+    }
+
+    private var sortedItems: [EquipmentItemStat] {
+        let filtered = categoryFilter == nil
+            ? equipmentStats.allItems
+            : equipmentStats.allItems.filter { $0.category == categoryFilter }
+
+        switch sortMode {
+        case .sessions:
+            return filtered.sorted { $0.sessionCount > $1.sessionCount }
+        case .totalQSOs:
+            return filtered.sorted { $0.totalQSOs > $1.totalQSOs }
+        case .avgQSOs:
+            return filtered.sorted { $0.avgQSOsPerSession > $1.avgQSOsPerSession }
+        case .lastUsed:
+            return filtered.sorted { $0.lastUsed > $1.lastUsed }
         }
     }
 
@@ -138,42 +164,15 @@ struct EquipmentDetailView: View {
         }
         .buttonStyle(.plain)
     }
-
-    private var availableCategories: [EquipmentCategory] {
-        let used = Set(equipmentStats.allItems.map(\.category))
-        return EquipmentCategory.allCases.filter { used.contains($0) }
-    }
-
-    private var sortedItems: [EquipmentItemStat] {
-        let filtered = categoryFilter == nil
-            ? equipmentStats.allItems
-            : equipmentStats.allItems.filter { $0.category == categoryFilter }
-
-        switch sortMode {
-        case .sessions:
-            return filtered.sorted { $0.sessionCount > $1.sessionCount }
-        case .totalQSOs:
-            return filtered.sorted { $0.totalQSOs > $1.totalQSOs }
-        case .avgQSOs:
-            return filtered.sorted { $0.avgQSOsPerSession > $1.avgQSOsPerSession }
-        case .lastUsed:
-            return filtered.sorted { $0.lastUsed > $1.lastUsed }
-        }
-    }
 }
 
 // MARK: - EquipmentDetailRow
 
 private struct EquipmentDetailRow: View {
+    // MARK: Internal
+
     let item: EquipmentItemStat
     let highlightedMetric: EquipmentSortMode
-
-    private static let dateFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .none
-        return formatter
-    }()
 
     var body: some View {
         HStack(spacing: 12) {
@@ -206,6 +205,15 @@ private struct EquipmentDetailRow: View {
         }
         .padding(.vertical, 4)
     }
+
+    // MARK: Private
+
+    private static let dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .none
+        return formatter
+    }()
 
     private func metricPill(_ text: String, highlighted: Bool) -> some View {
         Text(text)

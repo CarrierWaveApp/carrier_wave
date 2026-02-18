@@ -21,10 +21,14 @@ final class AsyncEquipmentStats {
     private(set) var hasComputed = false
 
     /// Whether any equipment data exists to display
-    var hasData: Bool { !allItems.isEmpty }
+    var hasData: Bool {
+        !allItems.isEmpty
+    }
 
     func compute(from container: ModelContainer) {
-        guard !isComputing, !hasComputed else { return }
+        guard !isComputing, !hasComputed else {
+            return
+        }
         startComputation(from: container)
     }
 
