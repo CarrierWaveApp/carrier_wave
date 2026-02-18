@@ -426,26 +426,36 @@ extension SyncService {
         // Filter out metadata pseudo-modes before processing
         let realQsos = qsos.filter { !Self.metadataModes.contains($0.mode.uppercased()) }
 
-        // Expand multi-park QSOs: each QSO with "US-1044, US-3791" becomes entries for both parks
-        // This handles two-fer, three-fer, etc. activations
-        var expandedByPark: [String: [QSO]] = [:]
+        // Group by (park, UTC date) so each upload matches a single POTA activation.
+        // Without date grouping, multi-date uploads create jobs whose firstQSO date
+        // only covers one date, causing the reconciliation to reset QSOs from other
+        // dates back to needsUpload (producing duplicate uploads on every sync).
+        var expandedByParkAndDate: [String: [QSO]] = [:]
         for qso in realQsos {
             guard let parkRef = qso.parkReference, !parkRef.isEmpty else {
                 continue
             }
 
             let parks = POTAClient.splitParkReferences(parkRef)
+            let dateStr = Self.utcDateFormatter.string(from: qso.timestamp)
             for park in parks {
-                expandedByPark[park, default: []].append(qso)
+                let key = "\(park)|\(dateStr)"
+                expandedByParkAndDate[key, default: []].append(qso)
             }
         }
 
         var totalUploaded = 0
         var totalFailed = 0
+        let parkRefs = Set(expandedByParkAndDate.keys.compactMap {
+            $0.split(separator: "|").first.map(String.init)
+        })
 
-        await logPOTAUploadStart(qsos: qsos, realQsos: realQsos, parkCount: expandedByPark.count)
+        await logPOTAUploadStart(
+            qsos: qsos, realQsos: realQsos, parkCount: parkRefs.count
+        )
 
-        for (parkRef, parkQSOs) in expandedByPark {
+        for (key, parkQSOs) in expandedByParkAndDate {
+            let parkRef = String(key.split(separator: "|").first ?? "")
             let result = await uploadParkToPOTA(parkRef: parkRef, parkQSOs: parkQSOs)
             totalUploaded += result.uploaded
             totalFailed += result.failed
@@ -456,13 +466,22 @@ extension SyncService {
         await MainActor.run {
             SyncDebugLog.shared.info(
                 "POTA upload complete: \(totalUploaded) uploaded, \(totalFailed) failed "
-                    + "across \(expandedByPark.count) park(s) in \(totalDurationMs)ms",
+                    + "across \(expandedByParkAndDate.count) activation(s) in "
+                    + "\(totalDurationMs)ms",
                 service: .pota
             )
         }
 
         return totalUploaded
     }
+
+    /// UTC date formatter for grouping QSOs by activation date
+    private static let utcDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.timeZone = TimeZone(identifier: "UTC")
+        return formatter
+    }()
 
     /// Log POTA upload start with metadata filtering info and content summary
     private func logPOTAUploadStart(qsos: [QSO], realQsos: [QSO], parkCount: Int) async {
