@@ -1,7 +1,8 @@
 // Activation Map View
 //
 // Full-screen map showing QSOs from a single POTA activation
-// with RST-based contact coloring.
+// with RST-based contact coloring. For rove sessions, also shows
+// numbered park stop markers and a dashed route line.
 
 import CarrierWaveCore
 import MapKit
@@ -16,6 +17,7 @@ struct ActivationMapView: View {
     let activation: POTAActivation
     let parkName: String?
     var metadata: ActivationMetadata?
+    var roveStops: [RoveStop] = []
 
     var body: some View {
         // swiftlint:disable:next redundant_discardable_let
@@ -94,6 +96,24 @@ struct ActivationMapView: View {
         return MaidenheadConverter.coordinate(from: grid)
     }
 
+    private var isRove: Bool {
+        !roveStops.isEmpty
+    }
+
+    /// Coordinates for rove stops, falling back to first QSO grid
+    private var roveStopCoordinates: [(stop: RoveStop, coordinate: CLLocationCoordinate2D)] {
+        let fallbackGrid = activation.qsos.first?.myGrid
+        return roveStops.compactMap { stop in
+            let grid = stop.myGrid ?? fallbackGrid
+            guard let grid, grid.count >= 4,
+                  let coord = MaidenheadConverter.coordinate(from: grid)
+            else {
+                return nil
+            }
+            return (stop: stop, coordinate: coord)
+        }
+    }
+
     private var activationStatistics: MapStatistics {
         ActivationStatsHelper.statistics(for: activation)
     }
@@ -137,8 +157,31 @@ struct ActivationMapView: View {
                     .stroke(.blue.opacity(0.4), lineWidth: 2)
             }
 
-            // My location marker
-            if let myCoord = myCoordinate {
+            // Rove stop markers
+            ForEach(
+                Array(roveStopCoordinates.enumerated()), id: \.element.stop.id
+            ) { index, item in
+                Annotation(
+                    item.stop.parkReference,
+                    coordinate: item.coordinate,
+                    anchor: .bottom
+                ) {
+                    roveStopMarker(item.stop, index: index)
+                }
+            }
+
+            // Route line between rove stops
+            if roveStopCoordinates.count >= 2 {
+                let coords = roveStopCoordinates.map(\.coordinate)
+                MapPolyline(coordinates: coords)
+                    .stroke(.green, style: StrokeStyle(
+                        lineWidth: 3,
+                        dash: [8, 4]
+                    ))
+            }
+
+            // My location marker (non-rove only — rove stops show location)
+            if !isRove, let myCoord = myCoordinate {
                 Annotation("My Location", coordinate: myCoord, anchor: .center) {
                     Circle()
                         .fill(.blue)
@@ -152,10 +195,18 @@ struct ActivationMapView: View {
         }
         .mapStyle(.standard(elevation: .realistic))
     }
+}
 
-    private var statsOverlay: some View {
+// MARK: - Overlays & Actions
+
+private extension ActivationMapView {
+    var statsOverlay: some View {
         VStack(alignment: .leading, spacing: 4) {
-            if let name = parkName {
+            if isRove {
+                Text("Rove \u{2013} \(roveStops.count) stops")
+                    .font(.caption)
+                    .fontWeight(.medium)
+            } else if let name = parkName {
                 Text(name)
                     .font(.caption)
                     .fontWeight(.medium)
@@ -177,7 +228,7 @@ struct ActivationMapView: View {
         .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 8))
     }
 
-    private var activationStatsView: some View {
+    var activationStatsView: some View {
         let stats = activationStatistics
         return VStack(alignment: .trailing, spacing: 1) {
             if let duration = stats.activationDuration {
@@ -228,7 +279,7 @@ struct ActivationMapView: View {
         .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 6))
     }
 
-    private var legendOverlay: some View {
+    var legendOverlay: some View {
         VStack(alignment: .trailing, spacing: 4) {
             Text("RST")
                 .font(.caption2)
@@ -254,7 +305,7 @@ struct ActivationMapView: View {
         .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 8))
     }
 
-    private func activationStatRow(label: String, value: String) -> some View {
+    func activationStatRow(label: String, value: String) -> some View {
         HStack(spacing: 4) {
             Text(label)
                 .font(.system(size: 9))
@@ -264,7 +315,31 @@ struct ActivationMapView: View {
         }
     }
 
-    private func computeMapData() {
+    /// Marker for a rove stop showing park reference and stop number
+    func roveStopMarker(_ stop: RoveStop, index: Int) -> some View {
+        let primaryPark = ParkReference.split(stop.parkReference).first
+            ?? stop.parkReference
+
+        return VStack(spacing: 2) {
+            ZStack {
+                Circle()
+                    .fill(stop.isActive ? Color.green : Color(.systemGray3))
+                    .frame(width: 28, height: 28)
+                Text("\(index + 1)")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(.white)
+            }
+
+            Text(primaryPark)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.green)
+                .padding(.horizontal, 4)
+                .padding(.vertical, 2)
+                .background(.ultraThinMaterial, in: Capsule())
+        }
+    }
+
+    func computeMapData() {
         var newAnnotations: [RSTAnnotation] = []
         var newArcs: [QSOArc] = []
 
@@ -307,16 +382,18 @@ struct ActivationMapView: View {
         annotations = newAnnotations
         arcs = newArcs
 
-        // Set initial camera to show all annotations
+        // Set initial camera to show all annotations + rove stops
+        var allCoords = newAnnotations.map(\.coordinate)
+        allCoords.append(contentsOf: roveStopCoordinates.map(\.coordinate))
         if let region = ActivationMapHelpers.mapRegion(
-            qsoCoordinates: newAnnotations.map(\.coordinate),
-            myCoordinate: myCoordinate
+            qsoCoordinates: allCoords,
+            myCoordinate: isRove ? nil : myCoordinate
         ) {
             cameraPosition = .region(region)
         }
     }
 
-    private func generateAndShare() async {
+    func generateAndShare() async {
         isGeneratingShare = true
 
         let statisticianMode = UserDefaults.standard.bool(

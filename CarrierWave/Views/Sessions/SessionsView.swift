@@ -65,6 +65,7 @@ struct SessionsView: View {
     @State var activationToShare: POTAActivation?
     @State var activationToExport: POTAActivation?
     @State var activationToMap: POTAActivation?
+    @State var roveStopsForMap: [RoveStop] = []
     @State var activationToEdit: POTAActivation?
     @State var isGeneratingShareImage = false
     @State var sharePreviewData: SharePreviewData?
@@ -205,11 +206,15 @@ struct SessionsView: View {
                 ActivationMapView(
                     activation: activation,
                     parkName: parkName(for: activation.parkReference),
-                    metadata: activationMetadata(for: activation)
+                    metadata: activationMetadata(for: activation),
+                    roveStops: roveStopsForMap
                 )
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
-                        Button("Done") { activationToMap = nil }
+                        Button("Done") {
+                            activationToMap = nil
+                            roveStopsForMap = []
+                        }
                     }
                 }
             }
@@ -406,8 +411,8 @@ extension SessionsView {
             onExportTapped: primaryActivation.map { act in
                 { activationToExport = act }
             },
-            onMapTapped: primaryActivation.map { act in
-                { activationToMap = act }
+            onMapTapped: primaryActivation == nil ? nil : {
+                self.showMap(session: session, activations: activations)
             },
             onEditTapped: primaryActivation.map { act in
                 { activationToEdit = act }

@@ -15,6 +15,7 @@ All notable changes to Carrier Wave will be documented in this file.
 - Add app review notes document with ATS justification, background audio explanation, and demo instructions
 
 ### Fixed
+- Fix rove session detail map showing only one park instead of the whole operation with all parks and route
 - Fix rove session detail showing duplicate stops when same park appears multiple times in stored data
 - Fix Live Activity not clearing when ending or deleting a paused session
 - Fix rove upload prompt showing all QSOs against last park instead of per-park counts

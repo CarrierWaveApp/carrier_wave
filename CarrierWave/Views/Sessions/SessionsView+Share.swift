@@ -41,6 +41,15 @@ extension SessionsView {
         activationToShare = nil
     }
 
+    func showMap(session: LoggingSession, activations: [POTAActivation]) {
+        if session.isRove, activations.count > 1 {
+            roveStopsForMap = session.mergedRoveStops
+            activationToMap = mergedRoveActivation(activations)
+        } else if let act = activations.first {
+            activationToMap = act
+        }
+    }
+
     func roveSessionDetail(
         session: LoggingSession, activations: [POTAActivation]
     ) -> SessionDetailView {
@@ -56,8 +65,13 @@ extension SessionsView {
             onExport: activations.first.map { act in
                 { activationToExport = act }
             },
-            onMap: activations.first.map { act in
-                { activationToMap = act }
+            onMap: activations.isEmpty ? nil : {
+                roveStopsForMap = session.mergedRoveStops
+                if activations.count > 1 {
+                    activationToMap = mergedRoveActivation(activations)
+                } else if let act = activations.first {
+                    activationToMap = act
+                }
             }
         )
     }
