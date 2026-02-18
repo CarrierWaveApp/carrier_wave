@@ -297,6 +297,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `SessionRow.swift` | Unified rich session row: timeline, conditions, badges, upload status |
 | `SessionQSORow.swift` | Expandable QSO row for session detail (tap to show all fields, swipe-to-delete) |
 | `SessionDetailView.swift` | Session detail with equipment, photos, notes, spots, QSO list, edit button |
+| `SessionDetailView+Components.swift` | Extracted helper views: RoveStopDetailRow, RoveParkGroup, PhotoItem |
 | `SessionSpotsSection.swift` | Persisted spots display section for session detail (POTA highlighted, RBN collapsed) |
 | `SessionMetadataEditSheet.swift` | Unified edit sheet for all session types (equipment, photos, notes) |
 | `PhotoViewer.swift` | Full-screen photo viewer with pinch-to-zoom |

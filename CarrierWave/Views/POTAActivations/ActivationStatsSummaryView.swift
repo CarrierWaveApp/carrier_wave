@@ -121,45 +121,60 @@ private extension ActivationStatsSummaryView {
                 .foregroundStyle(.secondary)
                 .frame(width: 48, alignment: .leading)
             GeometryReader { geo in
+                let widths = rstBarWidths(
+                    sorted, total: total, container: geo.size.width
+                )
                 HStack(spacing: 0) {
                     ForEach(
                         Array(sorted.enumerated()),
                         id: \.element.id
                     ) { idx, bucket in
-                        let fraction = CGFloat(bucket.count)
-                            / CGFloat(max(total, 1))
-                        let isFirst = idx == 0
-                        let isLast = idx == sorted.count - 1
-                        Text("\(bucket.value)")
-                            .font(.system(size: 9, weight: .bold))
-                            .foregroundStyle(.white)
-                            .frame(
-                                width: max(
-                                    fraction * geo.size.width, 20
-                                ),
-                                height: 18
-                            )
-                            .background(
-                                rstBarColor(bucket.value)
-                                    .opacity(0.7)
-                            )
-                            .clipShape(
-                                UnevenRoundedRectangle(
-                                    topLeadingRadius: isFirst
-                                        ? radius : 0,
-                                    bottomLeadingRadius: isFirst
-                                        ? radius : 0,
-                                    bottomTrailingRadius: isLast
-                                        ? radius : 0,
-                                    topTrailingRadius: isLast
-                                        ? radius : 0
-                                )
-                            )
+                        rstBarSegment(
+                            bucket: bucket, width: widths[idx],
+                            radius: radius,
+                            isFirst: idx == 0,
+                            isLast: idx == sorted.count - 1
+                        )
                     }
                 }
             }
             .frame(height: 18)
         }
+    }
+
+    func rstBarSegment(
+        bucket: RSTComponentBucket, width: CGFloat, radius: CGFloat,
+        isFirst: Bool, isLast: Bool
+    ) -> some View {
+        Text("\(bucket.value)")
+            .font(.system(size: 9, weight: .bold))
+            .foregroundStyle(.white)
+            .frame(width: width, height: 18)
+            .background(rstBarColor(bucket.value).opacity(0.7))
+            .clipShape(
+                UnevenRoundedRectangle(
+                    topLeadingRadius: isFirst ? radius : 0,
+                    bottomLeadingRadius: isFirst ? radius : 0,
+                    bottomTrailingRadius: isLast ? radius : 0,
+                    topTrailingRadius: isLast ? radius : 0
+                )
+            )
+    }
+
+    /// Compute bar widths with a minimum, scaling down if total exceeds container.
+    func rstBarWidths(
+        _ sorted: [RSTComponentBucket], total: Int, container: CGFloat
+    ) -> [CGFloat] {
+        let minW: CGFloat = 20
+        let raw = sorted.map { bucket in
+            max(CGFloat(bucket.count) / CGFloat(max(total, 1)) * container, minW)
+        }
+        let rawTotal = raw.reduce(0, +)
+        guard rawTotal > container else {
+            return raw
+        }
+        let scale = container / rawTotal
+        return raw.map { $0 * scale }
     }
 
     func rstBarColor(_ value: Int) -> Color {

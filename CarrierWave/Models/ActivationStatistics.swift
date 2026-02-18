@@ -21,7 +21,10 @@ struct ActivationStatistics {
         from activation: POTAActivation,
         metadata: ActivationMetadata? = nil
     ) -> ActivationStatistics {
-        let qsos = activation.qsos
+        compute(from: activation.qsos)
+    }
+
+    static func compute(from qsos: [QSO]) -> ActivationStatistics {
         let distances = computeDistances(qsos)
         let intervals = computeIntervals(qsos)
 

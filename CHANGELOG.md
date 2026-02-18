@@ -5,6 +5,7 @@ All notable changes to Carrier Wave will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Add statistics section to session detail view (band/mode charts, distance/timing CDFs, RST, entities) gated on Professional Statistician Mode, matching POTA activation detail
 - Add swipe-to-delete for QSOs in session detail view (both flat and rove-grouped)
 - Add tap-to-expand on QSO rows in session detail to show all stored fields
 - Add privacy manifest (PrivacyInfo.xcprivacy) for main app and widget targets declaring UserDefaults usage
