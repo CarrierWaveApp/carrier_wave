@@ -407,6 +407,10 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `StatDetailView.swift` | Drilldown view for stat categories |
 | `StatItemRow.swift` | Individual stat row with expandable QSOs |
 | `StreakDetailView.swift` | Streak statistics detail view with mode/band breakdowns |
+| `EquipmentStatsActor.swift` | Background actor for equipment usage stats from LoggingSession data |
+| `AsyncEquipmentStats.swift` | Observable wrapper for equipment stats with background computation |
+| `EquipmentUsageCard.swift` | Dashboard card showing top equipment, QSO magnet, combos, gathering dust |
+| `EquipmentDetailView.swift` | Sortable equipment ranking drilldown with category filtering |
 
 ## Views - Logs (`CarrierWave/Views/Logs/`)
 | File | Purpose |

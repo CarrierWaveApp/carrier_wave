@@ -48,6 +48,28 @@ Core struct with `items(for:)` method:
 - Returns grouped/counted items
 - Used by both dashboard summaries and detail views
 
+## Equipment Usage
+
+The dashboard includes an "Equipment" card computed from `LoggingSession` data (not QSOs). Shows usage patterns for radios, antennas, keys, and microphones.
+
+### Card Rows
+
+| Row | Description |
+|-----|-------------|
+| Top 3 Favorites | Most-used equipment across all categories by session count |
+| QSO Magnet | Equipment with highest average QSOs per session (min 3 sessions) |
+| Best Combo | Most common radio + antenna pairing |
+| Gathering Dust | Equipment unused for 30+ days with oldest last-used date |
+
+Each row taps through to a sortable detail view with category filtering.
+
+### Architecture
+
+- `EquipmentStatsActor` fetches `LoggingSession` in background, converts to snapshots
+- `AsyncEquipmentStats` observable wrapper (same pattern as `AsyncQSOStatistics`)
+- `EquipmentUsageCard` dashboard card, `EquipmentDetailView` drilldown
+- Card hidden when no sessions have equipment data
+
 ## Implementation Notes
 
 - Stats computed on-demand from SwiftData queries
