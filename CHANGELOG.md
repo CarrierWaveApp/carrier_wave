@@ -5,6 +5,8 @@ All notable changes to Carrier Wave will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Add swipe-to-delete for QSOs in session detail view (both flat and rove-grouped)
+- Add tap-to-expand on QSO rows in session detail to show all stored fields
 - Add privacy manifest (PrivacyInfo.xcprivacy) for main app and widget targets declaring UserDefaults usage
 - Add privacy policy link in Settings > About section
 - Add community account deletion in Settings > Activities with server-side cascade delete
@@ -12,11 +14,14 @@ All notable changes to Carrier Wave will be documented in this file.
 - Add app review notes document with ATS justification, background audio explanation, and demo instructions
 
 ### Fixed
+- Fix rove session detail showing duplicate stops when same park appears multiple times in stored data
 - Fix Live Activity not clearing when ending or deleting a paused session
 - Fix rove upload prompt showing all QSOs against last park instead of per-park counts
 - Fix callsign/command input field growing wider than screen with long text
 - Fix Sessions tab only showing last park and its QSOs for rove sessions
 - Fix brag sheet only including last park's QSOs for rove sessions
+- Fix rove brag sheet showing parks in reverse date order instead of chronological visit order
+- Split POTA sessions at UTC day boundary so each session covers one activation date (fixes duplicate park entries when session spans midnight UTC)
 
 ### Changed
 - Sync activity feed immediately on Activity tab appearance instead of waiting 60 seconds

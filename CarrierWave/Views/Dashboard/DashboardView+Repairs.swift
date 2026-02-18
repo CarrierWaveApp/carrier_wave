@@ -141,6 +141,29 @@ extension DashboardView {
         }
     }
 
+    // MARK: - POTA UTC Midnight Split Repair
+
+    private static let potaSplitRepairKey = "potaUTCMidnightSplitRepairV4Completed"
+
+    /// One-time repair: split existing POTA sessions that span UTC midnight.
+    func repairPOTAMidnightSplitIfNeeded() async {
+        guard !UserDefaults.standard.bool(forKey: Self.potaSplitRepairKey) else {
+            return
+        }
+
+        do {
+            let count = try POTASplitRepairService.repair(context: modelContext)
+            UserDefaults.standard.set(
+                "ran: split \(count)", forKey: "potaSplitRepairDebug"
+            )
+        } catch {
+            UserDefaults.standard.set(
+                "error: \(error)", forKey: "potaSplitRepairDebug"
+            )
+        }
+        UserDefaults.standard.set(true, forKey: Self.potaSplitRepairKey)
+    }
+
     // MARK: - K-Index Repair
 
     private static let kIndexRepairKey = "kIndexRepairCompleted"

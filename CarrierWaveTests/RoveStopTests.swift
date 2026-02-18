@@ -5,6 +5,7 @@ import XCTest
 final class RoveStopTests: XCTestCase {
     // MARK: - Codable Round-Trip
 
+    @MainActor
     func testEncodeDecode_preservesAllFields() throws {
         // Given
         let stop = RoveStop(
@@ -32,6 +33,7 @@ final class RoveStopTests: XCTestCase {
         XCTAssertEqual(result.notes, "First stop")
     }
 
+    @MainActor
     func testEncodeDecode_nilOptionals() throws {
         // Given
         let stop = RoveStop(
@@ -51,6 +53,7 @@ final class RoveStopTests: XCTestCase {
         XCTAssertNil(result.notes)
     }
 
+    @MainActor
     func testEncodeDecode_preservesArrayOrder() throws {
         // Given
         let stops = [
@@ -70,11 +73,13 @@ final class RoveStopTests: XCTestCase {
         XCTAssertEqual(decoded[2].parkReference, "US-0003")
     }
 
+    @MainActor
     func testIsActive_noEndedAt_returnsTrue() {
         let stop = RoveStop(parkReference: "US-1234", startedAt: Date())
         XCTAssertTrue(stop.isActive)
     }
 
+    @MainActor
     func testIsActive_withEndedAt_returnsFalse() {
         let stop = RoveStop(
             parkReference: "US-1234",
@@ -84,6 +89,7 @@ final class RoveStopTests: XCTestCase {
         XCTAssertFalse(stop.isActive)
     }
 
+    @MainActor
     func testFormattedDuration_minutesOnly() {
         let start = Date()
         let stop = RoveStop(
@@ -94,6 +100,7 @@ final class RoveStopTests: XCTestCase {
         XCTAssertEqual(stop.formattedDuration, "45m")
     }
 
+    @MainActor
     func testFormattedDuration_hoursAndMinutes() {
         let start = Date()
         let stop = RoveStop(

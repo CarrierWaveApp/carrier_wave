@@ -132,6 +132,7 @@ struct DashboardView: View {
                 await backfillWPMIfNeeded()
                 await backfillConditionsIfNeeded()
                 await backfillCommentParkRefsIfNeeded()
+                await repairPOTAMidnightSplitIfNeeded()
                 await repairKIndexIfNeeded()
                 await repairActivityLogQSOsIfNeeded()
                 await repairPhoneSSBDuplicatesIfNeeded()

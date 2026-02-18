@@ -257,29 +257,33 @@ struct POTAQSORow: View {
     var parks: [String] = [] // For two-fer per-park status display
 
     var body: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(qso.callsign).font(.subheadline).fontWeight(.medium)
-                Text(timeString).font(.caption).foregroundStyle(.secondary)
-            }
-            Spacer()
+        DisclosureGroup(isExpanded: $isExpanded) {
+            SessionQSOExpandedDetail(qso: qso)
+        } label: {
             HStack(spacing: 8) {
+                Text(qso.callsign)
+                    .font(.subheadline.monospaced().weight(.semibold))
+                Spacer()
                 badgeView(qso.band, color: .blue)
                 badgeView(qso.mode, color: .green)
+                uploadStatusView
+                Text(Self.timeFormatter.string(from: qso.timestamp))
+                    .font(.caption.monospaced())
+                    .foregroundStyle(.secondary)
             }
-            uploadStatusView
         }
-        .padding(.vertical, 2)
     }
 
     // MARK: Private
 
-    private var timeString: String {
+    private static let timeFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm"
         formatter.timeZone = TimeZone(identifier: "UTC")
-        return formatter.string(from: qso.timestamp) + " UTC"
-    }
+        return formatter
+    }()
+
+    @State private var isExpanded = false
 
     private var singleParkStatusIcon: String {
         // Use park-aware check so per-park presence records are found

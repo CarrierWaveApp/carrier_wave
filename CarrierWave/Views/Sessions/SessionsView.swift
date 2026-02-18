@@ -422,9 +422,8 @@ extension SessionsView {
         let recording = recordingsBySessionId[session.id]
 
         if session.isRove {
-            // Rove sessions go to SessionDetailView which shows all parks
             NavigationLink {
-                SessionDetailView(session: session)
+                roveSessionDetail(session: session, activations: activations)
             } label: { rowContent }
         } else if let activation = activations.first {
             NavigationLink(value: activation) { rowContent }

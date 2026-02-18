@@ -1200,7 +1200,11 @@ struct LoggerView: View {
                 "Delete QSO",
                 isPresented: Binding(
                     get: { qsoToDelete != nil },
-                    set: { if !$0 { qsoToDelete = nil } }
+                    set: { newValue in
+                        if !newValue {
+                            qsoToDelete = nil
+                        }
+                    }
                 )
             ) {
                 Button("Delete", role: .destructive) {
@@ -2480,7 +2484,7 @@ struct LoggerView: View {
 
                 // Build rove stop summaries or single park info
                 if session.isRove {
-                    let stops = session.roveStops
+                    let stops = session.mergedRoveStops
                     var summaries: [RoveUploadSummary] = []
                     for stop in stops {
                         let parkRef = stop.parkReference

@@ -100,7 +100,7 @@ extension LoggingSession {
         switch activationType {
         case .pota:
             if isRove {
-                let count = roveStopCount
+                let count = uniqueParkCount
                 return count > 0
                     ? "\(myCallsign) Rove (\(count) \(count == 1 ? "park" : "parks"))"
                     : "\(myCallsign) POTA Rove"

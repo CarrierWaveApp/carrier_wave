@@ -15,7 +15,9 @@ struct RoveUploadSummary: Identifiable {
     let parkName: String?
     let qsoCount: Int
 
-    var id: String { parkReference }
+    var id: String {
+        parkReference
+    }
 }
 
 // MARK: - POTAUploadPromptSheet
@@ -33,7 +35,9 @@ struct POTAUploadPromptSheet: View {
     let onLater: () -> Void
     let onDontAskAgain: () -> Void
 
-    var isRove: Bool { !roveStops.isEmpty }
+    var isRove: Bool {
+        !roveStops.isEmpty
+    }
 
     var body: some View {
         NavigationStack {

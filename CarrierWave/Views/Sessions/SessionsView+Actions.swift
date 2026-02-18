@@ -1,7 +1,3 @@
-// SessionsView POTA Actions, Data Loading, and Helpers
-//
-// Extracted from SessionsView to keep under the 500-line file limit.
-
 import CarrierWaveCore
 import SwiftData
 import SwiftUI
@@ -365,14 +361,32 @@ extension SessionsView {
         metadataByKey["\(activation.parkReference)|\(activation.utcDateString)"]
     }
 
-    /// Merge multiple park activations into one for rove brag sheet
+    /// Merge multiple park activations into one for rove brag sheet. Deduplicates consecutive
+    /// same-park entries (UTC midnight splits) and sorts chronologically.
     func mergedRoveActivation(_ activations: [POTAActivation]) -> POTAActivation {
         guard activations.count > 1 else {
             return activations[0]
         }
-        let first = activations[0]
-        let allQSOs = activations.flatMap(\.qsos).sorted { $0.timestamp < $1.timestamp }
-        let parkRefs = activations.map(\.parkReference).joined(separator: " \u{2192} ")
+
+        // Sort activations chronologically by earliest QSO timestamp
+        let sorted = activations.sorted {
+            ($0.qsos.first?.timestamp ?? .distantPast)
+                < ($1.qsos.first?.timestamp ?? .distantPast)
+        }
+
+        let first = sorted[0]
+        let allQSOs = sorted.flatMap(\.qsos).sorted { $0.timestamp < $1.timestamp }
+
+        // Deduplicate park refs (preserve order, remove consecutive dupes)
+        var uniqueParks: [String] = []
+        for activation in sorted {
+            let park = activation.parkReference.uppercased()
+            if uniqueParks.last?.uppercased() != park {
+                uniqueParks.append(activation.parkReference)
+            }
+        }
+        let parkRefs = uniqueParks.joined(separator: " \u{2192} ")
+
         return POTAActivation(
             parkReference: parkRefs,
             utcDate: first.utcDate,
@@ -384,11 +398,8 @@ extension SessionsView {
     func saveMetadataEdit(
         _ result: ActivationMetadataEditResult, for activation: POTAActivation
     ) {
-        let sanitizedNewPark = result.newParkReference.flatMap {
-            ParkReference.sanitizeMulti($0)
-        }
+        let sanitizedNewPark = result.newParkReference.flatMap { ParkReference.sanitizeMulti($0) }
         let parkRef = sanitizedNewPark ?? activation.parkReference
-
         if let newPark = sanitizedNewPark {
             for qso in activation.qsos {
                 qso.parkReference = newPark
@@ -465,26 +476,20 @@ extension SessionsView {
     }
 
     func engineFor(_ sessionId: UUID) -> RecordingPlaybackEngine {
-        if let existing = engines[sessionId] {
-            return existing
-        }
-        let engine = RecordingPlaybackEngine()
-        engines[sessionId] = engine
-        return engine
+        engines[sessionId] ?? {
+            let eng = RecordingPlaybackEngine(); engines[sessionId] = eng; return eng
+        }()
     }
 
     func startMaintenanceTimer() {
         updateMaintenanceTime()
         maintenanceTimer = Timer.scheduledTimer(
             withTimeInterval: 60, repeats: true
-        ) { [self] _ in
-            Task { @MainActor in updateMaintenanceTime() }
-        }
+        ) { [self] _ in Task { @MainActor in updateMaintenanceTime() } }
     }
 
     func stopMaintenanceTimer() {
-        maintenanceTimer?.invalidate()
-        maintenanceTimer = nil
+        maintenanceTimer?.invalidate(); maintenanceTimer = nil
     }
 
     func updateMaintenanceTime() {

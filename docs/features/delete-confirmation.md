@@ -76,3 +76,4 @@ When reviewing changes that involve deletion:
 | POTAActivationDetailView | Activation QSO (hide) | `CarrierWave/Views/POTAActivations/POTAActivationDetailView.swift` |
 | SessionsView | Session / orphan activation (delete + hide QSOs) | `CarrierWave/Views/Sessions/SessionsView.swift` |
 | LoggerView (qsoListSection) | Logger QSO (swipe-to-hide) | `CarrierWave/Views/Logger/LoggerView.swift` |
+| SessionDetailView | Session QSO (swipe-to-hide) | `CarrierWave/Views/Sessions/SessionDetailView.swift` |

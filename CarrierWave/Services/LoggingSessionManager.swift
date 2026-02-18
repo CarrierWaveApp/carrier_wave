@@ -243,6 +243,12 @@ final class LoggingSessionManager {
         }
 
         session.end()
+
+        // Split POTA sessions at UTC midnight so each covers one activation date
+        if session.activationType == .pota {
+            splitPOTAAtUTCMidnight(session)
+        }
+
         activeSession = nil
         clearActiveSessionId()
 

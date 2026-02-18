@@ -41,6 +41,27 @@ extension SessionsView {
         activationToShare = nil
     }
 
+    func roveSessionDetail(
+        session: LoggingSession, activations: [POTAActivation]
+    ) -> SessionDetailView {
+        SessionDetailView(
+            session: session,
+            onShare: activations.isEmpty ? nil : {
+                if activations.count > 1 {
+                    activationToShare = mergedRoveActivation(activations)
+                } else if let act = activations.first {
+                    activationToShare = act
+                }
+            },
+            onExport: activations.first.map { act in
+                { activationToExport = act }
+            },
+            onMap: activations.first.map { act in
+                { activationToMap = act }
+            }
+        )
+    }
+
     func buildEquipmentList(
         for activation: POTAActivation
     ) -> [ShareCardEquipmentItem] {

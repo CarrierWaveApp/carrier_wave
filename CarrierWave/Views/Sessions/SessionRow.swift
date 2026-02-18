@@ -87,13 +87,14 @@ struct SessionRow: View {
             let totalQSOs = activations.reduce(0) { $0 + $1.qsoCount }
             let totalUploaded = activations.reduce(0) { $0 + $1.uploadedCount }
             let allUploaded = activations.allSatisfy(\.isFullyUploaded)
+            let uniqueParks = Set(activations.map { $0.parkReference.uppercased() }).count
             HStack(spacing: 4) {
                 Image(systemName: allUploaded ? "checkmark.circle.fill" : "arrow.up.circle")
                     .foregroundStyle(allUploaded ? .green : .gray)
                 Text(
                     allUploaded
-                        ? "\(activations.count) parks, \(totalQSOs) QSOs accepted"
-                        : "\(totalUploaded)/\(totalQSOs) QSOs across \(activations.count) parks"
+                        ? "\(uniqueParks) parks, \(totalQSOs) QSOs accepted"
+                        : "\(totalUploaded)/\(totalQSOs) QSOs across \(uniqueParks) parks"
                 )
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -128,7 +129,7 @@ struct SessionRow: View {
 
     @ViewBuilder
     private var roveRefSummary: some View {
-        let stops = session.roveStops
+        let stops = session.roveStops.sorted { $0.startedAt < $1.startedAt }
         let parks = stops.map {
             ParkReference.split($0.parkReference).first ?? $0.parkReference
         }

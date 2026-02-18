@@ -136,6 +136,68 @@ final class LoggingSessionRoveTests: XCTestCase {
         XCTAssertEqual(session.defaultTitle, "N0TEST at US-0001")
     }
 
+    // MARK: - Unique Park Count & Merged Stops
+
+    @MainActor
+    func testUniqueParkCount_deduplicates() {
+        let session = LoggingSession.testSession()
+        session.roveStops = [
+            RoveStop(parkReference: "US-0001", startedAt: Date(), qsoCount: 5),
+            RoveStop(parkReference: "US-0002", startedAt: Date(), qsoCount: 3),
+            RoveStop(parkReference: "US-0001", startedAt: Date(), qsoCount: 2),
+        ]
+        XCTAssertEqual(session.roveStopCount, 3)
+        XCTAssertEqual(session.uniqueParkCount, 2)
+    }
+
+    @MainActor
+    func testMergedRoveStops_combinesDuplicateParks() {
+        let session = LoggingSession.testSession()
+        let t0 = Date()
+        let t1 = t0.addingTimeInterval(3_600)
+        let t2 = t1.addingTimeInterval(3_600)
+        let t3 = t2.addingTimeInterval(3_600)
+
+        session.roveStops = [
+            RoveStop(
+                parkReference: "US-0001", startedAt: t0, endedAt: t1,
+                myGrid: "FN31", qsoCount: 5
+            ),
+            RoveStop(
+                parkReference: "US-0002", startedAt: t1, endedAt: t2,
+                myGrid: "FN32", qsoCount: 3
+            ),
+            RoveStop(
+                parkReference: "US-0001", startedAt: t2, endedAt: t3,
+                myGrid: "FN31", qsoCount: 2
+            ),
+        ]
+
+        let merged = session.mergedRoveStops
+        XCTAssertEqual(merged.count, 2)
+        XCTAssertEqual(merged[0].parkReference, "US-0001")
+        XCTAssertEqual(merged[0].qsoCount, 7) // 5 + 2
+        XCTAssertEqual(merged[0].startedAt, t0)
+        XCTAssertEqual(merged[0].endedAt, t3)
+        XCTAssertEqual(merged[1].parkReference, "US-0002")
+        XCTAssertEqual(merged[1].qsoCount, 3)
+    }
+
+    @MainActor
+    func testDefaultTitle_roveWithDuplicateStops_countsUnique() {
+        let session = LoggingSession.testSession(
+            activationType: .pota,
+            parkReference: "US-0002"
+        )
+        session.isRove = true
+        session.roveStops = [
+            RoveStop(parkReference: "US-0001", startedAt: Date()),
+            RoveStop(parkReference: "US-0002", startedAt: Date()),
+            RoveStop(parkReference: "US-0001", startedAt: Date()),
+        ]
+        XCTAssertEqual(session.defaultTitle, "N0TEST Rove (2 parks)")
+    }
+
     // MARK: - IsRove Flag
 
     @MainActor

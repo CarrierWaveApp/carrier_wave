@@ -198,6 +198,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `KIndexRepairService.swift` | One-time repair clearing corrupted K-index=0 data from before HamQSL XML fix |
 | `ActivityLogQSORepairService.swift` | One-time repair flagging activity log QSOs and fixing misplaced parkReference |
 | `PhoneSSBDuplicateRepairService.swift` | One-time repair merging duplicate QSOs from PHONE vs SSB mode mismatch |
+| `POTASplitRepairService.swift` | One-time repair splitting completed POTA sessions that span UTC midnight |
 | `CWError.swift` | CW transcription error types |
 | `CWAudioCapture.swift` | AVAudioEngine microphone capture for CW decoding |
 | `CWSignalProcessorProtocol.swift` | Protocol for signal processors, CWSignalResult struct |
@@ -216,6 +217,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `LiveActivityService.swift` | Live Activity lifecycle management (start, update, end, reconnect, cleanup) |
 | `LoggingSessionManager.swift` | Session lifecycle management (start, end, log QSO, hide QSO, photos) |
 | `LoggingSessionManager+Conditions.swift` | Auto-record solar/weather conditions at POTA session start |
+| `LoggingSessionManager+POTASplit.swift` | Split POTA sessions at UTC midnight so each covers one activation date |
 | `LoggingSessionManager+LiveActivity.swift` | Live Activity integration hooks (start, update, end, pause, resume) |
 | `LoggingSessionManager+Spotting.swift` | POTA spot timer, posting, comments polling, monitoring |
 | `RBNClient.swift` | Vail ReRBN API client for reverse beacon network spots |
@@ -293,6 +295,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `SessionsView+Actions.swift` | Data loading, POTA actions, session deletion, and helpers for SessionsView |
 | `SessionsView+Share.swift` | Brag sheet generation and equipment list building for share cards |
 | `SessionRow.swift` | Unified rich session row: timeline, conditions, badges, upload status |
+| `SessionQSORow.swift` | Expandable QSO row for session detail (tap to show all fields, swipe-to-delete) |
 | `SessionDetailView.swift` | Session detail with equipment, photos, notes, spots, QSO list, edit button |
 | `SessionSpotsSection.swift` | Persisted spots display section for session detail (POTA highlighted, RBN collapsed) |
 | `SessionMetadataEditSheet.swift` | Unified edit sheet for all session types (equipment, photos, notes) |

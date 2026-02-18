@@ -9,6 +9,9 @@ struct SessionDetailView: View {
     // MARK: Internal
 
     let session: LoggingSession
+    var onShare: (() -> Void)?
+    var onExport: (() -> Void)?
+    var onMap: (() -> Void)?
 
     var body: some View {
         List {
@@ -30,9 +33,7 @@ struct SessionDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                Button("Edit") {
-                    showEditSheet = true
-                }
+                actionsMenu
             }
         }
         .sheet(isPresented: $showEditSheet) {
@@ -54,6 +55,33 @@ struct SessionDetailView: View {
                 )
             )
         }
+        .alert(
+            "Delete QSO",
+            isPresented: Binding(
+                get: { qsoToDelete != nil },
+                set: { newValue in
+                    if !newValue {
+                        qsoToDelete = nil
+                    }
+                }
+            )
+        ) {
+            Button("Delete", role: .destructive) {
+                if let qso = qsoToDelete {
+                    qso.isHidden = true
+                    qsos.removeAll { $0.id == qso.id }
+                    try? modelContext.save()
+                }
+                qsoToDelete = nil
+            }
+            Button("Cancel", role: .cancel) {
+                qsoToDelete = nil
+            }
+        } message: {
+            if let qso = qsoToDelete {
+                Text("Delete QSO with \(qso.callsign)?")
+            }
+        }
         .task {
             await loadQSOs()
         }
@@ -65,6 +93,11 @@ struct SessionDetailView: View {
     @State private var qsos: [QSO] = []
     @State private var showEditSheet = false
     @State private var selectedPhoto: PhotoItem?
+    @State private var qsoToDelete: QSO?
+
+    private var hasActions: Bool {
+        onShare != nil || onExport != nil || onMap != nil
+    }
 
     private var formattedQSOsPerHour: String {
         let hours = session.duration / 3_600
@@ -75,40 +108,68 @@ struct SessionDetailView: View {
         return String(format: "%.1f", rate)
     }
 
-    /// Group QSOs by park reference, ordered by rove stop order
+    /// Group QSOs by park reference, sorted by latest QSO timestamp (most recent park first).
     private var roveGroupedQSOs: [RoveParkGroup] {
-        let stops = session.roveStops
-        let sorted = qsos.sorted { $0.timestamp > $1.timestamp }
-
-        // Build groups in rove stop order
-        var groups: [RoveParkGroup] = []
-        var usedParks = Set<String>()
-
-        for stop in stops {
-            let park = stop.parkReference.uppercased()
-            guard !usedParks.contains(park) else {
-                continue
-            }
-            usedParks.insert(park)
-
-            let stopQSOs = sorted.filter { $0.parkReference?.uppercased() == park }
-            if !stopQSOs.isEmpty {
-                groups.append(RoveParkGroup(parkReference: stop.parkReference, qsos: stopQSOs))
+        // Group QSOs by park reference
+        var parkMap: [String: [QSO]] = [:]
+        var displayRef: [String: String] = [:]
+        for qso in qsos {
+            let park = (qso.parkReference ?? "").uppercased()
+            parkMap[park, default: []].append(qso)
+            if displayRef[park] == nil {
+                displayRef[park] = qso.parkReference ?? ""
             }
         }
 
-        // Catch any QSOs not matching a rove stop
-        let ungrouped = sorted.filter { qso in
-            guard let park = qso.parkReference?.uppercased() else {
-                return true
-            }
-            return !usedParks.contains(park)
+        // Sort QSOs within each group latest-first, then sort groups by latest QSO
+        return parkMap.map { key, groupQSOs in
+            let sorted = groupQSOs.sorted { $0.timestamp > $1.timestamp }
+            let ref = displayRef[key] ?? key
+            return RoveParkGroup(parkReference: ref.isEmpty ? "Other" : ref, qsos: sorted)
+        }.sorted {
+            ($0.qsos.first?.timestamp ?? .distantPast) > ($1.qsos.first?.timestamp ?? .distantPast)
         }
-        if !ungrouped.isEmpty {
-            groups.append(RoveParkGroup(parkReference: "Other", qsos: ungrouped))
-        }
+    }
 
-        return groups
+    private var actionsMenu: some View {
+        Group {
+            if hasActions {
+                Menu {
+                    Button {
+                        showEditSheet = true
+                    } label: {
+                        Label("Edit Info", systemImage: "pencil")
+                    }
+                    if let onMap {
+                        Button {
+                            onMap()
+                        } label: {
+                            Label("View Map", systemImage: "map")
+                        }
+                    }
+                    if let onExport {
+                        Button {
+                            onExport()
+                        } label: {
+                            Label("Export ADIF", systemImage: "doc.text")
+                        }
+                    }
+                    if let onShare {
+                        Button {
+                            onShare()
+                        } label: {
+                            Label("Brag Sheet", systemImage: "square.and.arrow.up")
+                        }
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                }
+            } else {
+                Button("Edit") {
+                    showEditSheet = true
+                }
+            }
+        }
     }
 
     private var infoSection: some View {
@@ -148,8 +209,8 @@ struct SessionDetailView: View {
     }
 
     private var roveStopsSection: some View {
-        Section("Rove Stops (\(session.roveStopCount))") {
-            ForEach(session.roveStops) { stop in
+        Section("Rove Stops (\(session.uniqueParkCount))") {
+            ForEach(session.mergedRoveStops) { stop in
                 RoveStopDetailRow(stop: stop)
             }
         }
@@ -226,9 +287,13 @@ struct SessionDetailView: View {
             }
         }
     }
+}
 
+// MARK: - QSO Sections & Data Loading
+
+extension SessionDetailView {
     @ViewBuilder
-    private var qsoSection: some View {
+    var qsoSection: some View {
         if session.isRove {
             roveQSOSections
         } else {
@@ -240,6 +305,13 @@ struct SessionDetailView: View {
         Section("\(qsos.count) QSO\(qsos.count == 1 ? "" : "s")") {
             ForEach(qsos.sorted { $0.timestamp > $1.timestamp }) { qso in
                 SessionQSORow(qso: qso)
+                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                        Button(role: .destructive) {
+                            qsoToDelete = qso
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                    }
             }
         }
     }
@@ -251,6 +323,13 @@ struct SessionDetailView: View {
             Section {
                 ForEach(group.qsos) { qso in
                     SessionQSORow(qso: qso)
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            Button(role: .destructive) {
+                                qsoToDelete = qso
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        }
                 }
             } header: {
                 HStack {
@@ -268,7 +347,7 @@ struct SessionDetailView: View {
         }
     }
 
-    private func loadQSOs() async {
+    func loadQSOs() async {
         let sessionStart = session.startedAt
         let sessionEnd = session.endedAt ?? Date()
         let callsign = session.myCallsign
@@ -287,7 +366,7 @@ struct SessionDetailView: View {
         qsos = (try? modelContext.fetch(descriptor)) ?? []
     }
 
-    private func applyEditResult(_ result: SessionMetadataEditResult) {
+    func applyEditResult(_ result: SessionMetadataEditResult) {
         session.customTitle = result.title
         session.power = result.watts
         session.myRig = result.radio
@@ -399,32 +478,6 @@ private struct RoveParkGroup {
     /// First individual park ref (for name lookup when n-fer)
     var primaryPark: String {
         ParkReference.split(parkReference).first ?? parkReference
-    }
-}
-
-// MARK: - SessionQSORow
-
-/// Shared QSO row used in session detail
-private struct SessionQSORow: View {
-    let qso: QSO
-
-    var body: some View {
-        HStack {
-            Text(qso.callsign)
-                .font(.subheadline)
-            Spacer()
-            Text(qso.band)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            Text(qso.mode)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            Text(
-                qso.timestamp.formatted(date: .omitted, time: .shortened)
-            )
-            .font(.caption)
-            .foregroundStyle(.secondary)
-        }
     }
 }
 
