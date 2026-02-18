@@ -771,6 +771,8 @@ final class LoggingSessionManager {
         }
 
         // Finish a non-active (paused) session
+        // End any live activity that may still be showing from the paused state
+        liveActivityService.end()
         session.end()
         try? modelContext.save()
     }
@@ -779,6 +781,9 @@ final class LoggingSessionManager {
     func deleteSession(_ session: LoggingSession) {
         if session.id == activeSession?.id {
             endSession()
+        } else {
+            // End any live activity that may still be showing from the paused state
+            liveActivityService.end()
         }
 
         let sessionId = session.id
@@ -905,6 +910,8 @@ final class LoggingSessionManager {
         guard let idString = UserDefaults.standard.string(forKey: activeSessionIdKey),
               let sessionId = UUID(uuidString: idString)
         else {
+            // No active session — clean up any orphaned Live Activities
+            liveActivityService.cleanupStale()
             return
         }
 
@@ -937,9 +944,11 @@ final class LoggingSessionManager {
             } else {
                 // Session was ended or not found, clear the stored ID
                 clearActiveSessionId()
+                liveActivityService.cleanupStale()
             }
         } catch {
             clearActiveSessionId()
+            liveActivityService.cleanupStale()
         }
     }
 
