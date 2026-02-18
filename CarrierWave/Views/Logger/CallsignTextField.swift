@@ -193,6 +193,8 @@ struct CallsignTextField: UIViewRepresentable {
         textField.spellCheckingType = .no
         textField.returnKeyType = .done
         textField.clearButtonMode = .never
+        textField.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        textField.setContentHuggingPriority(.defaultLow, for: .horizontal)
         textField.delegate = context.coordinator
         textField.addTarget(
             context.coordinator,

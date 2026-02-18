@@ -2,9 +2,21 @@
 //
 // Shown after ending a POTA logging session with unuploaded QSOs.
 // Offers options to upload now, later, or disable the prompt.
+// Supports rove sessions with per-park QSO counts.
 
 import SwiftData
 import SwiftUI
+
+// MARK: - RoveUploadSummary
+
+/// Per-park QSO count for rove upload prompt
+struct RoveUploadSummary: Identifiable {
+    let parkReference: String
+    let parkName: String?
+    let qsoCount: Int
+
+    var id: String { parkReference }
+}
 
 // MARK: - POTAUploadPromptSheet
 
@@ -14,33 +26,24 @@ struct POTAUploadPromptSheet: View {
     let parkReference: String
     let parkName: String?
     let qsoCount: Int
+    let roveStops: [RoveUploadSummary]
     let isInMaintenance: Bool
     let maintenanceTimeRemaining: String?
     let onUpload: () async -> Bool
     let onLater: () -> Void
     let onDontAskAgain: () -> Void
 
+    var isRove: Bool { !roveStops.isEmpty }
+
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
                 ScrollView {
                     VStack(spacing: 24) {
-                        // Park info header
-                        VStack(spacing: 8) {
-                            Image(systemName: "tree.fill")
-                                .font(.system(size: 48))
-                                .foregroundStyle(.green)
-
-                            Text(parkReference)
-                                .font(.title2)
-                                .fontWeight(.bold)
-
-                            if let name = parkName {
-                                Text(name)
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                                    .multilineTextAlignment(.center)
-                            }
+                        if isRove {
+                            roveHeader
+                        } else {
+                            singleParkHeader
                         }
 
                         // QSO count
@@ -48,46 +51,27 @@ struct POTAUploadPromptSheet: View {
                             Text("\(qsoCount)")
                                 .font(.system(size: 48, weight: .bold, design: .rounded))
                                 .foregroundStyle(.green)
-                            Text("QSOs ready to upload")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
+                            Text(
+                                isRove
+                                    ? "QSOs across \(roveStops.count) parks"
+                                    : "QSOs ready to upload"
+                            )
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        }
+
+                        // Per-park breakdown for roves
+                        if isRove {
+                            roveBreakdown
                         }
 
                         // Success state
                         if uploadState == .success {
-                            VStack(spacing: 12) {
-                                Image(systemName: "clock.arrow.circlepath")
-                                    .font(.system(size: 64))
-                                    .foregroundStyle(.blue)
-                                Text("Submitted!")
-                                    .font(.title2)
-                                    .fontWeight(.semibold)
-                                Text("Awaiting POTA confirmation")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                            .transition(.scale.combined(with: .opacity))
+                            successView
                         } else if uploadState == .uploading {
-                            VStack(spacing: 12) {
-                                ProgressView()
-                                    .scaleEffect(1.5)
-                                Text("Uploading to POTA...")
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                            }
+                            uploadingView
                         } else if uploadState == .failed {
-                            VStack(spacing: 12) {
-                                Image(systemName: "exclamationmark.triangle.fill")
-                                    .font(.system(size: 48))
-                                    .foregroundStyle(.orange)
-                                Text("Upload failed")
-                                    .font(.headline)
-                                Text(errorMessage ?? "Please try again from the POTA Activations tab.")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                    .multilineTextAlignment(.center)
-                            }
-                            .transition(.scale.combined(with: .opacity))
+                            failedView
                         }
 
                         // Maintenance warning
@@ -130,7 +114,112 @@ struct POTAUploadPromptSheet: View {
     @State private var uploadState: UploadState = .idle
     @State private var errorMessage: String?
 
-    // MARK: - Subviews
+    // MARK: - Headers
+
+    private var singleParkHeader: some View {
+        VStack(spacing: 8) {
+            Image(systemName: "tree.fill")
+                .font(.system(size: 48))
+                .foregroundStyle(.green)
+
+            Text(parkReference)
+                .font(.title2)
+                .fontWeight(.bold)
+
+            if let name = parkName {
+                Text(name)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+        }
+    }
+
+    private var roveHeader: some View {
+        VStack(spacing: 8) {
+            Image(systemName: "arrow.triangle.swap")
+                .font(.system(size: 48))
+                .foregroundStyle(.green)
+
+            Text("Rove Complete")
+                .font(.title2)
+                .fontWeight(.bold)
+
+            Text("\(roveStops.count) parks activated")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private var roveBreakdown: some View {
+        VStack(spacing: 6) {
+            ForEach(roveStops) { stop in
+                HStack {
+                    Text(stop.parkReference)
+                        .font(.subheadline.monospaced().weight(.medium))
+                        .foregroundStyle(.green)
+                    if let name = stop.parkName {
+                        Text(name)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                    Spacer()
+                    Text("\(stop.qsoCount) QSOs")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(Color(.systemGray6))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+            }
+        }
+    }
+
+    // MARK: - Status Views
+
+    private var successView: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "clock.arrow.circlepath")
+                .font(.system(size: 64))
+                .foregroundStyle(.blue)
+            Text("Submitted!")
+                .font(.title2)
+                .fontWeight(.semibold)
+            Text("Awaiting POTA confirmation")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .transition(.scale.combined(with: .opacity))
+    }
+
+    private var uploadingView: some View {
+        VStack(spacing: 12) {
+            ProgressView()
+                .scaleEffect(1.5)
+            Text("Uploading to POTA...")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private var failedView: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 48))
+                .foregroundStyle(.orange)
+            Text("Upload failed")
+                .font(.headline)
+            Text(errorMessage ?? "Please try again from the Sessions tab.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .transition(.scale.combined(with: .opacity))
+    }
+
+    // MARK: - Maintenance
 
     private var maintenanceWarning: some View {
         VStack(spacing: 8) {
@@ -148,7 +237,7 @@ struct POTAUploadPromptSheet: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
-            Text("Upload later from the POTA Activations tab.")
+            Text("Upload later from the Sessions tab.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -176,7 +265,7 @@ struct POTAUploadPromptSheet: View {
                     await performUpload()
                 }
             } label: {
-                Text("Upload Now")
+                Text(isRove ? "Upload All Parks" : "Upload Now")
                     .font(.headline)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
@@ -234,6 +323,40 @@ struct POTAUploadPromptSheet: View {
         parkReference: "US-0001",
         parkName: "Acadia National Park",
         qsoCount: 15,
+        roveStops: [],
+        isInMaintenance: false,
+        maintenanceTimeRemaining: nil,
+        onUpload: {
+            try? await Task.sleep(for: .seconds(1))
+            return true
+        },
+        onLater: {},
+        onDontAskAgain: {}
+    )
+}
+
+#Preview("Rove") {
+    POTAUploadPromptSheet(
+        parkReference: "US-0001",
+        parkName: nil,
+        qsoCount: 32,
+        roveStops: [
+            RoveUploadSummary(
+                parkReference: "US-0001",
+                parkName: "Acadia National Park",
+                qsoCount: 15
+            ),
+            RoveUploadSummary(
+                parkReference: "US-0002",
+                parkName: "Yellowstone National Park",
+                qsoCount: 10
+            ),
+            RoveUploadSummary(
+                parkReference: "US-0003",
+                parkName: "Grand Canyon National Park",
+                qsoCount: 7
+            ),
+        ],
         isInMaintenance: false,
         maintenanceTimeRemaining: nil,
         onUpload: {
@@ -250,6 +373,7 @@ struct POTAUploadPromptSheet: View {
         parkReference: "US-0001",
         parkName: "Acadia National Park",
         qsoCount: 15,
+        roveStops: [],
         isInMaintenance: true,
         maintenanceTimeRemaining: "2h 15m",
         onUpload: { false },

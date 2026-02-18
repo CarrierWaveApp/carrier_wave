@@ -11,7 +11,7 @@ struct SessionRow: View {
 
     let session: LoggingSession
     let qsos: [QSO]
-    var activation: POTAActivation?
+    var activations: [POTAActivation] = []
     var metadata: ActivationMetadata?
     var parkName: String?
     var hasRecording: Bool = false
@@ -58,14 +58,47 @@ struct SessionRow: View {
     @State private var showingConditions = false
 
     private var isPOTA: Bool {
-        session.activationType == .pota && activation != nil
+        session.activationType == .pota && !activations.isEmpty
     }
 
     private var shouldShowUpload: Bool {
-        guard let activation, showUploadButton, !hasCompletedJob else {
+        guard !activations.isEmpty, showUploadButton, !hasCompletedJob else {
             return false
         }
-        return activation.hasQSOsToUpload
+        return activations.contains { $0.hasQSOsToUpload }
+    }
+
+    private var totalPendingCount: Int {
+        activations.reduce(0) { $0 + $1.pendingCount }
+    }
+
+    /// Combined status view for one or more activations
+    @ViewBuilder
+    private var roveAwareStatusView: some View {
+        if activations.count == 1, let activation = activations.first {
+            HStack(spacing: 4) {
+                Image(systemName: activation.displayIconName)
+                    .foregroundStyle(activation.displayColor)
+                Text(activation.statusText)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        } else {
+            let totalQSOs = activations.reduce(0) { $0 + $1.qsoCount }
+            let totalUploaded = activations.reduce(0) { $0 + $1.uploadedCount }
+            let allUploaded = activations.allSatisfy { $0.isFullyUploaded }
+            HStack(spacing: 4) {
+                Image(systemName: allUploaded ? "checkmark.circle.fill" : "arrow.up.circle")
+                    .foregroundStyle(allUploaded ? .green : .gray)
+                Text(
+                    allUploaded
+                        ? "\(activations.count) parks, \(totalQSOs) QSOs accepted"
+                        : "\(totalUploaded)/\(totalQSOs) QSOs across \(activations.count) parks"
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+        }
     }
 
     // MARK: - Header
@@ -124,14 +157,8 @@ struct SessionRow: View {
     private var statusRow: some View {
         HStack(spacing: 8) {
             // POTA upload status
-            if let activation {
-                HStack(spacing: 4) {
-                    Image(systemName: activation.displayIconName)
-                        .foregroundStyle(activation.displayColor)
-                    Text(activation.statusText)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+            if !activations.isEmpty {
+                roveAwareStatusView
             } else {
                 // Non-POTA: QSO count and duration
                 Text(
@@ -220,7 +247,7 @@ struct SessionRow: View {
 
     @ViewBuilder
     private var uploadSection: some View {
-        if let activation {
+        if !activations.isEmpty {
             if isUploading {
                 HStack {
                     ProgressView()
@@ -240,7 +267,7 @@ struct SessionRow: View {
                         }
                     } label: {
                         Label(
-                            "Upload \(activation.pendingCount) QSO\(activation.pendingCount == 1 ? "" : "s") to POTA",
+                            "Upload \(totalPendingCount) QSO\(totalPendingCount == 1 ? "" : "s") to POTA",
                             systemImage: "arrow.up.circle.fill"
                         )
                         .frame(maxWidth: .infinity)
