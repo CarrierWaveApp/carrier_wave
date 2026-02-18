@@ -176,7 +176,7 @@ struct WidgetSpot: Identifiable, Sendable {
 
     var sourceLabel: String {
         switch source {
-        case .pota: parkRef ?? "POTA"
+        case .pota: return parkRef ?? "POTA"
         case .rbn:
             let parts = [
                 snr.map { "\($0) dB" },
@@ -229,6 +229,9 @@ enum SpotsFetcher {
 
     // MARK: Private
 
+    private static let potaSpotsURL = "https://api.pota.app/spot/activator"
+    private static let rbnBaseURL = "https://vailrerbn.com/api/v1"
+
     /// Groups spots by callsign, keeping the most recent spot and averaging SNR/WPM
     private static func deduplicateByCallsign(_ spots: [WidgetSpot]) -> [WidgetSpot] {
         let grouped = Dictionary(grouping: spots) { $0.callsign.uppercased() }
@@ -256,9 +259,6 @@ enum SpotsFetcher {
             )
         }
     }
-
-    private static let potaSpotsURL = "https://api.pota.app/spot/activator"
-    private static let rbnBaseURL = "https://vailrerbn.com/api/v1"
 
     private static func fetchPOTASpots() async -> [WidgetSpot]? {
         guard let url = URL(string: potaSpotsURL) else {

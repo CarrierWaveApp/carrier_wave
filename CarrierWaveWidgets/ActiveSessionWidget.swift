@@ -251,18 +251,9 @@ struct ActiveSessionWidget: Widget {
 
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: SessionTimelineProvider()) { entry in
-            Group {
-                switch entry.widgetFamily {
-                case .accessoryRectangular:
-                    ActiveSessionAccessoryRectangularView(session: entry.session)
-                case .systemMedium:
-                    ActiveSessionMediumView(session: entry.session)
-                default:
-                    ActiveSessionSmallView(session: entry.session)
-                }
-            }
-            .containerBackground(.fill.tertiary, for: .widget)
-            .widgetURL(URL(string: WidgetShared.DeepLink.logger))
+            ActiveSessionEntryView(entry: entry)
+                .containerBackground(.fill.tertiary, for: .widget)
+                .widgetURL(URL(string: WidgetShared.DeepLink.logger))
         }
         .configurationDisplayName("Active Session")
         .description("Shows your current logging session with QSO count.")
@@ -270,10 +261,21 @@ struct ActiveSessionWidget: Widget {
     }
 }
 
-// MARK: - Preview
+// MARK: - ActiveSessionEntryView
 
-private extension SessionEntry {
-    var widgetFamily: WidgetFamily {
-        .systemSmall
+struct ActiveSessionEntryView: View {
+    @Environment(\.widgetFamily) var widgetFamily
+
+    let entry: SessionEntry
+
+    var body: some View {
+        switch widgetFamily {
+        case .accessoryRectangular:
+            ActiveSessionAccessoryRectangularView(session: entry.session)
+        case .systemMedium:
+            ActiveSessionMediumView(session: entry.session)
+        default:
+            ActiveSessionSmallView(session: entry.session)
+        }
     }
 }

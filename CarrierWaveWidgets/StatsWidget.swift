@@ -250,11 +250,27 @@ struct StatsWidgetAccessoryCircularView: View {
     let entry: StatsEntry
 
     var body: some View {
-        VStack(spacing: 2) {
-            Image(systemName: entry.metric.icon)
-                .font(.caption)
-            Text("\(entry.value)")
-                .font(.title3.weight(.bold))
+        if entry.metric.isStreak, let best = entry.secondaryValue, best > 0 {
+            Gauge(
+                value: Double(min(entry.value, best)),
+                in: 0 ... Double(max(best, 1))
+            ) {
+                Image(systemName: entry.metric.icon)
+            } currentValueLabel: {
+                Text("\(entry.value)")
+                    .font(.system(.title3, design: .rounded, weight: .heavy))
+            }
+            .gaugeStyle(.accessoryCircular)
+        } else {
+            ZStack {
+                AccessoryWidgetBackground()
+                VStack(spacing: 0) {
+                    Text("\(entry.value)")
+                        .font(.system(.title3, design: .rounded, weight: .heavy))
+                    Image(systemName: entry.metric.icon)
+                        .font(.caption2)
+                }
+            }
         }
     }
 }
@@ -262,25 +278,45 @@ struct StatsWidgetAccessoryCircularView: View {
 // MARK: - StatsWidgetAccessoryRectangularView
 
 struct StatsWidgetAccessoryRectangularView: View {
+    // MARK: Internal
+
     let entry: StatsEntry
 
     var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: entry.metric.icon)
-                .font(.caption)
-            VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 4) {
+                Image(systemName: entry.metric.icon)
+                    .font(.caption2)
                 Text(entry.metric.shortLabel)
-                    .font(.caption2.weight(.semibold))
-                HStack(spacing: 4) {
-                    Text("\(entry.value)")
-                        .font(.caption.weight(.bold))
-                    if entry.metric.isStreak, let best = entry.secondaryValue, best > 0 {
-                        Text("(best \(best))")
-                            .font(.caption2)
-                    }
+                    .font(.headline)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
+
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text("\(entry.value)")
+                    .font(.system(.title, design: .rounded, weight: .bold))
+
+                if entry.metric.isStreak {
+                    streakDetails
                 }
             }
-            Spacer()
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    // MARK: Private
+
+    @ViewBuilder
+    private var streakDetails: some View {
+        if entry.isAtRisk {
+            Text("At Risk!")
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.secondary)
+        } else if let best = entry.secondaryValue, best > 0 {
+            Text("Best: \(best)")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
         }
     }
 }
@@ -295,18 +331,9 @@ struct StatsWidget: Widget {
             kind: kind, intent: StatsWidgetIntent.self,
             provider: StatsTimelineProvider()
         ) { entry in
-            Group {
-                switch entry.widgetFamily {
-                case .accessoryCircular:
-                    StatsWidgetAccessoryCircularView(entry: entry)
-                case .accessoryRectangular:
-                    StatsWidgetAccessoryRectangularView(entry: entry)
-                default:
-                    StatsWidgetSmallView(entry: entry)
-                }
-            }
-            .containerBackground(.fill.tertiary, for: .widget)
-            .widgetURL(URL(string: WidgetShared.DeepLink.dashboard))
+            StatsWidgetEntryView(entry: entry)
+                .containerBackground(.fill.tertiary, for: .widget)
+                .widgetURL(URL(string: WidgetShared.DeepLink.dashboard))
         }
         .configurationDisplayName("Stats & Streaks")
         .description("Track your on-air streaks, QSO counts, and more.")
@@ -314,10 +341,21 @@ struct StatsWidget: Widget {
     }
 }
 
-// MARK: - Preview
+// MARK: - StatsWidgetEntryView
 
-private extension StatsEntry {
-    var widgetFamily: WidgetFamily {
-        .systemSmall
+struct StatsWidgetEntryView: View {
+    @Environment(\.widgetFamily) var widgetFamily
+
+    let entry: StatsEntry
+
+    var body: some View {
+        switch widgetFamily {
+        case .accessoryCircular:
+            StatsWidgetAccessoryCircularView(entry: entry)
+        case .accessoryRectangular:
+            StatsWidgetAccessoryRectangularView(entry: entry)
+        default:
+            StatsWidgetSmallView(entry: entry)
+        }
     }
 }

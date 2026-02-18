@@ -310,6 +310,8 @@ struct SolarWidgetSmallView: View {
 // MARK: - SolarWidgetAccessoryCircularView
 
 struct SolarWidgetAccessoryCircularView: View {
+    // MARK: Internal
+
     let solar: SolarData?
     let metric: SolarMetric
 
@@ -349,6 +351,8 @@ struct SolarWidgetAccessoryCircularView: View {
         }
     }
 
+    // MARK: Private
+
     private func accessoryGauge(
         label: String, value: Double, range: ClosedRange<Double>,
         displayValue: String
@@ -378,51 +382,42 @@ struct SolarWidgetAccessoryCircularView: View {
 // MARK: - SolarWidgetAccessoryRectangularView
 
 struct SolarWidgetAccessoryRectangularView: View {
+    // MARK: Internal
+
     let solar: SolarData?
     let band: SolarBand
 
     var body: some View {
         if let solar {
-            VStack(alignment: .leading, spacing: 1) {
-                HStack {
-                    Text("Solar")
-                        .fontWeight(.bold)
-                    Spacer()
-                    Text(solar.propagationRating)
-                        .fontWeight(.semibold)
+            HStack(spacing: 4) {
+                accessoryGauge(label: "K", value: min(solar.kIndex, 9), range: 0 ... 9,
+                               displayValue: String(format: "%.0f", solar.kIndex))
+                if let aIdx = solar.aIndex {
+                    accessoryGauge(label: "A", value: min(Double(aIdx), 50), range: 0 ... 50,
+                                   displayValue: "\(aIdx)")
                 }
-                .font(.headline)
-
-                HStack {
-                    Text("K \(String(format: "%.0f", solar.kIndex))")
-                        .fontWeight(.bold)
-                    if let aIdx = solar.aIndex {
-                        Text("A \(aIdx)")
-                            .fontWeight(.bold)
-                    }
-                    Spacer()
-                    if let sfi = solar.solarFlux {
-                        Text("SFI \(Int(sfi))")
-                            .fontWeight(.bold)
-                    }
+                if let sfi = solar.solarFlux {
+                    accessoryGauge(label: "SFI", value: min(sfi, 300), range: 0 ... 300,
+                                   displayValue: "\(Int(sfi))")
                 }
-                .font(.caption.monospacedDigit())
-
-                HStack {
-                    Text(band.displayLabel)
-                        .fontWeight(.semibold)
-                    Spacer()
-                    if let cond = solar.bandConditions[band.rawValue] {
-                        Text("\(cond.day) / \(cond.night)")
-                            .fontWeight(.semibold)
-                    }
-                }
-                .font(.caption)
             }
         } else {
             Text("Solar: --")
                 .font(.caption.weight(.semibold))
         }
+    }
+
+    // MARK: Private
+
+    private func accessoryGauge(
+        label: String, value: Double, range: ClosedRange<Double>, displayValue: String
+    ) -> some View {
+        Gauge(value: value, in: range) {
+            Text(label)
+        } currentValueLabel: {
+            Text(displayValue).font(.system(.caption, design: .rounded, weight: .heavy))
+        }
+        .gaugeStyle(.accessoryCircular)
     }
 }
 
