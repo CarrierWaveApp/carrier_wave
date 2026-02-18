@@ -34,6 +34,26 @@ enum SolarBand: String, CaseIterable, AppEnum {
     }
 }
 
+// MARK: - SolarMetric
+
+enum SolarMetric: String, CaseIterable, AppEnum {
+    case kIndex
+    case aIndex
+    case sfi
+
+    // MARK: Internal
+
+    static let typeDisplayRepresentation = TypeDisplayRepresentation(name: "Metric")
+
+    static var caseDisplayRepresentations: [SolarMetric: DisplayRepresentation] {
+        [
+            .kIndex: "K-Index",
+            .aIndex: "A-Index",
+            .sfi: "SFI",
+        ]
+    }
+}
+
 // MARK: - SolarWidgetIntent
 
 struct SolarWidgetIntent: WidgetConfigurationIntent {
@@ -42,6 +62,9 @@ struct SolarWidgetIntent: WidgetConfigurationIntent {
 
     @Parameter(title: "Band", default: .band30m20m)
     var band: SolarBand
+
+    @Parameter(title: "Lock Screen Metric", default: .kIndex)
+    var metric: SolarMetric
 }
 
 // MARK: - BandCondition
@@ -53,7 +76,8 @@ struct BandCondition: Sendable {
 
 // MARK: - CircularMetricGauge
 
-/// Circular arc gauge with value inside — more filled = better propagation
+/// Circular arc gauge with value inside — more filled = better propagation.
+/// Fills counterclockwise from the top.
 struct CircularMetricGauge: View {
     // MARK: Internal
 
@@ -71,6 +95,7 @@ struct CircularMetricGauge: View {
                     .trim(from: 0, to: fraction)
                     .stroke(color, style: StrokeStyle(lineWidth: 3.5, lineCap: .round))
                     .rotationEffect(.degrees(-90))
+                    .scaleEffect(x: -1, y: 1)
                 Text(value)
                     .font(.system(.caption2, design: .rounded, weight: .bold))
                     .monospacedDigit()

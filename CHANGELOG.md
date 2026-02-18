@@ -4,6 +4,14 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Lock screen circular widget now supports A-index and SFI metrics (configurable via "Lock Screen Metric" parameter)
+
+### Changed
+- Spots widget deduplicates by callsign, averaging SNR and WPM across multiple spots for the same station
+- Spots widget band/mode filter pills collapse to "N bands" / "N modes" summary when more than 2 are selected
+- Solar metric gauge circles now fill counterclockwise from the top
+
 ## [1.38.0] - 2026-02-17
 
 ### Added
