@@ -53,6 +53,12 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `Sources/LoFiCLI/FileCredentialStore.swift` | LoFiCredentialStore backed by ~/.config/lofi-cli/credentials.json |
 | `Sources/LoFiCLI/ConsoleLogger.swift` | LoFiLogger that prints to stderr with level prefixes |
 
+## Privacy & Compliance
+| File | Purpose |
+|------|---------|
+| `CarrierWave/PrivacyInfo.xcprivacy` | Privacy manifest for main app target (UserDefaults, no tracking) |
+| `CarrierWaveWidgets/PrivacyInfo.xcprivacy` | Privacy manifest for widget target (UserDefaults, no tracking) |
+
 ## Entry Points
 | File | Purpose |
 |------|---------|
@@ -527,6 +533,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `features/sync.md` | QRZ, POTA, LoFi sync integration |
 | `features/statistics.md` | Dashboard stats and drilldown views |
 | `features/tour-requirements.md` | Feature tour rules and mini tour implementation guide |
+| `app-review-notes.md` | App Store review notes (ATS justification, background audio, demo instructions) |
 
 ## Views - Map (`CarrierWave/Views/Map/`)
 | File | Purpose |

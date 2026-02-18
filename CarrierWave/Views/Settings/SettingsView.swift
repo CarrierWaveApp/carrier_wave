@@ -629,6 +629,10 @@ struct SettingsMainView: View {
             } label: {
                 Label("Attributions", systemImage: "heart")
             }
+
+            Link(destination: URL(string: "https://carrierwave.app/privacy.html")!) {
+                Label("Privacy Policy", systemImage: "hand.raised")
+            }
         } header: {
             Text("About")
         }

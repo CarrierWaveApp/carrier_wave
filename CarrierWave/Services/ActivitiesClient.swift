@@ -74,6 +74,29 @@ final class ActivitiesClient {
         return apiResponse.data
     }
 
+    // MARK: - Account Deletion
+
+    /// Delete the authenticated user's account and all server-side data.
+    /// Clears the local auth token on success.
+    func deleteAccount() async throws {
+        let authToken = try getAuthToken()
+        let url = try buildURL(baseURL, path: "/v1/account")
+        let request = try buildRequest(url: url, method: "DELETE", authToken: authToken)
+
+        let (data, response) = try await performRequest(request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw ActivitiesError.invalidResponse("Not an HTTP response")
+        }
+
+        guard httpResponse.statusCode == 204 else {
+            try validateResponse(response, data: data)
+            return
+        }
+
+        clearAuthToken()
+    }
+
     // MARK: - Challenge Sources
 
     /// Fetch challenges with optional filters

@@ -66,6 +66,29 @@ struct ActivitiesSettingsView: View {
             } footer: {
                 Text("Activity servers host competitions and track leaderboards.")
             }
+            if activitiesEnabled {
+                Section {
+                    Button(role: .destructive) {
+                        showingDeleteAccountConfirmation = true
+                    } label: {
+                        if isDeletingAccount {
+                            HStack {
+                                ProgressView()
+                                    .padding(.trailing, 4)
+                                Text("Deleting...")
+                            }
+                        } else {
+                            Label("Delete Community Account", systemImage: "trash")
+                        }
+                    }
+                    .disabled(isDeletingAccount)
+                } footer: {
+                    Text(
+                        "Permanently deletes your community data from the server, "
+                            + "including challenges, friends, and activity history."
+                    )
+                }
+            }
         }
         .navigationTitle("Activities")
         .onAppear {
@@ -81,6 +104,18 @@ struct ActivitiesSettingsView: View {
         }
         .sheet(item: $editingSource) { source in
             EditChallengeServerSheet(source: source)
+        }
+        .alert("Delete Community Account?", isPresented: $showingDeleteAccountConfirmation) {
+            Button("Cancel", role: .cancel) {}
+            Button("Delete Account", role: .destructive) {
+                Task { await deleteAccount() }
+            }
+        } message: {
+            Text(
+                "This will permanently delete your community data from the server, "
+                    + "including challenge progress, friends, and activity history. "
+                    + "This cannot be undone."
+            )
         }
         .alert("Error", isPresented: $showingError) {
             Button("OK") {}
@@ -103,6 +138,8 @@ struct ActivitiesSettingsView: View {
     @State private var editingSource: ChallengeSource?
     @State private var showingError = false
     @State private var errorMessage = ""
+    @State private var showingDeleteAccountConfirmation = false
+    @State private var isDeletingAccount = false
 
     private let activitiesSourceURL = "https://activities.carrierwave.app"
 
@@ -159,6 +196,19 @@ struct ActivitiesSettingsView: View {
             try modelContext.save()
         } catch {
             errorMessage = error.localizedDescription
+            showingError = true
+        }
+    }
+
+    private func deleteAccount() async {
+        isDeletingAccount = true
+        defer { isDeletingAccount = false }
+
+        do {
+            try await ActivitiesClient().deleteAccount()
+            activitiesEnabled = false
+        } catch {
+            errorMessage = "Failed to delete account: \(error.localizedDescription)"
             showingError = true
         }
     }

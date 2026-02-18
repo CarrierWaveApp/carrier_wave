@@ -4,6 +4,13 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Add privacy manifest (PrivacyInfo.xcprivacy) for main app and widget targets declaring UserDefaults usage
+- Add privacy policy link in Settings > About section
+- Add community account deletion in Settings > Activities with server-side cascade delete
+- Add export compliance declaration (ITSAppUsesNonExemptEncryption) to Info.plist
+- Add app review notes document with ATS justification, background audio explanation, and demo instructions
+
 ### Fixed
 - Fix Live Activity not clearing when ending or deleting a paused session
 - Fix rove upload prompt showing all QSOs against last park instead of per-park counts
@@ -14,6 +21,9 @@ All notable changes to Carrier Wave will be documented in this file.
 ### Changed
 - Sync activity feed immediately on Activity tab appearance instead of waiting 60 seconds
 - Add club sync to Activity tab refresh action
+
+### Fixed
+- Remove empty CFBundleURLTypes entry from Info.plist
 
 ## [1.37.0] - 2026-02-17
 
