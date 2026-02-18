@@ -219,6 +219,12 @@ extension SettingsSearchIndex {
             destination: .potaActivations
         ),
         SettingsSearchItem(
+            title: "Rove QRT message",
+            keywords: ["pota", "rove", "qrt", "message", "spot", "park", "transition"],
+            breadcrumb: "POTA Activations",
+            destination: .potaActivations
+        ),
+        SettingsSearchItem(
             title: "Record solar & weather at start",
             keywords: ["solar", "weather", "conditions", "record", "auto"],
             breadcrumb: "POTA Activations",

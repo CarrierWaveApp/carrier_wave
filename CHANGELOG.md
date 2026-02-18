@@ -5,10 +5,14 @@ All notable changes to Carrier Wave will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Add configurable rove QRT spot message in POTA Activation settings — mid-rove park transitions use the custom message (default "QRT moving to next park") while final session QRT remains "QRT"
 - Report session completed activity to server when ending a logging session
 - Full brag sheet cards in activity feed for completed sessions (map, timeline, stats, equipment)
 - Lock screen circular widget now supports A-index and SFI metrics (configurable via "Lock Screen Metric" parameter)
 - Add search to settings: type to filter all ~55 settings by title and keywords, tap to navigate directly to the containing view
+
+### Fixed
+- Fix QRZ only syncing last QSO per activation — QRZ INSERT processes one ADIF record per request, but Carrier Wave sent all QSOs in a single payload; now uploads one QSO per request with per-QSO success tracking, and a one-time forced full download repairs QSOs stuck from the batch upload bug
 
 ### Changed
 - Restructure settings with progressive disclosure: top-level shows 5 category links (Appearance, Logger, POTA Activations, Sync Sources, Data & Tools) instead of ~48 inline rows

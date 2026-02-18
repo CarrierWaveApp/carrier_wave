@@ -21,6 +21,13 @@ extension LoggingSessionManager {
         return UserDefaults.standard.bool(forKey: "potaQSYSpotEnabled")
     }
 
+    /// The message to use for mid-rove QRT spots (from settings)
+    var potaRoveQRTMessage: String {
+        let message = UserDefaults.standard.string(forKey: "potaRoveQRTMessage")
+            ?? "QRT moving to next park"
+        return message.isEmpty ? "QRT moving to next park" : message
+    }
+
     /// Whether QRT spotting is enabled (from settings)
     var potaQRTSpotEnabled: Bool {
         // Default to true if setting hasn't been explicitly set
@@ -279,10 +286,11 @@ extension LoggingSessionManager {
                     reference: park,
                     frequency: freq * 1_000,
                     mode: session.mode,
-                    comments: "QRT"
+                    comments: potaRoveQRTMessage
                 )
                 SyncDebugLog.shared.info(
-                    "QRT spot posted for \(park) (rove stop change)", service: .pota
+                    "\(potaRoveQRTMessage) spot posted for \(park) (rove stop change)",
+                    service: .pota
                 )
             } catch {
                 SyncDebugLog.shared.warning(

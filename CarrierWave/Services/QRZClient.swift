@@ -49,11 +49,14 @@ struct QRZStatusResponse {
 
 // MARK: - QRZUploadResult
 
-/// Result of uploading QSOs to QRZ
+/// Result of uploading QSOs to QRZ (per-QSO tracking)
 struct QRZUploadResult {
     let uploaded: Int
     let duplicates: Int
+    let failed: Int
     let skipped: Int
+    /// Indices into the original QSO array that were confirmed on QRZ
+    let confirmedIndices: Set<Int>
 }
 
 // MARK: - QRZFetchedQSO
@@ -80,11 +83,21 @@ struct QRZFetchedQSO {
     let rawADIF: String
 }
 
+// MARK: - QRZSingleUploadOutcome
+
+/// Outcome of uploading a single QSO to QRZ
+struct QRZSingleUploadOutcome {
+    let uploaded: Int
+    let duplicates: Int
+    let failed: Int
+    let confirmed: Bool
+}
+
 // MARK: - QRZClient
 
 @MainActor
 final class QRZClient {
-    // MARK: Internal (for extension access)
+    // MARK: Internal
 
     let baseURL = "https://logbook.qrz.com/api"
     let keychain = KeychainHelper.shared
@@ -243,46 +256,56 @@ final class QRZClient {
         )
     }
 
-    /// Upload QSOs to QRZ logbook.
-    /// Only uploads QSOs matching the configured QRZ callsign; returns count of skipped QSOs.
+    /// Upload QSOs to QRZ logbook one at a time.
+    /// QRZ INSERT only processes one ADIF record per request, so we send each QSO
+    /// individually with a 200ms delay between requests.
+    /// Returns per-QSO results so the caller can mark only confirmed QSOs.
     func uploadQSOs(_ qsos: [QSO]) async throws -> QRZUploadResult {
         guard !qsos.isEmpty else {
-            return QRZUploadResult(uploaded: 0, duplicates: 0, skipped: 0)
+            return QRZUploadResult(
+                uploaded: 0, duplicates: 0, failed: 0, skipped: 0,
+                confirmedIndices: []
+            )
         }
 
         let apiKey = try getApiKey()
         let accountCallsign = getCallsign()?.uppercased()
         let bookId = accountCallsign.flatMap { getBookId(for: $0) }
 
-        // Filter to only QSOs matching the QRZ account callsign
-        let (matchingQSOs, skippedCount) = filterQSOsForUpload(
-            qsos, accountCallsign: accountCallsign
-        )
+        var totalUploaded = 0
+        var totalDuplicates = 0
+        var totalFailed = 0
+        var totalSkipped = 0
+        var confirmedIndices: Set<Int> = []
 
-        guard !matchingQSOs.isEmpty else {
-            await MainActor.run {
-                SyncDebugLog.shared.info(
-                    "QRZ upload: all \(qsos.count) QSO(s) filtered out "
-                        + "(callsign mismatch with account \(accountCallsign ?? "nil"))",
-                    service: .qrz
-                )
+        for (index, qso) in qsos.enumerated() {
+            if let accountCallsign {
+                let qsoCallsign = qso.myCallsign.uppercased()
+                if !qsoCallsign.isEmpty, qsoCallsign != accountCallsign {
+                    totalSkipped += 1
+                    continue
+                }
             }
-            return QRZUploadResult(uploaded: 0, duplicates: 0, skipped: skippedCount)
+
+            let outcome = await uploadSingleQSO(
+                qso, apiKey: apiKey, bookId: bookId
+            )
+            totalUploaded += outcome.uploaded
+            totalDuplicates += outcome.duplicates
+            totalFailed += outcome.failed
+            if outcome.confirmed {
+                confirmedIndices.insert(index)
+            }
+
+            if index < qsos.count - 1 {
+                try await Task.sleep(nanoseconds: 200_000_000)
+            }
         }
 
-        let adifContent = matchingQSOs.map { qso in
-            qso.rawADIF ?? generateADIF(for: qso)
-        }.joined(separator: "\n")
-
-        let request = try buildUploadRequest(
-            apiKey: apiKey, adifContent: adifContent, bookId: bookId
-        )
-        let result = try await executeQRZUpload(
-            request: request, adifChars: adifContent.count,
-            qsoCount: matchingQSOs.count, bookId: bookId
-        )
         return QRZUploadResult(
-            uploaded: result.uploaded, duplicates: result.duplicates, skipped: skippedCount
+            uploaded: totalUploaded, duplicates: totalDuplicates,
+            failed: totalFailed, skipped: totalSkipped,
+            confirmedIndices: confirmedIndices
         )
     }
 
@@ -376,6 +399,54 @@ final class QRZClient {
         try? keychain.delete(for: KeychainHelper.Keys.qrzTotalDownloaded)
         try? keychain.delete(for: KeychainHelper.Keys.qrzLastUploadDate)
         try? keychain.delete(for: KeychainHelper.Keys.qrzLastDownloadDate)
+    }
+
+    // MARK: Private
+
+    /// Upload a single QSO and return the outcome
+    private func uploadSingleQSO(
+        _ qso: QSO, apiKey: String, bookId: String?
+    ) async -> QRZSingleUploadOutcome {
+        let adifContent = qso.rawADIF ?? generateADIF(for: qso)
+        do {
+            let request = try buildUploadRequest(
+                apiKey: apiKey, adifContent: adifContent, bookId: bookId
+            )
+            let result = try await executeQRZUpload(
+                request: request, adifChars: adifContent.count,
+                qsoCount: 1, bookId: bookId
+            )
+            if result.uploaded >= 1 || result.duplicates >= 1 {
+                return QRZSingleUploadOutcome(
+                    uploaded: result.uploaded, duplicates: result.duplicates,
+                    failed: 0, confirmed: true
+                )
+            }
+            await logQSOUploadFailure(qso, reason: "COUNT=0")
+            return QRZSingleUploadOutcome(
+                uploaded: 0, duplicates: 0, failed: 1, confirmed: false
+            )
+        } catch {
+            await logQSOUploadFailure(qso, reason: error.localizedDescription)
+            return QRZSingleUploadOutcome(
+                uploaded: 0, duplicates: 0, failed: 1, confirmed: false
+            )
+        }
+    }
+
+    /// Log a per-QSO upload failure
+    private func logQSOUploadFailure(_ qso: QSO, reason: String) async {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm"
+        dateFormatter.timeZone = TimeZone(identifier: "UTC")
+        let dateStr = dateFormatter.string(from: qso.timestamp)
+        await MainActor.run {
+            SyncDebugLog.shared.warning(
+                "QRZ per-QSO upload failed: \(qso.callsign) @ \(dateStr) "
+                    + "| \(qso.band) \(qso.mode) - \(reason)",
+                service: .qrz
+            )
+        }
     }
 }
 

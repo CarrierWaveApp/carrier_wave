@@ -1,5 +1,3 @@
-// swiftlint:disable file_length
-
 import CarrierWaveCore
 import Foundation
 import SwiftData
@@ -94,32 +92,6 @@ extension SyncService {
         return result
     }
 
-    /// Upload to Club Log if configured
-    private func uploadClubLogIfConfigured(
-        qsosNeedingUpload: [QSO]?, timeout: TimeInterval
-    ) async -> Result<Int, Error>? {
-        guard clublogClient.isConfigured else {
-            return nil
-        }
-
-        let clublogQSOs = qsosNeedingUpload?
-            .filter { $0.needsUpload(to: .clublog) } ?? []
-        guard !clublogQSOs.isEmpty else {
-            return nil
-        }
-
-        let (validQSOs, invalidQSOs) = partitionQSOsByValidity(clublogQSOs)
-        await logQSOsWithMissingFields(invalidQSOs, service: .clublog)
-
-        guard !validQSOs.isEmpty else {
-            return nil
-        }
-
-        await logPendingQSOs(validQSOs, service: .clublog)
-        let (_, result) = await uploadClubLogBatch(qsos: validQSOs, timeout: timeout)
-        return result
-    }
-
     /// Upload to POTA if configured, with detailed debug logging
     private func uploadPOTAIfConfigured(
         qsosNeedingUpload: [QSO]?, timeout: TimeInterval
@@ -207,76 +179,6 @@ extension SyncService {
         }
     }
 
-    /// Partition QSOs into valid (uploadable) and invalid (missing required fields)
-    private func partitionQSOsByValidity(_ qsos: [QSO]) -> (valid: [QSO], invalid: [QSO]) {
-        let grouped = Dictionary(grouping: qsos) { $0.hasRequiredFieldsForUpload }
-        return (valid: grouped[true] ?? [], invalid: grouped[false] ?? [])
-    }
-
-    /// Log QSOs that can't be uploaded due to missing required fields
-    private func logQSOsWithMissingFields(_ qsos: [QSO], service: ServiceType) async {
-        guard !qsos.isEmpty else {
-            return
-        }
-        await MainActor.run {
-            SyncDebugLog.shared.actionRequired(
-                "\(qsos.count) QSO(s) cannot upload to \(service.displayName) "
-                    + "- edit in Logs to add missing band/frequency",
-                service: service
-            )
-            for qso in qsos.prefix(5) {
-                let dateStr = Self.debugDateFormatter.string(from: qso.timestamp)
-                var issues: [String] = []
-                if qso.band.isEmpty || qso.band == "Unknown" {
-                    issues.append("no band")
-                }
-                if qso.frequency == nil {
-                    issues.append("no frequency")
-                }
-                SyncDebugLog.shared.actionRequired(
-                    "  \(qso.callsign) @ \(dateStr) (\(issues.joined(separator: ", ")))",
-                    service: service
-                )
-            }
-            if qsos.count > 5 {
-                SyncDebugLog.shared.actionRequired(
-                    "  ... and \(qsos.count - 5) more", service: service
-                )
-            }
-        }
-    }
-
-    /// Log details about pending QSOs for debugging
-    private func logPendingQSOs(_ qsos: [QSO], service: ServiceType) async {
-        await MainActor.run {
-            SyncDebugLog.shared.info(
-                "Pending \(service.displayName) uploads: \(qsos.count) QSO(s)",
-                service: service
-            )
-            for qso in qsos.prefix(10) {
-                let dateStr = Self.debugDateFormatter.string(from: qso.timestamp)
-                let park = qso.parkReference.map { " park=\($0)" } ?? ""
-                SyncDebugLog.shared.debug(
-                    "  - \(qso.callsign) @ \(dateStr) | \(qso.band) \(qso.mode)\(park)",
-                    service: service
-                )
-            }
-            if qsos.count > 10 {
-                SyncDebugLog.shared.debug(
-                    "  ... and \(qsos.count - 10) more pending", service: service
-                )
-            }
-        }
-    }
-
-    /// Date formatter for debug logging
-    private static let debugDateFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd HH:mm"
-        formatter.timeZone = TimeZone(identifier: "UTC")
-        return formatter
-    }()
-
     /// Log failed QSOs for debugging (call from MainActor)
     @MainActor
     private func logFailedQSOs(_ qsos: [QSO], reason: String) {
@@ -362,62 +264,43 @@ extension SyncService {
     }
 
     func uploadToQRZ(qsos: [QSO]) async throws -> (uploaded: Int, skipped: Int) {
-        let batchSize = 50
-        var totalUploaded = 0
-        var totalSkipped = 0
+        let uploadResult = try await qrzClient.uploadQSOs(qsos)
 
-        for batch in stride(from: 0, to: qsos.count, by: batchSize) {
-            let end = min(batch + batchSize, qsos.count)
-            let batchQSOs = Array(qsos[batch ..< end])
-
-            let uploadResult = try await qrzClient.uploadQSOs(batchQSOs)
-            totalUploaded += uploadResult.uploaded
-            totalSkipped += uploadResult.skipped
-
-            // Only clear needsUpload for QSOs that were actually uploaded (matching callsign)
-            // Non-matching QSOs keep their needsUpload flag - they're just skipped, not rejected
-            let accountCallsign = qrzClient.getCallsign()?.uppercased()
-            await MainActor.run {
-                for qso in batchQSOs {
-                    let qsoCallsign = qso.myCallsign.uppercased()
-                    let matches = qsoCallsign.isEmpty || qsoCallsign == accountCallsign
-                    if matches, let presence = qso.presence(for: .qrz) {
-                        presence.needsUpload = false
-                        presence.isPresent = true
-                        presence.lastConfirmedAt = Date()
-                    } else {
-                        // Log why this QSO wasn't marked as uploaded
-                        let dateStr = Self.debugDateFormatter.string(from: qso.timestamp)
-                        let acct = accountCallsign ?? "nil"
-                        SyncDebugLog.shared.debug(
-                            "QRZ skip (callsign mismatch): \(qso.callsign) @ \(dateStr) | "
-                                + "myCall=\(qso.myCallsign) vs account=\(acct)",
-                            service: .qrz
-                        )
-                    }
+        // Mark only QSOs confirmed by QRZ (per-QSO result tracking)
+        await MainActor.run {
+            for index in uploadResult.confirmedIndices {
+                let qso = qsos[index]
+                if let presence = qso.presence(for: .qrz) {
+                    presence.needsUpload = false
+                    presence.isPresent = true
+                    presence.lastConfirmedAt = Date()
                 }
             }
         }
 
         // Warn user if QSOs were skipped due to callsign mismatch
-        if totalSkipped > 0 {
+        if uploadResult.skipped > 0 {
             let callsign = qrzClient.getCallsign() ?? "unknown"
-            SyncDebugLog.shared.warning(
-                "Skipped \(totalSkipped) QSOs from other callsigns (QRZ account: \(callsign)). "
-                    + "Go to Settings > Callsign Aliases to delete non-primary callsign QSOs.",
-                service: .qrz
-            )
+            await MainActor.run {
+                SyncDebugLog.shared.warning(
+                    "Skipped \(uploadResult.skipped) QSO(s) from other callsigns "
+                        + "(QRZ account: \(callsign))",
+                    service: .qrz
+                )
+            }
         }
 
         // Log final state
         await MainActor.run {
             SyncDebugLog.shared.info(
-                "QRZ upload complete: \(totalUploaded) uploaded, \(totalSkipped) skipped",
+                "QRZ upload complete: \(uploadResult.uploaded) uploaded, "
+                    + "\(uploadResult.duplicates) dupes, \(uploadResult.failed) failed, "
+                    + "\(uploadResult.skipped) skipped",
                 service: .qrz
             )
         }
 
-        return (uploaded: totalUploaded, skipped: totalSkipped)
+        return (uploaded: uploadResult.uploaded, skipped: uploadResult.skipped)
     }
 
     func uploadToPOTA(qsos: [QSO]) async throws -> Int {
@@ -577,7 +460,7 @@ extension SyncService {
                         + "needsUpload=\($0.needsUpload)"
                 } ?? "no presence"
 
-            let dateStr = Self.debugDateFormatter.string(from: qso.timestamp)
+            let dateStr = Self.uploadDebugDateFormatter.string(from: qso.timestamp)
             SyncDebugLog.shared.debug(
                 "markSubmittedToPark \(parkRef): \(qso.callsign) @ \(dateStr) "
                     + "[\(beforeState)] -> [\(afterState)]",
@@ -590,49 +473,5 @@ extension SyncService {
                 + "message=\(result.message ?? "nil")",
             service: .pota
         )
-    }
-
-    // MARK: - Club Log Upload
-
-    private func uploadClubLogBatch(qsos: [QSO], timeout: TimeInterval) async -> (
-        ServiceType, Result<Int, Error>
-    ) {
-        await MainActor.run { self.syncPhase = .uploading(service: .clublog) }
-        do {
-            let result = try await withTimeout(seconds: timeout, service: .clublog) {
-                try await self.uploadToClubLog(qsos: qsos)
-            }
-            return (.clublog, .success(result.uploaded))
-        } catch {
-            return (.clublog, .failure(error))
-        }
-    }
-
-    func uploadToClubLog(qsos: [QSO]) async throws -> ClubLogUploadResult {
-        let uploadResult = try await clublogClient.uploadQSOs(qsos)
-
-        // Mark uploaded QSOs
-        let accountCallsign = clublogClient.getCallsign()?.uppercased()
-        await MainActor.run {
-            for qso in qsos {
-                let qsoCallsign = qso.myCallsign.uppercased()
-                let matches = qsoCallsign.isEmpty || qsoCallsign == accountCallsign
-                if matches, let presence = qso.presence(for: .clublog) {
-                    presence.needsUpload = false
-                    presence.isPresent = true
-                    presence.lastConfirmedAt = Date()
-                }
-            }
-        }
-
-        await MainActor.run {
-            SyncDebugLog.shared.info(
-                "Club Log upload complete: \(uploadResult.uploaded) uploaded, "
-                    + "\(uploadResult.skipped) skipped",
-                service: .clublog
-            )
-        }
-
-        return uploadResult
     }
 }

@@ -121,8 +121,41 @@ extension SyncService {
         // Repair QRZ records stuck in isSubmitted state (should be isPresent)
         await repairQRZSubmittedStateAsync()
 
+        // One-time: force full QRZ download to reconcile QSOs stuck from batch upload bug
+        await repairQRZPerQSOUpload()
+
         // Refresh main context to pick up changes from background actor
         modelContext.rollback()
+    }
+
+    /// One-time migration: clear QRZ lastDownloadDate to force full download.
+    /// The old batch upload sent all QSOs in one request but QRZ only processed
+    /// the last one, leaving QSOs stuck as isPresent=true but never actually uploaded.
+    /// A full download triggers reconciliation which resets needsUpload for missing QSOs.
+    private func repairQRZPerQSOUpload() async {
+        let key = "qrzPerQSOUploadRepairV1"
+        guard !UserDefaults.standard.bool(forKey: key) else {
+            return
+        }
+
+        guard qrzClient.hasApiKey() else {
+            // No QRZ configured, nothing to repair
+            UserDefaults.standard.set(true, forKey: key)
+            return
+        }
+
+        qrzClient.clearLastDownloadDate()
+
+        await MainActor.run {
+            SyncDebugLog.shared.info(
+                "QRZ per-QSO upload repair: cleared lastDownloadDate to force "
+                    + "full download on next sync (reconciliation will flag "
+                    + "missing QSOs for re-upload)",
+                service: .qrz
+            )
+        }
+
+        UserDefaults.standard.set(true, forKey: key)
     }
 
     /// Reconcile service presence and repair data after processing.

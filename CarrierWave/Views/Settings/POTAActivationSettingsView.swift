@@ -11,6 +11,13 @@ struct POTAActivationSettingsView: View {
                 Toggle("Auto-spot every 10 minutes", isOn: $potaAutoSpotEnabled)
                 Toggle("Prompt for QSY spots", isOn: $potaQSYSpotEnabled)
                 Toggle("Post QRT when ending session", isOn: $potaQRTSpotEnabled)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Rove QRT message")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    TextField("QRT moving to next park", text: $potaRoveQRTMessage)
+                        .textInputAutocapitalization(.characters)
+                }
                 Toggle(
                     "Record solar & weather at start",
                     isOn: $autoRecordConditions
@@ -46,6 +53,7 @@ struct POTAActivationSettingsView: View {
     @AppStorage("potaAutoSpotEnabled") private var potaAutoSpotEnabled = false
     @AppStorage("potaQSYSpotEnabled") private var potaQSYSpotEnabled = true
     @AppStorage("potaQRTSpotEnabled") private var potaQRTSpotEnabled = true
+    @AppStorage("potaRoveQRTMessage") private var potaRoveQRTMessage = "QRT moving to next park"
     @AppStorage("autoRecordConditions") private var autoRecordConditions = true
     @AppStorage("solarPollingEnabled") private var solarPollingEnabled = true
     @AppStorage("shareCardIncludeEquipment") private var shareCardIncludeEquipment = true
