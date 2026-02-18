@@ -1,4 +1,5 @@
 import CarrierWaveCore
+import CoreLocation
 import SwiftData
 import SwiftUI
 
@@ -8,23 +9,50 @@ import SwiftUI
 struct WebSDRFavoritesView: View {
     // MARK: Internal
 
+    @State var enrichments: [String: KiwiSDRStatusFetcher.ReceiverStatus] = [:]
+    @State var selectedReceiver: KiwiSDRReceiver?
+
     var body: some View {
         List {
-            if favorites.isEmpty {
-                emptyState
-            } else {
+            if !filteredFavorites.isEmpty {
                 favoritesSection
             }
 
-            if advancedMode {
+            if isLoading {
+                Section("Available") {
+                    HStack {
+                        ProgressView()
+                            .padding(.trailing, 8)
+                        Text("Loading receivers...")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            } else if !filteredReceivers.isEmpty {
+                nearbySection
+            }
+
+            if advancedMode, searchText.isEmpty {
                 addSection
             }
 
-            advancedToggle
+            if searchText.isEmpty {
+                advancedToggle
+            }
         }
+        .searchable(text: $searchText, prompt: "Search by name or location")
         .navigationTitle("WebSDR Favorites")
         .navigationBarTitleDisplayMode(.inline)
         .task { await loadData() }
+        .sheet(item: $selectedReceiver) { receiver in
+            ReceiverDetailSheet(
+                receiver: receiver,
+                enrichment: enrichments[receiver.id],
+                isFavorite: isFavorite(receiver),
+                onToggleFavorite: { toggleFavorite(receiver) }
+            )
+            .presentationDetents([.medium])
+        }
         .sheet(isPresented: $showAddSheet) {
             AddReceiverSheet { hostPort, name, location, antenna in
                 addFavorite(
@@ -40,36 +68,62 @@ struct WebSDRFavoritesView: View {
     @Environment(\.modelContext) private var modelContext
     @AppStorage("webSDRAdvancedMode") private var advancedMode = false
     @State private var favorites: [WebSDRFavorite] = []
-    @State private var enrichments: [String: KiwiSDRStatusFetcher.ReceiverStatus] = [:]
+    @State private var receivers: [KiwiSDRReceiver] = []
+    @State private var isLoading = true
     @State private var showAddSheet = false
+    @State private var searchText = ""
+    @State private var locationService = GridLocationService()
 
-    private var emptyState: some View {
-        Section {
-            VStack(spacing: 12) {
-                Image(systemName: "star")
-                    .font(.largeTitle)
-                    .foregroundStyle(.secondary)
-                    .accessibilityHidden(true)
-                Text("No Favorites")
-                    .font(.headline)
-                Text("Star receivers in the WebSDR picker to add favorites.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 24)
+    // MARK: - Filtering
+
+    private var filteredReceivers: [KiwiSDRReceiver] {
+        guard !searchText.isEmpty else {
+            return receivers
+        }
+        let query = searchText.lowercased()
+        return receivers.filter {
+            $0.name.lowercased().contains(query)
+                || $0.location.lowercased().contains(query)
         }
     }
 
+    private var filteredFavorites: [WebSDRFavorite] {
+        guard !searchText.isEmpty else {
+            return favorites
+        }
+        let query = searchText.lowercased()
+        return favorites.filter {
+            $0.displayName.lowercased().contains(query)
+                || $0.location.lowercased().contains(query)
+        }
+    }
+
+    // MARK: - Sections
+
     private var favoritesSection: some View {
         Section {
-            ForEach(favorites) { favorite in
-                favoriteRow(favorite)
+            ForEach(filteredFavorites) { favorite in
+                if let receiver = receiverForFavorite(favorite) {
+                    compactRow(receiver)
+                } else {
+                    compactFavoriteRow(favorite)
+                }
             }
             .onDelete(perform: deleteFavorites)
         } header: {
-            Text("\(favorites.count) favorite\(favorites.count == 1 ? "" : "s")")
+            Text(
+                "\(filteredFavorites.count) favorite\(filteredFavorites.count == 1 ? "" : "s")"
+            )
+        }
+    }
+
+    private var nearbySection: some View {
+        Section {
+            ForEach(filteredReceivers) { receiver in
+                compactRow(receiver)
+            }
+        } header: {
+            Text("Available (\(filteredReceivers.count))")
         }
     }
 
@@ -83,7 +137,9 @@ struct WebSDRFavoritesView: View {
         } header: {
             Text("Manual")
         } footer: {
-            Text("Add a private or unlisted KiwiSDR by entering its host and port.")
+            Text(
+                "Add a private or unlisted KiwiSDR by entering its host and port."
+            )
         }
     }
 
@@ -97,79 +153,64 @@ struct WebSDRFavoritesView: View {
         }
     }
 
-    private func favoriteRow(_ favorite: WebSDRFavorite) -> some View {
-        let enrichment = enrichments[favorite.hostPort]
-        return VStack(alignment: .leading, spacing: 4) {
-            Text(favorite.displayName)
-                .font(.subheadline)
-                .fontWeight(.medium)
+    // MARK: - Helpers
 
-            HStack(spacing: 4) {
-                Text(favorite.location)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+    private func receiverForFavorite(
+        _ favorite: WebSDRFavorite
+    ) -> KiwiSDRReceiver? {
+        receivers.first { $0.id == favorite.hostPort }
+    }
 
-                if let grid = enrichment?.grid {
-                    Text("·")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
-                    Text(grid)
-                        .font(.caption.monospaced())
-                        .foregroundStyle(.secondary)
-                }
-            }
+    private func isFavorite(_ receiver: KiwiSDRReceiver) -> Bool {
+        favorites.contains { $0.hostPort == receiver.id }
+    }
 
-            HStack(spacing: 6) {
-                if let parsed = enrichment?.parsedAntenna {
-                    if let type = parsed.type {
-                        badgeCapsule(type.rawValue, color: .blue)
-                    }
-                    ForEach(parsed.bands.prefix(3), id: \.self) { band in
-                        badgeCapsule(band, color: .green)
-                    }
-                } else if let antenna = favorite.antenna {
-                    Text(antenna)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                }
-
-                Spacer()
-
-                if let snr = enrichment?.snrHF ?? enrichment?.snrAll {
-                    snrLabel(snr)
-                }
-            }
-
-            Text("\(favorite.host):\(favorite.port)")
-                .font(.caption2.monospaced())
-                .foregroundStyle(.tertiary)
+    private func toggleFavorite(_ receiver: KiwiSDRReceiver) {
+        if let existing = favorites.first(where: {
+            $0.hostPort == receiver.id
+        }) {
+            modelContext.delete(existing)
+        } else {
+            let favorite = WebSDRFavorite(
+                hostPort: receiver.id,
+                displayName: receiver.name,
+                location: receiver.location,
+                antenna: enrichments[receiver.id]?.antenna
+                    ?? receiver.antenna
+            )
+            modelContext.insert(favorite)
         }
-        .padding(.vertical, 2)
+        try? modelContext.save()
+        loadFavorites()
     }
 
-    private func badgeCapsule(_ text: String, color: Color) -> some View {
-        Text(text)
-            .font(.caption2.weight(.medium))
-            .padding(.horizontal, 5)
-            .padding(.vertical, 1)
-            .background(color.opacity(0.2))
-            .clipShape(Capsule())
-    }
-
-    private func snrLabel(_ snr: Int) -> some View {
-        let color: Color = snr < 15 ? .red : snr < 25 ? .yellow : .green
-        return HStack(spacing: 2) {
-            Circle().fill(color).frame(width: 6, height: 6)
-            Text("SNR \(snr)")
-                .font(.caption2.monospacedDigit())
-                .foregroundStyle(.secondary)
-        }
-    }
+    // MARK: - Data Loading
 
     private func loadData() async {
         loadFavorites()
-        await enrichFavorites()
+        isLoading = true
+
+        // Get user location for proximity sorting
+        locationService.requestGrid()
+        // Brief wait for GPS fix
+        try? await Task.sleep(for: .seconds(1))
+
+        let coord = resolveUserCoordinate()
+        receivers = await WebSDRDirectory.shared.findNearby(
+            grid: locationService.currentGrid,
+            latitude: coord?.latitude,
+            longitude: coord?.longitude,
+            limit: 50
+        )
+        isLoading = false
+        await enrichReceivers()
+    }
+
+    private func resolveUserCoordinate() -> CLLocationCoordinate2D? {
+        if let grid = locationService.currentGrid {
+            return MaidenheadConverter.coordinate(from: grid)
+        }
+        return nil
     }
 
     private func loadFavorites() {
@@ -179,27 +220,32 @@ struct WebSDRFavoritesView: View {
         favorites = (try? modelContext.fetch(descriptor)) ?? []
     }
 
-    private func enrichFavorites() async {
-        // Convert favorites to minimal receivers for fetching
-        for favorite in favorites {
-            if let status = await KiwiSDRStatusFetcher.shared.fetchStatus(
-                host: favorite.host, port: favorite.port
-            ) {
-                enrichments[favorite.hostPort] = status
-            }
+    private func enrichReceivers() async {
+        let stream = await KiwiSDRStatusFetcher.shared.fetchStatuses(
+            for: receivers
+        )
+        for await status in stream {
+            enrichments[status.hostPort] = status
         }
     }
 
     private func deleteFavorites(at offsets: IndexSet) {
+        let filtered = filteredFavorites
         for index in offsets {
-            modelContext.delete(favorites[index])
+            let favorite = filtered[index]
+            if let actual = favorites.first(where: {
+                $0.id == favorite.id
+            }) {
+                modelContext.delete(actual)
+            }
         }
         try? modelContext.save()
         loadFavorites()
     }
 
     private func addFavorite(
-        hostPort: String, name: String, location: String, antenna: String?
+        hostPort: String, name: String,
+        location: String, antenna: String?
     ) {
         let favorite = WebSDRFavorite(
             hostPort: hostPort,
@@ -210,127 +256,5 @@ struct WebSDRFavoritesView: View {
         modelContext.insert(favorite)
         try? modelContext.save()
         loadFavorites()
-    }
-}
-
-// MARK: - AddReceiverSheet
-
-/// Sheet for manually adding a private/unlisted receiver.
-struct AddReceiverSheet: View {
-    // MARK: Internal
-
-    let onAdd: (String, String, String, String?) -> Void
-
-    var body: some View {
-        NavigationStack {
-            Form {
-                Section {
-                    TextField("Host (e.g., sdr.example.com)", text: $hostInput)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                    TextField("Port", text: $portInput)
-                        .keyboardType(.numberPad)
-                } header: {
-                    Text("Receiver Address")
-                }
-
-                if let name = fetchedName {
-                    Section("Receiver Info") {
-                        LabeledContent("Name", value: name)
-                        if let loc = fetchedLocation {
-                            LabeledContent("Location", value: loc)
-                        }
-                        if let ant = fetchedAntenna {
-                            LabeledContent("Antenna", value: ant)
-                        }
-                    }
-                }
-
-                if let error = validationError {
-                    Section {
-                        Text(error)
-                            .foregroundStyle(.red)
-                            .font(.caption)
-                    }
-                }
-
-                Section {
-                    Button {
-                        Task { await validate() }
-                    } label: {
-                        if isValidating {
-                            HStack {
-                                ProgressView()
-                                    .padding(.trailing, 4)
-                                Text("Checking...")
-                            }
-                        } else {
-                            Text("Check Connection")
-                        }
-                    }
-                    .disabled(hostInput.isEmpty || isValidating)
-                }
-            }
-            .navigationTitle("Add Receiver")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Add") {
-                        let hp = "\(hostInput):\(portInput)"
-                        onAdd(
-                            hp,
-                            fetchedName ?? hostInput,
-                            fetchedLocation ?? "",
-                            fetchedAntenna
-                        )
-                        dismiss()
-                    }
-                    .disabled(fetchedName == nil)
-                }
-            }
-        }
-    }
-
-    // MARK: Private
-
-    @Environment(\.dismiss) private var dismiss
-    @State private var hostInput = ""
-    @State private var portInput = "8073"
-    @State private var isValidating = false
-    @State private var validationError: String?
-    @State private var fetchedName: String?
-    @State private var fetchedLocation: String?
-    @State private var fetchedAntenna: String?
-
-    private func validate() async {
-        isValidating = true
-        validationError = nil
-        fetchedName = nil
-        fetchedLocation = nil
-        fetchedAntenna = nil
-        defer { isValidating = false }
-
-        let port = Int(portInput) ?? 8_073
-        let status = await KiwiSDRStatusFetcher.shared.fetchStatus(
-            host: hostInput, port: port
-        )
-
-        if let status {
-            fetchedName = status.antenna.isEmpty
-                ? hostInput : "\(hostInput) KiwiSDR"
-            fetchedLocation = status.grid ?? ""
-            fetchedAntenna = status.antenna.isEmpty ? nil : status.antenna
-            // Use software version to confirm it's a real KiwiSDR
-            if status.softwareVersion != nil {
-                fetchedName = "\(hostInput) KiwiSDR"
-            }
-        } else {
-            validationError =
-                "Could not connect to \(hostInput):\(port). "
-                    + "Check the address and ensure the receiver is online."
-        }
     }
 }
