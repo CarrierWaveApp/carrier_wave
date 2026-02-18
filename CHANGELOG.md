@@ -10,6 +10,8 @@ All notable changes to Carrier Wave will be documented in this file.
 - Parse antenna descriptions showing type, bands, and directionality as badges
 - Highlight band match during activations ("Good for 40m" badge)
 - Add manual receiver entry for private KiwiSDRs (advanced mode in Settings)
+- Show available WebSDR receivers in favorites settings with search and proximity sorting
+- Add tap-to-expand detail sheet for receivers with full info and favorite toggle
 - Add statistics section to session detail view (band/mode charts, distance/timing CDFs, RST, entities) gated on Professional Statistician Mode, matching POTA activation detail
 - Add swipe-to-delete for QSOs in session detail view (both flat and rove-grouped)
 - Add tap-to-expand on QSO rows in session detail to show all stored fields

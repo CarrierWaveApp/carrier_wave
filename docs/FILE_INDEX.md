@@ -530,6 +530,9 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `DashboardMetricsSettingsView.swift` | Configure which metrics appear on dashboard card |
 | `WebSDRRecordingsView.swift` | List of all WebSDR recordings with delete, share, and details |
 | `WebSDRFavoritesView.swift` | WebSDR favorites management with manual add (advanced mode) |
+| `WebSDRFavoritesView+Rows.swift` | Compact row rendering for WebSDR favorites (extension) |
+| `ReceiverDetailSheet.swift` | Detail sheet for a KiwiSDR receiver with favorite toggle |
+| `AddReceiverSheet.swift` | Manual receiver add sheet (host:port entry with validation) |
 
 ## Documentation (`docs/`)
 | File | Purpose |
