@@ -31,7 +31,7 @@ struct SpotFilters: Equatable {
     var modes: Set<String> = ["CW"]
 
     /// Whether to hide already-worked callsigns
-    var hideWorked = true
+    var hideWorked = false
 
     /// Proximity filter mode
     var proximityMode: ProximityMode = .heardNearby

@@ -590,6 +590,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `UnitFormatter.swift` | Centralized imperial/metric unit formatting (distance, temperature, wind, watts/distance) |
 | `EquipmentStorage.swift` | Generic UserDefaults-backed equipment list storage (antenna, key, mic) |
 | `SessionPhotoManager.swift` | Session photo file save/load/delete (JPEG in Documents/SessionPhotos/) |
+| `USStates.swift` | US state abbreviation-to-name lookup for accessibility labels |
 
 ## Tests (`CarrierWaveTests/`)
 | File | Purpose |

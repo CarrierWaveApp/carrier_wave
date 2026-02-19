@@ -122,6 +122,7 @@ struct ActivityLogSpotRow: View {
                 if let state = spot.spot.stateAbbr {
                     Text("·")
                         .foregroundStyle(.secondary)
+                        .accessibilityHidden(true)
                     statePill(state)
                 }
             }
@@ -178,6 +179,7 @@ struct ActivityLogSpotRow: View {
             .padding(.vertical, 1)
             .background(Color(.tertiarySystemFill))
             .clipShape(RoundedRectangle(cornerRadius: 3))
+            .accessibilityLabel(USStates.fullName(for: state) ?? state)
     }
 
     // MARK: - Badge Views
