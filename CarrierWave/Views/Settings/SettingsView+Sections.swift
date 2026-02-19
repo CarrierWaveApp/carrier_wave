@@ -147,7 +147,7 @@ extension SettingsMainView {
             HStack {
                 Text("Version")
                 Spacer()
-                Text("1.40.0")
+                Text("1.40.1")
                     .foregroundStyle(.secondary)
             }
 

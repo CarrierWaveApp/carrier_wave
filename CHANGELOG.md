@@ -4,6 +4,8 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.40.1] - 2026-02-19
+
 ### Added
 - Add "Keep lookup info after logging" setting (default: on) to control whether callsign card persists after logging a QSO
 
