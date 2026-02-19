@@ -4,6 +4,14 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- Remove strikethrough from hunted spots in activity log — faded opacity only
+- Show state abbreviation on activity log spots (from POTA location or HamDB lookup)
+- Show duplicate QSO confirmation alert when tapping a worked spot in activity log
+
+### Fixed
+- Worked-before badges now update immediately after logging a QSO from a spot
+
 ## [1.39.0] - 2026-02-18
 
 ### Added

@@ -69,7 +69,6 @@ struct ActivityLogSpotRow: View {
         HStack(spacing: 4) {
             Text(spot.spot.callsign)
                 .font(.subheadline.weight(.semibold).monospaced())
-                .strikethrough(isHunted)
 
             if spot.spot.source == .rbn {
                 Text("RBN")
@@ -99,6 +98,9 @@ struct ActivityLogSpotRow: View {
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
+                if let state = spot.spot.stateAbbr {
+                    statePill(state)
+                }
             }
         } else if let snr = spot.spot.snr {
             HStack(spacing: 4) {
@@ -116,6 +118,11 @@ struct ActivityLogSpotRow: View {
                     Text("\(wpm) WPM")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                }
+                if let state = spot.spot.stateAbbr {
+                    Text("·")
+                        .foregroundStyle(.secondary)
+                    statePill(state)
                 }
             }
         }
@@ -161,6 +168,16 @@ struct ActivityLogSpotRow: View {
             .background(Color.blue)
             .clipShape(RoundedRectangle(cornerRadius: 3))
             .accessibilityLabel("New DXCC entity")
+    }
+
+    private func statePill(_ state: String) -> some View {
+        Text(state)
+            .font(.caption2.weight(.medium))
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 4)
+            .padding(.vertical, 1)
+            .background(Color(.tertiarySystemFill))
+            .clipShape(RoundedRectangle(cornerRadius: 3))
     }
 
     // MARK: - Badge Views

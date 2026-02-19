@@ -40,6 +40,10 @@ struct UnifiedSpot: Identifiable, Sendable {
     let parkName: String?
     let comments: String?
 
+    // Location fields
+    let locationDesc: String? // POTA raw (e.g., "US-WY")
+    var stateAbbr: String? // Parsed state (e.g., "WY") — var for async RBN enrichment
+
     /// Frequency in MHz
     var frequencyMHz: Double {
         frequencyKHz / 1_000.0
@@ -80,6 +84,18 @@ struct UnifiedSpot: Identifiable, Sendable {
         default:
             return .secondary // > 30 minutes: old
         }
+    }
+
+    /// Parse US state abbreviation from POTA locationDesc (e.g., "US-WY" → "WY")
+    nonisolated static func parseState(from locationDesc: String?) -> String? {
+        guard let desc = locationDesc else {
+            return nil
+        }
+        let parts = desc.split(separator: "-")
+        guard parts.count >= 2, parts[0] == "US" else {
+            return nil
+        }
+        return String(parts[1])
     }
 
     /// Check if this spot is a self-spot for the given user callsign
@@ -148,6 +164,55 @@ actor GridCache {
     private let expirationInterval: TimeInterval = 3_600
 
     /// Remove expired entries
+    private func pruneExpired() {
+        let now = Date()
+        cache = cache.filter { now.timeIntervalSince($0.value.timestamp) <= expirationInterval }
+    }
+}
+
+// MARK: - CallsignStateCache
+
+/// Shared cache for callsign → US state lookups with time-based expiration
+actor CallsignStateCache {
+    // MARK: Internal
+
+    static let shared = CallsignStateCache()
+
+    /// Get a cached state if it exists and hasn't expired
+    func get(_ callsign: String) -> String?? {
+        let key = callsign.uppercased()
+        guard let entry = cache[key] else {
+            return nil // Not in cache
+        }
+        if Date().timeIntervalSince(entry.timestamp) > expirationInterval {
+            cache.removeValue(forKey: key)
+            return nil // Expired
+        }
+        return entry.state // Return cached value (may be nil for non-US)
+    }
+
+    /// Store a state lookup result
+    func set(_ callsign: String, state: String?) {
+        let key = callsign.uppercased()
+        cache[key] = CacheEntry(state: state, timestamp: Date())
+
+        if cache.count > 200 {
+            pruneExpired()
+        }
+    }
+
+    // MARK: Private
+
+    private struct CacheEntry {
+        let state: String?
+        let timestamp: Date
+    }
+
+    private var cache: [String: CacheEntry] = [:]
+
+    /// Cache entries expire after 1 hour
+    private let expirationInterval: TimeInterval = 3_600
+
     private func pruneExpired() {
         let now = Date()
         cache = cache.filter { now.timeIntervalSince($0.value.timestamp) <= expirationInterval }
@@ -316,7 +381,9 @@ actor SpotsService {
                 spotterGrid: spot.spotterGrid,
                 parkRef: nil,
                 parkName: nil,
-                comments: nil
+                comments: nil,
+                locationDesc: nil,
+                stateAbbr: nil
             )
         }
     }
@@ -343,7 +410,9 @@ actor SpotsService {
                 spotterGrid: nil,
                 parkRef: spot.reference,
                 parkName: spot.parkName,
-                comments: spot.comments
+                comments: spot.comments,
+                locationDesc: spot.locationDesc,
+                stateAbbr: UnifiedSpot.parseState(from: spot.locationDesc)
             )
         }
     }

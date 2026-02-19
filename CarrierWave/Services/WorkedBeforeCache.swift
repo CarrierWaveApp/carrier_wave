@@ -120,6 +120,11 @@ actor WorkedBeforeCache {
         allTimeWorked[upper, default: []].insert(band)
     }
 
+    /// Clear historical cache so next checkCallsigns re-queries from DB
+    func invalidateHistory() {
+        allTimeWorked.removeAll()
+    }
+
     // MARK: Private
 
     /// callsign -> bands worked today

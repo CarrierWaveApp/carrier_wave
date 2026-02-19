@@ -129,6 +129,7 @@ struct ActivityLogView: View {
     @State private var spotFilters = SpotFilters()
     @State private var spotMonitor = SpotMonitoringService()
     @State private var workedBeforeCache = WorkedBeforeCache()
+    @State private var workedCacheVersion = 0
     @State private var locationService = GridLocationService()
 
     private var huntedBehavior: HuntedSpotBehavior {
@@ -156,6 +157,7 @@ struct ActivityLogView: View {
             proximityRadiusMiles: proximityRadiusMiles,
             huntedBehavior: huntedBehavior,
             workedBeforeCache: workedBeforeCache,
+            workedCacheVersion: workedCacheVersion,
             manager: manager,
             container: modelContext.container,
             onShowFilterSheet: { showingFilterSheet = true },
@@ -179,6 +181,7 @@ struct ActivityLogView: View {
             onQSOChanged: {
                 recentQSOs = manager.fetchRecentQSOs()
                 manager.refreshTodayStats()
+                workedCacheVersion += 1
             }
         )
     }
@@ -201,6 +204,7 @@ struct ActivityLogView: View {
             currentMode = data.mode
             currentFrequency = data.frequency
             recentQSOs = manager.fetchRecentQSOs()
+            workedCacheVersion += 1
             Task {
                 await workedBeforeCache.recordQSO(
                     callsign: data.callsign,
@@ -215,6 +219,7 @@ struct ActivityLogView: View {
         currentMode = mode
         manager.refreshTodayStats()
         recentQSOs = manager.fetchRecentQSOs()
+        workedCacheVersion += 1
     }
 
     private func requestGPSGridIfNeeded() {

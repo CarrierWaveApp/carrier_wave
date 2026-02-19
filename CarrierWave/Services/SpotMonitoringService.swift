@@ -147,6 +147,9 @@ final class SpotMonitoringService {
     /// Window for hunter spots (30 minutes — broader than activator mode)
     private let hunterSpotWindowMinutes = 30
 
+    /// Maximum HamDB lookups per poll cycle (keeps 45s refresh fast)
+    private let maxStateLookups = 10
+
     /// Main polling loop
     private func pollLoop() async {
         guard let callsign else {
@@ -193,7 +196,9 @@ final class SpotMonitoringService {
         var allSpots = rbnUnified + potaUnified
         allSpots.sort { $0.timestamp > $1.timestamp }
 
-        let enriched = enrichSpots(allSpots)
+        // Enrich RBN spots with state from HamDB
+        let stateEnriched = await enrichWithStates(allSpots)
+        let enriched = enrichSpots(stateEnriched)
         hunterSpots = enriched
         summary = buildSummary(from: enriched)
         lastError = nil
@@ -222,7 +227,9 @@ final class SpotMonitoringService {
                 spotterGrid: spot.spotterGrid,
                 parkRef: nil,
                 parkName: nil,
-                comments: nil
+                comments: nil,
+                locationDesc: nil,
+                stateAbbr: nil
             )
         }
     }
@@ -253,7 +260,9 @@ final class SpotMonitoringService {
                 spotterGrid: nil,
                 parkRef: spot.reference,
                 parkName: spot.parkName,
-                comments: spot.comments
+                comments: spot.comments,
+                locationDesc: spot.locationDesc,
+                stateAbbr: UnifiedSpot.parseState(from: spot.locationDesc)
             )
         }
     }
@@ -298,7 +307,9 @@ final class SpotMonitoringService {
                                 spotterGrid: spot.spotterGrid,
                                 parkRef: nil,
                                 parkName: nil,
-                                comments: nil
+                                comments: nil,
+                                locationDesc: nil,
+                                stateAbbr: nil
                             )
                         }
             }
@@ -316,6 +327,42 @@ final class SpotMonitoringService {
             lastError = error.localizedDescription
             // Keep existing summary on error
         }
+    }
+
+    /// Enrich RBN spots with US state from HamDB callsign lookup
+    private func enrichWithStates(_ spots: [UnifiedSpot]) async -> [UnifiedSpot] {
+        let hamDB = HamDBClient()
+        var lookupCount = 0
+
+        var result: [UnifiedSpot] = []
+        for var spot in spots {
+            // POTA spots already have state from locationDesc
+            if spot.source == .pota {
+                result.append(spot)
+                continue
+            }
+
+            // Check cache first
+            if let cached = await CallsignStateCache.shared.get(spot.callsign) {
+                spot.stateAbbr = cached
+                result.append(spot)
+                continue
+            }
+
+            // Limit lookups per cycle
+            guard lookupCount < maxStateLookups else {
+                result.append(spot)
+                continue
+            }
+
+            // Look up from HamDB
+            let state = try? await hamDB.lookup(callsign: spot.callsign)?.state
+            await CallsignStateCache.shared.set(spot.callsign, state: state)
+            spot.stateAbbr = state
+            lookupCount += 1
+            result.append(spot)
+        }
+        return result
     }
 
     /// Enrich spots with distance and region information

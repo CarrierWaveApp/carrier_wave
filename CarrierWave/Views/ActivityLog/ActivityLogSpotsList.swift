@@ -24,6 +24,7 @@ struct ActivityLogSpotsList: View {
     let proximityRadiusMiles: Int
     let huntedBehavior: HuntedSpotBehavior
     let workedBeforeCache: WorkedBeforeCache
+    let workedCacheVersion: Int
     let manager: ActivityLogManager
     let container: ModelContainer
     let onShowFilterSheet: () -> Void
@@ -48,16 +49,35 @@ struct ActivityLogSpotsList: View {
                 spot: spot,
                 manager: manager
             ) {
+                let callsign = spot.spot.callsign
+                let band = spot.spot.band
                 Task {
                     await workedBeforeCache.recordQSO(
-                        callsign: spot.spot.callsign,
-                        band: spot.spot.band
+                        callsign: callsign,
+                        band: band
                     )
+                    let key = callsign.uppercased()
+                    let updated = await workedBeforeCache.result(
+                        for: callsign, band: band
+                    )
+                    workedResults[key] = updated
                 }
                 onSpotLogged(spot.spot.frequencyMHz, spot.spot.mode)
             }
         }
-        .task {
+        .alert(
+            "Duplicate QSO",
+            isPresented: $showDupeAlert,
+            presenting: dupeConfirmSpot
+        ) { spot in
+            Button("Log Anyway") { selectedSpot = spot }
+            Button("Cancel", role: .cancel) {}
+        } message: { spot in
+            Text(
+                "You already worked \(spot.spot.callsign) on \(spot.spot.band) today."
+            )
+        }
+        .task(id: WorkedRefreshKey(spotIDs: spots.map(\.id), version: workedCacheVersion)) {
             await loadWorkedBefore()
         }
     }
@@ -70,6 +90,8 @@ struct ActivityLogSpotsList: View {
     @State private var workedResults: [String: WorkedBeforeResult] = [:]
     @State private var sortOrder: SpotSortOrder = .recent
     @State private var showAll = false
+    @State private var dupeConfirmSpot: EnrichedSpot?
+    @State private var showDupeAlert = false
 
     private var filteredSpots: [EnrichedSpot] {
         filters.apply(
@@ -216,7 +238,7 @@ struct ActivityLogSpotsList: View {
                 workedResult: workedResults[spot.spot.callsign.uppercased()]
                     ?? .notWorked,
                 huntedBehavior: huntedBehavior,
-                onTap: { selectedSpot = spot }
+                onTap: { handleSpotTap(spot) }
             )
 
             if spot.id != rowSpots.last?.id {
@@ -226,7 +248,19 @@ struct ActivityLogSpotsList: View {
         }
     }
 
+    private func handleSpotTap(_ spot: EnrichedSpot) {
+        let result = workedResults[spot.spot.callsign.uppercased()] ?? .notWorked
+        if result.isDupe(on: spot.spot.band) {
+            dupeConfirmSpot = spot
+            showDupeAlert = true
+        } else {
+            selectedSpot = spot
+        }
+    }
+
     private func loadWorkedBefore() async {
+        await workedBeforeCache.invalidateHistory()
+        await workedBeforeCache.loadToday(container: container)
         let callsigns = spots.map(\.spot.callsign)
         await workedBeforeCache.checkCallsigns(callsigns, container: container)
 
@@ -240,6 +274,14 @@ struct ActivityLogSpotsList: View {
         }
         workedResults = results
     }
+}
+
+// MARK: - WorkedRefreshKey
+
+/// Composite key for .task(id:) — re-runs when spots change or QSOs are modified
+private struct WorkedRefreshKey: Equatable {
+    let spotIDs: [String]
+    let version: Int
 }
 
 // MARK: - EnrichedSpot + Equatable
