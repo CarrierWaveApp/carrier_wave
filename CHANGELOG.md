@@ -4,6 +4,8 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.40.0] - 2026-02-19
+
 ### Added
 - Sync user settings across devices via iCloud Key-Value Store — identity, logger defaults, POTA settings, appearance, tab config, equipment lists, station profiles, activity log settings, keyboard config, and dashboard metrics automatically propagate between iPhone and iPad
 
