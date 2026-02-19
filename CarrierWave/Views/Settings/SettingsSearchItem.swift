@@ -162,6 +162,12 @@ extension SettingsSearchIndex {
             destination: .logger
         ),
         SettingsSearchItem(
+            title: "Keep lookup info after logging",
+            keywords: ["lookup", "callsign", "card", "info", "persist", "clear", "log"],
+            breadcrumb: "Logger",
+            destination: .logger
+        ),
+        SettingsSearchItem(
             title: "Notes display",
             keywords: ["notes", "emoji", "source", "callsign", "display"],
             breadcrumb: "Logger",

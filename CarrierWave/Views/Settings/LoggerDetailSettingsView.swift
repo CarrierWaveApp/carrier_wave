@@ -28,6 +28,7 @@ struct LoggerDetailSettingsView: View {
     @AppStorage("commandRowCommands") private var commandRowCommands =
         "rbn,solar,weather,spot,pota,p2p"
 
+    @AppStorage("loggerKeepLookupAfterLog") private var keepLookupAfterLog = true
     @AppStorage("loggerShowTheirGrid") private var showTheirGrid = false
     @AppStorage("loggerShowTheirPark") private var showTheirPark = false
     @AppStorage("loggerShowOperator") private var showOperator = false
@@ -103,6 +104,7 @@ struct LoggerDetailSettingsView: View {
             Toggle("Show frequency activity", isOn: $showActivityPanel)
             Toggle("Keep screen on", isOn: $keepScreenOn)
             Toggle("Auto-switch mode for frequency", isOn: $autoModeSwitch)
+            Toggle("Keep lookup info after logging", isOn: $keepLookupAfterLog)
 
             Picker("Notes display", selection: $notesDisplayMode) {
                 Text("Emoji").tag("emoji")
@@ -131,6 +133,7 @@ struct LoggerDetailSettingsView: View {
         } footer: {
             Text(
                 "Keep screen on prevents device sleep during sessions. "
+                    + "Keep lookup info shows the callsign card after logging until you start typing a new callsign. "
                     + "Notes and RST are always visible. "
                     + "Other fields appear without tapping \"More Fields\"."
             )

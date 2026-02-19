@@ -48,6 +48,7 @@ enum SettingsSyncRegistry {
         .init("loggerShowLicenseWarnings", type: .bool),
         .init("loggerKeepScreenOn", type: .bool),
         .init("loggerAutoModeSwitch", type: .bool),
+        .init("loggerKeepLookupAfterLog", type: .bool),
         .init("loggerShowTheirGrid", type: .bool),
         .init("loggerShowTheirPark", type: .bool),
         .init("loggerShowOperator", type: .bool),

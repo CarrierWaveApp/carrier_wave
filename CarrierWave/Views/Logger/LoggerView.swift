@@ -337,6 +337,7 @@ struct LoggerView: View {
         .rawValue
 
     @AppStorage("loggerAutoModeSwitch") private var autoModeSwitch = true
+    @AppStorage("loggerKeepLookupAfterLog") private var keepLookupAfterLog = true
 
     /// QSOs for the current session (manually fetched, not @Query to avoid full-database refresh)
     @State private var sessionQSOs: [QSO] = []
@@ -2464,7 +2465,10 @@ struct LoggerView: View {
         transaction.disablesAnimations = true
         withTransaction(transaction) {
             callsignInput = ""
-            // Keep lookupResult — card persists until user starts typing next callsign
+            // When keepLookupAfterLog is on, card persists until user starts typing next callsign
+            if !keepLookupAfterLog {
+                lookupResult = nil
+            }
             lookupError = nil
             previousQSOCount = 0
             cachedPotaDuplicateStatus = nil
