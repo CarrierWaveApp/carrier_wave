@@ -4,6 +4,9 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- Fix session photos saving the last photo multiple times when adding more than one photo at once (filename collision from timestamp-based naming)
+
 ## [1.40.1] - 2026-02-19
 
 ### Added

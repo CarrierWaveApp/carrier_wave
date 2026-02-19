@@ -37,7 +37,7 @@ enum SessionPhotoManager {
     /// Save a photo for a session, returning the filename
     static func savePhoto(_ image: UIImage, sessionID: UUID) throws -> String {
         let directory = try photosDirectory(for: sessionID)
-        let filename = "\(Int(Date().timeIntervalSince1970)).jpg"
+        let filename = "\(UUID().uuidString).jpg"
         let fileURL = directory.appendingPathComponent(filename)
 
         guard let data = image.jpegData(compressionQuality: 0.8) else {
