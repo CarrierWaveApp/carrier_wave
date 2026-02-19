@@ -129,7 +129,7 @@ extension ActivityView {
             Text("Recent Activity")
                 .font(.headline)
 
-            FilterBar(selectedFilter: $selectedFilter, clubs: clubs)
+            FilterBar(selectedFilter: $selectedFilter, clubs: [])
 
             if filteredActivityItems.isEmpty {
                 activityEmptyState

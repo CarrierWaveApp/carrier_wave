@@ -23,8 +23,6 @@ struct ActivityView: View {
 
     @State var allActivityItems: [ActivityItem] = []
 
-    @Query var clubs: [Club]
-
     @Query(filter: #Predicate<Friendship> { $0.statusRawValue == "accepted" })
     var acceptedFriends: [Friendship]
 
@@ -37,7 +35,6 @@ struct ActivityView: View {
 
     @State var syncService: ActivitiesSyncService?
     @State var friendsSyncService: FriendsSyncService?
-    @State var clubsSyncService: ClubsSyncService?
     @State var feedSyncService: ActivityFeedSyncService?
     @State var errorMessage: String?
     @State var showingError = false
@@ -94,11 +91,8 @@ struct ActivityView: View {
         case .friends:
             let friendCallsigns = Set(acceptedFriends.map { $0.friendCallsign.uppercased() })
             return allActivityItems.filter { friendCallsigns.contains($0.callsign.uppercased()) }
-        case let .club(clubId):
-            guard let club = clubs.first(where: { $0.id == clubId }) else {
-                return []
-            }
-            return allActivityItems.filter { club.isMember(callsign: $0.callsign) }
+        case .club:
+            return allActivityItems
         }
     }
 
@@ -138,7 +132,7 @@ struct ActivityView: View {
         }
         .navigationTitle("Activity")
         .toolbar {
-            ToolbarItemGroup(placement: .topBarLeading) {
+            ToolbarItem(placement: .topBarLeading) {
                 NavigationLink {
                     FriendsListView()
                 } label: {
@@ -161,13 +155,6 @@ struct ActivityView: View {
                         ? "Friends"
                         : "Friends, \(incomingRequests.count) pending requests"
                 )
-
-                NavigationLink {
-                    ClubsListView()
-                } label: {
-                    Image(systemName: "person.3")
-                }
-                .accessibilityLabel("Clubs")
             }
             ToolbarItem(placement: .primaryAction) {
                 Button {
@@ -210,9 +197,6 @@ struct ActivityView: View {
             }
             if friendsSyncService == nil {
                 friendsSyncService = FriendsSyncService(modelContext: modelContext)
-            }
-            if clubsSyncService == nil {
-                clubsSyncService = ClubsSyncService(modelContext: modelContext)
             }
             if feedSyncService == nil {
                 feedSyncService = ActivityFeedSyncService(modelContext: modelContext)
@@ -383,13 +367,6 @@ extension ActivityView {
 
             // Sync friends and pending requests from server
             await syncFriendsQuietly()
-
-            // Sync clubs
-            if let clubsService = clubsSyncService {
-                try? await clubsService.syncClubs(
-                    sourceURL: "https://activities.carrierwave.app"
-                )
-            }
 
             // Sync activity feed from server
             if let feedService = feedSyncService {

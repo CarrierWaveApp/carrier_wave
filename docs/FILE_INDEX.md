@@ -495,10 +495,11 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `ActivityItemRow.swift` | Individual activity feed item display |
 | `SessionBragSheetCard.swift` | Full brag sheet card for completed sessions in activity feed (map, stats, timeline) |
 | `SessionBragSheetCard+Components.swift` | Map, stats, equipment, and footer sections for session brag sheet card |
-| `FilterBar.swift` | Feed filter chips (All/Friends/Clubs) |
-| `FriendsListView.swift` | Friends list with pending requests, suggestions, and invite links |
+| `FilterBar.swift` | Feed filter chips (All/Friends) |
+| `FriendsListView.swift` | Friends list with inline search, pending requests, suggestions, and invite links |
+| `FriendsListView+Rows.swift` | Friend row components (IncomingRequestRow, OutgoingRequestRow, FriendRow, InviteLinkSheet) |
 | `FriendSuggestionsSection.swift` | Friend suggestion rows with Add/Dismiss actions |
-| `FriendSearchView.swift` | Search and add friends |
+| `FriendSearchView.swift` | Standalone friend search (SearchResultRow shared component) |
 | `FriendProfileView.swift` | Friend profile with activity and stats |
 | `ClubsListView.swift` | List of clubs user belongs to |
 | `ClubDetailView.swift` | Club details and member list |

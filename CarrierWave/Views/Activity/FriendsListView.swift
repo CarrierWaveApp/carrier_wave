@@ -7,34 +7,39 @@ struct FriendsListView: View {
     // MARK: Internal
 
     var body: some View {
-        Group {
-            if friendships.isEmpty, suggestions.isEmpty {
-                ContentUnavailableView(
-                    "No Friends Yet",
-                    systemImage: "person.2",
-                    description: Text(
-                        "Search for friends by their callsign to connect and see their activity"
-                    )
-                )
+        List {
+            if !searchText.isEmpty {
+                searchResultsSection
             } else {
-                friendsList
+                friendsContent
             }
         }
         .navigationTitle("Friends")
+        .searchable(
+            text: $searchText,
+            placement: .navigationBarDrawer(displayMode: .always),
+            prompt: "Search by callsign to add friends"
+        )
+        .onChange(of: searchText) { _, newValue in
+            searchTask?.cancel()
+            guard !newValue.isEmpty else {
+                searchResults = []
+                return
+            }
+            searchTask = Task {
+                try? await Task.sleep(nanoseconds: 300_000_000)
+                guard !Task.isCancelled else {
+                    return
+                }
+                await performSearch()
+            }
+        }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                NavigationLink {
-                    FriendSearchView()
-                } label: {
-                    Image(systemName: "plus")
+                Button { generateInviteLink() } label: {
+                    Image(systemName: "link.badge.plus")
                 }
-            }
-            ToolbarItem(placement: .secondaryAction) {
-                Button {
-                    generateInviteLink()
-                } label: {
-                    Label("Invite Friend", systemImage: "link.badge.plus")
-                }
+                .accessibilityLabel("Invite Friend via Link")
             }
         }
         .onAppear {
@@ -75,6 +80,13 @@ struct FriendsListView: View {
     @State private var errorMessage: String?
     @State private var showingError = false
 
+    // Inline search state
+    @State private var searchText = ""
+    @State private var searchResults: [UserSearchResult] = []
+    @State private var isSearching = false
+    @State private var sentRequests: Set<String> = []
+    @State private var searchTask: Task<Void, Never>?
+
     // Invite link state
     @State private var showingInviteSheet = false
     @State private var isGeneratingInvite = false
@@ -85,7 +97,6 @@ struct FriendsListView: View {
     @State private var suggestions: [FriendSuggestion] = []
     @State private var isLoadingSuggestions = false
 
-    /// For now, hardcode the source URL (will come from settings later)
     private let sourceURL = "https://activities.carrierwave.app"
 
     private var acceptedFriends: [Friendship] {
@@ -100,64 +111,162 @@ struct FriendsListView: View {
         friendships.filter { $0.isPending && $0.isOutgoing }
     }
 
-    private var friendsList: some View {
-        List {
-            if !suggestions.isEmpty {
-                FriendSuggestionsSection(
-                    suggestions: suggestions,
-                    onAdd: { addSuggestedFriend($0) },
-                    onDismiss: { dismissSuggestion($0) }
-                )
-            }
+    // MARK: - Search Results
 
-            if !incomingRequests.isEmpty {
-                Section("Pending Requests") {
-                    ForEach(incomingRequests) { friendship in
-                        IncomingRequestRow(
-                            friendship: friendship,
-                            onAccept: { acceptRequest(friendship) },
-                            onDecline: { declineRequest(friendship) }
+    @ViewBuilder
+    private var searchResultsSection: some View {
+        if isSearching {
+            HStack {
+                Spacer()
+                ProgressView()
+                Spacer()
+            }
+            .listRowBackground(Color.clear)
+        } else if searchText.count >= 2, searchResults.isEmpty {
+            ContentUnavailableView(
+                "No Results",
+                systemImage: "person.slash",
+                description: Text("No users found matching \"\(searchText)\"")
+            )
+            .listRowBackground(Color.clear)
+        } else if searchText.count < 2 {
+            ContentUnavailableView(
+                "Keep Typing",
+                systemImage: "character.cursor.ibeam",
+                description: Text("Enter at least 2 characters to search")
+            )
+            .listRowBackground(Color.clear)
+        } else {
+            Section("Search Results") {
+                ForEach(searchResults, id: \.userId) { user in
+                    SearchResultRow(
+                        user: user,
+                        isSent: sentRequests.contains(user.userId),
+                        onSend: { sendRequest(to: user) }
+                    )
+                }
+            }
+        }
+    }
+
+    // MARK: - Friends Content
+
+    @ViewBuilder
+    private var friendsContent: some View {
+        if !suggestions.isEmpty {
+            FriendSuggestionsSection(
+                suggestions: suggestions,
+                onAdd: { addSuggestedFriend($0) },
+                onDismiss: { dismissSuggestion($0) }
+            )
+        }
+
+        if !incomingRequests.isEmpty {
+            Section("Pending Requests") {
+                ForEach(incomingRequests) { friendship in
+                    IncomingRequestRow(
+                        friendship: friendship,
+                        onAccept: { acceptRequest(friendship) },
+                        onDecline: { declineRequest(friendship) }
+                    )
+                }
+            }
+        }
+
+        if !outgoingRequests.isEmpty {
+            Section("Sent Requests") {
+                ForEach(outgoingRequests) { friendship in
+                    OutgoingRequestRow(friendship: friendship)
+                }
+            }
+        }
+
+        if !acceptedFriends.isEmpty {
+            Section("Friends") {
+                ForEach(acceptedFriends) { friendship in
+                    NavigationLink {
+                        FriendProfileView(
+                            callsign: friendship.friendCallsign,
+                            friendship: friendship
                         )
+                    } label: {
+                        FriendRow(friendship: friendship)
                     }
                 }
-            }
-
-            if !outgoingRequests.isEmpty {
-                Section("Sent Requests") {
-                    ForEach(outgoingRequests) { friendship in
-                        OutgoingRequestRow(friendship: friendship)
-                    }
-                }
-            }
-
-            if !acceptedFriends.isEmpty {
-                Section("Friends") {
-                    ForEach(acceptedFriends) { friendship in
-                        NavigationLink {
-                            FriendProfileView(
-                                callsign: friendship.friendCallsign, friendship: friendship
-                            )
-                        } label: {
-                            FriendRow(friendship: friendship)
-                        }
-                    }
-                    .onDelete { offsets in
-                        for index in offsets {
-                            removeFriend(acceptedFriends[index])
-                        }
+                .onDelete { offsets in
+                    for index in offsets {
+                        removeFriend(acceptedFriends[index])
                     }
                 }
             }
         }
+
+        if friendships.isEmpty, suggestions.isEmpty {
+            ContentUnavailableView(
+                "No Friends Yet",
+                systemImage: "person.2",
+                description: Text("Type a callsign above to find and add friends")
+            )
+            .listRowBackground(Color.clear)
+        }
+    }
+}
+
+// MARK: - FriendsListView+Search
+
+private extension FriendsListView {
+    func performSearch() async {
+        guard searchText.count >= 2, let service = friendsSyncService else {
+            searchResults = []
+            return
+        }
+
+        isSearching = true
+        defer { isSearching = false }
+
+        do {
+            searchResults = try await service.searchUsers(
+                query: searchText, sourceURL: sourceURL
+            )
+        } catch {
+            errorMessage = error.localizedDescription
+            showingError = true
+            searchResults = []
+        }
     }
 
-    private func acceptRequest(_ friendship: Friendship) {
+    func sendRequest(to user: UserSearchResult) {
+        guard let service = friendsSyncService else {
+            return
+        }
+        sentRequests.insert(user.userId)
+
+        Task {
+            do {
+                try await service.sendFriendRequest(
+                    toUserId: user.userId, sourceURL: sourceURL
+                )
+            } catch {
+                sentRequests.remove(user.userId)
+                errorMessage = error.localizedDescription
+                showingError = true
+            }
+        }
+    }
+}
+
+// MARK: - FriendsListView+Actions
+
+private extension FriendsListView {
+    func acceptRequest(_ friendship: Friendship) {
         guard let service = friendsSyncService else {
             return
         }
         Task {
             do {
-                try await service.acceptFriendRequest(friendship, sourceURL: sourceURL)
+                try await service.acceptFriendRequest(
+                    friendship, sourceURL: sourceURL
+                )
             } catch {
                 errorMessage = error.localizedDescription
                 showingError = true
@@ -165,13 +274,15 @@ struct FriendsListView: View {
         }
     }
 
-    private func declineRequest(_ friendship: Friendship) {
+    func declineRequest(_ friendship: Friendship) {
         guard let service = friendsSyncService else {
             return
         }
         Task {
             do {
-                try await service.declineFriendRequest(friendship, sourceURL: sourceURL)
+                try await service.declineFriendRequest(
+                    friendship, sourceURL: sourceURL
+                )
             } catch {
                 errorMessage = error.localizedDescription
                 showingError = true
@@ -179,7 +290,7 @@ struct FriendsListView: View {
         }
     }
 
-    private func removeFriend(_ friendship: Friendship) {
+    func removeFriend(_ friendship: Friendship) {
         guard let service = friendsSyncService else {
             return
         }
@@ -193,8 +304,7 @@ struct FriendsListView: View {
         }
     }
 
-    /// Sync friends and pending requests from server so @Query reflects latest state.
-    private func syncFriendsOnAppear() async {
+    func syncFriendsOnAppear() async {
         if friendsSyncService == nil {
             friendsSyncService = FriendsSyncService(modelContext: modelContext)
         }
@@ -208,7 +318,7 @@ struct FriendsListView: View {
         }
     }
 
-    private func loadSuggestions() async {
+    func loadSuggestions() async {
         if friendsSyncService == nil {
             friendsSyncService = FriendsSyncService(modelContext: modelContext)
         }
@@ -229,7 +339,7 @@ struct FriendsListView: View {
         }
     }
 
-    private func addSuggestedFriend(_ suggestion: FriendSuggestion) {
+    func addSuggestedFriend(_ suggestion: FriendSuggestion) {
         guard let service = friendsSyncService else {
             return
         }
@@ -247,7 +357,7 @@ struct FriendsListView: View {
         }
     }
 
-    private func dismissSuggestion(_ suggestion: FriendSuggestion) {
+    func dismissSuggestion(_ suggestion: FriendSuggestion) {
         guard let service = friendsSyncService else {
             return
         }
@@ -260,7 +370,7 @@ struct FriendsListView: View {
         }
     }
 
-    private func generateInviteLink() {
+    func generateInviteLink() {
         if friendsSyncService == nil {
             friendsSyncService = FriendsSyncService(modelContext: modelContext)
         }
@@ -275,175 +385,13 @@ struct FriendsListView: View {
 
         Task {
             do {
-                inviteLink = try await service.generateInviteLink(sourceURL: sourceURL)
+                inviteLink = try await service.generateInviteLink(
+                    sourceURL: sourceURL
+                )
             } catch {
                 inviteLinkError = error.localizedDescription
             }
             isGeneratingInvite = false
-        }
-    }
-}
-
-// MARK: - IncomingRequestRow
-
-private struct IncomingRequestRow: View {
-    let friendship: Friendship
-    let onAccept: () -> Void
-    let onDecline: () -> Void
-
-    var body: some View {
-        HStack {
-            Text(friendship.friendCallsign)
-                .font(.headline)
-
-            Spacer()
-
-            Button("Accept") {
-                onAccept()
-            }
-            .buttonStyle(.borderedProminent)
-
-            Button("Decline") {
-                onDecline()
-            }
-            .buttonStyle(.bordered)
-            .tint(.red)
-        }
-    }
-}
-
-// MARK: - OutgoingRequestRow
-
-private struct OutgoingRequestRow: View {
-    let friendship: Friendship
-
-    var body: some View {
-        HStack {
-            Text(friendship.friendCallsign)
-                .font(.headline)
-
-            Spacer()
-
-            Text("Pending...")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-        }
-    }
-}
-
-// MARK: - FriendRow
-
-private struct FriendRow: View {
-    let friendship: Friendship
-
-    var body: some View {
-        HStack {
-            Text(friendship.friendCallsign)
-                .font(.headline)
-
-            Spacer()
-
-            if let acceptedAt = friendship.acceptedAt {
-                Text(acceptedAt, style: .date)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-        }
-    }
-}
-
-// MARK: - InviteLinkSheet
-
-private struct InviteLinkSheet: View {
-    // MARK: Internal
-
-    let inviteLink: InviteLinkDTO?
-    let isGenerating: Bool
-    let errorMessage: String?
-    let onDismiss: () -> Void
-
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: 24) {
-                if isGenerating {
-                    ProgressView("Generating invite link...")
-                        .frame(maxHeight: .infinity)
-                } else if let invite = inviteLink {
-                    inviteContent(invite)
-                } else if let errorMessage {
-                    ContentUnavailableView(
-                        "Unable to Generate Link",
-                        systemImage: "exclamationmark.triangle",
-                        description: Text(errorMessage)
-                    )
-                } else {
-                    ContentUnavailableView(
-                        "Unable to Generate Link",
-                        systemImage: "exclamationmark.triangle",
-                        description: Text("Please try again later.")
-                    )
-                }
-            }
-            .padding()
-            .navigationTitle("Invite Friend")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Done") { onDismiss() }
-                }
-            }
-        }
-        .presentationDetents([.medium])
-    }
-
-    // MARK: Private
-
-    private func inviteContent(_ invite: InviteLinkDTO) -> some View {
-        VStack(spacing: 20) {
-            Image(systemName: "link.circle.fill")
-                .font(.system(size: 60))
-                .foregroundStyle(.tint)
-
-            Text("Share this link with a friend")
-                .font(.headline)
-
-            Text(
-                "When they tap the link, they'll be able to send you a friend request in Carrier Wave."
-            )
-            .font(.subheadline)
-            .foregroundStyle(.secondary)
-            .multilineTextAlignment(.center)
-
-            Text(invite.url)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .padding()
-                .background(Color(.secondarySystemBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 8))
-
-            if invite.expiresAt > Date() {
-                Text("Expires \(invite.expiresAt, style: .relative)")
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
-            }
-
-            Spacer()
-
-            ShareLink(item: URL(string: invite.url)!) {
-                Label("Share Link", systemImage: "square.and.arrow.up")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-
-            Button {
-                UIPasteboard.general.string = invite.url
-            } label: {
-                Label("Copy to Clipboard", systemImage: "doc.on.doc")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.bordered)
-            .controlSize(.large)
         }
     }
 }

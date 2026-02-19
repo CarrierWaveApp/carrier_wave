@@ -7,6 +7,11 @@ All notable changes to Carrier Wave will be documented in this file.
 ### Added
 - Add "Keep lookup info after logging" setting (default: on) to control whether callsign card persists after logging a QSO
 
+### Changed
+- Add inline friend search to Friends list — search bar is always visible, no extra navigation needed
+- Hide clubs/groups feature from Activity tab (not ready yet)
+- Replace separate "Add Friend" screen with integrated search in Friends list
+
 ## [1.40.0] - 2026-02-19
 
 ### Added
