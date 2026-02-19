@@ -1781,7 +1781,7 @@ struct LoggerView: View {
                 && qso.parkReference != nil
         }
         var descriptor = FetchDescriptor<QSO>(predicate: predicate)
-        descriptor.fetchLimit = 5000
+        descriptor.fetchLimit = 5_000
 
         do {
             utcDayQSOs = try modelContext.fetch(descriptor)

@@ -244,6 +244,8 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `EnvironmentalDataActor.swift` | Background actor for loading conditions from LoggingSession, ActivationMetadata, and SolarSnapshot |
 | `WidgetDataWriter.swift` | Writes pre-computed stats/session data to App Group UserDefaults for widget consumption |
 | `SolarPollingService.swift` | Background hourly solar conditions polling service |
+| `SettingsSyncService.swift` | iCloud KVS settings sync (pull/push/echo suppression) |
+| `SettingsSyncService+Registry.swift` | Allowlist of settings that sync via iCloud KVS |
 
 ## Widget Extension (`CarrierWaveWidgets/`)
 
@@ -613,6 +615,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `WebSDRRecordingTests.swift` | WebSDR recording query helper tests |
 | `SDRParameterTrackingTests.swift` | SDR parameter change tracking, segment computation, and persistence tests |
 | `EquipmentStorageTests.swift` | Equipment storage CRUD and isolation tests |
+| `SettingsSyncServiceTests.swift` | iCloud KVS settings sync registry and type encoding tests |
 | `SessionPhotoManagerTests.swift` | Session photo file management tests |
 | `Helpers/QSOFactory.swift` | Synthetic QSO generator for testing (duplicates, metadata, edge cases) |
 | `Helpers/TestModelContainer.swift` | Shared test infrastructure for SwiftData tests |

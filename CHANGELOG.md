@@ -4,6 +4,9 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Sync user settings across devices via iCloud Key-Value Store — identity, logger defaults, POTA settings, appearance, tab config, equipment lists, station profiles, activity log settings, keyboard config, and dashboard metrics automatically propagate between iPhone and iPad
+
 ### Changed
 - Remove strikethrough from hunted spots in activity log — faded opacity only
 - Show state abbreviation on activity log spots (from POTA location or HamDB lookup)

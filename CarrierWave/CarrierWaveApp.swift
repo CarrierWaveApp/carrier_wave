@@ -54,6 +54,9 @@ struct CarrierWaveApp: App {
                 .sunlightMode(isSunlightMode)
                 .preferredColorScheme(colorScheme)
                 .task {
+                    // Start iCloud settings sync
+                    SettingsSyncService.shared.start()
+
                     // Start hourly solar conditions polling
                     SolarPollingService.shared.configure(container: sharedModelContainer)
 
