@@ -297,6 +297,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `CKRecordMapper+Fields.swift` | Sendable field structs (QSOFields, ServicePresenceFields, etc.) for actor boundaries |
 | `CKRecordMapper+SessionMapping.swift` | LoggingSession and ActivationMetadata CKRecord mapping |
 | `CloudSyncMetadata.swift` | SwiftData model tracking per-record sync state (change tags, record names) |
+| `CloudSyncMetadata+CKRecord.swift` | Extension with CKRecord encode/decode helpers (kept out of @Model body) |
 | `CloudSyncConflictResolver.swift` | Conflict resolution strategies (field-level QSO merge, union ServicePresence, LWW session) |
 
 ## Services - WebSDR (`CarrierWave/Services/WebSDR/`)

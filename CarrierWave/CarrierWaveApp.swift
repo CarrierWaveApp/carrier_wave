@@ -65,8 +65,6 @@ struct CarrierWaveApp: App {
                 configurations: [modelConfiguration]
             )
         } catch {
-            // If schema migration fails, log and crash
-            // In production, you might want to handle this more gracefully
             fatalError("Could not create ModelContainer: \(error)")
         }
     }()

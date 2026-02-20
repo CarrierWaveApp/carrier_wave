@@ -15,6 +15,7 @@ All notable changes to Carrier Wave will be documented in this file.
 - Add friend spot notification toggle in Activities settings
 
 ### Fixed
+- Fix ModelContainer crash on launch caused by nonisolated CloudKit methods inside @Model class body under -default-isolation=MainActor
 - Fix social pipeline dead state: auto-recover auth tokens across all community services (friends, clubs, activity feed, challenges) when token is missing or stale after reinstall/device change
 - Fix POTA dead-state blind spot: reconciliation now handles records stuck with all flags false (not present, not submitted, not needing upload) by checking job log and recovering them
 - Fix nil-date POTA error jobs being silently dropped from reconciliation tracking, leaving submitted QSOs permanently stuck
