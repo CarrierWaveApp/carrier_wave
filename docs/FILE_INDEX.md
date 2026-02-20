@@ -177,7 +177,8 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `DescriptionLookup.swift` | Human-readable descriptions for codes |
 | `DescriptionLookup+DXCC.swift` | DXCC entity descriptions |
 | `FetchedQSO.swift` | Intermediate QSO representation during fetch |
-| `ActivitiesClient.swift` | Activities API client |
+| `ActivitiesClient.swift` | Activities API client (auth, register, challenges, progress) |
+| `ActivitiesClient+Endpoints.swift` | Activities API endpoints (leaderboards, participants, health) |
 | `ActivitiesError.swift` | Activities-specific errors |
 | `ActivitiesSyncService.swift` | Activities data synchronization (sources, fetching) |
 | `ActivitiesSyncService+Participation.swift` | Activities participation, progress sync, leaderboards |
@@ -442,6 +443,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `QSOStatistics.swift` | QSO statistics calculations (entities, grids, bands, parks, frequencies) |
 | `QSOStatistics+Streaks.swift` | Streak calculation extensions for QSOStatistics |
 | `AsyncQSOStatistics.swift` | Progressive stats computation wrapper with cooperative yielding |
+| `AsyncQSOStatistics+Apply.swift` | Apply computed stats to observable properties and widget data |
 | `AsyncServicePresenceCounts.swift` | Background computation of service presence counts |
 | `StatsComputationActor.swift` | Background actor for QSO statistics computation |
 | `StatsComputationActor+Extensions.swift` | Extensions for activations and favorites computation |

@@ -15,6 +15,8 @@ All notable changes to Carrier Wave will be documented in this file.
 - Add friend spot notification toggle in Activities settings
 
 ### Fixed
+- Fix doubled QSO/QSL counts on dashboard caused by SwiftData returning duplicate records when CloudKit metadata tables exist in store
+- Disable SwiftData's built-in CloudKit sync (cloudKitDatabase: .none) since app uses CKSyncEngine directly
 - Fix doubled QSO counts on dashboard service cards for POTA two-fer activations (count unique QSOs, not ServicePresence records)
 - Fix dashboard stats excluding wrong metadata modes (WEATHER/SOLAR were not filtered, causing inflated QSO counts)
 - Add one-time data repair to clear stale POTA sync state after schema rename, forcing full re-download

@@ -117,9 +117,6 @@ struct ComputedStats: Sendable {
 actor StatsComputationActor {
     // MARK: Internal
 
-    /// Batch size for fetching - larger batches are fine since we're off the main thread
-    static let fetchBatchSize = 1_000
-
     // MARK: - Internal Helpers
 
     /// Get UTC date for a timestamp (for POTA activation grouping)
@@ -209,74 +206,59 @@ actor StatsComputationActor {
 
     // MARK: - Fetching
 
-    /// Fetch QSOs in batches on background thread and convert to Sendable snapshots.
+    /// Fetch all non-hidden QSOs and convert to Sendable snapshots.
+    /// Deduplicates by ID to work around SwiftData returning duplicate records
+    /// when CloudKit metadata tables exist in the store (from prior cloudKitDatabase: .automatic).
     private func fetchAndConvertToSnapshots(
         context: ModelContext,
         onProgress: @escaping @Sendable (Double, String) -> Void
     ) async throws -> [StatsQSOSnapshot] {
-        onProgress(0.0, "Counting QSOs...")
+        onProgress(0.0, "Loading QSOs...")
 
-        // Get total count
-        let countDescriptor = FetchDescriptor<QSO>(predicate: #Predicate { !$0.isHidden })
-        let totalCount = (try? context.fetchCount(countDescriptor)) ?? 0
+        try Task.checkCancellation()
+        var descriptor = FetchDescriptor<QSO>(predicate: #Predicate { !$0.isHidden })
+        descriptor.sortBy = [SortDescriptor(\.timestamp, order: .reverse)]
 
-        if totalCount == 0 {
+        guard let allQSOs = try? context.fetch(descriptor) else {
             return []
         }
 
-        var snapshots: [StatsQSOSnapshot] = []
-        snapshots.reserveCapacity(totalCount)
-
-        var offset = 0
-        let batchSize = Self.fetchBatchSize
-
-        onProgress(0.02, "Loading QSOs...")
-
-        while offset < totalCount {
-            try Task.checkCancellation()
-
-            var descriptor = FetchDescriptor<QSO>(predicate: #Predicate { !$0.isHidden })
-            descriptor.sortBy = [SortDescriptor(\.timestamp, order: .reverse)]
-            descriptor.fetchOffset = offset
-            descriptor.fetchLimit = batchSize
-
-            guard let batch = try? context.fetch(descriptor) else {
-                break
-            }
-
-            if batch.isEmpty {
-                break
-            }
-
-            // Convert to snapshots
-            for qso in batch {
-                let snapshot = StatsQSOSnapshot(
-                    id: qso.id,
-                    callsign: qso.callsign,
-                    band: qso.band,
-                    mode: qso.mode,
-                    frequency: qso.frequency,
-                    timestamp: qso.timestamp,
-                    myCallsign: qso.myCallsign,
-                    theirGrid: qso.theirGrid,
-                    parkReference: qso.parkReference,
-                    theirParkReference: qso.theirParkReference,
-                    importSource: qso.importSource,
-                    qrzConfirmed: qso.qrzConfirmed,
-                    lotwConfirmed: qso.lotwConfirmed,
-                    dxcc: qso.dxcc,
-                    loggingSessionId: qso.loggingSessionId
-                )
-                snapshots.append(snapshot)
-            }
-
-            offset += batchSize
-
-            // Update progress (fetch phase is 0-50%)
-            let fetchProgress = 0.5 * Double(min(offset, totalCount)) / Double(totalCount)
-            onProgress(fetchProgress, "Loading QSOs... \(min(offset, totalCount))/\(totalCount)")
+        if allQSOs.isEmpty {
+            return []
         }
 
+        // Convert to snapshots, deduplicating by ID.
+        // SwiftData may return the same record twice when the store contains
+        // CloudKit mirroring metadata (ACHANGE/ATRANSACTION tables).
+        var seenIds = Set<UUID>()
+        seenIds.reserveCapacity(allQSOs.count)
+        var snapshots: [StatsQSOSnapshot] = []
+        snapshots.reserveCapacity(allQSOs.count)
+
+        for qso in allQSOs {
+            guard seenIds.insert(qso.id).inserted else {
+                continue
+            }
+            snapshots.append(StatsQSOSnapshot(
+                id: qso.id,
+                callsign: qso.callsign,
+                band: qso.band,
+                mode: qso.mode,
+                frequency: qso.frequency,
+                timestamp: qso.timestamp,
+                myCallsign: qso.myCallsign,
+                theirGrid: qso.theirGrid,
+                parkReference: qso.parkReference,
+                theirParkReference: qso.theirParkReference,
+                importSource: qso.importSource,
+                qrzConfirmed: qso.qrzConfirmed,
+                lotwConfirmed: qso.lotwConfirmed,
+                dxcc: qso.dxcc,
+                loggingSessionId: qso.loggingSessionId
+            ))
+        }
+
+        onProgress(0.50, "Processing...")
         return snapshots
     }
 

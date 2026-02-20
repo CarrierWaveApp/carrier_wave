@@ -278,120 +278,16 @@ final class ActivitiesClient {
         return apiResponse.data
     }
 
-    // MARK: - Leaderboards
-
-    /// Fetch leaderboard for a challenge
-    func fetchLeaderboard(
-        challengeId: UUID,
-        sourceURL: String,
-        limit: Int? = nil,
-        offset: Int? = nil,
-        around: String? = nil
-    ) async throws -> LeaderboardData {
-        var components = URLComponents(
-            string: sourceURL + "/v1/challenges/\(challengeId.uuidString)/leaderboard"
-        )
-        var queryItems: [URLQueryItem] = []
-
-        if let limit {
-            queryItems.append(URLQueryItem(name: "limit", value: String(limit)))
-        }
-        if let offset {
-            queryItems.append(URLQueryItem(name: "offset", value: String(offset)))
-        }
-        if let around {
-            queryItems.append(URLQueryItem(name: "around", value: around))
-        }
-
-        if !queryItems.isEmpty {
-            components?.queryItems = queryItems
-        }
-
-        guard let url = components?.url else {
-            throw ActivitiesError.invalidServerURL
-        }
-
-        let request = try buildRequest(url: url, method: "GET")
-        let (data, response) = try await performRequest(request)
-        try validateResponse(response, data: data)
-
-        let apiResponse = try JSONDecoder.activitiesDecoder.decode(
-            APIResponse<LeaderboardData>.self,
-            from: data
-        )
-        return apiResponse.data
-    }
-
-    // MARK: - Participant Challenges
-
-    /// Fetch all challenges a callsign has joined
-    func fetchParticipatingChallenges(
-        callsign: String,
-        sourceURL: String,
-        authToken: String
-    ) async throws -> [ParticipatingChallengeDTO] {
-        let encodedCallsign =
-            callsign.addingPercentEncoding(
-                withAllowedCharacters: .urlPathAllowed
-            ) ?? callsign
-        let url = try buildURL(sourceURL, path: "/v1/participants/\(encodedCallsign)/challenges")
-        let request = try buildRequest(url: url, method: "GET", authToken: authToken)
-
-        let (data, response) = try await performRequest(request)
-        try validateResponse(response, data: data)
-
-        let apiResponse = try JSONDecoder.activitiesDecoder.decode(
-            APIResponse<[ParticipatingChallengeDTO]>.self,
-            from: data
-        )
-        return apiResponse.data
-    }
-
-    // MARK: - Health Check
-
-    /// Check server health
-    func healthCheck(sourceURL: String) async throws -> Bool {
-        let url = try buildURL(sourceURL, path: "/v1/health")
-        let request = try buildRequest(url: url, method: "GET")
-
-        let (data, response) = try await performRequest(request)
-        try validateResponse(response, data: data)
-
-        struct HealthResponse: Codable {
-            var status: String
-            var version: String
-        }
-
-        let healthResponse = try JSONDecoder.activitiesDecoder.decode(
-            HealthResponse.self,
-            from: data
-        )
-        return healthResponse.status == "ok"
-    }
-
-    // MARK: Private
-
-    private static let deviceName: String = {
-        #if canImport(UIKit)
-            UIDevice.current.name
-        #else
-            "Unknown Device"
-        #endif
-    }()
-
-    private let baseURL: String
-    private let userAgent = "CarrierWave/1.0"
-
     // MARK: - Request Building
 
-    private func buildURL(_ base: String, path: String) throws -> URL {
+    func buildURL(_ base: String, path: String) throws -> URL {
         guard let url = URL(string: base + path) else {
             throw ActivitiesError.invalidServerURL
         }
         return url
     }
 
-    private func buildRequest(
+    func buildRequest(
         url: URL,
         method: String,
         authToken: String? = nil
@@ -409,7 +305,7 @@ final class ActivitiesClient {
         return request
     }
 
-    private func performRequest(_ request: URLRequest) async throws -> (Data, URLResponse) {
+    func performRequest(_ request: URLRequest) async throws -> (Data, URLResponse) {
         do {
             return try await URLSession.shared.data(for: request)
         } catch {
@@ -417,7 +313,7 @@ final class ActivitiesClient {
         }
     }
 
-    private func validateResponse(_ response: URLResponse, data: Data) throws {
+    func validateResponse(_ response: URLResponse, data: Data) throws {
         guard let httpResponse = response as? HTTPURLResponse else {
             throw ActivitiesError.invalidResponse("Not an HTTP response")
         }
@@ -438,6 +334,19 @@ final class ActivitiesClient {
             throw ActivitiesError.serverError(httpResponse.statusCode, message)
         }
     }
+
+    // MARK: Private
+
+    private static let deviceName: String = {
+        #if canImport(UIKit)
+            UIDevice.current.name
+        #else
+            "Unknown Device"
+        #endif
+    }()
+
+    private let baseURL: String
+    private let userAgent = "CarrierWave/1.0"
 }
 
 // MARK: - JSON Encoder Extension
