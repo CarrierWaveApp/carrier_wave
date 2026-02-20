@@ -62,20 +62,32 @@ CKSyncEngine syncs individual records — it propagates deletes and corruption. 
 
 **UI location:** Settings > Data & Tools > Backups
 
-**Restore flow:**
+**Restore flow (every step requires explicit user interaction):**
 1. Show list of available backups with metadata (date, trigger, QSO count, size)
-2. User selects a backup
-3. **Pre-restore safety snapshot** — automatically create one more backup of current state before overwriting
-4. Validate the backup file: open with `sqlite3_open`, run `PRAGMA integrity_check`, verify the schema version matches (or is migratable)
-5. Replace the active store:
-   - Close the `ModelContainer` (requires app restart or `ModelContainer` re-creation)
-   - Swap the `.sqlite` file
-   - Relaunch the app (via `exit(0)` with a user-facing "Restarting..." message, or by re-building the `ModelContainer` and forcing a full view hierarchy reset)
-6. Post-restore: CKSyncEngine will reconcile — local records win over stale cloud records during the next sync cycle
+2. User selects a backup → show a **confirmation alert** explaining:
+   - What will happen ("Replace your current database with the backup from [date]")
+   - That a safety backup of the current state will be created first
+   - That the app **must restart** to complete the restore
+   - A destructive-style "Restore" button and a "Cancel" button
+3. On confirm: **pre-restore safety snapshot** — create a backup of the current state tagged `.preRestore`
+4. Validate the backup file: open with `sqlite3_open`, run `PRAGMA integrity_check`, verify the schema version matches (or is migratable). If validation fails, show an error alert and abort — no store changes made.
+5. Stage the restore:
+   - Write a `pendingRestore.json` marker file with the backup path
+   - Show a **"Restart Required"** screen explaining the app needs to restart, with a single "Restart Now" button (no automatic `exit(0)`)
+   - The user taps "Restart Now" to trigger `exit(0)`
+6. On next launch, `CarrierWaveApp` checks for `pendingRestore.json`:
+   - If present, swap the `.sqlite` file **before** creating the `ModelContainer`
+   - Remove the marker file
+   - Show a **post-restore banner/alert**: "Database restored from backup ([date]). iCloud sync has been paused — review your data before re-enabling."
+7. **iCloud sync is paused after restore** — the user must explicitly re-enable it from Settings. This prevents CloudKit from silently re-applying the changes that led to the data loss. The post-restore alert links directly to the iCloud sync settings.
+
+**No automatic merges or reconciliation.** After a restore, the user is in full control of when (and whether) to reconnect cloud sync.
 
 **Edge cases:**
 - If the backup is from an older schema version, SwiftData lightweight migration handles it (same as fresh app update)
-- If integrity check fails, reject the backup and show an error
+- If integrity check fails, show an error alert and abort — the user's current database is untouched
+- If the app crashes before the user taps "Restart Now", `pendingRestore.json` is still on disk and the restore completes on next launch (the user already confirmed)
+- If the marker file is present but the backup file is missing/corrupt, clear the marker and show an error on launch
 
 ## Backup Service Architecture
 
@@ -103,20 +115,51 @@ BackupEntry (Sendable struct)
 Under **Settings > Data & Tools**, add a **Backups** section:
 
 ```
-┌─────────────────────────────────┐
-│ Backups                         │
-├─────────────────────────────────┤
-│ Back Up Now                 [→] │
-│ Last backup: 2 hours ago        │
-│                                 │
-│ Auto-backup                  ON │
-│ Keep backups              5 max │
-│ iCloud backup                ON │
-│                                 │
-│ Restore from Backup...      [→] │
-│   Lists all available backups   │
-│   with date, size, trigger      │
-└─────────────────────────────────┘
+┌─────────────────────────────────────┐
+│ Backups                             │
+├─────────────────────────────────────┤
+│ Back Up Now                     [→] │
+│ Last backup: 2 hours ago            │
+│                                     │
+│ Auto-backup                      ON │
+│ Keep backups                  5 max │
+│ iCloud backup                    ON │
+│                                     │
+│ Restore from Backup...          [→] │
+│   Lists all available backups       │
+│   with date, size, trigger          │
+└─────────────────────────────────────┘
+
+Tapping "Restore from Backup..." → backup list → tap a backup →
+
+┌─────────────────────────────────────┐
+│ ⚠️ Restore Database?               │
+│                                     │
+│ This will replace your current      │
+│ database with the backup from       │
+│ Feb 18, 2026 at 3:42 PM.           │
+│                                     │
+│ A safety backup of your current     │
+│ data will be created first.         │
+│                                     │
+│ The app must restart to complete    │
+│ the restore. iCloud sync will be    │
+│ paused until you re-enable it.      │
+│                                     │
+│        [ Cancel ]  [ Restore ]      │
+└─────────────────────────────────────┘
+
+After confirming → validation → staging →
+
+┌─────────────────────────────────────┐
+│ Restart Required                    │
+│                                     │
+│ Your database restore is ready.     │
+│ Tap below to restart the app and    │
+│ complete the restore.               │
+│                                     │
+│        [ Restart Now ]              │
+└─────────────────────────────────────┘
 ```
 
 ## Testing Strategy
@@ -173,8 +216,11 @@ Under **Settings > Data & Tools**, add a **Backups** section:
 5. iCloud Drive sync layer
 6. Unit + integration tests
 
+## Resolved Decisions
+
+1. **App restart on restore:** User-initiated `exit(0)`. The restore is staged via a marker file, and the user explicitly taps "Restart Now". No silent restarts. If the app crashes or is force-quit before the tap, the marker file persists and the restore completes on next launch (which is safe — the user already confirmed).
+2. **CloudKit reconciliation after restore:** Cloud sync is **paused after restore**. The user must explicitly re-enable it from Settings. This prevents CloudKit from silently re-applying deletes or corruption. A post-restore alert explains this and links to the sync settings.
+
 ## Open Questions
 
-1. **App restart on restore:** SwiftData doesn't support hot-swapping the store file. Options: (a) `exit(0)` and let iOS relaunch, (b) recreate `ModelContainer` and reset `@Environment(\.modelContext)` via a state change at the app root. Option (b) is more user-friendly but more complex.
-2. **CloudKit reconciliation after restore:** After restoring an older backup, CKSyncEngine may try to re-apply changes from the cloud. Need to decide: should restore disable cloud sync temporarily until the user explicitly re-enables it, or let it reconcile automatically?
-3. **Backup encryption:** The SQLite file contains callsigns and grid squares (PII-adjacent). Should backups in iCloud Drive be encrypted? iCloud Drive is already encrypted at rest, so this may be unnecessary complexity.
+1. **Backup encryption:** The SQLite file contains callsigns and grid squares (PII-adjacent). Should backups in iCloud Drive be encrypted? iCloud Drive is already encrypted at rest, so this may be unnecessary complexity.
