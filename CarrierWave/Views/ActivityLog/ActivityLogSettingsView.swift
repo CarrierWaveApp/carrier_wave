@@ -15,7 +15,7 @@ struct ActivityLogSettingsView: View {
             uploadSection
             dailyGoalSection
         }
-        .navigationTitle("Activity Log")
+        .navigationTitle("Hunter Log")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { profileCount = StationProfileStorage.load().count }
     }
@@ -23,14 +23,31 @@ struct ActivityLogSettingsView: View {
     // MARK: Private
 
     private static let ageOptions = [5, 10, 12, 15, 20, 30]
-    private static let radiusOptions = [100, 250, 500, 1_000, 1_500, 2_000]
 
     @AppStorage("huntedSpotBehavior") private var huntedSpotBehaviorRaw = HuntedSpotBehavior.crossOut.rawValue
     @AppStorage("activityLogDailyGoalEnabled") private var dailyGoalEnabled = false
     @AppStorage("activityLogDailyGoal") private var dailyGoal = 10
     @AppStorage("spotMaxAgeMinutes") private var spotMaxAgeMinutes = 12
-    @AppStorage("spotProximityRadiusMiles") private var proximityRadiusMiles = 500
+    @AppStorage("spotRegionFilter") private var spotRegionFilterRaw = ""
     @State private var profileCount = 0
+
+    @State private var qrzConnected = false
+    @State private var lofiConnected = false
+
+    private let qrzClient = QRZClient()
+    private let lofiClient = LoFiClient.appDefault()
+
+    private var selectedRegions: Set<SpotRegionGroup> {
+        SpotRegionGroup.decode(spotRegionFilterRaw)
+    }
+
+    private var regionSummary: String {
+        let regions = selectedRegions
+        if regions == SpotRegionGroup.allSet || regions.isEmpty {
+            return "All"
+        }
+        return "\(regions.count) of \(SpotRegionGroup.allCases.count)"
+    }
 
     private var spotFilteringSection: some View {
         Section {
@@ -40,18 +57,25 @@ struct ActivityLogSettingsView: View {
                 }
             }
 
-            Picker("Proximity Radius", selection: $proximityRadiusMiles) {
-                ForEach(Self.radiusOptions, id: \.self) { miles in
-                    Text("\(miles) mi").tag(miles)
+            NavigationLink {
+                RegionPickerView(
+                    selectedRegions: Binding(
+                        get: { SpotRegionGroup.decode(spotRegionFilterRaw) },
+                        set: { spotRegionFilterRaw = SpotRegionGroup.encode($0) }
+                    )
+                )
+            } label: {
+                HStack {
+                    Text("Spot Regions")
+                    Spacer()
+                    Text(regionSummary)
+                        .foregroundStyle(.secondary)
                 }
             }
         } header: {
             Text("Spots")
         } footer: {
-            Text(
-                "Spots older than the max age are hidden. " +
-                    "Proximity radius applies when \"Heard Nearby\" is enabled in the spot filter."
-            )
+            Text("Spots older than the max age are hidden. Region filter controls which areas appear.")
         }
     }
 
@@ -89,29 +113,33 @@ struct ActivityLogSettingsView: View {
 
     private var uploadSection: some View {
         Section {
-            HStack {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(.green)
-                Text("QRZ Logbook")
-                Spacer()
-                Text("Enabled")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+            NavigationLink {
+                QRZSettingsView()
+            } label: {
+                HStack {
+                    Text("QRZ Logbook")
+                    Spacer()
+                    if qrzConnected {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(.green)
+                    }
+                }
+            }
+
+            NavigationLink {
+                LoFiSettingsView(tourState: TourState())
+            } label: {
+                HStack {
+                    Text("Ham2K LoFi")
+                    Spacer()
+                    if lofiConnected {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(.green)
+                    }
+                }
             }
 
             HStack {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(.green)
-                Text("Ham2K LoFi")
-                Spacer()
-                Text("Enabled")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            HStack {
-                Image(systemName: "xmark.circle.fill")
-                    .foregroundStyle(.secondary)
                 Text("POTA")
                 Spacer()
                 Text("Not applicable")
@@ -122,9 +150,13 @@ struct ActivityLogSettingsView: View {
             Text("Upload Services")
         } footer: {
             Text(
-                "Activity log QSOs upload to QRZ and LoFi. " +
+                "Hunter log QSOs upload to QRZ and LoFi. " +
                     "POTA upload requires an activation session with a park reference."
             )
+        }
+        .onAppear {
+            qrzConnected = qrzClient.hasApiKey()
+            lofiConnected = lofiClient.isConfigured
         }
     }
 
@@ -140,6 +172,63 @@ struct ActivityLogSettingsView: View {
                     step: 5
                 )
             }
+        }
+    }
+}
+
+// MARK: - RegionPickerView
+
+/// Multiselect picker for spot region groups.
+struct RegionPickerView: View {
+    // MARK: Internal
+
+    @Binding var selectedRegions: Set<SpotRegionGroup>
+
+    var body: some View {
+        List {
+            Section {
+                ForEach(SpotRegionGroup.allCases, id: \.self) { region in
+                    Button {
+                        toggleRegion(region)
+                    } label: {
+                        HStack {
+                            Text(region.rawValue)
+                                .foregroundStyle(.primary)
+                            Spacer()
+                            if selectedRegions.contains(region) {
+                                Image(systemName: "checkmark")
+                                    .foregroundStyle(.blue)
+                            }
+                        }
+                    }
+                }
+            } footer: {
+                Text("Select which regions to show spots from. Tap to toggle.")
+            }
+
+            Section {
+                Button("Select All") {
+                    selectedRegions = SpotRegionGroup.allSet
+                }
+                .disabled(selectedRegions == SpotRegionGroup.allSet)
+
+                Button("Deselect All") {
+                    selectedRegions = []
+                }
+                .disabled(selectedRegions.isEmpty)
+            }
+        }
+        .navigationTitle("Spot Regions")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    // MARK: Private
+
+    private func toggleRegion(_ region: SpotRegionGroup) {
+        if selectedRegions.contains(region) {
+            selectedRegions.remove(region)
+        } else {
+            selectedRegions.insert(region)
         }
     }
 }

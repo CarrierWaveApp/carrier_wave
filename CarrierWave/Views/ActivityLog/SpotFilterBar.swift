@@ -13,12 +13,6 @@ struct SpotFilterBar: View {
         if hasChipsToShow {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 6) {
-                    if filters.proximityMode == .heardNearby {
-                        activeChip(label: "Heard Nearby") {
-                            filters.proximityMode = .all
-                        }
-                    }
-
                     sourceChips
                     bandChips
                     modeChips

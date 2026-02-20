@@ -218,7 +218,7 @@ enum MiniTourContent {
     static let activityLog: [TourPage] = [
         TourPage(
             icon: "scope",
-            title: "Activity Log",
+            title: "Hunter Log",
             body: """
             Your always-on logbook for everyday contacts. \
             No session to start or stop — just open and log.
@@ -253,7 +253,7 @@ enum MiniTourContent {
             title: "Automatic Uploads",
             body: """
             QSOs are marked for upload to QRZ and LoFi automatically. \
-            Activity log contacts never go to POTA — use a POTA session for activations.
+            Hunter log contacts never go to POTA — use a POTA session for activations.
             """
         ),
     ]

@@ -4,6 +4,11 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- Rename "Activity Log" to "Hunter Log" across all user-facing strings
+- Replace distance-based proximity radius spot filter with region-based multiselect (US, Canada, Europe, Asia, etc.)
+- Link hunter log upload services (QRZ, LoFi) to their settings views instead of showing hardcoded status
+
 ## [1.41.0] - 2026-02-19
 
 ### Added

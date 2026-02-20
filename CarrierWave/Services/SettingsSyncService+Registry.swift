@@ -105,7 +105,7 @@ enum SettingsSyncRegistry {
         .init("activityLogDailyGoalEnabled", type: .bool),
         .init("activityLogDailyGoal", type: .int),
         .init("spotMaxAgeMinutes", type: .int),
-        .init("spotProximityRadiusMiles", type: .int),
+        .init("spotRegionFilter", type: .string),
     ]
 
     // MARK: - Keyboard & Command Row

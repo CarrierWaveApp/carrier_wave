@@ -16,11 +16,6 @@ struct SpotFilters: Equatable {
         }
     }
 
-    enum ProximityMode: String, CaseIterable {
-        case heardNearby = "Heard Nearby"
-        case all = "All Spots"
-    }
-
     /// Selected source filters (empty = show all, default: POTA)
     var sources: Set<SourceFilter> = [.pota]
 
@@ -33,13 +28,9 @@ struct SpotFilters: Equatable {
     /// Whether to hide already-worked callsigns
     var hideWorked = false
 
-    /// Proximity filter mode
-    var proximityMode: ProximityMode = .heardNearby
-
     /// Whether any filters are active
     var hasActiveFilters: Bool {
-        !sources.isEmpty || !bands.isEmpty || !modes.isEmpty
-            || hideWorked || proximityMode == .heardNearby
+        !sources.isEmpty || !bands.isEmpty || !modes.isEmpty || hideWorked
     }
 
     /// Apply all filters to a spot list
@@ -47,10 +38,11 @@ struct SpotFilters: Equatable {
         to spots: [EnrichedSpot],
         workedResults: [String: WorkedBeforeResult],
         maxAgeMinutes: Int,
-        proximityRadiusMiles: Int
+        selectedRegions: Set<SpotRegionGroup>
     ) -> [EnrichedSpot] {
         let cutoff = Date().addingTimeInterval(-Double(maxAgeMinutes) * 60)
-        let radiusMeters = Double(proximityRadiusMiles) * 1_609.344
+        let allSelected = selectedRegions == SpotRegionGroup.allSet
+            || selectedRegions.isEmpty
 
         return spots.filter { spot in
             if spot.spot.timestamp < cutoff {
@@ -79,8 +71,8 @@ struct SpotFilters: Equatable {
                 }
             }
 
-            if proximityMode == .heardNearby {
-                if let distance = spot.distanceMeters, distance > radiusMeters {
+            if !allSelected {
+                if !selectedRegions.contains(spot.region.group) {
                     return false
                 }
             }
@@ -97,12 +89,13 @@ struct SpotFilterSheet: View {
     // MARK: Internal
 
     @Binding var filters: SpotFilters
+    @Binding var selectedRegions: Set<SpotRegionGroup>
 
     var body: some View {
         NavigationStack {
             Form {
                 sourceSection
-                proximitySection
+                regionSection
                 bandSection
                 modeSection
                 togglesSection
@@ -114,9 +107,12 @@ struct SpotFilterSheet: View {
                     Button("Done") { dismiss() }
                 }
                 ToolbarItem(placement: .cancellationAction) {
-                    if filters != SpotFilters() {
+                    if filters != SpotFilters()
+                        || selectedRegions != SpotRegionGroup.allSet
+                    {
                         Button("Reset") {
                             filters = SpotFilters()
+                            selectedRegions = SpotRegionGroup.allSet
                         }
                     }
                 }
@@ -133,14 +129,47 @@ struct SpotFilterSheet: View {
     private let commonBands = ["160m", "80m", "40m", "30m", "20m", "17m", "15m", "12m", "10m"]
     private let commonModes = ["CW", "SSB", "FT8", "FT4", "RTTY"]
 
-    private var proximitySection: some View {
-        Section("Proximity") {
-            Picker("Show", selection: $filters.proximityMode) {
-                ForEach(SpotFilters.ProximityMode.allCases, id: \.self) { mode in
-                    Text(mode.rawValue).tag(mode)
+    private var allRegionsSelected: Bool {
+        selectedRegions == SpotRegionGroup.allSet || selectedRegions.isEmpty
+    }
+
+    private var regionSection: some View {
+        Section {
+            FlowLayout(spacing: 6) {
+                ForEach(SpotRegionGroup.allCases, id: \.self) { region in
+                    filterChip(
+                        label: region.rawValue,
+                        isSelected: selectedRegions.contains(region)
+                    ) {
+                        if selectedRegions.contains(region) {
+                            selectedRegions.remove(region)
+                            // If removing would leave empty, select all others
+                            if selectedRegions.isEmpty {
+                                selectedRegions = SpotRegionGroup.allSet
+                            }
+                        } else {
+                            selectedRegions.insert(region)
+                        }
+                    }
                 }
             }
-            .pickerStyle(.segmented)
+
+            if allRegionsSelected {
+                Text("All regions shown")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        } header: {
+            HStack {
+                Text("Regions")
+                Spacer()
+                if !allRegionsSelected {
+                    Button("All") {
+                        selectedRegions = SpotRegionGroup.allSet
+                    }
+                    .font(.caption)
+                }
+            }
         }
     }
 

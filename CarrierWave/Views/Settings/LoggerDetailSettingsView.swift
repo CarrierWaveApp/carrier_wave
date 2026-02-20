@@ -141,12 +141,12 @@ struct LoggerDetailSettingsView: View {
     }
 
     private var activityLogSection: some View {
-        Section("Activity Log") {
+        Section("Hunter Log") {
             NavigationLink {
                 ActivityLogSettingsView()
             } label: {
                 HStack {
-                    Text("Activity Log Settings")
+                    Text("Hunter Log Settings")
                     Spacer()
                     let count = StationProfileStorage.load().count
                     Text("\(count) profile\(count == 1 ? "" : "s")")

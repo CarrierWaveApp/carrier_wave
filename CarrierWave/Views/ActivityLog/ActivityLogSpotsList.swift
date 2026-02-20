@@ -21,7 +21,7 @@ struct ActivityLogSpotsList: View {
     @Binding var filters: SpotFilters
 
     let maxAgeMinutes: Int
-    let proximityRadiusMiles: Int
+    let selectedRegions: Set<SpotRegionGroup>
     let huntedBehavior: HuntedSpotBehavior
     let workedBeforeCache: WorkedBeforeCache
     let workedCacheVersion: Int
@@ -98,7 +98,7 @@ struct ActivityLogSpotsList: View {
             to: spots,
             workedResults: workedResults,
             maxAgeMinutes: maxAgeMinutes,
-            proximityRadiusMiles: proximityRadiusMiles
+            selectedRegions: selectedRegions
         )
     }
 

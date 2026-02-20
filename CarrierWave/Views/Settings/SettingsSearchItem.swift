@@ -198,8 +198,8 @@ extension SettingsSearchIndex {
             destination: .webSDRFavorites
         ),
         SettingsSearchItem(
-            title: "Activity Log Settings",
-            keywords: ["activity", "log", "hunter", "profile", "daily", "goal"],
+            title: "Hunter Log Settings",
+            keywords: ["hunter", "log", "activity", "profile", "daily", "goal"],
             breadcrumb: "Logger",
             destination: .activityLogSettings
         ),

@@ -56,7 +56,7 @@ struct ActivityGrid: View {
                 RoundedRectangle(cornerRadius: 2)
                     .fill(ActivityGridColors.activityLog)
                     .frame(width: 10, height: 10)
-                Text("Activity Log")
+                Text("Hunter Log")
                     .font(.system(size: 10))
                     .foregroundStyle(.secondary)
             }

@@ -23,7 +23,7 @@ struct ActivityLogView: View {
             .padding()
         }
         .background(Color(.systemGroupedBackground))
-        .navigationTitle("Activity Log")
+        .navigationTitle("Hunter Log")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
@@ -32,7 +32,7 @@ struct ActivityLogView: View {
                 } label: {
                     Image(systemName: "gearshape")
                 }
-                .accessibilityLabel("Activity log settings")
+                .accessibilityLabel("Hunter log settings")
             }
         }
         .sheet(isPresented: $showingProfilePicker) {
@@ -51,7 +51,13 @@ struct ActivityLogView: View {
             )
         }
         .sheet(isPresented: $showingFilterSheet) {
-            SpotFilterSheet(filters: $spotFilters)
+            SpotFilterSheet(
+                filters: $spotFilters,
+                selectedRegions: Binding(
+                    get: { SpotRegionGroup.decode(spotRegionFilterRaw) },
+                    set: { spotRegionFilterRaw = SpotRegionGroup.encode($0) }
+                )
+            )
         }
         .sheet(isPresented: $showingLocationChange) {
             if let oldGrid = manager.activeLog?.currentGrid,
@@ -115,7 +121,7 @@ struct ActivityLogView: View {
     // MARK: Private
 
     @AppStorage("spotMaxAgeMinutes") private var spotMaxAgeMinutes = 12
-    @AppStorage("spotProximityRadiusMiles") private var proximityRadiusMiles = 500
+    @AppStorage("spotRegionFilter") private var spotRegionFilterRaw = ""
     @AppStorage("huntedSpotBehavior") private var huntedSpotBehaviorRaw = HuntedSpotBehavior.crossOut.rawValue
 
     @State private var showingProfilePicker = false
@@ -136,6 +142,10 @@ struct ActivityLogView: View {
         HuntedSpotBehavior(rawValue: huntedSpotBehaviorRaw) ?? .crossOut
     }
 
+    private var selectedRegions: Set<SpotRegionGroup> {
+        SpotRegionGroup.decode(spotRegionFilterRaw)
+    }
+
     private var headerSection: some View {
         ActivityLogHeader(
             todayQSOCount: manager.todayQSOCount,
@@ -154,7 +164,7 @@ struct ActivityLogView: View {
             spots: spotMonitor.hunterSpots,
             filters: $spotFilters,
             maxAgeMinutes: spotMaxAgeMinutes,
-            proximityRadiusMiles: proximityRadiusMiles,
+            selectedRegions: selectedRegions,
             huntedBehavior: huntedBehavior,
             workedBeforeCache: workedBeforeCache,
             workedCacheVersion: workedCacheVersion,

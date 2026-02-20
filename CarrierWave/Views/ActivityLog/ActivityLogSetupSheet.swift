@@ -21,7 +21,7 @@ struct ActivityLogSetupSheet: View {
                         .textInputAutocapitalization(.characters)
                         .autocorrectionDisabled()
                 } header: {
-                    Text("Activity Log")
+                    Text("Hunter Log")
                 } footer: {
                     Text("Give your log a name like \"Home CW Hunting\" or \"Daily Log\".")
                 }
@@ -79,7 +79,7 @@ struct ActivityLogSetupSheet: View {
                     }
                 }
             }
-            .navigationTitle("Set Up Activity Log")
+            .navigationTitle("Set Up Hunter Log")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

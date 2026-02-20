@@ -204,6 +204,66 @@ enum SpotRegion: String, CaseIterable, Sendable {
     }
 }
 
+// MARK: - SpotRegionGroup
+
+/// Coarser geographic region groups for spot filtering.
+/// Combines the 5 US sub-regions into a single "US" group.
+enum SpotRegionGroup: String, CaseIterable, Codable, Sendable {
+    case us = "US"
+    case canada = "Canada"
+    case mexico = "Mexico"
+    case caribbean = "Caribbean"
+    case europe = "Europe"
+    case asia = "Asia"
+    case oceania = "Oceania"
+    case africa = "Africa"
+    case southAmerica = "S. America"
+    case other = "Other"
+
+    // MARK: Internal
+
+    /// All region groups as a set (for "show all" default)
+    static var allSet: Set<SpotRegionGroup> {
+        Set(allCases)
+    }
+
+    /// Encode a set of region groups to a comma-separated string for AppStorage
+    static func encode(_ regions: Set<SpotRegionGroup>) -> String {
+        regions.map(\.rawValue).sorted().joined(separator: ",")
+    }
+
+    /// Decode a comma-separated string to a set of region groups
+    static func decode(_ string: String) -> Set<SpotRegionGroup> {
+        guard !string.isEmpty else {
+            return allSet
+        }
+        let values = string.components(separatedBy: ",")
+        return Set(values.compactMap { SpotRegionGroup(rawValue: $0) })
+    }
+}
+
+extension SpotRegion {
+    /// Map this fine-grained region to its coarser group
+    var group: SpotRegionGroup {
+        switch self {
+        case .neUS,
+             .seUS,
+             .mwUS,
+             .swUS,
+             .nwUS: .us
+        case .canada: .canada
+        case .mexico: .mexico
+        case .caribbean: .caribbean
+        case .europe: .europe
+        case .asia: .asia
+        case .oceania: .oceania
+        case .africa: .africa
+        case .southAmerica: .southAmerica
+        case .other: .other
+        }
+    }
+}
+
 // MARK: - EnrichedSpot
 
 /// A spot enriched with distance and region information

@@ -31,7 +31,7 @@ struct ActivityLogCard: View {
                 Image(systemName: "scope")
                     .font(.title3)
                     .foregroundStyle(.blue)
-                Text("Activity Log")
+                Text("Hunter Log")
                     .font(.headline)
             }
 
@@ -42,7 +42,7 @@ struct ActivityLogCard: View {
             Button {
                 showSetup()
             } label: {
-                Text("Set Up Activity Log")
+                Text("Set Up Hunter Log")
                     .font(.subheadline.weight(.medium))
                     .frame(maxWidth: .infinity)
             }
@@ -59,7 +59,7 @@ struct ActivityLogCard: View {
                 Image(systemName: "scope")
                     .font(.title3)
                     .foregroundStyle(.blue)
-                Text("Activity Log")
+                Text("Hunter Log")
                     .font(.headline)
                 Spacer()
                 Image(systemName: "chevron.right")
