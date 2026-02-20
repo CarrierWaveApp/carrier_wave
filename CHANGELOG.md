@@ -4,6 +4,12 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Apple Watch companion app with idle mode (solar conditions, spots, stats) and active session view (QSO count, activation progress ring, callsign display)
+- WatchConnectivity for real-time session updates between iPhone and Watch
+- Quick session start from Watch using last-used defaults
+- Solar and spots data sharing to App Group for Watch consumption
+
 ### Fixed
 - Fix session photos saving the last photo multiple times when adding more than one photo at once (filename collision from timestamp-based naming)
 

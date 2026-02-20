@@ -291,6 +291,7 @@ final class LoggingSessionManager {
         }
 
         WidgetDataWriter.clearSession()
+        PhoneSessionDelegate.shared.sendSessionEnd()
     }
 
     /// Pause the current session and return to the session listing
@@ -914,6 +915,25 @@ final class LoggingSessionManager {
             lastCallsign: lastCallsign,
             activationType: session.activationType.rawValue,
             updatedAt: Date()
+        ))
+
+        // Send real-time update to Watch via WatchConnectivity
+        let band = session.frequency.map { LoggingSession.bandForFrequency($0) }
+        PhoneSessionDelegate.shared.sendSessionUpdate(WatchSessionUpdate(
+            qsoCount: session.qsoCount,
+            lastCallsign: lastCallsign,
+            frequency: freqString,
+            band: band,
+            mode: session.mode,
+            parkReference: session.parkReference,
+            activationType: session.activationType.rawValue,
+            isPaused: false,
+            startedAt: session.startedAt,
+            myCallsign: session.myCallsign,
+            currentStopPark: session.isRove ? session.roveStops.last?.parkReference : nil,
+            stopNumber: session.isRove ? session.roveStops.count : nil,
+            totalStops: session.isRove ? session.roveStops.count : nil,
+            currentStopQSOs: session.isRove ? session.roveStops.last?.qsoCount : nil
         ))
     }
 

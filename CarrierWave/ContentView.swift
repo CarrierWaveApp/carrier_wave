@@ -105,6 +105,12 @@ struct ContentView: View {
                 break
             }
         }
+        .onReceive(
+            NotificationCenter.default.publisher(for: .didReceiveWatchStartSession)
+        ) { _ in
+            // Navigate to logger tab — session manager will pick up the request
+            selectedTab = .logger
+        }
         .fullScreenCover(isPresented: $showIntroTour) {
             IntroTourView(tourState: tourState)
         }

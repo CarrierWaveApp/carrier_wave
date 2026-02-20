@@ -242,7 +242,8 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `ActivityLogManager.swift` | Activity log lifecycle management (create, activate, log QSO, daily stats) |
 | `EnvironmentalSnapshot.swift` | Sendable snapshot struct for environmental conditions charting |
 | `EnvironmentalDataActor.swift` | Background actor for loading conditions from LoggingSession, ActivationMetadata, and SolarSnapshot |
-| `WidgetDataWriter.swift` | Writes pre-computed stats/session data to App Group UserDefaults for widget consumption |
+| `PhoneSessionDelegate.swift` | WCSessionDelegate for Apple Watch communication (session updates, start requests) |
+| `WidgetDataWriter.swift` | Writes pre-computed stats/session/solar/spots data to App Group for widget/Watch consumption |
 | `SolarPollingService.swift` | Background hourly solar conditions polling service |
 | `SettingsSyncService.swift` | iCloud KVS settings sync (pull/push/echo suppression) |
 | `SettingsSyncService+Registry.swift` | Allowlist of settings that sync via iCloud KVS |
@@ -262,6 +263,22 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `LiveActivityAttributes.swift` | ActivityKit attributes mirror for widget extension compilation |
 | `LiveActivityView.swift` | Live Activity views: lock screen, Dynamic Island compact/expanded/minimal |
 | `CarrierWaveWidgets.entitlements` | App Group entitlement for shared data access |
+
+## Watch App (`CarrierWaveWatch/`)
+
+| File | Purpose |
+|------|---------|
+| `CarrierWaveWatchApp.swift` | Watch app entry point |
+| `ContentView.swift` | Root view switching between idle and active session modes |
+| `Views/IdleView.swift` | Idle mode TabView (solar, spots, stats, quick start pages) |
+| `Views/SolarView.swift` | Solar conditions gauges (K-index, A-index, SFI) |
+| `Views/SpotsListView.swift` | Recent POTA/RBN spots list |
+| `Views/StatsView.swift` | Quick stats (streaks, QSO counts) |
+| `Views/ActiveSessionView.swift` | Active session display (QSO count, callsign, activation progress) |
+| `Views/ActivationProgressRing.swift` | POTA activation progress ring (X/10) |
+| `Views/QuickStartView.swift` | Quick session start from Watch |
+| `Services/SharedDataReader.swift` | Reads shared data from App Group UserDefaults + shared Codable types |
+| `Services/WatchSessionDelegate.swift` | WCSessionDelegate for receiving session updates from iPhone |
 
 ## Services - WebSDR (`CarrierWave/Services/WebSDR/`)
 

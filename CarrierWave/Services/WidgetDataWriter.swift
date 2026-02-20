@@ -11,6 +11,8 @@ enum WidgetShared {
         static let streakData = "widget.streakData"
         static let countData = "widget.countData"
         static let sessionData = "widget.sessionData"
+        static let solarData = "widget.solarData"
+        static let spotsData = "widget.spotsData"
     }
 
     /// Deep link URLs
@@ -74,9 +76,45 @@ struct WidgetSessionSnapshot: Codable, Sendable {
     let updatedAt: Date
 }
 
+// MARK: - WidgetSolarSnapshot
+
+/// Solar conditions for Watch and widget consumption
+struct WidgetSolarSnapshot: Codable, Sendable {
+    let kIndex: Double?
+    let aIndex: Int?
+    let solarFlux: Double?
+    let sunspots: Int?
+    let propagationRating: String?
+    let updatedAt: Date
+}
+
+// MARK: - WidgetSpotSnapshot
+
+/// Recent spots for Watch consumption
+struct WidgetSpotSnapshot: Codable, Sendable {
+    let spots: [WidgetSpot]
+    let updatedAt: Date
+}
+
+// MARK: - WidgetSpot
+
+/// A single spot in a format safe for Watch/widget consumption
+struct WidgetSpot: Codable, Sendable, Identifiable {
+    let id: String
+    let callsign: String
+    let frequencyMHz: Double
+    let mode: String
+    let band: String
+    let timestamp: Date
+    let source: String // "pota" or "rbn"
+    let parkRef: String?
+    let parkName: String?
+    let snr: Int?
+}
+
 // MARK: - WidgetDataWriter
 
-/// Writes pre-computed data to shared UserDefaults for widget consumption.
+/// Writes pre-computed data to shared UserDefaults for widget/Watch consumption.
 /// Call from the main app after stats computation or session state changes.
 enum WidgetDataWriter {
     // MARK: Internal
@@ -114,6 +152,20 @@ enum WidgetDataWriter {
             updatedAt: Date()
         )
         writeSession(empty)
+    }
+
+    static func writeSolar(_ snapshot: WidgetSolarSnapshot) {
+        guard let data = try? JSONEncoder().encode(snapshot) else {
+            return
+        }
+        defaults?.set(data, forKey: WidgetShared.Key.solarData)
+    }
+
+    static func writeSpots(_ snapshot: WidgetSpotSnapshot) {
+        guard let data = try? JSONEncoder().encode(snapshot) else {
+            return
+        }
+        defaults?.set(data, forKey: WidgetShared.Key.spotsData)
     }
 
     // MARK: Private

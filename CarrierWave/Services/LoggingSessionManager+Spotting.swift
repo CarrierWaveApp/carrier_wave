@@ -210,6 +210,26 @@ extension LoggingSessionManager {
         if inserted > 0 {
             try? modelContext.save()
         }
+
+        // Write spots to App Group for Watch consumption (top 15, most recent first)
+        let sorted = enrichedSpots.sorted { $0.spot.timestamp > $1.spot.timestamp }
+        let watchSpots = sorted.prefix(15).map { enriched in
+            WidgetSpot(
+                id: enriched.spot.id,
+                callsign: enriched.spot.callsign,
+                frequencyMHz: enriched.spot.frequencyMHz,
+                mode: enriched.spot.mode,
+                band: enriched.spot.band,
+                timestamp: enriched.spot.timestamp,
+                source: enriched.spot.source == .rbn ? "rbn" : "pota",
+                parkRef: enriched.spot.parkRef,
+                parkName: enriched.spot.parkName,
+                snr: enriched.spot.snr
+            )
+        }
+        WidgetDataWriter.writeSpots(WidgetSpotSnapshot(
+            spots: Array(watchSpots), updatedAt: Date()
+        ))
     }
 
     /// Post spots to POTA for all parks in the session (supports n-fer)

@@ -269,6 +269,23 @@ struct LoggerView: View {
                     externalSpotSelection = nil
                 }
             }
+            .onReceive(
+                NotificationCenter.default.publisher(for: .didReceiveWatchStartSession)
+            ) { notification in
+                guard let request = notification.userInfo?["request"]
+                    as? WatchStartSessionRequest,
+                    sessionManager?.hasActiveSession != true
+                else { return }
+
+                let type = ActivationType(rawValue: request.activationType) ?? .casual
+                sessionManager?.startSession(
+                    myCallsign: request.myCallsign,
+                    mode: request.mode,
+                    frequency: request.frequency,
+                    activationType: type,
+                    parkReference: request.parkReference
+                )
+            }
             .overlay(alignment: .bottom) {
                 panelOverlays
             }
