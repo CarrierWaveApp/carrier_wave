@@ -103,6 +103,9 @@ extension SyncService {
         // Repair QRZ dead-state QSOs (isPresent=false, needsUpload=false)
         await repairQRZDeadStateAsync()
 
+        // Repair POTA dead-state QSOs (isPresent=false, needsUpload=false)
+        await repairPOTADeadStateAsync()
+
         // Clear upload flags on hidden (soft-deleted) QSOs
         await clearHiddenQSOUploadFlagsAsync()
 

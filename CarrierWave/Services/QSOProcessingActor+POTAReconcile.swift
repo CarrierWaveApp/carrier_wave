@@ -16,6 +16,8 @@ extension QSOProcessingActor {
         let orphanResetCount: Int
         let inProgressCount: Int
         let staleResetCount: Int
+        let deadStateConfirmedCount: Int
+        let deadStateResetCount: Int
     }
 
     /// Reconcile POTA ServicePresence records against completed upload jobs.
@@ -50,7 +52,9 @@ extension QSOProcessingActor {
         return POTAReconcileResult(
             resetCount: counts.reset, confirmedCount: counts.confirmed,
             failedResetCount: counts.failedReset, orphanResetCount: counts.orphanReset,
-            inProgressCount: counts.inProgress, staleResetCount: counts.staleReset
+            inProgressCount: counts.inProgress, staleResetCount: counts.staleReset,
+            deadStateConfirmedCount: counts.deadStateConfirmed,
+            deadStateResetCount: counts.deadStateReset
         )
     }
 }
@@ -65,10 +69,12 @@ extension QSOProcessingActor {
         var orphanReset = 0
         var inProgress = 0
         var staleReset = 0
+        var deadStateConfirmed = 0
+        var deadStateReset = 0
 
         var hasChanges: Bool {
             reset > 0 || confirmed > 0 || failedReset > 0 || orphanReset > 0
-                || staleReset > 0
+                || staleReset > 0 || deadStateConfirmed > 0 || deadStateReset > 0
         }
     }
 
@@ -148,48 +154,80 @@ extension QSOProcessingActor {
                 return true
             }
         } else if presence.isSubmitted {
-            if keys.confirmed.contains(key) {
-                presence.isPresent = true
-                presence.isSubmitted = false
-                presence.lastConfirmedAt = Date()
-                counts.confirmed += 1
-                return true
-            } else if keys.nilDateConfirmed.contains(parkCallsignKey) {
-                // A nil-date completed job exists for this park+callsign.
-                // This happens when all QSOs in the upload were duplicates
-                // (POTA returns firstQSO=nil). The QSOs are already in POTA.
-                presence.isPresent = true
-                presence.isSubmitted = false
-                presence.lastConfirmedAt = Date()
-                counts.confirmed += 1
-                return true
-            } else if keys.failed.contains(key) {
-                presence.isSubmitted = false
-                presence.needsUpload = true
-                counts.failedReset += 1
-                return true
-            } else if let submittedAt = keys.inProgress[key] {
-                let age = Date().timeIntervalSince(submittedAt)
-                if age >= Self.staleJobThreshold {
-                    // Job has been pending/processing too long — reset to retry.
-                    presence.isSubmitted = false
-                    presence.needsUpload = true
-                    counts.staleReset += 1
-                } else {
-                    // Job is recent — leave isSubmitted alone, wait for POTA.
-                    counts.inProgress += 1
-                }
-                return true
-            } else {
-                // Submitted but no matching job at all (confirmed, failed, or in-progress).
-                // POTA likely silently dropped the upload — reset to retry.
-                presence.isSubmitted = false
-                presence.needsUpload = true
-                counts.orphanReset += 1
-                return true
-            }
+            return reconcileSubmitted(
+                presence: presence, key: key,
+                parkCallsignKey: parkCallsignKey,
+                keys: keys, counts: &counts
+            )
+        } else {
+            return reconcileDeadState(
+                presence: presence, key: key,
+                parkCallsignKey: parkCallsignKey,
+                keys: keys, counts: &counts
+            )
         }
         return false
+    }
+
+    /// Reconcile a submitted presence record against POTA job log.
+    private func reconcileSubmitted(
+        presence: ServicePresence,
+        key: String,
+        parkCallsignKey: String,
+        keys: SyncService.POTAActivationKeys,
+        counts: inout ReconcileCounts
+    ) -> Bool {
+        if keys.confirmed.contains(key)
+            || keys.nilDateConfirmed.contains(parkCallsignKey)
+        {
+            presence.isPresent = true
+            presence.isSubmitted = false
+            presence.lastConfirmedAt = Date()
+            counts.confirmed += 1
+        } else if keys.failed.contains(key)
+            || keys.nilDateFailed.contains(parkCallsignKey)
+        {
+            presence.isSubmitted = false
+            presence.needsUpload = true
+            counts.failedReset += 1
+        } else if let submittedAt = keys.inProgress[key] {
+            let age = Date().timeIntervalSince(submittedAt)
+            if age >= Self.staleJobThreshold {
+                presence.isSubmitted = false
+                presence.needsUpload = true
+                counts.staleReset += 1
+            } else {
+                counts.inProgress += 1
+            }
+        } else {
+            // No matching job at all — POTA likely silently dropped the upload.
+            presence.isSubmitted = false
+            presence.needsUpload = true
+            counts.orphanReset += 1
+        }
+        return true
+    }
+
+    /// Reconcile a dead-state presence record (not present, not submitted).
+    private func reconcileDeadState(
+        presence: ServicePresence,
+        key: String,
+        parkCallsignKey: String,
+        keys: SyncService.POTAActivationKeys,
+        counts: inout ReconcileCounts
+    ) -> Bool {
+        if keys.confirmed.contains(key)
+            || keys.nilDateConfirmed.contains(parkCallsignKey)
+        {
+            presence.isPresent = true
+            presence.needsUpload = false
+            presence.lastConfirmedAt = Date()
+            counts.deadStateConfirmed += 1
+        } else {
+            presence.needsUpload = true
+            counts.deadStateReset += 1
+        }
+        return true
     }
 
     /// Build an activation key for matching against POTA jobs.

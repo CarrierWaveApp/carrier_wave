@@ -112,7 +112,8 @@ extension SyncService {
                 "POTA reconciliation: fetched \(jobs.count) jobs in \(fetchDurationMs)ms, "
                     + "\(activationKeys.confirmed.count) confirmed, "
                     + "\(activationKeys.failed.count) failed, "
-                    + "\(activationKeys.inProgress.count) in-progress",
+                    + "\(activationKeys.inProgress.count) in-progress, "
+                    + "\(activationKeys.nilDateFailed.count) nil-date-failed",
                 service: .pota
             )
 
@@ -162,6 +163,10 @@ extension SyncService {
         /// Format: "PARKREF|CALLSIGN". Used as fallback when no date-specific key matches
         /// a submitted presence — prevents orphan-reset loops for all-duplicate re-uploads.
         var nilDateConfirmed = Set<String>()
+        /// Park+callsign pairs with nil-date failed/error jobs.
+        /// Format: "PARKREF|CALLSIGN". Used to reset submitted QSOs whose jobs failed
+        /// without recording a date.
+        var nilDateFailed = Set<String>()
     }
 
     /// Build classified activation key sets from POTA jobs.
@@ -192,11 +197,19 @@ extension SyncService {
                 let parkCallsign =
                     "\(job.reference.uppercased())|\(callsign.uppercased())"
                 keys.nilDateConfirmed.insert(parkCallsign)
+            } else if job.status.isFailure {
+                // Nil-date failed/error jobs — POTA rejected without processing.
+                // Track so reconciliation can reset submitted QSOs for retry.
+                let parkCallsign =
+                    "\(job.reference.uppercased())|\(callsign.uppercased())"
+                keys.nilDateFailed.insert(parkCallsign)
             }
         }
 
         // Remove failed keys that also have a completed/duplicate job
         keys.failed.subtract(keys.confirmed)
+        // Remove nil-date failed keys that also have a confirmed job
+        keys.nilDateFailed.subtract(keys.nilDateConfirmed)
         // Remove in-progress keys that also have a completed/duplicate job
         for key in keys.confirmed {
             keys.inProgress.removeValue(forKey: key)
@@ -206,6 +219,23 @@ extension SyncService {
 
     /// Log the results of POTA presence reconciliation.
     private func logPOTAReconcileResult(_ result: QSOProcessingActor.POTAReconcileResult) {
+        logPOTASubmitResults(result)
+        logPOTADeadStateResults(result)
+
+        let totalChanges =
+            result.resetCount + result.confirmedCount
+                + result.failedResetCount + result.orphanResetCount
+                + result.staleResetCount + result.deadStateConfirmedCount
+                + result.deadStateResetCount
+        if totalChanges == 0, result.inProgressCount == 0 {
+            SyncDebugLog.shared.debug(
+                "POTA reconciliation: no changes needed", service: .pota
+            )
+        }
+    }
+
+    /// Log submit-related reconciliation results.
+    private func logPOTASubmitResults(_ result: QSOProcessingActor.POTAReconcileResult) {
         let debugLog = SyncDebugLog.shared
         if result.resetCount > 0 {
             debugLog.warning(
@@ -248,12 +278,24 @@ extension SyncService {
                 service: .pota
             )
         }
-        let totalChanges =
-            result.resetCount + result.confirmedCount
-                + result.failedResetCount + result.orphanResetCount
-                + result.staleResetCount
-        if totalChanges == 0, result.inProgressCount == 0 {
-            debugLog.debug("POTA reconciliation: no changes needed", service: .pota)
+    }
+
+    /// Log dead-state reconciliation results.
+    private func logPOTADeadStateResults(_ result: QSOProcessingActor.POTAReconcileResult) {
+        let debugLog = SyncDebugLog.shared
+        if result.deadStateConfirmedCount > 0 {
+            debugLog.info(
+                "POTA reconciliation: confirmed \(result.deadStateConfirmedCount) "
+                    + "dead-state record(s) (POTA has the QSOs)",
+                service: .pota
+            )
+        }
+        if result.deadStateResetCount > 0 {
+            debugLog.warning(
+                "POTA reconciliation: reset \(result.deadStateResetCount) "
+                    + "dead-state record(s) to needsUpload (no confirmation found)",
+                service: .pota
+            )
         }
     }
 
@@ -405,6 +447,27 @@ extension SyncService {
             }
         } catch {
             SyncDebugLog.shared.error("Failed to repair QRZ dead-state QSOs: \(error)")
+        }
+    }
+
+    /// Repair POTA ServicePresence records stuck in dead state
+    /// (isPresent=false, needsUpload=false, not submitted, not rejected).
+    func repairPOTADeadStateAsync() async {
+        do {
+            let result = try await Self.processingActor.repairPOTADeadStateQSOs(
+                container: modelContext.container
+            )
+            if result.repairedCount > 0 {
+                SyncDebugLog.shared.warning(
+                    "Repaired \(result.repairedCount) POTA dead-state QSO(s) "
+                        + "(reset to needsUpload=true)",
+                    service: .pota
+                )
+            }
+        } catch {
+            SyncDebugLog.shared.error(
+                "Failed to repair POTA dead-state QSOs: \(error)", service: .pota
+            )
         }
     }
 
