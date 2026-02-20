@@ -87,6 +87,7 @@ nonisolated final class QSO {
     var parkReference: String?
     var theirParkReference: String?
     var notes: String?
+    @Attribute(originalName: "importSource")
     var importSourceRawValue = ImportSource.logger.rawValue
     var importedAt = Date()
     var rawADIF: String?

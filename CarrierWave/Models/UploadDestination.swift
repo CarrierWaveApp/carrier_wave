@@ -21,6 +21,7 @@ nonisolated final class UploadDestination {
     // MARK: Internal
 
     var id = UUID()
+    @Attribute(originalName: "type")
     var typeRawValue = ServiceType.qrz.rawValue
     var isEnabled: Bool = false
     var lastSyncAt: Date?

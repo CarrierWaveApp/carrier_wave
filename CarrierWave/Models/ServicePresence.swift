@@ -31,6 +31,7 @@ nonisolated final class ServicePresence {
     // MARK: Internal
 
     var id = UUID()
+    @Attribute(originalName: "serviceType")
     var serviceTypeRawValue = ServiceType.qrz.rawValue
     var isPresent: Bool = false
     var needsUpload: Bool = false
