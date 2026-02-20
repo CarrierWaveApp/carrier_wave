@@ -563,6 +563,7 @@
 				DEVELOPMENT_TEAM = 7UE4RDLUSX;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Carrier Wave";
+				INFOPLIST_KEY_CFBundleIconName = AppIcon;
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.jsvana.FullDuplex;
 				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = NO;
 				MARKETING_VERSION = 1.41.0;
@@ -935,6 +936,7 @@
 				DEVELOPMENT_TEAM = 7UE4RDLUSX;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Carrier Wave";
+				INFOPLIST_KEY_CFBundleIconName = AppIcon;
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.jsvana.FullDuplex;
 				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = NO;
 				MARKETING_VERSION = 1.41.0;
