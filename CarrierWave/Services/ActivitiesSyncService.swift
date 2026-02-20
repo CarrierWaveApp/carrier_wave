@@ -236,6 +236,22 @@ final class ActivitiesSyncService: ObservableObject {
         source.lastError = nil
     }
 
+    /// Resolve the best available auth token: global keychain token first,
+    /// then fall back to a participation-stored token.
+    func resolveAuthToken() -> String? {
+        if let global = try? client.getAuthToken() {
+            return global
+        }
+        // Fall back to any participation token as last resort
+        let activeRaw = ParticipationStatus.active.rawValue
+        var descriptor = FetchDescriptor<ChallengeParticipation>(
+            predicate: #Predicate { $0.statusRawValue == activeRaw },
+            sortBy: [SortDescriptor(\.joinedAt, order: .reverse)]
+        )
+        descriptor.fetchLimit = 1
+        return (try? modelContext.fetch(descriptor))?.first?.deviceToken
+    }
+
     // MARK: Private
 
     /// If user opted in to community features but has no auth token, register now.
@@ -262,22 +278,6 @@ final class ActivitiesSyncService: ObservableObject {
         } catch {
             print("[ActivitiesSyncService] Auto-registration failed: \(error)")
         }
-    }
-
-    /// Resolve the best available auth token: global keychain token first,
-    /// then fall back to a participation-stored token.
-    func resolveAuthToken() -> String? {
-        if let global = try? client.getAuthToken() {
-            return global
-        }
-        // Fall back to any participation token as last resort
-        let activeRaw = ParticipationStatus.active.rawValue
-        var descriptor = FetchDescriptor<ChallengeParticipation>(
-            predicate: #Predicate { $0.statusRawValue == activeRaw },
-            sortBy: [SortDescriptor(\.joinedAt, order: .reverse)]
-        )
-        descriptor.fetchLimit = 1
-        return (try? modelContext.fetch(descriptor))?.first?.deviceToken
     }
 
     /// Update all participation device tokens to match the current global auth token.

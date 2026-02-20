@@ -28,7 +28,7 @@ final class CloudSyncMetadata {
     var entityType: String = ""
 
     /// The local SwiftData model's UUID
-    var localId: UUID = UUID()
+    var localId = UUID()
 
     /// The CKRecord.ID name (e.g., "QSO-A1B2C3D4-...")
     var recordName: String = ""
@@ -40,16 +40,19 @@ final class CloudSyncMetadata {
     /// When this record was last successfully synced
     var lastSyncedAt: Date?
 
-    // MARK: - Helpers
-
-    /// Build a deterministic CKRecord name from entity type and UUID
-    static func recordName(entityType: String, id: UUID) -> String {
-        "\(entityType)-\(id.uuidString)"
+    /// Encode a CKRecord's system fields for storage
+    nonisolated static func encodeSystemFields(of record: CKRecord) -> Data {
+        let coder = NSKeyedArchiver(requiringSecureCoding: true)
+        record.encodeSystemFields(with: coder)
+        coder.finishEncoding()
+        return coder.encodedData
     }
+
+    // MARK: - Helpers
 
     /// Decode the stored system fields back into a skeleton CKRecord.
     /// Returns nil if no system fields are stored.
-    func decodedRecord() -> CKRecord? {
+    nonisolated func decodedRecord() -> CKRecord? {
         guard let data = encodedSystemFields else {
             return nil
         }
@@ -61,13 +64,5 @@ final class CloudSyncMetadata {
         let record = CKRecord(coder: coder)
         coder.finishDecoding()
         return record
-    }
-
-    /// Encode a CKRecord's system fields for storage
-    static func encodeSystemFields(of record: CKRecord) -> Data {
-        let coder = NSKeyedArchiver(requiringSecureCoding: true)
-        record.encodeSystemFields(with: coder)
-        coder.finishEncoding()
-        return coder.encodedData
     }
 }

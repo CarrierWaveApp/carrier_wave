@@ -171,8 +171,7 @@ extension DashboardView {
             secondaryStat: secondaryStat,
             tertiaryInfo: status == .notConfigured ? "Not configured" : nil,
             showWarning: cloudSync.syncStatus.isError || !iCloudMonitor.pendingFiles.isEmpty,
-            isSyncing: cloudSync.syncStatus == .syncing(detail: "")
-                || { if case .syncing = cloudSync.syncStatus { return true }; return false }()
+            isSyncing: cloudSync.isSyncing
         )
     }
 

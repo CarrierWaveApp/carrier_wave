@@ -1,3 +1,4 @@
+import CloudKit
 import SwiftUI
 
 /// iCloud sync settings: enable/disable toggle, status, last sync time, account info.
@@ -32,9 +33,30 @@ struct CloudSyncSettingsView: View {
     @StateObject private var monitor = ICloudMonitor()
     @State private var isForcing = false
 
+    // MARK: - Helpers
+
+    private var statusColor: Color {
+        switch syncService.syncStatus {
+        case .disabled: .secondary
+        case .upToDate: .green
+        case .syncing: .blue
+        case .error: .red
+        }
+    }
+
+    private var accountStatusText: String {
+        switch syncService.accountStatus {
+        case .available: "Signed In"
+        case .noAccount: "Not Signed In"
+        case .restricted: "Restricted"
+        case .couldNotDetermine: "Unknown"
+        case .temporarilyUnavailable: "Temporarily Unavailable"
+        @unknown default: "Unknown"
+        }
+    }
+
     // MARK: - Sections
 
-    @ViewBuilder
     private var syncToggleSection: some View {
         Section {
             Toggle("iCloud QSO Sync", isOn: Binding(
@@ -50,7 +72,6 @@ struct CloudSyncSettingsView: View {
         }
     }
 
-    @ViewBuilder
     private var statusSection: some View {
         Section {
             HStack {
@@ -91,7 +112,6 @@ struct CloudSyncSettingsView: View {
         }
     }
 
-    @ViewBuilder
     private var actionsSection: some View {
         Section {
             Button {
@@ -115,7 +135,6 @@ struct CloudSyncSettingsView: View {
         }
     }
 
-    @ViewBuilder
     private var adifImportSection: some View {
         Section {
             if let url = monitor.iCloudContainerURL {
@@ -141,7 +160,6 @@ struct CloudSyncSettingsView: View {
         }
     }
 
-    @ViewBuilder
     private var errorSection: some View {
         Section {
             if let error = syncService.errorMessage {
@@ -151,28 +169,6 @@ struct CloudSyncSettingsView: View {
             }
         } header: {
             Text("Errors")
-        }
-    }
-
-    // MARK: - Helpers
-
-    private var statusColor: Color {
-        switch syncService.syncStatus {
-        case .disabled: .secondary
-        case .upToDate: .green
-        case .syncing: .blue
-        case .error: .red
-        }
-    }
-
-    private var accountStatusText: String {
-        switch syncService.accountStatus {
-        case .available: "Signed In"
-        case .noAccount: "Not Signed In"
-        case .restricted: "Restricted"
-        case .couldNotDetermine: "Unknown"
-        case .temporarilyUnavailable: "Temporarily Unavailable"
-        @unknown default: "Unknown"
         }
     }
 }

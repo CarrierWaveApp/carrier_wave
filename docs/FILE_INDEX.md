@@ -287,8 +287,15 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | File | Purpose |
 |------|---------|
 | `CloudSyncService.swift` | `@MainActor` service owning CKSyncEngine, publishing sync status for UI |
-| `CloudSyncEngine.swift` | `actor` implementing `CKSyncEngineDelegate` — record mapping, conflict resolution, dedup |
-| `CKRecordMapper.swift` | Pure functions mapping QSO/ServicePresence/LoggingSession/ActivationMetadata to/from CKRecords |
+| `CloudSyncEngine.swift` | `actor` implementing `CKSyncEngineDelegate` — core setup and event dispatch |
+| `CloudSyncEngine+Inbound.swift` | Inbound record processing (fetched changes, record upsert/delete) |
+| `CloudSyncEngine+Outbound.swift` | Outbound change collection, batch building, sent-changes handling |
+| `CloudSyncEngine+ConflictResolution.swift` | Per-type conflict resolution dispatchers (QSO, ServicePresence, Session, Metadata) |
+| `CloudSyncEngine+Helpers.swift` | Shared helpers: dirty flag clearing, field extraction, metadata lookup |
+| `CloudSyncEngine+ZoneAndState.swift` | Zone creation, state serialization, account status |
+| `CKRecordMapper.swift` | Record type constants, identity helpers, QSO/ServicePresence CKRecord mapping |
+| `CKRecordMapper+Fields.swift` | Sendable field structs (QSOFields, ServicePresenceFields, etc.) for actor boundaries |
+| `CKRecordMapper+SessionMapping.swift` | LoggingSession and ActivationMetadata CKRecord mapping |
 | `CloudSyncMetadata.swift` | SwiftData model tracking per-record sync state (change tags, record names) |
 | `CloudSyncConflictResolver.swift` | Conflict resolution strategies (field-level QSO merge, union ServicePresence, LWW session) |
 

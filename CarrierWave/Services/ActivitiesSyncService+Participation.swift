@@ -1,5 +1,6 @@
 import Foundation
 import SwiftData
+import UIKit
 
 // MARK: - Participation & Progress
 
@@ -112,12 +113,20 @@ extension ActivitiesSyncService {
             }
         }
 
+        applyProgressResponse(response, to: participation, localProgress: localProgress)
+        try modelContext.save()
+    }
+
+    private func applyProgressResponse(
+        _ response: ProgressReportData,
+        to participation: ChallengeParticipation,
+        localProgress: ChallengeProgress
+    ) {
         if response.accepted {
             participation.lastSyncedAt = Date()
             participation.needsSync = false
         }
 
-        // Update local progress with server values
         let serverProgress = response.serverProgress
         participation.progress = ChallengeProgress(
             completedGoals: serverProgress.completedGoals,
@@ -128,12 +137,9 @@ extension ActivitiesSyncService {
             lastUpdated: Date()
         )
 
-        // Update rank if provided
         if let rank = serverProgress.rank {
             participation.serverRank = rank
         }
-
-        try modelContext.save()
     }
 
     /// Re-register with the server and return the new token, or nil on failure.

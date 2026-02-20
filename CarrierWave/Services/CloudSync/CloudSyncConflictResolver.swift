@@ -4,16 +4,13 @@ import Foundation
 /// Conflict resolution strategies for each synced model type.
 /// Called when the same record is modified on two devices simultaneously.
 enum CloudSyncConflictResolver {
+    // MARK: Internal
+
     // MARK: - QSO: Field-Level Merge
 
-    /// Merge two versions of a QSO, preferring the version with the newer modificationDate
-    /// for fields changed on both sides.
-    /// - Parameters:
-    ///   - local: The local QSO's current field values
-    ///   - remote: The incoming CKRecord field values
-    ///   - base: The base version (last known synced state), if available
-    /// - Returns: Merged field values to apply to the local QSO
-    static func mergeQSO(
+    // swiftlint:disable function_body_length
+    /// Merge two versions of a QSO, preferring the newer modificationDate for differing fields.
+    nonisolated static func mergeQSO(
         local: QSOFields,
         remote: QSOFields,
         localModDate: Date,
@@ -82,11 +79,13 @@ enum CloudSyncConflictResolver {
         )
     }
 
+    // swiftlint:enable function_body_length
+
     // MARK: - ServicePresence: Union Merge
 
     /// Merge service presence using union semantics.
     /// Upload status propagates in one direction: once present, stays present.
-    static func mergeServicePresence(
+    nonisolated static func mergeServicePresence(
         local: ServicePresenceFields,
         remote: ServicePresenceFields
     ) -> ServicePresenceFields {
@@ -107,7 +106,7 @@ enum CloudSyncConflictResolver {
 
     /// Merge logging session using last-writer-wins.
     /// Exception: qsoCount takes the maximum of both values.
-    static func mergeLoggingSession(
+    nonisolated static func mergeLoggingSession(
         local: LoggingSessionFields,
         remote: LoggingSessionFields,
         localModDate: Date,
@@ -162,7 +161,7 @@ enum CloudSyncConflictResolver {
 
     // MARK: - ActivationMetadata: Last-Writer-Wins
 
-    static func mergeActivationMetadata(
+    nonisolated static func mergeActivationMetadata(
         local: ActivationMetadataFields,
         remote: ActivationMetadataFields,
         localModDate: Date,
@@ -171,57 +170,75 @@ enum CloudSyncConflictResolver {
         remoteModDate > localModDate ? remote : local
     }
 
+    // MARK: Private
+
     // MARK: - Private Helpers
 
-    private static func pickString(
+    nonisolated private static func pickString(
         _ local: String,
         _ remote: String,
         preferRemote: Bool
     ) -> String {
-        if local == remote { return local }
+        if local == remote {
+            return local
+        }
         return preferRemote ? remote : local
     }
 
-    private static func pickValue<T: Equatable>(
+    nonisolated private static func pickValue<T: Equatable>(
         _ local: T,
         _ remote: T,
         preferRemote: Bool
     ) -> T {
-        if local == remote { return local }
+        if local == remote {
+            return local
+        }
         return preferRemote ? remote : local
     }
 
-    private static func pickOptional<T: Equatable>(
+    nonisolated private static func pickOptional<T: Equatable>(
         _ local: T?,
         _ remote: T?,
         preferRemote: Bool
     ) -> T? {
-        if local == remote { return local }
+        if local == remote {
+            return local
+        }
         // If one side has data and the other doesn't, prefer the one with data
-        if local == nil { return remote }
-        if remote == nil { return local }
+        if local == nil {
+            return remote
+        }
+        if remote == nil {
+            return local
+        }
         // Both have different values — prefer by timestamp
         return preferRemote ? remote : local
     }
 
-    private static func mergeNotes(local: String?, remote: String?) -> String? {
-        if local == remote { return local }
-        if local == nil { return remote }
-        if remote == nil { return local }
+    nonisolated private static func mergeNotes(local: String?, remote: String?) -> String? {
+        if local == remote {
+            return local
+        }
+        if local == nil {
+            return remote
+        }
+        if remote == nil {
+            return local
+        }
         // Both have different values — concatenate
         return "\(local!)\n---\n\(remote!)"
     }
 
-    private static func newerOptionalDate(_ a: Date?, _ b: Date?) -> Date? {
-        switch (a, b) {
-        case (.some(let dateA), .some(let dateB)):
-            return dateA > dateB ? dateA : dateB
+    nonisolated private static func newerOptionalDate(_ lhs: Date?, _ rhs: Date?) -> Date? {
+        switch (lhs, rhs) {
+        case let (.some(dateA), .some(dateB)):
+            dateA > dateB ? dateA : dateB
         case (.some, .none):
-            return a
+            lhs
         case (.none, .some):
-            return b
+            rhs
         case (.none, .none):
-            return nil
+            nil
         }
     }
 }

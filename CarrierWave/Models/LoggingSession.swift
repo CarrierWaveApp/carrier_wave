@@ -180,6 +180,9 @@ final class LoggingSession {
     var weatherTimestamp: Date?
     var weather: String?
 
+    /// Whether this record has local changes not yet synced to iCloud.
+    var cloudDirtyFlag: Bool = false
+
     /// Whether structured solar data is available
     var hasSolarData: Bool {
         solarKIndex != nil || solarFlux != nil || solarSunspots != nil
@@ -282,9 +285,6 @@ final class LoggingSession {
     var roveTotalQSOCount: Int {
         roveStops.reduce(0) { $0 + $1.qsoCount }
     }
-
-    /// Whether this record has local changes not yet synced to iCloud.
-    var cloudDirtyFlag: Bool = false
 
     /// Whether the session is currently active
     var isActive: Bool {

@@ -240,12 +240,21 @@ struct CarrierWaveApp: App {
 }
 
 extension Notification.Name {
-    static let didReceiveADIFFile = Notification.Name("didReceiveADIFFile")
-    static let didReceiveChallengeInvite = Notification.Name("didReceiveChallengeInvite")
-    static let didReceiveFriendInvite = Notification.Name("didReceiveFriendInvite")
-    static let didReceiveWidgetDeepLink = Notification.Name("didReceiveWidgetDeepLink")
-    static let didSyncQSOs = Notification.Name("didSyncQSOs")
-    static let didDetectActivities = Notification.Name("didDetectActivities")
-    static let didClearQSOs = Notification.Name("didClearQSOs")
-    static let didReceiveWatchStartSession = Notification.Name("didReceiveWatchStartSession")
+    // nonisolated(unsafe) required: project uses -default-isolation=MainActor
+    nonisolated(unsafe) static let didReceiveADIFFile = Notification.Name("didReceiveADIFFile")
+    nonisolated(unsafe) static let didReceiveChallengeInvite = Notification.Name(
+        "didReceiveChallengeInvite"
+    )
+    nonisolated(unsafe) static let didReceiveFriendInvite = Notification.Name(
+        "didReceiveFriendInvite"
+    )
+    nonisolated(unsafe) static let didReceiveWidgetDeepLink = Notification.Name(
+        "didReceiveWidgetDeepLink"
+    )
+    nonisolated(unsafe) static let didSyncQSOs = Notification.Name("didSyncQSOs")
+    nonisolated(unsafe) static let didDetectActivities = Notification.Name("didDetectActivities")
+    nonisolated(unsafe) static let didClearQSOs = Notification.Name("didClearQSOs")
+    nonisolated(unsafe) static let didReceiveWatchStartSession = Notification.Name(
+        "didReceiveWatchStartSession"
+    )
 }

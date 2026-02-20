@@ -4,6 +4,8 @@ import Foundation
 import os
 import SwiftData
 
+// MARK: - CloudSyncService
+
 /// @MainActor service that owns the CKSyncEngine and publishes sync status for UI.
 /// Observes local data changes and feeds pending record IDs to the engine.
 @MainActor
@@ -70,14 +72,18 @@ class CloudSyncService: ObservableObject {
     }
 
     /// Handle a remote push notification
-    func handleRemoteNotification(_ userInfo: [AnyHashable: Any]) async {
-        guard isEnabled, let engine else { return }
+    func handleRemoteNotification(_ userInfo: sending [AnyHashable: Any]) async {
+        guard isEnabled, let engine else {
+            return
+        }
         await engine.handleRemoteNotification(userInfo)
     }
 
     /// Force a full sync (mark everything dirty and push)
     func forceFullSync() async {
-        guard isEnabled, let engine else { return }
+        guard isEnabled, let engine else {
+            return
+        }
         syncStatus = .syncing(detail: "Full sync...")
         await engine.schedulePendingChanges()
     }
@@ -93,10 +99,10 @@ class CloudSyncService: ObservableObject {
     private var engine: CloudSyncEngine?
     private var changeObserver: AnyCancellable?
 
-    // MARK: - Lifecycle
-
     private func startSync() async {
-        guard let engine else { return }
+        guard let engine else {
+            return
+        }
 
         do {
             syncStatus = .syncing(detail: "Starting...")
@@ -113,7 +119,9 @@ class CloudSyncService: ObservableObject {
     }
 
     private func stopSync() async {
-        guard let engine else { return }
+        guard let engine else {
+            return
+        }
         await engine.stop()
         syncStatus = .disabled
         pendingCount = 0
@@ -160,7 +168,9 @@ class CloudSyncService: ObservableObject {
         )
         .debounce(for: .milliseconds(500), scheduler: RunLoop.main)
         .sink { [weak self] _ in
-            guard let self, self.isEnabled else { return }
+            guard let self, isEnabled else {
+                return
+            }
             Task { @MainActor in
                 await self.engine?.schedulePendingChanges()
             }
@@ -168,7 +178,7 @@ class CloudSyncService: ObservableObject {
     }
 }
 
-// MARK: - SyncStatus
+// MARK: CloudSyncService.SyncStatus
 
 extension CloudSyncService {
     enum SyncStatus: Equatable {
@@ -183,8 +193,8 @@ extension CloudSyncService {
             switch self {
             case .disabled: "Disabled"
             case .upToDate: "Up to date"
-            case .syncing(let detail): detail
-            case .error(let message): message
+            case let .syncing(detail): detail
+            case let .error(message): message
             }
         }
 
@@ -198,8 +208,21 @@ extension CloudSyncService {
         }
 
         var isError: Bool {
-            if case .error = self { return true }
+            if case .error = self {
+                return true
+            }
             return false
         }
+
+        var isSyncing: Bool {
+            if case .syncing = self {
+                return true
+            }
+            return false
+        }
+    }
+
+    var isSyncing: Bool {
+        syncStatus.isSyncing
     }
 }
