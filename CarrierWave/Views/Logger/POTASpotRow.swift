@@ -9,6 +9,7 @@ struct POTASpotRow: View {
 
     let spot: POTASpot
     let userCallsign: String?
+    var friendCallsigns: Set<String> = []
     var workedResult: WorkedBeforeResult = .notWorked
     let onTap: () -> Void
 
@@ -52,6 +53,17 @@ struct POTASpotRow: View {
 
     private var isDupe: Bool {
         workedResult.isDupe(on: spotBand)
+    }
+
+    private var isFriend: Bool {
+        friendCallsigns.contains(spot.activator.uppercased())
+    }
+
+    private var isSelf: Bool {
+        if let userCallsign {
+            return spot.isSelfSpot(userCallsign: userCallsign)
+        }
+        return false
     }
 
     private var parkDisplayText: String {
@@ -113,13 +125,21 @@ struct POTASpotRow: View {
                 .foregroundStyle(spot.isHumanSpot ? .primary : .secondary)
                 .strikethrough(isDupe)
 
-            if let userCallsign, spot.isSelfSpot(userCallsign: userCallsign) {
+            if isSelf {
                 Text("SELF")
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
                     .background(Color.indigo)
+                    .clipShape(Capsule())
+            } else if isFriend {
+                Text("FRIEND")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Color.green)
                     .clipShape(Capsule())
             }
 

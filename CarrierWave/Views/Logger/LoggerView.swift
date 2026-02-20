@@ -225,6 +225,9 @@ struct LoggerView: View {
                 if sessionManager == nil {
                     sessionManager = LoggingSessionManager(modelContext: modelContext)
                 }
+                sessionManager?.friendCallsigns = Set(
+                    acceptedFriends.map { $0.friendCallsign.uppercased() }
+                )
                 // Load session QSOs after session manager is ready
                 refreshSessionQSOs()
                 refreshActiveSessions()
@@ -976,6 +979,9 @@ struct LoggerView: View {
     }
 
     // MARK: Private
+
+    @Query(filter: #Predicate<Friendship> { $0.statusRawValue == "accepted" })
+    private var acceptedFriends: [Friendship]
 
     @AppStorage("userLicenseClass") private var licenseClassRaw: String = LicenseClass.extra
         .rawValue

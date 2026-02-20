@@ -11,6 +11,7 @@ struct ActivityLogSpotRow: View {
     let spot: EnrichedSpot
     let workedResult: WorkedBeforeResult
     let huntedBehavior: HuntedSpotBehavior
+    var isFriend: Bool = false
     let onTap: () -> Void
 
     var body: some View {
@@ -78,6 +79,16 @@ struct ActivityLogSpotRow: View {
                     .padding(.vertical, 1)
                     .background(Color(.tertiarySystemFill))
                     .clipShape(RoundedRectangle(cornerRadius: 3))
+            }
+
+            if isFriend {
+                Text("FRIEND")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Color.green)
+                    .clipShape(Capsule())
             }
         }
     }

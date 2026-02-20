@@ -64,6 +64,9 @@ struct POTASpotsView: View {
 
     @Environment(\.modelContext) private var modelContext
 
+    @Query(filter: #Predicate<Friendship> { $0.statusRawValue == "accepted" })
+    private var acceptedFriends: [Friendship]
+
     @State private var allSpots: [POTASpot] = []
     @State private var isLoading = true
     @State private var errorMessage: String?
@@ -72,6 +75,10 @@ struct POTASpotsView: View {
     @State private var showFilterSheet = false
     @State private var workedBeforeCache = WorkedBeforeCache()
     @State private var workedResults: [String: WorkedBeforeResult] = [:]
+
+    private var friendCallsigns: Set<String> {
+        Set(acceptedFriends.map { $0.friendCallsign.uppercased() })
+    }
 
     private var filteredSpots: [POTASpot] {
         allSpots.filter { spot in
@@ -184,6 +191,7 @@ struct POTASpotsView: View {
                             POTASpotRow(
                                 spot: spot,
                                 userCallsign: userCallsign,
+                                friendCallsigns: friendCallsigns,
                                 workedResult: result
                             ) {
                                 onSelectSpot?(spot)

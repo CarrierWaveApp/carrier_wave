@@ -186,6 +186,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `ActivitiesClient+FriendSuggestions.swift` | Friend suggestion validation API (batch + fallback) |
 | `FriendsSyncService.swift` | Friend data synchronization and actions |
 | `FriendSuggestionActor.swift` | Background actor for counting QSOs per callsign |
+| `FriendSpotNotifier.swift` | Deduped toast + local notification when friends appear in spots |
 | `ActivitiesClient+Clubs.swift` | Club API endpoints extension |
 | `ClubsSyncService.swift` | Club data synchronization |
 | `ActivityDetector.swift` | Detect notable activities from QSOs |
@@ -434,6 +435,8 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `AsyncEquipmentStats.swift` | Observable wrapper for equipment stats with background computation |
 | `EquipmentUsageCard.swift` | Dashboard card showing top equipment, QSO magnet, combos, gathering dust |
 | `EquipmentDetailView.swift` | Sortable equipment ranking drilldown with category filtering |
+| `FriendsOnAirCard.swift` | Dashboard card showing friends in current POTA spots |
+| `FriendActivityCard.swift` | Dashboard card showing recent friend activity feed items |
 
 ## Views - Logs (`CarrierWave/Views/Logs/`)
 | File | Purpose |

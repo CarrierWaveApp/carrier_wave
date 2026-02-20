@@ -173,6 +173,9 @@ extension LoggingSessionManager {
             self?.recordSpots(enrichedSpots)
         }
 
+        // Pass friend callsigns for spot notifications
+        spotMonitoringService.friendNotifier.updateFriends(friendCallsigns)
+
         spotMonitoringService.startMonitoring(
             callsign: callsign,
             myGrid: session.myGrid,

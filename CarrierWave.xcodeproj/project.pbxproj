@@ -131,15 +131,11 @@
 		};
 		CF8DD1BF2F2098950021A936 /* CarrierWaveTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = CarrierWaveTests;
 			sourceTree = "<group>";
 		};
 		CF8DD1C92F2098950021A936 /* CarrierWaveUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = CarrierWaveUITests;
 			sourceTree = "<group>";
 		};
@@ -205,7 +201,6 @@
 				C41509B70794FC42EA5ABD9A /* ActivationProgressRing.swift */,
 				A92675B1B784ABC0EA3FA356 /* QuickStartView.swift */,
 			);
-			name = Views;
 			path = Views;
 			sourceTree = "<group>";
 		};
@@ -215,7 +210,6 @@
 				E710C1E17ED46AEC55D07BBA /* SharedDataReader.swift */,
 				40E17F05E31D95F0EB73D688 /* WatchSessionDelegate.swift */,
 			);
-			name = Services;
 			path = Services;
 			sourceTree = "<group>";
 		};
@@ -237,7 +231,6 @@
 				F164D6AB25C3BDE8E9D06A48 /* Assets.xcassets */,
 				D1E133306A7B699188A463B1 /* CarrierWaveWatch.entitlements */,
 			);
-			name = CarrierWaveWatch;
 			path = CarrierWaveWatch;
 			sourceTree = "<group>";
 		};

@@ -86,12 +86,19 @@ struct ActivityLogSpotsList: View {
 
     private static let visibleLimit = 50
 
+    @Query(filter: #Predicate<Friendship> { $0.statusRawValue == "accepted" })
+    private var acceptedFriends: [Friendship]
+
     @State private var selectedSpot: EnrichedSpot?
     @State private var workedResults: [String: WorkedBeforeResult] = [:]
     @State private var sortOrder: SpotSortOrder = .recent
     @State private var showAll = false
     @State private var dupeConfirmSpot: EnrichedSpot?
     @State private var showDupeAlert = false
+
+    private var friendCallsigns: Set<String> {
+        Set(acceptedFriends.map { $0.friendCallsign.uppercased() })
+    }
 
     private var filteredSpots: [EnrichedSpot] {
         filters.apply(
@@ -238,6 +245,7 @@ struct ActivityLogSpotsList: View {
                 workedResult: workedResults[spot.spot.callsign.uppercased()]
                     ?? .notWorked,
                 huntedBehavior: huntedBehavior,
+                isFriend: friendCallsigns.contains(spot.spot.callsign.uppercased()),
                 onTap: { handleSpotTap(spot) }
             )
 

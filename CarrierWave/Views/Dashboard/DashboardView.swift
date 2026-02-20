@@ -100,6 +100,8 @@ struct DashboardView: View {
                             VStack(spacing: 16) {
                                 activityCard
                                 activityLogCard
+                                friendsOnAirCard
+                                friendActivityCard
                                 conditionsCard
                             }
                             VStack(spacing: 16) {
@@ -111,6 +113,8 @@ struct DashboardView: View {
                     } else {
                         activityCard
                         activityLogCard
+                        friendsOnAirCard
+                        friendActivityCard
                         streaksCard
                         summaryCard
                         favoritesCard

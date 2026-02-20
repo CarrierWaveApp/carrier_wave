@@ -101,6 +101,9 @@ struct ActivityLogView: View {
             await workedBeforeCache.loadToday(
                 container: modelContext.container
             )
+            spotMonitor.friendNotifier.updateFriends(
+                Set(acceptedFriends.map { $0.friendCallsign.uppercased() })
+            )
             spotMonitor.startHunterMonitoring(
                 myGrid: manager.activeLog?.currentGrid
             )
@@ -133,6 +136,9 @@ struct ActivityLogView: View {
     @State private var currentMode = "CW"
     @State private var currentFrequency: Double?
     @State private var spotFilters = SpotFilters()
+    @Query(filter: #Predicate<Friendship> { $0.statusRawValue == "accepted" })
+    private var acceptedFriends: [Friendship]
+
     @State private var spotMonitor = SpotMonitoringService()
     @State private var workedBeforeCache = WorkedBeforeCache()
     @State private var workedCacheVersion = 0

@@ -36,6 +36,14 @@ struct ActivitiesSettingsView: View {
             }
 
             Section {
+                Toggle("Friend spot alerts", isOn: $friendSpotNotifications)
+            } header: {
+                Text("Notifications")
+            } footer: {
+                Text("Show alerts when friends appear in POTA or RBN spots.")
+            }
+
+            Section {
                 ForEach(sources) { source in
                     if source.isOfficial {
                         sourceRow(source)
@@ -130,6 +138,7 @@ struct ActivitiesSettingsView: View {
 
     @AppStorage("loggerDefaultCallsign") private var stationCallsign = ""
     @AppStorage("activitiesServerEnabled") private var activitiesEnabled = false
+    @AppStorage("friendSpotNotificationsEnabled") private var friendSpotNotifications = true
 
     @Query(sort: \ChallengeSource.name) private var sources: [ChallengeSource]
 

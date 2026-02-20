@@ -30,6 +30,9 @@ final class SpotMonitoringService {
     /// Callback fired when new enriched spots are received (for persistence)
     var onSpotsReceived: (([EnrichedSpot]) -> Void)?
 
+    /// Friend spot notifier — fires toasts and local notifications for friend spots
+    let friendNotifier = FriendSpotNotifier()
+
     /// Whether in hunter mode (fetches ALL spots, not just self-spots)
     private(set) var isHunterMode = false
 
@@ -203,6 +206,9 @@ final class SpotMonitoringService {
         summary = buildSummary(from: enriched)
         lastError = nil
 
+        // Check for friend spots
+        friendNotifier.checkSpots(enriched)
+
         // Notify listener for persistence
         onSpotsReceived?(enriched)
     }
@@ -320,6 +326,9 @@ final class SpotMonitoringService {
             // Build summary
             summary = buildSummary(from: enrichedSpots)
             lastError = nil
+
+            // Check for friend spots
+            friendNotifier.checkSpots(enrichedSpots)
 
             // Notify listener for persistence
             onSpotsReceived?(enrichedSpots)

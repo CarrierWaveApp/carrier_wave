@@ -47,6 +47,9 @@ final class LoggingSessionManager {
     /// Service for monitoring RBN/POTA spots during session
     let spotMonitoringService = SpotMonitoringService()
 
+    /// Friend callsigns for spot notifications — set by the hosting view
+    var friendCallsigns: Set<String> = []
+
     /// WebSDR recording session (optional, user-initiated)
     let webSDRSession = WebSDRSession()
 

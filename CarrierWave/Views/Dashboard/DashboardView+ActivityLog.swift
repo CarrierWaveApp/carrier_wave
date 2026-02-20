@@ -66,4 +66,12 @@ extension DashboardView {
     var conditionsCard: some View {
         ConditionsCard(tourState: tourState)
     }
+
+    var friendsOnAirCard: some View {
+        FriendsOnAirCard()
+    }
+
+    var friendActivityCard: some View {
+        FriendActivityCard()
+    }
 }

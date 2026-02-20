@@ -4,6 +4,13 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Add FRIEND badge on POTA spot rows, RBN spot rows, and hunter log spot rows for accepted friends
+- Add "Friends On Air" dashboard card showing friends active in POTA spots
+- Add "Friend Activity" dashboard card showing recent friend feed items
+- Add friend spot notifications (toast + local notification) when friends appear in spots during monitoring
+- Add friend spot notification toggle in Activities settings
+
 ### Changed
 - Rename "Activity Log" to "Hunter Log" across all user-facing strings
 - Replace distance-based proximity radius spot filter with region-based multiselect (US, Canada, Europe, Asia, etc.)

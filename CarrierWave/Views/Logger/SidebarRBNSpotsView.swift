@@ -1,4 +1,5 @@
 import CarrierWaveCore
+import SwiftData
 import SwiftUI
 
 // MARK: - SidebarRBNSpotsView
@@ -44,6 +45,9 @@ struct SidebarRBNSpotsView: View {
 
     // MARK: Private
 
+    @Query(filter: #Predicate<Friendship> { $0.statusRawValue == "accepted" })
+    private var acceptedFriends: [Friendship]
+
     @State private var spots: [UnifiedSpot] = []
     @State private var isLoading = true
     @State private var errorMessage: String?
@@ -54,6 +58,10 @@ struct SidebarRBNSpotsView: View {
         rbnClient: RBNClient(),
         potaClient: POTAClient(authService: POTAAuthService())
     )
+
+    private var friendCallsigns: Set<String> {
+        Set(acceptedFriends.map { $0.friendCallsign.uppercased() })
+    }
 
     private var hasMappableSpots: Bool {
         spots.contains { $0.spotterGrid != nil }
@@ -189,6 +197,14 @@ struct SidebarRBNSpotsView: View {
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
                     .background(Color.indigo)
+                    .clipShape(Capsule())
+            } else if friendCallsigns.contains(spot.callsign.uppercased()) {
+                Text("FRIEND")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Color.green)
                     .clipShape(Capsule())
             }
 
