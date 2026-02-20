@@ -1,5 +1,6 @@
 // swiftlint:disable cyclomatic_complexity
 import CarrierWaveCore
+import CoreLocation
 import SwiftUI
 
 // MARK: - LoggerCallsignCard
@@ -10,6 +11,7 @@ struct LoggerCallsignCard: View {
 
     let info: CallsignInfo
     var previousQSOCount: Int = 0
+    var myGrid: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -31,7 +33,7 @@ struct LoggerCallsignCard: View {
 
                 Spacer()
 
-                if let flag = countryFlag(for: info) {
+                if let flag = CallsignFlagHelper.countryFlag(for: info.callsign) {
                     Text(flag)
                         .font(.largeTitle)
                 }
@@ -57,7 +59,34 @@ struct LoggerCallsignCard: View {
     @AppStorage("callsignNotesDisplayMode") private var notesDisplayMode = "emoji"
 
     private var hasDetails: Bool {
-        info.grid != nil || info.state != nil || info.country != nil || previousQSOCount > 0
+        info.qth != nil || info.grid != nil || info.state != nil || info.country != nil
+            || previousQSOCount > 0 || distanceKm != nil
+    }
+
+    /// Distance in km from user's grid to station's grid
+    private var distanceKm: Double? {
+        guard let myGrid, !myGrid.isEmpty,
+              let theirGrid = info.grid, !theirGrid.isEmpty,
+              let myCoord = MaidenheadConverter.coordinate(from: myGrid),
+              let theirCoord = MaidenheadConverter.coordinate(from: theirGrid)
+        else {
+            return nil
+        }
+        let myLoc = CLLocation(latitude: myCoord.latitude, longitude: myCoord.longitude)
+        let theirLoc = CLLocation(latitude: theirCoord.latitude, longitude: theirCoord.longitude)
+        return myLoc.distance(from: theirLoc) / 1_000.0
+    }
+
+    /// Bearing in degrees from user's grid to station's grid
+    private var bearingDegrees: Double? {
+        guard let myGrid, !myGrid.isEmpty,
+              let theirGrid = info.grid, !theirGrid.isEmpty,
+              let myCoord = MaidenheadConverter.coordinate(from: myGrid),
+              let theirCoord = MaidenheadConverter.coordinate(from: theirGrid)
+        else {
+            return nil
+        }
+        return Self.bearing(from: myCoord, to: theirCoord)
     }
 
     private var sourceLabel: String {
@@ -97,21 +126,46 @@ struct LoggerCallsignCard: View {
     }
 
     private var detailChips: some View {
-        HStack(spacing: 8) {
-            if let state = info.state {
-                DetailChip(text: state)
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 8) {
+                if let qth = info.qth {
+                    DetailChip(text: qth)
+                }
+
+                if let state = info.state {
+                    DetailChip(text: state)
+                }
+
+                if let grid = info.grid {
+                    DetailChip(text: grid)
+                }
+
+                if let country = info.country {
+                    DetailChip(text: country)
+                }
             }
 
-            if let grid = info.grid {
-                DetailChip(text: grid)
-            }
+            if distanceKm != nil || previousQSOCount > 0 {
+                HStack(spacing: 8) {
+                    if let km = distanceKm {
+                        DetailChip(
+                            text: UnitFormatter.distance(km),
+                            icon: "arrow.triangle.swap"
+                        )
+                    }
 
-            if let country = info.country {
-                DetailChip(text: country)
-            }
+                    if let deg = bearingDegrees {
+                        DetailChip(
+                            text: "\(Int(deg.rounded()))\u{00B0}",
+                            icon: "location.north.fill",
+                            iconRotation: deg
+                        )
+                    }
 
-            if previousQSOCount > 0 {
-                ContactCountBadge(count: previousQSOCount, showLabel: true)
+                    if previousQSOCount > 0 {
+                        ContactCountBadge(count: previousQSOCount, showLabel: true)
+                    }
+                }
             }
         }
     }
@@ -144,50 +198,18 @@ struct LoggerCallsignCard: View {
         .padding(.top, 4)
     }
 
-    private func countryFlag(for info: CallsignInfo) -> String? {
-        // Try to determine country from callsign prefix
-        let callsign = info.callsign.uppercased()
-
-        // Common prefixes to flags
-        if callsign.hasPrefix("W") || callsign.hasPrefix("K") || callsign.hasPrefix("N")
-            || callsign.hasPrefix("A")
-        {
-            return "🇺🇸"
-        } else if callsign.hasPrefix("VE") || callsign.hasPrefix("VA") {
-            return "🇨🇦"
-        } else if callsign.hasPrefix("G") || callsign.hasPrefix("M") {
-            return "🇬🇧"
-        } else if callsign.hasPrefix("DL") || callsign.hasPrefix("DA") || callsign.hasPrefix("DB")
-            || callsign.hasPrefix("DC")
-        {
-            return "🇩🇪"
-        } else if callsign.hasPrefix("F") {
-            return "🇫🇷"
-        } else if callsign.hasPrefix("JA") || callsign.hasPrefix("JH") || callsign.hasPrefix("JR") {
-            return "🇯🇵"
-        } else if callsign.hasPrefix("VK") {
-            return "🇦🇺"
-        } else if callsign.hasPrefix("ZL") {
-            return "🇳🇿"
-        } else if callsign.hasPrefix("EA") {
-            return "🇪🇸"
-        } else if callsign.hasPrefix("I") {
-            return "🇮🇹"
-        } else if callsign.hasPrefix("PA") || callsign.hasPrefix("PD") || callsign.hasPrefix("PE") {
-            return "🇳🇱"
-        } else if callsign.hasPrefix("ON") {
-            return "🇧🇪"
-        } else if callsign.hasPrefix("OZ") {
-            return "🇩🇰"
-        } else if callsign.hasPrefix("SM") || callsign.hasPrefix("SA") {
-            return "🇸🇪"
-        } else if callsign.hasPrefix("LA") {
-            return "🇳🇴"
-        } else if callsign.hasPrefix("OH") {
-            return "🇫🇮"
-        }
-
-        return nil
+    /// Great-circle initial bearing between two coordinates
+    private static func bearing(
+        from: CLLocationCoordinate2D,
+        to: CLLocationCoordinate2D
+    ) -> Double {
+        let lat1 = from.latitude * .pi / 180
+        let lat2 = to.latitude * .pi / 180
+        let dLon = (to.longitude - from.longitude) * .pi / 180
+        let y = sin(dLon) * cos(lat2)
+        let x = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(dLon)
+        let radians = atan2(y, x)
+        return (radians * 180 / .pi + 360).truncatingRemainder(dividingBy: 360)
     }
 }
 
@@ -195,14 +217,23 @@ struct LoggerCallsignCard: View {
 
 struct DetailChip: View {
     let text: String
+    var icon: String?
+    var iconRotation: Double = 0
 
     var body: some View {
-        Text(text)
-            .font(.caption)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(Color(.tertiarySystemGroupedBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 6))
+        HStack(spacing: 4) {
+            if let icon {
+                Image(systemName: icon)
+                    .font(.caption2)
+                    .rotationEffect(.degrees(iconRotation))
+            }
+            Text(text)
+        }
+        .font(.caption)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(Color(.tertiarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 6))
     }
 }
 
@@ -210,8 +241,6 @@ struct DetailChip: View {
 
 /// A compact single-line callsign info display for use above the keyboard
 struct CompactCallsignBar: View {
-    // MARK: Internal
-
     let info: CallsignInfo
 
     var body: some View {
@@ -247,7 +276,7 @@ struct CompactCallsignBar: View {
 
             Spacer()
 
-            if let flag = countryFlag(for: info) {
+            if let flag = CallsignFlagHelper.countryFlag(for: info.callsign) {
                 Text(flag)
                     .font(.body)
             }
@@ -255,36 +284,6 @@ struct CompactCallsignBar: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
         .background(Color(.secondarySystemBackground))
-    }
-
-    // MARK: Private
-
-    private func countryFlag(for info: CallsignInfo) -> String? {
-        let callsign = info.callsign.uppercased()
-
-        if callsign.hasPrefix("W") || callsign.hasPrefix("K") || callsign.hasPrefix("N")
-            || callsign.hasPrefix("A")
-        {
-            return "🇺🇸"
-        } else if callsign.hasPrefix("VE") || callsign.hasPrefix("VA") {
-            return "🇨🇦"
-        } else if callsign.hasPrefix("G") || callsign.hasPrefix("M") {
-            return "🇬🇧"
-        } else if callsign.hasPrefix("DL") || callsign.hasPrefix("DA") || callsign.hasPrefix("DB")
-            || callsign.hasPrefix("DC")
-        {
-            return "🇩🇪"
-        } else if callsign.hasPrefix("F") {
-            return "🇫🇷"
-        } else if callsign.hasPrefix("JA") || callsign.hasPrefix("JH") || callsign.hasPrefix("JR") {
-            return "🇯🇵"
-        } else if callsign.hasPrefix("VK") {
-            return "🇦🇺"
-        } else if callsign.hasPrefix("ZL") {
-            return "🇳🇿"
-        }
-
-        return nil
     }
 }
 
@@ -413,6 +412,52 @@ struct CompactLookupErrorBar: View {
     }
 }
 
+// MARK: - CallsignFlagHelper
+
+/// Shared country flag lookup from callsign prefix
+enum CallsignFlagHelper {
+    // swiftlint:disable:next cyclomatic_complexity
+    static func countryFlag(for callsign: String) -> String? {
+        let cs = callsign.uppercased()
+        if cs.hasPrefix("W") || cs.hasPrefix("K") || cs.hasPrefix("N") || cs.hasPrefix("A") {
+            return "🇺🇸"
+        } else if cs.hasPrefix("VE") || cs.hasPrefix("VA") {
+            return "🇨🇦"
+        } else if cs.hasPrefix("G") || cs.hasPrefix("M") {
+            return "🇬🇧"
+        } else if cs.hasPrefix("DL") || cs.hasPrefix("DA") || cs.hasPrefix("DB")
+            || cs.hasPrefix("DC")
+        {
+            return "🇩🇪"
+        } else if cs.hasPrefix("F") {
+            return "🇫🇷"
+        } else if cs.hasPrefix("JA") || cs.hasPrefix("JH") || cs.hasPrefix("JR") {
+            return "🇯🇵"
+        } else if cs.hasPrefix("VK") {
+            return "🇦🇺"
+        } else if cs.hasPrefix("ZL") {
+            return "🇳🇿"
+        } else if cs.hasPrefix("EA") {
+            return "🇪🇸"
+        } else if cs.hasPrefix("I") {
+            return "🇮🇹"
+        } else if cs.hasPrefix("PA") || cs.hasPrefix("PD") || cs.hasPrefix("PE") {
+            return "🇳🇱"
+        } else if cs.hasPrefix("ON") {
+            return "🇧🇪"
+        } else if cs.hasPrefix("OZ") {
+            return "🇩🇰"
+        } else if cs.hasPrefix("SM") || cs.hasPrefix("SA") {
+            return "🇸🇪"
+        } else if cs.hasPrefix("LA") {
+            return "🇳🇴"
+        } else if cs.hasPrefix("OH") {
+            return "🇫🇮"
+        }
+        return nil
+    }
+}
+
 // MARK: - Preview
 
 #Preview {
@@ -423,11 +468,13 @@ struct CompactLookupErrorBar: View {
                 name: "ARRL Headquarters Station",
                 note: "Official ARRL station - always great to work!",
                 emoji: "🏛️",
+                qth: "Newington",
                 state: "CT",
                 country: "United States",
                 grid: "FN31pr",
                 source: .poloNotes
-            )
+            ),
+            myGrid: "CN87"
         )
 
         LoggerCallsignCard(
@@ -436,10 +483,12 @@ struct CompactLookupErrorBar: View {
                 name: "Hans Mueller",
                 note: nil,
                 emoji: nil,
+                qth: "Berlin",
                 country: "Germany",
                 grid: "JO31",
                 source: .qrz
-            )
+            ),
+            myGrid: "CN87"
         )
 
         CallsignLookupErrorBanner(error: .noQRZApiKey)

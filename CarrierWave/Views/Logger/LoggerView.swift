@@ -349,13 +349,18 @@ struct LoggerView: View {
     @ViewBuilder
     var callsignLookupDisplay: some View {
         if let info = lookupResult, !callsignFieldFocused || callsignInput.isEmpty {
-            LoggerCallsignCard(info: info, previousQSOCount: previousQSOCount)
-                .transition(
-                    .asymmetric(
-                        insertion: .move(edge: .top).combined(with: .opacity),
-                        removal: .opacity
-                    )
+            LoggerCallsignCard(
+                info: info,
+                previousQSOCount: previousQSOCount,
+                myGrid: sessionManager?.activeSession?.myGrid
+                    ?? UserDefaults.standard.string(forKey: "loggerDefaultGrid")
+            )
+            .transition(
+                .asymmetric(
+                    insertion: .move(edge: .top).combined(with: .opacity),
+                    removal: .opacity
                 )
+            )
         } else if let error = lookupError, shouldShowLookupError {
             CallsignLookupErrorBanner(error: error)
                 .transition(

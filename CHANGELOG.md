@@ -5,6 +5,7 @@ All notable changes to Carrier Wave will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Add city, distance, and bearing to logger callsign lookup card (distance uses configured units, bearing shown with compass arrow)
 - Apple Watch companion app with idle mode (solar conditions, spots, stats) and active session view (QSO count, activation progress ring, callsign display)
 - WatchConnectivity for real-time session updates between iPhone and Watch
 - Quick session start from Watch using last-used defaults
