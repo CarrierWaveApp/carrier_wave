@@ -15,6 +15,10 @@ All notable changes to Carrier Wave will be documented in this file.
 - Add friend spot notification toggle in Activities settings
 
 ### Fixed
+- Convert all user-facing QSO deletions to soft-delete (swipe-delete, clear QRZ/LoFi data, delete callsign alias QSOs) to prevent data loss
+- Hide orphaned QSOs when CloudKit inbound sync deletes a logging session
+- Replace full table scan in CloudKit dedup merge with targeted callsign+band+timestamp window fetch
+- Fix clearQRZData and clearLoFiData performing full table scan instead of predicated fetch
 - Fix doubled QSO/QSL counts on dashboard caused by SwiftData returning duplicate records when CloudKit metadata tables exist in store
 - Disable SwiftData's built-in CloudKit sync (cloudKitDatabase: .none) since app uses CKSyncEngine directly
 - Fix doubled QSO counts on dashboard service cards for POTA two-fer activations (count unique QSOs, not ServicePresence records)

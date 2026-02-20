@@ -259,10 +259,12 @@ struct LogsListContentView: View {
         cachedFilteredQSOs.removeAll { idsToRemove.contains($0.id) }
         qsos.removeAll { idsToRemove.contains($0.id) }
 
-        // Now delete from model context
+        // Soft-delete: hide instead of hard-deleting to protect against data loss
         for qso in qsosToDelete {
-            modelContext.delete(qso)
+            qso.isHidden = true
+            qso.cloudDirtyFlag = true
         }
+        try? modelContext.save()
 
         Task {
             await refreshQSOCount()

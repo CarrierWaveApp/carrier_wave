@@ -105,10 +105,25 @@ extension CloudSyncEngine {
 
     private func mergeOrCreateQSO(_ fields: QSOFields, record: CKRecord) {
         let deduplicationKey = fields.deduplicationKey
-        let allQSOs = FetchDescriptor<QSO>()
-        if let existing = (try? modelContext.fetch(allQSOs))?.first(
-            where: { $0.deduplicationKey == deduplicationKey }
-        ) {
+        let callsignUpper = fields.callsign
+            .trimmingCharacters(in: .whitespaces).uppercased()
+        let bandUpper = fields.band.uppercased()
+        let tLower = fields.timestamp.addingTimeInterval(-240)
+        let tUpper = fields.timestamp.addingTimeInterval(240)
+
+        let descriptor = FetchDescriptor<QSO>(
+            predicate: #Predicate {
+                $0.callsign == callsignUpper
+                    && $0.band == bandUpper
+                    && $0.timestamp >= tLower
+                    && $0.timestamp <= tUpper
+            }
+        )
+        if let candidates = try? modelContext.fetch(descriptor),
+           let existing = candidates.first(where: {
+               $0.deduplicationKey == deduplicationKey
+           })
+        {
             mergeInboundQSO(fields, into: existing, record: record)
         } else {
             insertNewQSO(from: fields)
@@ -389,6 +404,17 @@ extension CloudSyncEngine {
             }
 
         case CKRecordMapper.RecordType.loggingSession.rawValue:
+            // Hide QSOs associated with this session before deleting it
+            let qsoDescriptor = FetchDescriptor<QSO>(
+                predicate: #Predicate { $0.loggingSessionId == uuid }
+            )
+            if let sessionQSOs = try? modelContext.fetch(qsoDescriptor) {
+                for qso in sessionQSOs {
+                    qso.isHidden = true
+                    qso.cloudDirtyFlag = true
+                }
+            }
+
             var descriptor = FetchDescriptor<LoggingSession>(
                 predicate: #Predicate { $0.id == uuid }
             )

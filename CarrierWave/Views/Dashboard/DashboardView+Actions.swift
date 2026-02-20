@@ -203,11 +203,14 @@ extension DashboardView {
         defer { isSyncing = false }
 
         do {
-            let descriptor = FetchDescriptor<QSO>()
-            let allQSOs = try modelContext.fetch(descriptor)
-            let qrzQSOs = allQSOs.filter { $0.importSource == .qrz }
+            let qrzRaw = ImportSource.qrz.rawValue
+            let descriptor = FetchDescriptor<QSO>(
+                predicate: #Predicate { $0.importSourceRawValue == qrzRaw && !$0.isHidden }
+            )
+            let qrzQSOs = try modelContext.fetch(descriptor)
             for qso in qrzQSOs {
-                modelContext.delete(qso)
+                qso.isHidden = true
+                qso.cloudDirtyFlag = true
             }
             try modelContext.save()
         } catch {
@@ -220,11 +223,14 @@ extension DashboardView {
         defer { isSyncing = false }
 
         do {
-            let descriptor = FetchDescriptor<QSO>()
-            let allQSOs = try modelContext.fetch(descriptor)
-            let lofiQSOs = allQSOs.filter { $0.importSource == .lofi }
+            let lofiRaw = ImportSource.lofi.rawValue
+            let descriptor = FetchDescriptor<QSO>(
+                predicate: #Predicate { $0.importSourceRawValue == lofiRaw && !$0.isHidden }
+            )
+            let lofiQSOs = try modelContext.fetch(descriptor)
             for qso in lofiQSOs {
-                modelContext.delete(qso)
+                qso.isHidden = true
+                qso.cloudDirtyFlag = true
             }
             try modelContext.save()
 

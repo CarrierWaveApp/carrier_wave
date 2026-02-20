@@ -273,10 +273,11 @@ struct CallsignAliasesSettingsView: View {
                 break
             }
 
-            // Filter and delete matching QSOs
+            // Filter and soft-delete matching QSOs
             let matchingQSOs = batch.filter { $0.myCallsign.uppercased() == upperCallsign }
             for qso in matchingQSOs {
-                modelContext.delete(qso)
+                qso.isHidden = true
+                qso.cloudDirtyFlag = true
                 deletedCount += 1
             }
 
@@ -287,7 +288,7 @@ struct CallsignAliasesSettingsView: View {
         do {
             try modelContext.save()
             SyncDebugLog.shared.info(
-                "Deleted \(deletedCount) QSOs from callsign \(callsign)",
+                "Hid \(deletedCount) QSOs from callsign \(callsign)",
                 service: nil
             )
 
