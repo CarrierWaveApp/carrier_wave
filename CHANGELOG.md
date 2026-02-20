@@ -11,6 +11,13 @@ All notable changes to Carrier Wave will be documented in this file.
 - Add friend spot notifications (toast + local notification) when friends appear in spots during monitoring
 - Add friend spot notification toggle in Activities settings
 
+### Fixed
+- Fix Live Activity showing stale QSO count after deleting QSOs from active session
+- Fix QSO deletion not decrementing session QSO count or updating widget
+- Fix QSY spot prompt not appearing when changing frequency via band or mode edit sheets (SwiftUI alert swallowed by simultaneous sheet dismissal)
+- Fix mode edit sheet never prompting for QSY spot (return value was discarded)
+- Gate first-frequency-set auto-spot on potaAutoSpotEnabled setting (previously spotted unconditionally)
+
 ### Changed
 - Rename "Activity Log" to "Hunter Log" across all user-facing strings
 - Replace distance-based proximity radius spot filter with region-based multiselect (US, Canada, Europe, Asia, etc.)

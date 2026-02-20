@@ -152,46 +152,70 @@ struct LoggerView: View {
                 )
                 .landscapeAdaptiveDetents(portrait: [.medium, .large])
             }
-            .sheet(isPresented: $showBandEditSheet) {
-                SessionBandEditSheet(
-                    currentFrequency: sessionManager?.activeSession?.frequency,
-                    currentMode: sessionManager?.activeSession?.mode ?? "CW",
-                    onSelectFrequency: { freq in
-                        let result = sessionManager?.updateFrequency(freq)
-                        if result?.isFirstFrequencySet == true {
-                            let band = LoggingSession.bandForFrequency(freq)
-                            ToastManager.shared.success(
-                                "Frequency set to \(FrequencyFormatter.formatWithUnit(freq)) (\(band))"
-                            )
-                        }
-                        if autoModeSwitch, let suggestedMode = result?.suggestedMode {
-                            _ = sessionManager?.updateMode(suggestedMode)
-                        }
-                        if result?.shouldPromptForSpot == true {
-                            qsyNewFrequency = freq
-                            showQSYSpotConfirmation = true
-                        }
-                        showBandEditSheet = false
-                    },
-                    onCancel: {
-                        showBandEditSheet = false
+            .sheet(
+                isPresented: $showBandEditSheet,
+                onDismiss: {
+                    // Defer QSY prompt until after sheet fully dismisses
+                    // (SwiftUI swallows alerts presented during sheet dismissal)
+                    if let freq = pendingQSYFrequency {
+                        pendingQSYFrequency = nil
+                        qsyNewFrequency = freq
+                        showQSYSpotConfirmation = true
                     }
-                )
-                .landscapeAdaptiveDetents(portrait: [.medium, .large])
-            }
-            .sheet(isPresented: $showModeEditSheet) {
-                SessionModeEditSheet(
-                    currentMode: sessionManager?.activeSession?.mode ?? "CW",
-                    onSelectMode: { newMode in
-                        _ = sessionManager?.updateMode(newMode)
-                        showModeEditSheet = false
-                    },
-                    onCancel: {
-                        showModeEditSheet = false
+                },
+                content: {
+                    SessionBandEditSheet(
+                        currentFrequency: sessionManager?.activeSession?.frequency,
+                        currentMode: sessionManager?.activeSession?.mode ?? "CW",
+                        onSelectFrequency: { freq in
+                            let result = sessionManager?.updateFrequency(freq)
+                            if result?.isFirstFrequencySet == true {
+                                let band = LoggingSession.bandForFrequency(freq)
+                                ToastManager.shared.success(
+                                    "Frequency set to \(FrequencyFormatter.formatWithUnit(freq)) (\(band))"
+                                )
+                            }
+                            if autoModeSwitch, let suggestedMode = result?.suggestedMode {
+                                _ = sessionManager?.updateMode(suggestedMode)
+                            }
+                            if result?.shouldPromptForSpot == true {
+                                pendingQSYFrequency = freq
+                            }
+                            showBandEditSheet = false
+                        },
+                        onCancel: {
+                            showBandEditSheet = false
+                        }
+                    )
+                    .landscapeAdaptiveDetents(portrait: [.medium, .large])
+                }
+            )
+            .sheet(
+                isPresented: $showModeEditSheet,
+                onDismiss: {
+                    if let freq = pendingQSYFrequency {
+                        pendingQSYFrequency = nil
+                        qsyNewFrequency = freq
+                        showQSYSpotConfirmation = true
                     }
-                )
-                .landscapeAdaptiveDetents(portrait: [.height(280)])
-            }
+                },
+                content: {
+                    SessionModeEditSheet(
+                        currentMode: sessionManager?.activeSession?.mode ?? "CW",
+                        onSelectMode: { newMode in
+                            let shouldPrompt = sessionManager?.updateMode(newMode) ?? false
+                            if shouldPrompt {
+                                pendingQSYFrequency = sessionManager?.activeSession?.frequency
+                            }
+                            showModeEditSheet = false
+                        },
+                        onCancel: {
+                            showModeEditSheet = false
+                        }
+                    )
+                    .landscapeAdaptiveDetents(portrait: [.height(280)])
+                }
+            )
             .sheet(isPresented: $showRigEditSheet) {
                 SessionEquipmentEditSheet(
                     radio: Binding(
@@ -814,7 +838,10 @@ struct LoggerView: View {
                                     utcDayQSOs: utcDayQSOs,
                                     isPOTASession: sessionManager?.activeSession?
                                         .activationType == .pota,
-                                    onQSODeleted: refreshSessionQSOs,
+                                    onQSODeleted: { deletedQSO in
+                                        sessionManager?.hideQSO(deletedQSO)
+                                        refreshSessionQSOs()
+                                    },
                                     onEditCallsign: { qsoToEdit in
                                         startEditingCallsign(qsoToEdit)
                                     }
@@ -861,8 +888,7 @@ struct LoggerView: View {
             ) {
                 Button("Delete", role: .destructive) {
                     if let qso = qsoToDelete {
-                        qso.isHidden = true
-                        try? modelContext.save()
+                        sessionManager?.hideQSO(qso)
                         refreshSessionQSOs()
                     }
                     qsoToDelete = nil
@@ -1071,6 +1097,8 @@ struct LoggerView: View {
     // QSY spot confirmation
     @State private var showQSYSpotConfirmation = false
     @State private var qsyNewFrequency: Double?
+    /// Deferred QSY prompt: stored when a sheet dismissal would swallow the alert
+    @State private var pendingQSYFrequency: Double?
 
     /// POTA spot tracking - stores session frequency before tuning to a spot
     @State private var preSpotFrequency: Double?
@@ -2725,7 +2753,7 @@ struct LoggerQSORow: View {
     /// Whether this is a POTA session
     var isPOTASession: Bool = false
     /// Callback when QSO is deleted (hidden)
-    var onQSODeleted: (() -> Void)?
+    var onQSODeleted: ((QSO) -> Void)?
     /// Callback when callsign is tapped for quick edit
     var onEditCallsign: ((QSO) -> Void)?
 
@@ -2737,7 +2765,7 @@ struct LoggerQSORow: View {
         }
         .buttonStyle(.plain)
         .sheet(isPresented: $showEditSheet) {
-            QSOEditSheet(qso: qso, onDelete: onQSODeleted)
+            QSOEditSheet(qso: qso, onDelete: { onQSODeleted?(qso) })
         }
         .onAppear {
             // Use QSO's stored data if available (from pre-fetch during logging)
@@ -3207,8 +3235,6 @@ struct QSOEditSheet: View {
     }
 
     private func hideQSO() {
-        qso.isHidden = true
-        try? modelContext.save()
         dismiss()
         onDelete?()
     }

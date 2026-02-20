@@ -420,7 +420,10 @@ final class LoggingSessionManager {
 
         // If this is the first frequency set on a POTA session, trigger an initial spot
         // Skip if tuning to a spot — don't self-spot on the hunted station's frequency
-        if isFirstSet, session.activationType == .pota, !isTuningToSpot {
+        // Only auto-spot if the user has auto-spotting enabled
+        if isFirstSet, potaAutoSpotEnabled,
+           session.activationType == .pota, !isTuningToSpot
+        {
             Task {
                 await postSpot()
             }
@@ -438,35 +441,11 @@ final class LoggingSessionManager {
                 nil
             }
 
-        // Check if this is a QSY that could be spotted
-        // Don't prompt for spot if:
-        // - QSY spots are disabled in settings
-        // - Frequency is outside amateur bands or violates license
-        // - This is the first frequency set (we already auto-spotted above)
-        // - Tuning to a spot (temporary frequency change for hunting)
-        var shouldPromptForSpot = false
-        if potaQSYSpotEnabled,
-           session.activationType == .pota,
-           !isFirstSet,
-           !isTuningToSpot,
-           oldFrequency != frequency
-        {
-            // Get user's license class
-            let licenseRaw =
-                UserDefaults.standard.string(forKey: "userLicenseClass")
-                    ?? LicenseClass.extra.rawValue
-            let license = LicenseClass(rawValue: licenseRaw) ?? .extra
-
-            // Only prompt for spot if frequency is valid for the user's license
-            let violation = BandPlanService.validate(
-                frequencyMHz: frequency,
-                mode: modeToSuggest ?? currentMode,
-                license: license
-            )
-
-            // Allow spot prompt only if no violation, or if it's just an unusual frequency warning
-            shouldPromptForSpot = violation == nil || violation?.type == .unusualFrequency
-        }
+        // Check if this QSY should prompt for a POTA spot
+        let shouldPromptForSpot =
+            potaQSYSpotEnabled && session.activationType == .pota
+                && !isFirstSet && !isTuningToSpot && oldFrequency != frequency
+                && isValidForQSYSpot(frequency: frequency, mode: modeToSuggest ?? currentMode)
 
         return FrequencyUpdateResult(
             shouldPromptForSpot: shouldPromptForSpot,
@@ -661,6 +640,15 @@ final class LoggingSessionManager {
         for presence in qso.servicePresence where presence.needsUpload {
             presence.needsUpload = false
         }
+
+        // Decrement session QSO count and update Live Activity
+        if let session = activeSession, qso.loggingSessionId == session.id {
+            session.decrementQSOCount()
+            decrementRoveStopQSOCount(for: qso)
+            updateLiveActivity()
+            writeSessionToWidget(session)
+        }
+
         try? modelContext.save()
     }
 
@@ -901,6 +889,35 @@ final class LoggingSessionManager {
             return true
         }
         return UserDefaults.standard.bool(forKey: "loggerKeepScreenOn")
+    }
+
+    /// Check if a frequency change is valid for POTA QSY spotting
+    private func isValidForQSYSpot(frequency: Double, mode: String) -> Bool {
+        let licenseRaw = UserDefaults.standard.string(forKey: "userLicenseClass")
+            ?? LicenseClass.extra.rawValue
+        let license = LicenseClass(rawValue: licenseRaw) ?? .extra
+        let violation = BandPlanService.validate(
+            frequencyMHz: frequency, mode: mode, license: license
+        )
+        return violation == nil || violation?.type == .unusualFrequency
+    }
+
+    /// Decrement the rove stop QSO count for a hidden QSO
+    private func decrementRoveStopQSOCount(for qso: QSO) {
+        guard let session = activeSession, session.isRove else {
+            return
+        }
+        let qsoPark = qso.parkReference?.uppercased()
+        var stops = session.roveStops
+        // Find the matching stop (prefer current open stop, fall back to last matching park)
+        if let index = stops.lastIndex(where: {
+            $0.parkReference.uppercased() == qsoPark && $0.endedAt == nil
+        }) ?? stops.lastIndex(where: {
+            $0.parkReference.uppercased() == qsoPark
+        }) {
+            stops[index].qsoCount = max(0, stops[index].qsoCount - 1)
+            session.roveStops = stops
+        }
     }
 
     private func writeSessionToWidget(

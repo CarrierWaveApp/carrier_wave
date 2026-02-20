@@ -141,7 +141,10 @@ extension LoggerView {
                                 utcDayQSOs: utcDayQSOs,
                                 isPOTASession: sessionManager?.activeSession?
                                     .activationType == .pota,
-                                onQSODeleted: refreshSessionQSOs,
+                                onQSODeleted: { deletedQSO in
+                                    sessionManager?.hideQSO(deletedQSO)
+                                    refreshSessionQSOs()
+                                },
                                 onEditCallsign: { qsoToEdit in
                                     startEditingCallsign(qsoToEdit)
                                 }

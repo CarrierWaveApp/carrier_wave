@@ -317,6 +317,11 @@ final class LoggingSession {
         qsoCount += 1
     }
 
+    /// Decrement QSO count (when a QSO is hidden/deleted)
+    func decrementQSOCount() {
+        qsoCount = max(0, qsoCount - 1)
+    }
+
     /// Update operating frequency
     func updateFrequency(_ freq: Double) {
         frequency = freq
