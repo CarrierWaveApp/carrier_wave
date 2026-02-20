@@ -283,6 +283,9 @@ final class LoggingSession {
         roveStops.reduce(0) { $0 + $1.qsoCount }
     }
 
+    /// Whether this record has local changes not yet synced to iCloud.
+    var cloudDirtyFlag: Bool = false
+
     /// Whether the session is currently active
     var isActive: Bool {
         status == .active

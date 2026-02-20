@@ -129,7 +129,7 @@ extension SettingsMainView {
         case .clublog:
             ClubLogSettingsView(syncService: syncService)
         case .icloud:
-            ICloudSettingsView()
+            CloudSyncSettingsView()
         case .activities:
             ActivitiesSettingsView()
         case .callsignAliases:

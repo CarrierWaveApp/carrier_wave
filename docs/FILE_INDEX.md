@@ -282,6 +282,16 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `Services/SharedDataReader.swift` | Reads shared data from App Group UserDefaults + shared Codable types |
 | `Services/WatchSessionDelegate.swift` | WCSessionDelegate for receiving session updates from iPhone |
 
+## Services - CloudSync (`CarrierWave/Services/CloudSync/`)
+
+| File | Purpose |
+|------|---------|
+| `CloudSyncService.swift` | `@MainActor` service owning CKSyncEngine, publishing sync status for UI |
+| `CloudSyncEngine.swift` | `actor` implementing `CKSyncEngineDelegate` — record mapping, conflict resolution, dedup |
+| `CKRecordMapper.swift` | Pure functions mapping QSO/ServicePresence/LoggingSession/ActivationMetadata to/from CKRecords |
+| `CloudSyncMetadata.swift` | SwiftData model tracking per-record sync state (change tags, record names) |
+| `CloudSyncConflictResolver.swift` | Conflict resolution strategies (field-level QSO merge, union ServicePresence, LWW session) |
+
 ## Services - WebSDR (`CarrierWave/Services/WebSDR/`)
 
 | File | Purpose |
@@ -558,7 +568,8 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `DataToolsSettingsView.swift` | Data management (callbook, notes, external data, export) + deduplication |
 | `AboutMeView.swift` | User profile display and editing |
 | `ServiceSettingsViews.swift` | QRZ/POTA/LoFi auth configuration |
-| `CloudSettingsViews.swift` | iCloud sync settings |
+| `CloudSettingsViews.swift` | LoFi settings (iCloud ADIF folder monitoring moved to CloudSyncSettingsView) |
+| `CloudSyncSettingsView.swift` | iCloud QSO sync toggle, status, account info, ADIF import folder |
 | `HAMRSSettingsView.swift` | HAMRS connection settings |
 | `LoTWSettingsView.swift` | LoTW login configuration |
 | `ClubLogSettingsView.swift` | Club Log connection settings (email, app password, API key) |

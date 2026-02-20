@@ -12,6 +12,7 @@
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>audio</string>
+		<string>remote-notification</string>
 	</array>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Carrier Wave uses the microphone to decode CW (Morse code) audio from your radio.</string>

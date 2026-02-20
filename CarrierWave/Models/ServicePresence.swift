@@ -45,6 +45,9 @@ final class ServicePresence {
     /// When set, allows tracking upload status per-park for multi-park activations.
     var parkReference: String?
 
+    /// Whether this record has local changes not yet synced to iCloud.
+    var cloudDirtyFlag: Bool = false
+
     var qso: QSO?
 
     /// Create a presence record for a QSO that was downloaded from a service
