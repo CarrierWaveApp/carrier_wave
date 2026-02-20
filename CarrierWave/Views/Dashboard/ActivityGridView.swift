@@ -166,11 +166,16 @@ private struct ActivityGridContent: View {
     private let monthLabelHeight: CGFloat = 14
     private let gridToLabelSpacing: CGFloat = 4
 
-    private let calendar = Calendar.current
+    private let calendar: Calendar = {
+        var cal = Calendar.current
+        cal.timeZone = TimeZone(identifier: "UTC")!
+        return cal
+    }()
 
     private let tooltipDateFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "MMM d, yyyy"
+        formatter.timeZone = TimeZone(identifier: "UTC")
         return formatter
     }()
 

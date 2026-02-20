@@ -15,6 +15,7 @@ All notable changes to Carrier Wave will be documented in this file.
 - Add friend spot notification toggle in Activities settings
 
 ### Fixed
+- Fix activity grid using local timezone for date grouping instead of UTC, causing QSO counts to disagree with Sessions view for users west of UTC
 - Convert all user-facing QSO deletions to soft-delete (swipe-delete, clear QRZ/LoFi data, delete callsign alias QSOs) to prevent data loss
 - Hide orphaned QSOs when CloudKit inbound sync deletes a logging session
 - Replace full table scan in CloudKit dedup merge with targeted callsign+band+timestamp window fetch

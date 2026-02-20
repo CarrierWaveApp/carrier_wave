@@ -23,10 +23,14 @@ extension StatsComputationActor {
 
         try Task.checkCancellation()
         // Activity by date — combined plus split by type
+        // Use UTC calendar to match session/activation grouping (which is UTC-based).
+        // Using local time causes mismatches: e.g., a QSO at 06:00 UTC Feb 18 shows as
+        // Feb 17 in PST, inflating the wrong day's count vs the Sessions view.
         var activity: [Date: Int] = [:]
         var activationActivity: [Date: Int] = [:]
         var activityLogActivity: [Date: Int] = [:]
-        let calendar = Calendar.current
+        var calendar = Calendar.current
+        calendar.timeZone = TimeZone(identifier: "UTC")!
         for qso in realQSOs {
             let dateOnly = calendar.startOfDay(for: qso.timestamp)
             activity[dateOnly, default: 0] += 1
