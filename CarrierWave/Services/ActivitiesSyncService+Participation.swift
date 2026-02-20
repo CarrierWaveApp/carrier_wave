@@ -52,12 +52,13 @@ extension ActivitiesSyncService {
             throw ActivitiesError.invalidServerURL
         }
 
-        guard let deviceToken = participation.deviceToken else {
+        // Use participation token, fall back to global auth token
+        guard let authToken = participation.deviceToken ?? resolveAuthToken() else {
             throw ActivitiesError.notParticipating
         }
 
         try await client.leaveChallenge(
-            id: definition.id, sourceURL: sourceURL, authToken: deviceToken
+            id: definition.id, sourceURL: sourceURL, authToken: authToken
         )
 
         participation.status = .left
@@ -70,9 +71,13 @@ extension ActivitiesSyncService {
     func reportProgress(_ participation: ChallengeParticipation) async throws {
         guard let definition = participation.challengeDefinition,
               let sourceURL = definition.source?.url,
-              participation.serverParticipationId != nil,
-              let deviceToken = participation.deviceToken
+              participation.serverParticipationId != nil
         else {
+            return
+        }
+
+        // Use participation token, fall back to global auth token
+        guard let authToken = participation.deviceToken ?? resolveAuthToken() else {
             return
         }
 
@@ -83,12 +88,29 @@ extension ActivitiesSyncService {
             qualifyingQsoCount: localProgress.qualifyingQSOIds.count,
             lastQsoDate: localProgress.lastUpdated
         )
-        let response = try await client.reportProgress(
-            challengeId: definition.id,
-            report: report,
-            sourceURL: sourceURL,
-            authToken: deviceToken
-        )
+
+        let response: ProgressReportData
+        do {
+            response = try await client.reportProgress(
+                challengeId: definition.id,
+                report: report,
+                sourceURL: sourceURL,
+                authToken: authToken
+            )
+        } catch ActivitiesError.invalidToken {
+            // Token is stale — try re-registering and retrying with new token
+            if let newToken = await reRegisterAndGetToken(sourceURL: sourceURL) {
+                participation.deviceToken = newToken
+                response = try await client.reportProgress(
+                    challengeId: definition.id,
+                    report: report,
+                    sourceURL: sourceURL,
+                    authToken: newToken
+                )
+            } else {
+                throw ActivitiesError.invalidToken
+            }
+        }
 
         if response.accepted {
             participation.lastSyncedAt = Date()
@@ -112,6 +134,27 @@ extension ActivitiesSyncService {
         }
 
         try modelContext.save()
+    }
+
+    /// Re-register with the server and return the new token, or nil on failure.
+    private func reRegisterAndGetToken(sourceURL: String) async -> String? {
+        let callsign = UserDefaults.standard.string(forKey: "loggerDefaultCallsign") ?? ""
+        guard !callsign.isEmpty else {
+            return nil
+        }
+
+        do {
+            let response = try await client.register(
+                callsign: callsign.uppercased(),
+                deviceName: UIDevice.current.name,
+                sourceURL: sourceURL
+            )
+            print("[ActivitiesSyncService] Re-registered after INVALID_TOKEN")
+            return response.deviceToken
+        } catch {
+            print("[ActivitiesSyncService] Re-registration failed: \(error)")
+            return nil
+        }
     }
 
     /// Sync all participations that need sync

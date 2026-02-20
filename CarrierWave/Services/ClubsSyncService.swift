@@ -25,7 +25,7 @@ final class ClubsSyncService: ObservableObject {
 
     /// Sync clubs from server
     func syncClubs(sourceURL: String) async throws {
-        guard let authToken = try? client.getAuthToken() else {
+        guard let authToken = await client.ensureAuthToken() else {
             throw ClubsSyncError.notAuthenticated
         }
 
@@ -42,7 +42,7 @@ final class ClubsSyncService: ObservableObject {
 
     /// Sync a specific club's details and members
     func syncClubDetails(clubId: UUID, sourceURL: String) async throws {
-        guard let authToken = try? client.getAuthToken() else {
+        guard let authToken = await client.ensureAuthToken() else {
             throw ClubsSyncError.notAuthenticated
         }
 

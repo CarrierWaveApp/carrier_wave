@@ -148,10 +148,9 @@ final class ActivitiesSyncService: ObservableObject {
             return
         }
 
-        // Get an auth token from any active participation
-        let activeParticipations = try fetchActiveParticipations()
-        guard let authToken = activeParticipations.compactMap(\.deviceToken).first else {
-            // No auth token available - user hasn't joined any challenges yet
+        // Use global auth token first, fall back to participation tokens
+        guard let authToken = resolveAuthToken() else {
+            // No auth token available
             return
         }
 
@@ -240,6 +239,7 @@ final class ActivitiesSyncService: ObservableObject {
     // MARK: Private
 
     /// If user opted in to community features but has no auth token, register now.
+    /// After successful registration, updates any stale participation tokens.
     private func ensureRegisteredIfEnabled() async {
         let enabled = UserDefaults.standard.bool(forKey: "activitiesServerEnabled")
         guard enabled, !client.hasAuthToken() else {
@@ -257,8 +257,53 @@ final class ActivitiesSyncService: ObservableObject {
                 deviceName: UIDevice.current.name,
                 sourceURL: "https://activities.carrierwave.app"
             )
+            // After re-registration, update stale participation tokens
+            try updateParticipationTokens()
         } catch {
             print("[ActivitiesSyncService] Auto-registration failed: \(error)")
+        }
+    }
+
+    /// Resolve the best available auth token: global keychain token first,
+    /// then fall back to a participation-stored token.
+    func resolveAuthToken() -> String? {
+        if let global = try? client.getAuthToken() {
+            return global
+        }
+        // Fall back to any participation token as last resort
+        let activeRaw = ParticipationStatus.active.rawValue
+        var descriptor = FetchDescriptor<ChallengeParticipation>(
+            predicate: #Predicate { $0.statusRawValue == activeRaw },
+            sortBy: [SortDescriptor(\.joinedAt, order: .reverse)]
+        )
+        descriptor.fetchLimit = 1
+        return (try? modelContext.fetch(descriptor))?.first?.deviceToken
+    }
+
+    /// Update all participation device tokens to match the current global auth token.
+    /// Called after re-registration to recover from stale per-participation tokens.
+    private func updateParticipationTokens() throws {
+        guard let globalToken = try? client.getAuthToken() else {
+            return
+        }
+
+        let activeRaw = ParticipationStatus.active.rawValue
+        let descriptor = FetchDescriptor<ChallengeParticipation>(
+            predicate: #Predicate { $0.statusRawValue == activeRaw }
+        )
+        let participations = try modelContext.fetch(descriptor)
+
+        var updatedCount = 0
+        for participation in participations where participation.deviceToken != globalToken {
+            participation.deviceToken = globalToken
+            updatedCount += 1
+        }
+
+        if updatedCount > 0 {
+            print(
+                "[ActivitiesSyncService] Updated \(updatedCount) stale participation tokens"
+            )
+            try modelContext.save()
         }
     }
 

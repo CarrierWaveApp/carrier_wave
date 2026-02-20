@@ -15,7 +15,7 @@ final class ActivityReporter {
 
     /// Report detected activities to the server
     func reportActivities(_ activities: [DetectedActivity], sourceURL: String) async {
-        guard let authToken = try? client.getAuthToken() else {
+        guard let authToken = await client.ensureAuthToken() else {
             // Not authenticated, skip reporting
             return
         }

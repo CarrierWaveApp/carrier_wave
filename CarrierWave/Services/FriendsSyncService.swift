@@ -25,7 +25,7 @@ final class FriendsSyncService: ObservableObject {
 
     /// Sync friends and pending requests from server
     func syncFriends(sourceURL: String) async throws {
-        guard let authToken = try? client.getAuthToken() else {
+        guard let authToken = await client.ensureAuthToken() else {
             throw FriendsSyncError.notAuthenticated
         }
 
@@ -54,7 +54,7 @@ final class FriendsSyncService: ObservableObject {
 
     /// Send a friend request
     func sendFriendRequest(toUserId: String, sourceURL: String) async throws {
-        guard let authToken = try? client.getAuthToken() else {
+        guard let authToken = await client.ensureAuthToken() else {
             throw FriendsSyncError.notAuthenticated
         }
 
@@ -78,7 +78,7 @@ final class FriendsSyncService: ObservableObject {
 
     /// Accept a friend request
     func acceptFriendRequest(_ friendship: Friendship, sourceURL: String) async throws {
-        guard let authToken = try? client.getAuthToken() else {
+        guard let authToken = await client.ensureAuthToken() else {
             throw FriendsSyncError.notAuthenticated
         }
 
@@ -97,7 +97,7 @@ final class FriendsSyncService: ObservableObject {
 
     /// Decline a friend request
     func declineFriendRequest(_ friendship: Friendship, sourceURL: String) async throws {
-        guard let authToken = try? client.getAuthToken() else {
+        guard let authToken = await client.ensureAuthToken() else {
             throw FriendsSyncError.notAuthenticated
         }
 
@@ -113,7 +113,7 @@ final class FriendsSyncService: ObservableObject {
 
     /// Remove a friend
     func removeFriend(_ friendship: Friendship, sourceURL: String) async throws {
-        guard let authToken = try? client.getAuthToken() else {
+        guard let authToken = await client.ensureAuthToken() else {
             throw FriendsSyncError.notAuthenticated
         }
 
@@ -131,7 +131,7 @@ final class FriendsSyncService: ObservableObject {
 
     /// Generate a shareable invite link
     func generateInviteLink(sourceURL: String) async throws -> InviteLinkDTO {
-        guard let authToken = try? client.getAuthToken() else {
+        guard let authToken = await client.ensureAuthToken() else {
             throw FriendsSyncError.notAuthenticated
         }
 
@@ -140,7 +140,7 @@ final class FriendsSyncService: ObservableObject {
 
     /// Send a friend request using an invite token
     func sendFriendRequestWithInvite(inviteToken: String, sourceURL: String) async throws {
-        guard let authToken = try? client.getAuthToken() else {
+        guard let authToken = await client.ensureAuthToken() else {
             throw FriendsSyncError.notAuthenticated
         }
 
@@ -169,7 +169,7 @@ final class FriendsSyncService: ObservableObject {
         container: ModelContainer,
         sourceURL: String
     ) async throws -> [FriendSuggestion] {
-        guard let authToken = try? client.getAuthToken() else {
+        guard let authToken = await client.ensureAuthToken() else {
             return []
         }
 

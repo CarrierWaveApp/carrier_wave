@@ -23,7 +23,7 @@ final class ActivityFeedSyncService: ObservableObject {
 
     /// Sync activity feed from server
     func syncFeed(sourceURL: String, filter: FeedFilterType? = nil) async throws {
-        guard let authToken = try? client.getAuthToken() else {
+        guard let authToken = await client.ensureAuthToken() else {
             throw ActivityFeedSyncError.notAuthenticated
         }
 

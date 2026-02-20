@@ -47,7 +47,7 @@ extension LoggingSessionManager {
         let request = buildReportRequest(details: details)
         let sourceURL = "https://activities.carrierwave.app"
 
-        guard let authToken = try? reporter.client.getAuthToken() else {
+        guard let authToken = await reporter.client.ensureAuthToken() else {
             return
         }
 

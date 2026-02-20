@@ -45,6 +45,35 @@ final class ActivitiesClient {
         clearAuthToken()
     }
 
+    /// Get a valid auth token, auto-registering if community features are enabled but
+    /// no token exists (e.g., after reinstall or new device). Returns nil if community
+    /// features are disabled or callsign is not set.
+    func ensureAuthToken() async -> String? {
+        if let token = try? getAuthToken() {
+            return token
+        }
+
+        // No token — try auto-registering if community features are enabled
+        let enabled = UserDefaults.standard.bool(forKey: "activitiesServerEnabled")
+        let callsign = UserDefaults.standard.string(forKey: "loggerDefaultCallsign") ?? ""
+        guard enabled, !callsign.isEmpty else {
+            return nil
+        }
+
+        do {
+            let response = try await register(
+                callsign: callsign.uppercased(),
+                deviceName: Self.deviceName,
+                sourceURL: baseURL
+            )
+            print("[ActivitiesClient] Auto-registered to recover auth token")
+            return response.deviceToken
+        } catch {
+            print("[ActivitiesClient] Auto-registration failed: \(error)")
+            return nil
+        }
+    }
+
     // MARK: - Registration
 
     /// Register with the activities server so the user appears in friend search.
