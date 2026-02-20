@@ -30,6 +30,8 @@ actor PresenceComputationActor {
     // MARK: Internal
 
     /// Compute presence counts on background thread.
+    /// Counts unique QSOs per service (not ServicePresence records) to avoid
+    /// double-counting two-fer POTA activations. Excludes hidden QSOs.
     /// Only counts pending uploads for QSOs matching the primary callsign (if set).
     func computeCounts(
         container: ModelContainer,
@@ -41,13 +43,14 @@ actor PresenceComputationActor {
 
         let upperPrimary = primaryCallsign?.uppercased()
 
-        // Initialize counts
-        var uploaded: [ServiceType: Int] = [:]
-        var pending: [ServiceType: Int] = [:]
+        // Track unique QSO IDs per service to avoid double-counting
+        // (POTA two-fer activations create multiple presence records per QSO)
+        var uploadedQSOIds: [ServiceType: Set<UUID>] = [:]
+        var pendingQSOIds: [ServiceType: Set<UUID>] = [:]
 
         for serviceType in ServiceType.allCases {
-            uploaded[serviceType] = 0
-            pending[serviceType] = 0
+            uploadedQSOIds[serviceType] = []
+            pendingQSOIds[serviceType] = []
         }
 
         // Get total count
@@ -55,7 +58,7 @@ actor PresenceComputationActor {
         let totalCount = (try? context.fetchCount(countDescriptor)) ?? 0
 
         if totalCount == 0 {
-            return (uploaded, pending)
+            return (counts(from: uploadedQSOIds), counts(from: pendingQSOIds))
         }
 
         // Fetch in batches
@@ -74,19 +77,23 @@ actor PresenceComputationActor {
                 break
             }
 
-            // Count from managed objects directly
             for presence in batch {
+                // Skip presence records for hidden (soft-deleted) QSOs
+                guard let qso = presence.qso, !qso.isHidden else {
+                    continue
+                }
+
+                let qsoId = qso.id
+
                 if presence.isPresent {
-                    uploaded[presence.serviceType, default: 0] += 1
+                    uploadedQSOIds[presence.serviceType, default: []].insert(qsoId)
                 }
                 if presence.needsUpload {
-                    // Only count pending uploads for QSOs matching primary callsign
-                    // This matches the filtering logic in SyncService.fetchQSOsNeedingUpload()
-                    let qsoCallsign = presence.qso?.myCallsign.uppercased() ?? ""
+                    let qsoCallsign = qso.myCallsign.uppercased()
                     let matchesPrimary =
                         qsoCallsign.isEmpty || upperPrimary == nil || qsoCallsign == upperPrimary
                     if matchesPrimary {
-                        pending[presence.serviceType, default: 0] += 1
+                        pendingQSOIds[presence.serviceType, default: []].insert(qsoId)
                     }
                 }
             }
@@ -94,13 +101,18 @@ actor PresenceComputationActor {
             offset += batchSize
         }
 
-        return (uploaded, pending)
+        return (counts(from: uploadedQSOIds), counts(from: pendingQSOIds))
     }
 
     // MARK: Private
 
     /// Batch size for fetching - larger batches are fine on background thread
     private static let fetchBatchSize = 500
+
+    /// Convert Set<UUID> counts to Int counts per service.
+    private func counts(from idSets: [ServiceType: Set<UUID>]) -> [ServiceType: Int] {
+        idSets.mapValues(\.count)
+    }
 }
 
 // MARK: - AsyncServicePresenceCounts

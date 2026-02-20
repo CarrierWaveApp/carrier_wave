@@ -15,6 +15,9 @@ All notable changes to Carrier Wave will be documented in this file.
 - Add friend spot notification toggle in Activities settings
 
 ### Fixed
+- Fix doubled QSO counts on dashboard service cards for POTA two-fer activations (count unique QSOs, not ServicePresence records)
+- Fix dashboard stats excluding wrong metadata modes (WEATHER/SOLAR were not filtered, causing inflated QSO counts)
+- Add one-time data repair to clear stale POTA sync state after schema rename, forcing full re-download
 - Fix ModelContainer crash on launch caused by nonisolated CloudKit methods inside @Model class body under -default-isolation=MainActor
 - Fix social pipeline dead state: auto-recover auth tokens across all community services (friends, clubs, activity feed, challenges) when token is missing or stale after reinstall/device change
 - Fix POTA dead-state blind spot: reconciliation now handles records stuck with all flags false (not present, not submitted, not needing upload) by checking job log and recovering them

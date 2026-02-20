@@ -75,6 +75,9 @@ struct CarrierWaveApp: App {
                 .sunlightMode(isSunlightMode)
                 .preferredColorScheme(colorScheme)
                 .task {
+                    // Run one-time data repairs before sync starts
+                    DataRepairService.runPendingRepairs()
+
                     // Start iCloud settings sync
                     SettingsSyncService.shared.start()
 

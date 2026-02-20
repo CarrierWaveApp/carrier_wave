@@ -170,9 +170,7 @@ actor StatsComputationActor {
     // MARK: Private
 
     /// Modes that represent metadata rather than actual contacts
-    private static let metadataModes: Set<String> = [
-        "INFO", "METADATA", "NOTE", "NOTES", "COMMENT",
-    ]
+    private static let metadataModes: Set<String> = ["WEATHER", "SOLAR", "NOTE"]
 
     /// Extract the base callsign from a potentially prefixed/suffixed callsign
     private static func extractBaseCallsign(_ callsign: String) -> String {
