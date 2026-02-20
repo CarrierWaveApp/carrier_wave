@@ -16,7 +16,7 @@ enum WatchShared {
     static let appGroupID = "group.com.jsvana.FullDuplex"
 }
 
-// MARK: - Shared Codable Types (mirrors WidgetDataWriter types)
+// MARK: - WatchStreakSnapshot
 
 struct WatchStreakSnapshot: Codable, Sendable {
     let onAirCurrent: Int
@@ -34,6 +34,8 @@ struct WatchStreakSnapshot: Codable, Sendable {
     let updatedAt: Date
 }
 
+// MARK: - WatchCountSnapshot
+
 struct WatchCountSnapshot: Codable, Sendable {
     let qsosWeek: Int
     let qsosMonth: Int
@@ -45,6 +47,8 @@ struct WatchCountSnapshot: Codable, Sendable {
     let newDXCCYear: Int
     let updatedAt: Date
 }
+
+// MARK: - WatchSessionSnapshot
 
 struct WatchSessionSnapshot: Codable, Sendable {
     let isActive: Bool
@@ -59,6 +63,8 @@ struct WatchSessionSnapshot: Codable, Sendable {
     let updatedAt: Date
 }
 
+// MARK: - WatchSolarSnapshot
+
 struct WatchSolarSnapshot: Codable, Sendable {
     let kIndex: Double?
     let aIndex: Int?
@@ -68,10 +74,14 @@ struct WatchSolarSnapshot: Codable, Sendable {
     let updatedAt: Date
 }
 
+// MARK: - WatchSpotSnapshot
+
 struct WatchSpotSnapshot: Codable, Sendable {
     let spots: [WatchSpot]
     let updatedAt: Date
 }
+
+// MARK: - WatchSpot
 
 struct WatchSpot: Codable, Sendable, Identifiable {
     let id: String
@@ -91,6 +101,8 @@ struct WatchSpot: Codable, Sendable, Identifiable {
 /// Reads pre-computed data from the App Group shared UserDefaults.
 /// Used by the Watch app to display data written by the iPhone app.
 enum SharedDataReader {
+    // MARK: Internal
+
     static func readStreaks() -> WatchStreakSnapshot? {
         read(WatchStreakSnapshot.self, forKey: WatchShared.Key.streakData)
     }
@@ -118,7 +130,9 @@ enum SharedDataReader {
     }
 
     private static func read<T: Decodable>(_ type: T.Type, forKey key: String) -> T? {
-        guard let data = defaults?.data(forKey: key) else { return nil }
+        guard let data = defaults?.data(forKey: key) else {
+            return nil
+        }
         return try? JSONDecoder().decode(type, from: data)
     }
 }

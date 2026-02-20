@@ -207,12 +207,12 @@ struct QSOMapView: View {
 
             if filterState.showPaths {
                 ForEach(cachedArcs) { arc in
-                    MapPolyline(coordinates: arc.geodesicPath())
+                    MapPolyline(coordinates: arc.path)
                         .stroke(.blue.opacity(0.5), lineWidth: 2.5)
                 }
             }
         }
-        .mapStyle(.standard(elevation: .realistic))
+        .mapStyle(.standard(elevation: .flat))
     }
 
     private var overlayView: some View {

@@ -38,7 +38,6 @@ struct RSTMarkerView: View {
                     .stroke(isSelected ? Color.white : Color.clear, lineWidth: 2)
             )
             .shadow(radius: isSelected ? 4 : 2)
-            .animation(.easeInOut(duration: 0.2), value: isSelected)
     }
 }
 

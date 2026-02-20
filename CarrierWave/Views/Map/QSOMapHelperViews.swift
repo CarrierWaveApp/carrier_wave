@@ -10,26 +10,23 @@ struct QSOMarkerView: View {
     var isSelected: Bool = false
 
     var body: some View {
-        VStack(spacing: 2) {
-            ZStack {
-                Circle()
-                    .fill(markerColor)
-                    .frame(width: markerSize, height: markerSize)
-                    .overlay(
-                        Circle()
-                            .stroke(isSelected ? Color.white : Color.clear, lineWidth: 3)
-                    )
+        ZStack {
+            Circle()
+                .fill(markerColor)
+                .frame(width: markerSize, height: markerSize)
+                .overlay(
+                    Circle()
+                        .stroke(isSelected ? Color.white : Color.clear, lineWidth: 3)
+                )
 
-                if annotation.qsoCount > 1 {
-                    Text("\(annotation.qsoCount)")
-                        .font(.system(size: fontSize, weight: .bold))
-                        .foregroundStyle(.white)
-                }
+            if annotation.qsoCount > 1 {
+                Text("\(annotation.qsoCount)")
+                    .font(.system(size: fontSize, weight: .bold))
+                    .foregroundStyle(.white)
             }
-            .shadow(radius: isSelected ? 4 : 2)
-            .scaleEffect(isSelected ? 1.2 : 1.0)
-            .animation(.easeInOut(duration: 0.2), value: isSelected)
         }
+        .shadow(radius: isSelected ? 4 : 2)
+        .scaleEffect(isSelected ? 1.2 : 1.0)
     }
 
     // MARK: Private
@@ -411,6 +408,12 @@ struct ActiveFiltersView: View {
 
     // MARK: Private
 
+    private static let shortDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .short
+        return formatter
+    }()
+
     private var displayStartDate: Date {
         filterState.startDate ?? earliestDate ?? latestDate
     }
@@ -420,9 +423,7 @@ struct ActiveFiltersView: View {
     }
 
     private func formatDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .short
-        return formatter.string(from: date)
+        Self.shortDateFormatter.string(from: date)
     }
 }
 

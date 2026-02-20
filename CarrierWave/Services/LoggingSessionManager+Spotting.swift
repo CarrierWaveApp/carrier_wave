@@ -214,7 +214,7 @@ extension LoggingSessionManager {
         // Write spots to App Group for Watch consumption (top 15, most recent first)
         let sorted = enrichedSpots.sorted { $0.spot.timestamp > $1.spot.timestamp }
         let watchSpots = sorted.prefix(15).map { enriched in
-            WidgetSpot(
+            SharedSpot(
                 id: enriched.spot.id,
                 callsign: enriched.spot.callsign,
                 frequencyMHz: enriched.spot.frequencyMHz,
@@ -227,7 +227,7 @@ extension LoggingSessionManager {
                 snr: enriched.spot.snr
             )
         }
-        WidgetDataWriter.writeSpots(WidgetSpotSnapshot(
+        WidgetDataWriter.writeSpots(SharedSpotSnapshot(
             spots: Array(watchSpots), updatedAt: Date()
         ))
     }

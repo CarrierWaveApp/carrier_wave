@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Recent spots page showing POTA activators and RBN spots.
 struct SpotsListView: View {
-    @State private var spotSnapshot: WatchSpotSnapshot?
+    // MARK: Internal
 
     var body: some View {
         Group {
@@ -13,6 +13,25 @@ struct SpotsListView: View {
             }
         }
         .onAppear { spotSnapshot = SharedDataReader.readSpots() }
+    }
+
+    // MARK: Private
+
+    @State private var spotSnapshot: WatchSpotSnapshot?
+
+    private var emptyView: some View {
+        VStack(spacing: 8) {
+            Image(systemName: "antenna.radiowaves.left.and.right")
+                .font(.title2)
+                .foregroundStyle(.secondary)
+            Text("No Spots")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Text("Start a session on iPhone")
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+        }
+        .padding()
     }
 
     private func spotsList(_ spots: [WatchSpot]) -> some View {
@@ -66,27 +85,16 @@ struct SpotsListView: View {
             .clipShape(RoundedRectangle(cornerRadius: 3))
     }
 
-    private var emptyView: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "antenna.radiowaves.left.and.right")
-                .font(.title2)
-                .foregroundStyle(.secondary)
-            Text("No Spots")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            Text("Start a session on iPhone")
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
-        }
-        .padding()
-    }
-
     // MARK: - Helpers
 
     private func timeAgo(_ date: Date) -> String {
         let seconds = Date().timeIntervalSince(date)
-        if seconds < 60 { return "\(Int(seconds))s" }
-        if seconds < 3_600 { return "\(Int(seconds / 60))m" }
+        if seconds < 60 {
+            return "\(Int(seconds))s"
+        }
+        if seconds < 3_600 {
+            return "\(Int(seconds / 60))m"
+        }
         return "\(Int(seconds / 3_600))h"
     }
 

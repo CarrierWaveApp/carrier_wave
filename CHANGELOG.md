@@ -12,6 +12,10 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ### Fixed
 - Fix session photos saving the last photo multiple times when adding more than one photo at once (filename collision from timestamp-based naming)
+- Fix slow orientation changes by locking LoggerContainerView size class to prevent full view hierarchy rebuild on iPhone Pro Max rotation
+- Improve map view rotation performance: pre-compute geodesic paths at creation time instead of in view body, remove per-marker animation contexts, switch to flat elevation rendering, cache DateFormatter in filter overlay
+- Fix duplicate WidgetSpot type from Watch app merge causing widget build failure (rename shared Codable type to SharedSpot)
+- Fix Swift 6 concurrency errors in WatchConnectivity delegates (WatchSessionDelegate, PhoneSessionDelegate)
 
 ## [1.40.1] - 2026-02-19
 

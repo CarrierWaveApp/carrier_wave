@@ -6,17 +6,17 @@ import WatchConnectivity
 /// Messages exchanged between iPhone and Watch via WatchConnectivity
 enum WatchMessage {
     /// Keys for message dictionaries
-    enum Key {
-        static let type = "type"
-        static let payload = "payload"
+    enum Key: Sendable {
+        nonisolated static let type = "type"
+        nonisolated static let payload = "payload"
     }
 
     /// Message types
     enum MessageType: String {
-        case sessionUpdate = "sessionUpdate"
-        case sessionEnd = "sessionEnd"
-        case startSessionRequest = "startSessionRequest"
-        case startSessionResponse = "startSessionResponse"
+        case sessionUpdate
+        case sessionEnd
+        case startSessionRequest
+        case startSessionResponse
     }
 }
 
@@ -79,7 +79,9 @@ final class PhoneSessionDelegate: NSObject, @preconcurrency WCSessionDelegate {
 
     /// Activate WatchConnectivity session. Call once at app startup.
     func activate() {
-        guard WCSession.isSupported() else { return }
+        guard WCSession.isSupported() else {
+            return
+        }
         WCSession.default.delegate = self
         WCSession.default.activate()
     }
@@ -88,7 +90,9 @@ final class PhoneSessionDelegate: NSObject, @preconcurrency WCSessionDelegate {
     func sendSessionUpdate(_ update: WatchSessionUpdate) {
         guard WCSession.default.isReachable,
               let data = try? JSONEncoder().encode(update)
-        else { return }
+        else {
+            return
+        }
 
         let message: [String: Any] = [
             WatchMessage.Key.type: WatchMessage.MessageType.sessionUpdate.rawValue,
@@ -99,7 +103,9 @@ final class PhoneSessionDelegate: NSObject, @preconcurrency WCSessionDelegate {
 
     /// Notify Watch that session has ended
     func sendSessionEnd() {
-        guard WCSession.default.isReachable else { return }
+        guard WCSession.default.isReachable else {
+            return
+        }
 
         let message: [String: Any] = [
             WatchMessage.Key.type: WatchMessage.MessageType.sessionEnd.rawValue,
@@ -141,27 +147,33 @@ final class PhoneSessionDelegate: NSObject, @preconcurrency WCSessionDelegate {
 
     // MARK: Private
 
-    private nonisolated func handleStartRequest(
+    nonisolated private func handleStartRequest(
         message: [String: Any],
         replyHandler: @escaping ([String: Any]) -> Void
     ) {
-        guard let data = message[WatchMessage.Key.payload] as? Data,
-              let request = try? JSONDecoder().decode(
-                  WatchStartSessionRequest.self, from: data
-              )
-        else {
+        // Extract raw data before crossing isolation boundary
+        guard let data = message[WatchMessage.Key.payload] as? Data else {
             replyHandler(["error": "invalid payload"])
             return
         }
 
+        // Bridge the non-Sendable WCSession reply handler across isolation boundary
+        nonisolated(unsafe) let sendableReply = replyHandler
+
         Task { @MainActor in
+            guard let request = try? JSONDecoder().decode(
+                WatchStartSessionRequest.self, from: data
+            ) else {
+                sendableReply(["error": "invalid payload"])
+                return
+            }
             self.onStartSessionRequest?(request)
             NotificationCenter.default.post(
                 name: .didReceiveWatchStartSession,
                 object: nil,
                 userInfo: ["request": request]
             )
-            replyHandler(["status": "ok"])
+            sendableReply(["status": "ok"])
         }
     }
 }

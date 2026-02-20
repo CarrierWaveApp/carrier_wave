@@ -61,19 +61,41 @@ struct QSOAnnotation: Identifiable, Hashable {
 
 // MARK: - QSOArc
 
-/// Represents an arc between user location and a contact
+/// Represents an arc between user location and a contact.
+/// The geodesic path is pre-computed at creation time so the view body
+/// never performs trig during render.
 struct QSOArc: Identifiable {
+    // MARK: Lifecycle
+
+    /// Create an arc, pre-computing the geodesic path.
+    /// - Parameter segments: Number of segments (more = smoother curve)
+    init(id: String, from: CLLocationCoordinate2D, to: CLLocationCoordinate2D,
+         callsign: String, segments: Int = 30)
+    {
+        self.id = id
+        self.from = from
+        self.to = to
+        self.callsign = callsign
+        path = Self.computeGeodesicPath(from: from, to: to, segments: segments)
+    }
+
+    // MARK: Internal
+
     let id: String
     let from: CLLocationCoordinate2D
     let to: CLLocationCoordinate2D
     let callsign: String
+    /// Pre-computed geodesic path coordinates
+    let path: [CLLocationCoordinate2D]
+
+    // MARK: Private
 
     /// Calculate intermediate points along the great circle path
-    /// - Parameter segments: Number of segments (more = smoother curve)
-    /// - Returns: Array of coordinates forming the geodesic path
-    func geodesicPath(segments: Int = 50) -> [CLLocationCoordinate2D] {
-        var points: [CLLocationCoordinate2D] = []
-
+    private static func computeGeodesicPath(
+        from: CLLocationCoordinate2D,
+        to: CLLocationCoordinate2D,
+        segments: Int
+    ) -> [CLLocationCoordinate2D] {
         let lat1 = from.latitude * .pi / 180
         let lon1 = from.longitude * .pi / 180
         let lat2 = to.latitude * .pi / 180
@@ -93,6 +115,9 @@ struct QSOArc: Identifiable {
         guard angularDist > 0.001 else {
             return [from, to]
         }
+
+        var points: [CLLocationCoordinate2D] = []
+        points.reserveCapacity(segments + 1)
 
         for i in 0 ... segments {
             let fraction = Double(i) / Double(segments)

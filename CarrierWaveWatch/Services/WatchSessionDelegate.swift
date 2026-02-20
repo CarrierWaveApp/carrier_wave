@@ -4,10 +4,12 @@ import WatchConnectivity
 // MARK: - WatchMessageKey
 
 /// Message keys matching the iPhone-side PhoneSessionDelegate
-private enum WatchMessageKey {
-    static let type = "type"
-    static let payload = "payload"
+private enum WatchMessageKey: Sendable {
+    nonisolated static let type = "type"
+    nonisolated static let payload = "payload"
 }
+
+// MARK: - WatchMessageType
 
 private enum WatchMessageType: String {
     case sessionUpdate
@@ -16,7 +18,7 @@ private enum WatchMessageType: String {
     case startSessionResponse
 }
 
-// MARK: - WatchSessionUpdate
+// MARK: - WatchLiveSession
 
 /// Session state received from iPhone during active logging
 struct WatchLiveSession: Codable, Sendable {
@@ -74,7 +76,9 @@ final class WatchSessionDelegate: NSObject, @preconcurrency WCSessionDelegate {
 
     /// Activate WatchConnectivity. Call once at Watch app startup.
     func activate() {
-        guard WCSession.isSupported() else { return }
+        guard WCSession.isSupported() else {
+            return
+        }
         WCSession.default.delegate = self
         WCSession.default.activate()
     }
@@ -83,7 +87,9 @@ final class WatchSessionDelegate: NSObject, @preconcurrency WCSessionDelegate {
     func requestStartSession(_ request: WatchStartRequest) async -> Bool {
         guard WCSession.default.isReachable,
               let data = try? JSONEncoder().encode(request)
-        else { return false }
+        else {
+            return false
+        }
 
         let message: [String: Any] = [
             WatchMessageKey.type: WatchMessageType.startSessionRequest.rawValue,
@@ -112,12 +118,17 @@ final class WatchSessionDelegate: NSObject, @preconcurrency WCSessionDelegate {
     ) {
         guard let typeString = message[WatchMessageKey.type] as? String,
               let type = WatchMessageType(rawValue: typeString)
-        else { return }
+        else {
+            return
+        }
+
+        // Extract payload before crossing isolation boundary
+        let payload = message[WatchMessageKey.payload] as? Data
 
         Task { @MainActor in
             switch type {
             case .sessionUpdate:
-                if let data = message[WatchMessageKey.payload] as? Data,
+                if let data = payload,
                    let update = try? JSONDecoder().decode(WatchLiveSession.self, from: data)
                 {
                     self.liveSession = update

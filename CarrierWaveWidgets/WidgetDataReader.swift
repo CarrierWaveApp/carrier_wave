@@ -79,16 +79,16 @@ struct WidgetSolarSnapshot: Codable, Sendable {
     let updatedAt: Date
 }
 
-// MARK: - WidgetSpotSnapshot
+// MARK: - SharedSpotSnapshot
 
-struct WidgetSpotSnapshot: Codable, Sendable {
-    let spots: [WidgetSpot]
+struct SharedSpotSnapshot: Codable, Sendable {
+    let spots: [SharedSpot]
     let updatedAt: Date
 }
 
-// MARK: - WidgetSpot
+// MARK: - SharedSpot
 
-struct WidgetSpot: Codable, Sendable, Identifiable {
+struct SharedSpot: Codable, Sendable, Identifiable {
     let id: String
     let callsign: String
     let frequencyMHz: Double
@@ -134,11 +134,11 @@ enum WidgetDataReader {
         return try? JSONDecoder().decode(WidgetSolarSnapshot.self, from: data)
     }
 
-    static func readSpots() -> WidgetSpotSnapshot? {
+    static func readSpots() -> SharedSpotSnapshot? {
         guard let data = defaults?.data(forKey: WidgetShared.Key.spotsData) else {
             return nil
         }
-        return try? JSONDecoder().decode(WidgetSpotSnapshot.self, from: data)
+        return try? JSONDecoder().decode(SharedSpotSnapshot.self, from: data)
     }
 
     // MARK: Private

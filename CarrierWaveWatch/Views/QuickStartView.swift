@@ -3,13 +3,7 @@ import SwiftUI
 /// Quick session start from Watch. Uses the last-used defaults stored in
 /// App Group UserDefaults. Sends a start request to the iPhone via WatchConnectivity.
 struct QuickStartView: View {
-    @State private var isStarting = false
-    @State private var startFailed = false
-    @State private var selectedMode = "CW"
-    @State private var activationType = "casual"
-
-    private let modes = ["CW", "SSB", "FT8", "FT4"]
-    private let activationTypes = ["casual", "pota"]
+    // MARK: Internal
 
     var body: some View {
         ScrollView {
@@ -25,6 +19,16 @@ struct QuickStartView: View {
         }
         .onAppear { loadDefaults() }
     }
+
+    // MARK: Private
+
+    @State private var isStarting = false
+    @State private var startFailed = false
+    @State private var selectedMode = "CW"
+    @State private var activationType = "casual"
+
+    private let modes = ["CW", "SSB", "FT8", "FT4"]
+    private let activationTypes = ["casual", "pota"]
 
     // MARK: - Header
 

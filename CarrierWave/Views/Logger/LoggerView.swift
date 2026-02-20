@@ -275,7 +275,9 @@ struct LoggerView: View {
                 guard let request = notification.userInfo?["request"]
                     as? WatchStartSessionRequest,
                     sessionManager?.hasActiveSession != true
-                else { return }
+                else {
+                    return
+                }
 
                 let type = ActivationType(rawValue: request.activationType) ?? .casual
                 sessionManager?.startSession(

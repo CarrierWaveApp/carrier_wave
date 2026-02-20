@@ -88,18 +88,18 @@ struct WidgetSolarSnapshot: Codable, Sendable {
     let updatedAt: Date
 }
 
-// MARK: - WidgetSpotSnapshot
+// MARK: - SharedSpotSnapshot
 
-/// Recent spots for Watch consumption
-struct WidgetSpotSnapshot: Codable, Sendable {
-    let spots: [WidgetSpot]
+/// Recent spots for Watch/widget consumption via App Group
+struct SharedSpotSnapshot: Codable, Sendable {
+    let spots: [SharedSpot]
     let updatedAt: Date
 }
 
-// MARK: - WidgetSpot
+// MARK: - SharedSpot
 
 /// A single spot in a format safe for Watch/widget consumption
-struct WidgetSpot: Codable, Sendable, Identifiable {
+struct SharedSpot: Codable, Sendable, Identifiable {
     let id: String
     let callsign: String
     let frequencyMHz: Double
@@ -161,7 +161,7 @@ enum WidgetDataWriter {
         defaults?.set(data, forKey: WidgetShared.Key.solarData)
     }
 
-    static func writeSpots(_ snapshot: WidgetSpotSnapshot) {
+    static func writeSpots(_ snapshot: SharedSpotSnapshot) {
         guard let data = try? JSONEncoder().encode(snapshot) else {
             return
         }

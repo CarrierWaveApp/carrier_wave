@@ -195,7 +195,7 @@ struct SessionMapPanelView: View {
                 }
             }
         }
-        .mapStyle(.standard(elevation: .realistic))
+        .mapStyle(.standard(elevation: .flat))
         .frame(height: 250)
     }
 

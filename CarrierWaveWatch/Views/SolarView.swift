@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Solar conditions page showing K-index, A-index, SFI gauges and propagation rating.
 struct SolarView: View {
-    @State private var solar: WatchSolarSnapshot?
+    // MARK: Internal
 
     var body: some View {
         ScrollView {
@@ -18,6 +18,27 @@ struct SolarView: View {
             }
         }
         .onAppear { solar = SharedDataReader.readSolar() }
+    }
+
+    // MARK: Private
+
+    @State private var solar: WatchSolarSnapshot?
+
+    // MARK: - No data
+
+    private var noDataView: some View {
+        VStack(spacing: 8) {
+            Image(systemName: "sun.max.trianglebadge.exclamationmark")
+                .font(.title2)
+                .foregroundStyle(.secondary)
+            Text("No Solar Data")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Text("Open Carrier Wave on iPhone")
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+        }
+        .padding()
     }
 
     // MARK: - Header
@@ -106,23 +127,6 @@ struct SolarView: View {
             .foregroundStyle(.tertiary)
     }
 
-    // MARK: - No data
-
-    private var noDataView: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "sun.max.trianglebadge.exclamationmark")
-                .font(.title2)
-                .foregroundStyle(.secondary)
-            Text("No Solar Data")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            Text("Open Carrier Wave on iPhone")
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
-        }
-        .padding()
-    }
-
     // MARK: - Propagation level helpers
 
     private func kLevel(_ k: Double) -> Int {
@@ -144,8 +148,8 @@ struct SolarView: View {
         }
     }
 
-    private func aLevel(_ a: Int) -> Int {
-        switch a {
+    private func aLevel(_ aIndex: Int) -> Int {
+        switch aIndex {
         case ..<7: 5
         case ..<15: 4
         case ..<30: 3
@@ -154,8 +158,8 @@ struct SolarView: View {
         }
     }
 
-    private func aColor(_ a: Int) -> Color {
-        switch a {
+    private func aColor(_ aIndex: Int) -> Color {
+        switch aIndex {
         case ..<15: .green
         case ..<30: .yellow
         case ..<50: .orange
@@ -184,7 +188,8 @@ struct SolarView: View {
 
     private func ratingColor(_ rating: String) -> Color {
         switch rating {
-        case "Excellent", "Good": .green
+        case "Excellent",
+             "Good": .green
         case "Fair": .yellow
         case "Poor": .orange
         default: .red

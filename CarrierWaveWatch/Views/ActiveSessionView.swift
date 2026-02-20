@@ -67,6 +67,7 @@ struct ActiveSessionView: View {
     @State private var currentStopPark: String?
     @State private var stopNumber: Int?
     @State private var currentStopQSOs: Int?
+
     private let isLive: Bool
 
     private var isPOTA: Bool {

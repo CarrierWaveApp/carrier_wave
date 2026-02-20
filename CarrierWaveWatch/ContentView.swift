@@ -3,9 +3,7 @@ import SwiftUI
 /// Root view that switches between idle and active session modes.
 /// Polls App Group data on appear and listens for WatchConnectivity updates.
 struct ContentView: View {
-    @State private var session: WatchSessionSnapshot?
-    @State private var liveSession: WatchLiveSession?
-    @State private var refreshTimer: Timer?
+    // MARK: Internal
 
     var body: some View {
         Group {
@@ -25,6 +23,12 @@ struct ContentView: View {
             refreshTimer?.invalidate()
         }
     }
+
+    // MARK: Private
+
+    @State private var session: WatchSessionSnapshot?
+    @State private var liveSession: WatchLiveSession?
+    @State private var refreshTimer: Timer?
 
     private func refreshData() {
         session = SharedDataReader.readSession()

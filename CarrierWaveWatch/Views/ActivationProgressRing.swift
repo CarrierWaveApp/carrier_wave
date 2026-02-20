@@ -3,6 +3,8 @@ import SwiftUI
 /// Circular progress ring for POTA activation threshold.
 /// Shows X/10 progress filling clockwise. Turns green at completion.
 struct ActivationProgressRing: View {
+    // MARK: Internal
+
     let qsoCount: Int
     let target: Int
 
@@ -34,6 +36,8 @@ struct ActivationProgressRing: View {
         }
         .frame(width: 80, height: 80)
     }
+
+    // MARK: Private
 
     private var progress: Double {
         min(Double(qsoCount) / Double(target), 1.0)

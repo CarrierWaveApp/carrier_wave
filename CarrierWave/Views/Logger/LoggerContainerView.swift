@@ -13,10 +13,15 @@ struct LoggerContainerView: View {
 
     var body: some View {
         Group {
-            if horizontalSizeClass == .regular {
+            if (lockedSizeClass ?? horizontalSizeClass) == .regular {
                 iPadLayout
             } else {
                 iPhoneLayout
+            }
+        }
+        .onAppear {
+            if lockedSizeClass == nil {
+                lockedSizeClass = horizontalSizeClass
             }
         }
         .task {
@@ -28,6 +33,11 @@ struct LoggerContainerView: View {
     }
 
     // MARK: Private
+
+    /// Locked layout mode — set once on first appearance, never changes.
+    /// Prevents size class transitions (e.g., rotation on iPhone Max)
+    /// from destroying the entire view hierarchy and resetting @State.
+    @State private var lockedSizeClass: UserInterfaceSizeClass?
 
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.modelContext) private var modelContext

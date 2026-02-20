@@ -153,7 +153,7 @@ struct ActivationMapView: View {
 
             // Geodesic arcs from my location to each QSO
             ForEach(arcs) { arc in
-                MapPolyline(coordinates: arc.geodesicPath())
+                MapPolyline(coordinates: arc.path)
                     .stroke(.blue.opacity(0.4), lineWidth: 2)
             }
 
@@ -193,7 +193,7 @@ struct ActivationMapView: View {
                 }
             }
         }
-        .mapStyle(.standard(elevation: .realistic))
+        .mapStyle(.standard(elevation: .flat))
     }
 }
 

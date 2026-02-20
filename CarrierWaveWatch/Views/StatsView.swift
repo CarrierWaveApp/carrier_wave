@@ -2,8 +2,7 @@ import SwiftUI
 
 /// Quick stats page showing streaks and counts.
 struct StatsView: View {
-    @State private var streaks: WatchStreakSnapshot?
-    @State private var counts: WatchCountSnapshot?
+    // MARK: Internal
 
     var body: some View {
         ScrollView {
@@ -27,6 +26,11 @@ struct StatsView: View {
         }
     }
 
+    // MARK: Private
+
+    @State private var streaks: WatchStreakSnapshot?
+    @State private var counts: WatchCountSnapshot?
+
     private var headerRow: some View {
         HStack(spacing: 4) {
             Image(systemName: "chart.bar.fill")
@@ -39,27 +43,39 @@ struct StatsView: View {
         }
     }
 
+    private var noDataView: some View {
+        VStack(spacing: 8) {
+            Text("No stats yet")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Text("Open Carrier Wave on iPhone")
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+        }
+        .padding(.top, 16)
+    }
+
     // MARK: - Streaks
 
-    private func streakSection(_ s: WatchStreakSnapshot) -> some View {
+    private func streakSection(_ streaks: WatchStreakSnapshot) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             streakRow(
                 label: "On Air",
-                current: s.onAirCurrent,
-                longest: s.onAirLongest,
-                atRisk: s.onAirAtRisk
+                current: streaks.onAirCurrent,
+                longest: streaks.onAirLongest,
+                atRisk: streaks.onAirAtRisk
             )
             streakRow(
                 label: "Activations",
-                current: s.activationCurrent,
-                longest: s.activationLongest,
-                atRisk: s.activationAtRisk
+                current: streaks.activationCurrent,
+                longest: streaks.activationLongest,
+                atRisk: streaks.activationAtRisk
             )
             streakRow(
                 label: "Hunts",
-                current: s.hunterCurrent,
-                longest: s.hunterLongest,
-                atRisk: s.hunterAtRisk
+                current: streaks.hunterCurrent,
+                longest: streaks.hunterLongest,
+                atRisk: streaks.hunterAtRisk
             )
         }
     }
@@ -83,13 +99,13 @@ struct StatsView: View {
 
     // MARK: - Counts
 
-    private func countSection(_ c: WatchCountSnapshot) -> some View {
+    private func countSection(_ counts: WatchCountSnapshot) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Divider()
-            countRow(label: "QSOs this week", value: c.qsosWeek)
-            countRow(label: "QSOs this month", value: c.qsosMonth)
-            countRow(label: "Activations", value: c.activationsMonth)
-            countRow(label: "Hunts this week", value: c.huntsWeek)
+            countRow(label: "QSOs this week", value: counts.qsosWeek)
+            countRow(label: "QSOs this month", value: counts.qsosMonth)
+            countRow(label: "Activations", value: counts.activationsMonth)
+            countRow(label: "Hunts this week", value: counts.huntsWeek)
         }
     }
 
@@ -102,17 +118,5 @@ struct StatsView: View {
             Text("\(value)")
                 .font(.system(.caption, design: .rounded, weight: .bold))
         }
-    }
-
-    private var noDataView: some View {
-        VStack(spacing: 8) {
-            Text("No stats yet")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            Text("Open Carrier Wave on iPhone")
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
-        }
-        .padding(.top, 16)
     }
 }
