@@ -8,18 +8,20 @@ struct FriendActivityCard: View {
     // MARK: Internal
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            header
-            if friendActivities.isEmpty {
-                emptyState
-            } else {
-                activityRows
+        TimelineView(.periodic(from: .now, by: 30)) { _ in
+            VStack(alignment: .leading, spacing: 12) {
+                header
+                if friendActivities.isEmpty {
+                    emptyState
+                } else {
+                    activityRows
+                }
             }
+            .padding()
+            .background(Color(.systemGray6))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
         }
-        .padding()
-        .background(Color(.systemGray6))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .task {
+        .task(id: acceptedFriends.count) {
             loadActivities()
         }
         .onReceive(

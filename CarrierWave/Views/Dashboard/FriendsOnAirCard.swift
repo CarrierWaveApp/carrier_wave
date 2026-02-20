@@ -9,23 +9,33 @@ struct FriendsOnAirCard: View {
     // MARK: Internal
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            header
-            if isLoading {
-                ProgressView()
-                    .frame(maxWidth: .infinity, alignment: .center)
-            } else if friendSpots.isEmpty {
-                emptyState
-            } else {
-                spotRows
+        // TimelineView re-renders every 30s so timeAgo stays fresh
+        TimelineView(.periodic(from: .now, by: 30)) { _ in
+            VStack(alignment: .leading, spacing: 12) {
+                header
+                if isLoading {
+                    ProgressView()
+                        .frame(maxWidth: .infinity, alignment: .center)
+                } else if friendSpots.isEmpty {
+                    emptyState
+                } else {
+                    spotRows
+                }
             }
+            .padding()
+            .background(Color(.systemGray6))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
         }
-        .padding()
-        .background(Color(.systemGray6))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .task {
+        .task(id: acceptedFriends.count) {
             await loadFriendSpots()
+        }
+        .task {
             await autoRefreshLoop()
+        }
+        .onReceive(
+            NotificationCenter.default.publisher(for: .didSyncQSOs)
+        ) { _ in
+            Task { await loadFriendSpots() }
         }
     }
 
@@ -124,7 +134,7 @@ struct FriendsOnAirCard: View {
 
     private func autoRefreshLoop() async {
         while !Task.isCancelled {
-            try? await Task.sleep(for: .seconds(60))
+            try? await Task.sleep(for: .seconds(45))
             guard !Task.isCancelled else {
                 return
             }
