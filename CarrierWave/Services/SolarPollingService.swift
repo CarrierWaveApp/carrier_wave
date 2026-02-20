@@ -125,6 +125,16 @@ final class SolarPollingService {
             )
             context.insert(snapshot)
             try context.save()
+
+            // Write to App Group for Watch/widget consumption
+            WidgetDataWriter.writeSolar(WidgetSolarSnapshot(
+                kIndex: solar.kIndex,
+                aIndex: solar.aIndex,
+                solarFlux: solar.solarFlux,
+                sunspots: solar.sunspots,
+                propagationRating: solar.propagationRating,
+                updatedAt: Date()
+            ))
         } catch {
             // Network or save failed — retry next interval
         }

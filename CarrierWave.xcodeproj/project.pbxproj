@@ -7,6 +7,20 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		048F654563668B1DF925C34D /* CarrierWaveWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 0FCFE1EFC1D72D2A48680420 /* CarrierWaveWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		0E9AB3BE12D3475D6E49F14D /* WatchSessionDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40E17F05E31D95F0EB73D688 /* WatchSessionDelegate.swift */; };
+		15ADFCA1198A049CA4F8FD24 /* StatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C51884768001862EF7D7488B /* StatsView.swift */; };
+		1F24DBB851D4A3AA12AB7EEC /* QuickStartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A92675B1B784ABC0EA3FA356 /* QuickStartView.swift */; };
+		389F679B1C509511BC5CBBAD /* IdleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA9D2967992927A1A6B0984F /* IdleView.swift */; };
+		3DEF47BAF3D0D285C278DA9F /* CarrierWaveWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07398A1125705ADB8FA99900 /* CarrierWaveWatchApp.swift */; };
+		62AFCBC4FC5E9EB11420DF91 /* SpotsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76B2E7ACAE2F9415FC39E60A /* SpotsListView.swift */; };
+		68988BA40D95E587D42E2D50 /* ActivationProgressRing.swift in Sources */ = {isa = PBXBuildFile; fileRef = C41509B70794FC42EA5ABD9A /* ActivationProgressRing.swift */; };
+		82C5F8D294891E0DD13A1146 /* SolarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F48ACF9024A3C953084B362 /* SolarView.swift */; };
+		863AF8C51390A582D0C6CF23 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4D739778B0E9A372D780C7C /* ContentView.swift */; };
+		916242E85DE2B9874DFE311F /* ActiveSessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55A7305880DD8730DD1B753F /* ActiveSessionView.swift */; };
+		92BEE122BE706E3A87CA97AB /* SharedDataReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = E710C1E17ED46AEC55D07BBA /* SharedDataReader.swift */; };
+		A281DF5350AAB490BC0A0F65 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 518D696504E373AF7A909F81 /* Foundation.framework */; };
+		A4B98C617E82778D27395231 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F164D6AB25C3BDE8E9D06A48 /* Assets.xcassets */; };
 		CF8DE7EC2F344AED007A0358 /* CarrierWaveCore in Frameworks */ = {isa = PBXBuildFile; productRef = CFCORE0022F4B00000021A936 /* CarrierWaveCore */; };
 		CFA0000D2F50000D007A0358 /* CarrierWaveWidgets.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = CFA000012F500001007A0358 /* CarrierWaveWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
@@ -33,9 +47,27 @@
 			remoteGlobalIDString = CFA000062F500006007A0358;
 			remoteInfo = CarrierWaveWidgets;
 		};
+		D14D998666490ED11FFF7BA1 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = CF8DD1A52F2098940021A936 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4D7D39B157DB6390DB8674B6;
+			remoteInfo = CarrierWaveWatch;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		97840EB2BF539A63A24745A4 /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				048F654563668B1DF925C34D /* CarrierWaveWatch.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		CFA0000C2F50000C007A0358 /* Embed App Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -50,10 +82,25 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		07398A1125705ADB8FA99900 /* CarrierWaveWatchApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CarrierWaveWatchApp.swift; sourceTree = "<group>"; };
+		0FCFE1EFC1D72D2A48680420 /* CarrierWaveWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CarrierWaveWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		1F48ACF9024A3C953084B362 /* SolarView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SolarView.swift; sourceTree = "<group>"; };
+		40E17F05E31D95F0EB73D688 /* WatchSessionDelegate.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WatchSessionDelegate.swift; sourceTree = "<group>"; };
+		518D696504E373AF7A909F81 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/WatchOS.platform/Developer/SDKs/WatchOS11.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
+		55A7305880DD8730DD1B753F /* ActiveSessionView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ActiveSessionView.swift; sourceTree = "<group>"; };
+		76B2E7ACAE2F9415FC39E60A /* SpotsListView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SpotsListView.swift; sourceTree = "<group>"; };
+		A4D739778B0E9A372D780C7C /* ContentView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		A92675B1B784ABC0EA3FA356 /* QuickStartView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = QuickStartView.swift; sourceTree = "<group>"; };
+		C41509B70794FC42EA5ABD9A /* ActivationProgressRing.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ActivationProgressRing.swift; sourceTree = "<group>"; };
+		C51884768001862EF7D7488B /* StatsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StatsView.swift; sourceTree = "<group>"; };
 		CF8DD1AD2F2098940021A936 /* CarrierWave.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CarrierWave.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CF8DD1BC2F2098950021A936 /* CarrierWaveTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CarrierWaveTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		CF8DD1C62F2098950021A936 /* CarrierWaveUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CarrierWaveUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		CFA000012F500001007A0358 /* CarrierWaveWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CarrierWaveWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		D1E133306A7B699188A463B1 /* CarrierWaveWatch.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = CarrierWaveWatch.entitlements; sourceTree = "<group>"; };
+		E710C1E17ED46AEC55D07BBA /* SharedDataReader.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SharedDataReader.swift; sourceTree = "<group>"; };
+		F164D6AB25C3BDE8E9D06A48 /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		FA9D2967992927A1A6B0984F /* IdleView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = IdleView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -84,11 +131,15 @@
 		};
 		CF8DD1BF2F2098950021A936 /* CarrierWaveTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
 			path = CarrierWaveTests;
 			sourceTree = "<group>";
 		};
 		CF8DD1C92F2098950021A936 /* CarrierWaveUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
 			path = CarrierWaveUITests;
 			sourceTree = "<group>";
 		};
@@ -103,6 +154,14 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		243D1F07A27436E1179FBC06 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A281DF5350AAB490BC0A0F65 /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		CF8DD1AA2F2098940021A936 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -135,6 +194,53 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		05EB3E9CA9EDDC33A3E14D25 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				FA9D2967992927A1A6B0984F /* IdleView.swift */,
+				1F48ACF9024A3C953084B362 /* SolarView.swift */,
+				76B2E7ACAE2F9415FC39E60A /* SpotsListView.swift */,
+				C51884768001862EF7D7488B /* StatsView.swift */,
+				55A7305880DD8730DD1B753F /* ActiveSessionView.swift */,
+				C41509B70794FC42EA5ABD9A /* ActivationProgressRing.swift */,
+				A92675B1B784ABC0EA3FA356 /* QuickStartView.swift */,
+			);
+			name = Views;
+			path = Views;
+			sourceTree = "<group>";
+		};
+		07E7E34B103B1D25348668D5 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				E710C1E17ED46AEC55D07BBA /* SharedDataReader.swift */,
+				40E17F05E31D95F0EB73D688 /* WatchSessionDelegate.swift */,
+			);
+			name = Services;
+			path = Services;
+			sourceTree = "<group>";
+		};
+		7FD56C06FF2C6F4EE90CDFD7 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				E83E228B2F489A5EEFCC5667 /* watchOS */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		B02D6B769AAAE17783AD5DBF /* CarrierWaveWatch */ = {
+			isa = PBXGroup;
+			children = (
+				05EB3E9CA9EDDC33A3E14D25 /* Views */,
+				07E7E34B103B1D25348668D5 /* Services */,
+				07398A1125705ADB8FA99900 /* CarrierWaveWatchApp.swift */,
+				A4D739778B0E9A372D780C7C /* ContentView.swift */,
+				F164D6AB25C3BDE8E9D06A48 /* Assets.xcassets */,
+				D1E133306A7B699188A463B1 /* CarrierWaveWatch.entitlements */,
+			);
+			name = CarrierWaveWatch;
+			path = CarrierWaveWatch;
+			sourceTree = "<group>";
+		};
 		CF8DD1A42F2098940021A936 = {
 			isa = PBXGroup;
 			children = (
@@ -143,6 +249,8 @@
 				CF8DD1BF2F2098950021A936 /* CarrierWaveTests */,
 				CF8DD1C92F2098950021A936 /* CarrierWaveUITests */,
 				CF8DD1AE2F2098940021A936 /* Products */,
+				7FD56C06FF2C6F4EE90CDFD7 /* Frameworks */,
+				B02D6B769AAAE17783AD5DBF /* CarrierWaveWatch */,
 			);
 			sourceTree = "<group>";
 		};
@@ -153,13 +261,39 @@
 				CFA000012F500001007A0358 /* CarrierWaveWidgets.appex */,
 				CF8DD1BC2F2098950021A936 /* CarrierWaveTests.xctest */,
 				CF8DD1C62F2098950021A936 /* CarrierWaveUITests.xctest */,
+				0FCFE1EFC1D72D2A48680420 /* CarrierWaveWatch.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		E83E228B2F489A5EEFCC5667 /* watchOS */ = {
+			isa = PBXGroup;
+			children = (
+				518D696504E373AF7A909F81 /* Foundation.framework */,
+			);
+			name = watchOS;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		4D7D39B157DB6390DB8674B6 /* CarrierWaveWatch */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7D3D3FC061538458F9D73993 /* Build configuration list for PBXNativeTarget "CarrierWaveWatch" */;
+			buildPhases = (
+				2E9B246F544CADEC33826BE4 /* Sources */,
+				243D1F07A27436E1179FBC06 /* Frameworks */,
+				54FA00501D05D656E05B10C5 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = CarrierWaveWatch;
+			productName = CarrierWaveWatch;
+			productReference = 0FCFE1EFC1D72D2A48680420 /* CarrierWaveWatch.app */;
+			productType = "com.apple.product-type.application";
+		};
 		CF8DD1AC2F2098940021A936 /* CarrierWave */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = CF8DD1D02F2098950021A936 /* Build configuration list for PBXNativeTarget "CarrierWave" */;
@@ -168,11 +302,13 @@
 				CF8DD1AA2F2098940021A936 /* Frameworks */,
 				CF8DD1AB2F2098940021A936 /* Resources */,
 				CFA0000C2F50000C007A0358 /* Embed App Extensions */,
+				97840EB2BF539A63A24745A4 /* Embed Watch Content */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 				CFA0000B2F50000B007A0358 /* PBXTargetDependency */,
+				CF88F60B939BF7719D8B59B3 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				CF8DD1AF2F2098940021A936 /* CarrierWave */,
@@ -257,6 +393,9 @@
 				LastSwiftUpdateCheck = 2620;
 				LastUpgradeCheck = 2630;
 				TargetAttributes = {
+					4D7D39B157DB6390DB8674B6 = {
+						CreatedOnToolsVersion = 16.2;
+					};
 					CF8DD1AC2F2098940021A936 = {
 						CreatedOnToolsVersion = 26.2;
 					};
@@ -294,11 +433,20 @@
 				CFA000062F500006007A0358 /* CarrierWaveWidgets */,
 				CF8DD1BB2F2098950021A936 /* CarrierWaveTests */,
 				CF8DD1C52F2098950021A936 /* CarrierWaveUITests */,
+				4D7D39B157DB6390DB8674B6 /* CarrierWaveWatch */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		54FA00501D05D656E05B10C5 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A4B98C617E82778D27395231 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		CF8DD1AB2F2098940021A936 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -330,6 +478,24 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		2E9B246F544CADEC33826BE4 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3DEF47BAF3D0D285C278DA9F /* CarrierWaveWatchApp.swift in Sources */,
+				863AF8C51390A582D0C6CF23 /* ContentView.swift in Sources */,
+				389F679B1C509511BC5CBBAD /* IdleView.swift in Sources */,
+				82C5F8D294891E0DD13A1146 /* SolarView.swift in Sources */,
+				62AFCBC4FC5E9EB11420DF91 /* SpotsListView.swift in Sources */,
+				15ADFCA1198A049CA4F8FD24 /* StatsView.swift in Sources */,
+				916242E85DE2B9874DFE311F /* ActiveSessionView.swift in Sources */,
+				68988BA40D95E587D42E2D50 /* ActivationProgressRing.swift in Sources */,
+				1F24DBB851D4A3AA12AB7EEC /* QuickStartView.swift in Sources */,
+				92BEE122BE706E3A87CA97AB /* SharedDataReader.swift in Sources */,
+				0E9AB3BE12D3475D6E49F14D /* WatchSessionDelegate.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		CF8DD1A92F2098940021A936 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -361,6 +527,12 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		CF88F60B939BF7719D8B59B3 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = CarrierWaveWatch;
+			target = 4D7D39B157DB6390DB8674B6 /* CarrierWaveWatch */;
+			targetProxy = D14D998666490ED11FFF7BA1 /* PBXContainerItemProxy */;
+		};
 		CF8DD1BE2F2098950021A936 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = CF8DD1AC2F2098940021A936 /* CarrierWave */;
@@ -379,6 +551,37 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		54A69486ABD776CD80415922 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = CarrierWaveWatch/CarrierWaveWatch.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 51;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 7UE4RDLUSX;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Carrier Wave";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.jsvana.FullDuplex;
+				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = NO;
+				MARKETING_VERSION = 1.40.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jsvana.FullDuplex.Watch;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = watchos;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				VALIDATE_PRODUCT = YES;
+				WATCHOS_DEPLOYMENT_TARGET = 11.0;
+			};
+			name = Release;
+		};
 		CF8DD1CE2F2098950021A936 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -720,9 +923,49 @@
 			};
 			name = Release;
 		};
+		E302BE9FB7C681E95ABA69D3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = CarrierWaveWatch/CarrierWaveWatch.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 51;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 7UE4RDLUSX;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Carrier Wave";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.jsvana.FullDuplex;
+				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = NO;
+				MARKETING_VERSION = 1.40.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jsvana.FullDuplex.Watch;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = watchos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 11.0;
+			};
+			name = Debug;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		7D3D3FC061538458F9D73993 /* Build configuration list for PBXNativeTarget "CarrierWaveWatch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				54A69486ABD776CD80415922 /* Release */,
+				E302BE9FB7C681E95ABA69D3 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		CF8DD1A82F2098940021A936 /* Build configuration list for PBXProject "CarrierWave" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

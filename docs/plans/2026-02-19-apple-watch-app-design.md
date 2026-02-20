@@ -22,7 +22,7 @@ iPhone App
 └── SolarPollingService (extend) ──→ App Group UserDefaults ──→ Watch reads solar data
 ```
 
-The Watch app is **read-only** — it displays data from the phone but does not initiate sessions or log QSOs. This keeps the MVP simple and avoids complex bidirectional sync.
+The Watch app supports **quick session start** — users can begin a logging session from the Watch, which sends a message to the phone to start the session. QSO logging still happens on the phone; the Watch shows live progress.
 
 ### New Shared Snapshot Types
 
@@ -172,40 +172,34 @@ Complications update via `WidgetCenter.shared.reloadTimelines()` triggered from 
 
 ## Implementation Phases
 
-### Phase 1: Watch Target + Data Plumbing (this PR)
+### Phase 1: Watch Target + Full Functionality (this PR)
 
 1. Create `CarrierWaveWatch` target (watchOS 11.0+, SwiftUI lifecycle)
 2. Add App Group entitlement (`group.com.jsvana.FullDuplex`)
 3. Add `WidgetSolarSnapshot` and `WidgetSpotSnapshot` types to WidgetDataWriter/Reader
 4. Extend `SolarPollingService` to write solar snapshots to App Group
-5. Extend `SpotsService` to write top 15 spots to App Group
+5. Extend `SpotsService` to write top 15 spots to App Group (filtered by user's bands/modes)
 6. Implement `SharedDataReader` on Watch (reads all snapshot types from App Group)
-7. Build Idle View: solar conditions + spots list + quick stats
-8. Build basic Active Session View reading from `WidgetSessionSnapshot`
+7. Build Idle View: solar conditions + filtered spots list + quick stats
+8. Build Active Session View with progress ring and callsign info
+9. Add `WatchConnectivity` framework to both targets
+10. Implement `PhoneSessionDelegate` on iPhone, `WatchSessionDelegate` on Watch
+11. Real-time session updates (QSO count, callsign info, frequency changes)
+12. Quick session start from Watch (sends start request to phone)
 
-### Phase 2: WatchConnectivity for Real-Time Session Updates
-
-1. Add `WatchConnectivity` framework to both targets
-2. Implement `PhoneSessionDelegate` on iPhone
-3. Implement `WatchSessionDelegate` on Watch
-4. Send `WatchSessionUpdate` on every QSO log, frequency change, session start/end
-5. Include `WatchCallsignInfo` when callsign lookup completes
-6. Watch receives updates and displays instantly (no polling delay)
-
-### Phase 3: Complications
+### Phase 2: Complications
 
 1. Create WidgetKit complication bundle for Watch
 2. Solar gauge complications (circular, rectangular, inline)
 3. Active session complication (QSO count + park)
 4. Timeline providers reading from App Group
 
-### Phase 4: Polish + Haptics (future)
+### Phase 3: Polish + Haptics (future)
 
 1. Haptic tap on QSO logged confirmation
 2. Haptic tap on POTA activation threshold (10 QSOs)
 3. Haptic for P2P opportunity during session
 4. Haptic for spot comment received
-5. Quick session start from Watch
 
 ## Technical Decisions
 
@@ -217,8 +211,8 @@ Complications update via `WidgetCenter.shared.reloadTimelines()` triggered from 
 
 **Shared types duplicated (not a shared framework)** — Follows the existing widget pattern where `WidgetShared`, `WidgetStreakSnapshot`, etc. are duplicated between the main app and widget extension. A shared Swift package would be cleaner but is a larger refactor for a future PR.
 
-## Questions for Review
+## Decisions
 
-1. **watchOS minimum version**: 11.0 okay, or need to support 10.x?
-2. **Quick session start from Watch**: Include in Phase 1 or defer? (adds bidirectional communication complexity)
-3. **Spot filtering on Watch**: Show all spots, or filter to user's preferred bands/modes?
+1. **watchOS minimum version**: 11.0 ✓
+2. **Quick session start from Watch**: Phase 1 ✓
+3. **Spot filtering on Watch**: Filtered to user's preferred bands/modes ✓

@@ -7,6 +7,8 @@ enum WidgetShared {
         static let streakData = "widget.streakData"
         static let countData = "widget.countData"
         static let sessionData = "widget.sessionData"
+        static let solarData = "widget.solarData"
+        static let spotsData = "widget.spotsData"
     }
 
     enum DeepLink {
@@ -66,6 +68,39 @@ struct WidgetSessionSnapshot: Codable, Sendable {
     let updatedAt: Date
 }
 
+// MARK: - WidgetSolarSnapshot
+
+struct WidgetSolarSnapshot: Codable, Sendable {
+    let kIndex: Double?
+    let aIndex: Int?
+    let solarFlux: Double?
+    let sunspots: Int?
+    let propagationRating: String?
+    let updatedAt: Date
+}
+
+// MARK: - WidgetSpotSnapshot
+
+struct WidgetSpotSnapshot: Codable, Sendable {
+    let spots: [WidgetSpot]
+    let updatedAt: Date
+}
+
+// MARK: - WidgetSpot
+
+struct WidgetSpot: Codable, Sendable, Identifiable {
+    let id: String
+    let callsign: String
+    let frequencyMHz: Double
+    let mode: String
+    let band: String
+    let timestamp: Date
+    let source: String
+    let parkRef: String?
+    let parkName: String?
+    let snr: Int?
+}
+
 // MARK: - WidgetDataReader
 
 enum WidgetDataReader {
@@ -90,6 +125,20 @@ enum WidgetDataReader {
             return nil
         }
         return try? JSONDecoder().decode(WidgetSessionSnapshot.self, from: data)
+    }
+
+    static func readSolar() -> WidgetSolarSnapshot? {
+        guard let data = defaults?.data(forKey: WidgetShared.Key.solarData) else {
+            return nil
+        }
+        return try? JSONDecoder().decode(WidgetSolarSnapshot.self, from: data)
+    }
+
+    static func readSpots() -> WidgetSpotSnapshot? {
+        guard let data = defaults?.data(forKey: WidgetShared.Key.spotsData) else {
+            return nil
+        }
+        return try? JSONDecoder().decode(WidgetSpotSnapshot.self, from: data)
     }
 
     // MARK: Private

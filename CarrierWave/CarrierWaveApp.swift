@@ -57,6 +57,9 @@ struct CarrierWaveApp: App {
                     // Start iCloud settings sync
                     SettingsSyncService.shared.start()
 
+                    // Activate WatchConnectivity for Apple Watch companion
+                    PhoneSessionDelegate.shared.activate()
+
                     // Start hourly solar conditions polling
                     SolarPollingService.shared.configure(container: sharedModelContainer)
 
@@ -215,4 +218,5 @@ extension Notification.Name {
     static let didSyncQSOs = Notification.Name("didSyncQSOs")
     static let didDetectActivities = Notification.Name("didDetectActivities")
     static let didClearQSOs = Notification.Name("didClearQSOs")
+    static let didReceiveWatchStartSession = Notification.Name("didReceiveWatchStartSession")
 }
