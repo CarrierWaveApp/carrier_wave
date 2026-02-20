@@ -135,17 +135,44 @@ extension DashboardView {
     }
 
     private var icloudServiceInfo: ServiceInfo {
-        ServiceInfo(
+        let cloudSync = CloudSyncService.shared
+        let hasFolder = iCloudMonitor.iCloudContainerURL != nil
+        let syncEnabled = cloudSync.isEnabled
+
+        let status: ServiceStatus = if syncEnabled {
+            .connected
+        } else if hasFolder {
+            .connected
+        } else {
+            .notConfigured
+        }
+
+        let primaryStat: String? = if syncEnabled {
+            cloudSync.syncStatus.displayText
+        } else if hasFolder {
+            "\(asyncStats.icloudImportedCount) imported"
+        } else {
+            nil
+        }
+
+        let secondaryStat: String? = if cloudSync.pendingCount > 0 {
+            "\(cloudSync.pendingCount) pending"
+        } else if !iCloudMonitor.pendingFiles.isEmpty {
+            "\(iCloudMonitor.pendingFiles.count) files pending"
+        } else {
+            nil
+        }
+
+        return ServiceInfo(
             id: .icloud,
             name: "iCloud",
-            status: iCloudMonitor.iCloudContainerURL != nil ? .connected : .notConfigured,
-            primaryStat: iCloudMonitor.iCloudContainerURL != nil
-                ? "\(asyncStats.icloudImportedCount) imported" : nil,
-            secondaryStat: !iCloudMonitor.pendingFiles.isEmpty
-                ? "\(iCloudMonitor.pendingFiles.count) pending" : nil,
-            tertiaryInfo: iCloudMonitor.iCloudContainerURL != nil ? nil : "Not configured",
-            showWarning: !iCloudMonitor.pendingFiles.isEmpty,
-            isSyncing: false
+            status: status,
+            primaryStat: primaryStat,
+            secondaryStat: secondaryStat,
+            tertiaryInfo: status == .notConfigured ? "Not configured" : nil,
+            showWarning: cloudSync.syncStatus.isError || !iCloudMonitor.pendingFiles.isEmpty,
+            isSyncing: cloudSync.syncStatus == .syncing(detail: "")
+                || { if case .syncing = cloudSync.syncStatus { return true }; return false }()
         )
     }
 

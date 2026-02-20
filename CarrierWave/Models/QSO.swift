@@ -121,6 +121,10 @@ final class QSO {
     /// Activity log QSOs should never have parkReference set (that's the activator field).
     var isActivityLogQSO: Bool = false
 
+    /// Whether this record has local changes not yet synced to iCloud.
+    /// Set to true on any local mutation, cleared after successful upload.
+    var cloudDirtyFlag: Bool = false
+
     /// Logging session this QSO belongs to (optional - older QSOs won't have this)
     var loggingSessionId: UUID?
 

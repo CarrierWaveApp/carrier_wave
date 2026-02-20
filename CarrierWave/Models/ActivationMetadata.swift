@@ -66,6 +66,9 @@ final class ActivationMetadata {
     var weatherDescription: String?
     var weatherTimestamp: Date?
 
+    /// Whether this record has local changes not yet synced to iCloud.
+    var cloudDirtyFlag: Bool = false
+
     /// Whether structured solar data is available
     var hasSolarData: Bool {
         solarKIndex != nil || solarFlux != nil || solarSunspots != nil

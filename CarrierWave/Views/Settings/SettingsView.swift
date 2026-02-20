@@ -97,7 +97,7 @@ struct SettingsMainView: View {
             case .clublog:
                 ClubLogSettingsView(syncService: syncService)
             case .icloud:
-                ICloudSettingsView()
+                CloudSyncSettingsView()
             }
         }
         .onAppear {

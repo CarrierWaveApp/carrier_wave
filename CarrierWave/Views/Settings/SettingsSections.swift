@@ -142,10 +142,10 @@ struct SyncSourcesSection: View {
 
             // iCloud
             NavigationLink {
-                ICloudSettingsView()
+                CloudSyncSettingsView()
             } label: {
                 HStack {
-                    Text("iCloud Folder")
+                    Text("iCloud")
                     Spacer()
                     if iCloudMonitor.iCloudContainerURL != nil {
                         Image(systemName: "checkmark.circle.fill")

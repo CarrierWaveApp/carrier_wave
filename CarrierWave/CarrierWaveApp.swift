@@ -1,12 +1,34 @@
 import SwiftData
 import SwiftUI
+import UIKit
 import UniformTypeIdentifiers
+
+// MARK: - AppDelegate
+
+class AppDelegate: NSObject, UIApplicationDelegate {
+    func application(
+        _: UIApplication,
+        didReceiveRemoteNotification userInfo: [AnyHashable: Any]
+    ) async -> UIBackgroundFetchResult {
+        await CloudSyncService.shared.handleRemoteNotification(userInfo)
+        return .newData
+    }
+
+    func application(
+        _: UIApplication,
+        didRegisterForRemoteNotificationsWithDeviceToken _: Data
+    ) {
+        // CKSyncEngine handles token registration internally
+    }
+}
 
 // MARK: - CarrierWaveApp
 
 @main
 struct CarrierWaveApp: App {
     // MARK: Internal
+
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
@@ -30,6 +52,7 @@ struct CarrierWaveApp: App {
             SessionSpot.self,
             SolarSnapshot.self,
             WebSDRFavorite.self,
+            CloudSyncMetadata.self,
         ])
         let modelConfiguration = ModelConfiguration(
             schema: schema,
@@ -62,6 +85,12 @@ struct CarrierWaveApp: App {
 
                     // Start hourly solar conditions polling
                     SolarPollingService.shared.configure(container: sharedModelContainer)
+
+                    // Start iCloud QSO sync (CKSyncEngine)
+                    CloudSyncService.shared.configure(container: sharedModelContainer)
+
+                    // Register for remote notifications (CKSyncEngine push)
+                    UIApplication.shared.registerForRemoteNotifications()
 
                     // Preload caches on app launch (loads from disk, refreshes in background)
                     await POTAParksCache.shared.ensureLoaded()

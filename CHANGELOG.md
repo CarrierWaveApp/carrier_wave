@@ -5,6 +5,9 @@ All notable changes to Carrier Wave will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Add iCloud QSO sync via CKSyncEngine: bidirectional sync of QSOs, sessions, service presence, and activation metadata across devices
+- Add CloudSyncSettingsView with sync toggle, status display, last sync time, and iCloud account info
+- Add iCloud sync status indicator on dashboard service list
 - Add FRIEND badge on POTA spot rows, RBN spot rows, and hunter log spot rows for accepted friends
 - Add "Friends On Air" dashboard card showing friends active in POTA spots
 - Add "Friend Activity" dashboard card showing recent friend feed items
