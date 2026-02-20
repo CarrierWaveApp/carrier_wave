@@ -4,7 +4,7 @@ import SwiftData
 /// Hourly solar conditions snapshot captured by background polling.
 /// Stores solar-only readings (no weather — that requires location).
 @Model
-final class SolarSnapshot {
+nonisolated final class SolarSnapshot {
     // MARK: Lifecycle
 
     init(

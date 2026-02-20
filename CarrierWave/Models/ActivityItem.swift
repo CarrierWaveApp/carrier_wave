@@ -4,7 +4,7 @@ import SwiftData
 // MARK: - ActivityItem
 
 @Model
-final class ActivityItem {
+nonisolated final class ActivityItem {
     // MARK: Lifecycle
 
     init(

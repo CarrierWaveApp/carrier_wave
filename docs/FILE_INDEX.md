@@ -71,6 +71,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | File | Purpose |
 |------|---------|
 | `QSO.swift` | Core contact record (callsign, band, mode, timestamps, grid, park ref) |
+| `QSO+Dedup.swift` | QSO deduplication key using ModeEquivalence from CarrierWaveCore |
 | `QSO+POTAPresence.swift` | Per-park POTA presence tracking for two-fer activations |
 | `UploadDestination.swift` | Sync target configuration (enabled flag, last sync timestamp) |
 | `POTAJob.swift` | POTA job tracking, status, details models (POTAJob, POTAJobDetails, POTAJobStatus) |

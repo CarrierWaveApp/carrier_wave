@@ -13,7 +13,7 @@ nonisolated private func encodeProgress(_ progress: ChallengeProgress) -> Data? 
 // MARK: - ChallengeParticipation
 
 @Model
-final class ChallengeParticipation {
+nonisolated final class ChallengeParticipation {
     // MARK: Lifecycle
 
     init(

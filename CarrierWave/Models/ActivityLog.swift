@@ -7,7 +7,7 @@ import SwiftData
 /// Unlike LoggingSession (which has start/end), activity logs stay open across app launches
 /// and track daily QSO tallies, station profiles, and location changes.
 @Model
-final class ActivityLog {
+nonisolated final class ActivityLog {
     // MARK: Lifecycle
 
     init(
@@ -32,10 +32,10 @@ final class ActivityLog {
 
     // MARK: Internal
 
-    var id: UUID
-    var name: String
-    var myCallsign: String
-    var createdAt: Date
+    var id = UUID()
+    var name = ""
+    var myCallsign = ""
+    var createdAt = Date()
 
     /// ID of the currently selected StationProfile (stored in UserDefaults)
     var stationProfileId: UUID?
@@ -47,5 +47,5 @@ final class ActivityLog {
     var locationLabel: String?
 
     /// Whether this is the currently active activity log
-    var isActive: Bool
+    var isActive: Bool = true
 }

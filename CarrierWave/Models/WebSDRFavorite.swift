@@ -6,7 +6,7 @@ import SwiftData
 /// A favorited KiwiSDR receiver, synced via iCloud.
 /// Small table (~20 items max), so @Query is fine.
 @Model
-final class WebSDRFavorite {
+nonisolated final class WebSDRFavorite {
     // MARK: Lifecycle
 
     init(
@@ -26,11 +26,11 @@ final class WebSDRFavorite {
     // MARK: Internal
 
     /// Stable identifier: "host:port"
-    var hostPort: String
-    var displayName: String
-    var location: String
+    var hostPort = ""
+    var displayName = ""
+    var location = ""
     var antenna: String?
-    var addedDate: Date
+    var addedDate = Date()
 
     var host: String {
         let parts = hostPort.components(separatedBy: ":")

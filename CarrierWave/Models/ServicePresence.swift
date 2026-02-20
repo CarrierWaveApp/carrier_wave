@@ -3,7 +3,7 @@ import Foundation
 import SwiftData
 
 @Model
-final class ServicePresence {
+nonisolated final class ServicePresence {
     // MARK: Lifecycle
 
     init(
@@ -18,7 +18,7 @@ final class ServicePresence {
         parkReference: String? = nil
     ) {
         self.id = id
-        self.serviceType = serviceType
+        serviceTypeRawValue = serviceType.rawValue
         self.isPresent = isPresent
         self.needsUpload = needsUpload
         self.uploadRejected = uploadRejected
@@ -30,10 +30,10 @@ final class ServicePresence {
 
     // MARK: Internal
 
-    var id: UUID
-    var serviceType: ServiceType
-    var isPresent: Bool
-    var needsUpload: Bool
+    var id = UUID()
+    var serviceTypeRawValue = ServiceType.qrz.rawValue
+    var isPresent: Bool = false
+    var needsUpload: Bool = false
     /// User explicitly rejected uploading this QSO to this service
     var uploadRejected: Bool = false
     /// Upload HTTP request succeeded but POTA job completion is unconfirmed.
@@ -49,6 +49,12 @@ final class ServicePresence {
     var cloudDirtyFlag: Bool = false
 
     var qso: QSO?
+
+    /// Service type enum accessor
+    var serviceType: ServiceType {
+        get { ServiceType(rawValue: serviceTypeRawValue) ?? .qrz }
+        set { serviceTypeRawValue = newValue.rawValue }
+    }
 
     /// Create a presence record for a QSO that was downloaded from a service
     static func downloaded(

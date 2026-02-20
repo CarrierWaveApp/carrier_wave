@@ -13,7 +13,7 @@ nonisolated private func encodeConfiguration(_ config: ChallengeConfiguration) t
 // MARK: - ChallengeDefinition
 
 @Model
-final class ChallengeDefinition {
+nonisolated final class ChallengeDefinition {
     // MARK: Lifecycle
 
     init(
@@ -62,8 +62,11 @@ final class ChallengeDefinition {
 
     var source: ChallengeSource?
 
-    @Relationship(deleteRule: .cascade, inverse: \ChallengeParticipation.challengeDefinition)
-    var participations: [ChallengeParticipation] = []
+    /// Non-optional wrapper for CloudKit-required optional relationship
+    var participations: [ChallengeParticipation] {
+        get { participationsRelation ?? [] }
+        set { participationsRelation = newValue }
+    }
 
     var type: ChallengeType {
         get { ChallengeType(rawValue: typeRawValue) ?? .collection }
@@ -146,6 +149,11 @@ final class ChallengeDefinition {
     var sortedTiers: [ChallengeTier] {
         tiers.sorted { $0.order < $1.order }
     }
+
+    // MARK: Private
+
+    @Relationship(deleteRule: .cascade, inverse: \ChallengeParticipation.challengeDefinition)
+    private var participationsRelation: [ChallengeParticipation]?
 }
 
 // MARK: - Factory

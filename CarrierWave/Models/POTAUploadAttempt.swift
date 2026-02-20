@@ -7,7 +7,7 @@ import Foundation
 import SwiftData
 
 @Model
-class POTAUploadAttempt {
+nonisolated class POTAUploadAttempt {
     // MARK: Lifecycle
 
     init(

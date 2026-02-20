@@ -4,7 +4,7 @@ import SwiftData
 // MARK: - Club
 
 @Model
-final class Club {
+nonisolated final class Club {
     // MARK: Lifecycle
 
     init(

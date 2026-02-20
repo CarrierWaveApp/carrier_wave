@@ -5,7 +5,7 @@ import SwiftData
 
 /// Persists dismissed friend suggestions so they don't reappear.
 @Model
-final class DismissedSuggestion {
+nonisolated final class DismissedSuggestion {
     // MARK: Lifecycle
 
     init(callsign: String, dismissedAt: Date = Date()) {

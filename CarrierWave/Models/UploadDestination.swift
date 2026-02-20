@@ -3,7 +3,7 @@ import Foundation
 import SwiftData
 
 @Model
-final class UploadDestination {
+nonisolated final class UploadDestination {
     // MARK: Lifecycle
 
     init(
@@ -13,17 +13,23 @@ final class UploadDestination {
         lastSyncAt: Date? = nil
     ) {
         self.id = id
-        self.type = type
+        typeRawValue = type.rawValue
         self.isEnabled = isEnabled
         self.lastSyncAt = lastSyncAt
     }
 
     // MARK: Internal
 
-    var id: UUID
-    var type: ServiceType
-    var isEnabled: Bool
+    var id = UUID()
+    var typeRawValue = ServiceType.qrz.rawValue
+    var isEnabled: Bool = false
     var lastSyncAt: Date?
+
+    /// Service type enum accessor
+    var type: ServiceType {
+        get { ServiceType(rawValue: typeRawValue) ?? .qrz }
+        set { typeRawValue = newValue.rawValue }
+    }
 }
 
 // Note: Credentials (API keys, tokens) stored in Keychain, not SwiftData

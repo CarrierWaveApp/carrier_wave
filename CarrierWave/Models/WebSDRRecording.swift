@@ -3,7 +3,7 @@ import SwiftData
 
 /// Stores metadata for a WebSDR audio recording associated with a logging session
 @Model
-final class WebSDRRecording {
+nonisolated final class WebSDRRecording {
     // MARK: Lifecycle
 
     init(

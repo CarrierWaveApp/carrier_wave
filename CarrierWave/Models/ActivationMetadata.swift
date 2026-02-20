@@ -9,7 +9,7 @@ import SwiftData
 /// Stores metadata for POTA activations (title, power, weather, solar conditions)
 /// Keyed by park reference + date (UTC start of day)
 @Model
-final class ActivationMetadata {
+nonisolated final class ActivationMetadata {
     // MARK: Lifecycle
 
     init(

@@ -6,7 +6,7 @@ import SwiftData
 /// A persisted spot (RBN or POTA) recorded during a logging session.
 /// Linked to LoggingSession via `loggingSessionId` (same pattern as QSO).
 @Model
-final class SessionSpot {
+nonisolated final class SessionSpot {
     // MARK: Lifecycle
 
     init(
@@ -46,16 +46,16 @@ final class SessionSpot {
 
     // MARK: Internal
 
-    var id: UUID
-    var loggingSessionId: UUID
+    var id = UUID()
+    var loggingSessionId = UUID()
 
     // Core fields
-    var callsign: String
-    var frequencyKHz: Double
-    var mode: String
-    var timestamp: Date
+    var callsign = ""
+    var frequencyKHz: Double = 0
+    var mode = ""
+    var timestamp = Date()
     /// "rbn" or "pota"
-    var source: String
+    var source = ""
 
     // RBN-specific
     var snr: Int?
@@ -69,7 +69,7 @@ final class SessionSpot {
     var comments: String?
 
     // Enrichment
-    var region: String
+    var region = SpotRegion.other.rawValue
     var distanceMeters: Double?
 
     /// Dedup key to prevent re-inserting the same spot across polling cycles

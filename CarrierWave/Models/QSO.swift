@@ -1,9 +1,8 @@
-import CarrierWaveCore
 import Foundation
 import SwiftData
 
 @Model
-final class QSO {
+nonisolated final class QSO {
     // MARK: Lifecycle
 
     init(
@@ -53,7 +52,7 @@ final class QSO {
         self.parkReference = parkReference
         self.theirParkReference = theirParkReference
         self.notes = notes
-        self.importSource = importSource
+        importSourceRawValue = importSource.rawValue
         self.importedAt = importedAt
         self.rawADIF = rawADIF
         self.name = name
@@ -74,22 +73,22 @@ final class QSO {
 
     // MARK: Internal
 
-    var id: UUID
-    var callsign: String
-    var band: String
-    var mode: String
+    var id = UUID()
+    var callsign = ""
+    var band = ""
+    var mode = ""
     var frequency: Double?
-    var timestamp: Date
+    var timestamp = Date()
     var rstSent: String?
     var rstReceived: String?
-    var myCallsign: String
+    var myCallsign = ""
     var myGrid: String?
     var theirGrid: String?
     var parkReference: String?
     var theirParkReference: String?
     var notes: String?
-    var importSource: ImportSource
-    var importedAt: Date
+    var importSourceRawValue = ImportSource.logger.rawValue
+    var importedAt = Date()
     var rawADIF: String?
 
     // Contact info (from HAMRS and other sources)
@@ -128,16 +127,16 @@ final class QSO {
     /// Logging session this QSO belongs to (optional - older QSOs won't have this)
     var loggingSessionId: UUID?
 
-    @Relationship(deleteRule: .cascade, inverse: \ServicePresence.qso)
-    var servicePresence: [ServicePresence] = []
+    /// Non-optional wrapper for CloudKit-required optional relationship
+    var servicePresence: [ServicePresence] {
+        get { servicePresenceRelation ?? [] }
+        set { servicePresenceRelation = newValue }
+    }
 
-    /// Deduplication key: callsign + band + mode + timestamp (rounded to 2 min)
-    nonisolated var deduplicationKey: String {
-        let roundedTimestamp = timestamp.timeIntervalSince1970
-        let rounded = Int(roundedTimestamp / 120) * 120 // 2 minute buckets
-        let trimmedCallsign = callsign.trimmingCharacters(in: .whitespaces).uppercased()
-        let canonicalMode = ModeEquivalence.canonicalName(mode).uppercased()
-        return "\(trimmedCallsign)|\(band.uppercased())|\(canonicalMode)|\(rounded)"
+    /// Import source enum accessor
+    var importSource: ImportSource {
+        get { ImportSource(rawValue: importSourceRawValue) ?? .logger }
+        set { importSourceRawValue = newValue.rawValue }
     }
 
     /// Extract callsign prefix (for display/grouping)
@@ -355,4 +354,9 @@ final class QSO {
     func potaPresenceRecords() -> [ServicePresence] {
         servicePresence.filter { $0.serviceType == .pota }
     }
+
+    // MARK: Private
+
+    @Relationship(deleteRule: .cascade, inverse: \ServicePresence.qso)
+    private var servicePresenceRelation: [ServicePresence]?
 }

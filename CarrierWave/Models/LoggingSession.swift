@@ -42,7 +42,7 @@ enum LoggingSessionStatus: String, Codable {
 
 /// A logging session represents a period of operating, optionally at a specific activation
 @Model
-final class LoggingSession {
+nonisolated final class LoggingSession {
     // MARK: Lifecycle
 
     init(
@@ -85,16 +85,16 @@ final class LoggingSession {
 
     // MARK: Internal
 
-    var id: UUID
-    var myCallsign: String
-    var startedAt: Date
+    var id = UUID()
+    var myCallsign = ""
+    var startedAt = Date()
     var endedAt: Date?
 
     /// Operating frequency in MHz (e.g., 14.060)
     var frequency: Double?
 
     /// Operating mode (CW, SSB, FT8, etc.)
-    var mode: String
+    var mode = "CW"
 
     /// Stored as raw value for SwiftData compatibility
     var activationTypeRawValue: String = ActivationType.casual.rawValue

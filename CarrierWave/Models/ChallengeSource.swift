@@ -2,7 +2,7 @@ import Foundation
 import SwiftData
 
 @Model
-final class ChallengeSource {
+nonisolated final class ChallengeSource {
     // MARK: Lifecycle
 
     init(
@@ -34,8 +34,11 @@ final class ChallengeSource {
     var lastFetched: Date?
     var lastError: String?
 
-    @Relationship(deleteRule: .cascade, inverse: \ChallengeDefinition.source)
-    var challenges: [ChallengeDefinition] = []
+    /// Non-optional wrapper for CloudKit-required optional relationship
+    var challenges: [ChallengeDefinition] {
+        get { challengesRelation ?? [] }
+        set { challengesRelation = newValue }
+    }
 
     var type: ChallengeSourceType {
         get { ChallengeSourceType(rawValue: typeRawValue) ?? .community }
@@ -58,4 +61,9 @@ final class ChallengeSource {
             "\(name) (Invite)"
         }
     }
+
+    // MARK: Private
+
+    @Relationship(deleteRule: .cascade, inverse: \ChallengeDefinition.source)
+    private var challengesRelation: [ChallengeDefinition]?
 }

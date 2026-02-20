@@ -12,7 +12,7 @@ enum FriendshipStatus: String, Codable {
 // MARK: - Friendship
 
 @Model
-final class Friendship {
+nonisolated final class Friendship {
     // MARK: Lifecycle
 
     init(

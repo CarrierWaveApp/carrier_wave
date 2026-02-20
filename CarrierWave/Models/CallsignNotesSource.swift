@@ -9,7 +9,7 @@ import SwiftData
 // MARK: - CallsignNotesSource
 
 @Model
-final class CallsignNotesSource {
+nonisolated final class CallsignNotesSource {
     // MARK: Lifecycle
 
     init(title: String, url: String) {
@@ -25,22 +25,22 @@ final class CallsignNotesSource {
     // MARK: Internal
 
     /// Unique identifier
-    var id: UUID
+    var id = UUID()
 
     /// Display name for this source (e.g., "POTA Activators")
-    var title: String
+    var title = ""
 
     /// URL to the notes file
-    var url: String
+    var url = ""
 
     /// Whether this source is enabled for lookups
-    var isEnabled: Bool
+    var isEnabled: Bool = true
 
     /// When this source was last successfully fetched
     var lastFetched: Date?
 
     /// Number of callsign entries parsed from this source
-    var entryCount: Int
+    var entryCount: Int = 0
 
     /// Last error message (if fetch failed)
     var lastError: String?

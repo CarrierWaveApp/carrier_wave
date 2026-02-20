@@ -4,7 +4,7 @@ import SwiftData
 // MARK: - LeaderboardCache
 
 @Model
-final class LeaderboardCache {
+nonisolated final class LeaderboardCache {
     // MARK: Lifecycle
 
     init(
