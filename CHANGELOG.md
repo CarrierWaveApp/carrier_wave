@@ -18,6 +18,7 @@ All notable changes to Carrier Wave will be documented in this file.
 - Compact session rows in landscape (hide timeline, conditions, upload section)
 
 ### Fixed
+- Fix crash on launch when PencilKit initializes on a background thread and triggers UserDefaults notification into @MainActor-isolated SettingsSyncService (switch to queue-based notification observers)
 - Fix session photos saving the last photo multiple times when adding more than one photo at once (filename collision from timestamp-based naming)
 - Fix slow orientation changes by locking LoggerContainerView size class to prevent full view hierarchy rebuild on iPhone Pro Max rotation
 - Improve map view rotation performance: pre-compute geodesic paths at creation time instead of in view body, remove per-marker animation contexts, switch to flat elevation rendering, cache DateFormatter in filter overlay

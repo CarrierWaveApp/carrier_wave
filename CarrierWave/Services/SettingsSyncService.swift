@@ -72,21 +72,27 @@ final class SettingsSyncService {
         // 3. Push any local-only values that aren't in the cloud yet
         pushFirstSyncValues()
 
-        // 4. Observe remote changes
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(cloudDidChange(_:)),
-            name: NSUbiquitousKeyValueStore.didChangeExternallyNotification,
-            object: cloud
-        )
+        // 4. Observe remote changes (queue: .main ensures @MainActor safety)
+        cloudObserver = NotificationCenter.default.addObserver(
+            forName: NSUbiquitousKeyValueStore.didChangeExternallyNotification,
+            object: cloud,
+            queue: .main
+        ) { [weak self] _ in
+            self?.pullFromCloud()
+        }
 
-        // 5. Observe local changes
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(localDidChange(_:)),
-            name: UserDefaults.didChangeNotification,
-            object: nil
-        )
+        // 5. Observe local changes (queue: .main prevents crashes when
+        //    frameworks like PencilKit post from background threads)
+        localObserver = NotificationCenter.default.addObserver(
+            forName: UserDefaults.didChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self, !self.suppressEcho else {
+                return
+            }
+            pushToCloud()
+        }
 
         // 6. Trigger initial sync from iCloud
         cloud.synchronize()
@@ -149,6 +155,10 @@ final class SettingsSyncService {
     /// Used for diffing on `didChangeNotification`.
     private var localSnapshot: [String: Any] = [:]
 
+    /// Observation tokens for block-based notification observers.
+    private var cloudObserver: Any?
+    private var localObserver: Any?
+
     // MARK: - Snapshot
 
     private func captureSnapshot() {
@@ -186,21 +196,6 @@ final class SettingsSyncService {
         if didPush {
             cloud.synchronize()
         }
-    }
-
-    // MARK: - Notification Handlers
-
-    @objc
-    private func cloudDidChange(_ notification: Notification) {
-        pullFromCloud()
-    }
-
-    @objc
-    private func localDidChange(_: Notification) {
-        guard !suppressEcho else {
-            return
-        }
-        pushToCloud()
     }
 
     // MARK: - Helpers
