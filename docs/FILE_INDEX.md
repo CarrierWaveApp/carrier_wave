@@ -352,6 +352,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `SidebarRBNSpotsView.swift` | RBN/My Spots adapted for persistent sidebar display |
 | `SidebarP2PView.swift` | P2P opportunities adapted for persistent sidebar display |
 | `LoggerView.swift` | Main logger view with session header, callsign input, QSO form |
+| `LoggerView+Landscape.swift` | Logger landscape two-pane layout (form left, QSO list right) and compact session header |
 | `CallsignTextField.swift` | UITextField wrapper for callsign entry with proper cursor handling |
 | `LoggerCallsignCard.swift` | Callsign info display card for logger |
 | `SessionStartSheet.swift` | Session wizard for mode, frequency, activation type, equipment |
@@ -611,6 +612,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `EquipmentStorage.swift` | Generic UserDefaults-backed equipment list storage (antenna, key, mic) |
 | `SessionPhotoManager.swift` | Session photo file save/load/delete (JPEG in Documents/SessionPhotos/) |
 | `USStates.swift` | US state abbreviation-to-name lookup for accessibility labels |
+| `LandscapeAdaptiveDetents.swift` | ViewModifier that switches sheet detents for landscape (portrait `.medium` → landscape `.large`) |
 
 ## Tests (`CarrierWaveTests/`)
 | File | Purpose |

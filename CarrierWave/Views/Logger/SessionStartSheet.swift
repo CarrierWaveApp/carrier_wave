@@ -155,25 +155,25 @@ struct SessionStartSheet: View {
             }
             .sheet(isPresented: $showRadioPicker) {
                 RadioPickerSheet(selection: $selectedRadio)
-                    .presentationDetents([.medium, .large])
+                    .landscapeAdaptiveDetents(portrait: [.medium, .large])
             }
             .sheet(isPresented: $showAntennaPicker) {
                 EquipmentPickerSheet(
                     equipmentType: .antenna, selection: $selectedAntenna
                 )
-                .presentationDetents([.medium, .large])
+                .landscapeAdaptiveDetents(portrait: [.medium, .large])
             }
             .sheet(isPresented: $showKeyPicker) {
                 EquipmentPickerSheet(
                     equipmentType: .key, selection: $selectedKey
                 )
-                .presentationDetents([.medium, .large])
+                .landscapeAdaptiveDetents(portrait: [.medium, .large])
             }
             .sheet(isPresented: $showMicPicker) {
                 EquipmentPickerSheet(
                     equipmentType: .mic, selection: $selectedMic
                 )
-                .presentationDetents([.medium, .large])
+                .landscapeAdaptiveDetents(portrait: [.medium, .large])
             }
             .navigationTitle("Start Session")
             .navigationBarTitleDisplayMode(.inline)

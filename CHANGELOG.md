@@ -9,6 +9,12 @@ All notable changes to Carrier Wave will be documented in this file.
 - WatchConnectivity for real-time session updates between iPhone and Watch
 - Quick session start from Watch using last-used defaults
 - Solar and spots data sharing to App Group for Watch consumption
+- Landscape two-pane layout for logger: form on left, scrollable QSO list on right, compact single-line session header
+- Landscape two-column dashboard layout: activity/conditions on left, favorites/equipment/services on right
+- Auto-hide tab bar when logger has active session in landscape (reclaims ~49pt vertical space)
+- Landscape-adaptive sheet detents: sheets expand in landscape to avoid clipping at unusable heights
+- Compact single-line QSO rows in landscape (callsign + freq + band + mode + RST + grid + timestamp)
+- Compact session rows in landscape (hide timeline, conditions, upload section)
 
 ### Fixed
 - Fix session photos saving the last photo multiple times when adding more than one photo at once (filename collision from timestamp-based naming)

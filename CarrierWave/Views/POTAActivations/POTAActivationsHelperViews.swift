@@ -382,7 +382,7 @@ struct UploadErrorSheet: View {
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
             }
         }
-        .presentationDetents([.medium])
+        .landscapeAdaptiveDetents(portrait: [.medium])
     }
 
     // MARK: Private

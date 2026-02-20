@@ -97,21 +97,21 @@ struct SessionMetadataEditSheet: View {
         }
         .sheet(isPresented: $showRadioPicker) {
             RadioPickerSheet(selection: $radio)
-                .presentationDetents([.medium])
+                .landscapeAdaptiveDetents(portrait: [.medium])
         }
         .sheet(isPresented: $showAntennaPicker) {
             EquipmentPickerSheet(equipmentType: .antenna, selection: $antenna)
-                .presentationDetents([.medium])
+                .landscapeAdaptiveDetents(portrait: [.medium])
         }
         .sheet(isPresented: $showKeyPicker) {
             EquipmentPickerSheet(equipmentType: .key, selection: $key)
-                .presentationDetents([.medium])
+                .landscapeAdaptiveDetents(portrait: [.medium])
         }
         .sheet(isPresented: $showMicPicker) {
             EquipmentPickerSheet(equipmentType: .mic, selection: $mic)
-                .presentationDetents([.medium])
+                .landscapeAdaptiveDetents(portrait: [.medium])
         }
-        .presentationDetents([.large])
+        .landscapeAdaptiveDetents(portrait: [.large])
     }
 
     // MARK: Private

@@ -106,4 +106,72 @@ extension DashboardView {
             }
         }
     }
+
+    // MARK: - Streaks Card
+
+    var streaksCard: some View {
+        NavigationLink {
+            LazyStreakDetailView(asyncStats: asyncStats, tourState: tourState)
+        } label: {
+            MetricsCard(asyncStats: asyncStats)
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - Summary Card
+
+    var summaryCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("Statistics")
+                    .font(.headline)
+                Spacer()
+                if let lastSync = lastSyncDate {
+                    Text("Synced \(lastSync, style: .relative) ago")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            statsGrid
+        }
+        .padding()
+        .background(Color(.systemGray6))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+
+    // MARK: - Combined Streaks and Stats Card (Landscape)
+
+    var combinedStreaksAndStatsCard: some View {
+        HStack(alignment: .top, spacing: 16) {
+            // Streaks section (left side)
+            NavigationLink {
+                LazyStreakDetailView(asyncStats: asyncStats, tourState: tourState)
+            } label: {
+                MetricsCard(asyncStats: asyncStats)
+            }
+            .buttonStyle(.plain)
+
+            Divider()
+
+            // Stats section (right side)
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Text("Statistics")
+                        .font(.headline)
+                    Spacer()
+                    if let lastSync = lastSyncDate {
+                        Text("Synced \(lastSync, style: .relative) ago")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                statsGrid
+            }
+        }
+        .padding()
+        .background(Color(.systemGray6))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
 }

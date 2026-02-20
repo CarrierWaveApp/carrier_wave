@@ -237,7 +237,7 @@ struct BulkADIFExportSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium, .large])
+        .landscapeAdaptiveDetents(portrait: [.medium, .large])
         .task { await generateBulkADIF() }
     }
 

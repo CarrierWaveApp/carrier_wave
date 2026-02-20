@@ -30,7 +30,7 @@ struct SpotLogSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium])
+        .landscapeAdaptiveDetents(portrait: [.medium])
         .presentationDragIndicator(.visible)
     }
 

@@ -331,7 +331,7 @@ struct BandActivitySheet: View, Identifiable {
                 }
             }
         }
-        .presentationDetents([.medium, .large])
+        .landscapeAdaptiveDetents(portrait: [.medium, .large])
         .presentationDragIndicator(.visible)
     }
 

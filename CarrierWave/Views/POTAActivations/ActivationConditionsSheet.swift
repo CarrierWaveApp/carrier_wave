@@ -37,7 +37,7 @@ struct ActivationConditionsSheet<C: ConditionsData>: View {
                 }
             }
         }
-        .presentationDetents([.medium, .large])
+        .landscapeAdaptiveDetents(portrait: [.medium, .large])
         .presentationDragIndicator(.visible)
     }
 

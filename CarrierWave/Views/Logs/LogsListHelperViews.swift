@@ -152,6 +152,114 @@ struct QSORow: View {
     let serviceConfig: ServiceConfiguration
 
     var body: some View {
+        Group {
+            if isLandscape {
+                landscapeRow
+            } else {
+                portraitRow
+            }
+        }
+        .padding(.vertical, isRegularWidth ? 8 : 4)
+        .task {
+            if let park = qso.parkReference {
+                parkName = await POTAParksCache.shared.name(for: park)
+            }
+            callsignInfo = await CallsignNotesCache.shared.info(for: qso.callsign)
+            totalContactCount = fetchTotalContactCount(for: qso.callsign)
+        }
+    }
+
+    // MARK: Private
+
+    private static let utcFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM d HH:mm"
+        formatter.timeZone = TimeZone(identifier: "UTC")
+        return formatter
+    }()
+
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
+    @Environment(\.modelContext) private var modelContext
+
+    @State private var parkName: String?
+    @State private var callsignInfo: CallsignInfo?
+    @State private var totalContactCount: Int = 0
+
+    private var isRegularWidth: Bool {
+        horizontalSizeClass == .regular
+    }
+
+    private var isLandscape: Bool {
+        verticalSizeClass == .compact
+    }
+
+    /// Display name from callsign notes (prefers nickname), fallback to QSO stored name
+    private var displayName: String? {
+        callsignInfo?.displayName ?? qso.name?.capitalized
+    }
+
+    private var formattedTimestamp: String {
+        Self.utcFormatter.string(from: qso.timestamp) + "Z"
+    }
+
+    /// Only show pills for configured services or services with actual data
+    private var sortedPresence: [ServicePresence] {
+        qso.servicePresence
+            .filter { presence in
+                let configured = serviceConfig.isConfigured(presence.serviceType)
+                return configured || presence.isPresent || presence.isSubmitted
+            }
+            .sorted { $0.serviceType.rawValue < $1.serviceType.rawValue }
+    }
+
+    /// Compact single-line row for landscape mode
+    private var landscapeRow: some View {
+        HStack(spacing: 8) {
+            Text(qso.callsign)
+                .font(.subheadline.weight(.semibold))
+                .lineLimit(1)
+
+            if let freq = qso.frequency {
+                Text(FrequencyFormatter.format(freq))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Text(qso.band)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Text(qso.mode)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            if let rstSent = qso.rstSent {
+                Text("S:\(rstSent)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            if let grid = qso.theirGrid {
+                Text(grid)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            if let park = qso.parkReference {
+                Text(park)
+                    .font(.caption)
+                    .foregroundStyle(.green)
+            }
+
+            Spacer()
+
+            Text(formattedTimestamp)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    /// Full multi-line row for portrait mode
+    private var portraitRow: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
                 Text(qso.callsign)
@@ -213,53 +321,6 @@ struct QSORow: View {
                 }
             }
         }
-        .padding(.vertical, isRegularWidth ? 8 : 4)
-        .task {
-            if let park = qso.parkReference {
-                parkName = await POTAParksCache.shared.name(for: park)
-            }
-            callsignInfo = await CallsignNotesCache.shared.info(for: qso.callsign)
-            totalContactCount = fetchTotalContactCount(for: qso.callsign)
-        }
-    }
-
-    // MARK: Private
-
-    private static let utcFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMM d HH:mm"
-        formatter.timeZone = TimeZone(identifier: "UTC")
-        return formatter
-    }()
-
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-    @Environment(\.modelContext) private var modelContext
-
-    @State private var parkName: String?
-    @State private var callsignInfo: CallsignInfo?
-    @State private var totalContactCount: Int = 0
-
-    private var isRegularWidth: Bool {
-        horizontalSizeClass == .regular
-    }
-
-    /// Display name from callsign notes (prefers nickname), fallback to QSO stored name
-    private var displayName: String? {
-        callsignInfo?.displayName ?? qso.name?.capitalized
-    }
-
-    private var formattedTimestamp: String {
-        Self.utcFormatter.string(from: qso.timestamp) + "Z"
-    }
-
-    /// Only show pills for configured services or services with actual data
-    private var sortedPresence: [ServicePresence] {
-        qso.servicePresence
-            .filter { presence in
-                let configured = serviceConfig.isConfigured(presence.serviceType)
-                return configured || presence.isPresent || presence.isSubmitted
-            }
-            .sorted { $0.serviceType.rawValue < $1.serviceType.rawValue }
     }
 
     /// Count all-time QSOs with a callsign (excludes hidden and metadata modes)

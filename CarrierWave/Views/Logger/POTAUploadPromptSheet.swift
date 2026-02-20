@@ -102,7 +102,7 @@ struct POTAUploadPromptSheet: View {
             .navigationTitle("Upload to POTA?")
             .navigationBarTitleDisplayMode(.inline)
         }
-        .presentationDetents([.medium, .large])
+        .landscapeAdaptiveDetents(portrait: [.medium, .large])
         .interactiveDismissDisabled(uploadState == .uploading)
     }
 

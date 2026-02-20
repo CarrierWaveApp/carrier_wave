@@ -777,16 +777,27 @@ if horizontalSizeClass == .regular {
 }
 ```
 
-**Landscape iPhone:**
+**Landscape iPhone (`verticalSizeClass == .compact`):**
+
+Use `verticalSizeClass == .compact` to detect iPhone landscape. This is safe — it doesn't trigger iPad/iPhone layout switching (that uses `horizontalSizeClass` via `lockedSizeClass`).
+
+- **Tab bar:** Hidden when logger has an active session (reclaims ~49pt)
+- **Logger:** Two-pane layout — left pane (form), right pane (scrollable QSO list), compact single-line session header
+- **Dashboard:** Combined streaks+stats card (full width) + two-column card layout below
+- **QSO rows:** Single-line compact format (callsign + freq + band + mode + RST + grid + timestamp), no service badges
+- **Session rows:** Header + status only, no timeline bar, conditions, or upload section
+- **Sheet detents:** Use `.landscapeAdaptiveDetents(portrait:)` — portrait `.medium` becomes landscape `.large`, portrait `.height(N)` becomes `.medium`
+
 ```swift
-if verticalSizeClass == .compact {
-    // Combined layout
-    combinedStreaksAndStatsCard
-} else {
-    // Separate cards
-    streaksCard
-    summaryCard
+// Detection pattern
+@Environment(\.verticalSizeClass) private var verticalSizeClass
+
+var isLandscape: Bool {
+    verticalSizeClass == .compact
 }
+
+// Sheet detents (replaces .presentationDetents)
+.landscapeAdaptiveDetents(portrait: [.medium, .large])
 ```
 
 ### Dark Mode

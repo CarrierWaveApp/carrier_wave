@@ -10,6 +10,7 @@ struct LoggerContainerView: View {
 
     let tourState: TourState
     let onSessionEnd: (() -> Void)?
+    var onSessionStateChange: ((Bool) -> Void)?
 
     var body: some View {
         Group {
@@ -124,6 +125,7 @@ struct LoggerContainerView: View {
             sessionBand = session.band
             sessionMode = session.mode
             isPOTAActivation = session.activationType == .pota
+            onSessionStateChange?(true)
         } else {
             // Fallback to defaults when no active session
             sessionCallsign = UserDefaults.standard.string(
@@ -135,6 +137,7 @@ struct LoggerContainerView: View {
             sessionBand = nil
             sessionMode = nil
             isPOTAActivation = false
+            onSessionStateChange?(false)
         }
     }
 

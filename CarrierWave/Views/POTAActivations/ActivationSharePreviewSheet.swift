@@ -45,7 +45,7 @@ struct ActivationSharePreviewSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium, .large])
+        .landscapeAdaptiveDetents(portrait: [.medium, .large])
     }
 
     // MARK: Private

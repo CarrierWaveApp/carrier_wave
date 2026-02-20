@@ -32,16 +32,20 @@ struct SessionRow: View {
         VStack(alignment: .leading, spacing: 4) {
             headerRow
             titleRow
-            if !qsos.isEmpty {
-                QSOTimelineView(qsos: qsos, compact: true)
+            if !isLandscape {
+                if !qsos.isEmpty {
+                    QSOTimelineView(qsos: qsos, compact: true)
+                }
             }
             statusRow
-            conditionsRow
-            if hasFailedJob {
-                failedJobBanner
-            }
-            if shouldShowUpload {
-                uploadSection
+            if !isLandscape {
+                conditionsRow
+                if hasFailedJob {
+                    failedJobBanner
+                }
+                if shouldShowUpload {
+                    uploadSection
+                }
             }
         }
         .padding(.vertical, 4)
@@ -53,9 +57,14 @@ struct SessionRow: View {
 
     // MARK: Private
 
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
     @State private var isUploading = false
     @State private var uploadErrors: [String: String] = [:]
     @State private var showingConditions = false
+
+    private var isLandscape: Bool {
+        verticalSizeClass == .compact
+    }
 
     private var isPOTA: Bool {
         session.activationType == .pota && !activations.isEmpty

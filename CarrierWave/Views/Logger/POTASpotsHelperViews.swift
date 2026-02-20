@@ -47,7 +47,7 @@ struct POTASpotsFilterSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium])
+        .landscapeAdaptiveDetents(portrait: [.medium])
     }
 }
 

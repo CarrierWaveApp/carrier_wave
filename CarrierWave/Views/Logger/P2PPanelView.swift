@@ -215,7 +215,7 @@ struct P2PPanelView: View {
                 }
             }
         }
-        .presentationDetents([.medium])
+        .landscapeAdaptiveDetents(portrait: [.medium])
     }
 
     // MARK: - Content Views

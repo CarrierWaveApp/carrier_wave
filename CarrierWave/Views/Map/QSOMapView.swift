@@ -51,7 +51,7 @@ struct QSOMapView: View {
                 availableParks: cachedAvailableParks,
                 earliestDate: cachedEarliestQSODate
             )
-            .presentationDetents([.medium, .large])
+            .landscapeAdaptiveDetents(portrait: [.medium, .large])
         }
         .task {
             // Only load if we haven't loaded initial data yet

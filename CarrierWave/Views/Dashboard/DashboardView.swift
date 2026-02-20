@@ -93,19 +93,31 @@ struct DashboardView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
-                    activityCard
-                    activityLogCard
-                    // In landscape on iPhone (compact vertical), combine streaks and stats
                     if verticalSizeClass == .compact {
+                        // Landscape: two-column layout
                         combinedStreaksAndStatsCard
+                        HStack(alignment: .top, spacing: 16) {
+                            VStack(spacing: 16) {
+                                activityCard
+                                activityLogCard
+                                conditionsCard
+                            }
+                            VStack(spacing: 16) {
+                                favoritesCard
+                                equipmentCard
+                                servicesList
+                            }
+                        }
                     } else {
+                        activityCard
+                        activityLogCard
                         streaksCard
                         summaryCard
+                        favoritesCard
+                        equipmentCard
+                        conditionsCard
+                        servicesList
                     }
-                    favoritesCard
-                    equipmentCard
-                    conditionsCard
-                    servicesList
                 }
                 .padding()
             }
@@ -318,74 +330,6 @@ struct DashboardView: View {
         .background(Color(.systemGray6))
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .animation(.easeInOut(duration: 0.2), value: asyncStats.isComputing)
-    }
-
-    // MARK: - Streaks Card
-
-    private var streaksCard: some View {
-        NavigationLink {
-            LazyStreakDetailView(asyncStats: asyncStats, tourState: tourState)
-        } label: {
-            MetricsCard(asyncStats: asyncStats)
-        }
-        .buttonStyle(.plain)
-    }
-
-    // MARK: - Summary Card
-
-    private var summaryCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("Statistics")
-                    .font(.headline)
-                Spacer()
-                if let lastSync = lastSyncDate {
-                    Text("Synced \(lastSync, style: .relative) ago")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            statsGrid
-        }
-        .padding()
-        .background(Color(.systemGray6))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-    }
-
-    // MARK: - Combined Streaks and Stats Card (Landscape)
-
-    private var combinedStreaksAndStatsCard: some View {
-        HStack(alignment: .top, spacing: 16) {
-            // Streaks section (left side)
-            NavigationLink {
-                LazyStreakDetailView(asyncStats: asyncStats, tourState: tourState)
-            } label: {
-                MetricsCard(asyncStats: asyncStats)
-            }
-            .buttonStyle(.plain)
-
-            Divider()
-
-            // Stats section (right side)
-            VStack(alignment: .leading, spacing: 12) {
-                HStack {
-                    Text("Statistics")
-                        .font(.headline)
-                    Spacer()
-                    if let lastSync = lastSyncDate {
-                        Text("Synced \(lastSync, style: .relative) ago")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-
-                statsGrid
-            }
-        }
-        .padding()
-        .background(Color(.systemGray6))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 }
 

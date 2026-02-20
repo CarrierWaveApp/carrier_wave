@@ -51,7 +51,7 @@ struct WebSDRFavoritesView: View {
                 isFavorite: isFavorite(receiver),
                 onToggleFavorite: { toggleFavorite(receiver) }
             )
-            .presentationDetents([.medium])
+            .landscapeAdaptiveDetents(portrait: [.medium])
         }
         .sheet(isPresented: $showAddSheet) {
             AddReceiverSheet { hostPort, name, location, antenna in

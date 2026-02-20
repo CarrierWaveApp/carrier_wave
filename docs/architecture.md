@@ -55,3 +55,18 @@ CarrierWave/
 │   └── Settings/     # Configuration and auth
 └── Utilities/        # Helpers (Keychain, etc.)
 ```
+
+## Size Class Strategy
+
+Two separate mechanisms handle layout adaptation:
+
+**iPhone vs iPad (`horizontalSizeClass` via `lockedSizeClass`):**
+- `ContentView` and `LoggerContainerView` lock `horizontalSizeClass` on first appearance
+- `.regular` → iPad sidebar layout; `.compact` → iPhone tab layout
+- Locked to prevent orientation changes from switching between iPad/iPhone layouts
+
+**Landscape adaptation (`verticalSizeClass`):**
+- `.compact` = iPhone landscape; `.regular` = iPhone portrait (or iPad any orientation)
+- Used for: tab bar hiding, two-pane logger, dashboard columns, compact rows, sheet detents
+- NOT locked — responds dynamically to rotation
+- Safe to use alongside `lockedSizeClass` since it doesn't affect iPhone/iPad branching

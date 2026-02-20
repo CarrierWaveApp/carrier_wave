@@ -104,7 +104,7 @@ struct TourSheetView: View {
             .padding(.horizontal, 24)
             .padding(.bottom, 24)
         }
-        .presentationDetents([.medium])
+        .landscapeAdaptiveDetents(portrait: [.medium])
         .presentationDragIndicator(.visible)
         .interactiveDismissDisabled()
     }

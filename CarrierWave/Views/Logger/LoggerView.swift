@@ -23,88 +23,86 @@ struct LoggerView: View {
 
     // MARK: Internal
 
+    @Environment(\.horizontalSizeClass) var horizontalSizeClass
+    @Environment(\.verticalSizeClass) var verticalSizeClass
+    @Environment(\.modelContext) var modelContext
+
+    /// QSOs for the current session (manually fetched, not @Query to avoid full-database refresh)
+    @State var sessionQSOs: [QSO] = []
+
+    /// All QSOs for the current UTC day (across all sessions) — used for POTA duplicate detection
+    /// POTA groups contacts by band + park + UTC day, not by session
+    @State var utcDayQSOs: [QSO] = []
+
+    @State var sessionManager: LoggingSessionManager?
+
+    @State var showSessionSheet = false
+
+    // Input fields
+    @State var callsignInput = ""
+    @FocusState var callsignFieldFocused: Bool
+    @State var showWebSDRPanel = false
+    /// Session end/delete confirmation
+    @State var showEndSessionConfirmation = false
+    /// QSO being edited (for tap-to-edit callsign feature)
+    @State var editingQSO: QSO?
+
+    /// QSO pending swipe-to-delete confirmation
+    @State var qsoToDelete: QSO?
+
+    /// Cached POTA activator spots for nearby frequency detection
+    @State var cachedPOTASpots: [POTASpot] = []
+    /// License warning
+    /// Dismissed warning messages (to avoid re-showing dismissed warnings)
+    @State var dismissedWarnings: Set<String> = []
+
+    /// Whether to use the landscape two-pane layout
+    var isLandscapeWithSession: Bool {
+        verticalSizeClass == .compact && sessionManager?.hasActiveSession == true
+    }
+
+    /// QSOs to display — during roves, scoped to the viewed or current park stop
+    var displayQSOs: [QSO] {
+        guard let session = sessionManager?.activeSession, session.isRove else {
+            return sessionQSOs
+        }
+        let park = (viewingParkOverride ?? session.parkReference)?.uppercased()
+        guard let park else {
+            return sessionQSOs
+        }
+        return sessionQSOs.filter { $0.parkReference?.uppercased() == park }
+    }
+
+    /// Check if the current callsign input would be a duplicate in the current POTA session
+    /// Uses cached value computed in onCallsignChanged to avoid expensive filtering on every render
+    var potaDuplicateStatus: POTACallsignStatus? {
+        cachedPotaDuplicateStatus
+    }
+
+    /// Whether any bottom panel is currently open
+    var isAnyPanelOpen: Bool {
+        showRBNPanel || showSolarPanel || showWeatherPanel || showMapPanel || showPOTAPanel
+            || showP2PPanel || showWebSDRPanel
+    }
+
+    // MARK: - QSO List
+
+    /// Combined session log entries (QSOs + notes)
+    var sessionLogEntries: [SessionLogEntry] {
+        let notes = sessionManager?.parseSessionNotes() ?? []
+        return SessionLogEntry.combine(qsos: displayQSOs, notes: notes)
+    }
+
     var body: some View {
         NavigationStack {
             ZStack {
                 Color(.systemGroupedBackground)
                     .ignoresSafeArea()
 
-                VStack(spacing: 0) {
-                    sessionHeader
-
-                    // WebSDR mini recording badge (visible when panel is closed)
-                    if let manager = sessionManager,
-                       !showWebSDRPanel,
-                       manager.webSDRSession.state.isActive
-                    {
-                        webSDRMiniBadge(session: manager.webSDRSession)
-                    }
-
-                    // Spot monitoring summary (always visible when session active)
-                    if let manager = sessionManager {
-                        SpotSummaryView(monitoringService: manager.spotMonitoringService)
-                            .padding(.horizontal)
-                            .padding(.top, 8)
-                    }
-
-                    // Frequency warning banner (license violations + activity warnings)
-                    // Note: We pass cachedPOTASpots.count and callsignInput to force re-evaluation
-                    FrequencyWarningBannerContainer(
-                        warning: computeCurrentWarning(
-                            spotCount: cachedPOTASpots.count,
-                            inputText: callsignInput
-                        ),
-                        onDismiss: { message in
-                            dismissedWarnings.insert(message)
-                        }
-                    )
-
-                    ScrollView {
-                        VStack(spacing: 12) {
-                            UnderConstructionBanner()
-
-                            // Only show QSO form when session is active
-                            if sessionManager?.hasActiveSession == true {
-                                callsignInputSection
-
-                                // POTA duplicate/new band warning
-                                if let status = potaDuplicateStatus {
-                                    POTAStatusBanner(status: status)
-                                        .transition(
-                                            .asymmetric(
-                                                insertion: .move(edge: .top).combined(
-                                                    with: .opacity
-                                                ),
-                                                removal: .opacity
-                                            )
-                                        )
-                                }
-
-                                // Show callsign info or error when keyboard is not visible
-                                callsignLookupDisplay
-
-                                // Compact fields: State, RSTs, with More expansion
-                                compactFieldsSection
-
-                                // Cancel button when editing a QSO
-                                if editingQSO != nil {
-                                    Button {
-                                        cancelEditingCallsign()
-                                    } label: {
-                                        Text("Cancel Edit")
-                                            .font(.subheadline)
-                                    }
-                                    .buttonStyle(.bordered)
-                                    .accessibilityLabel("Cancel editing callsign")
-                                }
-                            }
-
-                            qsoListSection
-                        }
-                        .padding()
-                        // Add bottom padding when a panel is open so Log QSO button remains accessible
-                        .padding(.bottom, isAnyPanelOpen ? 280 : 0)
-                    }
+                if isLandscapeWithSession {
+                    landscapeTwoPaneLayout
+                } else {
+                    portraitLayout
                 }
             }
             .navigationBarHidden(horizontalSizeClass != .regular)
@@ -127,7 +125,7 @@ struct LoggerView: View {
                         showTitleEditSheet = false
                     }
                 )
-                .presentationDetents([.height(200)])
+                .landscapeAdaptiveDetents(portrait: [.height(200)])
             }
             .sheet(isPresented: $showParkEditSheet) {
                 SessionParkEditSheet(
@@ -142,7 +140,7 @@ struct LoggerView: View {
                         showParkEditSheet = false
                     }
                 )
-                .presentationDetents([.height(340)])
+                .landscapeAdaptiveDetents(portrait: [.height(340)])
             }
             .sheet(isPresented: $showNextStopSheet) {
                 NextRoveStopSheet(
@@ -152,7 +150,7 @@ struct LoggerView: View {
                         refreshSessionQSOs()
                     }
                 )
-                .presentationDetents([.medium, .large])
+                .landscapeAdaptiveDetents(portrait: [.medium, .large])
             }
             .sheet(isPresented: $showBandEditSheet) {
                 SessionBandEditSheet(
@@ -179,7 +177,7 @@ struct LoggerView: View {
                         showBandEditSheet = false
                     }
                 )
-                .presentationDetents([.medium, .large])
+                .landscapeAdaptiveDetents(portrait: [.medium, .large])
             }
             .sheet(isPresented: $showModeEditSheet) {
                 SessionModeEditSheet(
@@ -192,7 +190,7 @@ struct LoggerView: View {
                         showModeEditSheet = false
                     }
                 )
-                .presentationDetents([.height(280)])
+                .landscapeAdaptiveDetents(portrait: [.height(280)])
             }
             .sheet(isPresented: $showRigEditSheet) {
                 SessionEquipmentEditSheet(
@@ -218,7 +216,7 @@ struct LoggerView: View {
                     ),
                     mode: sessionManager?.activeSession?.mode ?? "CW"
                 )
-                .presentationDetents([.medium, .large])
+                .landscapeAdaptiveDetents(portrait: [.medium, .large])
             }
             .sheet(isPresented: $showHiddenQSOsSheet) {
                 HiddenQSOsSheet(sessionId: sessionManager?.activeSession?.id)
@@ -347,338 +345,9 @@ struct LoggerView: View {
         }
     }
 
-    // MARK: Private
-
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-    @Environment(\.modelContext) private var modelContext
-
-    @AppStorage("userLicenseClass") private var licenseClassRaw: String = LicenseClass.extra
-        .rawValue
-
-    @AppStorage("loggerAutoModeSwitch") private var autoModeSwitch = true
-    @AppStorage("loggerKeepLookupAfterLog") private var keepLookupAfterLog = true
-
-    /// QSOs for the current session (manually fetched, not @Query to avoid full-database refresh)
-    @State private var sessionQSOs: [QSO] = []
-
-    /// All QSOs for the current UTC day (across all sessions) — used for POTA duplicate detection
-    /// POTA groups contacts by band + park + UTC day, not by session
-    @State private var utcDayQSOs: [QSO] = []
-
-    @State private var sessionManager: LoggingSessionManager?
-
-    @State private var showSessionSheet = false
-
-    /// Active/paused sessions available to continue or finish
-    @State private var activeSessions: [LoggingSession] = []
-    /// QSO counts for active sessions (keyed by session ID)
-    @State private var activeSessionQSOCounts: [UUID: Int] = [:]
-    /// Finish confirmation for an active session
-    @State private var sessionToFinish: LoggingSession?
-    /// Delete confirmation for an active session
-    @State private var sessionToDelete: LoggingSession?
-
-    // Input fields
-    @State private var callsignInput = ""
-    @State private var rstSent = ""
-    @State private var rstReceived = ""
-    @State private var showMoreFields = false
-    @FocusState private var callsignFieldFocused: Bool
-
-    // Quick entry
-    @State private var quickEntryResult: QuickEntryResult?
-    @State private var quickEntryTokens: [ParsedToken] = []
-
-    // Expanded fields
-    @State private var notes = ""
-    @State private var theirPark = ""
-    @State private var operatorName = ""
-    @State private var theirGrid = ""
-    @State private var theirState = ""
-
-    // Callsign lookup
-    @State private var lookupResult: CallsignInfo?
-    @State private var lookupError: CallsignLookupError?
-    @State private var lookupTask: Task<Void, Never>?
-
-    /// All-time QSO count with the current callsign
-    @State private var previousQSOCount: Int = 0
-
-    /// Cached POTA duplicate status (computed on callsign change, not every render)
-    @State private var cachedPotaDuplicateStatus: POTACallsignStatus?
-
-    // Command panels
-    @State private var showRBNPanel = false
-    @State private var showMapPanel = false
-    @State private var rbnTargetCallsign: String?
-    @State private var showSolarPanel = false
-    @State private var showWeatherPanel = false
-    @State private var showPOTAPanel = false
-    @State private var showP2PPanel = false
-    @State private var showHelpSheet = false
-    @State private var showHiddenQSOsSheet = false
-    @State private var showWebSDRPanel = false
-
-    // Session title editing
-    @State private var showTitleEditSheet = false
-    @State private var editingTitle = ""
-
-    // Session park editing
-    @State private var showParkEditSheet = false
-    @State private var editingParkReference = ""
-
-    /// Rove
-    @State private var showNextStopSheet = false
-    /// When set, logger displays QSOs for this park instead of the current active stop
-    @State private var viewingParkOverride: String?
-
-    // Session band/mode/rig editing
-    @State private var showBandEditSheet = false
-    @State private var showModeEditSheet = false
-    @State private var showRigEditSheet = false
-
-    /// Session end/delete confirmation
-    @State private var showEndSessionConfirmation = false
-    @State private var showDeleteSessionSheet = false
-
-    /// POTA upload prompt after session end
-    @State private var showPOTAUploadPrompt = false
-    @State private var pendingSessionEndParkRef: String?
-    @State private var pendingSessionEndParkName: String?
-    @State private var pendingSessionEndQSOCount = 0
-    @State private var pendingSessionEndQSOs: [QSO] = []
-    @State private var pendingSessionEndRoveStops: [RoveUploadSummary] = []
-    @State private var pendingSessionEndInMaintenance = false
-    @State private var pendingSessionEndMaintenanceRemaining: String?
-
-    /// User preference to disable POTA upload prompt
-    @AppStorage("potaUploadPromptDisabled") private var potaUploadPromptDisabled = false
-
-    /// QSO being edited (for tap-to-edit callsign feature)
-    @State private var editingQSO: QSO?
-
-    /// QSO pending swipe-to-delete confirmation
-    @State private var qsoToDelete: QSO?
-
-    // QSY spot confirmation
-    @State private var showQSYSpotConfirmation = false
-    @State private var qsyNewFrequency: Double?
-
-    /// POTA spot tracking - stores session frequency before tuning to a spot
-    @State private var preSpotFrequency: Double?
-
-    /// Cached POTA activator spots for nearby frequency detection
-    @State private var cachedPOTASpots: [POTASpot] = []
-    @State private var spotsLastFetched: Date?
-
-    /// License warning
-    /// Dismissed warning messages (to avoid re-showing dismissed warnings)
-    @State private var dismissedWarnings: Set<String> = []
-
-    /// iPad sidebar: spot selected from sidebar, processed via .onChange
-    @Binding private var externalSpotSelection: SpotSelection?
-
-    /// Tour state for mini-tour
-    private let tourState: TourState
-
-    /// Callback when session ends with QSOs logged
-    private let onSessionEnd: (() -> Void)?
-
-    /// iPad sidebar: intercepts spot commands to switch sidebar tab
-    private let onSpotCommand: ((SpotCommandAction) -> Void)?
-
-    // MARK: - Compact Form Fields
-
-    /// Unified field height for consistency
-    private let fieldHeight: CGFloat = 36
-
-    /// Deprecated: Use dismissedWarnings
-    private var dismissedViolation: String? {
-        get { dismissedWarnings.first }
-        set {
-            if let value = newValue {
-                dismissedWarnings.insert(value)
-            }
-        }
-    }
-
-    private var userLicenseClass: LicenseClass {
-        LicenseClass(rawValue: licenseClassRaw) ?? .extra
-    }
-
-    /// QSOs to display — during roves, scoped to the viewed or current park stop
-    private var displayQSOs: [QSO] {
-        guard let session = sessionManager?.activeSession, session.isRove else {
-            return sessionQSOs
-        }
-        let park = (viewingParkOverride ?? session.parkReference)?.uppercased()
-        guard let park else {
-            return sessionQSOs
-        }
-        return sessionQSOs.filter { $0.parkReference?.uppercased() == park }
-    }
-
-    /// Whether we're viewing a past rove stop (not the active one)
-    private var isViewingPastStop: Bool {
-        viewingParkOverride != nil
-    }
-
-    /// Whether the log button should be enabled
-    private var canLog: Bool {
-        guard sessionManager?.hasActiveSession == true else {
-            return false
-        }
-
-        // Determine which callsign to validate
-        let callsignToValidate: String
-        if let qeResult = quickEntryResult {
-            // In quick entry mode, use the parsed callsign
-            callsignToValidate = qeResult.callsign
-        } else {
-            // Normal mode, use the input directly
-            guard !callsignInput.isEmpty, callsignInput.count >= 3 else {
-                return false
-            }
-            callsignToValidate = callsignInput.uppercased()
-        }
-
-        // Don't allow logging your own callsign
-        let myCallsign = sessionManager?.activeSession?.myCallsign.uppercased() ?? ""
-        if !myCallsign.isEmpty, callsignToValidate.uppercased() == myCallsign {
-            return false
-        }
-
-        // Block POTA duplicates on same band (requirement 6a)
-        if case .duplicateBand = potaDuplicateStatus {
-            return false
-        }
-
-        return true
-    }
-
-    /// Whether the action button next to the callsign field is enabled
-    private var actionButtonEnabled: Bool {
-        detectedCommand != nil || canLog
-    }
-
-    /// Label for the action button next to the callsign field
-    private var actionButtonLabel: String {
-        if detectedCommand != nil {
-            return "RUN"
-        } else if editingQSO != nil {
-            return "SAVE"
-        }
-        return "LOG"
-    }
-
-    /// Color for the action button next to the callsign field
-    private var actionButtonColor: Color {
-        if detectedCommand != nil {
-            return .purple
-        } else if editingQSO != nil {
-            return .orange
-        }
-        return .green
-    }
-
-    /// Accessibility label for the action button
-    private var actionButtonAccessibilityLabel: String {
-        if detectedCommand != nil {
-            return "Run command"
-        } else if editingQSO != nil {
-            return "Save callsign edit"
-        }
-        return "Log QSO"
-    }
-
-    /// Current mode (for RST default)
-    private var currentMode: String {
-        sessionManager?.activeSession?.mode ?? "CW"
-    }
-
-    /// Whether current mode uses 3-digit RST (CW/digital) vs 2-digit RS (phone)
-    private var isCWMode: Bool {
-        let mode = currentMode.uppercased()
-        let threeDigitModes = [
-            "CW", "RTTY", "PSK", "PSK31", "FT8", "FT4", "JT65", "JT9", "DATA", "DIGITAL",
-        ]
-        return threeDigitModes.contains(mode)
-    }
-
-    /// Default RST based on current mode
-    private var defaultRST: String {
-        isCWMode ? "599" : "59"
-    }
-
-    /// Detected command from input (if any)
-    private var detectedCommand: LoggerCommand? {
-        LoggerCommand.parse(callsignInput)
-    }
-
-    /// Whether to show the lookup error banner (when keyboard is not visible)
-    private var shouldShowLookupError: Bool {
-        lookupError != nil && lookupResult == nil && !callsignFieldFocused && !callsignInput.isEmpty
-            && callsignInput.count >= 3 && detectedCommand == nil
-    }
-
-    /// Check if the current callsign input would be a duplicate in the current POTA session
-    /// Uses cached value computed in onCallsignChanged to avoid expensive filtering on every render
-    private var potaDuplicateStatus: POTACallsignStatus? {
-        cachedPotaDuplicateStatus
-    }
-
-    /// Key for animating POTA status changes
-    private var potaDuplicateStatusKey: String {
-        switch potaDuplicateStatus {
-        case .none: "none"
-        case .firstContact: "first"
-        case .newBand: "newband"
-        case .duplicateBand: "dupe"
-        }
-    }
-
-    /// Current frequency warning (if any) - convenience property
-    private var currentWarning: FrequencyWarning? {
-        computeCurrentWarning(spotCount: cachedPOTASpots.count, inputText: callsignInput)
-    }
-
-    /// Whether any bottom panel is currently open
-    private var isAnyPanelOpen: Bool {
-        showRBNPanel || showSolarPanel || showWeatherPanel || showMapPanel || showPOTAPanel
-            || showP2PPanel || showWebSDRPanel
-    }
-
-    /// Deprecated: Use currentWarning instead
-    private var currentViolation: BandPlanViolation? {
-        guard let warning = currentWarning else {
-            return nil
-        }
-        // Convert back for compatibility (if needed elsewhere)
-        let violationType: BandPlanViolation.ViolationType =
-            switch warning.type {
-            case .noPrivileges: .noPrivileges
-            case .wrongMode: .wrongMode
-            case .outOfBand: .outOfBand
-            default: .unusualFrequency
-            }
-        return BandPlanViolation(
-            type: violationType,
-            message: warning.message,
-            suggestion: warning.suggestion
-        )
-    }
-
-    // MARK: - QSO List
-
-    /// Combined session log entries (QSOs + notes)
-    private var sessionLogEntries: [SessionLogEntry] {
-        let notes = sessionManager?.parseSessionNotes() ?? []
-        return SessionLogEntry.combine(qsos: displayQSOs, notes: notes)
-    }
-
     /// Callsign lookup display (card or error banner)
     @ViewBuilder
-    private var callsignLookupDisplay: some View {
+    var callsignLookupDisplay: some View {
         if let info = lookupResult, !callsignFieldFocused || callsignInput.isEmpty {
             LoggerCallsignCard(info: info, previousQSOCount: previousQSOCount)
                 .transition(
@@ -698,8 +367,89 @@ struct LoggerView: View {
         }
     }
 
+    // MARK: - Portrait Layout
+
+    var portraitLayout: some View {
+        VStack(spacing: 0) {
+            sessionHeader
+
+            // WebSDR mini recording badge (visible when panel is closed)
+            if let manager = sessionManager,
+               !showWebSDRPanel,
+               manager.webSDRSession.state.isActive
+            {
+                webSDRMiniBadge(session: manager.webSDRSession)
+            }
+
+            // Spot monitoring summary (always visible when session active)
+            if let manager = sessionManager {
+                SpotSummaryView(monitoringService: manager.spotMonitoringService)
+                    .padding(.horizontal)
+                    .padding(.top, 8)
+            }
+
+            // Frequency warning banner (license violations + activity warnings)
+            FrequencyWarningBannerContainer(
+                warning: computeCurrentWarning(
+                    spotCount: cachedPOTASpots.count,
+                    inputText: callsignInput
+                ),
+                onDismiss: { message in
+                    dismissedWarnings.insert(message)
+                }
+            )
+
+            ScrollView {
+                VStack(spacing: 12) {
+                    UnderConstructionBanner()
+
+                    // Only show QSO form when session is active
+                    if sessionManager?.hasActiveSession == true {
+                        callsignInputSection
+
+                        // POTA duplicate/new band warning
+                        if let status = potaDuplicateStatus {
+                            POTAStatusBanner(status: status)
+                                .transition(
+                                    .asymmetric(
+                                        insertion: .move(edge: .top).combined(
+                                            with: .opacity
+                                        ),
+                                        removal: .opacity
+                                    )
+                                )
+                        }
+
+                        // Show callsign info or error when keyboard is not visible
+                        callsignLookupDisplay
+
+                        // Compact fields: State, RSTs, with More expansion
+                        compactFieldsSection
+
+                        // Cancel button when editing a QSO
+                        if editingQSO != nil {
+                            Button {
+                                cancelEditingCallsign()
+                            } label: {
+                                Text("Cancel Edit")
+                                    .font(.subheadline)
+                            }
+                            .buttonStyle(.bordered)
+                            .accessibilityLabel("Cancel editing callsign")
+                        }
+                    }
+
+                    qsoListSection
+                }
+                .padding()
+                // Add bottom padding when a panel is open so Log QSO button remains accessible
+                .padding(.bottom, isAnyPanelOpen ? 280 : 0)
+            }
+        }
+    }
+
     /// Panel overlays for RBN, Solar, Weather
-    private var panelOverlays: some View {
+    var panelOverlays: some View {
         VStack {
             if showRBNPanel {
                 SwipeToDismissPanel(isPresented: $showRBNPanel) {
@@ -819,7 +569,7 @@ struct LoggerView: View {
     }
 
     /// Session header - shows active session info or "no session" prompt
-    private var sessionHeader: some View {
+    var sessionHeader: some View {
         Group {
             if let session = sessionManager?.activeSession {
                 activeSessionHeader(session)
@@ -827,6 +577,662 @@ struct LoggerView: View {
                 noSessionHeader
             }
         }
+    }
+
+    // MARK: - Callsign Input
+
+    var callsignInputSection: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 8) {
+                // Text field with clear button
+                HStack(spacing: 12) {
+                    CallsignTextField(
+                        "Callsign or command...",
+                        text: $callsignInput,
+                        isFocused: $callsignFieldFocused,
+                        onSubmit: {
+                            // Defer to next run loop to avoid UICollectionView crash
+                            // when keyboard dismiss triggers List updates simultaneously
+                            DispatchQueue.main.async {
+                                handleInputSubmit()
+                            }
+                        },
+                        onCommand: { command in
+                            executeCommand(command)
+                        }
+                    )
+                    .foregroundStyle(detectedCommand != nil ? .purple : .primary)
+                    .onChange(of: callsignInput) { _, newValue in
+                        onCallsignChanged(newValue)
+                    }
+
+                    Button {
+                        callsignInput = ""
+                        lookupResult = nil
+                        lookupError = nil
+                        quickEntryResult = nil
+                        quickEntryTokens = []
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(.secondary)
+                    }
+                    .opacity(callsignInput.isEmpty ? 0 : 1)
+                    .disabled(callsignInput.isEmpty)
+                }
+                .padding()
+                .background(Color(.secondarySystemGroupedBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .strokeBorder(detectedCommand != nil ? Color.purple : Color.clear, lineWidth: 2)
+                )
+
+                // Action button to the right of text field (always present)
+                Button {
+                    if let command = detectedCommand {
+                        executeCommand(command)
+                        callsignInput = ""
+                    } else if quickEntryResult != nil {
+                        logQuickEntry()
+                    } else {
+                        logQSO()
+                    }
+                } label: {
+                    Text(actionButtonLabel)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .frame(maxHeight: .infinity)
+                        .frame(width: 48)
+                        .background(actionButtonColor)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+                .buttonStyle(.plain)
+                .disabled(!actionButtonEnabled)
+                .opacity(actionButtonEnabled ? 1 : 0.4)
+                .accessibilityLabel(actionButtonAccessibilityLabel)
+            }
+
+            // Command description badge
+            if let command = detectedCommand {
+                HStack {
+                    Text(command.description)
+                        .font(.caption)
+                        .foregroundStyle(.purple)
+
+                    Spacer()
+
+                    Text("Press Return to execute")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.horizontal, 12)
+                .padding(.top, 6)
+                .transition(.move(edge: .top).combined(with: .opacity))
+            }
+
+            // Quick entry preview
+            if !quickEntryTokens.isEmpty, detectedCommand == nil {
+                QuickEntryPreview(tokens: quickEntryTokens)
+                    .padding(.horizontal, 12)
+                    .padding(.top, 6)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
+
+            // Cancel spot button - shown when tuned away from session frequency
+            if preSpotFrequency != nil {
+                Button {
+                    cancelSpot()
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.caption)
+                        Text("Cancel Spot")
+                            .font(.caption.weight(.medium))
+                    }
+                    .foregroundStyle(.orange)
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, 12)
+                .padding(.top, 6)
+                .transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+    }
+
+    /// Compact RST and State fields with inline More expansion
+    var compactFieldsSection: some View {
+        VStack(spacing: 8) {
+            // Row 1: State, RST Sent, RST Rcvd, More chevron
+            HStack(spacing: 8) {
+                // State field
+                compactField(
+                    label: "State",
+                    placeholder: lookupResult?.state ?? "ST",
+                    text: $theirState,
+                    width: 50
+                )
+
+                // RST Sent
+                compactField(label: "Sent", placeholder: defaultRST, text: $rstSent, width: 50)
+                    .keyboardType(.numberPad)
+
+                // RST Rcvd
+                compactField(label: "Rcvd", placeholder: defaultRST, text: $rstReceived, width: 50)
+                    .keyboardType(.numberPad)
+
+                Spacer()
+
+                // More fields chevron
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        showMoreFields.toggle()
+                    }
+                } label: {
+                    Image(systemName: showMoreFields ? "chevron.up" : "chevron.down")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 32, height: fieldHeight)
+                        .background(Color(.tertiarySystemGroupedBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
+                .buttonStyle(.plain)
+            }
+
+            // Row 2: Expanded fields (Grid, Park, Operator, Notes)
+            if showMoreFields {
+                VStack(spacing: 8) {
+                    HStack(spacing: 8) {
+                        compactField(
+                            label: "Grid",
+                            placeholder: lookupResult?.grid ?? "",
+                            text: $theirGrid
+                        )
+                        compactField(label: "Park", placeholder: "", text: $theirPark)
+                    }
+                    compactField(
+                        label: "Operator",
+                        placeholder: lookupResult?.displayName ?? "",
+                        text: $operatorName,
+                        isMonospaced: false
+                    )
+                    compactField(
+                        label: "Notes",
+                        placeholder: "",
+                        text: $notes,
+                        isMonospaced: false
+                    )
+                }
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+        .padding(12)
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+
+    @ViewBuilder
+    var qsoListSection: some View {
+        // Only show QSO list when there's an active session
+        if sessionManager?.hasActiveSession == true {
+            VStack(alignment: .leading, spacing: 8) {
+                if let viewingPark = viewingParkOverride {
+                    viewingPastStopBanner(viewingPark)
+                }
+
+                HStack {
+                    Text("Session Log")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Text("\(displayQSOs.count) QSOs")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+
+                if sessionLogEntries.isEmpty {
+                    Text("No entries yet")
+                        .font(.subheadline)
+                        .foregroundStyle(.tertiary)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .padding(.vertical, 20)
+                } else {
+                    let entries = Array(sessionLogEntries.prefix(15))
+                    List {
+                        ForEach(entries) { entry in
+                            switch entry {
+                            case let .qso(qso):
+                                LoggerQSORow(
+                                    qso: qso,
+                                    utcDayQSOs: utcDayQSOs,
+                                    isPOTASession: sessionManager?.activeSession?
+                                        .activationType == .pota,
+                                    onQSODeleted: refreshSessionQSOs,
+                                    onEditCallsign: { qsoToEdit in
+                                        startEditingCallsign(qsoToEdit)
+                                    }
+                                )
+                                .swipeActions(
+                                    edge: .trailing,
+                                    allowsFullSwipe: false
+                                ) {
+                                    Button(role: .destructive) {
+                                        qsoToDelete = qso
+                                    } label: {
+                                        Label("Delete", systemImage: "trash")
+                                    }
+                                }
+                            case let .note(note):
+                                LoggerNoteRow(note: note)
+                            }
+                        }
+                        .listRowInsets(
+                            EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
+                        )
+                        .listRowBackground(Color.clear)
+                        .listRowSeparatorTint(.secondary.opacity(0.2))
+                    }
+                    .listStyle(.plain)
+                    .scrollDisabled(true)
+                    .scrollContentBackground(.hidden)
+                    .frame(height: CGFloat(entries.count) * 44)
+                }
+            }
+            .padding()
+            .background(Color(.secondarySystemGroupedBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .alert(
+                "Delete QSO",
+                isPresented: Binding(
+                    get: { qsoToDelete != nil },
+                    set: { newValue in
+                        if !newValue {
+                            qsoToDelete = nil
+                        }
+                    }
+                )
+            ) {
+                Button("Delete", role: .destructive) {
+                    if let qso = qsoToDelete {
+                        qso.isHidden = true
+                        try? modelContext.save()
+                        refreshSessionQSOs()
+                    }
+                    qsoToDelete = nil
+                }
+                Button("Cancel", role: .cancel) {
+                    qsoToDelete = nil
+                }
+            } message: {
+                if let qso = qsoToDelete {
+                    Text("Delete QSO with \(qso.callsign)?")
+                }
+            }
+        }
+    }
+
+    func webSDRMiniBadge(session: WebSDRSession) -> some View {
+        Button {
+            showWebSDRPanel = true
+        } label: {
+            HStack(spacing: 6) {
+                Circle()
+                    .fill(.red)
+                    .frame(width: 8, height: 8)
+                Image(systemName: "antenna.radiowaves.left.and.right")
+                    .font(.caption2)
+                Text(formatWebSDRDuration(session.recordingDuration))
+                    .font(.caption.monospacedDigit())
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(.red.opacity(0.1))
+            .clipShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal)
+        .padding(.top, 4)
+    }
+
+    /// Current frequency warning (if any) - includes license violations, activity warnings, and nearby spots
+    /// The spotCount parameter forces SwiftUI to re-evaluate when cached spots change
+    func computeCurrentWarning(spotCount: Int, inputText: String) -> FrequencyWarning? {
+        // Reference parameters to silence unused parameter warnings
+        _ = spotCount
+        _ = inputText
+
+        guard let session = sessionManager?.activeSession else {
+            return nil
+        }
+
+        // Check both the session frequency AND any frequency being typed as a command
+        let freq: Double
+        if case let .frequency(typedFreq) = detectedCommand {
+            // User is typing a frequency command - check that frequency
+            freq = typedFreq
+        } else if let sessionFreq = session.frequency {
+            // Use the session's current frequency
+            freq = sessionFreq
+        } else {
+            return nil
+        }
+
+        var warnings = BandPlanService.validateFrequency(
+            frequencyMHz: freq,
+            mode: session.mode,
+            license: userLicenseClass
+        )
+
+        // Check for nearby POTA spots
+        if let nearbyWarning = checkNearbySpots(frequencyMHz: freq, mode: session.mode) {
+            warnings.append(nearbyWarning)
+            warnings.sort { $0.priority < $1.priority }
+        }
+
+        // Return the highest priority warning not dismissed
+        return warnings.first { !dismissedWarnings.contains($0.message) }
+    }
+
+    /// Refresh the session QSOs from SwiftData
+    func refreshSessionQSOs() {
+        guard let session = sessionManager?.activeSession else {
+            sessionQSOs = []
+            return
+        }
+
+        let sessionId = session.id
+        let predicate = #Predicate<QSO> { qso in
+            qso.loggingSessionId == sessionId && !qso.isHidden
+        }
+        let descriptor = FetchDescriptor<QSO>(
+            predicate: predicate,
+            sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+        )
+
+        do {
+            sessionQSOs = try modelContext.fetch(descriptor)
+        } catch {
+            sessionQSOs = []
+        }
+        refreshUTCDayQSOs()
+    }
+
+    /// Start editing an existing QSO's callsign
+    func startEditingCallsign(_ qso: QSO) {
+        editingQSO = qso
+        callsignInput = qso.callsign
+        callsignFieldFocused = true
+        ToastManager.shared.info("Editing callsign - tap Update to save")
+    }
+
+    /// Cancel editing and clear the form
+    func cancelEditingCallsign() {
+        editingQSO = nil
+        resetFormAfterLog()
+    }
+
+    // MARK: Private
+
+    @AppStorage("userLicenseClass") private var licenseClassRaw: String = LicenseClass.extra
+        .rawValue
+
+    @AppStorage("loggerAutoModeSwitch") private var autoModeSwitch = true
+    @AppStorage("loggerKeepLookupAfterLog") private var keepLookupAfterLog = true
+
+    /// Active/paused sessions available to continue or finish
+    @State private var activeSessions: [LoggingSession] = []
+    /// QSO counts for active sessions (keyed by session ID)
+    @State private var activeSessionQSOCounts: [UUID: Int] = [:]
+    /// Finish confirmation for an active session
+    @State private var sessionToFinish: LoggingSession?
+    /// Delete confirmation for an active session
+    @State private var sessionToDelete: LoggingSession?
+
+    @State private var rstSent = ""
+    @State private var rstReceived = ""
+    @State private var showMoreFields = false
+
+    // Quick entry
+    @State private var quickEntryResult: QuickEntryResult?
+    @State private var quickEntryTokens: [ParsedToken] = []
+
+    // Expanded fields
+    @State private var notes = ""
+    @State private var theirPark = ""
+    @State private var operatorName = ""
+    @State private var theirGrid = ""
+    @State private var theirState = ""
+
+    // Callsign lookup
+    @State private var lookupResult: CallsignInfo?
+    @State private var lookupError: CallsignLookupError?
+    @State private var lookupTask: Task<Void, Never>?
+
+    /// All-time QSO count with the current callsign
+    @State private var previousQSOCount: Int = 0
+
+    /// Cached POTA duplicate status (computed on callsign change, not every render)
+    @State private var cachedPotaDuplicateStatus: POTACallsignStatus?
+
+    // Command panels
+    @State private var showRBNPanel = false
+    @State private var showMapPanel = false
+    @State private var rbnTargetCallsign: String?
+    @State private var showSolarPanel = false
+    @State private var showWeatherPanel = false
+    @State private var showPOTAPanel = false
+    @State private var showP2PPanel = false
+    @State private var showHelpSheet = false
+    @State private var showHiddenQSOsSheet = false
+
+    // Session title editing
+    @State private var showTitleEditSheet = false
+    @State private var editingTitle = ""
+
+    // Session park editing
+    @State private var showParkEditSheet = false
+    @State private var editingParkReference = ""
+
+    /// Rove
+    @State private var showNextStopSheet = false
+    /// When set, logger displays QSOs for this park instead of the current active stop
+    @State private var viewingParkOverride: String?
+
+    // Session band/mode/rig editing
+    @State private var showBandEditSheet = false
+    @State private var showModeEditSheet = false
+    @State private var showRigEditSheet = false
+
+    @State private var showDeleteSessionSheet = false
+
+    /// POTA upload prompt after session end
+    @State private var showPOTAUploadPrompt = false
+    @State private var pendingSessionEndParkRef: String?
+    @State private var pendingSessionEndParkName: String?
+    @State private var pendingSessionEndQSOCount = 0
+    @State private var pendingSessionEndQSOs: [QSO] = []
+    @State private var pendingSessionEndRoveStops: [RoveUploadSummary] = []
+    @State private var pendingSessionEndInMaintenance = false
+    @State private var pendingSessionEndMaintenanceRemaining: String?
+
+    /// User preference to disable POTA upload prompt
+    @AppStorage("potaUploadPromptDisabled") private var potaUploadPromptDisabled = false
+
+    // QSY spot confirmation
+    @State private var showQSYSpotConfirmation = false
+    @State private var qsyNewFrequency: Double?
+
+    /// POTA spot tracking - stores session frequency before tuning to a spot
+    @State private var preSpotFrequency: Double?
+
+    @State private var spotsLastFetched: Date?
+
+    /// iPad sidebar: spot selected from sidebar, processed via .onChange
+    @Binding private var externalSpotSelection: SpotSelection?
+
+    /// Tour state for mini-tour
+    private let tourState: TourState
+
+    /// Callback when session ends with QSOs logged
+    private let onSessionEnd: (() -> Void)?
+
+    /// iPad sidebar: intercepts spot commands to switch sidebar tab
+    private let onSpotCommand: ((SpotCommandAction) -> Void)?
+
+    // MARK: - Compact Form Fields
+
+    /// Unified field height for consistency
+    private let fieldHeight: CGFloat = 36
+
+    /// Deprecated: Use dismissedWarnings
+    private var dismissedViolation: String? {
+        get { dismissedWarnings.first }
+        set {
+            if let value = newValue {
+                dismissedWarnings.insert(value)
+            }
+        }
+    }
+
+    private var userLicenseClass: LicenseClass {
+        LicenseClass(rawValue: licenseClassRaw) ?? .extra
+    }
+
+    /// Whether we're viewing a past rove stop (not the active one)
+    private var isViewingPastStop: Bool {
+        viewingParkOverride != nil
+    }
+
+    /// Whether the log button should be enabled
+    private var canLog: Bool {
+        guard sessionManager?.hasActiveSession == true else {
+            return false
+        }
+
+        // Determine which callsign to validate
+        let callsignToValidate: String
+        if let qeResult = quickEntryResult {
+            // In quick entry mode, use the parsed callsign
+            callsignToValidate = qeResult.callsign
+        } else {
+            // Normal mode, use the input directly
+            guard !callsignInput.isEmpty, callsignInput.count >= 3 else {
+                return false
+            }
+            callsignToValidate = callsignInput.uppercased()
+        }
+
+        // Don't allow logging your own callsign
+        let myCallsign = sessionManager?.activeSession?.myCallsign.uppercased() ?? ""
+        if !myCallsign.isEmpty, callsignToValidate.uppercased() == myCallsign {
+            return false
+        }
+
+        // Block POTA duplicates on same band (requirement 6a)
+        if case .duplicateBand = potaDuplicateStatus {
+            return false
+        }
+
+        return true
+    }
+
+    /// Whether the action button next to the callsign field is enabled
+    private var actionButtonEnabled: Bool {
+        detectedCommand != nil || canLog
+    }
+
+    /// Label for the action button next to the callsign field
+    private var actionButtonLabel: String {
+        if detectedCommand != nil {
+            return "RUN"
+        } else if editingQSO != nil {
+            return "SAVE"
+        }
+        return "LOG"
+    }
+
+    /// Color for the action button next to the callsign field
+    private var actionButtonColor: Color {
+        if detectedCommand != nil {
+            return .purple
+        } else if editingQSO != nil {
+            return .orange
+        }
+        return .green
+    }
+
+    /// Accessibility label for the action button
+    private var actionButtonAccessibilityLabel: String {
+        if detectedCommand != nil {
+            return "Run command"
+        } else if editingQSO != nil {
+            return "Save callsign edit"
+        }
+        return "Log QSO"
+    }
+
+    /// Current mode (for RST default)
+    private var currentMode: String {
+        sessionManager?.activeSession?.mode ?? "CW"
+    }
+
+    /// Whether current mode uses 3-digit RST (CW/digital) vs 2-digit RS (phone)
+    private var isCWMode: Bool {
+        let mode = currentMode.uppercased()
+        let threeDigitModes = [
+            "CW", "RTTY", "PSK", "PSK31", "FT8", "FT4", "JT65", "JT9", "DATA", "DIGITAL",
+        ]
+        return threeDigitModes.contains(mode)
+    }
+
+    /// Default RST based on current mode
+    private var defaultRST: String {
+        isCWMode ? "599" : "59"
+    }
+
+    /// Detected command from input (if any)
+    private var detectedCommand: LoggerCommand? {
+        LoggerCommand.parse(callsignInput)
+    }
+
+    /// Whether to show the lookup error banner (when keyboard is not visible)
+    private var shouldShowLookupError: Bool {
+        lookupError != nil && lookupResult == nil && !callsignFieldFocused && !callsignInput.isEmpty
+            && callsignInput.count >= 3 && detectedCommand == nil
+    }
+
+    /// Key for animating POTA status changes
+    private var potaDuplicateStatusKey: String {
+        switch potaDuplicateStatus {
+        case .none: "none"
+        case .firstContact: "first"
+        case .newBand: "newband"
+        case .duplicateBand: "dupe"
+        }
+    }
+
+    /// Current frequency warning (if any) - convenience property
+    private var currentWarning: FrequencyWarning? {
+        computeCurrentWarning(spotCount: cachedPOTASpots.count, inputText: callsignInput)
+    }
+
+    /// Deprecated: Use currentWarning instead
+    private var currentViolation: BandPlanViolation? {
+        guard let warning = currentWarning else {
+            return nil
+        }
+        // Convert back for compatibility (if needed elsewhere)
+        let violationType: BandPlanViolation.ViolationType =
+            switch warning.type {
+            case .noPrivileges: .noPrivileges
+            case .wrongMode: .wrongMode
+            case .outOfBand: .outOfBand
+            default: .unusualFrequency
+            }
+        return BandPlanViolation(
+            type: violationType,
+            message: warning.message,
+            suggestion: warning.suggestion
+        )
     }
 
     private var noSessionHeader: some View {
@@ -957,297 +1363,6 @@ struct LoggerView: View {
         .padding()
     }
 
-    // MARK: - Callsign Input
-
-    private var callsignInputSection: some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 8) {
-                // Text field with clear button
-                HStack(spacing: 12) {
-                    CallsignTextField(
-                        "Callsign or command...",
-                        text: $callsignInput,
-                        isFocused: $callsignFieldFocused,
-                        onSubmit: {
-                            // Defer to next run loop to avoid UICollectionView crash
-                            // when keyboard dismiss triggers List updates simultaneously
-                            DispatchQueue.main.async {
-                                handleInputSubmit()
-                            }
-                        },
-                        onCommand: { command in
-                            executeCommand(command)
-                        }
-                    )
-                    .foregroundStyle(detectedCommand != nil ? .purple : .primary)
-                    .onChange(of: callsignInput) { _, newValue in
-                        onCallsignChanged(newValue)
-                    }
-
-                    Button {
-                        callsignInput = ""
-                        lookupResult = nil
-                        lookupError = nil
-                        quickEntryResult = nil
-                        quickEntryTokens = []
-                    } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .foregroundStyle(.secondary)
-                    }
-                    .opacity(callsignInput.isEmpty ? 0 : 1)
-                    .disabled(callsignInput.isEmpty)
-                }
-                .padding()
-                .background(Color(.secondarySystemGroupedBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .strokeBorder(detectedCommand != nil ? Color.purple : Color.clear, lineWidth: 2)
-                )
-
-                // Action button to the right of text field (always present)
-                Button {
-                    if let command = detectedCommand {
-                        executeCommand(command)
-                        callsignInput = ""
-                    } else if quickEntryResult != nil {
-                        logQuickEntry()
-                    } else {
-                        logQSO()
-                    }
-                } label: {
-                    Text(actionButtonLabel)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.white)
-                        .frame(maxHeight: .infinity)
-                        .frame(width: 48)
-                        .background(actionButtonColor)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                }
-                .buttonStyle(.plain)
-                .disabled(!actionButtonEnabled)
-                .opacity(actionButtonEnabled ? 1 : 0.4)
-                .accessibilityLabel(actionButtonAccessibilityLabel)
-            }
-
-            // Command description badge
-            if let command = detectedCommand {
-                HStack {
-                    Text(command.description)
-                        .font(.caption)
-                        .foregroundStyle(.purple)
-
-                    Spacer()
-
-                    Text("Press Return to execute")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.horizontal, 12)
-                .padding(.top, 6)
-                .transition(.move(edge: .top).combined(with: .opacity))
-            }
-
-            // Quick entry preview
-            if !quickEntryTokens.isEmpty, detectedCommand == nil {
-                QuickEntryPreview(tokens: quickEntryTokens)
-                    .padding(.horizontal, 12)
-                    .padding(.top, 6)
-                    .transition(.move(edge: .top).combined(with: .opacity))
-            }
-
-            // Cancel spot button - shown when tuned away from session frequency
-            if preSpotFrequency != nil {
-                Button {
-                    cancelSpot()
-                } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.caption)
-                        Text("Cancel Spot")
-                            .font(.caption.weight(.medium))
-                    }
-                    .foregroundStyle(.orange)
-                }
-                .buttonStyle(.plain)
-                .padding(.horizontal, 12)
-                .padding(.top, 6)
-                .transition(.move(edge: .top).combined(with: .opacity))
-            }
-        }
-    }
-
-    /// Compact RST and State fields with inline More expansion
-    private var compactFieldsSection: some View {
-        VStack(spacing: 8) {
-            // Row 1: State, RST Sent, RST Rcvd, More chevron
-            HStack(spacing: 8) {
-                // State field
-                compactField(
-                    label: "State",
-                    placeholder: lookupResult?.state ?? "ST",
-                    text: $theirState,
-                    width: 50
-                )
-
-                // RST Sent
-                compactField(label: "Sent", placeholder: defaultRST, text: $rstSent, width: 50)
-                    .keyboardType(.numberPad)
-
-                // RST Rcvd
-                compactField(label: "Rcvd", placeholder: defaultRST, text: $rstReceived, width: 50)
-                    .keyboardType(.numberPad)
-
-                Spacer()
-
-                // More fields chevron
-                Button {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        showMoreFields.toggle()
-                    }
-                } label: {
-                    Image(systemName: showMoreFields ? "chevron.up" : "chevron.down")
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(.secondary)
-                        .frame(width: 32, height: fieldHeight)
-                        .background(Color(.tertiarySystemGroupedBackground))
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                }
-                .buttonStyle(.plain)
-            }
-
-            // Row 2: Expanded fields (Grid, Park, Operator, Notes)
-            if showMoreFields {
-                VStack(spacing: 8) {
-                    HStack(spacing: 8) {
-                        compactField(
-                            label: "Grid",
-                            placeholder: lookupResult?.grid ?? "",
-                            text: $theirGrid
-                        )
-                        compactField(label: "Park", placeholder: "", text: $theirPark)
-                    }
-                    compactField(
-                        label: "Operator",
-                        placeholder: lookupResult?.displayName ?? "",
-                        text: $operatorName,
-                        isMonospaced: false
-                    )
-                    compactField(
-                        label: "Notes",
-                        placeholder: "",
-                        text: $notes,
-                        isMonospaced: false
-                    )
-                }
-                .transition(.opacity.combined(with: .move(edge: .top)))
-            }
-        }
-        .padding(12)
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-    }
-
-    @ViewBuilder
-    private var qsoListSection: some View {
-        // Only show QSO list when there's an active session
-        if sessionManager?.hasActiveSession == true {
-            VStack(alignment: .leading, spacing: 8) {
-                if let viewingPark = viewingParkOverride {
-                    viewingPastStopBanner(viewingPark)
-                }
-
-                HStack {
-                    Text("Session Log")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                    Spacer()
-                    Text("\(displayQSOs.count) QSOs")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-
-                if sessionLogEntries.isEmpty {
-                    Text("No entries yet")
-                        .font(.subheadline)
-                        .foregroundStyle(.tertiary)
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(.vertical, 20)
-                } else {
-                    let entries = Array(sessionLogEntries.prefix(15))
-                    List {
-                        ForEach(entries) { entry in
-                            switch entry {
-                            case let .qso(qso):
-                                LoggerQSORow(
-                                    qso: qso,
-                                    utcDayQSOs: utcDayQSOs,
-                                    isPOTASession: sessionManager?.activeSession?
-                                        .activationType == .pota,
-                                    onQSODeleted: refreshSessionQSOs,
-                                    onEditCallsign: { qsoToEdit in
-                                        startEditingCallsign(qsoToEdit)
-                                    }
-                                )
-                                .swipeActions(
-                                    edge: .trailing,
-                                    allowsFullSwipe: false
-                                ) {
-                                    Button(role: .destructive) {
-                                        qsoToDelete = qso
-                                    } label: {
-                                        Label("Delete", systemImage: "trash")
-                                    }
-                                }
-                            case let .note(note):
-                                LoggerNoteRow(note: note)
-                            }
-                        }
-                        .listRowInsets(
-                            EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
-                        )
-                        .listRowBackground(Color.clear)
-                        .listRowSeparatorTint(.secondary.opacity(0.2))
-                    }
-                    .listStyle(.plain)
-                    .scrollDisabled(true)
-                    .scrollContentBackground(.hidden)
-                    .frame(height: CGFloat(entries.count) * 44)
-                }
-            }
-            .padding()
-            .background(Color(.secondarySystemGroupedBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .alert(
-                "Delete QSO",
-                isPresented: Binding(
-                    get: { qsoToDelete != nil },
-                    set: { newValue in
-                        if !newValue {
-                            qsoToDelete = nil
-                        }
-                    }
-                )
-            ) {
-                Button("Delete", role: .destructive) {
-                    if let qso = qsoToDelete {
-                        qso.isHidden = true
-                        try? modelContext.save()
-                        refreshSessionQSOs()
-                    }
-                    qsoToDelete = nil
-                }
-                Button("Cancel", role: .cancel) {
-                    qsoToDelete = nil
-                }
-            } message: {
-                if let qso = qsoToDelete {
-                    Text("Delete QSO with \(qso.callsign)?")
-                }
-            }
-        }
-    }
-
     private func viewingPastStopBanner(_ parkRef: String) -> some View {
         HStack(spacing: 8) {
             Image(systemName: "clock.arrow.circlepath")
@@ -1274,29 +1389,6 @@ struct LoggerView: View {
         .padding(.vertical, 8)
         .background(Color.blue.opacity(0.1))
         .clipShape(RoundedRectangle(cornerRadius: 8))
-    }
-
-    private func webSDRMiniBadge(session: WebSDRSession) -> some View {
-        Button {
-            showWebSDRPanel = true
-        } label: {
-            HStack(spacing: 6) {
-                Circle()
-                    .fill(.red)
-                    .frame(width: 8, height: 8)
-                Image(systemName: "antenna.radiowaves.left.and.right")
-                    .font(.caption2)
-                Text(formatWebSDRDuration(session.recordingDuration))
-                    .font(.caption.monospacedDigit())
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .background(.red.opacity(0.1))
-            .clipShape(Capsule())
-        }
-        .buttonStyle(.plain)
-        .padding(.horizontal)
-        .padding(.top, 4)
     }
 
     /// Reusable compact field with label above
@@ -1587,45 +1679,6 @@ struct LoggerView: View {
         return String(format: "%d:%02d", minutes, seconds)
     }
 
-    /// Current frequency warning (if any) - includes license violations, activity warnings, and nearby spots
-    /// The spotCount parameter forces SwiftUI to re-evaluate when cached spots change
-    private func computeCurrentWarning(spotCount: Int, inputText: String) -> FrequencyWarning? {
-        // Reference parameters to silence unused parameter warnings
-        _ = spotCount
-        _ = inputText
-
-        guard let session = sessionManager?.activeSession else {
-            return nil
-        }
-
-        // Check both the session frequency AND any frequency being typed as a command
-        let freq: Double
-        if case let .frequency(typedFreq) = detectedCommand {
-            // User is typing a frequency command - check that frequency
-            freq = typedFreq
-        } else if let sessionFreq = session.frequency {
-            // Use the session's current frequency
-            freq = sessionFreq
-        } else {
-            return nil
-        }
-
-        var warnings = BandPlanService.validateFrequency(
-            frequencyMHz: freq,
-            mode: session.mode,
-            license: userLicenseClass
-        )
-
-        // Check for nearby POTA spots
-        if let nearbyWarning = checkNearbySpots(frequencyMHz: freq, mode: session.mode) {
-            warnings.append(nearbyWarning)
-            warnings.sort { $0.priority < $1.priority }
-        }
-
-        // Return the highest priority warning not dismissed
-        return warnings.first { !dismissedWarnings.contains($0.message) }
-    }
-
     /// Tolerance for nearby spot detection based on mode
     private func spotToleranceKHz(for mode: String) -> Double {
         let normalizedMode = mode.uppercased()
@@ -1753,30 +1806,6 @@ struct LoggerView: View {
         quickEntryResult = nil
         quickEntryTokens = []
         ToastManager.shared.info("Spot cancelled")
-    }
-
-    /// Refresh the session QSOs from SwiftData
-    private func refreshSessionQSOs() {
-        guard let session = sessionManager?.activeSession else {
-            sessionQSOs = []
-            return
-        }
-
-        let sessionId = session.id
-        let predicate = #Predicate<QSO> { qso in
-            qso.loggingSessionId == sessionId && !qso.isHidden
-        }
-        let descriptor = FetchDescriptor<QSO>(
-            predicate: predicate,
-            sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
-        )
-
-        do {
-            sessionQSOs = try modelContext.fetch(descriptor)
-        } catch {
-            sessionQSOs = []
-        }
-        refreshUTCDayQSOs()
     }
 
     /// Refresh all QSOs for the current UTC day (for POTA duplicate detection across sessions)
@@ -2360,20 +2389,6 @@ struct LoggerView: View {
         viewingParkOverride = nil
         refreshSessionQSOs()
         restorePreSpotFrequency()
-        resetFormAfterLog()
-    }
-
-    /// Start editing an existing QSO's callsign
-    private func startEditingCallsign(_ qso: QSO) {
-        editingQSO = qso
-        callsignInput = qso.callsign
-        callsignFieldFocused = true
-        ToastManager.shared.info("Editing callsign - tap Update to save")
-    }
-
-    /// Cancel editing and clear the form
-    private func cancelEditingCallsign() {
-        editingQSO = nil
         resetFormAfterLog()
     }
 
@@ -3584,7 +3599,7 @@ struct DeleteSessionConfirmationSheet: View {
                 isTextFieldFocused = true
             }
         }
-        .presentationDetents([.medium, .large])
+        .landscapeAdaptiveDetents(portrait: [.medium, .large])
     }
 
     // MARK: Private

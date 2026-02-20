@@ -203,7 +203,7 @@ struct SidebarP2PView: View {
                 }
             }
         }
-        .presentationDetents([.medium])
+        .landscapeAdaptiveDetents(portrait: [.medium])
     }
 
     // MARK: - Content Views

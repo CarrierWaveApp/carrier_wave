@@ -121,7 +121,7 @@ struct ParkPickerSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium, .large])
+        .landscapeAdaptiveDetents(portrait: [.medium, .large])
         .presentationDragIndicator(.visible)
         .task {
             await loadNearbyParks()

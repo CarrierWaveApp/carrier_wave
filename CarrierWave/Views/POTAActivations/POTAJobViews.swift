@@ -257,7 +257,7 @@ struct POTAJobDetailSheet: View {
                 await loadDetails()
             }
         }
-        .presentationDetents([.large])
+        .landscapeAdaptiveDetents(portrait: [.large])
     }
 
     // MARK: Private

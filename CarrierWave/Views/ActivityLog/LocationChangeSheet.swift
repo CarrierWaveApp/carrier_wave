@@ -36,7 +36,7 @@ struct LocationChangeSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium])
+        .landscapeAdaptiveDetents(portrait: [.medium])
         .presentationDragIndicator(.visible)
     }
 

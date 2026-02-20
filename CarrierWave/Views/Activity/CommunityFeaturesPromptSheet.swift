@@ -71,7 +71,7 @@ struct CommunityFeaturesPromptSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium, .large])
+        .landscapeAdaptiveDetents(portrait: [.medium, .large])
     }
 
     // MARK: Private

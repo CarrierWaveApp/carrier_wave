@@ -40,6 +40,7 @@ struct ContentView: View {
     let tourState: TourState
 
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
+    @Environment(\.verticalSizeClass) var verticalSizeClass
 
     var body: some View {
         Group {
@@ -151,6 +152,7 @@ struct ContentView: View {
     @State private var iPadShowsSettings = false
     @State private var mapFilterState = MapFilterState()
     @State private var pendingActivityLogNavigation = false
+    @State private var loggerHasActiveSession = false
 
     @Query(
         filter: #Predicate<Friendship> { $0.statusRawValue == "pending" && $0.isOutgoing == false }
@@ -169,6 +171,11 @@ struct ContentView: View {
             get: { selectedTab ?? .dashboard },
             set: { selectedTab = $0 }
         )
+    }
+
+    /// Hide tab bar when logger has an active session in landscape
+    private var shouldHideTabBar: Bool {
+        selectedTab == .logger && loggerHasActiveSession && verticalSizeClass == .compact
     }
 
     // MARK: - iPad Navigation (Sidebar)
@@ -237,6 +244,7 @@ struct ContentView: View {
                     .badge(tab == .activity ? incomingFriendRequests.count : 0)
             }
         }
+        .toolbar(shouldHideTabBar ? .hidden : .visible, for: .tabBar)
         .onReceive(NotificationCenter.default.publisher(for: .tabConfigurationChanged)) { _ in
             visibleTabs = TabConfiguration.visibleTabs()
             // Ensure selected tab is still visible
@@ -282,6 +290,9 @@ struct ContentView: View {
             tourState: tourState,
             onSessionEnd: {
                 selectedTab = .logs
+            },
+            onSessionStateChange: { hasSession in
+                loggerHasActiveSession = hasSession
             }
         )
     }

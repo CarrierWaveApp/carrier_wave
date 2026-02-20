@@ -277,7 +277,7 @@ struct AddCallsignNotesSourceSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium])
+        .landscapeAdaptiveDetents(portrait: [.medium])
     }
 
     // MARK: Private

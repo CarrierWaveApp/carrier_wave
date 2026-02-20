@@ -55,7 +55,7 @@ struct RecordingPlayerView: View {
                 engine: engine,
                 qsos: effectiveQSOs
             )
-            .presentationDetents([.medium])
+            .landscapeAdaptiveDetents(portrait: [.medium])
         }
         .task {
             await loadQSOs()

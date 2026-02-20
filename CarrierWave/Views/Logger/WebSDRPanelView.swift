@@ -74,7 +74,7 @@ struct WebSDRPanelView: View {
                     Task { await startRecording(receiver: receiver) }
                 }
             )
-            .presentationDetents([.medium, .large])
+            .landscapeAdaptiveDetents(portrait: [.medium, .large])
         }
     }
 

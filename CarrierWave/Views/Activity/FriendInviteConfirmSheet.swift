@@ -64,7 +64,7 @@ struct FriendInviteConfirmSheet: View {
                 }
             }
         }
-        .presentationDetents([.medium])
+        .landscapeAdaptiveDetents(portrait: [.medium])
     }
 }
 
