@@ -83,12 +83,12 @@ struct SpotsWidgetMediumView: View {
     let entry: SpotsEntry
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 3) {
+        VStack(alignment: .leading, spacing: 2) {
             headerRow
             if entry.spots.isEmpty {
                 spotsEmptyState(font: .caption, iconFont: .title3)
             } else {
-                let displayCount = min(entry.spots.count, 5)
+                let displayCount = min(entry.spots.count, 7)
                 ForEach(entry.spots.prefix(displayCount), id: \.id) { spot in
                     spotRow(spot)
                 }
@@ -101,7 +101,6 @@ struct SpotsWidgetMediumView: View {
                 Spacer(minLength: 0)
             }
         }
-        .padding()
     }
 
     // MARK: Private
@@ -142,23 +141,26 @@ struct SpotsWidgetMediumView: View {
             Text(spot.frequencyDisplay)
                 .font(.caption2.monospaced())
                 .foregroundStyle(.secondary)
-                .frame(width: 52, alignment: .trailing)
+                .fixedSize()
+                .padding(.trailing, 4)
 
             Text(spot.mode)
                 .font(.caption2.monospaced())
                 .foregroundStyle(.secondary)
-                .padding(.horizontal, 4)
+                .fixedSize()
+                .padding(.trailing, 4)
 
             Text(spot.sourceLabel)
                 .font(.caption2)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
 
-            Spacer(minLength: 0)
+            Spacer(minLength: 4)
 
             Text(spot.timeAgo)
                 .font(.caption2.monospaced())
                 .foregroundStyle(.tertiary)
+                .fixedSize()
         }
     }
 
@@ -213,13 +215,13 @@ struct SpotsWidgetLargeView: View {
     let entry: SpotsEntry
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 3) {
             headerRow
                 .padding(.bottom, 2)
             if entry.spots.isEmpty {
                 spotsEmptyState(font: .subheadline, iconFont: .largeTitle)
             } else {
-                let displayCount = min(entry.spots.count, 8)
+                let displayCount = min(entry.spots.count, 12)
                 ForEach(entry.spots.prefix(displayCount), id: \.id) { spot in
                     spotRow(spot)
                     if spot.id != entry.spots.prefix(displayCount).last?.id {
@@ -235,7 +237,6 @@ struct SpotsWidgetLargeView: View {
                 Spacer(minLength: 0)
             }
         }
-        .padding()
     }
 
     // MARK: Private
@@ -318,23 +319,26 @@ struct SpotsWidgetLargeView: View {
             Text(spot.frequencyDisplay)
                 .font(.caption.monospaced())
                 .foregroundStyle(.secondary)
-                .frame(width: 56, alignment: .trailing)
+                .fixedSize()
+                .padding(.trailing, 6)
 
             Text(spot.mode)
                 .font(.caption2.monospaced())
                 .foregroundStyle(.secondary)
-                .padding(.horizontal, 6)
+                .fixedSize()
+                .padding(.trailing, 6)
 
             Text(spot.sourceLabel)
                 .font(.caption2)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
 
-            Spacer(minLength: 0)
+            Spacer(minLength: 4)
 
             Text(spot.timeAgo)
                 .font(.caption2.monospaced())
                 .foregroundStyle(.tertiary)
+                .fixedSize()
         }
         .padding(.vertical, 1)
     }
