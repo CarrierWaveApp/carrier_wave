@@ -212,9 +212,13 @@ struct CloudSyncSettingsView: View {
         if let storeURL = modelContext.container
             .configurations.first?.url
         {
+            let count = BackupService.visibleQSOCount(
+                in: modelContext.container
+            )
             await BackupService.shared.snapshot(
                 trigger: .preSync,
-                storeURL: storeURL
+                storeURL: storeURL,
+                qsoCount: count
             )
         }
         await syncService.setEnabled(true)

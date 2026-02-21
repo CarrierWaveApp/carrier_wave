@@ -48,8 +48,12 @@ class ImportService: ObservableObject {
             let storeURL = modelContext.container
             .configurations.first?.url
         {
+            let count = BackupService.visibleQSOCount(
+                in: modelContext.container
+            )
             await BackupService.shared.snapshot(
-                trigger: .preImport, storeURL: storeURL
+                trigger: .preImport, storeURL: storeURL,
+                qsoCount: count
             )
         }
 

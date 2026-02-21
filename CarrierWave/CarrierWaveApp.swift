@@ -98,9 +98,13 @@ struct CarrierWaveApp: App {
                     let storeURL = sharedModelContainer
                     .configurations.first?.url
                 {
+                    let count = BackupService.visibleQSOCount(
+                        in: sharedModelContainer
+                    )
                     await BackupService.shared.snapshot(
                         trigger: .launch,
-                        storeURL: storeURL
+                        storeURL: storeURL,
+                        qsoCount: count
                     )
                 }
 

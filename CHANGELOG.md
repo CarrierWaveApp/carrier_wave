@@ -25,6 +25,7 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ### Fixed
 - Fix backup restore using wrong UserDefaults key to disable iCloud sync, leaving sync active after restore
+- Fix backup QSO count showing 0 when SwiftData table name differs from CoreData convention
 - Fix activity grid using local timezone for date grouping instead of UTC, causing QSO counts to disagree with Sessions view for users west of UTC
 - Convert all user-facing QSO deletions to soft-delete (swipe-delete, clear QRZ/LoFi data, delete callsign alias QSOs) to prevent data loss
 - Hide orphaned QSOs when CloudKit inbound sync deletes a logging session

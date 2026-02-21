@@ -189,8 +189,12 @@ struct BackupSettingsView: View {
             return
         }
 
+        let count = BackupService.visibleQSOCount(
+            in: modelContext.container
+        )
         let entry = await BackupService.shared.snapshot(
-            trigger: .manual, storeURL: storeURL
+            trigger: .manual, storeURL: storeURL,
+            qsoCount: count
         )
         if entry == nil {
             errorMessage = "Backup failed. Check available storage."

@@ -120,20 +120,54 @@ actor BackupService {
             .appendingPathComponent("Backups")
     }
 
+    /// Count visible, non-metadata QSOs using SwiftData.
+    /// Matches the dashboard's totalQSOs calculation exactly:
+    /// fetch non-hidden, dedup by UUID, exclude metadata modes.
+    @MainActor
+    static func visibleQSOCount(
+        in container: ModelContainer
+    ) -> Int {
+        let context = ModelContext(container)
+        var descriptor = FetchDescriptor<QSO>(
+            predicate: #Predicate { !$0.isHidden }
+        )
+        descriptor.propertiesToFetch = [\.mode]
+        guard let qsos = try? context.fetch(descriptor) else {
+            return 0
+        }
+        var seenIds = Set<UUID>()
+        seenIds.reserveCapacity(qsos.count)
+        var count = 0
+        for qso in qsos {
+            guard seenIds.insert(qso.id).inserted else {
+                continue
+            }
+            if !Self.metadataModes.contains(
+                qso.mode.uppercased()
+            ) {
+                count += 1
+            }
+        }
+        return count
+    }
+
     // MARK: - Snapshot
 
-    /// Create a snapshot of the database
+    /// Create a snapshot of the database.
+    /// Pass `qsoCount` from the app's SwiftData context for an accurate count.
     @discardableResult
     func snapshot(
         trigger: BackupTrigger,
-        storeURL: URL
+        storeURL: URL,
+        qsoCount: Int = 0
     ) async -> BackupEntry? {
         do {
             ensureBackupDirectory()
             try checkpointWAL(storeURL: storeURL)
 
             let entry = try createSnapshotFile(
-                trigger: trigger, storeURL: storeURL
+                trigger: trigger, storeURL: storeURL,
+                qsoCount: qsoCount
             )
 
             var manifest = loadManifest()
@@ -206,6 +240,10 @@ actor BackupService {
 
     // MARK: Private
 
+    private static let metadataModes: Set<String> = [
+        "WEATHER", "SOLAR", "NOTE",
+    ]
+
     // MARK: - Private Helpers
 
     private func ensureBackupDirectory() {
@@ -238,7 +276,8 @@ actor BackupService {
 
     private func createSnapshotFile(
         trigger: BackupTrigger,
-        storeURL: URL
+        storeURL: URL,
+        qsoCount: Int
     ) throws -> BackupEntry {
         let timestamp = Date()
         let fmt = DateFormatter()
@@ -256,7 +295,6 @@ actor BackupService {
             atPath: destURL.path
         )
         let size = (attrs[.size] as? Int64) ?? 0
-        let qsoCount = countQSOs(in: destURL)
         let version = Bundle.main.infoDictionary?[
             "CFBundleShortVersionString"
         ] as? String ?? "unknown"
@@ -267,31 +305,6 @@ actor BackupService {
             sizeBytes: size, appVersion: version,
             location: .local, filename: filename
         )
-    }
-
-    private func countQSOs(in dbURL: URL) -> Int {
-        var db: OpaquePointer?
-        guard sqlite3_open_v2(
-            dbURL.path, &db, SQLITE_OPEN_READONLY, nil
-        ) == SQLITE_OK else {
-            sqlite3_close(db)
-            return 0
-        }
-        defer { sqlite3_close(db) }
-
-        var stmt: OpaquePointer?
-        guard sqlite3_prepare_v2(
-            db, "SELECT COUNT(*) FROM ZQSO",
-            -1, &stmt, nil
-        ) == SQLITE_OK,
-            sqlite3_step(stmt) == SQLITE_ROW
-        else {
-            sqlite3_finalize(stmt)
-            return 0
-        }
-        let count = Int(sqlite3_column_int64(stmt, 0))
-        sqlite3_finalize(stmt)
-        return count
     }
 
     // MARK: - Pruning
