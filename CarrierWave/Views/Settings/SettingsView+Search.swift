@@ -27,7 +27,8 @@ extension SettingsMainView {
              .externalData,
              .attributions,
              .syncDebug,
-             .hiddenQSOs:
+             .hiddenQSOs,
+             .backups:
             toolDestinationView(for: dest)
         case .qrzLogbook,
              .pota,
@@ -99,6 +100,8 @@ extension SettingsMainView {
             SyncDebugView(potaAuth: potaAuth)
         case .hiddenQSOs:
             AllHiddenQSOsView()
+        case .backups:
+            BackupSettingsView()
         default:
             EmptyView()
         }

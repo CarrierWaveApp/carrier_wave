@@ -8,6 +8,7 @@ struct DataToolsSettingsView: View {
 
     var body: some View {
         List {
+            backupsSection
             dataSection
             deduplicationSection
         }
@@ -22,6 +23,7 @@ struct DataToolsSettingsView: View {
         } message: {
             Text(dedupeResultMessage)
         }
+        .task { await loadLastBackupText() }
         .sheet(
             item: $exportedFile,
             onDismiss: { isExportingDatabase = false },
@@ -43,6 +45,27 @@ struct DataToolsSettingsView: View {
     @State private var isDeduplicating = false
     @State private var showingDedupeResult = false
     @State private var dedupeResultMessage = ""
+    @State private var lastBackupText = ""
+
+    private var backupsSection: some View {
+        Section {
+            NavigationLink {
+                BackupSettingsView()
+            } label: {
+                HStack {
+                    Text("Backups")
+                    Spacer()
+                    Text(lastBackupText)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        } footer: {
+            Text(
+                "Automatic snapshots protect against data loss. "
+                    + "Restore from any backup if needed."
+            )
+        }
+    }
 
     private var dataSection: some View {
         Section {
@@ -176,6 +199,20 @@ struct DataToolsSettingsView: View {
         } catch {
             errorMessage = "Deduplication failed: \(error.localizedDescription)"
             showingError = true
+        }
+    }
+
+    private func loadLastBackupText() async {
+        let backups = await BackupService.shared.availableBackups()
+        if let latest = backups.first {
+            let formatter = RelativeDateTimeFormatter()
+            formatter.unitsStyle = .abbreviated
+            lastBackupText = formatter.localizedString(
+                for: latest.timestamp,
+                relativeTo: Date()
+            )
+        } else {
+            lastBackupText = "Never"
         }
     }
 }
