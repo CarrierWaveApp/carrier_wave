@@ -13,6 +13,8 @@ extension CloudSyncEngine {
         collectDirtyServicePresenceChanges(into: &changes)
         collectDirtyLoggingSessionChanges(into: &changes)
         collectDirtyActivationMetadataChanges(into: &changes)
+        collectDirtySessionSpotChanges(into: &changes)
+        collectDirtyActivityLogChanges(into: &changes)
         return changes
     }
 
@@ -76,6 +78,38 @@ extension CloudSyncEngine {
                 )
                 let recordID = CKRecordMapper.recordID(
                     type: .activationMetadata, id: syntheticID
+                )
+                changes.append(.saveRecord(recordID))
+            }
+        }
+    }
+
+    private func collectDirtySessionSpotChanges(
+        into changes: inout [CKSyncEngine.PendingRecordZoneChange]
+    ) {
+        let descriptor = FetchDescriptor<SessionSpot>(
+            predicate: #Predicate { $0.cloudDirtyFlag == true }
+        )
+        if let dirtySpots = try? modelContext.fetch(descriptor) {
+            for spot in dirtySpots {
+                let recordID = CKRecordMapper.recordID(
+                    type: .sessionSpot, id: spot.id
+                )
+                changes.append(.saveRecord(recordID))
+            }
+        }
+    }
+
+    private func collectDirtyActivityLogChanges(
+        into changes: inout [CKSyncEngine.PendingRecordZoneChange]
+    ) {
+        let descriptor = FetchDescriptor<ActivityLog>(
+            predicate: #Predicate { $0.cloudDirtyFlag == true }
+        )
+        if let dirtyLogs = try? modelContext.fetch(descriptor) {
+            for log in dirtyLogs {
+                let recordID = CKRecordMapper.recordID(
+                    type: .activityLog, id: log.id
                 )
                 changes.append(.saveRecord(recordID))
             }
@@ -151,6 +185,14 @@ extension CloudSyncEngine {
             )
         case CKRecordMapper.RecordType.activationMetadata.rawValue:
             return buildActivationMetadataRecord(
+                id: uuid, existingRecord: existingRecord
+            )
+        case CKRecordMapper.RecordType.sessionSpot.rawValue:
+            return buildSessionSpotRecord(
+                id: uuid, existingRecord: existingRecord
+            )
+        case CKRecordMapper.RecordType.activityLog.rawValue:
+            return buildActivityLogRecord(
                 id: uuid, existingRecord: existingRecord
             )
         default:
@@ -244,6 +286,40 @@ extension CloudSyncEngine {
         }
 
         return nil
+    }
+
+    private func buildSessionSpotRecord(
+        id: UUID,
+        existingRecord: CKRecord?
+    ) -> CKRecord? {
+        var descriptor = FetchDescriptor<SessionSpot>(
+            predicate: #Predicate { $0.id == id }
+        )
+        descriptor.fetchLimit = 1
+        guard let spot = try? modelContext.fetch(descriptor).first else {
+            return nil
+        }
+        let fields = extractSessionSpotFields(spot)
+        return CKRecordMapper.sessionSpotFieldsToCKRecord(
+            fields, existingRecord: existingRecord
+        )
+    }
+
+    private func buildActivityLogRecord(
+        id: UUID,
+        existingRecord: CKRecord?
+    ) -> CKRecord? {
+        var descriptor = FetchDescriptor<ActivityLog>(
+            predicate: #Predicate { $0.id == id }
+        )
+        descriptor.fetchLimit = 1
+        guard let log = try? modelContext.fetch(descriptor).first else {
+            return nil
+        }
+        let fields = extractActivityLogFields(log)
+        return CKRecordMapper.activityLogFieldsToCKRecord(
+            fields, existingRecord: existingRecord
+        )
     }
 
     // MARK: - Handling Sent Changes
@@ -355,6 +431,17 @@ extension CloudSyncEngine {
             resolveActivationMetadataConflict(
                 serverRecord: serverRecord,
                 clientRecord: clientRecord
+            )
+        case CKRecordMapper.RecordType.sessionSpot.rawValue:
+            resolveSessionSpotConflict(
+                uuid: uuid,
+                serverRecord: serverRecord
+            )
+        case CKRecordMapper.RecordType.activityLog.rawValue:
+            resolveActivityLogConflict(
+                uuid: uuid,
+                clientRecord: clientRecord,
+                serverRecord: serverRecord
             )
         default:
             break
