@@ -106,6 +106,18 @@ extension SettingsMainView {
                     Text("Hidden QSOs")
                 }
 
+                HStack {
+                    Text("CW-SWL Server")
+                    TextField(
+                        "http://host:3000",
+                        text: $cwswlServerURL
+                    )
+                    .textFieldStyle(.roundedBorder)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .font(.caption.monospaced())
+                }
+
                 Button(role: .destructive) {
                     showingClearAllConfirmation = true
                 } label: {

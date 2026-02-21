@@ -27,6 +27,22 @@ final class RecordingPlaybackEngine: NSObject {
     /// Index of the recording segment currently under the playback head
     private(set) var activeSegmentIndex: Int = 0
 
+    // MARK: - QSO Ranges
+
+    /// Computed time ranges for each QSO (heuristic or transcript-derived)
+    var qsoRanges: [(start: TimeInterval, end: TimeInterval)] = []
+
+    // MARK: - Transcript
+
+    /// Loaded transcript (nil if none available)
+    var transcript: SDRRecordingTranscript?
+
+    /// Currently active transcript line index
+    var activeTranscriptLineIndex: Int?
+
+    /// Currently active transcript word index within the active line
+    var activeTranscriptWordIndex: Int?
+
     // MARK: - Amplitude Envelope
 
     /// Downsampled amplitude envelope for waveform display (0.0 to 1.0)
@@ -37,6 +53,17 @@ final class RecordingPlaybackEngine: NSObject {
 
     /// Recording segments with frequency/mode metadata (empty if no changes)
     private(set) var segments: [SDRRecordingSegment] = []
+
+    // MARK: - QSO Time Alignment (accessible from extension)
+
+    /// QSO offsets in seconds from recording start, sorted ascending
+    var qsoOffsets: [TimeInterval] = []
+
+    /// Window before QSO timestamp to consider "active" (seconds)
+    let activeLeadIn: TimeInterval = 90
+
+    /// Window after QSO timestamp to consider "active" (seconds)
+    let activeTrailOut: TimeInterval = 15
 
     /// Current playback rate (0.5, 1.0, 1.5, 2.0)
     var playbackRate: Float = 1.0 {
@@ -78,11 +105,11 @@ final class RecordingPlaybackEngine: NSObject {
         currentTime = 0
         self.segments = segments
 
-        // Compute QSO offsets relative to recording start
         qsoOffsets = qsoTimestamps.map { timestamp in
             timestamp.timeIntervalSince(recordingStart)
         }
 
+        computeQSORanges()
         scanAmplitude(fileURL: fileURL)
     }
 
@@ -124,6 +151,10 @@ final class RecordingPlaybackEngine: NSObject {
         duration = 0
         activeQSOIndex = nil
         activeSegmentIndex = 0
+        qsoRanges = []
+        transcript = nil
+        activeTranscriptLineIndex = nil
+        activeTranscriptWordIndex = nil
         segments = []
         stopDisplayLink()
     }
@@ -170,7 +201,6 @@ final class RecordingPlaybackEngine: NSObject {
     // MARK: - Amplitude Scanning
 
     /// Scan the audio file and compute amplitude envelope on a background task.
-    /// Call after load(). Each sample represents 0.5 seconds of audio.
     func scanAmplitude(fileURL: URL) {
         isLoadingAmplitude = true
         let sampleWindowSeconds = 0.5
@@ -188,22 +218,10 @@ final class RecordingPlaybackEngine: NSObject {
 
     // MARK: Private
 
-    // MARK: - QSO Time Alignment
-
-    /// QSO offsets in seconds from recording start, sorted ascending
-    private var qsoOffsets: [TimeInterval] = []
-
-    /// Window before QSO timestamp to consider "active" (seconds)
-    private let activeLeadIn: TimeInterval = 90
-
-    /// Window after QSO timestamp to consider "active" (seconds)
-    private let activeTrailOut: TimeInterval = 15
-
     private var player: AVAudioPlayer?
     private var displayLink: CADisplayLink?
 
     /// Compute peak amplitude envelope from a CAF/audio file.
-    /// Returns one float (0.0-1.0) per window of `windowSeconds`.
     nonisolated private static func computeEnvelope(
         fileURL: URL, windowSeconds: Double
     ) -> [Float] {
@@ -211,8 +229,6 @@ final class RecordingPlaybackEngine: NSObject {
             return []
         }
 
-        // Use the file's processingFormat (AVAudioFile always converts to
-        // non-interleaved float32 for reading)
         let format = audioFile.processingFormat
         let sampleRate = format.sampleRate
         let totalFrames = AVAudioFrameCount(audioFile.length)
@@ -310,10 +326,10 @@ final class RecordingPlaybackEngine: NSObject {
         currentTime = player.currentTime
         updateActiveQSO()
         updateActiveSegment()
+        updateActiveTranscript()
     }
 
     private func updateActiveQSO() {
-        // Find the QSO whose active window contains currentTime
         var bestIndex: Int?
         var bestDistance: TimeInterval = .greatestFiniteMagnitude
 
@@ -321,7 +337,6 @@ final class RecordingPlaybackEngine: NSObject {
             let windowStart = offset - activeLeadIn
             let windowEnd = offset + activeTrailOut
             if currentTime >= windowStart, currentTime <= windowEnd {
-                // Prefer the QSO closest to its timestamp
                 let distance = abs(currentTime - offset)
                 if distance < bestDistance {
                     bestDistance = distance
@@ -343,7 +358,6 @@ final class RecordingPlaybackEngine: NSObject {
                 return
             }
         }
-        // Past all segments — stay on last
         activeSegmentIndex = segments.count - 1
     }
 }

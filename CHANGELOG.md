@@ -23,6 +23,12 @@ All notable changes to Carrier Wave will be documented in this file.
 - Fix last QSO row state text clipped at bottom of session log card (44→54pt row height)
 
 ### Added
+- Add interactive recording player with QSO span regions on waveform
+- Add karaoke-style CW transcript panel with per-word highlighting and auto-scroll
+- Add cw-swl server integration for recording transcription (upload, poll, cache)
+- Add CW-SWL Server URL setting in Developer section
+- Add collapsible QSO summary with inline active QSO indicator
+- Add segment boundary markers on waveform for frequency/mode changes
 - Add "Hide field entry form" toggle in Logger Settings for quick-entry users
 - Add frequency picker hint about typing frequency in the command box
 

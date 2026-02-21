@@ -109,6 +109,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `RoveStop.swift` | Codable model for individual park stops within a POTA rove session |
 | `LoggerCommand.swift` | Command enum for logger input (FREQ, BAND, MODE, SPOT, RBN, POTA, P2P, SOLAR, WEATHER, MAP, WEBSDR) |
 | `WebSDRRecording.swift` | WebSDR recording metadata (host, file path, duration, session link) |
+| `SDRTranscriptModels.swift` | SDR transcript types (Word, Line, Transcript, DetectedQSORange) for cw-swl integration |
 | `WebSDRFavorite.swift` | Favorited KiwiSDR receiver model (iCloud synced) |
 | `CallsignNotesSource.swift` | SwiftData model for user-configured callsign notes file sources |
 | `BandPlan.swift` | US amateur radio band plan data with license class privileges |
@@ -342,8 +343,9 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `WebSDRRecorder.swift` | Records KiwiSDR audio frames to compressed audio file |
 | `WebSDRSession.swift` | Coordinates WebSDR connection, recording, playback, and resilient reconnects |
 | `WebSDRSession+Internals.swift` | Internal helpers: audio stream processing, reconnect logic, recording lifecycle |
-| `RecordingPlaybackEngine.swift` | @Observable AVAudioPlayer wrapper with seeking, speed control, amplitude envelope, QSO sync |
+| `RecordingPlaybackEngine.swift` | @Observable AVAudioPlayer wrapper with seeking, speed control, amplitude envelope, QSO sync, transcript tracking |
 | `RecordingClipExporter.swift` | M4A clip export from recordings using AVAssetExportSession |
+| `CWSWLClient.swift` | Actor for cw-swl server communication (upload, transcribe, poll, download transcript) |
 
 ## Services - Query Language (`CarrierWave/Services/QueryLanguage/`)
 
@@ -360,10 +362,11 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 ## Views - Recording Player (`CarrierWave/Views/RecordingPlayer/`)
 | File | Purpose |
 |------|---------|
-| `RecordingWaveformView.swift` | Reusable amplitude waveform with QSO markers, playback head, drag-to-seek |
+| `RecordingWaveformView.swift` | Reusable amplitude waveform with QSO span regions, segment boundaries, playback head, drag-to-seek |
 | `CompactRecordingPlayer.swift` | Inline card for activation detail and sessions list |
-| `RecordingPlayerView.swift` | Full-screen player with transport controls, speed picker, QSO list |
+| `RecordingPlayerView.swift` | Full-screen player with transport controls, speed picker, transcript panel, collapsible QSO list |
 | `RecordingPlayerView+Actions.swift` | Share clip sheet with range selection and M4A export |
+| `RecordingTranscriptView.swift` | Karaoke-style CW transcript with per-word highlighting, auto-scroll, segment dividers |
 
 ## Views - Sessions (`CarrierWave/Views/Sessions/`)
 | File | Purpose |

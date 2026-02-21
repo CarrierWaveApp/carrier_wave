@@ -2,7 +2,7 @@ import SwiftData
 import SwiftUI
 
 /// Full-screen recording player with waveform scrubber, transport controls,
-/// speed selector, and QSO list with bidirectional sync.
+/// speed selector, transcript panel, and collapsible QSO list.
 struct RecordingPlayerView: View {
     // MARK: Internal
 
@@ -10,6 +10,32 @@ struct RecordingPlayerView: View {
     var initialQSOs: [QSO] = []
 
     @Bindable var engine: RecordingPlaybackEngine
+
+    // State accessible from extension
+    @Environment(\.modelContext) var modelContext
+    @State var selectedRate: Float = 1.0
+    @State var showShareClip = false
+    @State var loadedQSOs: [QSO]?
+    @State var isQSOListExpanded = false
+    @State var isTranscribing = false
+    @State var transcriptionProgress: Float = 0
+    @State var transcriptionError: String?
+    @AppStorage("cwswlServerURL") var cwswlServerURL = ""
+
+    // MARK: - Helpers
+
+    var effectiveQSOs: [QSO] {
+        loadedQSOs ?? (initialQSOs.isEmpty ? [] : initialQSOs)
+    }
+
+    var sortedQSOs: [QSO] {
+        effectiveQSOs.sorted { $0.timestamp < $1.timestamp }
+    }
+
+    var qsoOffsets: [TimeInterval] {
+        let start = recording.startedAt
+        return sortedQSOs.map { $0.timestamp.timeIntervalSince(start) }
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -19,35 +45,33 @@ struct RecordingPlayerView: View {
 
             waveformSection
                 .padding(.horizontal)
-                .padding(.top, 16)
+                .padding(.top, 12)
 
             timeLabelsRow
                 .padding(.horizontal)
 
             transportControls
-                .padding(.top, 16)
-
-            speedPicker
                 .padding(.top, 12)
 
-            Divider()
-                .padding(.top, 16)
+            speedPicker
+                .padding(.top, 8)
 
-            qsoList
+            Divider()
+                .padding(.top, 12)
+
+            // Transcript takes primary space
+            transcriptSection
+                .frame(maxHeight: .infinity)
+
+            Divider()
+
+            // Collapsible QSO summary at bottom
+            qsoSummarySection
         }
         .navigationTitle("Recording")
         .navigationBarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom) {
-            HStack(spacing: 16) {
-                Button {
-                    showShareClip = true
-                } label: {
-                    Label("Share Clip", systemImage: "scissors")
-                }
-                .buttonStyle(.bordered)
-            }
-            .padding()
-            .background(.bar)
+            bottomBar
         }
         .sheet(isPresented: $showShareClip) {
             ShareClipSheet(
@@ -64,28 +88,6 @@ struct RecordingPlayerView: View {
     }
 
     // MARK: Private
-
-    // MARK: - Speed Picker
-
-    @Environment(\.modelContext) private var modelContext
-    @State private var selectedRate: Float = 1.0
-    @State private var showShareClip = false
-    @State private var loadedQSOs: [QSO]?
-
-    // MARK: - Helpers
-
-    private var effectiveQSOs: [QSO] {
-        loadedQSOs ?? (initialQSOs.isEmpty ? [] : initialQSOs)
-    }
-
-    private var sortedQSOs: [QSO] {
-        effectiveQSOs.sorted { $0.timestamp < $1.timestamp }
-    }
-
-    private var qsoOffsets: [TimeInterval] {
-        let start = recording.startedAt
-        return sortedQSOs.map { $0.timestamp.timeIntervalSince(start) }
-    }
 
     // MARK: - Header
 
@@ -115,10 +117,12 @@ struct RecordingPlayerView: View {
             currentTime: engine.currentTime,
             qsoOffsets: qsoOffsets,
             activeQSOIndex: engine.activeQSOIndex,
-            height: 80,
+            height: 60,
             seekable: true,
             onSeek: { time in engine.seek(to: time) },
-            qsoCallsigns: sortedQSOs.map(\.callsign)
+            qsoCallsigns: sortedQSOs.map(\.callsign),
+            qsoRanges: engine.qsoRanges,
+            segments: engine.segments
         )
     }
 
@@ -195,119 +199,54 @@ struct RecordingPlayerView: View {
         }
     }
 
-    // MARK: - QSO List
+    // MARK: - Transcript
 
-    private var qsoList: some View {
-        ScrollViewReader { proxy in
-            List {
-                ForEach(
-                    Array(sortedQSOs.enumerated()), id: \.element.id
-                ) { index, qso in
-                    qsoRow(qso, index: index)
-                        .id(qso.id)
-                        .onTapGesture {
-                            engine.seekToQSO(at: index)
-                        }
-                }
-            }
-            .listStyle(.plain)
-            .onChange(of: engine.activeQSOIndex) { _, newIndex in
-                if let idx = newIndex, idx < sortedQSOs.count {
-                    withAnimation {
-                        proxy.scrollTo(sortedQSOs[idx].id, anchor: .center)
-                    }
-                }
-            }
-        }
-    }
-
-    private func qsoRow(_ qso: QSO, index: Int) -> some View {
-        let isActive = index == engine.activeQSOIndex
-
-        return HStack(spacing: 8) {
-            if isActive {
-                Image(systemName: "speaker.wave.2.fill")
-                    .font(.caption)
-                    .foregroundStyle(.tint)
+    private var transcriptSection: some View {
+        VStack(spacing: 0) {
+            if isTranscribing {
+                transcriptionProgressView
+            } else if let error = transcriptionError {
+                transcriptionErrorView(error)
             } else {
-                Text(formatQSOTime(qso.timestamp))
-                    .font(.caption.monospacedDigit())
-                    .foregroundStyle(.secondary)
+                RecordingTranscriptView(
+                    transcript: engine.transcript,
+                    segments: engine.segments,
+                    activeLineIndex: engine.activeTranscriptLineIndex,
+                    activeWordIndex: engine.activeTranscriptWordIndex,
+                    currentTime: engine.currentTime,
+                    onSeek: { time in engine.seek(to: time) },
+                    onTranscribe: cwswlServerURL.isEmpty ? nil : {
+                        Task { await startTranscription() }
+                    }
+                )
             }
+        }
+    }
 
-            Text(qso.callsign)
-                .font(.subheadline)
-                .fontWeight(isActive ? .bold : .regular)
-
-            Spacer()
-
-            if let rst = qso.rstSent {
-                Text(rst)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            Text(qso.band)
+    private var transcriptionProgressView: some View {
+        VStack(spacing: 12) {
+            ProgressView(value: transcriptionProgress)
+                .progressViewStyle(.linear)
+                .frame(maxWidth: 200)
+            Text("Transcribing... \(Int(transcriptionProgress * 100))%")
                 .font(.caption)
                 .foregroundStyle(.secondary)
-
-            Text(qso.mode)
-                .font(.caption)
-                .foregroundStyle(.secondary)
         }
-        .padding(.vertical, 2)
-        .listRowBackground(
-            isActive ? Color.accentColor.opacity(0.1) : nil
-        )
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    private func loadQSOs() async {
-        guard initialQSOs.isEmpty else {
-            return
+    // MARK: - Bottom Bar
+
+    private var bottomBar: some View {
+        HStack(spacing: 16) {
+            Button {
+                showShareClip = true
+            } label: {
+                Label("Share Clip", systemImage: "scissors")
+            }
+            .buttonStyle(.bordered)
         }
-        let sessionId = recording.loggingSessionId
-        var descriptor = FetchDescriptor<QSO>(
-            predicate: #Predicate {
-                $0.loggingSessionId == sessionId && !$0.isHidden
-            },
-            sortBy: [SortDescriptor(\.timestamp)]
-        )
-        descriptor.fetchLimit = 500
-        loadedQSOs = (try? modelContext.fetch(descriptor)) ?? []
-    }
-
-    private func loadIfNeeded() async {
-        guard !engine.isLoaded, let fileURL = recording.fileURL else {
-            return
-        }
-        let timestamps = sortedQSOs.map(\.timestamp)
-        try? engine.load(
-            fileURL: fileURL,
-            qsoTimestamps: timestamps,
-            recordingStart: recording.startedAt
-        )
-    }
-
-    private func formatUTCTime(_ offset: TimeInterval) -> String {
-        let date = recording.startedAt.addingTimeInterval(offset)
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm:ss"
-        formatter.timeZone = TimeZone(identifier: "UTC")
-        return formatter.string(from: date) + "z"
-    }
-
-    private func formatQSOTime(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm"
-        formatter.timeZone = TimeZone(identifier: "UTC")
-        return formatter.string(from: date) + "z"
-    }
-
-    private func formatFrequency(_ kHz: Double) -> String {
-        let mHz = kHz / 1_000
-        if mHz == mHz.rounded() {
-            return String(format: "%.0f MHz", mHz)
-        }
-        return String(format: "%.3f MHz", mHz)
+        .padding()
+        .background(.bar)
     }
 }

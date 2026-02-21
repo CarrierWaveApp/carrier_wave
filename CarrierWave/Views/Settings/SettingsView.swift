@@ -35,6 +35,7 @@ struct SettingsMainView: View {
     @AppStorage("debugMode") var debugMode = false
     @AppStorage("readOnlyMode") var readOnlyMode = false
     @AppStorage("bypassPOTAMaintenance") var bypassPOTAMaintenance = false
+    @AppStorage("cwswlServerURL") var cwswlServerURL = ""
 
     @StateObject var iCloudMonitor = ICloudMonitor()
 
