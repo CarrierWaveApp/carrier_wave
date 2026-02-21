@@ -75,6 +75,18 @@ class SyncService: ObservableObject {
         let debugLog = SyncDebugLog.shared
         debugLog.info("Starting full sync")
 
+        // Pre-sync backup
+        if UserDefaults.standard.object(
+            forKey: "autoBackupEnabled"
+        ) as? Bool ?? true,
+            let storeURL = modelContext.container
+            .configurations.first?.url
+        {
+            await BackupService.shared.snapshot(
+                trigger: .preSync, storeURL: storeURL
+            )
+        }
+
         // Capture whether this will be an incremental QRZ sync (before downloads modify it)
         let qrzWasIncremental = qrzClient.getLastDownloadDate() != nil
 

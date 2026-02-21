@@ -167,6 +167,8 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `QSOProcessingActor+POTAReconcile.swift` | Reconcile POTA ServicePresence against upload job log |
 | `QSOProcessingActor+POTAGapRepair.swift` | Compare local QSOs against POTA remote data, flag missing for re-upload |
 | `QSOProcessingActor+DataRepairs.swift` | Callsign whitespace repair and QRZ isSubmitted state repair |
+| `BackupService.swift` | Database backup actor (snapshot, manifest, pruning) |
+| `BackupService+Restore.swift` | Backup restore, validation, iCloud Drive sync |
 | `SyncDebugLog.swift` | Sync debugging utilities |
 | `ImportService.swift` | ADIF parsing, deduplication, QSO creation |
 | `ImportService+External.swift` | External file import handling |
@@ -599,6 +601,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `DashboardMetricsSettingsView.swift` | Configure which metrics appear on dashboard card |
 | `WebSDRRecordingsView.swift` | List of all WebSDR recordings with delete, share, and details |
 | `WebSDRFavoritesView.swift` | WebSDR favorites management with manual add (advanced mode) |
+| `BackupSettingsView.swift` | Backup management UI (manual backup, restore list, settings) |
 | `WebSDRFavoritesView+Rows.swift` | Compact row rendering for WebSDR favorites (extension) |
 | `ReceiverDetailSheet.swift` | Detail sheet for a KiwiSDR receiver with favorite toggle |
 | `AddReceiverSheet.swift` | Manual receiver add sheet (host:port entry with validation) |
@@ -668,6 +671,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `Helpers/TestModelContainer.swift` | Shared test infrastructure for SwiftData tests |
 | `CommentParkRefRepairServiceTests.swift` | Comment park ref backfill predicate regression and logic tests |
 | `KIndexRepairServiceTests.swift` | K-index repair service tests (cutoff date, field preservation) |
+| `BackupServiceTests.swift` | Backup service tests (snapshot, manifest, integrity, restore marker) |
 | `BandPlanServiceTests.swift` | Band plan validation tests (license class privileges) |
 | `PerformanceTests/QSOStatisticsPerformanceTests.swift` | Performance regression tests (50k/500k QSOs) |
 

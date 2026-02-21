@@ -38,6 +38,7 @@ struct ContentView: View {
     // MARK: Internal
 
     let tourState: TourState
+    var restoredBackup: PendingRestore?
 
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     @Environment(\.verticalSizeClass) var verticalSizeClass
@@ -48,6 +49,30 @@ struct ContentView: View {
                 iPadNavigation
             } else {
                 iPhoneNavigation
+            }
+        }
+        .alert(
+            "Database Restored",
+            isPresented: $showingRestoreAlert
+        ) {
+            Button("OK") {
+                UserDefaults.standard.removeObject(
+                    forKey: "restoredFromBackup"
+                )
+            }
+        } message: {
+            if let backup = restoredBackup {
+                let formatter = DateFormatter()
+                let _ = formatter.dateStyle = .medium
+                let _ = formatter.timeStyle = .short
+                Text(
+                    "Database restored from backup "
+                        + "(\(formatter.string(from: backup.backupTimestamp))). "
+                        + "iCloud sync has been paused "
+                        + "— review your data before re-enabling."
+                )
+            } else {
+                Text("Database restored from backup.")
             }
         }
         .onAppear {
@@ -68,6 +93,9 @@ struct ContentView: View {
                 showIntroTour = true
             } else if tourState.shouldShowOnboarding() {
                 showOnboarding = true
+            }
+            if restoredBackup != nil {
+                showingRestoreAlert = true
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .didReceiveADIFFile)) { notification in
@@ -153,6 +181,7 @@ struct ContentView: View {
     @State private var mapFilterState = MapFilterState()
     @State private var pendingActivityLogNavigation = false
     @State private var loggerHasActiveSession = false
+    @State private var showingRestoreAlert = false
 
     @Query(
         filter: #Predicate<Friendship> { $0.statusRawValue == "pending" && $0.isOutgoing == false }
@@ -362,7 +391,7 @@ struct ContentView: View {
 }
 
 #Preview {
-    ContentView(tourState: TourState())
+    ContentView(tourState: TourState(), restoredBackup: nil)
         .modelContainer(
             for: [QSO.self, ServicePresence.self, UploadDestination.self, POTAUploadAttempt.self],
             inMemory: true

@@ -5,6 +5,10 @@ All notable changes to Carrier Wave will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Add automatic database backup system with rolling snapshots on app launch, pre-sync, and pre-import
+- Add manual backup and restore UI in Settings > Data & Tools > Backups
+- Add iCloud Drive backup sync (2 most recent snapshots) for cross-device recovery
+- Add restore mechanism with integrity validation, pre-restore safety snapshot, and post-restore iCloud sync pause
 - Add iCloud QSO sync via CKSyncEngine: bidirectional sync of QSOs, sessions, service presence, and activation metadata across devices
 - Add CloudSyncSettingsView with sync toggle, status display, last sync time, and iCloud account info
 - Add iCloud sync status indicator on dashboard service list

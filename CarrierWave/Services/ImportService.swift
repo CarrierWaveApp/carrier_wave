@@ -41,6 +41,18 @@ class ImportService: ObservableObject {
         isImporting = true
         defer { isImporting = false }
 
+        // Pre-import backup
+        if UserDefaults.standard.object(
+            forKey: "autoBackupEnabled"
+        ) as? Bool ?? true,
+            let storeURL = modelContext.container
+            .configurations.first?.url
+        {
+            await BackupService.shared.snapshot(
+                trigger: .preImport, storeURL: storeURL
+            )
+        }
+
         let data = try Data(contentsOf: url)
         guard let content = String(data: data, encoding: .utf8) else {
             throw ImportError.invalidFile

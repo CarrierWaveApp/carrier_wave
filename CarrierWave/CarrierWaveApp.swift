@@ -30,7 +30,12 @@ struct CarrierWaveApp: App {
 
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
-    var sharedModelContainer: ModelContainer = {
+    /// Restore info if a backup was just applied on this launch
+    let restoredBackup: PendingRestore?
+
+    var sharedModelContainer: ModelContainer
+
+    init() {
         let schema = Schema([
             QSO.self,
             ServicePresence.self,
@@ -60,22 +65,43 @@ struct CarrierWaveApp: App {
             cloudKitDatabase: .none
         )
 
+        // Apply pending restore BEFORE creating ModelContainer
+        restoredBackup = BackupService.applyPendingRestore(
+            storeURL: modelConfiguration.url
+        )
+
         do {
-            return try ModelContainer(
+            sharedModelContainer = try ModelContainer(
                 for: schema,
                 configurations: [modelConfiguration]
             )
         } catch {
             fatalError("Could not create ModelContainer: \(error)")
         }
-    }()
+    }
 
     var body: some Scene {
         WindowGroup {
-            ContentView(tourState: tourState)
-                .sunlightMode(isSunlightMode)
-                .preferredColorScheme(colorScheme)
-                .task {
+            ContentView(
+                tourState: tourState,
+                restoredBackup: restoredBackup
+            )
+            .sunlightMode(isSunlightMode)
+            .preferredColorScheme(colorScheme)
+            .task {
+                    // Create launch backup before sync/import
+                    if UserDefaults.standard.object(
+                        forKey: "autoBackupEnabled"
+                    ) as? Bool ?? true,
+                        let storeURL = sharedModelContainer
+                        .configurations.first?.url
+                    {
+                        await BackupService.shared.snapshot(
+                            trigger: .launch,
+                            storeURL: storeURL
+                        )
+                    }
+
                     // Run one-time data repairs before sync starts
                     DataRepairService.runPendingRepairs()
 
@@ -258,5 +284,8 @@ extension Notification.Name {
     nonisolated(unsafe) static let didClearQSOs = Notification.Name("didClearQSOs")
     nonisolated(unsafe) static let didReceiveWatchStartSession = Notification.Name(
         "didReceiveWatchStartSession"
+    )
+    nonisolated(unsafe) static let didRestoreFromBackup = Notification.Name(
+        "didRestoreFromBackup"
     )
 }

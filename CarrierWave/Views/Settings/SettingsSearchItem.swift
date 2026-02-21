@@ -34,6 +34,7 @@ enum SettingsSearchDestination: Hashable {
     case icloud
     case activities
     case callsignAliases
+    case backups
 }
 
 // MARK: - SettingsSearchItem
@@ -346,6 +347,12 @@ extension SettingsSearchIndex {
             keywords: ["duplicate", "dedup", "merge", "cleanup", "deduplicate"],
             breadcrumb: "Data & Tools",
             destination: .dataTools
+        ),
+        SettingsSearchItem(
+            title: "Backups",
+            keywords: ["backup", "restore", "snapshot", "recovery", "database"],
+            breadcrumb: "Data & Tools",
+            destination: .backups
         ),
     ]
 
