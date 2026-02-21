@@ -156,7 +156,7 @@ extension BackupService {
 
             // Pause iCloud sync after restore
             UserDefaults.standard.set(
-                false, forKey: "iCloudQSOSyncEnabled"
+                false, forKey: "cloudSyncEnabled"
             )
             UserDefaults.standard.set(
                 true, forKey: "restoredFromBackup"

@@ -619,6 +619,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `features/statistics.md` | Dashboard stats and drilldown views |
 | `features/tour-requirements.md` | Feature tour rules and mini tour implementation guide |
 | `app-review-notes.md` | App Store review notes (ATS justification, background audio, demo instructions) |
+| `plans/cksync-production-readiness.md` | CKSync production-readiness plan (known bugs, required tests, safety guardrails, checklist) |
 
 ## Views - Map (`CarrierWave/Views/Map/`)
 | File | Purpose |

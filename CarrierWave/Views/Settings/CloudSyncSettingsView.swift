@@ -1,4 +1,5 @@
 import CloudKit
+import SwiftData
 import SwiftUI
 
 /// iCloud sync settings: enable/disable toggle, status, last sync time, account info.
@@ -25,13 +26,29 @@ struct CloudSyncSettingsView: View {
         .onAppear {
             monitor.refreshContainerURL()
         }
+        .alert(
+            "Enable Experimental Sync?",
+            isPresented: $showEnableConfirmation
+        ) {
+            Button("Enable", role: .destructive) {
+                Task { await enableWithBackup() }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text(
+                "iCloud sync is experimental and may overwrite local data. "
+                    + "A backup will be created before enabling."
+            )
+        }
     }
 
     // MARK: Private
 
+    @Environment(\.modelContext) private var modelContext
     @ObservedObject private var syncService = CloudSyncService.shared
     @StateObject private var monitor = ICloudMonitor()
     @State private var isForcing = false
+    @State private var showEnableConfirmation = false
 
     // MARK: - Helpers
 
@@ -59,15 +76,34 @@ struct CloudSyncSettingsView: View {
 
     private var syncToggleSection: some View {
         Section {
-            Toggle("iCloud QSO Sync", isOn: Binding(
+            Toggle(isOn: Binding(
                 get: { syncService.isEnabled },
                 set: { newValue in
-                    Task { await syncService.setEnabled(newValue) }
+                    if newValue {
+                        showEnableConfirmation = true
+                    } else {
+                        Task { await syncService.setEnabled(false) }
+                    }
                 }
-            ))
+            )) {
+                HStack {
+                    Text("iCloud QSO Sync")
+                    Text("Experimental")
+                        .font(.caption2)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.orange)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(
+                            Capsule()
+                                .fill(.orange.opacity(0.15))
+                        )
+                }
+            }
         } footer: {
             Text(
-                "Sync QSOs, sessions, and upload status across your devices via iCloud."
+                "Sync QSOs, sessions, and upload status across your devices via iCloud. "
+                    + "This feature is experimental — a backup is created automatically when enabled."
             )
         }
     }
@@ -170,5 +206,17 @@ struct CloudSyncSettingsView: View {
         } header: {
             Text("Errors")
         }
+    }
+
+    private func enableWithBackup() async {
+        if let storeURL = modelContext.container
+            .configurations.first?.url
+        {
+            await BackupService.shared.snapshot(
+                trigger: .preSync,
+                storeURL: storeURL
+            )
+        }
+        await syncService.setEnabled(true)
     }
 }

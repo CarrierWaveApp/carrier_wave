@@ -21,8 +21,10 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ### Changed
 - Re-fetch callsign info from QRZ/HamDB when callsign is changed in the QSO edit sheet
+- Mark iCloud QSO sync as experimental with confirmation dialog and auto-backup before enabling
 
 ### Fixed
+- Fix backup restore using wrong UserDefaults key to disable iCloud sync, leaving sync active after restore
 - Fix activity grid using local timezone for date grouping instead of UTC, causing QSO counts to disagree with Sessions view for users west of UTC
 - Convert all user-facing QSO deletions to soft-delete (swipe-delete, clear QRZ/LoFi data, delete callsign alias QSOs) to prevent data loss
 - Hide orphaned QSOs when CloudKit inbound sync deletes a logging session
