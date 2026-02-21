@@ -167,6 +167,17 @@ struct QSORow: View {
             callsignInfo = await CallsignNotesCache.shared.info(for: qso.callsign)
             totalContactCount = fetchTotalContactCount(for: qso.callsign)
         }
+        .onReceive(NotificationCenter.default.publisher(for: .didSyncQSOs)) { _ in
+            totalContactCount = fetchTotalContactCount(for: qso.callsign)
+        }
+        .onAppear {
+            // Refresh count when row re-appears (e.g., after tab switch)
+            // fetchCount is cheap — no object materialization
+            let fresh = fetchTotalContactCount(for: qso.callsign)
+            if fresh != totalContactCount {
+                totalContactCount = fresh
+            }
+        }
     }
 
     // MARK: Private
@@ -339,18 +350,17 @@ struct QSORow: View {
     /// Count all-time QSOs with a callsign (excludes hidden and metadata modes)
     private func fetchTotalContactCount(for callsign: String) -> Int {
         let upper = callsign.uppercased()
-        return
-            (try? modelContext.fetchCount(
-                FetchDescriptor<QSO>(
-                    predicate: #Predicate<QSO> { qso in
-                        qso.callsign == upper
-                            && !qso.isHidden
-                            && qso.mode != "WEATHER"
-                            && qso.mode != "SOLAR"
-                            && qso.mode != "NOTE"
-                    }
-                )
-            )) ?? 0
+        return (try? modelContext.fetchCount(
+            FetchDescriptor<QSO>(
+                predicate: #Predicate<QSO> { qso in
+                    qso.callsign == upper
+                        && !qso.isHidden
+                        && qso.mode != "WEATHER"
+                        && qso.mode != "SOLAR"
+                        && qso.mode != "NOTE"
+                }
+            )
+        )) ?? 0
     }
 }
 

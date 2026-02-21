@@ -184,6 +184,7 @@ extension DashboardView {
                     + " \(result.qsosRemoved) removed")
                 asyncStats.recompute(from: modelContext)
                 presenceCounts.recompute(from: modelContext)
+                NotificationCenter.default.post(name: .didSyncQSOs, object: nil)
             }
             UserDefaults.standard.set(true, forKey: Self.duplicateQSORepairKey)
         } catch {
