@@ -296,19 +296,15 @@ extension BackupService {
         return files
             .filter { Self.backupExtensions.contains($0.pathExtension) }
             .compactMap { url -> BackupEntry? in
-                let size: Int64
-                if url.pathExtension == "cwbackup" {
-                    // Bundles are directories — sum contents
-                    size = self.calculateBundleSize(url)
-                } else {
-                    let attrs = try? fm.attributesOfItem(
-                        atPath: url.path
-                    )
-                    size = (attrs?[.size] as? Int64) ?? 0
-                }
                 let attrs = try? fm.attributesOfItem(
                     atPath: url.path
                 )
+                let size: Int64 = if url.pathExtension == "cwbackup" {
+                    // Bundles are directories — sum contents
+                    self.calculateBundleSize(url)
+                } else {
+                    (attrs?[.size] as? Int64) ?? 0
+                }
                 let created = (attrs?[.creationDate] as? Date)
                     ?? Date()
 
