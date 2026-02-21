@@ -12,7 +12,9 @@ SwiftUI/SwiftData iOS app for amateur radio QSO logging with cloud sync to QRZ, 
 
 ## Building and Testing
 
-Use the **xcode-build** skill (`xc`) for all builds and tests. Device configured in `CLAUDE.local.md`.
+> **Cloud/web environment (Claude Code app):** Xcode is not available. Skip all `xc` / `make` commands. Focus on code changes only — the user will build and test locally.
+
+When running locally with Xcode, use the **xcode-build** skill (`xc`) for all builds and tests. Device configured in `CLAUDE.local.md`.
 
 ```bash
 xc build        # Build for device
@@ -66,7 +68,7 @@ Full details: [docs/PERFORMANCE.md](docs/PERFORMANCE.md). These cause multi-seco
 
 ## Linting & Formatting
 
-SwiftLint + SwiftFormat. **Pre-commit hooks block on ANY violation.** Run `xc format` before committing.
+SwiftLint + SwiftFormat. **Pre-commit hooks block on ANY violation.** Run `xc format` before committing (local Xcode environment only — in cloud/web, the user will format locally).
 
 **Hard limits:**
 - File: 500 lines | Function body: 50 lines | Type body: 300 lines
