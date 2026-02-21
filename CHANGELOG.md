@@ -7,6 +7,14 @@ All notable changes to Carrier Wave will be documented in this file.
 ### Added
 - Add session photo persistence in backups: `.cwbackup` bundle format includes `SessionPhotos/` alongside database, with backward-compatible restore for legacy `.sqlite` backups
 - Extend iCloud sync to SessionSpot and ActivityLog entities (LWW conflict resolution)
+
+### Fixed
+- Fix photo restore safety: use copy-to-temp-then-move to prevent data loss if copy fails during backup restore
+- Fix SessionSpot conflict resolution setting dirty flag after accepting server version, preventing sync ping-pong
+- Fix ActivityLog inbound merge using immutable createdAt as modification date (now uses dirty-flag semantics)
+- Fix inbound ActivityLog deletion not clearing UserDefaults active log ID
+- Fix createLog not setting cloudDirtyFlag on deactivated existing log
+- Fix iCloud backup list showing near-zero size for .cwbackup bundles
 - Add QSO editing from the Logs tab: tap a QSO to view details, then tap Edit to modify fields (callsign, band, mode, frequency, RST, location, notes)
 - Add automatic database backup system with rolling snapshots on app launch, pre-sync, and pre-import
 - Add manual backup and restore UI in Settings > Data & Tools > Backups

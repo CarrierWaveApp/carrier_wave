@@ -152,7 +152,8 @@ extension CloudSyncEngine {
         descriptor.fetchLimit = 1
         if let spot = try? modelContext.fetch(descriptor).first {
             applySessionSpotFields(remoteFields, to: spot)
-            spot.cloudDirtyFlag = true
+            // Don't set cloudDirtyFlag — we accepted the server version,
+            // so local now matches server. Re-uploading would cause ping-pong.
 
             upsertSyncMetadata(
                 entityType: CKRecordMapper.RecordType.sessionSpot.rawValue,

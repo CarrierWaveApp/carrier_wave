@@ -296,10 +296,19 @@ extension BackupService {
         return files
             .filter { Self.backupExtensions.contains($0.pathExtension) }
             .compactMap { url -> BackupEntry? in
+                let size: Int64
+                if url.pathExtension == "cwbackup" {
+                    // Bundles are directories — sum contents
+                    size = self.calculateBundleSize(url)
+                } else {
+                    let attrs = try? fm.attributesOfItem(
+                        atPath: url.path
+                    )
+                    size = (attrs?[.size] as? Int64) ?? 0
+                }
                 let attrs = try? fm.attributesOfItem(
                     atPath: url.path
                 )
-                let size = (attrs?[.size] as? Int64) ?? 0
                 let created = (attrs?[.creationDate] as? Date)
                     ?? Date()
 
@@ -332,7 +341,8 @@ extension BackupService {
         return backupURL
     }
 
-    /// Restore session photos from a `.cwbackup` bundle
+    /// Restore session photos from a `.cwbackup` bundle.
+    /// Uses copy-to-temp-then-move to avoid data loss if copy fails.
     private static func restorePhotosFromBundle(
         _ backupURL: URL
     ) {
@@ -353,10 +363,25 @@ extension BackupService {
         let destPhotos = documentsDir
             .appendingPathComponent("SessionPhotos")
 
-        // Remove existing photos, then copy from bundle
-        if fm.fileExists(atPath: destPhotos.path) {
-            try? fm.removeItem(at: destPhotos)
+        // Copy to temp first so we don't delete existing photos
+        // if the copy fails
+        let tempPhotos = documentsDir
+            .appendingPathComponent("SessionPhotos_restoring")
+        do {
+            // Clean up any leftover temp from a previous failed restore
+            if fm.fileExists(atPath: tempPhotos.path) {
+                try fm.removeItem(at: tempPhotos)
+            }
+            try fm.copyItem(at: bundlePhotos, to: tempPhotos)
+
+            // Copy succeeded — safe to replace existing
+            if fm.fileExists(atPath: destPhotos.path) {
+                try fm.removeItem(at: destPhotos)
+            }
+            try fm.moveItem(at: tempPhotos, to: destPhotos)
+        } catch {
+            // Clean up temp on failure; existing photos are preserved
+            try? fm.removeItem(at: tempPhotos)
         }
-        try? fm.copyItem(at: bundlePhotos, to: destPhotos)
     }
 }

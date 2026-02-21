@@ -200,7 +200,7 @@ extension CloudSyncEngine {
         descriptor.fetchLimit = 1
 
         if let existing = try? modelContext.fetch(descriptor).first {
-            mergeInboundActivityLog(fields, into: existing, record: record)
+            mergeInboundActivityLog(fields, into: existing)
         } else {
             insertNewActivityLog(from: fields)
         }
@@ -215,17 +215,15 @@ extension CloudSyncEngine {
 
     private func mergeInboundActivityLog(
         _ fields: ActivityLogFields,
-        into existing: ActivityLog,
-        record: CKRecord
+        into existing: ActivityLog
     ) {
-        let localFields = extractActivityLogFields(existing)
-        let merged = CloudSyncConflictResolver.mergeActivityLog(
-            local: localFields,
-            remote: fields,
-            localModDate: existing.createdAt,
-            remoteModDate: record.modificationDate ?? Date()
-        )
-        applyActivityLogFields(merged, to: existing)
+        // ActivityLog has no modifiedAt field, so date-based LWW would
+        // always pick remote (createdAt never changes). Instead use
+        // dirty-flag semantics: if local has unsent changes, keep them;
+        // otherwise accept the remote version.
+        if !existing.cloudDirtyFlag {
+            applyActivityLogFields(fields, to: existing)
+        }
     }
 
     private func insertNewActivityLog(from fields: ActivityLogFields) {

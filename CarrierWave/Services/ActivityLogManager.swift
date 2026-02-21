@@ -79,6 +79,7 @@ final class ActivityLogManager {
         // Deactivate any existing active log
         if let existing = activeLog {
             existing.isActive = false
+            existing.cloudDirtyFlag = true
         }
 
         let log = ActivityLog(

@@ -337,6 +337,13 @@ extension CloudSyncEngine {
         )
         descriptor.fetchLimit = 1
         if let log = try? modelContext.fetch(descriptor).first {
+            // Clear active log ID if this was the active log
+            let activeIdKey = "activeActivityLogId"
+            if let activeIdString = UserDefaults.standard.string(forKey: activeIdKey),
+               UUID(uuidString: activeIdString) == log.id
+            {
+                UserDefaults.standard.removeObject(forKey: activeIdKey)
+            }
             modelContext.delete(log)
         }
     }
