@@ -55,6 +55,7 @@ struct SDRTranscriptLine: Codable, Sendable, Identifiable {
 struct SDRRecordingTranscript: Codable, Sendable {
     let recordingId: UUID
     let lines: [SDRTranscriptLine]
+    let detectedQSORanges: [DetectedQSORange]  // exchange boundaries from decoder
     let generatedAt: Date
     let decoderVersion: String      // cw-swl version string
     let averageWPM: Int
@@ -62,20 +63,26 @@ struct SDRRecordingTranscript: Codable, Sendable {
 }
 ```
 
-Storage: Serialized JSON alongside the recording as `[sessionId]-transcript.json` in `WebSDRRecordings/`. Loaded lazily by the playback engine.
+Storage: Serialized JSON alongside the recording as `[sessionId]-transcript.json` in `WebSDRRecordings/`. Loaded lazily by the playback engine. Cached after first server fetch.
 
-### 4. QSO Time Ranges
+### 4. QSO Time Ranges — Dual Strategy
 
-Each QSO already has a `timestamp` (when it was logged). We derive approximate start/end:
+**Heuristic (always available):** Derive ranges from sorted QSO timestamps:
+- Start: midpoint between previous QSO's trail-out and this QSO's lead-in (or recording start)
+- End: midpoint between this QSO's trail-out and next QSO's lead-in (or recording end)
+
+**Transcript-derived (when transcript exists):** The transcript includes `DetectedQSORange` entries that identify actual CQ/exchange boundaries from the decoded text. These are more accurate and override the heuristic ranges.
 
 ```swift
-extension QSO {
-    /// Estimated QSO start: midpoint between previous QSO and this one (or recording start)
-    /// Estimated QSO end: midpoint between this QSO and next one (or recording end)
+struct DetectedQSORange: Codable, Sendable {
+    let callsign: String
+    let startOffset: TimeInterval   // first CQ or callsign mention
+    let endOffset: TimeInterval     // final 73/SK/end of exchange
+    let loggedQSOId: UUID?          // matched to a logged QSO if possible
 }
 ```
 
-This is computed in `RecordingPlaybackEngine` from the sorted QSO timestamps, not stored. The engine already has `qsoOffsets`; we add `qsoRanges: [(start: TimeInterval, end: TimeInterval)]`.
+Both are computed in `RecordingPlaybackEngine`. The engine exposes `qsoRanges: [(start: TimeInterval, end: TimeInterval)]` — populated from transcript ranges when available, falling back to the heuristic.
 
 ---
 
@@ -146,6 +153,8 @@ This is computed in `RecordingPlaybackEngine` from the sorted QSO timestamps, no
 - Dashed vertical lines at frequency/mode change points
 - Tiny frequency label at the top of each boundary: "14.062"
 
+**Sizing:** Waveform shrinks from 80pt to 60pt to give the transcript panel more vertical space.
+
 **Implementation:**
 - Add `qsoRanges: [(start: TimeInterval, end: TimeInterval)]` parameter
 - Render as background rectangles in the ZStack, behind amplitude bars
@@ -161,11 +170,11 @@ The transcript is a `ScrollViewReader` containing `SDRTranscriptLine` rows. As p
 
 2. **Auto-scroll** — The active line is kept vertically centered using `scrollTo(lineId, anchor: .center)` with `.animation(.easeInOut(duration: 0.3))`.
 
-3. **Chat-bubble attribution** — If `speakerCallsign` is identified, the line renders as a chat bubble (left-aligned for "them", right-aligned for "me"/activator). Uses the existing chat bubble design language pattern.
+3. **Speaker attribution** — Parse POTA exchange patterns ("DE [callsign]", "CQ POTA DE [callsign]") to identify speakers. When confident, render as chat bubbles (left-aligned for "them", right-aligned for "me"/activator) using the existing chat bubble design language pattern. When not confident, render as a single-stream monospaced text flow without speaker labels — never guess.
 
 4. **Tap interaction** — Tapping any transcript line seeks playback to that line's `startOffset`.
 
-5. **Empty state** — When no transcript is available: "No transcription available. Process this recording with cw-swl to generate a time-aligned transcript." with a "Learn More" link.
+5. **Empty state** — When no transcript is available, show a "Transcribe" button that uploads to the cw-swl server. While processing, show progress. If server is unreachable, explain that transcription requires the cw-swl server.
 
 **Visual Design:**
 ```swift
@@ -223,10 +232,12 @@ The QSO list moves to the bottom and becomes collapsible:
 **Share button behavior:**
 1. Tap the share icon `[↗]` on a QSO row
 2. System extracts the QSO's audio clip (timestamp ± lead-in/trail-out)
-3. Creates a metadata annotation (callsign, frequency, mode, RST, park ref, UTC time)
-4. Presents `ShareLink` with the clip + metadata text
+3. Creates metadata in two formats:
+   - **M4A chapter markers** embedded in the exported clip (callsign, freq, mode at appropriate timestamps)
+   - **Companion `.txt` file** with full human-readable annotation
+4. Presents `ShareLink` with both files
 
-**Metadata annotation format** (included as a companion text file or embedded in the share item):
+**Companion text annotation format:**
 ```
 QSO: W3ABC
 Frequency: 14.060 MHz
@@ -237,6 +248,11 @@ Park: K-1234 (Shenandoah NP)
 Duration: 2m 15s
 Recorded via Kenya KiwiSDR
 ```
+
+**M4A chapter markers** (via `AVMutableMetadataItem` with chapter track):
+- Chapter at QSO start: "W3ABC — 14.060 MHz CW"
+- Chapter at exchange start (if transcript available): "W3ABC DE K4DEF"
+- Chapter at QSO end: "73 / End"
 
 ### E. Playback Engine Additions
 
@@ -290,32 +306,52 @@ private func computeQSORanges() {
 
 ## Transcript Data Pipeline
 
-### Source: cw-swl
+### Source: cw-swl Server
 
-The `cw-swl` project produces time-aligned transcripts from audio files. The integration point is a JSON sidecar file:
+The remote `cw-swl` server processes recordings and produces time-aligned transcripts. The app uploads the recording audio and receives a transcript JSON response.
+
+### API Contract (draft)
+
+```
+POST /api/v1/transcribe
+Content-Type: multipart/form-data
+Body: audio file (.caf or .m4a)
+
+Response 202 Accepted:
+{ "job_id": "uuid", "status": "processing" }
+
+GET /api/v1/transcribe/{job_id}
+Response 200 (when complete):
+{
+  "status": "complete",
+  "transcript": { <SDRRecordingTranscript JSON> }
+}
+
+Response 200 (still processing):
+{ "status": "processing", "progress": 0.45 }
+```
+
+### Integration Flow
+
+1. User taps "Transcribe" button on recording player
+2. App uploads recording audio to cw-swl server
+3. Shows progress indicator while processing
+4. On completion, saves transcript as sidecar JSON: `[sessionId]-transcript.json`
+5. Playback engine loads transcript and enables lyrics view
+
+### Local Cache
 
 ```
 WebSDRRecordings/
-├── [sessionId].caf          # audio file
-└── [sessionId]-transcript.json  # time-aligned transcript
+├── [sessionId].caf                 # audio file
+└── [sessionId]-transcript.json     # cached transcript from server
 ```
 
-### Generation Options
+Once transcribed, the result is cached locally. Re-transcription only needed if decoder version improves.
 
-**Option A — On-device (future):** Run a stripped-down CW decoder from `CarrierWaveCore` over the recording file on a background thread. Reuses `MorseDecoder` + `CWSignalProcessor` from the existing live transcription service but fed from file instead of microphone.
+### Fallback: Sidecar Import
 
-**Option B — External (immediate):** User runs `cw-swl` on their Mac, transfers the transcript JSON to the device (AirDrop, iCloud Drive, or a companion Mac app). The recording view checks for the sidecar file on load.
-
-**Option C — Server-side (future):** Upload recording to the Rust backend, process with cw-swl, return transcript JSON via API.
-
-For v1, support Option B (import from file) and design the UI to gracefully handle missing transcripts. Build the on-device pipeline as a fast-follow.
-
-### Import Flow
-
-1. Recording view checks for `[sessionId]-transcript.json` alongside the audio file
-2. If found, parse and load into `RecordingPlaybackEngine.transcript`
-3. If not found, show empty state with instructions
-4. Future: "Generate Transcript" button for on-device processing
+For offline/manual workflows, the app also checks for a pre-existing `[sessionId]-transcript.json` file (e.g., transferred via AirDrop or iCloud Drive from a local cw-swl run).
 
 ---
 
@@ -347,24 +383,50 @@ For v1, support Option B (import from file) and design the UI to gracefully hand
 
 | File | Purpose | Lines (est.) |
 |------|---------|-------------|
-| `Models/SDRTranscriptModels.swift` | Word, Line, Transcript structs | ~60 |
-| `RecordingPlaybackEngine.swift` | Add transcript + QSO range tracking | +80 |
-| `RecordingWaveformView.swift` | Add QSO span regions + segment boundaries | +50 |
+| `Models/SDRTranscriptModels.swift` | Word, Line, Transcript, DetectedQSORange structs | ~80 |
+| `Services/WebSDR/CWSWLClient.swift` | Actor: upload recording, poll status, download transcript | ~120 |
+| `Services/WebSDR/RecordingPlaybackEngine.swift` | Add transcript + QSO range tracking | +80 |
+| `Views/RecordingPlayer/RecordingWaveformView.swift` | Add QSO span regions + segment boundaries | +50 |
 | `Views/RecordingPlayer/RecordingTranscriptView.swift` | Karaoke-style transcript panel | ~200 |
 | `Views/RecordingPlayer/RecordingPlayerView.swift` | Restructure layout, add transcript section | ~50 delta |
 | `Views/RecordingPlayer/RecordingPlayerView+Actions.swift` | QSO share action, transcript loading | +60 |
-| `Services/WebSDR/RecordingClipExporter.swift` | Add metadata annotation to exports | +40 |
+| `Services/WebSDR/RecordingClipExporter.swift` | Add chapter markers + metadata companion file | +60 |
 
 ---
 
-## Open Questions
+## Resolved Decisions
 
-1. **Transcript source for v1:** Should we build the on-device CW decoder pipeline first, or start with sidecar JSON import? (Recommendation: sidecar import first, it's simpler and lets us validate the UI independently of the decoder.)
+| # | Question | Decision |
+|---|----------|----------|
+| 1 | Transcript source | Remote cw-swl server. Upload recording, poll for result, cache locally. Sidecar JSON import as offline fallback. |
+| 2 | Speaker attribution | Parse POTA exchange patterns for identity. Single unattributed stream when confidence is low — never guess. |
+| 3 | QSO range heuristic | Both: heuristic from timestamps (always available) + transcript-derived `DetectedQSORange` (when transcript exists, overrides heuristic). |
+| 4 | Waveform height | Shrink from 80pt → 60pt to maximize transcript panel space. |
+| 5 | Share format | Both: M4A chapter markers embedded in clip + companion `.txt` file with full metadata. |
 
-2. **Speaker attribution:** The CW decoder can try to attribute text to stations based on "DE [callsign]" patterns, but this is imperfect. Should we show unattributed text as a single stream, or always try to split into speakers?
+---
 
-3. **QSO range heuristic:** The midpoint-between-QSOs approach is rough. Should we use the transcript to detect actual CQ/exchange boundaries instead? (Better but requires transcript.)
+## Implementation Phases
 
-4. **Waveform height:** With the transcript panel taking significant space, should the waveform shrink (60pt instead of 80pt) or stay the same?
+### Phase 1 — Data Models + Enhanced Waveform
+- `SDRTranscriptModels.swift` (Word, Line, Transcript, DetectedQSORange)
+- QSO range computation in `RecordingPlaybackEngine`
+- Waveform span regions + segment boundaries in `RecordingWaveformView`
+- Waveform height → 60pt
 
-5. **Share format:** Should shared clips include the metadata as an embedded text track (chapter markers in M4A), as a separate .txt file, or both?
+### Phase 2 — Transcript Panel UI
+- `RecordingTranscriptView` with lyrics-style scrolling
+- Active word/line tracking in the playback engine
+- Segment divider labels interleaved in transcript
+- Player view layout restructure (transcript replaces QSO list as primary)
+
+### Phase 3 — cw-swl Server Integration
+- `CWSWLClient` actor for upload/poll/download
+- "Transcribe" button with progress UI
+- Sidecar JSON caching
+- Empty state → transcribe flow
+
+### Phase 4 — QSO Share with Metadata
+- Annotated clip export (chapter markers + companion text)
+- Per-QSO share button in collapsible QSO list
+- `RecordingClipExporter` metadata enrichment
