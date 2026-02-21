@@ -155,7 +155,6 @@ struct ActivityItemRow: View {
     }
 
     private var standardRow: some View {
-        // swiftlint:disable:next redundant_discardable_let
         let _ = useMetricUnits // Trigger re-render when unit preference changes
         return VStack(alignment: .leading, spacing: 8) {
             // Top row: icon, callsign, timestamp

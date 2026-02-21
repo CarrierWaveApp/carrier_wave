@@ -32,7 +32,9 @@ Pure logic library that can be tested without iOS Simulator. Run tests with `mak
 | `Sources/CarrierWaveCore/QueryLanguage/QueryToken.swift` | Query token types and field definitions |
 | `Sources/CarrierWaveCore/QueryLanguage/QueryLexer.swift` | Query string tokenization |
 | `Sources/CarrierWaveCore/QueryLanguage/QueryAST.swift` | Query AST types (expression, term, condition) |
-| `Sources/CarrierWaveCore/QueryLanguage/QueryParser.swift` | Token stream to AST parsing |
+| `Sources/CarrierWaveCore/QueryLanguage/QueryParser.swift` | Token stream to AST parsing (core struct, expression/group parsing) |
+| `Sources/CarrierWaveCore/QueryLanguage/QueryParser+FieldTerms.swift` | Field term and bare term parsing |
+| `Sources/CarrierWaveCore/QueryLanguage/QueryParser+Conditions.swift` | Condition building (date, numeric, status, source, wildcards) |
 | `Sources/CarrierWaveCore/QueryLanguage/QueryAnalyzer.swift` | Query performance analysis and warnings |
 | `Sources/CarrierWaveCore/LoFi/LoFiCredentialStore.swift` | Protocol + key enum for credential storage |
 | `Sources/CarrierWaveCore/LoFi/LoFiLogger.swift` | Protocol for logging |
@@ -87,7 +89,9 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `ChallengeParticipation.swift` | User's participation in a challenge |
 | `ChallengeSource.swift` | Where challenge definitions come from |
 | `ActiveStation.swift` | Unified on-air station model (POTA spots + RBN) |
-| `ChallengeTypes.swift` | Challenge-related enums and types |
+| `ChallengeTypes.swift` | Challenge enums, criteria, scoring, badge, and config structs |
+| `ChallengeTypes+Progress.swift` | ChallengeProgress, ChallengeConfiguration, LeaderboardEntry, ServerProgress |
+| `ChallengeTypes+DTOs.swift` | API DTOs (register, list, definition, join, progress report) |
 | `LeaderboardCache.swift` | Cached leaderboard data |
 | `POTAActivation.swift` | POTA activation grouping view model |
 | `TourState.swift` | UserDefaults-backed tour progress tracking |
@@ -155,7 +159,9 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `SyncService+UploadHelpers.swift` | Shared upload validation and logging helpers |
 | `SyncService+Download.swift` | Download/import logic |
 | `SyncService+ForceRedownload.swift` | Force re-download all QSOs from each service |
-| `SyncService+Process.swift` | QSO processing during sync |
+| `SyncService+Process.swift` | Async QSO processing during sync (process, reconcile QRZ/POTA presence) |
+| `SyncService+ProcessRepairs.swift` | Async repair methods (POTA gaps, orphans, dead state, whitespace, DXCC) |
+| `SyncService+ProcessLegacy.swift` | Legacy synchronous QSO processing, merge, and reconciliation |
 | `SyncService+Report.swift` | Per-service sync report building |
 | `SyncService+Helpers.swift` | Sync helpers (reconciliation, uploads, data repair) |
 | `DataRepairService.swift` | One-time data repairs gated by UserDefaults (runs on app launch) |
@@ -177,7 +183,12 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `DeduplicationService.swift` | QSO deduplication logic |
 | `ICloudMonitor.swift` | iCloud sync status monitoring |
 | `DescriptionLookup.swift` | Human-readable descriptions for codes |
-| `DescriptionLookup+DXCC.swift` | DXCC entity descriptions |
+| `DescriptionLookup+DXCC.swift` | DXCC lookup entry point and combined entity list |
+| `DescriptionLookup+DXCC+Americas.swift` | DXCC entities: US, Canada, Mexico, South/Central America, Caribbean |
+| `DescriptionLookup+DXCC+Europe.swift` | DXCC entities: Europe, Russia, Caucasus, Central Asia |
+| `DescriptionLookup+DXCC+AsiaOceania.swift` | DXCC entities: Middle East, South/East/SE Asia, Oceania |
+| `DescriptionLookup+DXCC+AfricaOther.swift` | DXCC entities: Africa, Indian/Atlantic Ocean, special entities |
+| `DescriptionLookup+DXCC+Descriptions.swift` | Simple prefix-to-country name lookup table |
 | `FetchedQSO.swift` | Intermediate QSO representation during fetch |
 | `ActivitiesClient.swift` | Activities API client (auth, register, challenges, progress) |
 | `ActivitiesClient+Endpoints.swift` | Activities API endpoints (leaderboards, participants, health) |
@@ -218,15 +229,22 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `GoertzelSignalProcessor.swift` | Goertzel-based CW processor with adaptive frequency detection |
 | `MorseCode.swift` | Morse code lookup table, timing constants, QSO abbreviations |
 | `MorseDecoder.swift` | Timing state machine for dit/dah classification, adaptive WPM |
-| `CWTranscriptionService.swift` | Coordinates audio capture, signal processing, and morse decoding |
+| `CWTranscriptionService.swift` | CW transcription service: state, properties, public API (start/stop/clear/copy) |
+| `CWTranscriptionService+Decoder.swift` | Audio processing, signal decoding, transcript assembly, callsign detection |
 | `CWConversationTracker.swift` | Track CW conversation turns via frequency and prosign analysis |
 | `PoloNotesParser.swift` | Parse Ham2K Polo notes list files for callsign info |
-| `CallsignLookupService.swift` | Two-tier callsign lookup (Polo notes cache, then QRZ API) |
+| `CallsignLookupService.swift` | Two-tier callsign lookup: error/result types, core lookup logic, cache management |
+| `CallsignLookupService+QRZ.swift` | QRZ XML callbook API: session auth, callsign lookup, XML parsing |
 | `CallsignNotesCache.swift` | Persistent cache for Polo notes (loads from disk, refreshes daily) |
 | `CWSuggestionEngine.swift` | Word suggestion engine with dictionaries and settings |
 | `LiveActivityAttributes.swift` | ActivityKit attributes and ContentState for logging session Live Activity |
 | `LiveActivityService.swift` | Live Activity lifecycle management (start, update, end, reconnect, cleanup) |
-| `LoggingSessionManager.swift` | Session lifecycle management (start, end, log QSO, hide QSO, photos) |
+| `LoggingSessionManager.swift` | Session lifecycle management: properties, init, startSession, nextRoveStop |
+| `LoggingSessionManager+Helpers.swift` | Internal helpers: save/clear session ID, widget write, notes combine, upload marking |
+| `LoggingSessionManager+FrequencyAndMode.swift` | Frequency, mode, title, park reference, and notes updates |
+| `LoggingSessionManager+QSOManagement.swift` | Log QSO, hide/unhide, get session QSOs, add/delete photos |
+| `LoggingSessionManager+SessionManagement.swift` | End, pause, resume, delete sessions, fetch active/recent sessions |
+| `LoggingSessionManager+Models.swift` | SessionNoteEntry struct, SessionLogEntry enum |
 | `LoggingSessionManager+Conditions.swift` | Auto-record solar/weather conditions at POTA session start |
 | `LoggingSessionManager+POTASplit.swift` | Split POTA sessions at UTC midnight so each covers one activation date |
 | `LoggingSessionManager+LiveActivity.swift` | Live Activity integration hooks (start, update, end, pause, resume) |
@@ -332,7 +350,11 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 
 | File | Purpose |
 |------|---------|
-| `QueryCompiler.swift` | Compiles AST to SwiftData predicates and filter closures |
+| `QueryCompiler.swift` | Core compiler (expression/term dispatch, CompiledQuery struct) |
+| `QueryCompiler+StringFields.swift` | String and optional string field matching |
+| `QueryCompiler+NumericFields.swift` | Numeric and optional int field matching |
+| `QueryCompiler+DateStatusFields.swift` | Date, status (confirmed/synced/pending), source, and bare term matching |
+| `QueryCompiler+Predicates.swift` | Predicate extraction for FetchDescriptor optimization and predicate helpers |
 
 ## Views - Recording Player (`CarrierWave/Views/RecordingPlayer/`)
 | File | Purpose |
@@ -382,7 +404,17 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `SidebarP2PView.swift` | P2P opportunities adapted for persistent sidebar display |
 | `SidebarMapView.swift` | Lightweight session map for sidebar tab (QSO markers, geodesic arcs, rove stops) |
 | `iPadCommandStrip.swift` | Persistent command row for iPad (always visible, not keyboard-dependent) |
-| `LoggerView.swift` | Main logger view with session header, callsign input, QSO form |
+| `LoggerView.swift` | Main logger struct definition with stored properties and body |
+| `LoggerView+Layout.swift` | Portrait layout, panel overlays, callsign lookup display, WebSDR badge |
+| `LoggerView+SessionHeader.swift` | Session header views, controls bar, band/mode/equipment capsules |
+| `LoggerView+FormFields.swift` | Callsign input, compact fields, QSO list section, computed properties |
+| `LoggerView+Commands.swift` | Command execution, spot posting, spot handling |
+| `LoggerView+QSOLogging.swift` | QSO logging, quick entry, session end handling |
+| `LoggerView+Data.swift` | Data refresh, callsign lookup, POTA duplicate detection, frequency warnings |
+| `LoggerView+HelperViews.swift` | POTACallsignStatus, LoggerNoteRow, LoggerQSORow, POTAStatusBanner, SwipeToDismissPanel |
+| `LoggerView+EditSheets.swift` | LoggerQSOEditSheet, SessionTitleEditSheet, SessionParkEditSheet |
+| `LoggerView+SessionSheets.swift` | HiddenQSOsSheet, DeleteSessionConfirmationSheet, SessionBandEditSheet, SessionModeEditSheet |
+| `LoggerView+Modifiers.swift` | Sheet presentations and lifecycle/event handler modifiers |
 | `LoggerView+Landscape.swift` | Logger landscape two-pane layout (form left, QSO list right) and compact session header |
 | `CallsignTextField.swift` | UITextField wrapper for callsign entry with proper cursor handling |
 | `LoggerCallsignCard.swift` | Callsign info display card for logger |
@@ -569,7 +601,9 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `IntroTourStepViews.swift` | Individual step content views for intro tour |
 | `MiniTourContent.swift` | Content definitions for all mini-tours |
 | `MiniTourModifier.swift` | View modifier for easy mini-tour integration |
-| `OnboardingView.swift` | Post-tour onboarding flow (callsign lookup, profile setup, service connections) |
+| `OnboardingView.swift` | Onboarding view (main layout, navigation, primary button) |
+| `OnboardingView+Steps.swift` | Step content views (callsign, lookup result, services, activities, complete) |
+| `OnboardingView+Actions.swift` | Helper views (profile grid, service card) and actions (lookup, connect, register) |
 
 ## Views - Settings (`CarrierWave/Views/Settings/`)
 | File | Purpose |
@@ -662,8 +696,11 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `ImportServiceTests.swift` | Import service tests |
 | `LoFiClientTests.swift` | LoFi client tests |
 | `QRZClientTests.swift` | QRZ client tests |
-| `LoggingSessionManagerTests.swift` | Session lifecycle, QSO logging, notes management tests |
-| `LoggingSessionTests.swift` | LoggingSession model tests (state, band derivation, duration) |
+| `LoggingSessionManagerTests.swift` | Session lifecycle, query, and title tests |
+| `LoggingSessionManagerTests+QSOLogging.swift` | QSO logging, frequency/mode/park updates, and notes tests |
+| `LoggingSessionManagerTests+HiddenQSOs.swift` | Hidden QSO handling tests |
+| `LoggingSessionTests.swift` | LoggingSession model tests (init, state, band derivation, duration) |
+| `LoggingSessionTests+DisplayAndPersistence.swift` | Display title, activation ref, frequency, suggested frequencies, persistence tests |
 | `LoggingSessionRoveTests.swift` | LoggingSession rove accessor and lifecycle tests |
 | `RoveStopTests.swift` | RoveStop Codable round-trip and computed property tests |
 | `ServicePresenceTests.swift` | Service presence and upload marking edge case tests |

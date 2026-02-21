@@ -1,5 +1,4 @@
 #!/usr/bin/env swift
-// swiftlint:disable file_length type_body_length function_body_length line_length
 //
 // LoFi Sync Test Script
 //

@@ -17,7 +17,6 @@ struct LocationChangeSheet: View {
     let onKeep: () -> Void
 
     var body: some View {
-        // swiftlint:disable:next redundant_discardable_let
         let _ = useMetricUnits // Trigger re-render when unit preference changes
         NavigationStack {
             VStack(spacing: 20) {

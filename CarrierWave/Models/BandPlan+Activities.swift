@@ -49,152 +49,141 @@ extension BandPlan {
 
     static let activities: [FrequencyActivity] = buildActivities()
 
-    // swiftlint:disable:next function_body_length
     private static func buildActivities() -> [FrequencyActivity] {
         var list: [FrequencyActivity] = []
+        list.append(contentsOf: buildQRPCWActivities())
+        list.append(contentsOf: buildQRPSSBActivities())
+        list.append(contentsOf: buildSSTVActivities())
+        list.append(contentsOf: buildFT8Activities())
+        list.append(contentsOf: buildPSKActivities())
+        list.append(contentsOf: buildRTTYActivities())
+        list.append(contentsOf: buildAMActivities())
+        list.append(contentsOf: buildFMActivities())
+        list.append(contentsOf: buildNetActivities())
+        return list
+    }
 
-        // MARK: QRP CW Calling Frequencies (±2 kHz)
-
-        let qrpCWFreqs: [(String, Double)] = [
+    private static func buildQRPCWActivities() -> [FrequencyActivity] {
+        let freqs: [(String, Double)] = [
             ("160m", 1.810), ("80m", 3.560), ("40m", 7.030), ("30m", 10.106),
             ("20m", 14.060), ("17m", 18.080), ("15m", 21.060), ("12m", 24.906),
             ("10m", 28.060), ("6m", 50.060), ("2m", 144.060),
         ]
-        for (band, freq) in qrpCWFreqs {
-            list.append(
-                FrequencyActivity(
-                    type: .qrpCW, band: band, centerMHz: freq, toleranceKHz: 2,
-                    modes: ["CW"], description: "QRP CW calling frequency", timeWindows: nil
-                )
+        return freqs.map { band, freq in
+            FrequencyActivity(
+                type: .qrpCW, band: band, centerMHz: freq, toleranceKHz: 2,
+                modes: ["CW"], description: "QRP CW calling frequency", timeWindows: nil
             )
         }
+    }
 
-        // MARK: QRP SSB Calling Frequencies (±2 kHz)
-
-        let qrpSSBFreqs: [(String, Double)] = [
+    private static func buildQRPSSBActivities() -> [FrequencyActivity] {
+        let freqs: [(String, Double)] = [
             ("160m", 1.910), ("80m", 3.985), ("40m", 7.285), ("20m", 14.285),
             ("17m", 18.130), ("15m", 21.385), ("12m", 24.950), ("10m", 28.385),
             ("6m", 50.885), ("2m", 144.285),
         ]
-        for (band, freq) in qrpSSBFreqs {
-            list.append(
-                FrequencyActivity(
-                    type: .qrpSSB, band: band, centerMHz: freq, toleranceKHz: 2,
-                    modes: ["SSB", "USB", "LSB"], description: "QRP SSB calling frequency",
-                    timeWindows: nil
-                )
+        return freqs.map { band, freq in
+            FrequencyActivity(
+                type: .qrpSSB, band: band, centerMHz: freq, toleranceKHz: 2,
+                modes: ["SSB", "USB", "LSB"], description: "QRP SSB calling frequency",
+                timeWindows: nil
             )
         }
+    }
 
-        // MARK: SSTV Frequencies (±3 kHz)
-
-        let sstvFreqs: [(String, Double)] = [
+    private static func buildSSTVActivities() -> [FrequencyActivity] {
+        let freqs: [(String, Double)] = [
             ("80m", 3.845), ("40m", 7.171), ("20m", 14.230), ("20m", 14.233),
             ("20m", 14.236), ("15m", 21.340), ("10m", 28.680),
         ]
-        for (band, freq) in sstvFreqs {
-            list.append(
-                FrequencyActivity(
-                    type: .sstv, band: band, centerMHz: freq, toleranceKHz: 3,
-                    modes: ["USB", "SSB"], description: "SSTV calling frequency", timeWindows: nil
-                )
+        return freqs.map { band, freq in
+            FrequencyActivity(
+                type: .sstv, band: band, centerMHz: freq, toleranceKHz: 3,
+                modes: ["USB", "SSB"], description: "SSTV calling frequency", timeWindows: nil
             )
         }
+    }
 
-        // MARK: FT8/FT4 Frequencies (±3 kHz)
-
-        let ft8Freqs: [(String, Double)] = [
+    private static func buildFT8Activities() -> [FrequencyActivity] {
+        let freqs: [(String, Double)] = [
             ("160m", 1.840), ("80m", 3.573), ("40m", 7.074), ("30m", 10.136),
             ("20m", 14.074), ("17m", 18.100), ("15m", 21.074), ("12m", 24.915),
             ("10m", 28.074), ("6m", 50.313),
         ]
-        for (band, freq) in ft8Freqs {
-            list.append(
-                FrequencyActivity(
-                    type: .digitalFT, band: band, centerMHz: freq, toleranceKHz: 3,
-                    modes: ["DATA", "FT8", "FT4", "USB"],
-                    description: "FT8/FT4 frequency", timeWindows: nil
-                )
+        return freqs.map { band, freq in
+            FrequencyActivity(
+                type: .digitalFT, band: band, centerMHz: freq, toleranceKHz: 3,
+                modes: ["DATA", "FT8", "FT4", "USB"],
+                description: "FT8/FT4 frequency", timeWindows: nil
             )
         }
+    }
 
-        // MARK: PSK31 Frequencies (±3 kHz)
-
-        let pskFreqs: [(String, Double)] = [
+    private static func buildPSKActivities() -> [FrequencyActivity] {
+        let freqs: [(String, Double)] = [
             ("160m", 1.838), ("80m", 3.580), ("40m", 7.035), ("30m", 10.142),
             ("20m", 14.070), ("17m", 18.100), ("15m", 21.080), ("12m", 24.920),
             ("10m", 28.120),
         ]
-        for (band, freq) in pskFreqs {
-            list.append(
-                FrequencyActivity(
-                    type: .digitalPSK, band: band, centerMHz: freq, toleranceKHz: 3,
-                    modes: ["DATA", "PSK31", "PSK", "USB"],
-                    description: "PSK31 frequency", timeWindows: nil
-                )
+        return freqs.map { band, freq in
+            FrequencyActivity(
+                type: .digitalPSK, band: band, centerMHz: freq, toleranceKHz: 3,
+                modes: ["DATA", "PSK31", "PSK", "USB"],
+                description: "PSK31 frequency", timeWindows: nil
             )
         }
+    }
 
-        // MARK: RTTY Frequencies (±3 kHz)
-
-        let rttyFreqs: [(String, Double)] = [
+    private static func buildRTTYActivities() -> [FrequencyActivity] {
+        let freqs: [(String, Double)] = [
             ("80m", 3.580), ("40m", 7.080), ("20m", 14.080),
             ("15m", 21.080), ("10m", 28.080),
         ]
-        for (band, freq) in rttyFreqs {
-            list.append(
-                FrequencyActivity(
-                    type: .rtty, band: band, centerMHz: freq, toleranceKHz: 3,
-                    modes: ["DATA", "RTTY", "USB"],
-                    description: "RTTY frequency", timeWindows: nil
-                )
+        return freqs.map { band, freq in
+            FrequencyActivity(
+                type: .rtty, band: band, centerMHz: freq, toleranceKHz: 3,
+                modes: ["DATA", "RTTY", "USB"],
+                description: "RTTY frequency", timeWindows: nil
             )
         }
+    }
 
-        // MARK: AM Calling Frequencies (±2 kHz)
-
-        let amFreqs: [(String, Double)] = [
+    private static func buildAMActivities() -> [FrequencyActivity] {
+        let freqs: [(String, Double)] = [
             ("80m", 3.885), ("40m", 7.290), ("20m", 14.286),
         ]
-        for (band, freq) in amFreqs {
-            list.append(
-                FrequencyActivity(
-                    type: .amCalling, band: band, centerMHz: freq, toleranceKHz: 2,
-                    modes: ["AM"], description: "AM calling frequency", timeWindows: nil
-                )
+        return freqs.map { band, freq in
+            FrequencyActivity(
+                type: .amCalling, band: band, centerMHz: freq, toleranceKHz: 2,
+                modes: ["AM"], description: "AM calling frequency", timeWindows: nil
             )
         }
+    }
 
-        // MARK: FM Simplex Frequencies (±2 kHz)
-
-        let fmFreqs: [(String, Double)] = [
+    private static func buildFMActivities() -> [FrequencyActivity] {
+        let freqs: [(String, Double)] = [
             ("10m", 29.600), ("6m", 52.525), ("2m", 146.520), ("70cm", 446.000),
         ]
-        for (band, freq) in fmFreqs {
-            list.append(
-                FrequencyActivity(
-                    type: .fmSimplex, band: band, centerMHz: freq, toleranceKHz: 2,
-                    modes: ["FM"], description: "FM simplex calling frequency", timeWindows: nil
-                )
+        return freqs.map { band, freq in
+            FrequencyActivity(
+                type: .fmSimplex, band: band, centerMHz: freq, toleranceKHz: 2,
+                modes: ["FM"], description: "FM simplex calling frequency", timeWindows: nil
             )
         }
+    }
 
-        // MARK: Net Frequencies (±5 kHz)
-
-        list.append(
+    private static func buildNetActivities() -> [FrequencyActivity] {
+        [
             FrequencyActivity(
                 type: .net, band: "20m", centerMHz: 14.336, toleranceKHz: 5,
                 modes: ["SSB", "USB", "LSB"], description: "County Hunters Net", timeWindows: nil
-            )
-        )
-        list.append(
+            ),
             FrequencyActivity(
                 type: .net, band: "40m", centerMHz: 7.188, toleranceKHz: 5,
                 modes: ["SSB", "USB", "LSB"], description: "County Hunters Net", timeWindows: nil
-            )
-        )
-
-        return list
+            ),
+        ]
     }
 
     /// Check if a frequency falls within a CWT range during active CWT time

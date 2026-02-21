@@ -4,6 +4,36 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- Remove all ~50 inline swiftlint:disable comments across ~35 files by fixing underlying violations
+- Disable `redundant_discardable_let` rule globally (required @AppStorage pattern)
+- Add `scripts/` to SwiftLint excluded paths
+- Add short algorithm variable names (`n`, `m`, `dp`, `e`) to identifier_name exclusions
+- Extract `CategorySearch` struct to replace large tuple in CWSuggestionEngine
+- Replace `try!` with `do/catch/fatalError` in AntennaDescriptionParser regex init
+- Replace `buildStates()` function with dictionary literal in USStates
+- Split long functions in BandPlanService, LoggerView+Modifiers, LoFiClient+Sync, SyncService+Download
+- Move helper methods to extensions in RBNPanelView, SidebarRBNSpotsView, CloudSyncConflictResolver
+- Rename `count` parameter to `commentCount` in SpotCommentsSheet
+- Rename short variables and add CodingKeys in HAMRSModels, QueryAST, BandPlanService
+- Extract dictionary to static property in USStates
+- Reduce cyclomatic complexity in LoggerCallsignCard, QueryLexer, QueryCompiler
+- Split LoggerView into twelve extension files by responsibility
+- Split LoggingSessionManager into six files by responsibility
+- Split SyncService+Process into three files by operation type
+- Split CWTranscriptionService into two files (service state/API, decoder/audio processing)
+- Split CallsignLookupService into two files (core lookup/cache, QRZ XML API)
+- Split QueryCompiler into four extension files by compilation phase
+- Split DescriptionLookup+DXCC into five extension files by region
+- Split ChallengeTypes into three files (base types, progress/config, DTOs)
+- Split QueryParser into three files (core parsing, field terms, condition building)
+- Split OnboardingView into three files (main layout, step views, actions/helpers)
+- Split LoggingSessionManagerTests into three files by test area
+- Split LoggingSessionTests into two files by test area
+
+### Fixed
+- Fix nested ObservableObject in CW transcription: convert CWTranscriptionService, CWConversationTracker, and CWSuggestionEngine to @Observable so nested property changes propagate to views
+
 ## [1.42.0] - 2026-02-20
 
 ### Added

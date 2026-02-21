@@ -185,73 +185,86 @@ struct SidebarRBNSpotsView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    // swiftlint:disable:next function_body_length
     private func spotRow(_ spot: UnifiedSpot) -> some View {
         HStack(spacing: 12) {
             sourceIndicator(spot)
-
-            if spot.isSelfSpot(userCallsign: callsign) {
-                Text("SELF")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Color.indigo)
-                    .clipShape(Capsule())
-            } else if friendCallsigns.contains(spot.callsign.uppercased()) {
-                Text("FRIEND")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Color.green)
-                    .clipShape(Capsule())
-            }
-
-            VStack(alignment: .leading, spacing: 2) {
-                HStack {
-                    if let spotter = spot.spotter {
-                        Text(spotter)
-                            .font(.system(.body, design: .monospaced))
-                            .fontWeight(.medium)
-                    }
-                    Spacer()
-                    Text(spot.formattedFrequency)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                HStack {
-                    if let snr = spot.snr {
-                        Text("\(snr) dB")
-                            .font(.caption)
-                            .foregroundStyle(snrColor(snr))
-                    }
-                    if let wpm = spot.wpm {
-                        Text("\(wpm) WPM")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    if let parkRef = spot.parkRef {
-                        Text(parkRef)
-                            .font(.caption)
-                            .foregroundStyle(.green)
-                    }
-                    Text(spot.mode)
-                        .font(.caption)
-                        .padding(.horizontal, 4)
-                        .padding(.vertical, 1)
-                        .background(Color.blue.opacity(0.1))
-                        .clipShape(RoundedRectangle(cornerRadius: 3))
-                    Spacer()
-                    Text(spot.timeAgo)
-                        .font(.caption2)
-                        .foregroundStyle(spot.ageColor)
-                }
-            }
+            spotBadge(spot)
+            spotDetails(spot)
         }
         .padding(.horizontal)
         .padding(.vertical, 8)
+    }
+
+    @ViewBuilder
+    private func spotBadge(_ spot: UnifiedSpot) -> some View {
+        if spot.isSelfSpot(userCallsign: callsign) {
+            Text("SELF")
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(Color.indigo)
+                .clipShape(Capsule())
+        } else if friendCallsigns.contains(spot.callsign.uppercased()) {
+            Text("FRIEND")
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(Color.green)
+                .clipShape(Capsule())
+        }
+    }
+
+    private func spotDetails(_ spot: UnifiedSpot) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            spotHeaderRow(spot)
+            spotMetadataRow(spot)
+        }
+    }
+
+    private func spotHeaderRow(_ spot: UnifiedSpot) -> some View {
+        HStack {
+            if let spotter = spot.spotter {
+                Text(spotter)
+                    .font(.system(.body, design: .monospaced))
+                    .fontWeight(.medium)
+            }
+            Spacer()
+            Text(spot.formattedFrequency)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private func spotMetadataRow(_ spot: UnifiedSpot) -> some View {
+        HStack {
+            if let snr = spot.snr {
+                Text("\(snr) dB")
+                    .font(.caption)
+                    .foregroundStyle(snrColor(snr))
+            }
+            if let wpm = spot.wpm {
+                Text("\(wpm) WPM")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            if let parkRef = spot.parkRef {
+                Text(parkRef)
+                    .font(.caption)
+                    .foregroundStyle(.green)
+            }
+            Text(spot.mode)
+                .font(.caption)
+                .padding(.horizontal, 4)
+                .padding(.vertical, 1)
+                .background(Color.blue.opacity(0.1))
+                .clipShape(RoundedRectangle(cornerRadius: 3))
+            Spacer()
+            Text(spot.timeAgo)
+                .font(.caption2)
+                .foregroundStyle(spot.ageColor)
+        }
     }
 
     private func sourceIndicator(_ spot: UnifiedSpot) -> some View {
@@ -264,10 +277,12 @@ struct SidebarRBNSpotsView: View {
                 .foregroundStyle(sourceColor(spot))
         }
     }
+}
 
-    // MARK: - Helpers
+// MARK: - SidebarRBNSpotsView + Helpers
 
-    private func sourceColor(_ spot: UnifiedSpot) -> Color {
+extension SidebarRBNSpotsView {
+    func sourceColor(_ spot: UnifiedSpot) -> Color {
         switch spot.source {
         case .rbn:
             if let snr = spot.snr {
@@ -279,7 +294,7 @@ struct SidebarRBNSpotsView: View {
         }
     }
 
-    private func sourceIcon(_ spot: UnifiedSpot) -> String {
+    func sourceIcon(_ spot: UnifiedSpot) -> String {
         switch spot.source {
         case .rbn:
             if let snr = spot.snr {
@@ -291,7 +306,7 @@ struct SidebarRBNSpotsView: View {
         }
     }
 
-    private func snrColor(_ snr: Int) -> Color {
+    func snrColor(_ snr: Int) -> Color {
         switch snr {
         case 25...: .green
         case 15...: .blue
@@ -300,7 +315,7 @@ struct SidebarRBNSpotsView: View {
         }
     }
 
-    private func signalIcon(snr: Int) -> String {
+    func signalIcon(snr: Int) -> String {
         switch snr {
         case 25...: "wifi"
         case 15...: "wifi"
@@ -309,9 +324,7 @@ struct SidebarRBNSpotsView: View {
         }
     }
 
-    // MARK: - Data Loading
-
-    private func loadData() async {
+    func loadData() async {
         isLoading = true
         errorMessage = nil
 
@@ -328,14 +341,11 @@ struct SidebarRBNSpotsView: View {
             isLoading = false
         } catch {
             errorMessage = error.localizedDescription
-            if spots.isEmpty {
-                isLoading = false
-            }
             isLoading = false
         }
     }
 
-    private func autoRefreshLoop() async {
+    func autoRefreshLoop() async {
         while !Task.isCancelled {
             try? await Task.sleep(for: .seconds(60))
             guard !Task.isCancelled else {

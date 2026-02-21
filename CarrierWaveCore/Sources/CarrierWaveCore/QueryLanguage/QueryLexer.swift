@@ -1,5 +1,3 @@
-// swiftlint:disable cyclomatic_complexity function_body_length identifier_name
-
 import Foundation
 
 // MARK: - QueryLexer
@@ -24,214 +22,53 @@ public struct QueryLexer {
             if isAtEnd {
                 break
             }
-
             let startOffset = input.distance(from: input.startIndex, to: currentIndex)
 
             switch peek() {
-            case "|":
-                advance()
-                tokens.append(
-                    PositionedToken(
-                        token: .or,
-                        position: SourcePosition(offset: startOffset, length: 1),
-                        rawText: "|"
-                    )
-                )
-
-            case "-":
-                advance()
-                tokens.append(
-                    PositionedToken(
-                        token: .not,
-                        position: SourcePosition(offset: startOffset, length: 1),
-                        rawText: "-"
-                    )
-                )
-
-            case "(":
-                advance()
-                tokens.append(
-                    PositionedToken(
-                        token: .openParen,
-                        position: SourcePosition(offset: startOffset, length: 1),
-                        rawText: "("
-                    )
-                )
-
-            case ")":
-                advance()
-                tokens.append(
-                    PositionedToken(
-                        token: .closeParen,
-                        position: SourcePosition(offset: startOffset, length: 1),
-                        rawText: ")"
-                    )
-                )
-
+            case "|",
+                 "-",
+                 "(",
+                 ")":
+                tokens.append(scanSingleCharToken(startOffset: startOffset))
             case ">":
-                advance()
-                if peek() == "=" {
-                    advance()
-                    tokens.append(
-                        PositionedToken(
-                            token: .greaterThanOrEqual,
-                            position: SourcePosition(offset: startOffset, length: 2),
-                            rawText: ">="
-                        )
-                    )
-                } else {
-                    tokens.append(
-                        PositionedToken(
-                            token: .greaterThan,
-                            position: SourcePosition(offset: startOffset, length: 1),
-                            rawText: ">"
-                        )
-                    )
-                }
-
+                tokens.append(scanComparisonToken(
+                    baseChar: ">", base: .greaterThan, extended: .greaterThanOrEqual,
+                    followChar: "=", startOffset: startOffset
+                ))
             case "<":
-                advance()
-                if peek() == "=" {
-                    advance()
-                    tokens.append(
-                        PositionedToken(
-                            token: .lessThanOrEqual,
-                            position: SourcePosition(offset: startOffset, length: 2),
-                            rawText: "<="
-                        )
-                    )
-                } else {
-                    tokens.append(
-                        PositionedToken(
-                            token: .lessThan,
-                            position: SourcePosition(offset: startOffset, length: 1),
-                            rawText: "<"
-                        )
-                    )
-                }
-
+                tokens.append(scanComparisonToken(
+                    baseChar: "<", base: .lessThan, extended: .lessThanOrEqual,
+                    followChar: "=", startOffset: startOffset
+                ))
             case "\"":
-                // Quoted string
-                switch scanQuotedString() {
-                case let .success(value):
-                    let length =
-                        input.distance(from: input.startIndex, to: currentIndex) - startOffset
-                    tokens.append(
-                        PositionedToken(
-                            token: .value(value),
-                            position: SourcePosition(offset: startOffset, length: length),
-                            rawText: value
-                        )
-                    )
-                case let .failure(error):
-                    return .failure(error)
+                switch scanQuotedStringToken(startOffset: startOffset) {
+                case let .success(token): tokens.append(token)
+                case let .failure(error): return .failure(error)
                 }
-
             default:
-                // Word or field:value
-                let word = scanWord()
-                let length = word.count
-
-                if peek() == ":" {
-                    // This is a field qualifier
-                    advance() // consume ':'
-                    if let field = QueryField.parse(word) {
-                        tokens.append(
-                            PositionedToken(
-                                token: .field(field),
-                                position: SourcePosition(offset: startOffset, length: length + 1),
-                                rawText: word + ":"
-                            )
-                        )
-                    } else {
-                        // Unknown field - suggest similar
-                        let suggestion = findSimilarField(word)
-                        return .failure(
-                            QueryError.unknownField(
-                                word,
-                                suggestion: suggestion,
-                                position: SourcePosition(offset: startOffset, length: length)
-                            )
-                        )
-                    }
-                } else if word == ".." {
-                    // Range operator
-                    tokens.append(
-                        PositionedToken(
-                            token: .range,
-                            position: SourcePosition(offset: startOffset, length: 2),
-                            rawText: ".."
-                        )
-                    )
-                } else if word.contains("..") {
-                    // Value with embedded range - split it
-                    let parts = word.split(
-                        separator: ".", maxSplits: 2, omittingEmptySubsequences: false
-                    )
-                    if parts.count >= 2 {
-                        let beforeRange = String(parts[0])
-                        let afterRange = word.dropFirst(beforeRange.count + 2)
-
-                        if !beforeRange.isEmpty {
-                            tokens.append(
-                                PositionedToken(
-                                    token: .value(beforeRange),
-                                    position: SourcePosition(
-                                        offset: startOffset, length: beforeRange.count
-                                    ),
-                                    rawText: beforeRange
-                                )
-                            )
-                        }
-
-                        tokens.append(
-                            PositionedToken(
-                                token: .range,
-                                position: SourcePosition(
-                                    offset: startOffset + beforeRange.count, length: 2
-                                ),
-                                rawText: ".."
-                            )
-                        )
-
-                        if !afterRange.isEmpty {
-                            tokens.append(
-                                PositionedToken(
-                                    token: .value(String(afterRange)),
-                                    position: SourcePosition(
-                                        offset: startOffset + beforeRange.count + 2,
-                                        length: afterRange.count
-                                    ),
-                                    rawText: String(afterRange)
-                                )
-                            )
-                        }
-                    }
-                } else {
-                    // Plain value
-                    tokens.append(
-                        PositionedToken(
-                            token: .value(word),
-                            position: SourcePosition(offset: startOffset, length: length),
-                            rawText: word
-                        )
-                    )
+                switch scanWordOrFieldToken(startOffset: startOffset) {
+                case let .success(newTokens): tokens += newTokens
+                case let .failure(error): return .failure(error)
                 }
             }
         }
 
-        tokens.append(
-            PositionedToken(
-                token: .eof,
-                position: SourcePosition(offset: input.count, length: 0),
-                rawText: ""
-            )
-        )
-
+        tokens.append(PositionedToken(
+            token: .eof,
+            position: SourcePosition(offset: input.count, length: 0),
+            rawText: ""
+        ))
         return .success(tokens)
     }
 
     // MARK: Private
+
+    private static let singleCharTokens: [Character: QueryToken] = [
+        "|": .or,
+        "-": .not,
+        "(": .openParen,
+        ")": .closeParen,
+    ]
 
     private let input: String
     private var currentIndex: String.Index
@@ -261,6 +98,139 @@ public struct QueryLexer {
         while let char = peek(), char.isWhitespace {
             advance()
         }
+    }
+
+    private mutating func scanSingleCharToken(startOffset: Int) -> PositionedToken {
+        let char = advance()!
+        let token = Self.singleCharTokens[char]!
+        return PositionedToken(
+            token: token,
+            position: SourcePosition(offset: startOffset, length: 1),
+            rawText: String(char)
+        )
+    }
+
+    private mutating func scanComparisonToken(
+        baseChar: Character,
+        base: QueryToken,
+        extended: QueryToken,
+        followChar: Character,
+        startOffset: Int
+    ) -> PositionedToken {
+        advance()
+        if peek() == followChar {
+            advance()
+            return PositionedToken(
+                token: extended,
+                position: SourcePosition(offset: startOffset, length: 2),
+                rawText: String(baseChar) + String(followChar)
+            )
+        }
+        return PositionedToken(
+            token: base,
+            position: SourcePosition(offset: startOffset, length: 1),
+            rawText: String(baseChar)
+        )
+    }
+
+    private mutating func scanQuotedStringToken(
+        startOffset: Int
+    ) -> Result<PositionedToken, QueryError> {
+        switch scanQuotedString() {
+        case let .success(value):
+            let length = input.distance(from: input.startIndex, to: currentIndex) - startOffset
+            return .success(PositionedToken(
+                token: .value(value),
+                position: SourcePosition(offset: startOffset, length: length),
+                rawText: value
+            ))
+        case let .failure(error):
+            return .failure(error)
+        }
+    }
+
+    private mutating func scanWordOrFieldToken(
+        startOffset: Int
+    ) -> Result<[PositionedToken], QueryError> {
+        let word = scanWord()
+        let length = word.count
+
+        if peek() == ":" {
+            return scanFieldQualifier(word: word, startOffset: startOffset, length: length)
+        } else if word == ".." {
+            return .success([PositionedToken(
+                token: .range,
+                position: SourcePosition(offset: startOffset, length: 2),
+                rawText: ".."
+            )])
+        } else if word.contains("..") {
+            return .success(splitEmbeddedRange(word: word, startOffset: startOffset))
+        } else {
+            return .success([PositionedToken(
+                token: .value(word),
+                position: SourcePosition(offset: startOffset, length: length),
+                rawText: word
+            )])
+        }
+    }
+
+    private mutating func scanFieldQualifier(
+        word: String,
+        startOffset: Int,
+        length: Int
+    ) -> Result<[PositionedToken], QueryError> {
+        advance() // consume ':'
+        if let field = QueryField.parse(word) {
+            return .success([PositionedToken(
+                token: .field(field),
+                position: SourcePosition(offset: startOffset, length: length + 1),
+                rawText: word + ":"
+            )])
+        }
+        let suggestion = findSimilarField(word)
+        return .failure(QueryError.unknownField(
+            word,
+            suggestion: suggestion,
+            position: SourcePosition(offset: startOffset, length: length)
+        ))
+    }
+
+    private func splitEmbeddedRange(word: String, startOffset: Int) -> [PositionedToken] {
+        let parts = word.split(separator: ".", maxSplits: 2, omittingEmptySubsequences: false)
+        guard parts.count >= 2 else {
+            return []
+        }
+
+        let beforeRange = String(parts[0])
+        let afterRange = word.dropFirst(beforeRange.count + 2)
+        var tokens: [PositionedToken] = []
+
+        if !beforeRange.isEmpty {
+            tokens.append(PositionedToken(
+                token: .value(beforeRange),
+                position: SourcePosition(offset: startOffset, length: beforeRange.count),
+                rawText: beforeRange
+            ))
+        }
+
+        tokens.append(PositionedToken(
+            token: .range,
+            position: SourcePosition(offset: startOffset + beforeRange.count, length: 2),
+            rawText: ".."
+        ))
+
+        if !afterRange.isEmpty {
+            tokens.append(PositionedToken(
+                token: .value(String(afterRange)),
+                position: SourcePosition(
+                    offset: startOffset + beforeRange.count + 2,
+                    length: afterRange.count
+                ),
+                rawText: String(afterRange)
+            ))
+        }
+
+        return tokens
     }
 
     private mutating func scanWord() -> String {

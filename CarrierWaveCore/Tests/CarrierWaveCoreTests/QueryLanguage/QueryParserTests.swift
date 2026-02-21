@@ -2,8 +2,6 @@
 //  QueryParserTests.swift
 //  CarrierWaveCoreTests
 //
-// swiftlint:disable identifier_name
-
 import Testing
 @testable import CarrierWaveCore
 
@@ -280,8 +278,8 @@ struct QueryParserTests {
         let result = try QueryParser.parse("synced:lotw").get()
 
         if case let .term(term) = result.expression {
-            if case let .service(s) = term.condition {
-                #expect(s == .lotw)
+            if case let .service(svc) = term.condition {
+                #expect(svc == .lotw)
             }
         } else {
             Issue.record("Expected term with service condition")

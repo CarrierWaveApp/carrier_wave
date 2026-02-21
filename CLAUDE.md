@@ -4,6 +4,10 @@ SwiftUI/SwiftData iOS app for amateur radio QSO logging with cloud sync to QRZ, 
 
 > Read this file and linked docs for context. Only explore source files when actively implementing.
 
+## Project Architecture
+
+This is a multi-repo project: a Rust server backend and an iOS/SwiftUI app (with Watch app). Deploy means building and deploying to a physical device. Release involves version bump, changelog, git tag, Discord notification, and App Store upload.
+
 ## File Discovery
 
 - Use [docs/FILE_INDEX.md](docs/FILE_INDEX.md) to locate files by feature/purpose
@@ -104,6 +108,24 @@ linear issue view CAR-XX --no-comments --no-pager
 - Comment on issues after committing: `linear issue comment add <ID> -b "<summary>"`
 - Mark done: `linear issue update CAR-XX -s "Done"`
 - Also check `docs/plans/human/` and `docs/bugs/` for work not yet in Linear
+
+## Workflow Rules
+
+When asked to commit and deploy, execute the full pipeline: build → fix any issues → deploy to device → commit → push. Don't stop at just committing.
+
+When asked to implement changes, start coding immediately. Do not spend more than 2-3 minutes on exploration/planning before writing actual code. If a plan is needed, write it concisely and move to implementation in the same session.
+
+## Quality Checks
+
+Always run a full build (`xc build`) after making changes to Swift files. Fix all build errors, lint violations (SwiftLint function length, parameter count, trailing closure), and Sendable/MainActor isolation issues before presenting work as complete.
+
+## Swift Conventions
+
+When splitting Swift files or moving code to extensions, remember that Swift extensions cannot access `private` or `private(set)` properties. Change access to `internal` or `fileprivate` before splitting. Always build immediately after splitting to catch access control errors.
+
+## UI Implementation
+
+When implementing UI changes from mockups or screenshots, match the FULL visual design on the first pass — colors, spacing, typography, dark/light aesthetics, and layout structure. Do not apply only partial token changes.
 
 ## Git Workflow
 

@@ -92,7 +92,7 @@ struct CWTranscriptionView: View {
 
     // MARK: Private
 
-    @StateObject private var service = CWTranscriptionService()
+    @State private var service = CWTranscriptionService()
     @Environment(\.dismiss) private var dismiss
     @State private var viewMode: TranscriptViewMode = .chat
 

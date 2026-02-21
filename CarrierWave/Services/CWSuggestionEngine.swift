@@ -1,6 +1,4 @@
-// swiftlint:disable function_body_length large_tuple
 import CarrierWaveCore
-import Combine
 import Foundation
 
 // MARK: - WordSuggestion
@@ -19,12 +17,33 @@ struct WordSuggestion: Identifiable, Equatable {
     }
 }
 
+// MARK: - SuggestionMatch
+
+/// A candidate match from dictionary lookup before building a full WordSuggestion.
+private struct SuggestionMatch {
+    let word: String
+    let distance: Int
+    let category: SuggestionCategory
+}
+
+// MARK: - CategorySearch
+
+/// A category to search for suggestions, pairing enabled state with candidates.
+private struct CategorySearch {
+    let enabled: Bool
+    let candidates: Set<String>
+    let category: SuggestionCategory
+}
+
 // MARK: - CWSuggestionEngine
 
 /// Engine for suggesting corrections to commonly misheard CW words.
 /// Uses morse code edit distance to find likely intended words.
 @MainActor
-final class CWSuggestionEngine: ObservableObject {
+@Observable
+final class CWSuggestionEngine {
+    // MARK: Internal
+
     // MARK: - Word Dictionaries
 
     /// Common prosigns in CW QSOs
@@ -55,50 +74,40 @@ final class CWSuggestionEngine: ObservableObject {
     // MARK: - Settings
 
     /// Whether suggestions are enabled at all
-    var suggestionsEnabled: Bool {
-        get { UserDefaults.standard.object(forKey: "cw.suggestions.enabled") as? Bool ?? true }
-        set {
-            objectWillChange.send()
-            UserDefaults.standard.set(newValue, forKey: "cw.suggestions.enabled")
-        }
+    var suggestionsEnabled: Bool = UserDefaults.standard.object(
+        forKey: "cw.suggestions.enabled"
+    ) as? Bool ?? true {
+        didSet { UserDefaults.standard.set(suggestionsEnabled, forKey: "cw.suggestions.enabled") }
     }
 
     /// Maximum edit distance for suggestions (1=strict, 2=moderate, 3=aggressive)
-    var maxEditDistance: Int {
-        get { UserDefaults.standard.object(forKey: "cw.suggestions.maxDistance") as? Int ?? 2 }
-        set {
-            objectWillChange.send()
-            UserDefaults.standard.set(newValue, forKey: "cw.suggestions.maxDistance")
-        }
+    var maxEditDistance: Int = UserDefaults.standard.object(
+        forKey: "cw.suggestions.maxDistance"
+    ) as? Int ?? 2 {
+        didSet { UserDefaults.standard.set(maxEditDistance, forKey: "cw.suggestions.maxDistance") }
     }
 
     /// Suggest prosigns (CQ, DE, K, AR, SK, etc.)
-    var suggestProsigns: Bool {
-        get { UserDefaults.standard.object(forKey: "cw.suggestions.prosigns") as? Bool ?? true }
-        set {
-            objectWillChange.send()
-            UserDefaults.standard.set(newValue, forKey: "cw.suggestions.prosigns")
-        }
+    var suggestProsigns: Bool = UserDefaults.standard.object(
+        forKey: "cw.suggestions.prosigns"
+    ) as? Bool ?? true {
+        didSet { UserDefaults.standard.set(suggestProsigns, forKey: "cw.suggestions.prosigns") }
     }
 
     /// Suggest common abbreviations (73, TU, UR, QTH, etc.)
-    var suggestAbbreviations: Bool {
-        get {
-            UserDefaults.standard.object(forKey: "cw.suggestions.abbreviations") as? Bool ?? true
-        }
-        set {
-            objectWillChange.send()
-            UserDefaults.standard.set(newValue, forKey: "cw.suggestions.abbreviations")
+    var suggestAbbreviations: Bool = UserDefaults.standard.object(
+        forKey: "cw.suggestions.abbreviations"
+    ) as? Bool ?? true {
+        didSet {
+            UserDefaults.standard.set(suggestAbbreviations, forKey: "cw.suggestions.abbreviations")
         }
     }
 
     /// Suggest number corrections (less common, off by default)
-    var suggestNumbers: Bool {
-        get { UserDefaults.standard.object(forKey: "cw.suggestions.numbers") as? Bool ?? false }
-        set {
-            objectWillChange.send()
-            UserDefaults.standard.set(newValue, forKey: "cw.suggestions.numbers")
-        }
+    var suggestNumbers: Bool = UserDefaults.standard.object(
+        forKey: "cw.suggestions.numbers"
+    ) as? Bool ?? false {
+        didSet { UserDefaults.standard.set(suggestNumbers, forKey: "cw.suggestions.numbers") }
     }
 
     // MARK: - API
@@ -139,46 +148,7 @@ final class CWSuggestionEngine: ObservableObject {
         }
 
         // Find best match across enabled categories
-        var bestMatch: (word: String, distance: Int, category: SuggestionCategory)?
-
-        if suggestProsigns {
-            if let match = MorseEditDistance.findBestMatch(
-                for: upperWord,
-                maxDistance: maxEditDistance,
-                candidates: Self.prosigns
-            ) {
-                let distance = MorseEditDistance.wordDistance(upperWord, match)
-                if bestMatch == nil || distance < bestMatch!.distance {
-                    bestMatch = (match, distance, .prosign)
-                }
-            }
-        }
-
-        if suggestAbbreviations {
-            if let match = MorseEditDistance.findBestMatch(
-                for: upperWord,
-                maxDistance: maxEditDistance,
-                candidates: Self.abbreviations
-            ) {
-                let distance = MorseEditDistance.wordDistance(upperWord, match)
-                if bestMatch == nil || distance < bestMatch!.distance {
-                    bestMatch = (match, distance, .abbreviation)
-                }
-            }
-        }
-
-        if suggestNumbers {
-            if let match = MorseEditDistance.findBestMatch(
-                for: upperWord,
-                maxDistance: maxEditDistance,
-                candidates: Self.numbers
-            ) {
-                let distance = MorseEditDistance.wordDistance(upperWord, match)
-                if bestMatch == nil || distance < bestMatch!.distance {
-                    bestMatch = (match, distance, .number)
-                }
-            }
-        }
+        let bestMatch = findBestCategoryMatch(for: upperWord)
 
         guard let match = bestMatch else {
             return nil
@@ -205,5 +175,52 @@ final class CWSuggestionEngine: ObservableObject {
             .filter { !$0.isEmpty }
 
         return words.compactMap { suggestCorrection(for: $0) }
+    }
+
+    // MARK: Private
+
+    /// Search all enabled categories for the best morse edit distance match
+    private func findBestCategoryMatch(for upperWord: String) -> SuggestionMatch? {
+        var bestMatch: SuggestionMatch?
+
+        let categoriesToSearch: [CategorySearch] = [
+            CategorySearch(enabled: suggestProsigns, candidates: Self.prosigns, category: .prosign),
+            CategorySearch(enabled: suggestAbbreviations, candidates: Self.abbreviations, category: .abbreviation),
+            CategorySearch(enabled: suggestNumbers, candidates: Self.numbers, category: .number),
+        ]
+
+        for search in categoriesToSearch {
+            guard search.enabled else {
+                continue
+            }
+            if let match = findMatchInCategory(
+                for: upperWord, candidates: search.candidates,
+                category: search.category, currentBest: bestMatch
+            ) {
+                bestMatch = match
+            }
+        }
+
+        return bestMatch
+    }
+
+    /// Find a match in a single category, returning it only if better than currentBest
+    private func findMatchInCategory(
+        for word: String,
+        candidates: Set<String>,
+        category: SuggestionCategory,
+        currentBest: SuggestionMatch?
+    ) -> SuggestionMatch? {
+        guard let match = MorseEditDistance.findBestMatch(
+            for: word, maxDistance: maxEditDistance, candidates: candidates
+        ) else {
+            return nil
+        }
+
+        let distance = MorseEditDistance.wordDistance(word, match)
+        if currentBest == nil || distance < currentBest!.distance {
+            return SuggestionMatch(word: match, distance: distance, category: category)
+        }
+        return nil
     }
 }

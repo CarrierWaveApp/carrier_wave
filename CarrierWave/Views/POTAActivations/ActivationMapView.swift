@@ -20,7 +20,6 @@ struct ActivationMapView: View {
     var roveStops: [RoveStop] = []
 
     var body: some View {
-        // swiftlint:disable:next redundant_discardable_let
         let _ = useMetricUnits // Trigger re-render when unit preference changes
         ZStack {
             mapContent

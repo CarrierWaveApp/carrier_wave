@@ -108,50 +108,16 @@ struct CallsignNotesSettingsView: View {
 
     // MARK: - Source Row
 
-    // swiftlint:disable:next function_body_length
     private func sourceRow(_ source: CallsignNotesSource) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Text(source.title)
-                    .font(.body)
-
-                Spacer()
-
-                Toggle(
-                    "",
-                    isOn: Binding(
-                        get: { source.isEnabled },
-                        set: { newValue in
-                            source.isEnabled = newValue
-                            try? modelContext.save()
-                        }
-                    )
-                )
-                .labelsHidden()
-            }
+            sourceHeaderRow(source)
 
             Text(source.url)
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
 
-            HStack(spacing: 8) {
-                if let error = source.lastError {
-                    Label(error, systemImage: "exclamationmark.triangle.fill")
-                        .font(.caption2)
-                        .foregroundStyle(.orange)
-                } else if source.entryCount > 0 {
-                    Text("\(source.entryCount) callsigns")
-                        .font(.caption2)
-                        .foregroundStyle(.green)
-                }
-
-                if let lastFetched = source.lastFetchedDescription {
-                    Text("Updated \(lastFetched)")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
-            }
+            sourceStatusRow(source)
         }
         .padding(.vertical, 2)
         .swipeActions(edge: .trailing) {
@@ -167,6 +133,47 @@ struct CallsignNotesSettingsView: View {
                 Label("Refresh", systemImage: "arrow.clockwise")
             }
             .tint(.blue)
+        }
+    }
+
+    private func sourceHeaderRow(_ source: CallsignNotesSource) -> some View {
+        HStack {
+            Text(source.title)
+                .font(.body)
+
+            Spacer()
+
+            Toggle(
+                "",
+                isOn: Binding(
+                    get: { source.isEnabled },
+                    set: { newValue in
+                        source.isEnabled = newValue
+                        try? modelContext.save()
+                    }
+                )
+            )
+            .labelsHidden()
+        }
+    }
+
+    private func sourceStatusRow(_ source: CallsignNotesSource) -> some View {
+        HStack(spacing: 8) {
+            if let error = source.lastError {
+                Label(error, systemImage: "exclamationmark.triangle.fill")
+                    .font(.caption2)
+                    .foregroundStyle(.orange)
+            } else if source.entryCount > 0 {
+                Text("\(source.entryCount) callsigns")
+                    .font(.caption2)
+                    .foregroundStyle(.green)
+            }
+
+            if let lastFetched = source.lastFetchedDescription {
+                Text("Updated \(lastFetched)")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
         }
     }
 

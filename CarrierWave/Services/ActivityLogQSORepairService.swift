@@ -69,8 +69,7 @@ actor ActivityLogQSORepairService {
                 // If parkReference was set but theirParkReference is empty,
                 // move the value — it's the hunted park, not the operator's park
                 if let parkRef = qso.parkReference, !parkRef.isEmpty {
-                    // swiftlint:disable:next empty_string
-                    if qso.theirParkReference == nil || qso.theirParkReference == "" {
+                    if qso.theirParkReference == nil || (qso.theirParkReference ?? "").isEmpty {
                         qso.theirParkReference = parkRef
                     }
                     qso.parkReference = nil

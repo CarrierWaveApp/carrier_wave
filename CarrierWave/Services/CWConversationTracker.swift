@@ -1,5 +1,4 @@
 import CarrierWaveCore
-import Combine
 import Foundation
 
 // MARK: - CWConversationTracker
@@ -7,7 +6,8 @@ import Foundation
 /// Tracks CW conversation turns based on frequency changes and prosign analysis.
 /// Groups decoded text into messages attributed to different stations.
 @MainActor
-final class CWConversationTracker: ObservableObject {
+@Observable
+final class CWConversationTracker {
     // MARK: Lifecycle
 
     init(myCallsign: String? = nil) {
@@ -19,10 +19,10 @@ final class CWConversationTracker: ObservableObject {
     // MARK: - Published State
 
     /// The conversation being tracked
-    @Published private(set) var conversation: CWConversation
+    private(set) var conversation: CWConversation
 
     /// Current speaker identity
-    @Published private(set) var currentSpeaker: StationIdentity = .unknown
+    private(set) var currentSpeaker: StationIdentity = .unknown
 
     // MARK: - Configuration
 

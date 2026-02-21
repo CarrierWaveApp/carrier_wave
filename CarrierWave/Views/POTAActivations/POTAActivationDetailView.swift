@@ -33,7 +33,6 @@ struct POTAActivationDetailView: View {
     @State var engine = RecordingPlaybackEngine()
 
     var body: some View {
-        // swiftlint:disable:next redundant_discardable_let
         let _ = statisticianMode
         List {
             activationInfoSection

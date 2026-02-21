@@ -2,8 +2,6 @@
 //  QueryLexerTests.swift
 //  CarrierWaveCoreTests
 //
-// swiftlint:disable identifier_name
-
 import Testing
 @testable import CarrierWaveCore
 
@@ -30,8 +28,8 @@ struct QueryLexerTests {
         let result = try lexer.tokenize().get()
 
         #expect(result.count == 3) // field + value + eof
-        if case let .field(f) = result[0].token {
-            #expect(f == .callsign)
+        if case let .field(field) = result[0].token {
+            #expect(field == .callsign)
         } else {
             Issue.record("Expected field token")
         }

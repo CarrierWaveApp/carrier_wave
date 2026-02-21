@@ -323,8 +323,13 @@ enum PowerValue: Codable, @unchecked Sendable {
 
 /// CouchDB _all_docs response
 struct CouchDBAllDocsResponse<T: Codable>: Codable, @unchecked Sendable {
-    // swiftlint:disable:next identifier_name
-    let total_rows: Int
+    enum CodingKeys: String, CodingKey {
+        case totalRows = "total_rows"
+        case offset
+        case rows
+    }
+
+    let totalRows: Int
     let offset: Int
     let rows: [CouchDBRow<T>]
 }

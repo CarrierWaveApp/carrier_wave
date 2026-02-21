@@ -1,4 +1,3 @@
-// swiftlint:disable function_body_length
 import CarrierWaveCore
 import Foundation
 import Security
@@ -151,80 +150,14 @@ struct LoFiCLI {
 
         printInfo("Downloading QSOs...")
         let startTime = Date()
-
-        let result: LoFiDownloadResult
-        if fresh {
-            result = try await client.fetchAllQsos()
-        } else {
-            result = try await client.fetchAllQsosSinceLastSync(
-                onProgress: { progress in
-                    let pct = progress.totalQSOs > 0
-                        ? Int(Double(progress.downloadedQSOs) / Double(progress.totalQSOs) * 100)
-                        : 0
-                    let msg = "\r  \(progress.downloadedQSOs)/\(progress.totalQSOs) QSOs (\(pct)%), "
-                        + "\(progress.processedOperations)/\(progress.totalOperations) operations"
-                    FileHandle.standardError.write(Data(msg.utf8))
-                }
-            )
-            FileHandle.standardError.write(Data("\n".utf8))
-        }
-
+        let result = try await performDownload(client: client, fresh: fresh)
         let qsos = result.qsos
         let elapsed = Date().timeIntervalSince(startTime)
 
-        // Group by operation for summary
-        var opCounts: [String: Int] = [:]
-        for (_, op) in qsos {
-            opCounts[op.uuid, default: 0] += 1
-        }
+        printDownloadSummary(result: result, elapsed: elapsed)
 
-        printInfo("Download complete in \(String(format: "%.1f", elapsed))s")
-        printInfo("  Operations: \(opCounts.count)")
-        printInfo("  QSOs: \(qsos.count)")
-
-        // Three-step pipeline breakdown
-        printPipelineBreakdown(result: result)
-
-        // Date range
-        let timestamps = qsos.compactMap(\.0.startAtMillis)
-        if let minTs = timestamps.min(), let maxTs = timestamps.max() {
-            let fmt = DateFormatter()
-            fmt.dateStyle = .medium
-            fmt.timeStyle = .short
-            let minDate = Date(timeIntervalSince1970: minTs / 1_000.0)
-            let maxDate = Date(timeIntervalSince1970: maxTs / 1_000.0)
-            printInfo("  Date range: \(fmt.string(from: minDate)) to \(fmt.string(from: maxDate))")
-        }
-
-        // Write JSON output if requested
         if let outputPath {
-            printInfo("Writing QSOs to \(outputPath)...")
-            let encoder = JSONEncoder()
-            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-
-            let output = qsos.map { qso, op in
-                DownloadedQSO(
-                    uuid: qso.uuid,
-                    operationUUID: op.uuid,
-                    operationTitle: op.title,
-                    stationCall: op.stationCall,
-                    theirCall: qso.their?.call,
-                    band: qso.band,
-                    mode: qso.mode,
-                    freqKHz: qso.freq,
-                    startAtMillis: qso.startAtMillis,
-                    rstSent: qso.our?.sent,
-                    rstRcvd: qso.their?.sent,
-                    theirGrid: qso.their?.guess?.grid,
-                    theirName: qso.their?.guess?.name,
-                    notes: qso.notes,
-                    deleted: qso.deleted
-                )
-            }
-
-            let data = try encoder.encode(output)
-            try data.write(to: URL(fileURLWithPath: outputPath))
-            printInfo("Wrote \(output.count) QSOs to \(outputPath)")
+            try writeQsoOutput(qsos: qsos, to: outputPath)
         }
     }
 
@@ -325,6 +258,85 @@ struct LoFiCLI {
 
     // MARK: Private
 
+    private static func performDownload(
+        client: LoFiClient,
+        fresh: Bool
+    ) async throws -> LoFiDownloadResult {
+        if fresh {
+            return try await client.fetchAllQsos()
+        }
+        let result = try await client.fetchAllQsosSinceLastSync(
+            onProgress: { progress in
+                let pct = progress.totalQSOs > 0
+                    ? Int(Double(progress.downloadedQSOs) / Double(progress.totalQSOs) * 100)
+                    : 0
+                let msg = "\r  \(progress.downloadedQSOs)/\(progress.totalQSOs) QSOs (\(pct)%), "
+                    + "\(progress.processedOperations)/\(progress.totalOperations) operations"
+                FileHandle.standardError.write(Data(msg.utf8))
+            }
+        )
+        FileHandle.standardError.write(Data("\n".utf8))
+        return result
+    }
+
+    private static func printDownloadSummary(result: LoFiDownloadResult, elapsed: TimeInterval) {
+        let qsos = result.qsos
+
+        var opCounts: [String: Int] = [:]
+        for (_, op) in qsos {
+            opCounts[op.uuid, default: 0] += 1
+        }
+
+        printInfo("Download complete in \(String(format: "%.1f", elapsed))s")
+        printInfo("  Operations: \(opCounts.count)")
+        printInfo("  QSOs: \(qsos.count)")
+
+        printPipelineBreakdown(result: result)
+
+        let timestamps = qsos.compactMap(\.0.startAtMillis)
+        if let minTs = timestamps.min(), let maxTs = timestamps.max() {
+            let fmt = DateFormatter()
+            fmt.dateStyle = .medium
+            fmt.timeStyle = .short
+            let minDate = Date(timeIntervalSince1970: minTs / 1_000.0)
+            let maxDate = Date(timeIntervalSince1970: maxTs / 1_000.0)
+            printInfo("  Date range: \(fmt.string(from: minDate)) to \(fmt.string(from: maxDate))")
+        }
+    }
+
+    private static func writeQsoOutput(
+        qsos: [(LoFiQso, LoFiOperation)],
+        to outputPath: String
+    ) throws {
+        printInfo("Writing QSOs to \(outputPath)...")
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+
+        let output = qsos.map { qso, op in
+            DownloadedQSO(
+                uuid: qso.uuid,
+                operationUUID: op.uuid,
+                operationTitle: op.title,
+                stationCall: op.stationCall,
+                theirCall: qso.their?.call,
+                band: qso.band,
+                mode: qso.mode,
+                freqKHz: qso.freq,
+                startAtMillis: qso.startAtMillis,
+                rstSent: qso.our?.sent,
+                rstRcvd: qso.their?.sent,
+                theirGrid: qso.their?.guess?.grid,
+                theirName: qso.their?.guess?.name,
+                notes: qso.notes,
+                deleted: qso.deleted
+            )
+        }
+
+        let data = try encoder.encode(output)
+        try data.write(to: URL(fileURLWithPath: outputPath))
+        printInfo("Wrote \(output.count) QSOs to \(outputPath)")
+    }
+
     private static func readKeychainValue(service: String, account: String) -> String? {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
@@ -375,5 +387,3 @@ extension Array {
         indices.contains(index) ? self[index] : nil
     }
 }
-
-// swiftlint:enable function_body_length

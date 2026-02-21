@@ -1,5 +1,3 @@
-// swiftlint:disable identifier_name
-
 import Foundation
 
 // MARK: - ParsedQuery
@@ -220,16 +218,16 @@ public enum TermCondition: Equatable, Sendable {
             "\(a)..\(b)"
         case let .numericRange(a, b):
             "\(a)..\(b)"
-        case let .dateEquals(d),
-             let .dateAfter(d),
-             let .dateBefore(d):
-            d.description
+        case let .dateEquals(date),
+             let .dateAfter(date),
+             let .dateBefore(date):
+            date.description
         case let .dateRange(a, b):
             "\(a.description)..\(b.description)"
         case let .boolean(v):
             v ? "yes" : "no"
-        case let .service(s):
-            s.rawValue
+        case let .service(svc):
+            svc.rawValue
         }
     }
 

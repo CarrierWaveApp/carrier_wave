@@ -1,4 +1,3 @@
-// swiftlint:disable function_body_length
 // POTA self-spotting extension
 //
 // Provides functionality for activators to spot themselves on POTA.
@@ -76,20 +75,9 @@ extension POTAClient {
     ) async throws -> Bool {
         let debugLog = SyncDebugLog.shared
 
-        // Validate inputs
-        guard validateParkReference(reference) else {
-            debugLog.error("Invalid park reference for spot: \(reference)", service: .pota)
-            throw POTASpotError.invalidReference
-        }
+        try validateSpotInputs(reference: reference, frequency: frequency, debugLog: debugLog)
 
-        guard frequency > 0 else {
-            debugLog.error("Invalid frequency for spot: \(frequency)", service: .pota)
-            throw POTASpotError.invalidFrequency
-        }
-
-        // Ensure we have a valid token
         let token = try await authService.ensureValidToken()
-
         let normalizedRef = reference.uppercased()
         let frequencyString = formatFrequency(frequency)
 
@@ -107,6 +95,26 @@ extension POTAClient {
             comments: comments
         )
 
+        let request = try buildSpotURLRequest(token: token, body: spotRequest)
+        return try await executeSpotRequest(request, debugLog: debugLog)
+    }
+
+    private func validateSpotInputs(
+        reference: String,
+        frequency: Double,
+        debugLog: SyncDebugLog
+    ) throws {
+        guard validateParkReference(reference) else {
+            debugLog.error("Invalid park reference for spot: \(reference)", service: .pota)
+            throw POTASpotError.invalidReference
+        }
+        guard frequency > 0 else {
+            debugLog.error("Invalid frequency for spot: \(frequency)", service: .pota)
+            throw POTASpotError.invalidFrequency
+        }
+    }
+
+    private func buildSpotURLRequest(token: String, body: POTASpotRequest) throws -> URLRequest {
         guard let url = URL(string: "\(baseURL)/spot") else {
             throw POTASpotError.spotFailed("Invalid URL")
         }
@@ -117,11 +125,18 @@ extension POTAClient {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
         do {
-            request.httpBody = try JSONEncoder().encode(spotRequest)
+            request.httpBody = try JSONEncoder().encode(body)
         } catch {
             throw POTASpotError.spotFailed("Failed to encode request")
         }
 
+        return request
+    }
+
+    private func executeSpotRequest(
+        _ request: URLRequest,
+        debugLog: SyncDebugLog
+    ) async throws -> Bool {
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
 
@@ -129,33 +144,40 @@ extension POTAClient {
                 throw POTASpotError.spotFailed("Invalid response")
             }
 
-            switch httpResponse.statusCode {
-            case 200,
-                 201:
-                debugLog.info("Self-spot posted successfully", service: .pota)
-                return true
-
-            case 401,
-                 403:
-                authService.invalidateToken()
-                throw POTASpotError.notAuthenticated
-
-            case 429:
-                debugLog.warning("Rate limited on spot request", service: .pota)
-                throw POTASpotError.rateLimited
-
-            default:
-                let body = String(data: data, encoding: .utf8) ?? ""
-                debugLog.error(
-                    "Spot failed: HTTP \(httpResponse.statusCode) - \(body)", service: .pota
-                )
-                throw POTASpotError.spotFailed("HTTP \(httpResponse.statusCode)")
-            }
+            return try handleSpotResponse(
+                statusCode: httpResponse.statusCode, data: data, debugLog: debugLog
+            )
         } catch let error as POTASpotError {
             throw error
         } catch {
             debugLog.error("Network error posting spot: \(error)", service: .pota)
             throw POTASpotError.networkError(error)
+        }
+    }
+
+    private func handleSpotResponse(
+        statusCode: Int,
+        data: Data,
+        debugLog: SyncDebugLog
+    ) throws -> Bool {
+        switch statusCode {
+        case 200,
+             201:
+            debugLog.info("Self-spot posted successfully", service: .pota)
+            return true
+        case 401,
+             403:
+            authService.invalidateToken()
+            throw POTASpotError.notAuthenticated
+        case 429:
+            debugLog.warning("Rate limited on spot request", service: .pota)
+            throw POTASpotError.rateLimited
+        default:
+            let body = String(data: data, encoding: .utf8) ?? ""
+            debugLog.error(
+                "Spot failed: HTTP \(statusCode) - \(body)", service: .pota
+            )
+            throw POTASpotError.spotFailed("HTTP \(statusCode)")
         }
     }
 

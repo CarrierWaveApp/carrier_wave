@@ -113,4 +113,38 @@ extension SessionsView {
         }
         return items
     }
+
+    // MARK: - Row Builder Helpers
+
+    func buildUploadHandler(
+        activations: [POTAActivation]
+    ) -> (() async -> [String: String])? {
+        guard !activations.isEmpty else {
+            return nil
+        }
+        return {
+            var allErrors: [String: String] = [:]
+            for act in activations {
+                let errors = await performUploadReturningErrors(for: act)
+                allErrors.merge(errors) { _, new in new }
+            }
+            return allErrors
+        }
+    }
+
+    func buildShareHandler(
+        session: LoggingSession,
+        activations: [POTAActivation]
+    ) -> (() -> Void)? {
+        guard activations.first != nil else {
+            return nil
+        }
+        return {
+            if session.isRove, activations.count > 1 {
+                activationToShare = mergedRoveActivation(activations)
+            } else if let act = activations.first {
+                activationToShare = act
+            }
+        }
+    }
 }

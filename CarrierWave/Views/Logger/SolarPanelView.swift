@@ -1,4 +1,3 @@
-// swiftlint:disable function_body_length
 // Solar Panel View for Logger
 //
 // Displays current solar conditions including K-index,
@@ -117,66 +116,75 @@ struct SolarPanelView: View {
 
     private func conditionsView(_ conditions: SolarConditions) -> some View {
         VStack(spacing: 16) {
-            // Propagation rating
             propagationBadge(conditions)
-
-            // Metrics grid
-            LazyVGrid(
-                columns: [
-                    GridItem(.flexible()),
-                    GridItem(.flexible()),
-                    GridItem(.flexible()),
-                ], spacing: 12
-            ) {
-                metricCard(
-                    title: "K-Index",
-                    value: String(format: "%.1f", conditions.kIndex),
-                    icon: "gauge",
-                    color: kIndexColor(conditions.kIndex)
-                )
-
-                if let flux = conditions.solarFlux {
-                    metricCard(
-                        title: "SFI",
-                        value: "\(Int(flux))",
-                        icon: "sun.max",
-                        color: sfiColor(flux)
-                    )
-                } else {
-                    metricCard(
-                        title: "SFI",
-                        value: "--",
-                        icon: "sun.max",
-                        color: .secondary
-                    )
-                }
-
-                if let spots = conditions.sunspots {
-                    metricCard(
-                        title: "Sunspots",
-                        value: "\(spots)",
-                        icon: "circle.dotted",
-                        color: .orange
-                    )
-                } else {
-                    metricCard(
-                        title: "A-Index",
-                        value: conditions.aIndex.map { "\($0)" } ?? "--",
-                        icon: "waveform.path",
-                        color: .purple
-                    )
-                }
-            }
-
-            // Band conditions summary
+            metricsGrid(conditions)
             bandConditionsSummary(conditions)
 
-            // Last updated
             Text("Updated: \(conditions.timestamp.formatted(date: .omitted, time: .shortened))")
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
         }
         .padding()
+    }
+
+    private func metricsGrid(_ conditions: SolarConditions) -> some View {
+        LazyVGrid(
+            columns: [
+                GridItem(.flexible()),
+                GridItem(.flexible()),
+                GridItem(.flexible()),
+            ], spacing: 12
+        ) {
+            metricCard(
+                title: "K-Index",
+                value: String(format: "%.1f", conditions.kIndex),
+                icon: "gauge",
+                color: kIndexColor(conditions.kIndex)
+            )
+
+            sfiCard(conditions)
+            thirdMetricCard(conditions)
+        }
+    }
+
+    private func sfiCard(_ conditions: SolarConditions) -> some View {
+        Group {
+            if let flux = conditions.solarFlux {
+                metricCard(
+                    title: "SFI",
+                    value: "\(Int(flux))",
+                    icon: "sun.max",
+                    color: sfiColor(flux)
+                )
+            } else {
+                metricCard(
+                    title: "SFI",
+                    value: "--",
+                    icon: "sun.max",
+                    color: .secondary
+                )
+            }
+        }
+    }
+
+    private func thirdMetricCard(_ conditions: SolarConditions) -> some View {
+        Group {
+            if let spots = conditions.sunspots {
+                metricCard(
+                    title: "Sunspots",
+                    value: "\(spots)",
+                    icon: "circle.dotted",
+                    color: .orange
+                )
+            } else {
+                metricCard(
+                    title: "A-Index",
+                    value: conditions.aIndex.map { "\($0)" } ?? "--",
+                    icon: "waveform.path",
+                    color: .purple
+                )
+            }
+        }
     }
 
     private func propagationBadge(_ conditions: SolarConditions) -> some View {

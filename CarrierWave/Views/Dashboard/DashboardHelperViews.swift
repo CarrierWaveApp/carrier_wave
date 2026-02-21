@@ -144,9 +144,7 @@ struct MetricsCard: View {
     let asyncStats: AsyncQSOStatistics
 
     var body: some View {
-        // swiftlint:disable:next redundant_discardable_let
         let _ = metric1RawValue
-        // swiftlint:disable:next redundant_discardable_let
         let _ = metric2RawValue
 
         VStack(alignment: .leading, spacing: 12) {

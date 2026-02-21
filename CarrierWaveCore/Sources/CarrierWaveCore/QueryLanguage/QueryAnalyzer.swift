@@ -1,5 +1,3 @@
-// swiftlint:disable function_body_length identifier_name
-
 import Foundation
 
 // MARK: - QueryAnalyzer
@@ -18,79 +16,19 @@ public enum QueryAnalyzer {
             )
         }
 
-        var warnings: [QueryWarning] = []
         let terms = query.expression.allTerms
-
-        // Separate positive and negative terms
         let (positiveTerms, negatedTerms) = categorizeTerms(query.expression)
 
-        // Check 1: No indexed fields in positive terms
         let indexedPositiveFields = positiveTerms.compactMap(\.field).filter(\.isIndexed)
         let usesIndex = !indexedPositiveFields.isEmpty
 
-        if !usesIndex && qsoCount > 1_000 {
-            warnings.append(
-                QueryWarning(
-                    severity: .high,
-                    message: "This search scans all \(qsoCount.formatted()) QSOs",
-                    suggestion: "Add a callsign, date, band, or mode filter"
-                )
-            )
-        }
+        var warnings: [QueryWarning] = []
+        warnings += checkIndexUsage(usesIndex: usesIndex, qsoCount: qsoCount)
+        warnings += checkLeadingWildcards(terms: terms)
+        warnings += checkNegationOnly(positiveTerms: positiveTerms, negatedTerms: negatedTerms)
+        warnings += checkTextScanFields(positiveTerms: positiveTerms)
+        warnings += checkSubstringMatching(terms: terms)
 
-        // Check 2: Leading wildcards
-        for term in terms {
-            if case let .suffix(pattern) = term.condition {
-                warnings.append(
-                    QueryWarning(
-                        severity: .high,
-                        message: "Wildcard at start of '*\(pattern)' can't use index",
-                        suggestion: "Use trailing wildcard instead: '\(pattern)*'"
-                    )
-                )
-            }
-        }
-
-        // Check 3: Negation-only query
-        if !positiveTerms.isEmpty || !negatedTerms.isEmpty {
-            if positiveTerms.isEmpty, !negatedTerms.isEmpty {
-                warnings.append(
-                    QueryWarning(
-                        severity: .high,
-                        message: "Exclusion-only query must scan all records",
-                        suggestion: "Add a positive filter like a date range"
-                    )
-                )
-            }
-        }
-
-        // Check 4: Text scan fields (notes, name, qth)
-        for term in positiveTerms {
-            if let field = term.field, field.requiresTextScan {
-                warnings.append(
-                    QueryWarning(
-                        severity: .medium,
-                        message: "Searching '\(field.displayName)' scans all records",
-                        suggestion: nil
-                    )
-                )
-            }
-        }
-
-        // Check 5: Contains/substring matching on non-text fields
-        for term in terms where term.field != nil {
-            if case .contains = term.condition, let field = term.field, !field.requiresTextScan {
-                warnings.append(
-                    QueryWarning(
-                        severity: .medium,
-                        message: "Substring search on '\(field.displayName)' is slower than prefix",
-                        suggestion: "Use '\(term.condition.displayValue)*' for prefix match"
-                    )
-                )
-            }
-        }
-
-        // Check 6: Large dataset without date bounds
         let hasDateBound = positiveTerms.contains { term in
             guard let field = term.field else {
                 return false
@@ -98,39 +36,15 @@ public enum QueryAnalyzer {
             return field == .date || field == .after || field == .before
         }
 
-        if !hasDateBound, qsoCount > 10_000, usesIndex {
-            warnings.append(
-                QueryWarning(
-                    severity: .hint,
-                    message: "Searching \(qsoCount.formatted()) QSOs",
-                    suggestion: "Add 'after:30d' to search recent contacts only"
-                )
-            )
-        }
+        warnings += checkLargeDataset(
+            hasDateBound: hasDateBound, qsoCount: qsoCount, usesIndex: usesIndex
+        )
+        warnings += checkFrequencySearch(
+            terms: terms, qsoCount: qsoCount, hasDateBound: hasDateBound
+        )
 
-        // Check 7: Frequency range queries
-        let hasFrequencySearch = terms.contains { $0.field == .frequency }
-        if hasFrequencySearch, qsoCount > 5_000, !hasDateBound {
-            warnings.append(
-                QueryWarning(
-                    severity: .medium,
-                    message: "Frequency searches may be slow on large datasets",
-                    suggestion: "Add a date filter to reduce scan size"
-                )
-            )
-        }
+        let cost = determineCost(usesIndex: usesIndex, hasDateBound: hasDateBound)
 
-        // Determine overall cost
-        let cost: QueryCost =
-            if usesIndex {
-                .indexed
-            } else if hasDateBound {
-                .bounded
-            } else {
-                .fullScan
-            }
-
-        // Deduplicate warnings by message
         let uniqueWarnings = Array(
             Dictionary(grouping: warnings, by: \.message).values.compactMap(\.first)
         )
@@ -143,6 +57,117 @@ public enum QueryAnalyzer {
     }
 
     // MARK: Private
+
+    private static func checkIndexUsage(usesIndex: Bool, qsoCount: Int) -> [QueryWarning] {
+        guard !usesIndex, qsoCount > 1_000 else {
+            return []
+        }
+        return [QueryWarning(
+            severity: .high,
+            message: "This search scans all \(qsoCount.formatted()) QSOs",
+            suggestion: "Add a callsign, date, band, or mode filter"
+        )]
+    }
+
+    private static func checkLeadingWildcards(terms: [QueryTerm]) -> [QueryWarning] {
+        terms.compactMap { term in
+            guard case let .suffix(pattern) = term.condition else {
+                return nil
+            }
+            return QueryWarning(
+                severity: .high,
+                message: "Wildcard at start of '*\(pattern)' can't use index",
+                suggestion: "Use trailing wildcard instead: '\(pattern)*'"
+            )
+        }
+    }
+
+    private static func checkNegationOnly(
+        positiveTerms: [QueryTerm],
+        negatedTerms: [QueryTerm]
+    ) -> [QueryWarning] {
+        guard !positiveTerms.isEmpty || !negatedTerms.isEmpty else {
+            return []
+        }
+        guard positiveTerms.isEmpty, !negatedTerms.isEmpty else {
+            return []
+        }
+        return [QueryWarning(
+            severity: .high,
+            message: "Exclusion-only query must scan all records",
+            suggestion: "Add a positive filter like a date range"
+        )]
+    }
+
+    private static func checkTextScanFields(positiveTerms: [QueryTerm]) -> [QueryWarning] {
+        positiveTerms.compactMap { term in
+            guard let field = term.field, field.requiresTextScan else {
+                return nil
+            }
+            return QueryWarning(
+                severity: .medium,
+                message: "Searching '\(field.displayName)' scans all records",
+                suggestion: nil
+            )
+        }
+    }
+
+    private static func checkSubstringMatching(terms: [QueryTerm]) -> [QueryWarning] {
+        terms.compactMap { term in
+            guard let field = term.field, !field.requiresTextScan else {
+                return nil
+            }
+            guard case .contains = term.condition else {
+                return nil
+            }
+            return QueryWarning(
+                severity: .medium,
+                message: "Substring search on '\(field.displayName)' is slower than prefix",
+                suggestion: "Use '\(term.condition.displayValue)*' for prefix match"
+            )
+        }
+    }
+
+    private static func checkLargeDataset(
+        hasDateBound: Bool,
+        qsoCount: Int,
+        usesIndex: Bool
+    ) -> [QueryWarning] {
+        guard !hasDateBound, qsoCount > 10_000, usesIndex else {
+            return []
+        }
+        return [QueryWarning(
+            severity: .hint,
+            message: "Searching \(qsoCount.formatted()) QSOs",
+            suggestion: "Add 'after:30d' to search recent contacts only"
+        )]
+    }
+
+    private static func checkFrequencySearch(
+        terms: [QueryTerm],
+        qsoCount: Int,
+        hasDateBound: Bool
+    ) -> [QueryWarning] {
+        let hasFrequencySearch = terms.contains { $0.field == .frequency }
+        guard hasFrequencySearch, qsoCount > 5_000, !hasDateBound else {
+            return []
+        }
+        return [QueryWarning(
+            severity: .medium,
+            message: "Frequency searches may be slow on large datasets",
+            suggestion: "Add a date filter to reduce scan size"
+        )]
+    }
+
+    private static func determineCost(usesIndex: Bool, hasDateBound: Bool) -> QueryCost {
+        if usesIndex {
+            .indexed
+        } else if hasDateBound {
+            .bounded
+        } else {
+            .fullScan
+        }
+    }
 
     /// Categorize terms into positive and negated
     private static func categorizeTerms(_ expression: QueryExpression)

@@ -265,12 +265,11 @@ struct SpotCommentsSheet: View {
 
 /// A badge showing the number of new spot comments
 struct SpotCommentsBadge: View {
-    let count: Int
+    let commentCount: Int
 
     var body: some View {
-        // swiftlint:disable:next empty_count
-        if count > 0 {
-            Text("\(count)")
+        if commentCount > 0 {
+            Text("\(commentCount)")
                 .font(.caption2.weight(.bold))
                 .foregroundStyle(.white)
                 .padding(.horizontal, 6)

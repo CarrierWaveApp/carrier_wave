@@ -1,4 +1,3 @@
-// swiftlint:disable cyclomatic_complexity
 import CarrierWaveCore
 import CoreLocation
 import SwiftUI
@@ -416,46 +415,32 @@ struct CompactLookupErrorBar: View {
 
 /// Shared country flag lookup from callsign prefix
 enum CallsignFlagHelper {
-    // swiftlint:disable:next cyclomatic_complexity
+    // MARK: Internal
+
     static func countryFlag(for callsign: String) -> String? {
         let cs = callsign.uppercased()
-        if cs.hasPrefix("W") || cs.hasPrefix("K") || cs.hasPrefix("N") || cs.hasPrefix("A") {
-            return "🇺🇸"
-        } else if cs.hasPrefix("VE") || cs.hasPrefix("VA") {
-            return "🇨🇦"
-        } else if cs.hasPrefix("G") || cs.hasPrefix("M") {
-            return "🇬🇧"
-        } else if cs.hasPrefix("DL") || cs.hasPrefix("DA") || cs.hasPrefix("DB")
-            || cs.hasPrefix("DC")
-        {
-            return "🇩🇪"
-        } else if cs.hasPrefix("F") {
-            return "🇫🇷"
-        } else if cs.hasPrefix("JA") || cs.hasPrefix("JH") || cs.hasPrefix("JR") {
-            return "🇯🇵"
-        } else if cs.hasPrefix("VK") {
-            return "🇦🇺"
-        } else if cs.hasPrefix("ZL") {
-            return "🇳🇿"
-        } else if cs.hasPrefix("EA") {
-            return "🇪🇸"
-        } else if cs.hasPrefix("I") {
-            return "🇮🇹"
-        } else if cs.hasPrefix("PA") || cs.hasPrefix("PD") || cs.hasPrefix("PE") {
-            return "🇳🇱"
-        } else if cs.hasPrefix("ON") {
-            return "🇧🇪"
-        } else if cs.hasPrefix("OZ") {
-            return "🇩🇰"
-        } else if cs.hasPrefix("SM") || cs.hasPrefix("SA") {
-            return "🇸🇪"
-        } else if cs.hasPrefix("LA") {
-            return "🇳🇴"
-        } else if cs.hasPrefix("OH") {
-            return "🇫🇮"
+        for (prefix, flag) in prefixFlags where cs.hasPrefix(prefix) {
+            return flag
         }
         return nil
     }
+
+    // MARK: Private
+
+    /// Ordered longest prefix first so 2-char prefixes match before 1-char
+    private static let prefixFlags: [(prefix: String, flag: String)] = [
+        ("VE", "🇨🇦"), ("VA", "🇨🇦"),
+        ("DL", "🇩🇪"), ("DA", "🇩🇪"), ("DB", "🇩🇪"), ("DC", "🇩🇪"),
+        ("JA", "🇯🇵"), ("JH", "🇯🇵"), ("JR", "🇯🇵"),
+        ("VK", "🇦🇺"), ("ZL", "🇳🇿"), ("EA", "🇪🇸"),
+        ("PA", "🇳🇱"), ("PD", "🇳🇱"), ("PE", "🇳🇱"),
+        ("ON", "🇧🇪"), ("OZ", "🇩🇰"),
+        ("SM", "🇸🇪"), ("SA", "🇸🇪"),
+        ("LA", "🇳🇴"), ("OH", "🇫🇮"),
+        ("W", "🇺🇸"), ("K", "🇺🇸"), ("N", "🇺🇸"), ("A", "🇺🇸"),
+        ("G", "🇬🇧"), ("M", "🇬🇧"),
+        ("F", "🇫🇷"), ("I", "🇮🇹"),
+    ]
 }
 
 // MARK: - Preview

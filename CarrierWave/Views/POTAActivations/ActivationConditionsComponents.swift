@@ -104,7 +104,6 @@ struct WeatherConditionBadge<C: ConditionsData>: View {
     let metadata: C
 
     var body: some View {
-        // swiftlint:disable:next redundant_discardable_let
         let _ = useMetricUnits // Trigger re-render when unit preference changes
         HStack(spacing: 3) {
             weatherIcon

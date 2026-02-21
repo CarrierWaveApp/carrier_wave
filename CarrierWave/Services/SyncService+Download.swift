@@ -1,4 +1,3 @@
-// swiftlint:disable function_body_length
 import CarrierWaveCore
 import Foundation
 import SwiftData
@@ -9,68 +8,72 @@ extension SyncService {
     func downloadFromAllSources() async -> [ServiceType: Result<[FetchedQSO], Error>] {
         let timeout = syncTimeoutSeconds
         let extendedTimeout = extendedSyncTimeoutSeconds
-
-        // Capture service configuration state before entering task group
-        let qrzHasKey = qrzClient.hasApiKey()
-        // Use isConfigured (has stored credentials) instead of isAuthenticated (has valid token)
-        // This allows POTA sync to proceed even if token expired - ensureValidToken will re-auth
-        let potaIsConfigured = potaAuthService.isConfigured
-        let potaInMaintenance = POTAClient.isInMaintenanceWindow()
-        let lofiReady = lofiClient.isConfigured && lofiClient.isLinked
-        let hamrsReady = hamrsClient.isConfigured
-        let lotwHasCreds = lotwClient.hasCredentials()
-        let clublogReady = clublogClient.isConfigured
+        let serviceConfig = captureServiceConfiguration()
 
         return await withTaskGroup(of: (ServiceType, Result<[FetchedQSO], Error>).self) { group in
-            // QRZ download
-            if qrzHasKey {
-                group.addTask {
-                    await self.downloadFromQRZ(timeout: timeout)
-                }
-            }
-
-            // POTA download (skip during maintenance window)
-            // Uses extended timeout - POTA handles its own per-activation timeouts
-            if potaIsConfigured, !potaInMaintenance {
-                group.addTask {
-                    await self.downloadFromPOTA(timeout: extendedTimeout)
-                }
-            }
-
-            // LoFi download
-            if lofiReady {
-                group.addTask {
-                    await self.downloadFromLoFi(timeout: timeout)
-                }
-            }
-
-            // HAMRS download
-            if hamrsReady {
-                group.addTask {
-                    await self.downloadFromHAMRS(timeout: timeout)
-                }
-            }
-
-            // LoTW download
-            // Uses extended timeout - LoTW handles its own adaptive windowing
-            if lotwHasCreds {
-                group.addTask {
-                    await self.downloadFromLoTW(timeout: extendedTimeout)
-                }
-            }
-
-            // Club Log download
-            if clublogReady {
-                group.addTask {
-                    await self.downloadFromClubLog(timeout: timeout)
-                }
-            }
+            addDownloadTasks(
+                to: &group, config: serviceConfig,
+                timeout: timeout, extendedTimeout: extendedTimeout
+            )
 
             var results: [ServiceType: Result<[FetchedQSO], Error>] = [:]
             for await (service, result) in group {
                 results[service] = result
             }
             return results
+        }
+    }
+
+    private struct ServiceConfiguration {
+        let qrzHasKey: Bool
+        let potaIsConfigured: Bool
+        let potaInMaintenance: Bool
+        let lofiReady: Bool
+        let hamrsReady: Bool
+        let lotwHasCreds: Bool
+        let clublogReady: Bool
+    }
+
+    private func captureServiceConfiguration() -> ServiceConfiguration {
+        // Capture service configuration state before entering task group
+        ServiceConfiguration(
+            qrzHasKey: qrzClient.hasApiKey(),
+            // Use isConfigured (has stored credentials) instead of isAuthenticated (has valid token)
+            // This allows POTA sync to proceed even if token expired - ensureValidToken will re-auth
+            potaIsConfigured: potaAuthService.isConfigured,
+            potaInMaintenance: POTAClient.isInMaintenanceWindow(),
+            lofiReady: lofiClient.isConfigured && lofiClient.isLinked,
+            hamrsReady: hamrsClient.isConfigured,
+            lotwHasCreds: lotwClient.hasCredentials(),
+            clublogReady: clublogClient.isConfigured
+        )
+    }
+
+    private func addDownloadTasks(
+        to group: inout TaskGroup<(ServiceType, Result<[FetchedQSO], Error>)>,
+        config: ServiceConfiguration,
+        timeout: TimeInterval,
+        extendedTimeout: TimeInterval
+    ) {
+        if config.qrzHasKey {
+            group.addTask { await self.downloadFromQRZ(timeout: timeout) }
+        }
+        // POTA: skip during maintenance window, uses extended timeout
+        if config.potaIsConfigured, !config.potaInMaintenance {
+            group.addTask { await self.downloadFromPOTA(timeout: extendedTimeout) }
+        }
+        if config.lofiReady {
+            group.addTask { await self.downloadFromLoFi(timeout: timeout) }
+        }
+        if config.hamrsReady {
+            group.addTask { await self.downloadFromHAMRS(timeout: timeout) }
+        }
+        // LoTW: uses extended timeout for adaptive windowing
+        if config.lotwHasCreds {
+            group.addTask { await self.downloadFromLoTW(timeout: extendedTimeout) }
+        }
+        if config.clublogReady {
+            group.addTask { await self.downloadFromClubLog(timeout: timeout) }
         }
     }
 
@@ -168,63 +171,18 @@ extension SyncService {
         await MainActor.run { self.syncPhase = .downloading(service: .lofi) }
         let debugLog = SyncDebugLog.shared
         debugLog.info("Starting LoFi download", service: .lofi)
-
-        // Log LoFi configuration state
-        let lastSyncMillis = lofiClient.getLastSyncMillis()
-        if lastSyncMillis > 0 {
-            let lastSyncDate = Date(timeIntervalSince1970: Double(lastSyncMillis) / 1_000.0)
-            let formatter = DateFormatter()
-            formatter.dateStyle = .medium
-            formatter.timeStyle = .short
-            debugLog.info("Last sync: \(formatter.string(from: lastSyncDate))", service: .lofi)
-        } else {
-            debugLog.info("Last sync: Never (fresh sync)", service: .lofi)
-        }
+        logLoFiSyncState(debugLog: debugLog)
 
         do {
-            let downloadResult = try await withTimeout(seconds: timeout, service: .lofi) {
-                try await self.lofiClient.fetchAllQsosSinceLastSync { [weak self] progress in
-                    Task { @MainActor [weak self] in
-                        guard let self else {
-                            return
-                        }
-                        // Update progress - must modify struct to trigger @Published
-                        NSLog(
-                            "[LoFi Progress] total=%d, downloaded=%d",
-                            progress.totalQSOs, progress.downloadedQSOs
-                        )
-                        var updated = syncProgress
-                        updated.lofiTotalQSOs = progress.totalQSOs
-                        updated.lofiTotalOperations = progress.totalOperations
-                        updated.lofiDownloadedQSOs = progress.downloadedQSOs
-                        syncProgress = updated
-                    }
-                }
-            }
+            let downloadResult = try await fetchLoFiQSOs(timeout: timeout)
             let qsos = downloadResult.qsos
             debugLog.info(
                 "Downloaded \(downloadResult.rawFetchCount) raw QSOs from LoFi API (\(qsos.count) after dedup)",
                 service: .lofi
             )
+            logQSODateRange(qsos: qsos, debugLog: debugLog)
 
-            // Log date range of downloaded QSOs
-            if !qsos.isEmpty {
-                let timestamps = qsos.compactMap(\.0.startAtMillis)
-                let minTimestamp = timestamps.min() ?? 0
-                let maxTimestamp = timestamps.max() ?? 0
-                let minDate = Date(timeIntervalSince1970: minTimestamp / 1_000.0)
-                let maxDate = Date(timeIntervalSince1970: maxTimestamp / 1_000.0)
-                let formatter = DateFormatter()
-                formatter.dateStyle = .medium
-                debugLog.info(
-                    "QSO date range: \(formatter.string(from: minDate)) to \(formatter.string(from: maxDate))",
-                    service: .lofi
-                )
-            }
-
-            // Convert to FetchedQSO with periodic yields to avoid blocking UI
             let (fetchedList, skippedCount) = await convertLoFiQSOsWithYielding(qsos)
-
             debugLog.info(
                 "After filtering: \(fetchedList.count) valid, \(skippedCount) skipped",
                 service: .lofi
@@ -236,6 +194,52 @@ extension SyncService {
             debugLog.error("LoFi download failed: \(error.localizedDescription)", service: .lofi)
             return (.lofi, .failure(error))
         }
+    }
+
+    private func logLoFiSyncState(debugLog: SyncDebugLog) {
+        let lastSyncMillis = lofiClient.getLastSyncMillis()
+        if lastSyncMillis > 0 {
+            let formatter = DateFormatter()
+            formatter.dateStyle = .medium
+            formatter.timeStyle = .short
+            let lastSyncDate = Date(timeIntervalSince1970: Double(lastSyncMillis) / 1_000.0)
+            debugLog.info("Last sync: \(formatter.string(from: lastSyncDate))", service: .lofi)
+        } else {
+            debugLog.info("Last sync: Never (fresh sync)", service: .lofi)
+        }
+    }
+
+    private func fetchLoFiQSOs(timeout: TimeInterval) async throws -> LoFiDownloadResult {
+        try await withTimeout(seconds: timeout, service: .lofi) {
+            try await self.lofiClient.fetchAllQsosSinceLastSync { [weak self] progress in
+                Task { @MainActor [weak self] in
+                    guard let self else {
+                        return
+                    }
+                    NSLog("[LoFi Progress] total=%d, downloaded=%d", progress.totalQSOs, progress.downloadedQSOs)
+                    var updated = syncProgress
+                    updated.lofiTotalQSOs = progress.totalQSOs
+                    updated.lofiTotalOperations = progress.totalOperations
+                    updated.lofiDownloadedQSOs = progress.downloadedQSOs
+                    syncProgress = updated
+                }
+            }
+        }
+    }
+
+    private func logQSODateRange(qsos: [(LoFiQso, LoFiOperation)], debugLog: SyncDebugLog) {
+        guard !qsos.isEmpty else {
+            return
+        }
+        let timestamps = qsos.compactMap(\.0.startAtMillis)
+        guard let minTs = timestamps.min(), let maxTs = timestamps.max() else {
+            return
+        }
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        let minDate = formatter.string(from: Date(timeIntervalSince1970: minTs / 1_000.0))
+        let maxDate = formatter.string(from: Date(timeIntervalSince1970: maxTs / 1_000.0))
+        debugLog.info("QSO date range: \(minDate) to \(maxDate)", service: .lofi)
     }
 
     /// Convert LoFi QSOs to FetchedQSO format with periodic yields to avoid blocking UI

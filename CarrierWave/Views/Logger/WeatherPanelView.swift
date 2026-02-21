@@ -15,7 +15,6 @@ struct WeatherPanelView: View {
     let onDismiss: () -> Void
 
     var body: some View {
-        // swiftlint:disable:next redundant_discardable_let
         let _ = useMetricUnits // Trigger re-render when unit preference changes
         VStack(spacing: 0) {
             header

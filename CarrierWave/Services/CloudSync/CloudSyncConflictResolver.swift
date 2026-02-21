@@ -1,14 +1,13 @@
 import CarrierWaveCore
 import Foundation
 
+// MARK: - CloudSyncConflictResolver
+
 /// Conflict resolution strategies for each synced model type.
 /// Called when the same record is modified on two devices simultaneously.
 enum CloudSyncConflictResolver {
-    // MARK: Internal
-
     // MARK: - QSO: Field-Level Merge
 
-    // swiftlint:disable function_body_length
     /// Merge two versions of a QSO, preferring the newer modificationDate for differing fields.
     nonisolated static func mergeQSO(
         local: QSOFields,
@@ -22,67 +21,51 @@ enum CloudSyncConflictResolver {
         // prefer the newer modification date for differing fields.
         let preferRemote = remoteModDate > localModDate
 
+        let coreFields = mergeQSOCoreFields(
+            local: local, remote: remote, preferRemote: preferRemote
+        )
+        let extraFields = mergeQSOExtraFields(
+            local: local, remote: remote, preferRemote: preferRemote
+        )
+
         return QSOFields(
             id: local.id,
-            callsign: pickString(local.callsign, remote.callsign, preferRemote: preferRemote),
-            band: pickString(local.band, remote.band, preferRemote: preferRemote),
-            mode: pickString(local.mode, remote.mode, preferRemote: preferRemote),
-            frequency: pickOptional(local.frequency, remote.frequency, preferRemote: preferRemote),
-            timestamp: pickValue(local.timestamp, remote.timestamp, preferRemote: preferRemote),
-            rstSent: pickOptional(local.rstSent, remote.rstSent, preferRemote: preferRemote),
-            rstReceived: pickOptional(
-                local.rstReceived, remote.rstReceived, preferRemote: preferRemote
-            ),
-            myCallsign: pickString(
-                local.myCallsign, remote.myCallsign, preferRemote: preferRemote
-            ),
-            myGrid: pickOptional(local.myGrid, remote.myGrid, preferRemote: preferRemote),
-            theirGrid: pickOptional(local.theirGrid, remote.theirGrid, preferRemote: preferRemote),
-            parkReference: pickOptional(
-                local.parkReference, remote.parkReference, preferRemote: preferRemote
-            ),
-            theirParkReference: pickOptional(
-                local.theirParkReference, remote.theirParkReference, preferRemote: preferRemote
-            ),
-            // Notes: concatenate if both changed to different values
+            callsign: coreFields.callsign,
+            band: coreFields.band,
+            mode: coreFields.mode,
+            frequency: coreFields.frequency,
+            timestamp: coreFields.timestamp,
+            rstSent: coreFields.rstSent,
+            rstReceived: coreFields.rstReceived,
+            myCallsign: coreFields.myCallsign,
+            myGrid: coreFields.myGrid,
+            theirGrid: coreFields.theirGrid,
+            parkReference: coreFields.parkReference,
+            theirParkReference: coreFields.theirParkReference,
             notes: mergeNotes(local: local.notes, remote: remote.notes),
-            importSource: local.importSource, // keep local
-            importedAt: min(local.importedAt, remote.importedAt), // earliest
-            modifiedAt: pickOptional(
-                local.modifiedAt, remote.modifiedAt, preferRemote: preferRemote
-            ),
-            // rawADIF: never overwrite non-nil with nil
+            importSource: local.importSource,
+            importedAt: min(local.importedAt, remote.importedAt),
+            modifiedAt: extraFields.modifiedAt,
             rawADIF: local.rawADIF ?? remote.rawADIF,
-            name: pickOptional(local.name, remote.name, preferRemote: preferRemote),
-            qth: pickOptional(local.qth, remote.qth, preferRemote: preferRemote),
-            state: pickOptional(local.state, remote.state, preferRemote: preferRemote),
-            country: pickOptional(local.country, remote.country, preferRemote: preferRemote),
-            power: pickOptional(local.power, remote.power, preferRemote: preferRemote),
-            myRig: pickOptional(local.myRig, remote.myRig, preferRemote: preferRemote),
-            stationProfileName: pickOptional(
-                local.stationProfileName, remote.stationProfileName, preferRemote: preferRemote
-            ),
-            sotaRef: pickOptional(local.sotaRef, remote.sotaRef, preferRemote: preferRemote),
-            qrzLogId: pickOptional(local.qrzLogId, remote.qrzLogId, preferRemote: preferRemote),
+            name: extraFields.name,
+            qth: extraFields.qth,
+            state: extraFields.state,
+            country: extraFields.country,
+            power: extraFields.power,
+            myRig: extraFields.myRig,
+            stationProfileName: extraFields.stationProfileName,
+            sotaRef: extraFields.sotaRef,
+            qrzLogId: extraFields.qrzLogId,
             qrzConfirmed: local.qrzConfirmed || remote.qrzConfirmed,
-            lotwConfirmedDate: pickOptional(
-                local.lotwConfirmedDate, remote.lotwConfirmedDate, preferRemote: preferRemote
-            ),
+            lotwConfirmedDate: extraFields.lotwConfirmedDate,
             lotwConfirmed: local.lotwConfirmed || remote.lotwConfirmed,
-            dxcc: pickOptional(local.dxcc, remote.dxcc, preferRemote: preferRemote),
-            theirLicenseClass: pickOptional(
-                local.theirLicenseClass, remote.theirLicenseClass, preferRemote: preferRemote
-            ),
-            // isHidden: delete wins (if either is hidden, stay hidden)
+            dxcc: extraFields.dxcc,
+            theirLicenseClass: extraFields.theirLicenseClass,
             isHidden: local.isHidden || remote.isHidden,
             isActivityLogQSO: local.isActivityLogQSO || remote.isActivityLogQSO,
-            loggingSessionId: pickOptional(
-                local.loggingSessionId, remote.loggingSessionId, preferRemote: preferRemote
-            )
+            loggingSessionId: extraFields.loggingSessionId
         )
     }
-
-    // swiftlint:enable function_body_length
 
     // MARK: - ServicePresence: Union Merge
 
@@ -197,53 +180,129 @@ enum CloudSyncConflictResolver {
     ) -> ActivityLogFields {
         remoteModDate > localModDate ? remote : local
     }
+}
 
-    // MARK: Private
+// MARK: - CloudSyncConflictResolver + QSO Merge Helpers
 
-    // MARK: - Private Helpers
+extension CloudSyncConflictResolver {
+    struct QSOCoreFieldsMerge {
+        let callsign: String
+        let band: String
+        let mode: String
+        let frequency: Double?
+        let timestamp: Date
+        let rstSent: String?
+        let rstReceived: String?
+        let myCallsign: String
+        let myGrid: String?
+        let theirGrid: String?
+        let parkReference: String?
+        let theirParkReference: String?
+    }
 
-    nonisolated private static func pickString(
-        _ local: String,
-        _ remote: String,
-        preferRemote: Bool
+    struct QSOExtraFieldsMerge {
+        let modifiedAt: Date?
+        let name: String?
+        let qth: String?
+        let state: String?
+        let country: String?
+        let power: Int?
+        let myRig: String?
+        let stationProfileName: String?
+        let sotaRef: String?
+        let qrzLogId: String?
+        let lotwConfirmedDate: Date?
+        let dxcc: Int?
+        let theirLicenseClass: String?
+        let loggingSessionId: UUID?
+    }
+
+    nonisolated static func mergeQSOCoreFields(
+        local: QSOFields, remote: QSOFields, preferRemote: Bool
+    ) -> QSOCoreFieldsMerge {
+        QSOCoreFieldsMerge(
+            callsign: pickString(local.callsign, remote.callsign, preferRemote: preferRemote),
+            band: pickString(local.band, remote.band, preferRemote: preferRemote),
+            mode: pickString(local.mode, remote.mode, preferRemote: preferRemote),
+            frequency: pickOptional(local.frequency, remote.frequency, preferRemote: preferRemote),
+            timestamp: pickValue(local.timestamp, remote.timestamp, preferRemote: preferRemote),
+            rstSent: pickOptional(local.rstSent, remote.rstSent, preferRemote: preferRemote),
+            rstReceived: pickOptional(
+                local.rstReceived, remote.rstReceived, preferRemote: preferRemote
+            ),
+            myCallsign: pickString(
+                local.myCallsign, remote.myCallsign, preferRemote: preferRemote
+            ),
+            myGrid: pickOptional(local.myGrid, remote.myGrid, preferRemote: preferRemote),
+            theirGrid: pickOptional(local.theirGrid, remote.theirGrid, preferRemote: preferRemote),
+            parkReference: pickOptional(
+                local.parkReference, remote.parkReference, preferRemote: preferRemote
+            ),
+            theirParkReference: pickOptional(
+                local.theirParkReference, remote.theirParkReference, preferRemote: preferRemote
+            )
+        )
+    }
+
+    nonisolated static func mergeQSOExtraFields(
+        local: QSOFields, remote: QSOFields, preferRemote: Bool
+    ) -> QSOExtraFieldsMerge {
+        QSOExtraFieldsMerge(
+            modifiedAt: pickOptional(
+                local.modifiedAt, remote.modifiedAt, preferRemote: preferRemote
+            ),
+            name: pickOptional(local.name, remote.name, preferRemote: preferRemote),
+            qth: pickOptional(local.qth, remote.qth, preferRemote: preferRemote),
+            state: pickOptional(local.state, remote.state, preferRemote: preferRemote),
+            country: pickOptional(local.country, remote.country, preferRemote: preferRemote),
+            power: pickOptional(local.power, remote.power, preferRemote: preferRemote),
+            myRig: pickOptional(local.myRig, remote.myRig, preferRemote: preferRemote),
+            stationProfileName: pickOptional(
+                local.stationProfileName, remote.stationProfileName, preferRemote: preferRemote
+            ),
+            sotaRef: pickOptional(local.sotaRef, remote.sotaRef, preferRemote: preferRemote),
+            qrzLogId: pickOptional(local.qrzLogId, remote.qrzLogId, preferRemote: preferRemote),
+            lotwConfirmedDate: pickOptional(
+                local.lotwConfirmedDate, remote.lotwConfirmedDate, preferRemote: preferRemote
+            ),
+            dxcc: pickOptional(local.dxcc, remote.dxcc, preferRemote: preferRemote),
+            theirLicenseClass: pickOptional(
+                local.theirLicenseClass, remote.theirLicenseClass, preferRemote: preferRemote
+            ),
+            loggingSessionId: pickOptional(
+                local.loggingSessionId, remote.loggingSessionId, preferRemote: preferRemote
+            )
+        )
+    }
+
+    nonisolated static func pickString(
+        _ local: String, _ remote: String, preferRemote: Bool
     ) -> String {
-        if local == remote {
-            return local
-        }
-        return preferRemote ? remote : local
+        local == remote ? local : (preferRemote ? remote : local)
     }
 
-    nonisolated private static func pickValue<T: Equatable>(
-        _ local: T,
-        _ remote: T,
-        preferRemote: Bool
+    nonisolated static func pickValue<T: Equatable>(
+        _ local: T, _ remote: T, preferRemote: Bool
     ) -> T {
-        if local == remote {
-            return local
-        }
-        return preferRemote ? remote : local
+        local == remote ? local : (preferRemote ? remote : local)
     }
 
-    nonisolated private static func pickOptional<T: Equatable>(
-        _ local: T?,
-        _ remote: T?,
-        preferRemote: Bool
+    nonisolated static func pickOptional<T: Equatable>(
+        _ local: T?, _ remote: T?, preferRemote: Bool
     ) -> T? {
         if local == remote {
             return local
         }
-        // If one side has data and the other doesn't, prefer the one with data
         if local == nil {
             return remote
         }
         if remote == nil {
             return local
         }
-        // Both have different values — prefer by timestamp
         return preferRemote ? remote : local
     }
 
-    nonisolated private static func mergeNotes(local: String?, remote: String?) -> String? {
+    nonisolated static func mergeNotes(local: String?, remote: String?) -> String? {
         if local == remote {
             return local
         }
@@ -255,14 +314,12 @@ enum CloudSyncConflictResolver {
         }
         let localStr = local!
         let remoteStr = remote!
-        // If one is a substring of the other, keep the longer one
         if localStr.contains(remoteStr) {
             return localStr
         }
         if remoteStr.contains(localStr) {
             return remoteStr
         }
-        // Split on separator, deduplicate blocks, rejoin
         let separator = "\n---\n"
         let localBlocks = localStr.components(separatedBy: separator)
         let remoteBlocks = remoteStr.components(separatedBy: separator)
@@ -277,23 +334,16 @@ enum CloudSyncConflictResolver {
             merged.append(trimmed)
         }
         let result = merged.joined(separator: separator)
-        // Cap at 10,000 characters to prevent unbounded growth
-        if result.count > 10_000 {
-            return String(result.prefix(10_000))
-        }
-        return result
+        return result.count > 10_000 ? String(result.prefix(10_000)) : result
     }
 
-    nonisolated private static func newerOptionalDate(_ lhs: Date?, _ rhs: Date?) -> Date? {
+    nonisolated static func newerOptionalDate(_ lhs: Date?, _ rhs: Date?) -> Date? {
         switch (lhs, rhs) {
         case let (.some(dateA), .some(dateB)):
             dateA > dateB ? dateA : dateB
-        case (.some, .none):
-            lhs
-        case (.none, .some):
-            rhs
-        case (.none, .none):
-            nil
+        case (.some, .none): lhs
+        case (.none, .some): rhs
+        case (.none, .none): nil
         }
     }
 }

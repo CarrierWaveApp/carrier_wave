@@ -138,29 +138,44 @@ public enum AntennaDescriptionParser {
         BandRange(name: "6m", low: 50.0, high: 54.0),
     ]
 
-    // swiftlint:disable force_try
-    private static let bandPattern = try! NSRegularExpression(
-        pattern: #"(?:^|\b)(160|80|60|40|30|20|17|15|12|10|6|2)\s*m(?:eter)?s?\b"#,
-        options: .caseInsensitive
-    )
+    private static let bandPattern: NSRegularExpression = {
+        do {
+            return try NSRegularExpression(
+                pattern: #"(?:^|\b)(160|80|60|40|30|20|17|15|12|10|6|2)\s*m(?:eter)?s?\b"#,
+                options: .caseInsensitive
+            )
+        } catch {
+            fatalError("Invalid bandPattern regex: \(error)")
+        }
+    }()
 
-    private static let mhzRangePattern = try! NSRegularExpression(
-        pattern: #"(\d+(?:\.\d+)?)\s*[-–]\s*(\d+(?:\.\d+)?)\s*[Mm][Hh][Zz]"#,
-        options: []
-    )
+    private static let mhzRangePattern: NSRegularExpression = {
+        do {
+            return try NSRegularExpression(
+                pattern: #"(\d+(?:\.\d+)?)\s*[-–]\s*(\d+(?:\.\d+)?)\s*[Mm][Hh][Zz]"#,
+                options: []
+            )
+        } catch {
+            fatalError("Invalid mhzRangePattern regex: \(error)")
+        }
+    }()
 
     // MARK: - Directionality
 
     private static let compassDirections =
         "N|S|E|W|NE|NW|SE|SW|NNE|NNW|SSE|SSW|ENE|ESE|WNW|WSW"
 
-    private static let compassPattern = try! NSRegularExpression(
-        pattern: #"\b("# + compassDirections
-            + #")\s*/\s*("# + compassDirections + #")\b"#,
-        options: []
-    )
-
-    // swiftlint:enable force_try
+    private static let compassPattern: NSRegularExpression = {
+        do {
+            return try NSRegularExpression(
+                pattern: #"\b("# + compassDirections
+                    + #")\s*/\s*("# + compassDirections + #")\b"#,
+                options: []
+            )
+        } catch {
+            fatalError("Invalid compassPattern regex: \(error)")
+        }
+    }()
 
     private static func matchKnownModel(_ lower: String) -> KnownModel? {
         knownModels.first { lower.contains($0.name.lowercased()) }

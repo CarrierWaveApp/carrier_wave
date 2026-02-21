@@ -35,11 +35,8 @@ actor CommentParkRefRepairService {
         while true {
             var descriptor = FetchDescriptor<QSO>(
                 predicate: #Predicate<QSO> { qso in
-                    // Using == "" instead of .isEmpty: SwiftData's #Predicate translates
-                    // ?? + .isEmpty to an invalid NSPredicate, causing a CoreData assertion (SIGABRT).
                     !qso.isActivityLogQSO
-                        // swiftlint:disable:next empty_string
-                        && (qso.parkReference == nil || qso.parkReference == "")
+                        && qso.parkReference == nil
                         && qso.notes != nil
                         && !qso.isHidden
                 }

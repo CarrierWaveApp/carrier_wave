@@ -304,7 +304,6 @@ struct MapStatsOverlay: View {
     let statistics: MapStatistics
 
     var body: some View {
-        // swiftlint:disable:next redundant_discardable_let
         let _ = useMetricUnits // Trigger re-render when unit preference changes
         VStack(spacing: 6) {
             HStack(spacing: 12) {

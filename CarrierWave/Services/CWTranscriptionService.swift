@@ -1,6 +1,4 @@
-// swiftlint:disable file_length
 import CarrierWaveCore
-import Combine
 import Foundation
 import SwiftUI
 
@@ -131,67 +129,87 @@ enum NoiseFloorQuality: String {
 /// Main service coordinating CW audio capture, signal processing, and decoding.
 /// Publishes state updates for UI consumption.
 @MainActor
-final class CWTranscriptionService: ObservableObject {
-    // MARK: Internal
-
+@Observable
+final class CWTranscriptionService {
     // MARK: - Published State
 
     /// Current transcription state
-    @Published private(set) var state: CWTranscriptionState = .idle
+    var state: CWTranscriptionState = .idle
 
     /// Estimated WPM from decoder
-    @Published private(set) var estimatedWPM: Int = 20
+    var estimatedWPM: Int = 20
 
     /// Decoded transcript entries
-    @Published private(set) var transcript: [CWTranscriptEntry] = []
+    var transcript: [CWTranscriptEntry] = []
 
     /// Current decoded text line being assembled
-    @Published private(set) var currentLine: String = ""
+    var currentLine: String = ""
 
     /// Whether key is currently down (for UI indicator)
-    @Published private(set) var isKeyDown: Bool = false
+    var isKeyDown: Bool = false
 
     /// Peak amplitude for level meter (0.0-1.0)
-    @Published private(set) var peakAmplitude: Float = 0
+    var peakAmplitude: Float = 0
 
     /// Whether still in calibration period
-    @Published private(set) var isCalibrating: Bool = true
+    var isCalibrating: Bool = true
 
     /// Recent envelope samples for waveform visualization
-    @Published private(set) var waveformSamples: [Float] = []
+    var waveformSamples: [Float] = []
 
     /// Current noise floor level (0.0-1.0, normalized)
-    @Published private(set) var noiseFloor: Float = 0
+    var noiseFloor: Float = 0
 
     /// Current signal-to-noise ratio
-    @Published private(set) var signalToNoiseRatio: Float = 0
+    var signalToNoiseRatio: Float = 0
 
     /// Most recently detected callsign from transcript
-    @Published private(set) var detectedCallsign: DetectedCallsign?
+    var detectedCallsign: DetectedCallsign?
 
     /// All callsigns detected in current session
-    @Published private(set) var detectedCallsigns: [String] = []
+    var detectedCallsigns: [String] = []
 
     /// Conversation tracker for chat-style display
-    @Published private(set) var conversationTracker = CWConversationTracker()
+    var conversationTracker = CWConversationTracker()
 
     /// Suggestion engine for word corrections
-    @Published var suggestionEngine = CWSuggestionEngine()
+    var suggestionEngine = CWSuggestionEngine()
 
     /// Pre-amplifier enabled (boosts weak signals)
-    @Published var preAmpEnabled: Bool = false
+    var preAmpEnabled: Bool = false
 
     /// Detected tone frequency when using adaptive mode (nil if fixed frequency)
-    @Published private(set) var detectedFrequency: Double?
+    var detectedFrequency: Double?
 
     /// Whether adaptive frequency detection is enabled
-    @Published var adaptiveFrequencyEnabled: Bool = true
+    var adaptiveFrequencyEnabled: Bool = true
 
     /// Minimum frequency for adaptive detection (Hz)
-    @Published var minFrequency: Double = 400
+    var minFrequency: Double = 400
 
     /// Maximum frequency for adaptive detection (Hz)
-    @Published var maxFrequency: Double = 900
+    var maxFrequency: Double = 900
+
+    /// Pre-amplifier gain multiplier when enabled
+    let preAmpGain: Float = 10.0
+
+    // MARK: - Private Properties
+
+    var audioCapture: CWAudioCapture?
+    var signalProcessor: (any CWSignalProcessorProtocol)?
+    var morseDecoder: MorseDecoder?
+
+    var captureTask: Task<Void, Never>?
+    var timeoutTask: Task<Void, Never>?
+
+    /// Maximum entries to keep in transcript
+    let maxTranscriptEntries = 100
+
+    /// Characters per line before wrapping
+    let lineWrapLength = 40
+
+    /// Track the last audio timestamp for timeout checking
+    var lastAudioTimestamp: TimeInterval = 0
 
     /// The current conversation (convenience accessor)
     var conversation: CWConversation {
@@ -226,7 +244,7 @@ final class CWTranscriptionService: ObservableObject {
     }
 
     /// Tone frequency for signal detection
-    @Published var toneFrequency: Double = 600 {
+    var toneFrequency: Double = 600 {
         didSet {
             Task {
                 await signalProcessor?.setToneFrequency(toneFrequency)
@@ -319,214 +337,6 @@ final class CWTranscriptionService: ObservableObject {
         estimatedWPM = wpm
         Task {
             await morseDecoder?.setWPM(wpm)
-        }
-    }
-
-    // MARK: Private
-
-    /// Pre-amplifier gain multiplier when enabled
-    private let preAmpGain: Float = 10.0
-
-    // MARK: - Private Properties
-
-    private var audioCapture: CWAudioCapture?
-    private var signalProcessor: (any CWSignalProcessorProtocol)?
-    private var morseDecoder: MorseDecoder?
-
-    private var captureTask: Task<Void, Never>?
-    private var timeoutTask: Task<Void, Never>?
-
-    /// Maximum entries to keep in transcript
-    private let maxTranscriptEntries = 100
-
-    /// Characters per line before wrapping
-    private let lineWrapLength = 40
-
-    /// Track the last audio timestamp for timeout checking
-    private var lastAudioTimestamp: TimeInterval = 0
-
-    // MARK: - Private Methods
-
-    private func processAudioStream(_ stream: AsyncStream<CWAudioCapture.AudioBuffer>) async {
-        var bufferCount = 0
-        for await buffer in stream {
-            bufferCount += 1
-            if bufferCount.isMultiple(of: 100) {
-                print("[CW] Processed \(bufferCount) audio buffers")
-            }
-            guard !Task.isCancelled else {
-                break
-            }
-
-            await processAudioBuffer(buffer)
-        }
-    }
-
-    private func processAudioBuffer(_ buffer: CWAudioCapture.AudioBuffer) async {
-        // Create signal processor on first buffer using actual sample rate
-        if signalProcessor == nil {
-            createSignalProcessor(sampleRate: buffer.sampleRate)
-        }
-
-        guard let processor = signalProcessor else {
-            return
-        }
-
-        // Apply pre-amp boost if enabled
-        let samples = preAmpEnabled ? buffer.samples.map { $0 * preAmpGain } : buffer.samples
-        let result = await processor.process(samples: samples, timestamp: buffer.timestamp)
-
-        lastAudioTimestamp = buffer.timestamp
-        updateUIState(from: result)
-
-        // Process key events through decoder
-        guard let decoder = morseDecoder else {
-            return
-        }
-        for event in result.keyEvents {
-            let outputs = await decoder.processKeyEvent(
-                isKeyDown: event.isDown, timestamp: event.timestamp
-            )
-            await processDecoderOutputs(outputs)
-        }
-
-        // Update WPM
-        let wpm = await decoder.estimatedWPM
-        if estimatedWPM != wpm {
-            estimatedWPM = wpm
-        }
-    }
-
-    private func createSignalProcessor(sampleRate: Double) {
-        if adaptiveFrequencyEnabled {
-            print(
-                "[CW] Creating adaptive signal processor: \(Int(minFrequency))-\(Int(maxFrequency)) Hz"
-            )
-            signalProcessor = GoertzelSignalProcessor(
-                sampleRate: sampleRate,
-                minFrequency: minFrequency,
-                maxFrequency: maxFrequency,
-                frequencyStep: 50
-            )
-        } else {
-            print("[CW] Creating fixed signal processor at \(Int(toneFrequency)) Hz")
-            signalProcessor = GoertzelSignalProcessor(
-                sampleRate: sampleRate, toneFrequency: toneFrequency
-            )
-        }
-    }
-
-    private func updateUIState(from result: CWSignalResult) {
-        isKeyDown = result.isKeyDown
-        peakAmplitude = result.peakAmplitude
-        waveformSamples = result.envelopeSamples
-        isCalibrating = result.isCalibrating
-        noiseFloor = result.noiseFloor
-        signalToNoiseRatio = result.signalToNoiseRatio
-        detectedFrequency = result.detectedFrequency
-    }
-
-    private func processDecoderOutputs(_ outputs: [DecodedOutput]) async {
-        for output in outputs {
-            switch output {
-            case let .character(char):
-                print("[CW] Service received character: '\(char)'")
-                await MainActor.run {
-                    appendCharacter(char)
-                }
-            case .wordSpace:
-                print("[CW] Service received word space")
-                await MainActor.run {
-                    appendWordSpace()
-                }
-            case .element:
-                // Raw elements are for debugging, skip for now
-                break
-            }
-        }
-    }
-
-    private func appendCharacter(_ char: String) {
-        currentLine += char
-        print("[CW] currentLine is now: '\(currentLine)'")
-
-        // Check for line wrap
-        if currentLine.count >= lineWrapLength {
-            flushCurrentLine()
-        }
-    }
-
-    private func appendWordSpace() {
-        // Only add space if there's content
-        if !currentLine.isEmpty {
-            currentLine += " "
-        }
-    }
-
-    private func flushCurrentLine() {
-        guard !currentLine.isEmpty else {
-            return
-        }
-
-        // Find last space for word boundary
-        let text: String
-        let remainder: String
-
-        if let lastSpace = currentLine.lastIndex(of: " ") {
-            // Include trailing space to preserve word boundary
-            text = String(currentLine[...lastSpace])
-            remainder = String(currentLine[currentLine.index(after: lastSpace)...])
-        } else {
-            text = currentLine
-            remainder = ""
-        }
-
-        let entry = CWTranscriptEntry(text: text, suggestionEngine: suggestionEngine)
-        transcript.append(entry)
-        currentLine = remainder
-
-        // Forward to conversation tracker with current frequency
-        conversationTracker.processEntry(entry, frequency: detectedFrequency)
-
-        // Trim old entries
-        if transcript.count > maxTranscriptEntries {
-            transcript.removeFirst(transcript.count - maxTranscriptEntries)
-        }
-
-        // Update detected callsigns
-        updateDetectedCallsigns()
-    }
-
-    private func updateDetectedCallsigns() {
-        // Extract all callsigns from current transcript
-        let allText = transcript.map(\.text).joined(separator: " ") + " " + currentLine
-        let newCallsigns = CallsignDetector.extractCallsigns(from: allText)
-
-        // Update unique callsigns list
-        for callsign in newCallsigns where !detectedCallsigns.contains(callsign) {
-            detectedCallsigns.append(callsign)
-        }
-
-        // Update primary detected callsign
-        if let primary = CallsignDetector.detectPrimaryCallsign(from: transcript) {
-            detectedCallsign = primary
-        }
-    }
-
-    private func startTimeoutChecker() {
-        timeoutTask = Task {
-            while !Task.isCancelled {
-                try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
-
-                guard let decoder = morseDecoder else {
-                    continue
-                }
-                // Use audio timestamp + elapsed time for consistent time reference
-                // Add 0.1 seconds for each check interval
-                let checkTime = lastAudioTimestamp + 0.1
-                let outputs = await decoder.checkTimeout(currentTime: checkTime)
-                await processDecoderOutputs(outputs)
-            }
         }
     }
 }

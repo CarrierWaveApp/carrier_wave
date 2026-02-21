@@ -191,92 +191,107 @@ struct RBNPanelView: View {
         .frame(maxWidth: .infinity, minHeight: 150)
     }
 
-    // swiftlint:disable:next function_body_length
     private func spotRow(_ spot: UnifiedSpot) -> some View {
         HStack(spacing: 12) {
-            // Source indicator
             sourceIndicator(spot)
-
-            // Self-spot badge
-            if spot.isSelfSpot(userCallsign: callsign) {
-                Text("SELF")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Color.indigo)
-                    .clipShape(Capsule())
-            }
-
-            VStack(alignment: .leading, spacing: 2) {
-                HStack {
-                    if let spotter = spot.spotter {
-                        Text(spotter)
-                            .font(.system(.body, design: .monospaced))
-                            .fontWeight(.medium)
-                    }
-
-                    Spacer()
-
-                    Text(spot.formattedFrequency)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                HStack {
-                    // RBN-specific: SNR and WPM
-                    if let snr = spot.snr {
-                        Text("\(snr) dB")
-                            .font(.caption)
-                            .foregroundStyle(snrColor(snr))
-                    }
-
-                    if let wpm = spot.wpm {
-                        Text("\(wpm) WPM")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    // POTA-specific: park info
-                    if let parkRef = spot.parkRef {
-                        Text(parkRef)
-                            .font(.caption)
-                            .foregroundStyle(.green)
-                    }
-
-                    Text(spot.mode)
-                        .font(.caption)
-                        .padding(.horizontal, 4)
-                        .padding(.vertical, 1)
-                        .background(Color.blue.opacity(0.1))
-                        .clipShape(RoundedRectangle(cornerRadius: 3))
-
-                    Spacer()
-
-                    Text(spot.timeAgo)
-                        .font(.caption2)
-                        .foregroundStyle(spot.ageColor)
-                }
-
-                // POTA comments
-                if let comments = spot.comments, !comments.isEmpty {
-                    Text(comments)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(2)
-                }
-
-                // POTA park name
-                if let parkName = spot.parkName, !parkName.isEmpty {
-                    Text(parkName)
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
-                        .lineLimit(1)
-                }
-            }
+            selfSpotBadge(spot)
+            spotDetails(spot)
         }
         .padding(.horizontal)
         .padding(.vertical, 8)
+    }
+
+    @ViewBuilder
+    private func selfSpotBadge(_ spot: UnifiedSpot) -> some View {
+        if spot.isSelfSpot(userCallsign: callsign) {
+            Text("SELF")
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(Color.indigo)
+                .clipShape(Capsule())
+        }
+    }
+
+    private func spotDetails(_ spot: UnifiedSpot) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            spotHeaderRow(spot)
+            spotMetadataRow(spot)
+            spotComments(spot)
+            spotParkName(spot)
+        }
+    }
+
+    private func spotHeaderRow(_ spot: UnifiedSpot) -> some View {
+        HStack {
+            if let spotter = spot.spotter {
+                Text(spotter)
+                    .font(.system(.body, design: .monospaced))
+                    .fontWeight(.medium)
+            }
+
+            Spacer()
+
+            Text(spot.formattedFrequency)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private func spotMetadataRow(_ spot: UnifiedSpot) -> some View {
+        HStack {
+            if let snr = spot.snr {
+                Text("\(snr) dB")
+                    .font(.caption)
+                    .foregroundStyle(snrColor(snr))
+            }
+
+            if let wpm = spot.wpm {
+                Text("\(wpm) WPM")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            if let parkRef = spot.parkRef {
+                Text(parkRef)
+                    .font(.caption)
+                    .foregroundStyle(.green)
+            }
+
+            Text(spot.mode)
+                .font(.caption)
+                .padding(.horizontal, 4)
+                .padding(.vertical, 1)
+                .background(Color.blue.opacity(0.1))
+                .clipShape(RoundedRectangle(cornerRadius: 3))
+
+            Spacer()
+
+            Text(spot.timeAgo)
+                .font(.caption2)
+                .foregroundStyle(spot.ageColor)
+        }
+    }
+
+    @ViewBuilder
+    private func spotComments(_ spot: UnifiedSpot) -> some View {
+        if let comments = spot.comments, !comments.isEmpty {
+            Text(comments)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(2)
+        }
+    }
+
+    @ViewBuilder
+    private func spotParkName(_ spot: UnifiedSpot) -> some View {
+        if let parkName = spot.parkName, !parkName.isEmpty {
+            Text(parkName)
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+                .lineLimit(1)
+        }
     }
 
     private func sourceIndicator(_ spot: UnifiedSpot) -> some View {
@@ -290,10 +305,12 @@ struct RBNPanelView: View {
                 .foregroundStyle(sourceColor(spot))
         }
     }
+}
 
-    // MARK: - Helpers
+// MARK: - RBNPanelView + Helpers
 
-    private func sourceColor(_ spot: UnifiedSpot) -> Color {
+extension RBNPanelView {
+    func sourceColor(_ spot: UnifiedSpot) -> Color {
         switch spot.source {
         case .rbn:
             if let snr = spot.snr {
@@ -305,7 +322,7 @@ struct RBNPanelView: View {
         }
     }
 
-    private func sourceIcon(_ spot: UnifiedSpot) -> String {
+    func sourceIcon(_ spot: UnifiedSpot) -> String {
         switch spot.source {
         case .rbn:
             if let snr = spot.snr {
@@ -317,7 +334,7 @@ struct RBNPanelView: View {
         }
     }
 
-    private func snrColor(_ snr: Int) -> Color {
+    func snrColor(_ snr: Int) -> Color {
         switch snr {
         case 25...: .green
         case 15...: .blue
@@ -326,7 +343,7 @@ struct RBNPanelView: View {
         }
     }
 
-    private func signalIcon(snr: Int) -> String {
+    func signalIcon(snr: Int) -> String {
         switch snr {
         case 25...: "wifi"
         case 15...: "wifi"
@@ -335,21 +352,17 @@ struct RBNPanelView: View {
         }
     }
 
-    // MARK: - Data Loading
-
-    private func loadData() async {
+    func loadData() async {
         isLoading = true
         errorMessage = nil
 
         do {
-            // Fetch spots and target grid in parallel
             async let spotsTask = spotsService.fetchSpots(for: displayCallsign, minutes: 10)
-            async let gridTask = lookupTargetGrid()
+            async let gridTask = spotsService.lookupGrid(for: displayCallsign)
 
             spots = try await spotsTask
             targetGrid = await gridTask
 
-            // Reset map view if no spots have location data
             if showMap, !spots.contains(where: { $0.spotterGrid != nil }) {
                 showMap = false
             }
@@ -358,11 +371,6 @@ struct RBNPanelView: View {
             errorMessage = error.localizedDescription
             isLoading = false
         }
-    }
-
-    /// Look up the grid for the target callsign (uses shared cache)
-    private func lookupTargetGrid() async -> String? {
-        await spotsService.lookupGrid(for: displayCallsign)
     }
 }
 

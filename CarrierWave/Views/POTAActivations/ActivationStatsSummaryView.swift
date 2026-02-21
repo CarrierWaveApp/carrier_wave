@@ -13,7 +13,6 @@ struct ActivationStatsSummaryView: View {
     let stats: ActivationStatistics
 
     var body: some View {
-        // swiftlint:disable:next redundant_discardable_let
         let _ = useMetricUnits
         VStack(alignment: .leading, spacing: 12) {
             if let distance = stats.distance {

@@ -6,7 +6,7 @@ import SwiftUI
 struct CWSettingsMenu: View {
     // MARK: Internal
 
-    @ObservedObject var service: CWTranscriptionService
+    var service: CWTranscriptionService
 
     var body: some View {
         wpmSection

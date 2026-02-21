@@ -357,7 +357,6 @@ extension SessionsView {
         }
     }
 
-    // swiftlint:disable:next function_body_length
     func sessionRowContent(_ session: LoggingSession) -> SessionRow {
         let activations = activationsBySessionId[session.id] ?? []
         let primaryActivation = activations.first
@@ -365,29 +364,6 @@ extension SessionsView {
         let meta = primaryActivation.flatMap { activationMetadata(for: $0) }
         let sessionJobs = activations.flatMap {
             jobsByActivationId[$0.id] ?? []
-        }
-
-        let uploadHandler: (() async -> [String: String])? = if activations.isEmpty {
-            nil
-        } else {
-            {
-                var allErrors: [String: String] = [:]
-                for act in activations {
-                    let errors = await performUploadReturningErrors(for: act)
-                    allErrors.merge(errors) { _, new in new }
-                }
-                return allErrors
-            }
-        }
-
-        let shareHandler: (() -> Void)? = primaryActivation.map { _ in
-            {
-                if session.isRove, activations.count > 1 {
-                    activationToShare = mergedRoveActivation(activations)
-                } else if let act = activations.first {
-                    activationToShare = act
-                }
-            }
         }
 
         return SessionRow(
@@ -403,11 +379,11 @@ extension SessionsView {
             },
             showUploadButton: isAuthenticated,
             isUploadDisabled: isInMaintenance || potaClient == nil,
-            onUploadTapped: uploadHandler,
+            onUploadTapped: buildUploadHandler(activations: activations),
             onRejectTapped: primaryActivation.map { act in
                 { activationToReject = act }
             },
-            onShareTapped: shareHandler,
+            onShareTapped: buildShareHandler(session: session, activations: activations),
             onExportTapped: primaryActivation.map { act in
                 { activationToExport = act }
             },

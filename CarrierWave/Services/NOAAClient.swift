@@ -1,4 +1,3 @@
-// swiftlint:disable function_body_length
 import CoreLocation
 import Foundation
 
@@ -160,67 +159,10 @@ actor NOAAClient {
             return cached
         }
 
-        // Step 1: Get the forecast URL for this location
-        let pointsURL = URL(string: "\(weatherBaseURL)/points/\(latitude),\(longitude)")!
-
-        let (pointsData, pointsResponse) = try await performRequest(pointsURL)
-
-        guard let httpResponse = pointsResponse as? HTTPURLResponse,
-              httpResponse.statusCode == 200
-        else {
-            throw NOAAError.invalidResponse("Failed to fetch weather point data")
-        }
-
-        guard
-            let pointsJson = try? JSONSerialization.jsonObject(with: pointsData) as? [String: Any],
-            let properties = pointsJson["properties"] as? [String: Any],
-            let forecastHourlyURLString = properties["forecastHourly"] as? String,
-            let forecastURL = URL(string: forecastHourlyURLString)
-        else {
-            throw NOAAError.parsingError("Could not parse weather points data")
-        }
-
-        // Step 2: Fetch the hourly forecast
-        let (forecastData, forecastResponse) = try await performRequest(forecastURL)
-
-        guard let httpForecastResponse = forecastResponse as? HTTPURLResponse,
-              httpForecastResponse.statusCode == 200
-        else {
-            throw NOAAError.invalidResponse("Failed to fetch forecast data")
-        }
-
-        guard
-            let forecastJson = try? JSONSerialization.jsonObject(with: forecastData)
-            as? [String: Any],
-            let forecastProperties = forecastJson["properties"] as? [String: Any],
-            let periods = forecastProperties["periods"] as? [[String: Any]],
-            let current = periods.first
-        else {
-            throw NOAAError.parsingError("Could not parse forecast data")
-        }
-
-        // Parse current conditions
-        let temperature = current["temperature"] as? Double ?? 0
-        let temperatureUnit = current["temperatureUnit"] as? String ?? "F"
-        let tempF = temperatureUnit == "C" ? (temperature * 9 / 5 + 32) : temperature
-        let tempC = temperatureUnit == "C" ? temperature : ((temperature - 32) * 5 / 9)
-
-        let windSpeedString = current["windSpeed"] as? String ?? "0 mph"
-        let windSpeed = Double(windSpeedString.components(separatedBy: " ").first ?? "0")
-
-        let conditions = WeatherConditions(
-            temperature: tempF,
-            temperatureCelsius: tempC,
-            humidity: (current["relativeHumidity"] as? [String: Any])?["value"] as? Int,
-            windSpeed: windSpeed,
-            windDirection: current["windDirection"] as? String,
-            description: current["shortForecast"] as? String ?? "Unknown",
-            icon: current["icon"] as? String,
-            timestamp: Date()
-        )
+        let forecastURL = try await fetchForecastURL(latitude: latitude, longitude: longitude)
+        let conditions = try await fetchCurrentConditions(from: forecastURL)
 
         cachedWeather[cacheKey] = conditions
-
         return conditions
     }
 
@@ -243,6 +185,74 @@ actor NOAAClient {
     private var cachedSolar: SolarConditions?
     private var cachedSolarTime: Date?
     private var cachedWeather: [String: WeatherConditions] = [:]
+
+    /// Fetch the hourly forecast URL for a given location from the NOAA points API
+    private func fetchForecastURL(latitude: Double, longitude: Double) async throws -> URL {
+        let pointsURL = URL(string: "\(weatherBaseURL)/points/\(latitude),\(longitude)")!
+        let (pointsData, pointsResponse) = try await performRequest(pointsURL)
+
+        guard let httpResponse = pointsResponse as? HTTPURLResponse,
+              httpResponse.statusCode == 200
+        else {
+            throw NOAAError.invalidResponse("Failed to fetch weather point data")
+        }
+
+        guard
+            let pointsJson = try? JSONSerialization.jsonObject(with: pointsData) as? [String: Any],
+            let properties = pointsJson["properties"] as? [String: Any],
+            let forecastHourlyURLString = properties["forecastHourly"] as? String,
+            let forecastURL = URL(string: forecastHourlyURLString)
+        else {
+            throw NOAAError.parsingError("Could not parse weather points data")
+        }
+
+        return forecastURL
+    }
+
+    /// Fetch and parse the current weather conditions from a forecast URL
+    private func fetchCurrentConditions(from forecastURL: URL) async throws -> WeatherConditions {
+        let (forecastData, forecastResponse) = try await performRequest(forecastURL)
+
+        guard let httpForecastResponse = forecastResponse as? HTTPURLResponse,
+              httpForecastResponse.statusCode == 200
+        else {
+            throw NOAAError.invalidResponse("Failed to fetch forecast data")
+        }
+
+        guard
+            let forecastJson = try? JSONSerialization.jsonObject(with: forecastData)
+            as? [String: Any],
+            let forecastProperties = forecastJson["properties"] as? [String: Any],
+            let periods = forecastProperties["periods"] as? [[String: Any]],
+            let current = periods.first
+        else {
+            throw NOAAError.parsingError("Could not parse forecast data")
+        }
+
+        return parseWeatherPeriod(current)
+    }
+
+    /// Parse a single forecast period dictionary into WeatherConditions
+    private func parseWeatherPeriod(_ period: [String: Any]) -> WeatherConditions {
+        let temperature = period["temperature"] as? Double ?? 0
+        let temperatureUnit = period["temperatureUnit"] as? String ?? "F"
+        let tempF = temperatureUnit == "C" ? (temperature * 9 / 5 + 32) : temperature
+        let tempC = temperatureUnit == "C" ? temperature : ((temperature - 32) * 5 / 9)
+
+        let windSpeedString = period["windSpeed"] as? String ?? "0 mph"
+        let windSpeed = Double(windSpeedString.components(separatedBy: " ").first ?? "0")
+
+        return WeatherConditions(
+            temperature: tempF,
+            temperatureCelsius: tempC,
+            humidity: (period["relativeHumidity"] as? [String: Any])?["value"] as? Int,
+            windSpeed: windSpeed,
+            windDirection: period["windDirection"] as? String,
+            description: period["shortForecast"] as? String ?? "Unknown",
+            icon: period["icon"] as? String,
+            timestamp: Date()
+        )
+    }
 
     /// Parse HamQSL solar XML response
     private func parseSolarXML(_ data: Data) throws -> SolarConditions {

@@ -1,4 +1,3 @@
-// swiftlint:disable function_body_length identifier_name
 // Band Plan Service
 //
 // Validates frequency and mode combinations against license class privileges.
@@ -140,73 +139,16 @@ enum BandPlanService {
         let modeSegments = matchingSegments.filter { $0.allowsMode(normalizedMode) }
 
         if modeSegments.isEmpty {
-            // CW is allowed anywhere in amateur bands, but warn if unusual
-            if normalizedMode == "CW" {
-                let typicalModes = Set(matchingSegments.flatMap(\.modes))
-                let typicalModesStr = typicalModes.sorted().joined(separator: ", ")
-                return BandPlanViolation(
-                    type: .unusualFrequency,
-                    message:
-                    "\(FrequencyFormatter.formatWithUnit(frequencyMHz)) is not a typical CW frequency",
-                    suggestion: "Usually \(typicalModesStr) here"
-                )
-            }
-
-            // Mode not allowed at this frequency
-            let allowedModes = Set(matchingSegments.flatMap(\.modes))
-            return BandPlanViolation(
-                type: .wrongMode,
-                message:
-                "\(mode) is not allowed at \(FrequencyFormatter.formatWithUnit(frequencyMHz))",
-                suggestion: "Try: \(allowedModes.joined(separator: ", "))"
+            return buildModeViolation(
+                frequencyMHz: frequencyMHz, mode: mode,
+                normalizedMode: normalizedMode, matchingSegments: matchingSegments
             )
         }
 
-        // Check license class privileges
-        let privilegeOrder: [LicenseClass] = [.technician, .general, .extra]
-        let userPrivilegeIndex = privilegeOrder.firstIndex(of: license) ?? 0
-
-        // Find segments where user has privileges
-        let allowedSegments = modeSegments.filter { segment in
-            let requiredIndex = privilegeOrder.firstIndex(of: segment.minimumLicense) ?? 0
-            return userPrivilegeIndex >= requiredIndex
-        }
-
-        if allowedSegments.isEmpty {
-            // User doesn't have privileges
-            let requiredLicense =
-                modeSegments
-                    .map(\.minimumLicense)
-                    .min { a, b in
-                        (privilegeOrder.firstIndex(of: a) ?? 0)
-                            < (privilegeOrder.firstIndex(of: b) ?? 0)
-                    } ?? .extra
-
-            // For Technicians, check if they have ANY privileges on this band
-            // If not, show a clearer message that the entire band is off-limits
-            if license == .technician, let band = matchingSegments.first?.band {
-                let techPrivilegesOnBand = BandPlan.segments.filter { segment in
-                    segment.band == band && segment.minimumLicense == .technician
-                }
-
-                if techPrivilegesOnBand.isEmpty {
-                    return BandPlanViolation(
-                        type: .noPrivileges,
-                        message: "Technicians cannot operate in any mode within the \(band) band",
-                        suggestion: "Requires General or higher"
-                    )
-                }
-            }
-
-            let freqStr = FrequencyFormatter.formatWithUnit(frequencyMHz)
-            return BandPlanViolation(
-                type: .noPrivileges,
-                message: "\(license.displayName) license cannot operate \(mode) at \(freqStr)",
-                suggestion: "Requires \(requiredLicense.displayName) or higher"
-            )
-        }
-
-        return nil
+        return checkLicensePrivileges(
+            frequencyMHz: frequencyMHz, mode: mode, license: license,
+            modeSegments: modeSegments, matchingSegments: matchingSegments
+        )
     }
 
     /// Get the band name for a frequency
@@ -326,68 +268,14 @@ enum BandPlanService {
         var warnings: [FrequencyWarning] = []
 
         // Check CWT first (time-based, takes priority)
-        if let cwtRange = BandPlan.isInCWTRange(frequencyMHz: frequencyMHz) {
-            let freqStr = FrequencyFormatter.formatWithUnit(frequencyMHz)
-            let rangeStr =
-                "\(FrequencyFormatter.format(cwtRange.startMHz))-\(FrequencyFormatter.formatWithUnit(cwtRange.endMHz))"
-
-            // CWT is CW only - warn if not in CW mode
-            let normalizedMode = mode.uppercased()
-            if normalizedMode != "CW" {
-                warnings.append(
-                    FrequencyWarning(
-                        type: .activityConflict,
-                        message: "\(freqStr) is in the CWOps CWT range",
-                        suggestion: "CWT uses CW mode only (\(rangeStr))",
-                        activity: .cwtContest
-                    )
-                )
-            } else {
-                warnings.append(
-                    FrequencyWarning(
-                        type: .activityCrowded,
-                        message: "CWOps CWT is active",
-                        suggestion: "Expect heavy CW traffic \(rangeStr)",
-                        activity: .cwtContest
-                    )
-                )
-            }
+        if let cwtWarning = checkCWTWarning(frequencyMHz: frequencyMHz, mode: mode) {
+            warnings.append(cwtWarning)
         }
 
         // Check other activities
-        let matchingActivities = BandPlan.activitiesMatching(frequencyMHz: frequencyMHz)
-
-        for activity in matchingActivities {
-            // Skip time-based activities that aren't active
-            guard activity.isActive() else {
-                continue
-            }
-
-            let freqStr = FrequencyFormatter.formatWithUnit(activity.centerMHz)
-
-            if activity.matchesMode(mode) {
-                // Mode matches - informational notice
-                warnings.append(
-                    FrequencyWarning(
-                        type: .activityInfo,
-                        message: "\(freqStr) is the \(activity.description)",
-                        suggestion: nil,
-                        activity: activity.type
-                    )
-                )
-            } else {
-                // Mode mismatch - warning
-                let expectedModes = activity.modes.sorted().joined(separator: "/")
-                warnings.append(
-                    FrequencyWarning(
-                        type: .activityConflict,
-                        message: "\(freqStr) is the \(activity.description)",
-                        suggestion: "Expected mode: \(expectedModes), you're in \(mode)",
-                        activity: activity.type
-                    )
-                )
-            }
-        }
+        warnings.append(
+            contentsOf: checkNonCWTActivityWarnings(frequencyMHz: frequencyMHz, mode: mode)
+        )
 
         return warnings
     }
@@ -403,6 +291,139 @@ enum BandPlanService {
     }
 
     // MARK: Private
+
+    /// Check CWT-specific warnings for a frequency/mode combination
+    private static func checkCWTWarning(
+        frequencyMHz: Double, mode: String
+    ) -> FrequencyWarning? {
+        guard let cwtRange = BandPlan.isInCWTRange(frequencyMHz: frequencyMHz) else {
+            return nil
+        }
+        let freqStr = FrequencyFormatter.formatWithUnit(frequencyMHz)
+        let rangeStr =
+            "\(FrequencyFormatter.format(cwtRange.startMHz))-\(FrequencyFormatter.formatWithUnit(cwtRange.endMHz))"
+
+        if mode.uppercased() != "CW" {
+            return FrequencyWarning(
+                type: .activityConflict,
+                message: "\(freqStr) is in the CWOps CWT range",
+                suggestion: "CWT uses CW mode only (\(rangeStr))",
+                activity: .cwtContest
+            )
+        }
+        return FrequencyWarning(
+            type: .activityCrowded,
+            message: "CWOps CWT is active",
+            suggestion: "Expect heavy CW traffic \(rangeStr)",
+            activity: .cwtContest
+        )
+    }
+
+    /// Check non-CWT activity warnings for a frequency/mode combination
+    private static func checkNonCWTActivityWarnings(
+        frequencyMHz: Double, mode: String
+    ) -> [FrequencyWarning] {
+        BandPlan.activitiesMatching(frequencyMHz: frequencyMHz)
+            .filter { $0.isActive() }
+            .map { activity in
+                let freqStr = FrequencyFormatter.formatWithUnit(activity.centerMHz)
+                if activity.matchesMode(mode) {
+                    return FrequencyWarning(
+                        type: .activityInfo,
+                        message: "\(freqStr) is the \(activity.description)",
+                        suggestion: nil,
+                        activity: activity.type
+                    )
+                }
+                let expectedModes = activity.modes.sorted().joined(separator: "/")
+                return FrequencyWarning(
+                    type: .activityConflict,
+                    message: "\(freqStr) is the \(activity.description)",
+                    suggestion: "Expected mode: \(expectedModes), you're in \(mode)",
+                    activity: activity.type
+                )
+            }
+    }
+
+    /// Build a violation when no segments allow the requested mode
+    private static func buildModeViolation(
+        frequencyMHz: Double,
+        mode: String,
+        normalizedMode: String,
+        matchingSegments: [BandSegment]
+    ) -> BandPlanViolation {
+        // CW is allowed anywhere in amateur bands, but warn if unusual
+        if normalizedMode == "CW" {
+            let typicalModes = Set(matchingSegments.flatMap(\.modes))
+            let typicalModesStr = typicalModes.sorted().joined(separator: ", ")
+            return BandPlanViolation(
+                type: .unusualFrequency,
+                message:
+                "\(FrequencyFormatter.formatWithUnit(frequencyMHz)) is not a typical CW frequency",
+                suggestion: "Usually \(typicalModesStr) here"
+            )
+        }
+
+        // Mode not allowed at this frequency
+        let allowedModes = Set(matchingSegments.flatMap(\.modes))
+        return BandPlanViolation(
+            type: .wrongMode,
+            message:
+            "\(mode) is not allowed at \(FrequencyFormatter.formatWithUnit(frequencyMHz))",
+            suggestion: "Try: \(allowedModes.joined(separator: ", "))"
+        )
+    }
+
+    /// Check whether the user's license class has privileges for the matched mode segments
+    private static func checkLicensePrivileges(
+        frequencyMHz: Double,
+        mode: String,
+        license: LicenseClass,
+        modeSegments: [BandSegment],
+        matchingSegments: [BandSegment]
+    ) -> BandPlanViolation? {
+        let privilegeOrder: [LicenseClass] = [.technician, .general, .extra]
+        let userPrivilegeIndex = privilegeOrder.firstIndex(of: license) ?? 0
+
+        // Find segments where user has privileges
+        let allowedSegments = modeSegments.filter { segment in
+            let requiredIndex = privilegeOrder.firstIndex(of: segment.minimumLicense) ?? 0
+            return userPrivilegeIndex >= requiredIndex
+        }
+
+        guard allowedSegments.isEmpty else {
+            return nil
+        }
+
+        let requiredLicense =
+            modeSegments
+                .map(\.minimumLicense)
+                .min { a, b in
+                    (privilegeOrder.firstIndex(of: a) ?? 0)
+                        < (privilegeOrder.firstIndex(of: b) ?? 0)
+                } ?? .extra
+
+        // For Technicians, check if they have ANY privileges on this band
+        if license == .technician, let band = matchingSegments.first?.band {
+            let techPrivilegesOnBand = BandPlan.segments.filter { segment in
+                segment.band == band && segment.minimumLicense == .technician
+            }
+            if techPrivilegesOnBand.isEmpty {
+                return BandPlanViolation(
+                    type: .noPrivileges,
+                    message: "Technicians cannot operate in any mode within the \(band) band",
+                    suggestion: "Requires General or higher"
+                )
+            }
+        }
+
+        let freqStr = FrequencyFormatter.formatWithUnit(frequencyMHz)
+        return BandPlanViolation(
+            type: .noPrivileges,
+            message: "\(license.displayName) license cannot operate \(mode) at \(freqStr)",
+            suggestion: "Requires \(requiredLicense.displayName) or higher"
+        )
+    }
 
     private static func normalizeMode(_ mode: String) -> String {
         let upper = mode.uppercased()
