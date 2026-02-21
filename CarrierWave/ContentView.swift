@@ -61,19 +61,7 @@ struct ContentView: View {
                 )
             }
         } message: {
-            if let backup = restoredBackup {
-                let formatter = DateFormatter()
-                let _ = formatter.dateStyle = .medium
-                let _ = formatter.timeStyle = .short
-                Text(
-                    "Database restored from backup "
-                        + "(\(formatter.string(from: backup.backupTimestamp))). "
-                        + "iCloud sync has been paused "
-                        + "— review your data before re-enabling."
-                )
-            } else {
-                Text("Database restored from backup.")
-            }
+            Text(restoreAlertMessage)
         }
         .onAppear {
             if lockedSizeClass == nil {
@@ -282,11 +270,13 @@ struct ContentView: View {
             }
         }
     }
+}
 
-    // MARK: - Tab Content
+// MARK: - Tab Content
 
+extension ContentView {
     @ViewBuilder
-    private var selectedTabContent: some View {
+    var selectedTabContent: some View {
         if let tab = selectedTab {
             selectedTabContent(for: tab)
         } else {
@@ -296,7 +286,7 @@ struct ContentView: View {
     }
 
     @ViewBuilder
-    private var dashboardTabContent: some View {
+    var dashboardTabContent: some View {
         if let syncService {
             LazyTabContent {
                 DashboardView(
@@ -314,7 +304,7 @@ struct ContentView: View {
         }
     }
 
-    private var loggerTabContent: some View {
+    var loggerTabContent: some View {
         LoggerContainerView(
             tourState: tourState,
             onSessionEnd: {
@@ -326,7 +316,7 @@ struct ContentView: View {
         )
     }
 
-    private var logsTabContent: some View {
+    var logsTabContent: some View {
         LazyTabContent {
             LogsContainerView(
                 potaClient: potaClient,
@@ -340,7 +330,7 @@ struct ContentView: View {
         }
     }
 
-    private var cwDecoderTabContent: some View {
+    var cwDecoderTabContent: some View {
         CWTranscriptionView(
             onLog: { callsign in
                 UIPasteboard.general.string = callsign
@@ -349,7 +339,7 @@ struct ContentView: View {
         )
     }
 
-    private var mapTabContent: some View {
+    var mapTabContent: some View {
         NavigationStack {
             LazyTabContent {
                 QSOMapView(filterState: mapFilterState)
@@ -357,7 +347,7 @@ struct ContentView: View {
         }
     }
 
-    private var activityTabContent: some View {
+    var activityTabContent: some View {
         NavigationStack {
             LazyTabContent {
                 ActivityView(tourState: tourState, isInNavigationContext: false)
@@ -365,7 +355,7 @@ struct ContentView: View {
         }
     }
 
-    private var moreTabContent: some View {
+    var moreTabContent: some View {
         MoreTabView(
             potaAuthService: potaAuthService,
             settingsDestination: $settingsDestination,
@@ -377,7 +367,7 @@ struct ContentView: View {
     }
 
     @ViewBuilder
-    private func selectedTabContent(for tab: AppTab) -> some View {
+    func selectedTabContent(for tab: AppTab) -> some View {
         switch tab {
         case .dashboard: dashboardTabContent
         case .logger: loggerTabContent
@@ -387,6 +377,19 @@ struct ContentView: View {
         case .activity: activityTabContent
         case .more: moreTabContent
         }
+    }
+
+    var restoreAlertMessage: String {
+        guard let backup = restoredBackup else {
+            return "Database restored from backup."
+        }
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return "Database restored from backup "
+            + "(\(formatter.string(from: backup.backupTimestamp))). "
+            + "iCloud sync has been paused "
+            + "— review your data before re-enabling."
     }
 }
 

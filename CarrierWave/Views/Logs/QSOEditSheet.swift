@@ -1,4 +1,5 @@
 import CarrierWaveCore
+import SwiftData
 import SwiftUI
 
 // MARK: - QSOEditSheet
@@ -60,8 +61,14 @@ struct QSOEditSheet: View {
 
     // MARK: Private
 
-    private let qso: QSO
-    private let onSave: () -> Void
+    private static let bands = [
+        "160m", "80m", "60m", "40m", "30m", "20m", "17m", "15m", "12m", "10m",
+        "6m", "2m", "70cm",
+    ]
+
+    private static let modes = [
+        "SSB", "CW", "FT8", "FT4", "RTTY", "AM", "FM", "DIGI",
+    ]
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
@@ -86,14 +93,8 @@ struct QSOEditSheet: View {
     @State private var state: String
     @State private var country: String
 
-    private static let bands = [
-        "160m", "80m", "60m", "40m", "30m", "20m", "17m", "15m", "12m", "10m",
-        "6m", "2m", "70cm",
-    ]
-
-    private static let modes = [
-        "SSB", "CW", "FT8", "FT4", "RTTY", "AM", "FM", "DIGI",
-    ]
+    private let qso: QSO
+    private let onSave: () -> Void
 
     private var isValid: Bool {
         !callsign.trimmingCharacters(in: .whitespaces).isEmpty
@@ -111,14 +112,14 @@ struct QSOEditSheet: View {
                 .autocorrectionDisabled()
 
             Picker("Band", selection: $band) {
-                ForEach(Self.bandOptions(current: band), id: \.self) { b in
-                    Text(b).tag(b)
+                ForEach(Self.bandOptions(current: band), id: \.self) { bandOption in
+                    Text(bandOption).tag(bandOption)
                 }
             }
 
             Picker("Mode", selection: $mode) {
-                ForEach(Self.modeOptions(current: mode), id: \.self) { m in
-                    Text(m).tag(m)
+                ForEach(Self.modeOptions(current: mode), id: \.self) { modeOption in
+                    Text(modeOption).tag(modeOption)
                 }
             }
 
@@ -272,7 +273,9 @@ struct QSOEditSheet: View {
 
     private func save() {
         let trimmedCallsign = callsign.trimmingCharacters(in: .whitespaces).uppercased()
-        guard !trimmedCallsign.isEmpty else { return }
+        guard !trimmedCallsign.isEmpty else {
+            return
+        }
 
         let callsignChanged = trimmedCallsign != originalCallsign
 

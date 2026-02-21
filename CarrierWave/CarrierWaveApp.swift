@@ -26,14 +26,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 
 @main
 struct CarrierWaveApp: App {
-    // MARK: Internal
-
-    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-
-    /// Restore info if a backup was just applied on this launch
-    let restoredBackup: PendingRestore?
-
-    var sharedModelContainer: ModelContainer
+    // MARK: Lifecycle
 
     init() {
         let schema = Schema([
@@ -80,6 +73,15 @@ struct CarrierWaveApp: App {
         }
     }
 
+    // MARK: Internal
+
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+
+    /// Restore info if a backup was just applied on this launch
+    let restoredBackup: PendingRestore?
+
+    var sharedModelContainer: ModelContainer
+
     var body: some Scene {
         WindowGroup {
             ContentView(
@@ -89,48 +91,48 @@ struct CarrierWaveApp: App {
             .sunlightMode(isSunlightMode)
             .preferredColorScheme(colorScheme)
             .task {
-                    // Create launch backup before sync/import
-                    if UserDefaults.standard.object(
-                        forKey: "autoBackupEnabled"
-                    ) as? Bool ?? true,
-                        let storeURL = sharedModelContainer
-                        .configurations.first?.url
-                    {
-                        await BackupService.shared.snapshot(
-                            trigger: .launch,
-                            storeURL: storeURL
-                        )
-                    }
-
-                    // Run one-time data repairs before sync starts
-                    DataRepairService.runPendingRepairs()
-
-                    // Start iCloud settings sync
-                    SettingsSyncService.shared.start()
-
-                    // Activate WatchConnectivity for Apple Watch companion
-                    PhoneSessionDelegate.shared.activate()
-
-                    // Start hourly solar conditions polling
-                    SolarPollingService.shared.configure(container: sharedModelContainer)
-
-                    // Start iCloud QSO sync (CKSyncEngine)
-                    CloudSyncService.shared.configure(container: sharedModelContainer)
-
-                    // Register for remote notifications (CKSyncEngine push)
-                    UIApplication.shared.registerForRemoteNotifications()
-
-                    // Preload caches on app launch (loads from disk, refreshes in background)
-                    await POTAParksCache.shared.ensureLoaded()
-                    // Fetch sources on main actor, then pass to cache actor
-                    let sources = NotesSourceInfo.fetchAll(
-                        modelContext: sharedModelContainer.mainContext
+                // Create launch backup before sync/import
+                if UserDefaults.standard.object(
+                    forKey: "autoBackupEnabled"
+                ) as? Bool ?? true,
+                    let storeURL = sharedModelContainer
+                    .configurations.first?.url
+                {
+                    await BackupService.shared.snapshot(
+                        trigger: .launch,
+                        storeURL: storeURL
                     )
-                    await CallsignNotesCache.shared.ensureLoaded(sources: sources)
                 }
-                .onOpenURL { url in
-                    handleURL(url)
-                }
+
+                // Run one-time data repairs before sync starts
+                DataRepairService.runPendingRepairs()
+
+                // Start iCloud settings sync
+                SettingsSyncService.shared.start()
+
+                // Activate WatchConnectivity for Apple Watch companion
+                PhoneSessionDelegate.shared.activate()
+
+                // Start hourly solar conditions polling
+                SolarPollingService.shared.configure(container: sharedModelContainer)
+
+                // Start iCloud QSO sync (CKSyncEngine)
+                CloudSyncService.shared.configure(container: sharedModelContainer)
+
+                // Register for remote notifications (CKSyncEngine push)
+                UIApplication.shared.registerForRemoteNotifications()
+
+                // Preload caches on app launch (loads from disk, refreshes in background)
+                await POTAParksCache.shared.ensureLoaded()
+                // Fetch sources on main actor, then pass to cache actor
+                let sources = NotesSourceInfo.fetchAll(
+                    modelContext: sharedModelContainer.mainContext
+                )
+                await CallsignNotesCache.shared.ensureLoaded(sources: sources)
+            }
+            .onOpenURL { url in
+                handleURL(url)
+            }
         }
         .modelContainer(sharedModelContainer)
     }

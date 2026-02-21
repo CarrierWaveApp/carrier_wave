@@ -85,19 +85,6 @@ struct QSODetailView: View {
             .sorted { $0.serviceType.rawValue < $1.serviceType.rawValue }
     }
 
-    private func refreshParkNames() async {
-        if let park = qso.parkReference {
-            myParkName = await POTAParksCache.shared.name(for: park)
-        } else {
-            myParkName = nil
-        }
-        if let park = qso.theirParkReference {
-            theirParkName = await POTAParksCache.shared.name(for: park)
-        } else {
-            theirParkName = nil
-        }
-    }
-
     // MARK: - Header
 
     private var headerSection: some View {
@@ -299,6 +286,19 @@ struct QSODetailView: View {
             } else {
                 Text(value)
             }
+        }
+    }
+
+    private func refreshParkNames() async {
+        if let park = qso.parkReference {
+            myParkName = await POTAParksCache.shared.name(for: park)
+        } else {
+            myParkName = nil
+        }
+        if let park = qso.theirParkReference {
+            theirParkName = await POTAParksCache.shared.name(for: park)
+        } else {
+            theirParkName = nil
         }
     }
 

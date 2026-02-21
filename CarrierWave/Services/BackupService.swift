@@ -43,6 +43,8 @@ enum BackupError: LocalizedError {
     case restoreInProgress
     case manifestCorrupted
 
+    // MARK: Internal
+
     var errorDescription: String? {
         switch self {
         case .storeNotFound:
@@ -63,7 +65,7 @@ enum BackupError: LocalizedError {
 
 // MARK: - PendingRestore
 
-struct PendingRestore: Codable {
+nonisolated struct PendingRestore: Codable, Sendable {
     let backupFilename: String
     let backupTimestamp: Date
     let stagedAt: Date
@@ -76,7 +78,16 @@ struct PendingRestore: Codable {
 ///
 /// Restore and iCloud logic in BackupService+Restore.swift.
 actor BackupService {
+    // MARK: Internal
+
     static let shared = BackupService()
+
+    nonisolated static var pendingRestoreURL: URL {
+        let library = FileManager.default.urls(
+            for: .libraryDirectory, in: .userDomainMask
+        ).first!
+        return library.appendingPathComponent("pendingRestore.json")
+    }
 
     let maxLocalBackups = 5
     let maxICloudBackups = 2
@@ -98,17 +109,12 @@ actor BackupService {
         localBackupDir.appendingPathComponent("backups.json")
     }
 
-    static nonisolated var pendingRestoreURL: URL {
-        let library = FileManager.default.urls(
-            for: .libraryDirectory, in: .userDomainMask
-        ).first!
-        return library.appendingPathComponent("pendingRestore.json")
-    }
-
     var icloudBackupDir: URL? {
         guard let container = FileManager.default.url(
             forUbiquityContainerIdentifier: nil
-        ) else { return nil }
+        ) else {
+            return nil
+        }
         return container
             .appendingPathComponent("Documents")
             .appendingPathComponent("Backups")
@@ -137,10 +143,7 @@ actor BackupService {
             syncToICloud()
 
             logger.info(
-                "Backup: \(entry.filename) "
-                    + "(\(entry.qsoCount) QSOs, "
-                    + "\(entry.sizeBytes) bytes, "
-                    + "\(trigger.rawValue))"
+                "Backup: \(entry.filename) (\(entry.qsoCount) QSOs, \(entry.sizeBytes) bytes, \(trigger.rawValue))"
             )
             return entry
         } catch {
@@ -154,12 +157,10 @@ actor BackupService {
     /// List all available backups (local + iCloud), newest first
     func availableBackups() -> [BackupEntry] {
         var entries = loadManifest()
-        for entry in loadICloudBackups() {
-            if !entries.contains(where: {
-                $0.filename == entry.filename
-            }) {
-                entries.append(entry)
-            }
+        for entry in loadICloudBackups()
+            where !entries.contains(where: { $0.filename == entry.filename })
+        {
+            entries.append(entry)
         }
         return entries.sorted { $0.timestamp > $1.timestamp }
     }
@@ -178,17 +179,16 @@ actor BackupService {
     func loadManifest() -> [BackupEntry] {
         guard FileManager.default.fileExists(
             atPath: manifestURL.path
-        ) else { return [] }
+        ) else {
+            return []
+        }
         do {
             let data = try Data(contentsOf: manifestURL)
             return try JSONDecoder().decode(
                 [BackupEntry].self, from: data
             )
         } catch {
-            logger.warning(
-                "Manifest load failed: "
-                    + "\(error.localizedDescription)"
-            )
+            logger.warning("Manifest load failed: \(error.localizedDescription)")
             return []
         }
     }
@@ -200,12 +200,11 @@ actor BackupService {
             let data = try encoder.encode(entries)
             try data.write(to: manifestURL)
         } catch {
-            logger.error(
-                "Manifest save failed: "
-                    + "\(error.localizedDescription)"
-            )
+            logger.error("Manifest save failed: \(error.localizedDescription)")
         }
     }
+
+    // MARK: Private
 
     // MARK: - Private Helpers
 
@@ -299,7 +298,9 @@ actor BackupService {
 
     private func pruneLocal() {
         var manifest = loadManifest()
-        guard manifest.count > maxLocalBackups else { return }
+        guard manifest.count > maxLocalBackups else {
+            return
+        }
 
         let sorted = manifest.sorted {
             $0.timestamp < $1.timestamp
@@ -320,7 +321,9 @@ actor BackupService {
         var toRemove: [BackupEntry] = []
         for entry in sorted {
             let remaining = manifest.count - toRemove.count
-            if remaining <= maxLocalBackups { break }
+            if remaining <= maxLocalBackups {
+                break
+            }
             if !keepByTrigger.contains(entry.id) {
                 toRemove.append(entry)
             }

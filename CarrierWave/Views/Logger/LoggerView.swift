@@ -2765,7 +2765,7 @@ struct LoggerQSORow: View {
         }
         .buttonStyle(.plain)
         .sheet(isPresented: $showEditSheet) {
-            QSOEditSheet(qso: qso, onDelete: { onQSODeleted?(qso) })
+            LoggerQSOEditSheet(qso: qso, onDelete: { onQSODeleted?(qso) })
         }
         .onAppear {
             // Use QSO's stored data if available (from pre-fetch during logging)
@@ -3044,10 +3044,10 @@ struct LoggerQSORow: View {
     }
 }
 
-// MARK: - QSOEditSheet
+// MARK: - LoggerQSOEditSheet
 
-/// Sheet for editing an existing QSO
-struct QSOEditSheet: View {
+/// Sheet for editing an existing QSO from the logger tab
+struct LoggerQSOEditSheet: View {
     // MARK: Internal
 
     let qso: QSO

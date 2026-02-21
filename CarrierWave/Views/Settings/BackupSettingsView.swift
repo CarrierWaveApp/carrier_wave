@@ -1,3 +1,4 @@
+import SwiftData
 import SwiftUI
 
 // MARK: - BackupSettingsView
@@ -28,17 +29,7 @@ struct BackupSettingsView: View {
                 Task { await performRestore(backup) }
             }
         } message: { backup in
-            let formatter = DateFormatter()
-            let _ = formatter.dateStyle = .medium
-            let _ = formatter.timeStyle = .short
-            Text(
-                "This will replace your current database with the "
-                    + "backup from \(formatter.string(from: backup.timestamp)). "
-                    + "A safety backup of your current data will be "
-                    + "created first.\n\n"
-                    + "The app must restart to complete the restore. "
-                    + "iCloud sync will be paused until you re-enable it."
-            )
+            Text(restoreConfirmationMessage(for: backup))
         }
         .alert(
             "Delete Backup?",
@@ -164,7 +155,17 @@ struct BackupSettingsView: View {
         }
     }
 
-    // MARK: - Actions
+    private func restoreConfirmationMessage(for backup: BackupEntry) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return "This will replace your current database with the "
+            + "backup from \(formatter.string(from: backup.timestamp)). "
+            + "A safety backup of your current data will be "
+            + "created first.\n\n"
+            + "The app must restart to complete the restore. "
+            + "iCloud sync will be paused until you re-enable it."
+    }
 
     @MainActor
     private func createManualBackup() async {
@@ -230,6 +231,8 @@ struct BackupSettingsView: View {
 // MARK: - BackupRow
 
 private struct BackupRow: View {
+    // MARK: Internal
+
     let backup: BackupEntry
 
     var body: some View {
@@ -263,6 +266,8 @@ private struct BackupRow: View {
         }
         .padding(.vertical, 2)
     }
+
+    // MARK: Private
 
     private var formattedDate: String {
         let formatter = DateFormatter()

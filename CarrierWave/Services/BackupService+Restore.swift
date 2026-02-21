@@ -1,4 +1,5 @@
 import Foundation
+import os
 import SQLite3
 
 // MARK: - BackupService Restore & iCloud
@@ -91,7 +92,7 @@ extension BackupService {
     }
 
     /// Check if there is a pending restore to apply on launch
-    static nonisolated func checkPendingRestore() -> PendingRestore? {
+    nonisolated static func checkPendingRestore() -> PendingRestore? {
         guard FileManager.default.fileExists(
             atPath: pendingRestoreURL.path
         ) else {
@@ -111,7 +112,7 @@ extension BackupService {
 
     /// Apply a pending restore by swapping the database file.
     /// Call BEFORE creating the ModelContainer.
-    static nonisolated func applyPendingRestore(
+    nonisolated static func applyPendingRestore(
         storeURL: URL
     ) -> PendingRestore? {
         guard let pending = checkPendingRestore() else {
@@ -181,7 +182,9 @@ extension BackupService {
     // MARK: - iCloud Drive Sync
 
     func syncToICloud() {
-        guard let icloudDir = icloudBackupDir else { return }
+        guard let icloudDir = icloudBackupDir else {
+            return
+        }
 
         let fm = FileManager.default
         if !fm.fileExists(atPath: icloudDir.path) {
@@ -202,8 +205,12 @@ extension BackupService {
                 .appendingPathComponent(entry.filename)
             let dst = icloudDir
                 .appendingPathComponent(entry.filename)
-            guard fm.fileExists(atPath: src.path) else { continue }
-            if fm.fileExists(atPath: dst.path) { continue }
+            guard fm.fileExists(atPath: src.path) else {
+                continue
+            }
+            if fm.fileExists(atPath: dst.path) {
+                continue
+            }
 
             let coordinator = NSFileCoordinator()
             var error: NSError?
@@ -241,26 +248,29 @@ extension BackupService {
     }
 
     private func pruneICloud(keeping keepFilenames: Set<String>) {
-        guard let icloudDir = icloudBackupDir else { return }
+        guard let icloudDir = icloudBackupDir else {
+            return
+        }
         let fm = FileManager.default
 
         guard let files = try? fm.contentsOfDirectory(
             at: icloudDir, includingPropertiesForKeys: nil
-        ) else { return }
+        ) else {
+            return
+        }
 
         for file in files where file.pathExtension == "sqlite" {
             if !keepFilenames.contains(file.lastPathComponent) {
                 try? fm.removeItem(at: file)
-                logger.info(
-                    "Pruned iCloud backup: "
-                        + "\(file.lastPathComponent)"
-                )
+                logger.info("Pruned iCloud backup: \(file.lastPathComponent)")
             }
         }
     }
 
     func loadICloudBackups() -> [BackupEntry] {
-        guard let icloudDir = icloudBackupDir else { return [] }
+        guard let icloudDir = icloudBackupDir else {
+            return []
+        }
         let fm = FileManager.default
 
         guard let files = try? fm.contentsOfDirectory(
@@ -268,7 +278,9 @@ extension BackupService {
             includingPropertiesForKeys: [
                 .fileSizeKey, .creationDateKey,
             ]
-        ) else { return [] }
+        ) else {
+            return []
+        }
 
         return files
             .filter { $0.pathExtension == "sqlite" }
