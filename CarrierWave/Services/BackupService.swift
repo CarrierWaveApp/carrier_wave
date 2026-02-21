@@ -238,6 +238,25 @@ actor BackupService {
         }
     }
 
+    func calculateBundleSize(_ bundleURL: URL) -> Int64 {
+        let fm = FileManager.default
+        guard let enumerator = fm.enumerator(
+            at: bundleURL,
+            includingPropertiesForKeys: [.fileSizeKey],
+            options: [.skipsHiddenFiles]
+        ) else {
+            return 0
+        }
+        var total: Int64 = 0
+        for case let fileURL as URL in enumerator {
+            let values = try? fileURL.resourceValues(
+                forKeys: [.fileSizeKey]
+            )
+            total += Int64(values?.fileSize ?? 0)
+        }
+        return total
+    }
+
     // MARK: Private
 
     private static let metadataModes: Set<String> = [
@@ -283,18 +302,24 @@ actor BackupService {
         let fmt = DateFormatter()
         fmt.dateFormat = "yyyy-MM-dd_HHmmss"
         let filename =
-            "carrierwave_\(fmt.string(from: timestamp)).sqlite"
-        let destURL = localBackupDir
+            "carrierwave_\(fmt.string(from: timestamp)).cwbackup"
+        let bundleURL = localBackupDir
             .appendingPathComponent(filename)
 
-        try FileManager.default.copyItem(
-            at: storeURL, to: destURL
+        let fm = FileManager.default
+        try fm.createDirectory(
+            at: bundleURL, withIntermediateDirectories: true
         )
 
-        let attrs = try FileManager.default.attributesOfItem(
-            atPath: destURL.path
-        )
-        let size = (attrs[.size] as? Int64) ?? 0
+        // Copy database into bundle
+        let dbDest = bundleURL
+            .appendingPathComponent("database.sqlite")
+        try fm.copyItem(at: storeURL, to: dbDest)
+
+        // Copy session photos into bundle
+        copyPhotosIntoBundle(bundleURL)
+
+        let size = calculateBundleSize(bundleURL)
         let version = Bundle.main.infoDictionary?[
             "CFBundleShortVersionString"
         ] as? String ?? "unknown"
@@ -305,6 +330,29 @@ actor BackupService {
             sizeBytes: size, appVersion: version,
             location: .local, filename: filename
         )
+    }
+
+    private func copyPhotosIntoBundle(_ bundleURL: URL) {
+        let fm = FileManager.default
+        let documentsDir = fm.urls(
+            for: .documentDirectory, in: .userDomainMask
+        ).first!
+        let photosDir = documentsDir
+            .appendingPathComponent("SessionPhotos")
+
+        guard fm.fileExists(atPath: photosDir.path) else {
+            return
+        }
+
+        let destPhotos = bundleURL
+            .appendingPathComponent("SessionPhotos")
+        do {
+            try fm.copyItem(at: photosDir, to: destPhotos)
+        } catch {
+            logger.warning(
+                "Photo backup failed: \(error.localizedDescription)"
+            )
+        }
     }
 
     // MARK: - Pruning

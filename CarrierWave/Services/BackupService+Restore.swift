@@ -14,11 +14,14 @@ extension BackupService {
             return .failure(.backupFileNotFound)
         }
 
+        // Resolve the SQLite path: bundle or legacy flat file
+        let dbURL = Self.databaseURL(for: url)
+
         var db: OpaquePointer?
         // Open read-write so SQLite can create the .shm file
         // needed to read WAL-mode databases
         let openResult = sqlite3_open_v2(
-            url.path, &db, SQLITE_OPEN_READWRITE, nil
+            dbURL.path, &db, SQLITE_OPEN_READWRITE, nil
         )
         defer { sqlite3_close(db) }
 
@@ -136,6 +139,8 @@ extension BackupService {
         }
 
         do {
+            let fm = FileManager.default
+
             // Remove existing store files
             for ext in ["", ".wal", ".shm"] {
                 let url = ext.isEmpty
@@ -143,18 +148,20 @@ extension BackupService {
                     : storeURL.appendingPathExtension(
                         String(ext.dropFirst())
                     )
-                if FileManager.default.fileExists(atPath: url.path) {
-                    try FileManager.default.removeItem(at: url)
+                if fm.fileExists(atPath: url.path) {
+                    try fm.removeItem(at: url)
                 }
             }
 
-            // Copy backup to store location
-            try FileManager.default.copyItem(
-                at: backupURL, to: storeURL
-            )
+            // Resolve the database file within the backup
+            let dbSource = databaseURL(for: backupURL)
+            try fm.copyItem(at: dbSource, to: storeURL)
+
+            // Restore session photos if bundle contains them
+            restorePhotosFromBundle(backupURL)
 
             // Clear the marker
-            try FileManager.default.removeItem(at: pendingRestoreURL)
+            try fm.removeItem(at: pendingRestoreURL)
 
             // Pause iCloud sync after restore
             UserDefaults.standard.set(
@@ -261,7 +268,9 @@ extension BackupService {
             return
         }
 
-        for file in files where file.pathExtension == "sqlite" {
+        for file in files where Self.backupExtensions.contains(
+            file.pathExtension
+        ) {
             if !keepFilenames.contains(file.lastPathComponent) {
                 try? fm.removeItem(at: file)
                 logger.info("Pruned iCloud backup: \(file.lastPathComponent)")
@@ -285,7 +294,7 @@ extension BackupService {
         }
 
         return files
-            .filter { $0.pathExtension == "sqlite" }
+            .filter { Self.backupExtensions.contains($0.pathExtension) }
             .compactMap { url -> BackupEntry? in
                 let attrs = try? fm.attributesOfItem(
                     atPath: url.path
@@ -305,5 +314,49 @@ extension BackupService {
                     filename: url.lastPathComponent
                 )
             }
+    }
+
+    // MARK: - Bundle Helpers
+
+    private static let backupExtensions: Set<String> = [
+        "sqlite", "cwbackup",
+    ]
+
+    /// Resolve the SQLite database path within a backup.
+    /// For `.cwbackup` bundles, returns `<bundle>/database.sqlite`.
+    /// For legacy `.sqlite` files, returns the file itself.
+    nonisolated static func databaseURL(for backupURL: URL) -> URL {
+        if backupURL.pathExtension == "cwbackup" {
+            return backupURL.appendingPathComponent("database.sqlite")
+        }
+        return backupURL
+    }
+
+    /// Restore session photos from a `.cwbackup` bundle
+    private static func restorePhotosFromBundle(
+        _ backupURL: URL
+    ) {
+        guard backupURL.pathExtension == "cwbackup" else {
+            return
+        }
+
+        let fm = FileManager.default
+        let bundlePhotos = backupURL
+            .appendingPathComponent("SessionPhotos")
+        guard fm.fileExists(atPath: bundlePhotos.path) else {
+            return
+        }
+
+        let documentsDir = fm.urls(
+            for: .documentDirectory, in: .userDomainMask
+        ).first!
+        let destPhotos = documentsDir
+            .appendingPathComponent("SessionPhotos")
+
+        // Remove existing photos, then copy from bundle
+        if fm.fileExists(atPath: destPhotos.path) {
+            try? fm.removeItem(at: destPhotos)
+        }
+        try? fm.copyItem(at: bundlePhotos, to: destPhotos)
     }
 }
