@@ -93,6 +93,7 @@ final class ActivityLogManager {
             log.currentGrid = profile.grid
         }
 
+        log.cloudDirtyFlag = true
         modelContext.insert(log)
         activeLog = log
         saveActiveLogId(log.id)
@@ -106,8 +107,10 @@ final class ActivityLogManager {
     func activateLog(_ log: ActivityLog) {
         if let existing = activeLog, existing.id != log.id {
             existing.isActive = false
+            existing.cloudDirtyFlag = true
         }
         log.isActive = true
+        log.cloudDirtyFlag = true
         activeLog = log
         saveActiveLogId(log.id)
         cacheServiceConfiguration()
@@ -123,6 +126,7 @@ final class ActivityLogManager {
             return
         }
         log.isActive = false
+        log.cloudDirtyFlag = true
         activeLog = nil
         clearActiveLogId()
         try? modelContext.save()
@@ -147,6 +151,7 @@ final class ActivityLogManager {
         if !profile.useCurrentLocation, let grid = profile.grid {
             log.currentGrid = grid
         }
+        log.cloudDirtyFlag = true
         try? modelContext.save()
         refreshCurrentProfile()
     }
@@ -157,6 +162,7 @@ final class ActivityLogManager {
             return
         }
         log.currentGrid = grid
+        log.cloudDirtyFlag = true
         try? modelContext.save()
     }
 
@@ -166,6 +172,7 @@ final class ActivityLogManager {
             return
         }
         log.locationLabel = label
+        log.cloudDirtyFlag = true
         try? modelContext.save()
     }
 

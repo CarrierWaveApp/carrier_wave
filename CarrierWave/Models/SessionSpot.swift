@@ -72,6 +72,9 @@ nonisolated final class SessionSpot {
     var region = SpotRegion.other.rawValue
     var distanceMeters: Double?
 
+    /// Cloud sync
+    var cloudDirtyFlag = false
+
     /// Dedup key to prevent re-inserting the same spot across polling cycles
     var dedupKey: String {
         "\(source)-\(callsign)-\(Int(frequencyKHz))-\(Int(timestamp.timeIntervalSince1970))"

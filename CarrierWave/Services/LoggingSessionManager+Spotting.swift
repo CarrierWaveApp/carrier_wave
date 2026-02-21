@@ -206,6 +206,7 @@ extension LoggingSessionManager {
             guard !existingKeys.contains(candidate.dedupKey) else {
                 continue
             }
+            candidate.cloudDirtyFlag = true
             modelContext.insert(candidate)
             inserted += 1
         }

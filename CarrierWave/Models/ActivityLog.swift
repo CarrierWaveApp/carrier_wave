@@ -48,4 +48,7 @@ nonisolated final class ActivityLog {
 
     /// Whether this is the currently active activity log
     var isActive: Bool = true
+
+    /// Cloud sync
+    var cloudDirtyFlag = false
 }
