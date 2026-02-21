@@ -18,6 +18,9 @@ All notable changes to Carrier Wave will be documented in this file.
 - Add friend spot notifications (toast + local notification) when friends appear in spots during monitoring
 - Add friend spot notification toggle in Activities settings
 
+### Changed
+- Re-fetch callsign info from QRZ/HamDB when callsign is changed in the QSO edit sheet
+
 ### Fixed
 - Fix activity grid using local timezone for date grouping instead of UTC, causing QSO counts to disagree with Sessions view for users west of UTC
 - Convert all user-facing QSO deletions to soft-delete (swipe-delete, clear QRZ/LoFi data, delete callsign alias QSOs) to prevent data loss
