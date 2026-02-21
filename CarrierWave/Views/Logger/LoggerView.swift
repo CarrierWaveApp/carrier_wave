@@ -2442,8 +2442,9 @@ struct LoggerView: View {
 
         qso.callsign = newCallsign
 
-        // Update with new callsign's metadata from lookup (if available)
-        if let info = lookupResult {
+        // Only use lookupResult if it matches the new callsign (it may be stale)
+        let primaryCallsign = extractPrimaryCallsign(newCallsign)
+        if let info = lookupResult, info.callsign == primaryCallsign {
             qso.name = info.name
             qso.theirGrid = info.grid
             qso.state = info.state
@@ -2451,7 +2452,7 @@ struct LoggerView: View {
             qso.qth = info.qth
             qso.theirLicenseClass = info.licenseClass
         } else {
-            // No lookup result yet - clear metadata and fetch async
+            // Clear stale metadata and fetch for the new callsign
             qso.name = nil
             qso.theirGrid = nil
             qso.state = nil
@@ -2459,7 +2460,6 @@ struct LoggerView: View {
             qso.qth = nil
             qso.theirLicenseClass = nil
 
-            // Trigger async lookup to populate metadata
             Task {
                 await fetchAndUpdateQSOMetadata(qso, callsign: newCallsign)
             }
