@@ -2442,8 +2442,9 @@ struct LoggerView: View {
 
         qso.callsign = newCallsign
 
-        // Update with new callsign's metadata from lookup (if available)
-        if let info = lookupResult {
+        // Only use lookupResult if it matches the new callsign (it may be stale)
+        let primaryCallsign = extractPrimaryCallsign(newCallsign)
+        if let info = lookupResult, info.callsign == primaryCallsign {
             qso.name = info.name
             qso.theirGrid = info.grid
             qso.state = info.state
@@ -2451,7 +2452,7 @@ struct LoggerView: View {
             qso.qth = info.qth
             qso.theirLicenseClass = info.licenseClass
         } else {
-            // No lookup result yet - clear metadata and fetch async
+            // Clear stale metadata and fetch for the new callsign
             qso.name = nil
             qso.theirGrid = nil
             qso.state = nil
@@ -2459,7 +2460,6 @@ struct LoggerView: View {
             qso.qth = nil
             qso.theirLicenseClass = nil
 
-            // Trigger async lookup to populate metadata
             Task {
                 await fetchAndUpdateQSOMetadata(qso, callsign: newCallsign)
             }
@@ -3202,6 +3202,7 @@ struct QSOEditSheet: View {
     @Environment(\.modelContext) private var modelContext
 
     @State private var callsign = ""
+    @State private var originalCallsign = ""
     @State private var timestamp = Date()
     @State private var rstSent = ""
     @State private var rstReceived = ""
@@ -3213,6 +3214,7 @@ struct QSOEditSheet: View {
 
     private func loadQSOData() {
         callsign = qso.callsign
+        originalCallsign = qso.callsign
         timestamp = qso.timestamp
         rstSent = qso.rstSent ?? "599"
         rstReceived = qso.rstReceived ?? "599"
@@ -3223,7 +3225,10 @@ struct QSOEditSheet: View {
     }
 
     private func saveChanges() {
-        qso.callsign = callsign.trimmingCharacters(in: .whitespaces).uppercased()
+        let newCallsign = callsign.trimmingCharacters(in: .whitespaces).uppercased()
+        let callsignChanged = newCallsign != originalCallsign
+
+        qso.callsign = newCallsign
         qso.timestamp = timestamp
         qso.rstSent = rstSent.isEmpty ? nil : rstSent
         qso.rstReceived = rstReceived.isEmpty ? nil : rstReceived
@@ -3232,6 +3237,23 @@ struct QSOEditSheet: View {
         qso.theirParkReference = theirPark.isEmpty ? nil : theirPark
         qso.notes = notes.isEmpty ? nil : notes
         try? modelContext.save()
+
+        if callsignChanged {
+            let context = modelContext
+            Task {
+                let service = CallsignLookupService(modelContext: context)
+                guard let info = await service.lookup(newCallsign) else {
+                    return
+                }
+                qso.name = info.name
+                qso.theirGrid = info.grid
+                qso.state = info.state
+                qso.country = info.country
+                qso.qth = info.qth
+                qso.theirLicenseClass = info.licenseClass
+                try? context.save()
+            }
+        }
     }
 
     private func hideQSO() {
