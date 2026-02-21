@@ -15,8 +15,10 @@ extension BackupService {
         }
 
         var db: OpaquePointer?
+        // Open read-write so SQLite can create the .shm file
+        // needed to read WAL-mode databases
         let openResult = sqlite3_open_v2(
-            url.path, &db, SQLITE_OPEN_READONLY, nil
+            url.path, &db, SQLITE_OPEN_READWRITE, nil
         )
         defer { sqlite3_close(db) }
 
