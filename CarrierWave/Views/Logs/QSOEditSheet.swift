@@ -12,6 +12,7 @@ struct QSOEditSheet: View {
         self.onSave = onSave
 
         _callsign = State(initialValue: qso.callsign)
+        _originalCallsign = State(initialValue: qso.callsign)
         _band = State(initialValue: qso.band)
         _mode = State(initialValue: qso.mode)
         _frequencyText = State(
@@ -66,6 +67,7 @@ struct QSOEditSheet: View {
     @Environment(\.modelContext) private var modelContext
 
     @State private var callsign: String
+    @State private var originalCallsign: String
     @State private var band: String
     @State private var mode: String
     @State private var frequencyText: String
@@ -272,6 +274,8 @@ struct QSOEditSheet: View {
         let trimmedCallsign = callsign.trimmingCharacters(in: .whitespaces).uppercased()
         guard !trimmedCallsign.isEmpty else { return }
 
+        let callsignChanged = trimmedCallsign != originalCallsign
+
         qso.callsign = trimmedCallsign
         qso.band = band
         qso.mode = mode
@@ -295,6 +299,23 @@ struct QSOEditSheet: View {
         qso.cloudDirtyFlag = true
 
         try? modelContext.save()
+
+        if callsignChanged {
+            let context = modelContext
+            Task {
+                let service = CallsignLookupService(modelContext: context)
+                guard let info = await service.lookup(trimmedCallsign) else {
+                    return
+                }
+                qso.name = info.name
+                qso.theirGrid = info.grid
+                qso.state = info.state
+                qso.country = info.country
+                qso.qth = info.qth
+                qso.theirLicenseClass = info.licenseClass
+                try? context.save()
+            }
+        }
 
         UINotificationFeedbackGenerator().notificationOccurred(.success)
         onSave()
