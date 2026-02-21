@@ -7,6 +7,7 @@ enum SidebarTab: String, CaseIterable, Identifiable {
     case pota = "POTA"
     case mySpots = "My Spots"
     case p2p = "P2P"
+    case map = "Map"
 
     // MARK: Internal
 
@@ -47,4 +48,5 @@ enum SpotCommandAction {
     case showPOTA
     case showRBN(callsign: String?)
     case showP2P
+    case showMap
 }

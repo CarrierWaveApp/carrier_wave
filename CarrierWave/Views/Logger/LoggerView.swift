@@ -433,8 +433,6 @@ struct LoggerView: View {
 
             ScrollView {
                 VStack(spacing: 12) {
-                    UnderConstructionBanner()
-
                     // Only show QSO form when session is active
                     if sessionManager?.hasActiveSession == true {
                         callsignInputSection
@@ -476,6 +474,15 @@ struct LoggerView: View {
                 .padding()
                 // Add bottom padding when a panel is open so Log QSO button remains accessible
                 .padding(.bottom, isAnyPanelOpen ? 280 : 0)
+            }
+
+            // Persistent command strip on iPad (keyboard accessory has numbers only)
+            if horizontalSizeClass == .regular,
+               sessionManager?.hasActiveSession == true
+            {
+                IPadCommandStrip(onCommand: { command in
+                    executeCommand(command)
+                })
             }
         }
     }
@@ -2179,7 +2186,12 @@ struct LoggerView: View {
             checkSessionGridWarnings()
         }
 
-        showMapPanel = true
+        // On iPad, switch to the sidebar map tab instead of opening an overlay
+        if let onSpotCommand {
+            onSpotCommand(.showMap)
+        } else {
+            showMapPanel = true
+        }
     }
 
     private func checkSessionGridWarnings() {

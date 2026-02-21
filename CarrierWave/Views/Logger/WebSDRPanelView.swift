@@ -103,14 +103,6 @@ struct WebSDRPanelView: View {
             Text("WebSDR")
                 .font(.headline)
 
-            Text("Under construction")
-                .font(.caption2)
-                .foregroundStyle(.orange)
-                .padding(.horizontal, 6)
-                .padding(.vertical, 2)
-                .background(.orange.opacity(0.12))
-                .clipShape(Capsule())
-
             if webSDRSession.state == .recording ||
                 webSDRSession.state.isActive
             {

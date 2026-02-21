@@ -5,6 +5,9 @@ All notable changes to Carrier Wave will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Add persistent command strip on iPad logger: commands (RBN, POTA, SOLAR, etc.) are always visible at the bottom of the logger pane, independent of keyboard state
+- Add resizable sidebar panes on iPad: drag the divider between logger and spots sidebar to resize, with width persisted across sessions
+- Add Map tab to iPad sidebar: shows current session QSOs with geodesic arcs and rove stop markers
 - Add session photo persistence in backups: `.cwbackup` bundle format includes `SessionPhotos/` alongside database, with backward-compatible restore for legacy `.sqlite` backups
 - Extend iCloud sync to SessionSpot and ActivityLog entities (LWW conflict resolution)
 

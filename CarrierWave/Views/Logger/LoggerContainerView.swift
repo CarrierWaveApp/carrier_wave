@@ -55,7 +55,20 @@ struct LoggerContainerView: View {
     @State private var sessionMode: String?
     @State private var isPOTAActivation = false
 
+    // Map data for sidebar
+    @State private var sessionQSOs: [QSO] = []
+    @State private var roveStops: [RoveStop] = []
+
+    // Resizable sidebar — GestureState for flicker-free live dragging
+    @AppStorage("iPadSidebarWidth") private var persistedSidebarWidth: Double = 340
+    @GestureState private var dragOffset: CGFloat = 0
+
     // MARK: - Layouts
+
+    private var effectiveSidebarWidth: CGFloat {
+        let raw = CGFloat(persistedSidebarWidth) - dragOffset
+        return min(max(raw, 280), 600)
+    }
 
     private var iPadLayout: some View {
         HStack(spacing: 0) {
@@ -66,7 +79,7 @@ struct LoggerContainerView: View {
                 pendingSpotSelection: $pendingSpotSelection
             )
 
-            Divider()
+            dragHandle
 
             LoggerSpotsSidebarView(
                 selectedTab: $sidebarTab,
@@ -76,11 +89,13 @@ struct LoggerContainerView: View {
                 isPOTAActivation: isPOTAActivation,
                 currentBand: sessionBand,
                 currentMode: sessionMode,
+                sessionQSOs: sessionQSOs,
+                roveStops: roveStops,
                 onSelectSpot: { selection in
                     pendingSpotSelection = selection
                 }
             )
-            .frame(minWidth: 280, idealWidth: 340, maxWidth: 400)
+            .frame(width: effectiveSidebarWidth)
         }
     }
 
@@ -89,6 +104,26 @@ struct LoggerContainerView: View {
             tourState: tourState,
             onSessionEnd: onSessionEnd
         )
+    }
+
+    // MARK: - Drag Handle
+
+    private var dragHandle: some View {
+        Rectangle()
+            .fill(dragOffset != 0 ? Color.accentColor : Color(.separator))
+            .frame(width: 4)
+            .contentShape(Rectangle().inset(by: -8))
+            .gesture(
+                DragGesture(minimumDistance: 1)
+                    .updating($dragOffset) { value, state, transaction in
+                        transaction.disablesAnimations = true
+                        state = value.translation.width
+                    }
+                    .onEnded { value in
+                        let newWidth = CGFloat(persistedSidebarWidth) - value.translation.width
+                        persistedSidebarWidth = Double(min(max(newWidth, 280), 600))
+                    }
+            )
     }
 
     // MARK: - Spot Command Handler
@@ -102,6 +137,8 @@ struct LoggerContainerView: View {
             sidebarTab = .mySpots
         case .showP2P:
             sidebarTab = .p2p
+        case .showMap:
+            sidebarTab = .map
         }
     }
 
@@ -125,9 +162,12 @@ struct LoggerContainerView: View {
             sessionBand = session.band
             sessionMode = session.mode
             isPOTAActivation = session.activationType == .pota
+            roveStops = session.roveStops
             onSessionStateChange?(true)
+
+            // Fetch QSOs for the map sidebar tab
+            refreshSessionQSOs(sessionId: session.id, context: context)
         } else {
-            // Fallback to defaults when no active session
             sessionCallsign = UserDefaults.standard.string(
                 forKey: "loggerDefaultCallsign"
             )
@@ -137,8 +177,22 @@ struct LoggerContainerView: View {
             sessionBand = nil
             sessionMode = nil
             isPOTAActivation = false
+            sessionQSOs = []
+            roveStops = []
             onSessionStateChange?(false)
         }
+    }
+
+    private func refreshSessionQSOs(sessionId: UUID, context: ModelContext) {
+        var descriptor = FetchDescriptor<QSO>(
+            predicate: #Predicate<QSO> { qso in
+                qso.loggingSessionId == sessionId && !qso.isHidden
+            },
+            sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+        )
+        descriptor.fetchLimit = 500
+
+        sessionQSOs = (try? context.fetch(descriptor)) ?? []
     }
 
     private func sessionPollLoop() async {

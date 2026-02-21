@@ -24,10 +24,6 @@ struct CWTranscriptionView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                UnderConstructionBanner()
-                    .padding(.horizontal)
-                    .padding(.top, 8)
-
                 // Status bar
                 statusBar
                     .padding(.horizontal)

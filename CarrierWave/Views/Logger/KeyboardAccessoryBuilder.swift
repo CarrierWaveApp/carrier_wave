@@ -33,23 +33,32 @@ enum KeyboardAccessoryBuilder {
         return characters
     }
 
-    /// Returns the configured commands for the command row based on user settings
+    /// Returns the configured commands for the command row based on user settings.
+    /// On iPad, always returns commands even if the command row is disabled in
+    /// settings — the persistent strip hides when the keyboard is up, so the
+    /// accessory is the only command source while typing.
     static func configuredCommands() -> [CommandRowItem] {
         let commandRowEnabled =
             UserDefaults.standard.object(forKey: "commandRowEnabled") as? Bool ?? false
-        guard commandRowEnabled else {
+        let isIPad = UIDevice.current.userInterfaceIdiom == .pad
+
+        if !commandRowEnabled, !isIPad {
             return []
         }
 
         let commandsString =
             UserDefaults.standard.string(forKey: "commandRowCommands") ?? defaultCommands
         guard !commandsString.isEmpty else {
-            return []
+            return isIPad ? CommandRowItem.allCases : []
         }
 
-        return commandsString.components(separatedBy: ",").compactMap {
+        let configured = commandsString.components(separatedBy: ",").compactMap {
             CommandRowItem(rawValue: $0)
         }
+        if configured.isEmpty, isIPad {
+            return CommandRowItem.allCases
+        }
+        return configured
     }
 
     /// Creates the input accessory view with number and command rows

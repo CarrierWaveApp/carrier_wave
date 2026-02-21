@@ -380,6 +380,8 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `SidebarPOTASpotsView.swift` | POTA spots adapted for persistent sidebar display (auto-refresh, no dismiss) |
 | `SidebarRBNSpotsView.swift` | RBN/My Spots adapted for persistent sidebar display |
 | `SidebarP2PView.swift` | P2P opportunities adapted for persistent sidebar display |
+| `SidebarMapView.swift` | Lightweight session map for sidebar tab (QSO markers, geodesic arcs, rove stops) |
+| `iPadCommandStrip.swift` | Persistent command row for iPad (always visible, not keyboard-dependent) |
 | `LoggerView.swift` | Main logger view with session header, callsign input, QSO form |
 | `LoggerView+Landscape.swift` | Logger landscape two-pane layout (form left, QSO list right) and compact session header |
 | `CallsignTextField.swift` | UITextField wrapper for callsign entry with proper cursor handling |

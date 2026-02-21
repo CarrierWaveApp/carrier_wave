@@ -2,7 +2,7 @@ import SwiftUI
 
 // MARK: - LoggerSpotsSidebarView
 
-/// Tabbed sidebar for iPad showing POTA spots, RBN/My Spots, and P2P opportunities.
+/// Tabbed sidebar for iPad showing POTA spots, RBN/My Spots, P2P opportunities, and session map.
 /// Lives alongside LoggerView in a horizontal layout.
 struct LoggerSpotsSidebarView: View {
     // MARK: Internal
@@ -15,6 +15,8 @@ struct LoggerSpotsSidebarView: View {
     let isPOTAActivation: Bool
     let currentBand: String?
     let currentMode: String?
+    let sessionQSOs: [QSO]
+    let roveStops: [RoveStop]
     let onSelectSpot: (SpotSelection) -> Void
 
     var body: some View {
@@ -34,7 +36,7 @@ struct LoggerSpotsSidebarView: View {
         if isPOTAActivation {
             SidebarTab.allCases
         } else {
-            [.pota, .mySpots]
+            [.pota, .mySpots, .map]
         }
     }
 
@@ -87,6 +89,13 @@ struct LoggerSpotsSidebarView: View {
                 onSelectOpportunity: { opportunity in
                     onSelectSpot(.p2p(opportunity))
                 }
+            )
+
+        case .map:
+            SidebarMapView(
+                sessionQSOs: sessionQSOs,
+                myGrid: userGrid,
+                roveStops: roveStops
             )
         }
     }
