@@ -138,3 +138,39 @@ struct ActivationMetadataFields: Sendable {
     let weatherDescription: String?
     let weatherTimestamp: Date?
 }
+
+// MARK: - SessionSpotFields
+
+/// Sendable snapshot of SessionSpot fields
+struct SessionSpotFields: Sendable {
+    let id: UUID
+    let loggingSessionId: UUID
+    let callsign: String
+    let frequencyKHz: Double
+    let mode: String
+    let timestamp: Date
+    let source: String
+    let snr: Int?
+    let wpm: Int?
+    let spotter: String?
+    let spotterGrid: String?
+    let parkRef: String?
+    let parkName: String?
+    let comments: String?
+    let region: String
+    let distanceMeters: Double?
+}
+
+// MARK: - ActivityLogFields
+
+/// Sendable snapshot of ActivityLog fields
+struct ActivityLogFields: Sendable {
+    let id: UUID
+    let name: String
+    let myCallsign: String
+    let createdAt: Date
+    let stationProfileId: UUID?
+    let currentGrid: String?
+    let locationLabel: String?
+    let isActive: Bool
+}

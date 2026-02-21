@@ -15,6 +15,8 @@ enum CKRecordMapper {
         case servicePresence = "ServicePresence"
         case loggingSession = "LoggingSession"
         case activationMetadata = "ActivationMetadata"
+        case sessionSpot = "SessionSpot"
+        case activityLog = "ActivityLog"
     }
 
     // MARK: - Constants
