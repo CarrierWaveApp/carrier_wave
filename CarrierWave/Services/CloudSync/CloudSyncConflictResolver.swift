@@ -173,6 +173,31 @@ enum CloudSyncConflictResolver {
         remoteModDate > localModDate ? remote : local
     }
 
+    // MARK: - SessionSpot: Last-Writer-Wins
+
+    /// Merge session spot using LWW. Spots are immutable once recorded,
+    /// so we simply take the remote version on conflict.
+    nonisolated static func mergeSessionSpot(
+        local _: SessionSpotFields,
+        remote: SessionSpotFields,
+        localModDate _: Date,
+        remoteModDate _: Date
+    ) -> SessionSpotFields {
+        remote
+    }
+
+    // MARK: - ActivityLog: Last-Writer-Wins
+
+    /// Merge activity log using LWW — prefer the newer modification date.
+    nonisolated static func mergeActivityLog(
+        local: ActivityLogFields,
+        remote: ActivityLogFields,
+        localModDate: Date,
+        remoteModDate: Date
+    ) -> ActivityLogFields {
+        remoteModDate > localModDate ? remote : local
+    }
+
     // MARK: Private
 
     // MARK: - Private Helpers

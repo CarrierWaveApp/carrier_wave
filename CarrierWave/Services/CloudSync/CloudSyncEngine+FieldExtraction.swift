@@ -110,6 +110,40 @@ extension CloudSyncEngine {
         )
     }
 
+    func extractSessionSpotFields(_ spot: SessionSpot) -> SessionSpotFields {
+        SessionSpotFields(
+            id: spot.id,
+            loggingSessionId: spot.loggingSessionId,
+            callsign: spot.callsign,
+            frequencyKHz: spot.frequencyKHz,
+            mode: spot.mode,
+            timestamp: spot.timestamp,
+            source: spot.source,
+            snr: spot.snr,
+            wpm: spot.wpm,
+            spotter: spot.spotter,
+            spotterGrid: spot.spotterGrid,
+            parkRef: spot.parkRef,
+            parkName: spot.parkName,
+            comments: spot.comments,
+            region: spot.region,
+            distanceMeters: spot.distanceMeters
+        )
+    }
+
+    func extractActivityLogFields(_ log: ActivityLog) -> ActivityLogFields {
+        ActivityLogFields(
+            id: log.id,
+            name: log.name,
+            myCallsign: log.myCallsign,
+            createdAt: log.createdAt,
+            stationProfileId: log.stationProfileId,
+            currentGrid: log.currentGrid,
+            locationLabel: log.locationLabel,
+            isActive: log.isActive
+        )
+    }
+
     func extractActivationMetadataFields(
         _ metadata: ActivationMetadata
     ) -> ActivationMetadataFields {

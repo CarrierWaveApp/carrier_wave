@@ -94,6 +94,34 @@ extension CloudSyncEngine {
         session.weather = fields.weather
     }
 
+    func applySessionSpotFields(_ fields: SessionSpotFields, to spot: SessionSpot) {
+        spot.loggingSessionId = fields.loggingSessionId
+        spot.callsign = fields.callsign
+        spot.frequencyKHz = fields.frequencyKHz
+        spot.mode = fields.mode
+        spot.timestamp = fields.timestamp
+        spot.source = fields.source
+        spot.snr = fields.snr
+        spot.wpm = fields.wpm
+        spot.spotter = fields.spotter
+        spot.spotterGrid = fields.spotterGrid
+        spot.parkRef = fields.parkRef
+        spot.parkName = fields.parkName
+        spot.comments = fields.comments
+        spot.region = fields.region
+        spot.distanceMeters = fields.distanceMeters
+    }
+
+    func applyActivityLogFields(_ fields: ActivityLogFields, to log: ActivityLog) {
+        log.name = fields.name
+        log.myCallsign = fields.myCallsign
+        log.createdAt = fields.createdAt
+        log.stationProfileId = fields.stationProfileId
+        log.currentGrid = fields.currentGrid
+        log.locationLabel = fields.locationLabel
+        log.isActive = fields.isActive
+    }
+
     func applyActivationMetadataSolarWeather(
         _ fields: ActivationMetadataFields,
         to metadata: ActivationMetadata

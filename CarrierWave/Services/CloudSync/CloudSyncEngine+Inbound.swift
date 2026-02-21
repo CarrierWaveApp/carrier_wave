@@ -53,6 +53,10 @@ extension CloudSyncEngine {
             processInboundLoggingSession(record)
         case CKRecordMapper.RecordType.activationMetadata.rawValue:
             processInboundActivationMetadataRecord(record)
+        case CKRecordMapper.RecordType.sessionSpot.rawValue:
+            processInboundSessionSpot(record)
+        case CKRecordMapper.RecordType.activityLog.rawValue:
+            processInboundActivityLog(record)
         default:
             logger.warning("Unknown record type: \(entityType)")
         }
@@ -260,51 +264,80 @@ extension CloudSyncEngine {
 
         switch entityType {
         case CKRecordMapper.RecordType.qso.rawValue:
-            var descriptor = FetchDescriptor<QSO>(
-                predicate: #Predicate { $0.id == uuid }
-            )
-            descriptor.fetchLimit = 1
-            if let qso = try? modelContext.fetch(descriptor).first {
-                qso.isHidden = true
-            }
-
+            deleteInboundQSO(uuid: uuid)
         case CKRecordMapper.RecordType.servicePresence.rawValue:
-            var descriptor = FetchDescriptor<ServicePresence>(
-                predicate: #Predicate { $0.id == uuid }
-            )
-            descriptor.fetchLimit = 1
-            if let presence = try? modelContext.fetch(descriptor).first {
-                modelContext.delete(presence)
-            }
-
+            deleteInboundServicePresence(uuid: uuid)
         case CKRecordMapper.RecordType.loggingSession.rawValue:
-            // Hide QSOs associated with this session before deleting it
-            let qsoDescriptor = FetchDescriptor<QSO>(
-                predicate: #Predicate { $0.loggingSessionId == uuid }
-            )
-            if let sessionQSOs = try? modelContext.fetch(qsoDescriptor) {
-                for qso in sessionQSOs {
-                    qso.isHidden = true
-                    qso.cloudDirtyFlag = true
-                }
-            }
-
-            var descriptor = FetchDescriptor<LoggingSession>(
-                predicate: #Predicate { $0.id == uuid }
-            )
-            descriptor.fetchLimit = 1
-            if let session = try? modelContext.fetch(descriptor).first {
-                modelContext.delete(session)
-            }
-
+            deleteInboundLoggingSession(uuid: uuid)
         case CKRecordMapper.RecordType.activationMetadata.rawValue:
             deleteSyncMetadata(entityType: entityType, localId: uuid)
-
+        case CKRecordMapper.RecordType.sessionSpot.rawValue:
+            deleteInboundSessionSpot(uuid: uuid)
+        case CKRecordMapper.RecordType.activityLog.rawValue:
+            deleteInboundActivityLog(uuid: uuid)
         default:
             break
         }
 
         deleteSyncMetadata(entityType: entityType, localId: uuid)
         try? modelContext.save()
+    }
+
+    private func deleteInboundQSO(uuid: UUID) {
+        var descriptor = FetchDescriptor<QSO>(predicate: #Predicate { $0.id == uuid })
+        descriptor.fetchLimit = 1
+        if let qso = try? modelContext.fetch(descriptor).first {
+            qso.isHidden = true
+        }
+    }
+
+    private func deleteInboundServicePresence(uuid: UUID) {
+        var descriptor = FetchDescriptor<ServicePresence>(
+            predicate: #Predicate { $0.id == uuid }
+        )
+        descriptor.fetchLimit = 1
+        if let presence = try? modelContext.fetch(descriptor).first {
+            modelContext.delete(presence)
+        }
+    }
+
+    private func deleteInboundLoggingSession(uuid: UUID) {
+        let qsoDescriptor = FetchDescriptor<QSO>(
+            predicate: #Predicate { $0.loggingSessionId == uuid }
+        )
+        if let sessionQSOs = try? modelContext.fetch(qsoDescriptor) {
+            for qso in sessionQSOs {
+                qso.isHidden = true
+                qso.cloudDirtyFlag = true
+            }
+        }
+
+        var descriptor = FetchDescriptor<LoggingSession>(
+            predicate: #Predicate { $0.id == uuid }
+        )
+        descriptor.fetchLimit = 1
+        if let session = try? modelContext.fetch(descriptor).first {
+            modelContext.delete(session)
+        }
+    }
+
+    private func deleteInboundSessionSpot(uuid: UUID) {
+        var descriptor = FetchDescriptor<SessionSpot>(
+            predicate: #Predicate { $0.id == uuid }
+        )
+        descriptor.fetchLimit = 1
+        if let spot = try? modelContext.fetch(descriptor).first {
+            modelContext.delete(spot)
+        }
+    }
+
+    private func deleteInboundActivityLog(uuid: UUID) {
+        var descriptor = FetchDescriptor<ActivityLog>(
+            predicate: #Predicate { $0.id == uuid }
+        )
+        descriptor.fetchLimit = 1
+        if let log = try? modelContext.fetch(descriptor).first {
+            modelContext.delete(log)
+        }
     }
 }

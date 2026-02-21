@@ -136,4 +136,65 @@ extension CloudSyncEngine {
             record: serverRecord
         )
     }
+
+    func resolveSessionSpotConflict(
+        uuid: UUID,
+        serverRecord: CKRecord
+    ) {
+        // Spots are immutable once recorded — accept server version
+        guard let remoteFields = CKRecordMapper.sessionSpotFields(from: serverRecord) else {
+            return
+        }
+
+        var descriptor = FetchDescriptor<SessionSpot>(
+            predicate: #Predicate { $0.id == uuid }
+        )
+        descriptor.fetchLimit = 1
+        if let spot = try? modelContext.fetch(descriptor).first {
+            applySessionSpotFields(remoteFields, to: spot)
+            spot.cloudDirtyFlag = true
+
+            upsertSyncMetadata(
+                entityType: CKRecordMapper.RecordType.sessionSpot.rawValue,
+                localId: uuid,
+                recordName: serverRecord.recordID.recordName,
+                record: serverRecord
+            )
+        }
+    }
+
+    func resolveActivityLogConflict(
+        uuid: UUID,
+        clientRecord: CKRecord,
+        serverRecord: CKRecord
+    ) {
+        guard let localFields = CKRecordMapper.activityLogFields(from: clientRecord),
+              let remoteFields = CKRecordMapper.activityLogFields(from: serverRecord)
+        else {
+            return
+        }
+
+        let merged = CloudSyncConflictResolver.mergeActivityLog(
+            local: localFields,
+            remote: remoteFields,
+            localModDate: clientRecord.modificationDate ?? Date.distantPast,
+            remoteModDate: serverRecord.modificationDate ?? Date.distantPast
+        )
+
+        var descriptor = FetchDescriptor<ActivityLog>(
+            predicate: #Predicate { $0.id == uuid }
+        )
+        descriptor.fetchLimit = 1
+        if let log = try? modelContext.fetch(descriptor).first {
+            applyActivityLogFields(merged, to: log)
+            log.cloudDirtyFlag = true
+
+            upsertSyncMetadata(
+                entityType: CKRecordMapper.RecordType.activityLog.rawValue,
+                localId: uuid,
+                recordName: serverRecord.recordID.recordName,
+                record: serverRecord
+            )
+        }
+    }
 }

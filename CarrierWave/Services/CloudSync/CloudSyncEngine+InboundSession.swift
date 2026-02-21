@@ -3,7 +3,7 @@ import Foundation
 import os
 import SwiftData
 
-// MARK: - Inbound: LoggingSession & ActivationMetadata
+// MARK: - Inbound: LoggingSession, ActivationMetadata, SessionSpot, ActivityLog
 
 extension CloudSyncEngine {
     func processInboundLoggingSession(_ record: CKRecord) {
@@ -131,5 +131,114 @@ extension CloudSyncEngine {
             recordName: record.recordID.recordName,
             record: record
         )
+    }
+
+    // MARK: - SessionSpot Inbound
+
+    func processInboundSessionSpot(_ record: CKRecord) {
+        guard let fields = CKRecordMapper.sessionSpotFields(from: record) else {
+            return
+        }
+
+        let uuid = fields.id
+
+        var descriptor = FetchDescriptor<SessionSpot>(
+            predicate: #Predicate { $0.id == uuid }
+        )
+        descriptor.fetchLimit = 1
+
+        if let existing = try? modelContext.fetch(descriptor).first {
+            // LWW: spots are immutable once recorded, take remote
+            applySessionSpotFields(fields, to: existing)
+        } else {
+            insertNewSessionSpot(from: fields)
+        }
+
+        upsertSyncMetadata(
+            entityType: CKRecordMapper.RecordType.sessionSpot.rawValue,
+            localId: uuid,
+            recordName: record.recordID.recordName,
+            record: record
+        )
+    }
+
+    private func insertNewSessionSpot(from fields: SessionSpotFields) {
+        let spot = SessionSpot(
+            loggingSessionId: fields.loggingSessionId,
+            callsign: fields.callsign,
+            frequencyKHz: fields.frequencyKHz,
+            mode: fields.mode,
+            timestamp: fields.timestamp,
+            source: fields.source,
+            snr: fields.snr,
+            wpm: fields.wpm,
+            spotter: fields.spotter,
+            spotterGrid: fields.spotterGrid,
+            parkRef: fields.parkRef,
+            parkName: fields.parkName,
+            comments: fields.comments,
+            region: fields.region,
+            distanceMeters: fields.distanceMeters
+        )
+        // Preserve the original UUID from the remote
+        spot.id = fields.id
+        modelContext.insert(spot)
+    }
+
+    // MARK: - ActivityLog Inbound
+
+    func processInboundActivityLog(_ record: CKRecord) {
+        guard let fields = CKRecordMapper.activityLogFields(from: record) else {
+            return
+        }
+
+        let uuid = fields.id
+
+        var descriptor = FetchDescriptor<ActivityLog>(
+            predicate: #Predicate { $0.id == uuid }
+        )
+        descriptor.fetchLimit = 1
+
+        if let existing = try? modelContext.fetch(descriptor).first {
+            mergeInboundActivityLog(fields, into: existing, record: record)
+        } else {
+            insertNewActivityLog(from: fields)
+        }
+
+        upsertSyncMetadata(
+            entityType: CKRecordMapper.RecordType.activityLog.rawValue,
+            localId: uuid,
+            recordName: record.recordID.recordName,
+            record: record
+        )
+    }
+
+    private func mergeInboundActivityLog(
+        _ fields: ActivityLogFields,
+        into existing: ActivityLog,
+        record: CKRecord
+    ) {
+        let localFields = extractActivityLogFields(existing)
+        let merged = CloudSyncConflictResolver.mergeActivityLog(
+            local: localFields,
+            remote: fields,
+            localModDate: existing.createdAt,
+            remoteModDate: record.modificationDate ?? Date()
+        )
+        applyActivityLogFields(merged, to: existing)
+    }
+
+    private func insertNewActivityLog(from fields: ActivityLogFields) {
+        let log = ActivityLog(
+            id: fields.id,
+            name: fields.name,
+            myCallsign: fields.myCallsign,
+            createdAt: fields.createdAt,
+            stationProfileId: fields.stationProfileId,
+            currentGrid: fields.currentGrid,
+            locationLabel: fields.locationLabel,
+            isActive: fields.isActive
+        )
+        modelContext.insert(log)
     }
 }

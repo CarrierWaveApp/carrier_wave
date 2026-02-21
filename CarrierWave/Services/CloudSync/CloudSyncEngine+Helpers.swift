@@ -67,50 +67,76 @@ extension CloudSyncEngine {
     func clearDirtyFlag(entityType: String, id: UUID) {
         switch entityType {
         case CKRecordMapper.RecordType.qso.rawValue:
-            var desc = FetchDescriptor<QSO>(
-                predicate: #Predicate { $0.id == id }
-            )
-            desc.fetchLimit = 1
-            if let qso = try? modelContext.fetch(desc).first {
-                qso.cloudDirtyFlag = false
-            }
-
+            clearQSODirtyFlag(id: id)
         case CKRecordMapper.RecordType.servicePresence.rawValue:
-            var desc = FetchDescriptor<ServicePresence>(
-                predicate: #Predicate { $0.id == id }
-            )
-            desc.fetchLimit = 1
-            if let presence = try? modelContext.fetch(desc).first {
-                presence.cloudDirtyFlag = false
-            }
-
+            clearServicePresenceDirtyFlag(id: id)
         case CKRecordMapper.RecordType.loggingSession.rawValue:
-            var desc = FetchDescriptor<LoggingSession>(
-                predicate: #Predicate { $0.id == id }
-            )
-            desc.fetchLimit = 1
-            if let session = try? modelContext.fetch(desc).first {
-                session.cloudDirtyFlag = false
-            }
-
+            clearLoggingSessionDirtyFlag(id: id)
         case CKRecordMapper.RecordType.activationMetadata.rawValue:
-            if let meta = lookupSyncMetadata(entityType: entityType, localId: id) {
-                let descriptor = FetchDescriptor<ActivationMetadata>()
-                if let all = try? modelContext.fetch(descriptor) {
-                    for am in all {
-                        let syntheticID = CKRecordMapper.activationMetadataID(
-                            parkReference: am.parkReference, date: am.date
-                        )
-                        if syntheticID == meta.localId {
-                            am.cloudDirtyFlag = false
-                            break
-                        }
+            clearActivationMetadataDirtyFlag(entityType: entityType, id: id)
+        case CKRecordMapper.RecordType.sessionSpot.rawValue:
+            clearSessionSpotDirtyFlag(id: id)
+        case CKRecordMapper.RecordType.activityLog.rawValue:
+            clearActivityLogDirtyFlag(id: id)
+        default:
+            break
+        }
+    }
+
+    private func clearQSODirtyFlag(id: UUID) {
+        var desc = FetchDescriptor<QSO>(predicate: #Predicate { $0.id == id })
+        desc.fetchLimit = 1
+        if let qso = try? modelContext.fetch(desc).first {
+            qso.cloudDirtyFlag = false
+        }
+    }
+
+    private func clearServicePresenceDirtyFlag(id: UUID) {
+        var desc = FetchDescriptor<ServicePresence>(predicate: #Predicate { $0.id == id })
+        desc.fetchLimit = 1
+        if let presence = try? modelContext.fetch(desc).first {
+            presence.cloudDirtyFlag = false
+        }
+    }
+
+    private func clearLoggingSessionDirtyFlag(id: UUID) {
+        var desc = FetchDescriptor<LoggingSession>(predicate: #Predicate { $0.id == id })
+        desc.fetchLimit = 1
+        if let session = try? modelContext.fetch(desc).first {
+            session.cloudDirtyFlag = false
+        }
+    }
+
+    private func clearActivationMetadataDirtyFlag(entityType: String, id: UUID) {
+        if let meta = lookupSyncMetadata(entityType: entityType, localId: id) {
+            let descriptor = FetchDescriptor<ActivationMetadata>()
+            if let all = try? modelContext.fetch(descriptor) {
+                for am in all {
+                    let syntheticID = CKRecordMapper.activationMetadataID(
+                        parkReference: am.parkReference, date: am.date
+                    )
+                    if syntheticID == meta.localId {
+                        am.cloudDirtyFlag = false
+                        break
                     }
                 }
             }
+        }
+    }
 
-        default:
-            break
+    private func clearSessionSpotDirtyFlag(id: UUID) {
+        var desc = FetchDescriptor<SessionSpot>(predicate: #Predicate { $0.id == id })
+        desc.fetchLimit = 1
+        if let spot = try? modelContext.fetch(desc).first {
+            spot.cloudDirtyFlag = false
+        }
+    }
+
+    private func clearActivityLogDirtyFlag(id: UUID) {
+        var desc = FetchDescriptor<ActivityLog>(predicate: #Predicate { $0.id == id })
+        desc.fetchLimit = 1
+        if let log = try? modelContext.fetch(desc).first {
+            log.cloudDirtyFlag = false
         }
     }
 
@@ -140,6 +166,20 @@ extension CloudSyncEngine {
         if let metadata = try? modelContext.fetch(metadataDescriptor) {
             for am in metadata {
                 am.cloudDirtyFlag = true
+            }
+        }
+
+        let spotDescriptor = FetchDescriptor<SessionSpot>()
+        if let spots = try? modelContext.fetch(spotDescriptor) {
+            for spot in spots {
+                spot.cloudDirtyFlag = true
+            }
+        }
+
+        let logDescriptor = FetchDescriptor<ActivityLog>()
+        if let logs = try? modelContext.fetch(logDescriptor) {
+            for log in logs {
+                log.cloudDirtyFlag = true
             }
         }
 
