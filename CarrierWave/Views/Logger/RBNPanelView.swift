@@ -52,7 +52,7 @@ struct RBNPanelView: View {
     @State private var spots: [UnifiedSpot] = []
     @State private var isLoading = true
     @State private var errorMessage: String?
-    @State private var showMap = false
+    @State private var showMap = true
     @State private var targetGrid: String?
 
     /// Shared spots service instance for this view

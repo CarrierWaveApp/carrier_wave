@@ -4,6 +4,20 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- Fix session controls bar pills wrapping to multiple lines (horizontal scroll safety net)
+- Fix recording pill taking up an entire row (moved inline into session controls bar)
+- Fix RBN spot command defaulting to list view instead of map
+- Fix RBN spot map showing straight lines instead of geodesic arcs
+- Fix false frequency warning when hunting activator with quick-entry RST
+- Fix frequency picker sheet dismissing immediately on tap (added Done button)
+- Fix spot comments button scrolled off-screen (moved before trailing Spacer)
+- Fix last QSO row state text clipped at bottom of session log card (44→54pt row height)
+
+### Added
+- Add "Hide field entry form" toggle in Logger Settings for quick-entry users
+- Add frequency picker hint about typing frequency in the command box
+
 ### Changed
 - Remove all ~50 inline swiftlint:disable comments across ~35 files by fixing underlying violations
 - Disable `redundant_discardable_let` rule globally (required @AppStorage pattern)

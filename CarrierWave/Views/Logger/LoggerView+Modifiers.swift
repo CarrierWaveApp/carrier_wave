@@ -131,7 +131,6 @@ extension LoggerView {
         if result?.shouldPromptForSpot == true {
             pendingQSYFrequency = freq
         }
-        showBandEditSheet = false
     }
 
     /// Equipment, hidden QSOs, and help sheets

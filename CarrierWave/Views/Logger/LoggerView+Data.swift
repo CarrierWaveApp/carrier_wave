@@ -392,10 +392,19 @@ extension LoggerView {
         }
 
         // Don't warn about the spot we're actively trying to work
-        if !callsignInput.isEmpty,
-           closestSpot.activator.uppercased() == callsignInput.uppercased()
-        {
-            return nil
+        // Extract just the callsign from quick-entry input (e.g. "W7PFB 599" → "W7PFB")
+        if !callsignInput.isEmpty {
+            let inputCallsign: String = if let qeResult = QuickEntryParser.parse(callsignInput) {
+                qeResult.callsign.uppercased()
+            } else {
+                callsignInput
+                    .split(separator: " ").first.map(String.init)?.uppercased() ?? ""
+            }
+            if !inputCallsign.isEmpty,
+               closestSpot.activator.uppercased() == inputCallsign
+            {
+                return nil
+            }
         }
 
         return buildNearbySpotWarning(spot: closestSpot, freqKHz: freqKHz, mode: mode)

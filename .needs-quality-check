@@ -1,0 +1,53 @@
+Split long functions to remove function_body_length SwiftLint disables in 6 files:
+- SyncService+Download.swift: extracted ServiceConfiguration struct, captureServiceConfiguration(), addDownloadTasks()
+- POTAClient+Spot.swift: extracted validateSpotInputs(), buildSpotURLRequest(), executeSpotRequest(), handleSpotResponse()
+- NOAAClient.swift: extracted fetchForecastURL(), fetchCurrentConditions(), parseWeatherPeriod()
+- CloudSyncConflictResolver.swift: extracted mergeQSOCoreFields(), mergeQSOExtraFields() with supporting structs
+- BandPlanService.swift: extracted buildModeViolation(), checkLicensePrivileges()
+- CWSuggestionEngine.swift: extracted findBestCategoryMatch(), findMatchInCategory()
+Split long functions to remove function_body_length SwiftLint disables in 4 more files:
+- QueryAnalyzer.swift: extracted checkIndexUsage(), checkLeadingWildcards(), checkNegationOnly(), checkTextScanFields(), checkSubstringMatching(), checkLargeDataset(), checkFrequencySearch(), determineCost()
+- QueryLexer.swift: extracted scanSingleCharToken(), scanComparisonToken(), scanQuotedStringToken(), scanWordOrFieldToken(), scanFieldQualifier(), splitEmbeddedRange(); kept cyclomatic_complexity disable
+- LoFiClient+Sync.swift: extracted logSyncStart(), refreshRegistration(), fetchProgressTotals()
+- LoFiCLI.swift: extracted performDownload(), printDownloadSummary(), writeQsoOutput()
+Split long functions to remove function_body_length SwiftLint disables in 7 more files:
+- SolarPanelView.swift: extracted metricsGrid(), sfiCard(), thirdMetricCard() from conditionsView
+- SessionsView.swift: extracted buildUploadHandler(), buildShareHandler() (moved to SessionsView+Share.swift)
+- RBNPanelView.swift: extracted selfSpotBadge(), spotDetails(), spotHeaderRow(), spotMetadataRow(), spotComments(), spotParkName()
+- SidebarRBNSpotsView.swift: extracted spotBadge(), spotDetails(), spotHeaderRow(), spotMetadataRow()
+- LoggerView.swift: extracted sessionTitleBar(), sessionActionsButton(), roveProgressSection(), sessionControlsBar()
+- CallsignNotesSettingsView.swift: extracted sourceHeaderRow(), sourceStatusRow()
+- BandPlan+Activities.swift: extracted buildQRPCWActivities(), buildQRPSSBActivities(), buildSSTVActivities(), buildFT8Activities(), buildPSKActivities(), buildRTTYActivities(), buildAMActivities(), buildFMActivities(), buildNetActivities()
+Remove swiftlint:disable comments from 3 files:
+- LoggingSessionManagerTests.swift: removed file_length + type_body_length disables, split into +QSOLogging and +HiddenQSOs
+- LoggingSessionTests.swift: removed type_body_length disable, split into +DisplayAndPersistence
+- QueryLexer.swift: removed cyclomatic_complexity disable (tokenize() delegates to helpers, under threshold)
+Split 5 files to remove file_length and type_body_length SwiftLint disables:
+- QueryCompiler.swift: split into QueryCompiler + StringFields + NumericFields + DateStatusFields + Predicates extensions
+- DescriptionLookup+DXCC.swift: split into DXCC + Americas + Europe + AsiaOceania + AfricaOther + Descriptions extensions
+- ChallengeTypes.swift: split into ChallengeTypes + Progress + DTOs
+- QueryParser.swift: split into QueryParser + FieldTerms + Conditions extensions
+- OnboardingView.swift: split into OnboardingView + Steps + Actions extensions
+Changed private members to internal for cross-file extension access in QueryCompiler, QueryParser, OnboardingView, DescriptionLookup+DXCC
+Split LoggingSessionManager.swift into 6 extension files (Helpers, FrequencyAndMode, QSOManagement, SessionManagement, Models)
+Split SyncService+Process.swift into 3 files (Process, ProcessRepairs, ProcessLegacy)
+Split CWTranscriptionService.swift into 2 files (main, Decoder)
+Split CallsignLookupService.swift into 2 files (main, QRZ)
+Changed private members to internal for cross-file extension access in all split files
+Removed swiftlint:disable file_length and type_body_length comments from all split files
+Split LoggerView.swift (3818 lines) into 12 extension files. Removed swiftlint:disable file_length type_body_length. All files under 500 lines, type body under 300 lines. Changed private members to internal for cross-file access. Extracted sheet/event modifiers into LoggerView+Modifiers.swift.
+Logger interface fixes (6 issues):
+- SessionHeader: wrapped sessionControlsBar in horizontal ScrollView, added fixedSize on freq/mode capsules, truncated equipment names >12 chars
+- SpotSummaryView: replaced fixed prefix(4) region pills with ViewThatFits (4→3→2 pills)
+- Layout: moved webSDRMiniBadge inline into session controls bar (removed standalone row), added webSDRInlineBadge
+- RBNPanelView: changed showMap default from false to true
+- SpotsMiniMapView: replaced straight MapPolyline with geodesic arcs via ActivationMapHelpers.geodesicPath
+- LoggerView+Data: extract callsign from quick-entry input before comparing in checkNearbySpots (fixes false frequency warning)
+- LoggerView+Modifiers: removed showBandEditSheet=false from handleBandFrequencySelection (band picker stays open)
+- LoggerView+SessionSheets: added Done toolbar button to SessionBandEditSheet
+Logger interface fixes (round 2):
+- LoggerView+SessionHeader: moved SpotCommentsButton before Spacer so it's visible without scrolling
+- LoggerView+FormFields: increased QSO row height from 44→54pt to prevent state text clipping
+- LoggerView.swift + LoggerView+Layout: added @AppStorage hideFieldEntryForm, conditional on compactFieldsSection
+- LoggerSettingsView: added "Hide field entry form" toggle in Display section
+- LoggerView+SessionSheets: wrapped FrequencyBandView in Section with footer hint about command box frequency entry

@@ -239,17 +239,24 @@ struct SessionBandEditSheet: View {
     var body: some View {
         NavigationStack {
             List {
-                FrequencyBandView(
-                    selectedMode: currentMode,
-                    frequency: $frequencyText,
-                    detailBand: $bandDetail
-                )
+                Section {
+                    FrequencyBandView(
+                        selectedMode: currentMode,
+                        frequency: $frequencyText,
+                        detailBand: $bandDetail
+                    )
+                } footer: {
+                    Text("Tip: Type a frequency like 14.061 in the command box to set it directly.")
+                }
             }
             .navigationTitle("Pick Frequency")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { onCancel() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { onCancel() }
                 }
             }
             .sheet(item: $bandDetail) { band in

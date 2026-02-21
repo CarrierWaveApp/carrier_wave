@@ -65,6 +65,7 @@ struct LoggerView: View {
 
     @AppStorage("loggerAutoModeSwitch") var autoModeSwitch = true
     @AppStorage("loggerKeepLookupAfterLog") var keepLookupAfterLog = true
+    @AppStorage("loggerHideFieldEntryForm") var hideFieldEntryForm = false
 
     /// Active/paused sessions available to continue or finish
     @State var activeSessions: [LoggingSession] = []

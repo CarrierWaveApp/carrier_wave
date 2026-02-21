@@ -30,6 +30,7 @@ struct LoggerSettingsView: View {
     @AppStorage("loggerDefaultMode") private var defaultMode = "CW"
     @AppStorage("loggerDefaultGrid") private var defaultGrid = ""
     @AppStorage("loggerShowActivityPanel") private var showActivityPanel = true
+    @AppStorage("loggerHideFieldEntryForm") private var hideFieldEntryForm = false
     @AppStorage("loggerShowLicenseWarnings") private var showLicenseWarnings = true
     @AppStorage("loggerKeepScreenOn") private var keepScreenOn = true
     @AppStorage("potaAutoSpotEnabled") private var potaAutoSpotEnabled = false
@@ -110,10 +111,15 @@ struct LoggerSettingsView: View {
     private var displaySection: some View {
         Section {
             Toggle("Show frequency activity", isOn: $showActivityPanel)
+            Toggle("Hide field entry form", isOn: $hideFieldEntryForm)
         } header: {
             Text("Display")
         } footer: {
-            Text("Show nearby activity on the frequency (from RBN, POTA, etc.)")
+            if hideFieldEntryForm {
+                Text("Use quick-entry syntax (e.g. W6JSV 599 CA) instead of separate fields")
+            } else {
+                Text("Show nearby activity on the frequency (from RBN, POTA, etc.)")
+            }
         }
     }
 

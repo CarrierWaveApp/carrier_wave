@@ -31,10 +31,12 @@ struct SpotsMiniMapView: View {
                     }
                 }
 
-                // Arcs from target to each spotter
+                // Geodesic arcs from target to each spotter
                 ForEach(spotAnnotations) { annotation in
-                    MapPolyline(coordinates: [targetCoord, annotation.coordinate])
-                        .stroke(annotation.color.opacity(0.6), lineWidth: 1.5)
+                    MapPolyline(coordinates: ActivationMapHelpers.geodesicPath(
+                        from: targetCoord, to: annotation.coordinate, segments: 20
+                    ))
+                    .stroke(annotation.color.opacity(0.6), lineWidth: 1.5)
                 }
             }
 

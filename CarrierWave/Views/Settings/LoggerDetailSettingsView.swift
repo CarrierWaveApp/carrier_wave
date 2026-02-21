@@ -29,6 +29,7 @@ struct LoggerDetailSettingsView: View {
         "rbn,solar,weather,spot,pota,p2p"
 
     @AppStorage("loggerKeepLookupAfterLog") private var keepLookupAfterLog = true
+    @AppStorage("loggerHideFieldEntryForm") private var hideFieldEntryForm = false
     @AppStorage("loggerShowTheirGrid") private var showTheirGrid = false
     @AppStorage("loggerShowTheirPark") private var showTheirPark = false
     @AppStorage("loggerShowOperator") private var showOperator = false
@@ -105,6 +106,7 @@ struct LoggerDetailSettingsView: View {
             Toggle("Keep screen on", isOn: $keepScreenOn)
             Toggle("Auto-switch mode for frequency", isOn: $autoModeSwitch)
             Toggle("Keep lookup info after logging", isOn: $keepLookupAfterLog)
+            Toggle("Hide field entry form", isOn: $hideFieldEntryForm)
 
             Picker("Notes display", selection: $notesDisplayMode) {
                 Text("Emoji").tag("emoji")

@@ -266,7 +266,7 @@ extension LoggerView {
                     .listStyle(.plain)
                     .scrollDisabled(true)
                     .scrollContentBackground(.hidden)
-                    .frame(height: CGFloat(entries.count) * 44)
+                    .frame(height: CGFloat(entries.count) * 54)
                 }
             }
             .padding()

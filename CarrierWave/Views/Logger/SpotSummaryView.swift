@@ -86,16 +86,10 @@ struct SpotSummaryView: View {
     }
 
     private var regionPills: some View {
-        HStack(spacing: 4) {
-            ForEach(summary.regionsWithSpots.prefix(4), id: \.region) { item in
-                RegionPill(region: item.region, count: item.count)
-            }
-
-            if summary.regionsWithSpots.count > 4 {
-                Text("+\(summary.regionsWithSpots.count - 4)")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-            }
+        ViewThatFits(in: .horizontal) {
+            regionPillRow(max: 4)
+            regionPillRow(max: 3)
+            regionPillRow(max: 2)
         }
     }
 
@@ -127,6 +121,21 @@ struct SpotSummaryView: View {
             }
             .frame(maxHeight: 200)
         }
+    }
+
+    private func regionPillRow(max count: Int) -> some View {
+        HStack(spacing: 4) {
+            ForEach(summary.regionsWithSpots.prefix(count), id: \.region) { item in
+                RegionPill(region: item.region, count: item.count)
+            }
+
+            if summary.regionsWithSpots.count > count {
+                Text("+\(summary.regionsWithSpots.count - count)")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .fixedSize()
     }
 
     private func errorRow(_ message: String) -> some View {

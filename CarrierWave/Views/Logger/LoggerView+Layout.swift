@@ -39,14 +39,6 @@ extension LoggerView {
         VStack(spacing: 0) {
             sessionHeader
 
-            // WebSDR mini recording badge (visible when panel is closed)
-            if let manager = sessionManager,
-               !showWebSDRPanel,
-               manager.webSDRSession.state.isActive
-            {
-                webSDRMiniBadge(session: manager.webSDRSession)
-            }
-
             // Spot monitoring summary (always visible when session active)
             if let manager = sessionManager {
                 SpotSummaryView(monitoringService: manager.spotMonitoringService)
@@ -88,7 +80,9 @@ extension LoggerView {
                         callsignLookupDisplay
 
                         // Compact fields: State, RSTs, with More expansion
-                        compactFieldsSection
+                        if !hideFieldEntryForm {
+                            compactFieldsSection
+                        }
 
                         // Cancel button when editing a QSO
                         if editingQSO != nil {
@@ -241,30 +235,5 @@ extension LoggerView {
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: showPOTAPanel)
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: showP2PPanel)
         .animation(.spring(response: 0.3, dampingFraction: 0.7), value: showWebSDRPanel)
-    }
-
-    // MARK: - WebSDR Mini Badge
-
-    func webSDRMiniBadge(session: WebSDRSession) -> some View {
-        Button {
-            showWebSDRPanel = true
-        } label: {
-            HStack(spacing: 6) {
-                Circle()
-                    .fill(.red)
-                    .frame(width: 8, height: 8)
-                Image(systemName: "antenna.radiowaves.left.and.right")
-                    .font(.caption2)
-                Text(formatWebSDRDuration(session.recordingDuration))
-                    .font(.caption.monospacedDigit())
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .background(.red.opacity(0.1))
-            .clipShape(Capsule())
-        }
-        .buttonStyle(.plain)
-        .padding(.horizontal)
-        .padding(.top, 4)
     }
 }

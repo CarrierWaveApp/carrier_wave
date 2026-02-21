@@ -268,44 +268,52 @@ extension LoggerView {
     // MARK: - Session Controls Bar
 
     func sessionControlsBar(_ session: LoggingSession) -> some View {
-        HStack {
-            if session.activationType == .pota, !session.isRove {
-                parkHeaderView(session)
-            }
-
-            freqBandCapsule(session)
-
-            Button {
-                showModeEditSheet = true
-            } label: {
-                HStack(spacing: 2) {
-                    Text(session.mode)
-                    Image(systemName: "chevron.up.chevron.down")
-                        .font(.system(size: 8))
-                        .foregroundStyle(.secondary)
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack {
+                if session.activationType == .pota, !session.isRove {
+                    parkHeaderView(session)
                 }
-                .font(.caption.weight(.medium))
-                .padding(.horizontal, 6)
-                .padding(.vertical, 2)
-                .background(Color.blue.opacity(0.2))
-                .clipShape(Capsule())
-            }
-            .buttonStyle(.plain)
 
-            equipmentCapsule(session)
+                if session.activationType == .pota,
+                   let parkRef = session.parkReference,
+                   let commentsService = sessionManager?.spotCommentsService
+                {
+                    SpotCommentsButton(
+                        comments: commentsService.comments,
+                        newCount: commentsService.newCommentCount,
+                        parkRef: parkRef,
+                        onMarkRead: { commentsService.markAllRead() }
+                    )
+                }
 
-            Spacer()
+                freqBandCapsule(session)
 
-            if session.activationType == .pota,
-               let parkRef = session.parkReference,
-               let commentsService = sessionManager?.spotCommentsService
-            {
-                SpotCommentsButton(
-                    comments: commentsService.comments,
-                    newCount: commentsService.newCommentCount,
-                    parkRef: parkRef,
-                    onMarkRead: { commentsService.markAllRead() }
-                )
+                Button {
+                    showModeEditSheet = true
+                } label: {
+                    HStack(spacing: 2) {
+                        Text(session.mode)
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(.system(size: 8))
+                            .foregroundStyle(.secondary)
+                    }
+                    .font(.caption.weight(.medium))
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Color.blue.opacity(0.2))
+                    .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+
+                equipmentCapsule(session)
+
+                // Inline WebSDR recording badge (visible when panel is closed)
+                if let manager = sessionManager,
+                   !showWebSDRPanel,
+                   manager.webSDRSession.state.isActive
+                {
+                    webSDRInlineBadge(session: manager.webSDRSession)
+                }
             }
         }
     }
@@ -382,6 +390,7 @@ extension LoggerView {
             .padding(.vertical, 2)
             .background(color.opacity(0.2))
             .clipShape(Capsule())
+            .fixedSize()
         }
         .buttonStyle(.plain)
     }
@@ -413,11 +422,32 @@ extension LoggerView {
             .contains { $0 != nil && !$0!.isEmpty }
     }
 
+    /// Compact inline WebSDR recording badge for the session controls bar
+    func webSDRInlineBadge(session: WebSDRSession) -> some View {
+        Button {
+            showWebSDRPanel = true
+        } label: {
+            HStack(spacing: 3) {
+                Circle()
+                    .fill(.red)
+                    .frame(width: 6, height: 6)
+                Text(formatWebSDRDuration(session.recordingDuration))
+                    .font(.caption2.monospacedDigit())
+            }
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(.red.opacity(0.15))
+            .clipShape(Capsule())
+        }
+        .buttonStyle(.plain)
+    }
+
     func equipmentCapsuleLabel(_ session: LoggingSession) -> String {
         if let rig = session.myRig, !rig.isEmpty {
             let extras = [session.myAntenna, session.myKey, session.myMic]
                 .compactMap { $0 }.filter { !$0.isEmpty }.count
-            return extras > 0 ? "\(rig) +\(extras)" : rig
+            let truncatedRig = rig.count > 12 ? String(rig.prefix(10)) + "…" : rig
+            return extras > 0 ? "\(truncatedRig) +\(extras)" : truncatedRig
         }
         if hasAnyEquipment(session) {
             return "Equipment"
