@@ -1,6 +1,8 @@
 # Setup & Build Commands
 
-NEVER run or build the app yourself. Prompt the user to do so.
+> **Cloud/web environment (Claude Code app):** Xcode and `make` are not available. Skip all build/test/deploy commands below. Focus on code changes only — the user will build and test locally.
+
+When running locally, NEVER run or build the app yourself. Prompt the user to do so.
 
 ```bash
 # Build for simulator
