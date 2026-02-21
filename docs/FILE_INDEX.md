@@ -293,17 +293,21 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 |------|---------|
 | `CloudSyncService.swift` | `@MainActor` service owning CKSyncEngine, publishing sync status for UI |
 | `CloudSyncEngine.swift` | `actor` implementing `CKSyncEngineDelegate` — core setup and event dispatch |
-| `CloudSyncEngine+Inbound.swift` | Inbound record processing (fetched changes, record upsert/delete) |
+| `CloudSyncEngine+Inbound.swift` | Inbound record processing (fetched changes, QSO/ServicePresence upsert, deletion dispatch) |
+| `CloudSyncEngine+InboundSession.swift` | Inbound processing for LoggingSession, ActivationMetadata, SessionSpot, ActivityLog |
 | `CloudSyncEngine+Outbound.swift` | Outbound change collection, batch building, sent-changes handling |
-| `CloudSyncEngine+ConflictResolution.swift` | Per-type conflict resolution dispatchers (QSO, ServicePresence, Session, Metadata) |
-| `CloudSyncEngine+Helpers.swift` | Shared helpers: dirty flag clearing, field extraction, metadata lookup |
+| `CloudSyncEngine+ConflictResolution.swift` | Per-type conflict resolution dispatchers (QSO, ServicePresence, Session, Metadata, Spot, Log) |
+| `CloudSyncEngine+FieldExtraction.swift` | Extract Sendable field structs from SwiftData models for all synced types |
+| `CloudSyncEngine+FieldApplication.swift` | Apply Sendable field structs back to SwiftData models for all synced types |
+| `CloudSyncEngine+Helpers.swift` | Sync metadata CRUD, dirty flag clearing, markAllDirty, account changes |
 | `CloudSyncEngine+ZoneAndState.swift` | Zone creation, state serialization, account status |
 | `CKRecordMapper.swift` | Record type constants, identity helpers, QSO/ServicePresence CKRecord mapping |
 | `CKRecordMapper+Fields.swift` | Sendable field structs (QSOFields, ServicePresenceFields, etc.) for actor boundaries |
 | `CKRecordMapper+SessionMapping.swift` | LoggingSession and ActivationMetadata CKRecord mapping |
+| `CKRecordMapper+SpotAndLogMapping.swift` | SessionSpot and ActivityLog CKRecord mapping |
 | `CloudSyncMetadata.swift` | SwiftData model tracking per-record sync state (change tags, record names) |
 | `CloudSyncMetadata+CKRecord.swift` | Extension with CKRecord encode/decode helpers (kept out of @Model body) |
-| `CloudSyncConflictResolver.swift` | Conflict resolution strategies (field-level QSO merge, union ServicePresence, LWW session) |
+| `CloudSyncConflictResolver.swift` | Conflict resolution strategies (field-level QSO merge, union ServicePresence, LWW session/spot/log) |
 
 ## Services - WebSDR (`CarrierWave/Services/WebSDR/`)
 
