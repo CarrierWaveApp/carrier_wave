@@ -49,7 +49,7 @@ extension QSOProcessingActor {
         for presence in presenceRecords {
             try Task.checkCancellation()
 
-            guard let qso = presence.qso else {
+            guard let qso = presence.qso, !qso.isDeleted else {
                 continue
             }
 
@@ -92,7 +92,7 @@ extension QSOProcessingActor {
         for presence in presenceRecords {
             try Task.checkCancellation()
 
-            guard let qso = presence.qso else {
+            guard let qso = presence.qso, !qso.isDeleted else {
                 continue
             }
 
@@ -148,7 +148,7 @@ extension QSOProcessingActor {
         for presence in presenceRecords {
             try Task.checkCancellation()
 
-            guard let qso = presence.qso else {
+            guard let qso = presence.qso, !qso.isDeleted else {
                 continue
             }
 
@@ -282,6 +282,10 @@ extension QSOProcessingActor {
         var result = BatchResult()
 
         for qso in batch {
+            guard !qso.isDeleted else {
+                continue
+            }
+
             // Only check QSOs that belong to the user (match one of their callsigns)
             let myCallsign = qso.myCallsign.uppercased()
             guard userCallsigns.isEmpty || userCallsigns.contains(myCallsign) else {

@@ -9,6 +9,7 @@ All notable changes to Carrier Wave will be documented in this file.
 - Extend iCloud sync to SessionSpot and ActivityLog entities (LWW conflict resolution)
 
 ### Fixed
+- Guard against accessing deleted QSO models in orphan repair, preventing InvalidFutureBackingData crashes
 - Fix photo restore safety: use copy-to-temp-then-move to prevent data loss if copy fails during backup restore
 - Fix SessionSpot conflict resolution setting dirty flag after accepting server version, preventing sync ping-pong
 - Fix ActivityLog inbound merge using immutable createdAt as modification date (now uses dirty-flag semantics)
