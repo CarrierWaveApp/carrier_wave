@@ -27,13 +27,25 @@ struct QSODetailView: View {
         }
         .navigationTitle("QSO Details")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button("Edit") {
+                    showEditSheet = true
+                }
+            }
+        }
+        .sheet(isPresented: $showEditSheet) {
+            QSOEditSheet(qso: qso) {
+                // Refresh park names after edit
+                refreshTask?.cancel()
+                refreshTask = Task {
+                    await refreshParkNames()
+                }
+            }
+            .landscapeAdaptiveDetents(portrait: [.large])
+        }
         .task {
-            if let park = qso.parkReference {
-                myParkName = await POTAParksCache.shared.name(for: park)
-            }
-            if let park = qso.theirParkReference {
-                theirParkName = await POTAParksCache.shared.name(for: park)
-            }
+            await refreshParkNames()
         }
     }
 
@@ -55,6 +67,8 @@ struct QSODetailView: View {
 
     @State private var myParkName: String?
     @State private var theirParkName: String?
+    @State private var showEditSheet = false
+    @State private var refreshTask: Task<Void, Never>?
 
     private var locationLine: String? {
         let parts = [qso.qth, qso.state, qso.country].compactMap(\.self)
@@ -69,6 +83,19 @@ struct QSODetailView: View {
                 return configured || presence.isPresent || presence.isSubmitted
             }
             .sorted { $0.serviceType.rawValue < $1.serviceType.rawValue }
+    }
+
+    private func refreshParkNames() async {
+        if let park = qso.parkReference {
+            myParkName = await POTAParksCache.shared.name(for: park)
+        } else {
+            myParkName = nil
+        }
+        if let park = qso.theirParkReference {
+            theirParkName = await POTAParksCache.shared.name(for: park)
+        } else {
+            theirParkName = nil
+        }
     }
 
     // MARK: - Header

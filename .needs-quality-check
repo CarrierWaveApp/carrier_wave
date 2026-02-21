@@ -1,0 +1,2 @@
+Add QSO editing from Logs tab: new QSOEditSheet, Edit button on QSODetailView
+Re-fetch callsign info from QRZ/HamDB when callsign is changed in QSOEditSheet
