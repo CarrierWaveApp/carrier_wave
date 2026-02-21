@@ -38,6 +38,7 @@ Deploy to device yourself (`make deploy`). Don't ask the user to build.
 | Setup | [docs/SETUP.md](docs/SETUP.md) |
 | Design Language | [docs/design-language.md](docs/design-language.md) |
 | Sync System | [docs/features/sync.md](docs/features/sync.md) |
+| iCloud Sync & Backup | [docs/features/icloud-sync.md](docs/features/icloud-sync.md) |
 | Statistics | [docs/features/statistics.md](docs/features/statistics.md) |
 | Performance | [docs/PERFORMANCE.md](docs/PERFORMANCE.md) |
 | Tours | [docs/features/tour-requirements.md](docs/features/tour-requirements.md) |

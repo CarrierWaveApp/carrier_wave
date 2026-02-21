@@ -154,7 +154,8 @@ Services authenticate with the user's current callsign. Uploading QSOs from a di
 - **Batching**: QRZ uploads batched at 50 QSOs; POTA grouped by park
 - **Error handling**: Failed uploads create `POTAUploadAttempt` records for debugging
 
-## Related Plans
+## Related Documents
 
+- [iCloud Sync & Backup](icloud-sync.md) — CKSyncEngine sync, conflict resolution, backup system
 - [Sync Model Redesign](../plans/2026-01-21-sync-model-redesign.md)
 - [QRZ Token Sync Design](../plans/2026-01-21-qrz-token-sync-design.md)

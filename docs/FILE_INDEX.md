@@ -620,6 +620,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `features/delete-confirmation.md` | Delete confirmation requirements and review checklist |
 | `features/logger-requirements.md` | Logger requirements and compliance checklist |
 | `features/sync.md` | QRZ, POTA, LoFi sync integration |
+| `features/icloud-sync.md` | iCloud sync architecture, conflict resolution, backup system |
 | `features/statistics.md` | Dashboard stats and drilldown views |
 | `features/tour-requirements.md` | Feature tour rules and mini tour implementation guide |
 | `app-review-notes.md` | App Store review notes (ATS justification, background audio, demo instructions) |

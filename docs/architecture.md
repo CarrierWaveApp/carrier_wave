@@ -56,6 +56,15 @@ CarrierWave/
 └── Utilities/        # Helpers (Keychain, etc.)
 ```
 
+## iCloud Sync & Backup
+
+Carrier Wave uses Apple's CKSyncEngine (iOS 17+) for bidirectional iCloud sync across
+devices, plus a local backup system with iCloud Drive mirroring. Six entity types sync
+(QSO, ServicePresence, LoggingSession, ActivationMetadata, SessionSpot, ActivityLog) with
+per-type conflict resolution strategies and a dirty-flag protocol to prevent sync ping-pong.
+
+Full details: [iCloud Sync & Backup](features/icloud-sync.md)
+
 ## Size Class Strategy
 
 Two separate mechanisms handle layout adaptation:
