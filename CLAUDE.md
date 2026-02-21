@@ -12,7 +12,9 @@ SwiftUI/SwiftData iOS app for amateur radio QSO logging with cloud sync to QRZ, 
 
 ## Building and Testing
 
-> **Cloud/web environment (Claude Code app):** Xcode is not available. Skip all `xc` / `make` commands. Focus on code changes only — the user will build and test locally.
+> **Cloud/web environment (Claude Code app):** Xcode is not available. Skip all `xc` / `make` commands. Focus on code changes only. After modifying any `.swift` files, create or append to `.needs-quality-check` with a summary of what changed (one line per commit), then commit it alongside your changes. This signals that formatting and build verification are needed locally.
+
+> **Local environment:** On session start, check for `.needs-quality-check`. If it exists, run `xc quality` (format + lint + build). If quality passes, delete the file and commit the cleanup. If it fails, fix the issues before continuing.
 
 When running locally with Xcode, use the **xcode-build** skill (`xc`) for all builds and tests. Device configured in `CLAUDE.local.md`.
 
