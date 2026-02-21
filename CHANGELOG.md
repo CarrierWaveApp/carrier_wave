@@ -5,6 +5,7 @@ All notable changes to Carrier Wave will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Add QSO editing from the Logs tab: tap a QSO to view details, then tap Edit to modify fields (callsign, band, mode, frequency, RST, location, notes)
 - Add automatic database backup system with rolling snapshots on app launch, pre-sync, and pre-import
 - Add manual backup and restore UI in Settings > Data & Tools > Backups
 - Add iCloud Drive backup sync (2 most recent snapshots) for cross-device recovery
