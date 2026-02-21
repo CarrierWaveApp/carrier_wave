@@ -220,6 +220,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `KIndexRepairService.swift` | One-time repair clearing corrupted K-index=0 data from before HamQSL XML fix |
 | `ActivityLogQSORepairService.swift` | One-time repair flagging activity log QSOs and fixing misplaced parkReference |
 | `PhoneSSBDuplicateRepairService.swift` | One-time repair merging duplicate QSOs from PHONE vs SSB mode mismatch |
+| `ServicePresenceDeduplicationRepairService.swift` | One-time repair deduplicating ServicePresence records from iCloud sync |
 | `POTASplitRepairService.swift` | One-time repair splitting completed POTA sessions that span UTC midnight |
 | `CWError.swift` | CW transcription error types |
 | `CWAudioCapture.swift` | AVAudioEngine microphone capture for CW decoding |

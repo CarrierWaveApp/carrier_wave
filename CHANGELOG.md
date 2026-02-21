@@ -5,6 +5,14 @@ All notable changes to Carrier Wave will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+- Fix duplicate service badges in QSO rows (collapse to one badge per service type)
+- Fix duplicate QSO records from iCloud sync (UUID collision repair on startup)
+- Fix duplicate ServicePresence records from iCloud sync (dedup repair on startup)
+- Prevent future ServicePresence duplicates in iCloud inbound sync
+- Fix crash in DeduplicationService when QSOs have duplicate UUIDs
+- Fix callsign truncation in QSO list rows (never abbreviated with ellipsis)
+- Fix contact count badge text wrapping (e.g., "x29" splitting across lines)
+- Fix dedup key whitespace trimming mismatch between QSO model and processing actor
 - Fix session controls bar pills wrapping to multiple lines (horizontal scroll safety net)
 - Fix recording pill taking up an entire row (moved inline into session controls bar)
 - Fix RBN spot command defaulting to list view instead of map
