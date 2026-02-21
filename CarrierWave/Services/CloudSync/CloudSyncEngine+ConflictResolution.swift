@@ -20,8 +20,10 @@ extension CloudSyncEngine {
         let merged = CloudSyncConflictResolver.mergeQSO(
             local: localFields,
             remote: remoteFields,
-            localModDate: clientRecord.modificationDate ?? Date.distantPast,
-            remoteModDate: serverRecord.modificationDate ?? Date.distantPast
+            localModDate: localFields.modifiedAt
+                ?? clientRecord.modificationDate ?? Date.distantPast,
+            remoteModDate: remoteFields.modifiedAt
+                ?? serverRecord.modificationDate ?? Date.distantPast
         )
 
         var descriptor = FetchDescriptor<QSO>(

@@ -24,6 +24,9 @@ All notable changes to Carrier Wave will be documented in this file.
 - Mark iCloud QSO sync as experimental with confirmation dialog and auto-backup before enabling
 
 ### Fixed
+- Fix iCloud sync conflict resolution using creation date instead of last-edit date, causing remote changes to silently overwrite local edits
+- Fix iCloud sync notes merge growing unboundedly on repeated conflicts
+- Fix new QSOs from logger and activity log not syncing to iCloud until edited
 - Fix backup restore using wrong UserDefaults key to disable iCloud sync, leaving sync active after restore
 - Fix backup QSO count showing 0 when SwiftData table name differs from CoreData convention
 - Fix activity grid using local timezone for date grouping instead of UTC, causing QSO counts to disagree with Sessions view for users west of UTC

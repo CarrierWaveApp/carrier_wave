@@ -217,6 +217,8 @@ final class ActivityLogManager {
         // Link QSO to this activity log via loggingSessionId
         qso.loggingSessionId = log.id
         qso.isActivityLogQSO = true
+        qso.cloudDirtyFlag = true
+        qso.modifiedAt = Date()
 
         modelContext.insert(qso)
         markForUpload(qso)
@@ -401,9 +403,13 @@ final class ActivityLogManager {
     private func clearActiveLogId() {
         UserDefaults.standard.removeObject(forKey: Self.activeLogIdKey)
     }
+}
 
+// MARK: - Activity Detection
+
+extension ActivityLogManager {
     /// Run activity detection for a newly logged QSO
-    private func detectActivities(for qso: QSO) {
+    func detectActivities(for qso: QSO) {
         guard let callsign = activeLog?.myCallsign, !callsign.isEmpty else {
             return
         }

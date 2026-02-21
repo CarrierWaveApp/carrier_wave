@@ -610,6 +610,8 @@ final class LoggingSessionManager {
 
         // Set the logging session ID
         qso.loggingSessionId = session.id
+        qso.cloudDirtyFlag = true
+        qso.modifiedAt = Date()
 
         modelContext.insert(qso)
         session.incrementQSOCount()

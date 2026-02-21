@@ -21,6 +21,7 @@ struct QSOFields: Sendable {
     let notes: String?
     let importSource: ImportSource
     let importedAt: Date
+    let modifiedAt: Date?
     let rawADIF: String?
     let name: String?
     let qth: String?

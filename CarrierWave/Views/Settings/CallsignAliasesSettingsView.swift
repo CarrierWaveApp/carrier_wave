@@ -278,6 +278,7 @@ struct CallsignAliasesSettingsView: View {
             for qso in matchingQSOs {
                 qso.isHidden = true
                 qso.cloudDirtyFlag = true
+                qso.modifiedAt = Date()
                 deletedCount += 1
             }
 

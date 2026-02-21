@@ -125,6 +125,10 @@ nonisolated final class QSO {
     /// Set to true on any local mutation, cleared after successful upload.
     var cloudDirtyFlag: Bool = false
 
+    /// When this QSO was last edited locally. Used for iCloud sync conflict resolution.
+    /// nil means never edited after creation — falls back to importedAt.
+    var modifiedAt: Date?
+
     /// Logging session this QSO belongs to (optional - older QSOs won't have this)
     var loggingSessionId: UUID?
 

@@ -263,6 +263,7 @@ struct LogsListContentView: View {
         for qso in qsosToDelete {
             qso.isHidden = true
             qso.cloudDirtyFlag = true
+            qso.modifiedAt = Date()
         }
         try? modelContext.save()
 

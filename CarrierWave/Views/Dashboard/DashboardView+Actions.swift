@@ -211,6 +211,7 @@ extension DashboardView {
             for qso in qrzQSOs {
                 qso.isHidden = true
                 qso.cloudDirtyFlag = true
+                qso.modifiedAt = Date()
             }
             try modelContext.save()
         } catch {
@@ -231,6 +232,7 @@ extension DashboardView {
             for qso in lofiQSOs {
                 qso.isHidden = true
                 qso.cloudDirtyFlag = true
+                qso.modifiedAt = Date()
             }
             try modelContext.save()
 

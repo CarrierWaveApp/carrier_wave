@@ -89,6 +89,7 @@ enum CKRecordMapper {
         record["notes"] = fields.notes
         record["importSource"] = fields.importSource.rawValue
         record["importedAt"] = fields.importedAt
+        record["modifiedAt"] = fields.modifiedAt
         record["rawADIF"] = fields.rawADIF
         record["name"] = fields.name
         record["qth"] = fields.qth
@@ -141,6 +142,7 @@ enum CKRecordMapper {
             notes: record["notes"] as? String,
             importSource: importSource,
             importedAt: record["importedAt"] as? Date ?? Date(),
+            modifiedAt: record["modifiedAt"] as? Date,
             rawADIF: record["rawADIF"] as? String,
             name: record["name"] as? String,
             qth: record["qth"] as? String,

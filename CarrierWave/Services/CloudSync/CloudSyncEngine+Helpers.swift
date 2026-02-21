@@ -197,6 +197,7 @@ extension CloudSyncEngine {
             notes: qso.notes,
             importSource: qso.importSource,
             importedAt: qso.importedAt,
+            modifiedAt: qso.modifiedAt,
             rawADIF: qso.rawADIF,
             name: qso.name,
             qth: qso.qth,
@@ -329,6 +330,7 @@ extension CloudSyncEngine {
         qso.notes = fields.notes
         qso.importSource = fields.importSource
         qso.importedAt = fields.importedAt
+        qso.modifiedAt = fields.modifiedAt
         qso.rawADIF = fields.rawADIF
         qso.name = fields.name
         qso.qth = fields.qth

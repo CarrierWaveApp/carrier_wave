@@ -97,7 +97,7 @@ extension CloudSyncEngine {
         let merged = CloudSyncConflictResolver.mergeQSO(
             local: localFields,
             remote: fields,
-            localModDate: existingQSO.importedAt,
+            localModDate: existingQSO.modifiedAt ?? existingQSO.importedAt,
             remoteModDate: record.modificationDate ?? Date()
         )
         applyQSOFields(merged, to: existingQSO)
@@ -167,6 +167,7 @@ extension CloudSyncEngine {
         newQSO.isHidden = fields.isHidden
         newQSO.isActivityLogQSO = fields.isActivityLogQSO
         newQSO.loggingSessionId = fields.loggingSessionId
+        newQSO.modifiedAt = fields.modifiedAt
         modelContext.insert(newQSO)
     }
 

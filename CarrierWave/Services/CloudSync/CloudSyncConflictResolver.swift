@@ -48,6 +48,9 @@ enum CloudSyncConflictResolver {
             notes: mergeNotes(local: local.notes, remote: remote.notes),
             importSource: local.importSource, // keep local
             importedAt: min(local.importedAt, remote.importedAt), // earliest
+            modifiedAt: pickOptional(
+                local.modifiedAt, remote.modifiedAt, preferRemote: preferRemote
+            ),
             // rawADIF: never overwrite non-nil with nil
             rawADIF: local.rawADIF ?? remote.rawADIF,
             name: pickOptional(local.name, remote.name, preferRemote: preferRemote),
@@ -225,8 +228,35 @@ enum CloudSyncConflictResolver {
         if remote == nil {
             return local
         }
-        // Both have different values — concatenate
-        return "\(local!)\n---\n\(remote!)"
+        let localStr = local!
+        let remoteStr = remote!
+        // If one is a substring of the other, keep the longer one
+        if localStr.contains(remoteStr) {
+            return localStr
+        }
+        if remoteStr.contains(localStr) {
+            return remoteStr
+        }
+        // Split on separator, deduplicate blocks, rejoin
+        let separator = "\n---\n"
+        let localBlocks = localStr.components(separatedBy: separator)
+        let remoteBlocks = remoteStr.components(separatedBy: separator)
+        var seen = Set<String>()
+        var merged: [String] = []
+        for block in localBlocks + remoteBlocks {
+            let trimmed = block.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty, !seen.contains(trimmed) else {
+                continue
+            }
+            seen.insert(trimmed)
+            merged.append(trimmed)
+        }
+        let result = merged.joined(separator: separator)
+        // Cap at 10,000 characters to prevent unbounded growth
+        if result.count > 10_000 {
+            return String(result.prefix(10_000))
+        }
+        return result
     }
 
     nonisolated private static func newerOptionalDate(_ lhs: Date?, _ rhs: Date?) -> Date? {

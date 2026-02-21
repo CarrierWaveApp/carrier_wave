@@ -300,6 +300,7 @@ struct QSOEditSheet: View {
         qso.state = state.trimmingCharacters(in: .whitespaces).uppercased().nonEmpty
         qso.country = country.trimmingCharacters(in: .whitespaces).nonEmpty
         qso.cloudDirtyFlag = true
+        qso.modifiedAt = Date()
 
         try? modelContext.save()
 
