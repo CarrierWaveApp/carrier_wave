@@ -203,12 +203,21 @@ struct QSORow: View {
         Self.utcFormatter.string(from: qso.timestamp) + "Z"
     }
 
-    /// Only show pills for configured services or services with actual data
+    /// One badge per service type — collapses POTA per-park records and any duplicate records
     private var sortedPresence: [ServicePresence] {
-        qso.servicePresence
+        let filtered = qso.servicePresence
             .filter { presence in
                 let configured = serviceConfig.isConfigured(presence.serviceType)
                 return configured || presence.isPresent || presence.isSubmitted
+            }
+
+        // Group by service type, pick the best-status record from each group
+        let grouped = Dictionary(grouping: filtered) { $0.serviceType }
+        return grouped.values
+            .compactMap { records -> ServicePresence? in
+                records.first(where: \.isPresent)
+                    ?? records.first(where: \.isSubmitted)
+                    ?? records.first
             }
             .sorted { $0.serviceType.rawValue < $1.serviceType.rawValue }
     }
@@ -264,6 +273,8 @@ struct QSORow: View {
             HStack {
                 Text(qso.callsign)
                     .font(.headline)
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
 
                 if let name = displayName {
                     Text(name)
@@ -286,6 +297,8 @@ struct QSORow: View {
                 Text(formattedTimestamp)
                     .font(isRegularWidth ? .subheadline : .caption)
                     .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
             }
 
             HStack {

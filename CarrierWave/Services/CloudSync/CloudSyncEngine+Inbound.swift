@@ -228,6 +228,18 @@ extension CloudSyncEngine {
     }
 
     private func insertNewServicePresence(from fields: ServicePresenceFields) {
+        // If the QSO already has a ServicePresence for this service type (and park),
+        // merge into that record instead of creating a duplicate.
+        if let qsoUUID = fields.qsoUUID,
+           let existing = findExistingPresence(
+               qsoUUID: qsoUUID, serviceType: fields.serviceType,
+               parkReference: fields.parkReference
+           )
+        {
+            mergeInboundServicePresence(fields, into: existing)
+            return
+        }
+
         let newPresence = ServicePresence(
             id: fields.id,
             serviceType: fields.serviceType,
@@ -250,6 +262,27 @@ extension CloudSyncEngine {
         }
 
         modelContext.insert(newPresence)
+    }
+
+    /// Find an existing ServicePresence for a QSO with matching service type and park reference.
+    private func findExistingPresence(
+        qsoUUID: UUID,
+        serviceType: ServiceType,
+        parkReference: String?
+    ) -> ServicePresence? {
+        var qsoDescriptor = FetchDescriptor<QSO>(
+            predicate: #Predicate { $0.id == qsoUUID }
+        )
+        qsoDescriptor.fetchLimit = 1
+        guard let qso = try? modelContext.fetch(qsoDescriptor).first else {
+            return nil
+        }
+
+        let serviceRaw = serviceType.rawValue
+        return qso.servicePresence.first { presence in
+            presence.serviceTypeRawValue == serviceRaw
+                && presence.parkReference == parkReference
+        }
     }
 
     // MARK: - Inbound Deletions

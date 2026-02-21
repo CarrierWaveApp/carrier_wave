@@ -303,7 +303,7 @@ extension QSOProcessingActor {
     // POTA Presence Reconciliation is in QSOProcessingActor+POTAReconcile.swift
 
     /// Compute deduplication key from QSO fields.
-    /// Duplicates the logic from QSO.deduplicationKey to avoid actor isolation issues.
+    /// Must match the logic in QSO.deduplicationKey exactly.
     static func computeDeduplicationKey(
         callsign: String,
         band: String,
@@ -312,7 +312,8 @@ extension QSOProcessingActor {
     ) -> String {
         let roundedTimestamp = timestamp.timeIntervalSince1970
         let rounded = Int(roundedTimestamp / 120) * 120 // 2 minute buckets
+        let trimmedCallsign = callsign.trimmingCharacters(in: .whitespaces).uppercased()
         let canonicalMode = ModeEquivalence.canonicalName(mode).uppercased()
-        return "\(callsign.uppercased())|\(band.uppercased())|\(canonicalMode)|\(rounded)"
+        return "\(trimmedCallsign)|\(band.uppercased())|\(canonicalMode)|\(rounded)"
     }
 }

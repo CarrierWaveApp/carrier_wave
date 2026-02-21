@@ -164,6 +164,53 @@ extension DashboardView {
         UserDefaults.standard.set(true, forKey: Self.potaSplitRepairKey)
     }
 
+    // MARK: - Duplicate QSO & ServicePresence Repair
+
+    private static let duplicateQSORepairKey = "duplicateQSORepairV1Completed"
+    private static let presenceDeduplicationRepairKey = "presenceDeduplicationRepairCompleted"
+
+    /// One-time repair: merge duplicate QSOs created by iCloud sync delivering
+    /// records with different UUIDs that match on dedup key.
+    func repairDuplicateQSOsIfNeeded() async {
+        guard !UserDefaults.standard.bool(forKey: Self.duplicateQSORepairKey) else {
+            return
+        }
+
+        let service = DeduplicationService(modelContext: modelContext)
+        do {
+            let result = try service.findAndMergeDuplicates()
+            if result.qsosRemoved > 0 {
+                print("QSO dedup repair: \(result.duplicateGroupsFound) groups,"
+                    + " \(result.qsosRemoved) removed")
+                asyncStats.recompute(from: modelContext)
+                presenceCounts.recompute(from: modelContext)
+            }
+            UserDefaults.standard.set(true, forKey: Self.duplicateQSORepairKey)
+        } catch {
+            print("QSO dedup repair failed: \(error)")
+        }
+    }
+
+    /// One-time repair: remove duplicate ServicePresence records created by iCloud sync.
+    func repairDuplicatePresenceIfNeeded() async {
+        guard !UserDefaults.standard.bool(forKey: Self.presenceDeduplicationRepairKey) else {
+            return
+        }
+
+        let service = ServicePresenceDeduplicationRepairService(
+            container: modelContext.container
+        )
+        do {
+            let result = try await service.repair()
+            if result.deleted > 0 {
+                print("Presence dedup repair: deleted \(result.deleted) of \(result.scanned)")
+            }
+            UserDefaults.standard.set(true, forKey: Self.presenceDeduplicationRepairKey)
+        } catch {
+            print("Presence dedup repair failed: \(error)")
+        }
+    }
+
     // MARK: - K-Index Repair
 
     private static let kIndexRepairKey = "kIndexRepairCompleted"

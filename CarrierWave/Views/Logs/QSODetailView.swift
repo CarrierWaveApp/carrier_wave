@@ -75,12 +75,20 @@ struct QSODetailView: View {
         return parts.isEmpty ? nil : parts.joined(separator: ", ")
     }
 
-    /// Only show pills for configured services or services with actual data
+    /// One badge per service type — collapses duplicates, picks best status from each group
     private var sortedPresence: [ServicePresence] {
-        qso.servicePresence
+        let filtered = qso.servicePresence
             .filter { presence in
                 let configured = serviceConfig.isConfigured(presence.serviceType)
                 return configured || presence.isPresent || presence.isSubmitted
+            }
+
+        let grouped = Dictionary(grouping: filtered) { $0.serviceType }
+        return grouped.values
+            .compactMap { records -> ServicePresence? in
+                records.first(where: \.isPresent)
+                    ?? records.first(where: \.isSubmitted)
+                    ?? records.first
             }
             .sorted { $0.serviceType.rawValue < $1.serviceType.rawValue }
     }

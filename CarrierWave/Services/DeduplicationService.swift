@@ -32,8 +32,14 @@ final class DeduplicationService {
             return DeduplicationResult(duplicateGroupsFound: 0, qsosMerged: 0, qsosRemoved: 0)
         }
 
-        // Convert to snapshots for pure logic matching
-        let snapshots = allQSOs.map { $0.toSnapshot() }
+        // First pass: resolve QSOs with identical UUIDs (DB corruption from iCloud sync).
+        // Group by UUID, keep the richest record, delete the rest.
+        var totalRemoved = 0
+        let qsoById = resolveUUIDDuplicates(allQSOs, removed: &totalRemoved)
+
+        // Convert surviving QSOs to snapshots for dedup matching
+        let surviving = Array(qsoById.values)
+        let snapshots = surviving.map { $0.toSnapshot() }
 
         // Use CarrierWaveCore's deduplication matcher
         let config = DeduplicationConfig(
@@ -45,10 +51,6 @@ final class DeduplicationService {
 
         // Merge each group
         var totalMerged = 0
-        var totalRemoved = 0
-
-        // Build lookup for QSOs by ID
-        let qsoById = Dictionary(uniqueKeysWithValues: allQSOs.map { ($0.id, $0) })
 
         for group in groups {
             guard let winner = qsoById[group.winnerId] else {
@@ -80,6 +82,55 @@ final class DeduplicationService {
     // MARK: Private
 
     private let modelContext: ModelContext
+
+    /// Resolve QSOs with identical UUIDs (DB corruption from iCloud sync).
+    /// Keeps the richest record per UUID, absorbs fields/presence from duplicates,
+    /// and deletes the rest. Returns a safe UUID→QSO lookup.
+    private func resolveUUIDDuplicates(
+        _ allQSOs: [QSO],
+        removed: inout Int
+    ) -> [UUID: QSO] {
+        var byId: [UUID: [QSO]] = [:]
+        for qso in allQSOs {
+            byId[qso.id, default: []].append(qso)
+        }
+
+        var result: [UUID: QSO] = [:]
+        for (uuid, records) in byId {
+            if records.count == 1 {
+                result[uuid] = records[0]
+                continue
+            }
+
+            // Pick the richest record: most service presence, then most filled fields
+            let sorted = records.sorted { lhs, rhs in
+                let lhsScore = lhs.servicePresence.count * 100 + fieldScore(lhs)
+                let rhsScore = rhs.servicePresence.count * 100 + fieldScore(rhs)
+                return lhsScore > rhsScore
+            }
+
+            let winner = sorted[0]
+            for loser in sorted.dropFirst() {
+                absorbFields(from: loser, into: winner)
+                absorbServicePresence(from: loser, into: winner)
+                modelContext.delete(loser)
+                removed += 1
+            }
+            result[uuid] = winner
+        }
+
+        return result
+    }
+
+    /// Score how many optional fields are populated on a QSO
+    private func fieldScore(_ qso: QSO) -> Int {
+        let fields: [Any?] = [
+            qso.rstSent, qso.rstReceived, qso.myGrid, qso.theirGrid,
+            qso.parkReference, qso.notes, qso.qrzLogId, qso.rawADIF,
+            qso.frequency, qso.name, qso.qth, qso.country, qso.power,
+        ]
+        return fields.compactMap { $0 }.count
+    }
 
     /// Fill nil/empty fields in winner from loser
     private func absorbFields(from loser: QSO, into winner: QSO) {

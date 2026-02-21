@@ -73,6 +73,7 @@ struct ContactCountBadge: View {
         Text("\u{00d7}\(count)")
             .font(.caption.weight(.medium))
             .foregroundStyle(.secondary)
+            .fixedSize()
     }
 
     private func badgeCapsule(tier: ContactCountTier) -> some View {
@@ -86,6 +87,7 @@ struct ContactCountBadge: View {
                     .font(.caption)
             }
         }
+        .fixedSize()
         .foregroundStyle(tier.color)
         .padding(.horizontal, 6)
         .padding(.vertical, 2)
