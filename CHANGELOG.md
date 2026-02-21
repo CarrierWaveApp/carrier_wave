@@ -4,6 +4,8 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.42.0] - 2026-02-20
+
 ### Added
 - Add persistent command strip on iPad logger: commands (RBN, POTA, SOLAR, etc.) are always visible at the bottom of the logger pane, independent of keyboard state
 - Add resizable sidebar panes on iPad: drag the divider between logger and spots sidebar to resize, with width persisted across sessions
