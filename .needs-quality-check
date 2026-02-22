@@ -51,3 +51,5 @@ Logger interface fixes (round 2):
 - LoggerView.swift + LoggerView+Layout: added @AppStorage hideFieldEntryForm, conditional on compactFieldsSection
 - LoggerSettingsView: added "Hide field entry form" toggle in Display section
 - LoggerView+SessionSheets: wrapped FrequencyBandView in Section with footer hint about command box frequency entry
+SessionQSORow: removed DisclosureGroup, simplified to plain tappable row
+SessionDetailView: added qsoToEdit state, QSOEditSheet presentation, wrapped QSO rows in Button for tap-to-edit

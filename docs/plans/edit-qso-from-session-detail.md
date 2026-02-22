@@ -35,22 +35,26 @@ Add a `@State private var qsoToEdit: QSO?` property alongside the existing `qsoT
 }
 ```
 
-### 2. Add edit swipe action to QSO rows (~6 lines each, 2 places)
+### 2. Make QSO rows tappable to open edit sheet (~6 lines each, 2 places)
 
 **File:** `CarrierWave/Views/Sessions/SessionDetailView.swift`
 
-In both `flatQSOSection` and `roveQSOSections`, add a leading swipe action (or tap gesture) for edit alongside the existing trailing delete swipe:
+In both `flatQSOSection` and `roveQSOSections`, wrap each `SessionQSORow` in a `Button` that sets `qsoToEdit`:
 
 ```swift
-.swipeActions(edge: .leading, allowsFullSwipe: true) {
-    Button {
-        qsoToEdit = qso
-    } label: {
-        Label("Edit", systemImage: "pencil")
-    }
-    .tint(.blue)
+Button {
+    qsoToEdit = qso
+} label: {
+    SessionQSORow(qso: qso)
 }
+.tint(.primary)
 ```
+
+### 2b. Simplify SessionQSORow (~remove DisclosureGroup)
+
+**File:** `CarrierWave/Views/Sessions/SessionQSORow.swift`
+
+Remove the `DisclosureGroup` and `isExpanded` state. The row body becomes just the compact HStack label with `.contentShape(Rectangle())` for full-row tap hit testing.
 
 ### 3. Refresh QSO list after edit save
 
@@ -67,19 +71,18 @@ The `onSave` callback in the sheet (step 1) already calls `loadQSOs()` to refres
 
 | File | Change |
 |------|--------|
-| `CarrierWave/Views/Sessions/SessionDetailView.swift` | Add `qsoToEdit` state, `.sheet` modifier, leading swipe actions on QSO rows |
+| `CarrierWave/Views/Sessions/SessionDetailView.swift` | Add `qsoToEdit` state, `.sheet` modifier, wrap QSO rows in Button |
+| `CarrierWave/Views/Sessions/SessionQSORow.swift` | Remove DisclosureGroup, simplify to plain tappable row |
 
 ## Not Changed
 
 - `QSOEditSheet` — no modifications needed, it already does everything we need.
-- `SessionQSORow` — no modifications needed, the swipe action is added at the call site in `SessionDetailView`.
 - No new files created.
 
 ## Testing
 
 - Open a completed session from Sessions tab
-- Swipe right on a QSO row → "Edit" button appears
-- Tap Edit → `QSOEditSheet` opens with all fields populated
+- Tap a QSO row → `QSOEditSheet` opens with all fields populated
 - Change callsign → save → verify lookup runs and backfills name/grid/location
 - Edit other fields → save → verify changes persist
 - Verify the QSO list refreshes after save

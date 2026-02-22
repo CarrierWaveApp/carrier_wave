@@ -89,6 +89,11 @@ struct SessionDetailView: View {
                 Text("Delete QSO with \(qso.callsign)?")
             }
         }
+        .sheet(item: $qsoToEdit) { qso in
+            QSOEditSheet(qso: qso) {
+                Task { await loadQSOs() }
+            }
+        }
         .task {
             await loadQSOs()
             if statisticianMode, qsos.count >= 2 {
@@ -113,6 +118,7 @@ struct SessionDetailView: View {
     @State private var showEditSheet = false
     @State private var selectedPhoto: PhotoItem?
     @State private var qsoToDelete: QSO?
+    @State private var qsoToEdit: QSO?
 
     private var hasActions: Bool {
         onShare != nil || onExport != nil || onMap != nil
@@ -323,14 +329,19 @@ extension SessionDetailView {
     private var flatQSOSection: some View {
         Section("\(qsos.count) QSO\(qsos.count == 1 ? "" : "s")") {
             ForEach(qsos.sorted { $0.timestamp > $1.timestamp }) { qso in
-                SessionQSORow(qso: qso)
-                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                        Button(role: .destructive) {
-                            qsoToDelete = qso
-                        } label: {
-                            Label("Delete", systemImage: "trash")
-                        }
+                Button {
+                    qsoToEdit = qso
+                } label: {
+                    SessionQSORow(qso: qso)
+                }
+                .tint(.primary)
+                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                    Button(role: .destructive) {
+                        qsoToDelete = qso
+                    } label: {
+                        Label("Delete", systemImage: "trash")
                     }
+                }
             }
         }
     }
@@ -341,14 +352,19 @@ extension SessionDetailView {
         ForEach(grouped, id: \.parkReference) { group in
             Section {
                 ForEach(group.qsos) { qso in
-                    SessionQSORow(qso: qso)
-                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                            Button(role: .destructive) {
-                                qsoToDelete = qso
-                            } label: {
-                                Label("Delete", systemImage: "trash")
-                            }
+                    Button {
+                        qsoToEdit = qso
+                    } label: {
+                        SessionQSORow(qso: qso)
+                    }
+                    .tint(.primary)
+                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                        Button(role: .destructive) {
+                            qsoToDelete = qso
+                        } label: {
+                            Label("Delete", systemImage: "trash")
                         }
+                    }
                 }
             } header: {
                 HStack {
