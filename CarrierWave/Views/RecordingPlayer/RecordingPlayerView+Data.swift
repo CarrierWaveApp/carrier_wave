@@ -1,3 +1,4 @@
+import os
 import SwiftData
 import SwiftUI
 
@@ -136,8 +137,16 @@ extension RecordingPlayerView {
 
     func startTranscription() async {
         guard let fileURL = recording.fileURL else {
+            Logger(subsystem: "com.jsvana.FullDuplex", category: "CW-SWL").info("[CW-SWL] No file URL for recording")
             return
         }
+        let exists = FileManager.default.fileExists(atPath: fileURL.path)
+        let size = (try? FileManager.default.attributesOfItem(
+            atPath: fileURL.path
+        )[.size] as? Int64) ?? 0
+        Logger(subsystem: "com.jsvana.FullDuplex", category: "CW-SWL")
+            .info("[CW-SWL] Starting transcription: \(fileURL.lastPathComponent), exists=\(exists), size=\(size)")
+
         isTranscribing = true
         transcriptionProgress = 0
         transcriptionError = nil
@@ -154,6 +163,8 @@ extension RecordingPlayerView {
             try? transcript.save(sessionId: recording.loggingSessionId)
             engine.setTranscript(transcript)
         } catch {
+            Logger(subsystem: "com.jsvana.FullDuplex", category: "CW-SWL")
+                .info("[CW-SWL] Transcription error: \(error)")
             transcriptionError = error.localizedDescription
         }
         isTranscribing = false

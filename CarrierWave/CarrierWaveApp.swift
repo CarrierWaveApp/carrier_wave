@@ -29,6 +29,11 @@ struct CarrierWaveApp: App {
     // MARK: Lifecycle
 
     init() {
+        // Set default cw-swl server URL if not yet configured
+        if (UserDefaults.standard.string(forKey: "cwswlServerURL") ?? "").isEmpty {
+            UserDefaults.standard.set("http://192.168.1.94:8080", forKey: "cwswlServerURL")
+        }
+
         let schema = Schema([
             QSO.self,
             ServicePresence.self,

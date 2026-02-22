@@ -1,4 +1,9 @@
 import Foundation
+import os
+
+nonisolated(unsafe) private let log = Logger(
+    subsystem: "com.jsvana.FullDuplex", category: "CW-SWL"
+)
 
 // MARK: - TranscriptionStatus
 
@@ -49,7 +54,9 @@ actor CWSWLClient {
     /// Upload a local recording file for transcription
     func uploadRecording(fileURL: URL) async throws -> UUID {
         let base = try baseURL()
+        log.info("[CW-SWL] Base URL: \(base)")
         let url = base.appendingPathComponent("api/v1/recordings/upload")
+        log.info("[CW-SWL] Uploading to: \(url)")
 
         let boundary = UUID().uuidString
         var request = URLRequest(url: url)
@@ -74,11 +81,15 @@ actor CWSWLClient {
 
         request.httpBody = body
 
+        log.info("[CW-SWL] Sending upload request (\(body.count) bytes)...")
         let (responseData, response) = try await performRequest(request)
-        guard let httpResponse = response as? HTTPURLResponse,
-              httpResponse.statusCode == 201
-        else {
-            throw CWSWLError.uploadFailed("Server returned non-201 status")
+        let httpResponse = response as? HTTPURLResponse
+        log.info("[CW-SWL] Upload response: \(httpResponse?.statusCode ?? -1)")
+        guard let httpResponse, httpResponse.statusCode == 201 else {
+            let bodyStr = String(data: responseData, encoding: .utf8) ?? ""
+            throw CWSWLError.uploadFailed(
+                "Server returned \(httpResponse?.statusCode ?? -1): \(bodyStr)"
+            )
         }
 
         let decoded = try JSONDecoder().decode(
@@ -120,7 +131,9 @@ actor CWSWLClient {
         let request = URLRequest(url: url)
         let (data, _) = try await performRequest(request)
 
-        let decoded = try JSONDecoder().decode(
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let decoded = try decoder.decode(
             TranscriptionStatusResponse.self, from: data
         )
 
@@ -139,7 +152,8 @@ actor CWSWLClient {
         }
     }
 
-    /// Convenience: upload + transcribe + poll until complete
+    /// Convenience: upload + transcribe + poll until complete.
+    /// Times out after 5 minutes of polling.
     func transcribe(
         fileURL: URL,
         progress: @Sendable @escaping (Float) -> Void
@@ -150,8 +164,9 @@ actor CWSWLClient {
         let jobId = try await startTranscription(recordingId: recordingId)
         progress(0.1)
 
-        // Poll until complete
-        while true {
+        // Poll until complete (timeout after 5 minutes)
+        let deadline = ContinuousClock.now + .seconds(300)
+        while ContinuousClock.now < deadline {
             try await Task.sleep(for: .seconds(2))
             let status = try await transcriptionStatus(id: jobId)
 
@@ -165,6 +180,7 @@ actor CWSWLClient {
                 throw CWSWLError.transcriptionFailed(message)
             }
         }
+        throw CWSWLError.transcriptionFailed("Timed out after 5 minutes")
     }
 
     // MARK: Private

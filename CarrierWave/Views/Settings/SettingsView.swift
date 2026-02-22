@@ -35,7 +35,7 @@ struct SettingsMainView: View {
     @AppStorage("debugMode") var debugMode = false
     @AppStorage("readOnlyMode") var readOnlyMode = false
     @AppStorage("bypassPOTAMaintenance") var bypassPOTAMaintenance = false
-    @AppStorage("cwswlServerURL") var cwswlServerURL = ""
+    @AppStorage("cwswlServerURL") var cwswlServerURL = "http://192.168.1.94:8080"
 
     @StateObject var iCloudMonitor = ICloudMonitor()
 
