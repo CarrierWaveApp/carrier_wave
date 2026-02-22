@@ -3,31 +3,28 @@ import SwiftUI
 
 // MARK: - SessionQSORow
 
-/// Expandable QSO row used in session detail views.
-/// Tap to expand and show all stored fields; swipe-to-delete handled by parent.
+/// Compact QSO row used in session detail views.
+/// Tap-to-edit and swipe-to-delete handled by parent.
 struct SessionQSORow: View {
     // MARK: Internal
 
     let qso: QSO
 
     var body: some View {
-        DisclosureGroup(isExpanded: $isExpanded) {
-            SessionQSOExpandedDetail(qso: qso)
-        } label: {
-            HStack(spacing: 8) {
-                Text(qso.callsign)
-                    .font(.subheadline.monospaced().weight(.semibold))
+        HStack(spacing: 8) {
+            Text(qso.callsign)
+                .font(.subheadline.monospaced().weight(.semibold))
 
-                Spacer()
+            Spacer()
 
-                pill(qso.band, color: .blue)
-                pill(qso.mode, color: .green)
+            pill(qso.band, color: .blue)
+            pill(qso.mode, color: .green)
 
-                Text(Self.timeFormatter.string(from: qso.timestamp))
-                    .font(.caption.monospaced())
-                    .foregroundStyle(.secondary)
-            }
+            Text(Self.timeFormatter.string(from: qso.timestamp))
+                .font(.caption.monospaced())
+                .foregroundStyle(.secondary)
         }
+        .contentShape(Rectangle())
     }
 
     // MARK: Private
@@ -38,8 +35,6 @@ struct SessionQSORow: View {
         formatter.timeZone = TimeZone(identifier: "UTC")
         return formatter
     }()
-
-    @State private var isExpanded = false
 
     private func pill(_ text: String, color: Color) -> some View {
         Text(text)
