@@ -272,6 +272,7 @@ struct POTAQSORow: View {
                     .foregroundStyle(.secondary)
             }
         }
+        .animation(nil, value: isExpanded)
     }
 
     // MARK: Private
