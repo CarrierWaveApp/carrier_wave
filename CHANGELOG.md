@@ -4,6 +4,8 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.43.0] - 2026-02-22
+
 ### Fixed
 - Fix spot comments appended repeatedly to QSO notes on every app restart
 - One-time repair to deduplicate existing QSOs with repeated spot notes
