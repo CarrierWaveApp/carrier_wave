@@ -268,6 +268,8 @@ private extension FriendsListView {
                     friendship, sourceURL: sourceURL
                 )
             } catch {
+                // Re-sync to clean up stale local data
+                try? await service.syncFriends(sourceURL: sourceURL)
                 errorMessage = error.localizedDescription
                 showingError = true
             }
@@ -284,6 +286,8 @@ private extension FriendsListView {
                     friendship, sourceURL: sourceURL
                 )
             } catch {
+                // Re-sync to clean up stale local data
+                try? await service.syncFriends(sourceURL: sourceURL)
                 errorMessage = error.localizedDescription
                 showingError = true
             }
@@ -298,6 +302,8 @@ private extension FriendsListView {
             do {
                 try await service.removeFriend(friendship, sourceURL: sourceURL)
             } catch {
+                // Re-sync to clean up stale local data
+                try? await service.syncFriends(sourceURL: sourceURL)
                 errorMessage = error.localizedDescription
                 showingError = true
             }

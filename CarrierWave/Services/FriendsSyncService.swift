@@ -33,14 +33,16 @@ final class FriendsSyncService: ObservableObject {
         syncError = nil
         defer { isSyncing = false }
 
-        // Fetch friends from server
-        let friends = try await client.getFriends(sourceURL: sourceURL, authToken: authToken)
-        let pending = try await client.getPendingRequests(
-            sourceURL: sourceURL, authToken: authToken
-        )
-
-        // Update local models
-        try updateLocalFriendships(friends: friends, pending: pending)
+        do {
+            try await fetchAndUpdateFriendships(sourceURL: sourceURL, authToken: authToken)
+        } catch let error as ActivitiesError where error.apiErrorCode == "INVALID_TOKEN" {
+            // Token rejected — clear it and re-register for a fresh one
+            client.clearAuthToken()
+            guard let freshToken = await client.ensureAuthToken() else {
+                throw FriendsSyncError.notAuthenticated
+            }
+            try await fetchAndUpdateFriendships(sourceURL: sourceURL, authToken: freshToken)
+        }
     }
 
     // MARK: - Search
@@ -228,6 +230,14 @@ final class FriendsSyncService: ObservableObject {
     }
 
     // MARK: Private
+
+    private func fetchAndUpdateFriendships(sourceURL: String, authToken: String) async throws {
+        let friends = try await client.getFriends(sourceURL: sourceURL, authToken: authToken)
+        let pending = try await client.getPendingRequests(
+            sourceURL: sourceURL, authToken: authToken
+        )
+        try updateLocalFriendships(friends: friends, pending: pending)
+    }
 
     /// Collect user's own callsigns to exclude from suggestions.
     private func collectOwnCallsigns() -> Set<String> {
