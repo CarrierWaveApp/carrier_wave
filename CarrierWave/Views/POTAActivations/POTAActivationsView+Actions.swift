@@ -98,24 +98,6 @@ extension POTAActivationsContentView {
         .refreshable {
             await refreshJobs()
         }
-        .navigationDestination(for: POTAActivation.self) { activation in
-            POTAActivationDetailView(
-                activation: activation,
-                metadata: metadata(for: activation),
-                parkName: parkName(for: activation.parkReference),
-                matchingJobs: jobsByActivationId[activation.id] ?? [],
-                potaClient: potaClient,
-                isAuthenticated: isAuthenticated,
-                isInMaintenance: isInMaintenance,
-                onUpload: { await performUploadReturningErrors(for: activation) },
-                onReject: { activationToReject = activation },
-                onEdit: { activationToEdit = activation },
-                onShare: { activationToShare = activation },
-                onExport: { activationToExport = activation },
-                onMap: { activationToMap = activation },
-                onForceReupload: { forceReupload(activation) }
-            )
-        }
     }
 
     @ViewBuilder
@@ -151,7 +133,9 @@ extension POTAActivationsContentView {
         if isSelecting {
             row
         } else {
-            NavigationLink(value: activation) {
+            NavigationLink {
+                activationDetailView(for: activation)
+            } label: {
                 row
             }
         }
@@ -190,7 +174,6 @@ extension POTAActivationsContentView {
         metadataByKey["\(activation.parkReference)|\(activation.utcDateString)"]
     }
 
-    /// Check if an activation's QSOs belong to a rove session
     func isPartOfRove(_ activation: POTAActivation) -> Bool {
         guard !roveSessionIds.isEmpty else {
             return false
@@ -220,6 +203,25 @@ extension POTAActivationsContentView {
         This will hide \(pendingCount) QSO(s) from POTA uploads. \
         They will remain in your log but won't be prompted for upload again.
         """
+    }
+
+    func activationDetailView(for activation: POTAActivation) -> SessionDetailView {
+        SessionDetailView(
+            session: findSession(for: activation),
+            onShare: { activationToShare = activation },
+            onExport: { activationToExport = activation },
+            onMap: { activationToMap = activation },
+            activation: activation,
+            activationMetadata: metadata(for: activation),
+            parkName: parkName(for: activation.parkReference),
+            matchingJobs: jobsByActivationId[activation.id] ?? [],
+            potaClient: potaClient,
+            isAuthenticated: isAuthenticated,
+            isInMaintenance: isInMaintenance,
+            onUpload: { await performUploadReturningErrors(for: activation) },
+            onReject: { activationToReject = activation },
+            onForceReupload: { forceReupload(activation) }
+        )
     }
 }
 
@@ -486,7 +488,7 @@ extension POTAActivationsContentView {
     }
 
     /// Find the LoggingSession matching an activation via QSO loggingSessionId
-    private func findSession(for activation: POTAActivation) -> LoggingSession? {
+    func findSession(for activation: POTAActivation) -> LoggingSession? {
         guard let sessionId = activation.qsos.compactMap(\.loggingSessionId).first else {
             return nil
         }

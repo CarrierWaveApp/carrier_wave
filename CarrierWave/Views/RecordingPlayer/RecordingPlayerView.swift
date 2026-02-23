@@ -245,6 +245,16 @@ struct RecordingPlayerView: View {
                 Label("Share Clip", systemImage: "scissors")
             }
             .buttonStyle(.bordered)
+
+            if engine.transcript != nil, !cwswlServerURL.isEmpty {
+                Button {
+                    Task { await startTranscription() }
+                } label: {
+                    Label("Retranscribe", systemImage: "arrow.trianglehead.2.counterclockwise")
+                }
+                .buttonStyle(.bordered)
+                .disabled(isTranscribing)
+            }
         }
         .padding()
         .background(.bar)

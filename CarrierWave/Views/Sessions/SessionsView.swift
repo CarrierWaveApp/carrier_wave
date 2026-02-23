@@ -325,26 +325,6 @@ extension SessionsView {
                 await refreshJobs()
             }
         }
-        .navigationDestination(for: POTAActivation.self) { activation in
-            POTAActivationDetailView(
-                activation: activation,
-                metadata: activationMetadata(for: activation),
-                parkName: parkName(for: activation.parkReference),
-                matchingJobs: jobsByActivationId[activation.id] ?? [],
-                potaClient: potaClient,
-                isAuthenticated: isAuthenticated,
-                isInMaintenance: isInMaintenance,
-                onUpload: {
-                    await performUploadReturningErrors(for: activation)
-                },
-                onReject: { activationToReject = activation },
-                onEdit: { activationToEdit = activation },
-                onShare: { activationToShare = activation },
-                onExport: { activationToExport = activation },
-                onMap: { activationToMap = activation },
-                onForceReupload: { forceReupload(activation) }
-            )
-        }
     }
 
     @ViewBuilder
@@ -407,7 +387,11 @@ extension SessionsView {
                 roveSessionDetail(session: session, activations: activations)
             } label: { rowContent }
         } else if let activation = activations.first {
-            NavigationLink(value: activation) { rowContent }
+            NavigationLink {
+                sessionDetailForActivation(
+                    activation, session: session
+                )
+            } label: { rowContent }
         } else if let recording {
             NavigationLink {
                 RecordingPlayerView(
@@ -429,7 +413,22 @@ extension SessionsView {
         let orphanJobs = jobsByActivationId[activation.id] ?? []
         let meta = activationMetadata(for: activation)
 
-        NavigationLink(value: activation) {
+        NavigationLink {
+            SessionDetailView(
+                activation: activation,
+                activationMetadata: meta,
+                parkName: parkName(for: activation.parkReference),
+                matchingJobs: orphanJobs,
+                potaClient: potaClient,
+                isAuthenticated: isAuthenticated,
+                isInMaintenance: isInMaintenance,
+                onUpload: {
+                    await performUploadReturningErrors(for: activation)
+                },
+                onReject: { activationToReject = activation },
+                onForceReupload: { forceReupload(activation) }
+            )
+        } label: {
             ActivationRow(
                 activation: activation,
                 metadata: meta,

@@ -34,6 +34,7 @@ All notable changes to Carrier Wave will be documented in this file.
 - Add frequency picker hint about typing frequency in the command box
 
 ### Changed
+- Unify POTAActivationDetailView into SessionDetailView (single detail view for all session types)
 - Remove all ~50 inline swiftlint:disable comments across ~35 files by fixing underlying violations
 - Disable `redundant_discardable_let` rule globally (required @AppStorage pattern)
 - Add `scripts/` to SwiftLint excluded paths

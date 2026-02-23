@@ -50,10 +50,40 @@ extension SessionsView {
         }
     }
 
+    func sessionDetailForActivation(
+        _ activation: POTAActivation, session: LoggingSession
+    ) -> SessionDetailView {
+        let jobs = jobsByActivationId[activation.id] ?? []
+        return SessionDetailView(
+            session: session,
+            onShare: { activationToShare = activation },
+            onExport: { activationToExport = activation },
+            onMap: { activationToMap = activation },
+            activation: activation,
+            activationMetadata: activationMetadata(for: activation),
+            parkName: parkName(for: activation.parkReference),
+            matchingJobs: jobs,
+            potaClient: potaClient,
+            isAuthenticated: isAuthenticated,
+            isInMaintenance: isInMaintenance,
+            onUpload: {
+                await performUploadReturningErrors(for: activation)
+            },
+            onReject: { activationToReject = activation },
+            onForceReupload: { forceReupload(activation) }
+        )
+    }
+
     func roveSessionDetail(
         session: LoggingSession, activations: [POTAActivation]
     ) -> SessionDetailView {
-        SessionDetailView(
+        let primary = activations.first
+        let merged = activations.count > 1
+            ? mergedRoveActivation(activations) : primary
+        let jobs = primary.flatMap { jobsByActivationId[$0.id] ?? [] } ?? []
+        let meta = primary.flatMap { activationMetadata(for: $0) }
+
+        return SessionDetailView(
             session: session,
             onShare: activations.isEmpty ? nil : {
                 if activations.count > 1 {
@@ -72,6 +102,24 @@ extension SessionsView {
                 } else if let act = activations.first {
                     activationToMap = act
                 }
+            },
+            activation: merged,
+            activationMetadata: meta,
+            parkName: primary.flatMap {
+                parkName(for: $0.parkReference)
+            },
+            matchingJobs: jobs,
+            potaClient: potaClient,
+            isAuthenticated: isAuthenticated,
+            isInMaintenance: isInMaintenance,
+            onUpload: primary.map { act in
+                { await performUploadReturningErrors(for: act) }
+            },
+            onReject: primary.map { act in
+                { activationToReject = act }
+            },
+            onForceReupload: primary.map { act in
+                { forceReupload(act) }
             }
         )
     }

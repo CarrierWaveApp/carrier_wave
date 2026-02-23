@@ -376,8 +376,10 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `SessionsView+Share.swift` | Brag sheet generation and equipment list building for share cards |
 | `SessionRow.swift` | Unified rich session row: timeline, conditions, badges, upload status |
 | `SessionQSORow.swift` | Compact QSO row for session detail (tap to edit, swipe-to-delete) |
-| `SessionDetailView.swift` | Session detail with equipment, photos, notes, spots, QSO list, edit button |
+| `SessionDetailView.swift` | Unified session/activation detail with equipment, photos, notes, spots, QSO list, POTA upload |
 | `SessionDetailView+Components.swift` | Extracted helper views: RoveStopDetailRow, RoveParkGroup, PhotoItem |
+| `SessionDetailView+QSOs.swift` | QSO list sections (flat and rove-grouped) and data loading |
+| `SessionDetailView+POTA.swift` | POTA-specific sections: activation info, metadata grid, upload, jobs, recording |
 | `SessionSpotsSection.swift` | Persisted spots display section for session detail (POTA highlighted, RBN collapsed) |
 | `SessionMetadataEditSheet.swift` | Unified edit sheet for all session types (equipment, photos, notes) |
 | `PhotoViewer.swift` | Full-screen photo viewer with pinch-to-zoom |
@@ -521,8 +523,6 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `POTAActivationsView+Actions.swift` | Actions extension (upload, reject, share, subviews, helpers) |
 | `POTAActivationsHelperViews.swift` | Helper views for POTA activations (ActivationRow, sheets) |
 | `POTAActivationsBulkActions.swift` | Bulk action components (multi-select, upload/reject/export toolbar, progress banner) |
-| `POTAActivationDetailView.swift` | Full activation detail view with upload, jobs, QSO list |
-| `POTAActivationDetailView+Recording.swift` | Recording integration: lookup and compact player section |
 | `POTAActivationLabel.swift` | Shared activation label view (date, park, status, metadata) |
 | `POTAJobViews.swift` | POTA job display components (POTAJobRow, POTAJobDetailSheet) |
 | `QSOTimelineView.swift` | Horizontal timeline bar showing QSO timing during activations (compact + share card variants) |

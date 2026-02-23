@@ -1,10 +1,167 @@
 // Session Detail View - Components
 //
 // Extracted helper views and types for SessionDetailView:
-// RoveStopDetailRow, RoveParkGroup, PhotoItem.
+// RoveStopDetailRow, RoveParkGroup, PhotoItem, session info sections.
 
 import CarrierWaveCore
 import SwiftUI
+
+// MARK: - Session Info Sections
+
+extension SessionDetailView {
+    func infoSection(_ session: LoggingSession) -> some View {
+        Section("Session Info") {
+            LabeledContent("Type", value: session.activationType.displayName)
+
+            if let freq = session.frequency {
+                LabeledContent("Frequency") {
+                    Text(String(format: "%.3f MHz", freq))
+                }
+            }
+
+            LabeledContent("Mode", value: session.mode)
+            LabeledContent("Duration", value: session.formattedDuration)
+
+            if !qsos.isEmpty {
+                LabeledContent("QSOs/Hour") {
+                    Text(formattedQSOsPerHour)
+                }
+            }
+
+            if let ref = session.activationReference {
+                LabeledContent("Reference", value: ref)
+            }
+
+            if let grid = session.myGrid {
+                LabeledContent("Grid", value: grid)
+            }
+
+            if let power = session.power {
+                LabeledContent("Power") {
+                    Text("\(power)W")
+                }
+            }
+        }
+    }
+
+    func roveStopsSection(_ session: LoggingSession) -> some View {
+        Section("Rove Stops (\(session.uniqueParkCount))") {
+            ForEach(session.mergedRoveStops) { stop in
+                RoveStopDetailRow(stop: stop)
+            }
+        }
+    }
+
+    @ViewBuilder
+    func equipmentSection(_ session: LoggingSession) -> some View {
+        let hasEquipment = session.myRig != nil || session.myAntenna != nil
+            || session.myKey != nil || session.myMic != nil
+            || session.extraEquipment != nil
+
+        if hasEquipment {
+            Section("Equipment") {
+                if let rig = session.myRig {
+                    Label(rig, systemImage: "radio")
+                }
+                if let antenna = session.myAntenna {
+                    Label(
+                        antenna,
+                        systemImage: "antenna.radiowaves.left.and.right"
+                    )
+                }
+                if let key = session.myKey {
+                    Label(key, systemImage: "pianokeys")
+                }
+                if let mic = session.myMic {
+                    Label(mic, systemImage: "mic")
+                }
+                if let extra = session.extraEquipment {
+                    Text(extra)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+    }
+
+    func notesSection(_ session: LoggingSession) -> some View {
+        Section {
+            if let attendees = session.attendees {
+                LabeledContent("Attendees") {
+                    Text(attendees)
+                        .font(.subheadline.monospaced())
+                }
+            }
+            if let notes = session.notes {
+                Text(notes)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+        } header: {
+            Text("Notes")
+        }
+    }
+
+    func photosSection(_ session: LoggingSession) -> some View {
+        Section("Photos") {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(
+                        session.photoFilenames, id: \.self
+                    ) { filename in
+                        let url = SessionPhotoManager.photoURL(
+                            filename: filename, sessionID: session.id
+                        )
+                        Button {
+                            selectedPhoto = PhotoItem(filename: filename)
+                        } label: {
+                            AsyncImage(url: url) { image in
+                                image.resizable()
+                                    .aspectRatio(contentMode: .fill)
+                            } placeholder: {
+                                Color.gray.opacity(0.3)
+                            }
+                            .frame(width: 100, height: 100)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+                    }
+                }
+                .padding(.vertical, 4)
+            }
+        }
+    }
+
+    func computeStatistics() {
+        guard statisticianMode else {
+            activationStatistics = nil
+            return
+        }
+        if let activation, let activationMetadata {
+            activationStatistics = ActivationStatistics.compute(
+                from: activation, metadata: activationMetadata
+            )
+        } else if let activation {
+            activationStatistics = ActivationStatistics.compute(
+                from: activation, metadata: nil
+            )
+        } else if qsos.count >= 2 {
+            activationStatistics = ActivationStatistics.compute(from: qsos)
+        } else {
+            activationStatistics = nil
+        }
+    }
+
+    var formattedQSOsPerHour: String {
+        guard let session else {
+            return "\(qsos.count)"
+        }
+        let hours = session.duration / 3_600
+        guard hours > 0 else {
+            return "\(qsos.count)"
+        }
+        let rate = Double(qsos.count) / hours
+        return String(format: "%.1f", rate)
+    }
+}
 
 // MARK: - RoveStopDetailRow
 
@@ -16,14 +173,12 @@ struct RoveStopDetailRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            // Timeline indicator
             Circle()
                 .fill(stop.isActive ? Color.green : Color(.systemGray3))
                 .frame(width: 10, height: 10)
                 .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 4) {
-                // Park reference + resolved name
                 let parks = ParkReference.split(stop.parkReference)
                 ForEach(parks, id: \.self) { park in
                     HStack(spacing: 6) {
@@ -39,7 +194,6 @@ struct RoveStopDetailRow: View {
                     }
                 }
 
-                // Time range + stats
                 HStack(spacing: 8) {
                     Text(timeRange)
                         .font(.caption.monospaced())
