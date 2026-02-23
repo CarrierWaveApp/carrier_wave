@@ -15,7 +15,7 @@ extension RecordingPlaybackEngine {
 
     /// Set a transcript (e.g., from server response) and recompute ranges
     func setTranscript(_ newTranscript: SDRRecordingTranscript) {
-        transcript = newTranscript
+        transcript = newTranscript.filteringNoise()
         computeQSORanges()
     }
 

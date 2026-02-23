@@ -4,6 +4,7 @@ import SwiftUI
 
 /// Karaoke-style scrolling CW transcript, time-aligned to recording playback.
 /// Words highlight as playback passes them, and the active line stays centered.
+/// Overlapping transmissions are grouped with a connecting bracket.
 struct RecordingTranscriptView: View {
     // MARK: Internal
 
@@ -24,6 +25,11 @@ struct RecordingTranscriptView: View {
     }
 
     // MARK: Private
+
+    /// Distinct colors for different operators (by frequency group).
+    private static let operatorColors: [Color] = [
+        .blue, .orange, .green, .purple, .pink, .cyan, .yellow, .red,
+    ]
 
     private var emptyState: some View {
         VStack(spacing: 12) {
@@ -52,20 +58,24 @@ struct RecordingTranscriptView: View {
     ) -> some View {
         ScrollViewReader { proxy in
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: 12) {
+                LazyVStack(alignment: .leading, spacing: 0) {
                     ForEach(
-                        Array(interleaveItems(transcript).enumerated()),
-                        id: \.element.id
-                    ) { _, item in
+                        interleaveItems(transcript), id: \.id
+                    ) { item in
                         switch item {
-                        case let .line(line, lineIndex):
-                            transcriptLineView(line, lineIndex: lineIndex)
-                                .id(line.id)
-                                .onTapGesture {
-                                    onSeek?(line.startOffset)
-                                }
+                        case let .line(line, lineIndex, overlap, continues):
+                            transcriptLineView(
+                                line, lineIndex: lineIndex,
+                                overlapsWithPrevious: overlap,
+                                continuesOperator: continues
+                            )
+                            .id(line.id)
+                            .onTapGesture {
+                                onSeek?(line.startOffset)
+                            }
                         case let .segment(segment):
                             segmentDivider(segment)
+                                .padding(.vertical, 6)
                         }
                     }
                 }
@@ -89,35 +99,48 @@ struct RecordingTranscriptView: View {
 
     @ViewBuilder
     private func transcriptLineView(
-        _ line: SDRTranscriptLine, lineIndex: Int
+        _ line: SDRTranscriptLine, lineIndex: Int,
+        overlapsWithPrevious: Bool, continuesOperator: Bool
     ) -> some View {
         let isActive = lineIndex == activeLineIndex
+        let opColor = operatorColor(for: line.operatorId)
 
-        HStack(alignment: .top, spacing: 8) {
-            // Speaker callsign label
-            Text(line.speakerCallsign ?? "")
-                .font(.caption.monospaced().weight(.semibold))
-                .foregroundStyle(.tint)
-                .frame(width: 70, alignment: .leading)
+        HStack(alignment: .top, spacing: 0) {
+            // Leading color bar — no vertical padding when continuing same operator
+            RoundedRectangle(cornerRadius: continuesOperator ? 0 : 1.5)
+                .fill(opColor)
+                .frame(width: 3)
+                .padding(.vertical, continuesOperator ? 0 : 2)
 
-            // Words with per-word highlighting
-            wordFlow(line: line, lineIndex: lineIndex)
+            VStack(alignment: .leading, spacing: 2) {
+                // Speaker label only on first line of a run
+                if !continuesOperator {
+                    Text(speakerLabel(for: line))
+                        .font(.caption2.monospaced().weight(.semibold))
+                        .foregroundStyle(opColor)
+                }
+
+                // Words with per-word highlighting
+                wordFlow(line: line, lineIndex: lineIndex)
+            }
+            .padding(.leading, 8)
+
+            Spacer(minLength: 0)
         }
-        .padding(.vertical, 4)
+        .padding(.top, continuesOperator ? 0 : (overlapsWithPrevious ? 2 : 6))
+        .padding(.bottom, 2)
         .padding(.horizontal, 8)
         .background(
             isActive
-                ? Color.accentColor.opacity(0.06)
+                ? opColor.opacity(0.08)
                 : Color.clear
         )
-        .clipShape(RoundedRectangle(cornerRadius: 6))
-        .opacity(lineOpacity(lineIndex: lineIndex))
+        .clipShape(RoundedRectangle(cornerRadius: continuesOperator ? 0 : 6))
     }
 
     private func wordFlow(
         line: SDRTranscriptLine, lineIndex: Int
     ) -> some View {
-        // Use a wrapping layout for words
         WrappingHStack(alignment: .leading, spacing: 4) {
             ForEach(
                 Array(line.words.enumerated()), id: \.element.id
@@ -154,8 +177,9 @@ struct RecordingTranscriptView: View {
                 .foregroundStyle(.secondary)
             VStack { Divider() }
         }
-        .padding(.vertical, 4)
     }
+
+    // MARK: - Helpers
 
     private func wordColor(
         lineIndex: Int, isWordActive: Bool
@@ -166,21 +190,9 @@ struct RecordingTranscriptView: View {
         guard let activeLine = activeLineIndex else {
             return AnyShapeStyle(.secondary)
         }
-        if lineIndex < activeLine {
-            return AnyShapeStyle(.secondary)
-        }
-        return AnyShapeStyle(.tertiary)
-    }
-
-    private func lineOpacity(lineIndex: Int) -> Double {
-        guard let activeLine = activeLineIndex else {
-            return 0.8
-        }
-        if lineIndex == activeLine {
-            return 1.0
-        }
-        let distance = abs(lineIndex - activeLine)
-        return max(0.4, 1.0 - Double(distance) * 0.15)
+        return lineIndex < activeLine
+            ? AnyShapeStyle(.secondary)
+            : AnyShapeStyle(.tertiary)
     }
 
     private func segmentLabel(_ segment: SDRRecordingSegment) -> String {
@@ -191,16 +203,34 @@ struct RecordingTranscriptView: View {
         return "\(freqStr) \u{00B7} \(segment.mode)"
     }
 
-    // MARK: - Interleaving
+    private func operatorColor(for operatorId: Int?) -> Color {
+        guard let id = operatorId else {
+            return .accentColor
+        }
+        return Self.operatorColors[id % Self.operatorColors.count]
+    }
 
-    /// Interleave transcript lines with segment dividers at the right offsets
+    private func speakerLabel(for line: SDRTranscriptLine) -> String {
+        if let callsign = line.speakerCallsign {
+            return callsign
+        }
+        if let id = line.operatorId {
+            return "OP \(id + 1)"
+        }
+        return ""
+    }
+
+    // MARK: - Interleaving with Overlap Detection
+
+    /// Interleave transcript lines with segment dividers, detecting time overlaps
     private func interleaveItems(
         _ transcript: SDRRecordingTranscript
     ) -> [TranscriptItem] {
         var items: [TranscriptItem] = []
         var segmentIdx = 0
-        // Skip first segment (no divider needed at recording start)
         let boundaries = Array(segments.dropFirst())
+        var prevEndOffset: TimeInterval = -.infinity
+        var prevOperatorId: Int?
 
         for (lineIndex, line) in transcript.lines.enumerated() {
             // Insert segment dividers that fall before this line
@@ -210,10 +240,26 @@ struct RecordingTranscriptView: View {
                 let seg = boundaries[segmentIdx]
                 if !seg.isSilence {
                     items.append(.segment(seg))
+                    prevEndOffset = -.infinity
+                    prevOperatorId = nil // reset after divider
                 }
                 segmentIdx += 1
             }
-            items.append(.line(line, lineIndex: lineIndex))
+
+            let sameOperator = line.operatorId != nil
+                && line.operatorId == prevOperatorId
+
+            // Lines overlap when this one starts before the previous ends
+            // and they come from different operators
+            let overlaps = line.startOffset < prevEndOffset && !sameOperator
+
+            items.append(.line(
+                line, lineIndex: lineIndex,
+                overlapsWithPrevious: overlaps,
+                continuesOperator: sameOperator
+            ))
+            prevEndOffset = line.endOffset
+            prevOperatorId = line.operatorId
         }
         return items
     }
@@ -222,14 +268,17 @@ struct RecordingTranscriptView: View {
 // MARK: - TranscriptItem
 
 private enum TranscriptItem: Identifiable {
-    case line(SDRTranscriptLine, lineIndex: Int)
+    case line(
+        SDRTranscriptLine, lineIndex: Int,
+        overlapsWithPrevious: Bool, continuesOperator: Bool
+    )
     case segment(SDRRecordingSegment)
 
     // MARK: Internal
 
     var id: String {
         switch self {
-        case let .line(line, _):
+        case let .line(line, _, _, _):
             "line-\(line.id)"
         case let .segment(seg):
             "seg-\(seg.startOffset)"
@@ -251,9 +300,7 @@ struct WrappingHStack: Layout {
         subviews: Subviews,
         cache _: inout ()
     ) -> CGSize {
-        let rows = computeRows(
-            proposal: proposal, subviews: subviews
-        )
+        let rows = computeRows(proposal: proposal, subviews: subviews)
         guard !rows.isEmpty else {
             return .zero
         }
@@ -269,9 +316,7 @@ struct WrappingHStack: Layout {
         subviews: Subviews,
         cache _: inout ()
     ) {
-        let rows = computeRows(
-            proposal: proposal, subviews: subviews
-        )
+        let rows = computeRows(proposal: proposal, subviews: subviews)
         var y = bounds.minY
         var subviewIdx = 0
 

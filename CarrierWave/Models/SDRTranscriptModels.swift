@@ -29,6 +29,10 @@ struct SDRTranscriptLine: Codable, Sendable, Identifiable {
     let words: [SDRTranscriptWord]
     /// Attributed station callsign (nil when confidence is low)
     let speakerCallsign: String?
+    /// Frequency-based operator index (0, 1, 2, ...) for distinguishing transmitters
+    let operatorId: Int?
+    /// Detected tone frequency in Hz for this line's operator
+    let toneFreqHz: Float?
 }
 
 // MARK: - DetectedQSORange
@@ -75,14 +79,16 @@ struct SDRRecordingTranscript: Codable, Sendable {
             .appendingPathComponent(sidecarFilename(sessionId: sessionId))
     }
 
-    /// Load a cached transcript from disk
+    /// Load a cached transcript from disk, with noise lines filtered out
     static func load(sessionId: UUID) -> SDRRecordingTranscript? {
         guard let url = sidecarURL(sessionId: sessionId),
               let data = try? Data(contentsOf: url)
         else {
             return nil
         }
-        return try? JSONDecoder().decode(SDRRecordingTranscript.self, from: data)
+        return try? JSONDecoder()
+            .decode(SDRRecordingTranscript.self, from: data)
+            .filteringNoise()
     }
 
     /// Save this transcript to the sidecar JSON file
@@ -94,5 +100,62 @@ struct SDRRecordingTranscript: Codable, Sendable {
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         let data = try encoder.encode(self)
         try data.write(to: url, options: .atomic)
+    }
+
+    /// Return a copy with noise lines removed
+    func filteringNoise() -> SDRRecordingTranscript {
+        let filtered = lines.filter { !Self.isNoiseLine($0) }
+        return SDRRecordingTranscript(
+            recordingId: recordingId,
+            lines: filtered,
+            detectedQSORanges: detectedQSORanges,
+            generatedAt: generatedAt,
+            decoderVersion: decoderVersion,
+            averageWPM: averageWPM,
+            averageConfidence: averageConfidence
+        )
+    }
+}
+
+// MARK: - Noise Detection
+
+extension SDRRecordingTranscript {
+    /// Short prosigns and fragments that appear when decoding random noise.
+    private static let noiseWords: Set<String> = [
+        "HI", "AR", "EE", "ET", "TE", "TT", "EI", "IE", "IT", "TI",
+        "II", "AE", "EA", "AI", "IA", "SE", "ES", "EN", "NE", "AN",
+        "NA", "AA", "NN", "SK",
+    ]
+
+    /// Callsign pattern: 3-6 alphanumeric chars with at least one digit
+    /// and at least one letter (simplified check).
+    private static func looksLikeCallsign(_ text: String) -> Bool {
+        let upper = text.uppercased()
+        guard (3 ... 6).contains(upper.count),
+              upper.allSatisfy(\.isASCII),
+              upper.allSatisfy({ $0.isLetter || $0.isNumber }),
+              upper.contains(where: \.isNumber),
+              upper.contains(where: \.isLetter)
+        else {
+            return false
+        }
+        return true
+    }
+
+    /// Returns true if a line is likely decoded noise rather than real CW.
+    ///
+    /// A line is noise if ALL its words are known noise fragments and
+    /// none look like a callsign. Works for any line length (even 1-2 words).
+    static func isNoiseLine(_ line: SDRTranscriptLine) -> Bool {
+        guard !line.words.isEmpty else {
+            return true
+        }
+        let hasCallsign = line.words.contains { looksLikeCallsign($0.text) }
+        if hasCallsign {
+            return false
+        }
+        return line.words.allSatisfy {
+            noiseWords.contains($0.text.uppercased())
+        }
     }
 }
