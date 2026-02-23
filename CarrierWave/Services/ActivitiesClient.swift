@@ -18,6 +18,8 @@ final class ActivitiesClient {
 
     let keychain = KeychainHelper.shared
 
+    let baseURL: String
+
     // MARK: - Authentication
 
     func saveAuthToken(_ token: String) throws {
@@ -345,7 +347,6 @@ final class ActivitiesClient {
         #endif
     }()
 
-    private let baseURL: String
     private let userAgent = "CarrierWave/1.0"
 }
 

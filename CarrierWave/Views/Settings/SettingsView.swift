@@ -64,7 +64,9 @@ struct SettingsMainView: View {
         List {
             if searchText.isEmpty {
                 profileSection
-                generalSection
+                appearanceSection
+                loggingSection
+                syncDataSection
                 developerSection
                 aboutSection
             } else {

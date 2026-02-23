@@ -45,14 +45,20 @@ extension SettingsMainView {
         }
     }
 
-    var generalSection: some View {
+    var appearanceSection: some View {
         Section {
             NavigationLink {
                 AppearanceSettingsView()
             } label: {
                 Text("Appearance")
             }
+        } header: {
+            Text("General")
+        }
+    }
 
+    var loggingSection: some View {
+        Section {
             NavigationLink {
                 LoggerDetailSettingsView()
             } label: {
@@ -64,7 +70,13 @@ extension SettingsMainView {
             } label: {
                 Text("POTA Activations")
             }
+        } header: {
+            Text("Logging")
+        }
+    }
 
+    var syncDataSection: some View {
+        Section {
             NavigationLink {
                 SyncSourcesSettingsView(
                     potaAuth: potaAuth,
@@ -80,6 +92,8 @@ extension SettingsMainView {
             } label: {
                 Text("Data & Tools")
             }
+        } header: {
+            Text("Sync & Data")
         }
     }
 

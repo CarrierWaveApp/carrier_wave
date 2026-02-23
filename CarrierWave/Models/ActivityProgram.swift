@@ -88,7 +88,9 @@ struct ActivityProgram: Codable, Identifiable, Sendable, Equatable {
     /// ADIF field mapping for export/upload
     let adifFields: ADIFFieldMapping?
 
-    var id: String { slug }
+    var id: String {
+        slug
+    }
 
     // MARK: - Capability Checks
 

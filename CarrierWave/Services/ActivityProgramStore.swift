@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 
 // MARK: - ActivityProgramStore
@@ -26,7 +27,7 @@ final class ActivityProgramStore: ObservableObject {
 
     /// Programs that have a reference field (excludes casual)
     var activationPrograms: [ActivityProgram] {
-        programs.filter { $0.hasReferenceField }
+        programs.filter(\.hasReferenceField)
     }
 
     /// All programs including casual, suitable for the session start picker
@@ -86,31 +87,6 @@ final class ActivityProgramStore: ObservableObject {
     private static let cacheKey = "activityProgramsCache"
     private static let lastFetchKey = "activityProgramsLastFetch"
 
-    private let client: ActivitiesClient?
-
-    private func loadFromCache() {
-        // Try UserDefaults cache first
-        if let data = UserDefaults.standard.data(forKey: Self.cacheKey),
-           let response = try? JSONDecoder.activitiesDecoder.decode(
-               ProgramListResponse.self,
-               from: data
-           )
-        {
-            programs = response.programs
-            version = response.version
-            return
-        }
-
-        // Fall back to bundled defaults
-        programs = Self.bundledPrograms
-    }
-
-    private func saveToCache(_ response: ProgramListResponse) {
-        if let data = try? JSONEncoder.activitiesEncoder.encode(response) {
-            UserDefaults.standard.set(data, forKey: Self.cacheKey)
-        }
-    }
-
     /// Built-in program definitions for offline-first startup.
     /// These match the server seed data and are used until the first successful fetch.
     private static let bundledPrograms: [ActivityProgram] = [
@@ -169,4 +145,29 @@ final class ActivityProgramStore: ObservableObject {
             )
         ),
     ]
+
+    private let client: ActivitiesClient?
+
+    private func loadFromCache() {
+        // Try UserDefaults cache first
+        if let data = UserDefaults.standard.data(forKey: Self.cacheKey),
+           let response = try? JSONDecoder.activitiesDecoder.decode(
+               ProgramListResponse.self,
+               from: data
+           )
+        {
+            programs = response.programs
+            version = response.version
+            return
+        }
+
+        // Fall back to bundled defaults
+        programs = Self.bundledPrograms
+    }
+
+    private func saveToCache(_ response: ProgramListResponse) {
+        if let data = try? JSONEncoder.activitiesEncoder.encode(response) {
+            UserDefaults.standard.set(data, forKey: Self.cacheKey)
+        }
+    }
 }

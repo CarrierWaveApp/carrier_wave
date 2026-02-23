@@ -159,7 +159,7 @@ final class LoggingSessionManager {
         // Start spot monitoring
         startSpotMonitoring()
 
-        // Auto-record solar/weather conditions for POTA activations
+        // Auto-record solar/weather conditions
         recordConditions()
 
         try? modelContext.save()

@@ -7,10 +7,19 @@ struct LoggerDetailSettingsView: View {
 
     var body: some View {
         List {
-            loggerSection
+            modeInputSection
+            displaySection
+            behaviorSection
+            fieldsSection
+            conditionsSection
+            bragSheetSection
+            webSDRSection
             activityLogSection
         }
         .navigationTitle("Logger")
+        .onAppear {
+            userProfile = UserProfileService.shared.getProfile()
+        }
     }
 
     // MARK: Private
@@ -33,6 +42,11 @@ struct LoggerDetailSettingsView: View {
     @AppStorage("loggerShowTheirGrid") private var showTheirGrid = false
     @AppStorage("loggerShowTheirPark") private var showTheirPark = false
     @AppStorage("loggerShowOperator") private var showOperator = false
+
+    @AppStorage("autoRecordConditions") private var autoRecordConditions = true
+    @AppStorage("solarPollingEnabled") private var solarPollingEnabled = true
+    @AppStorage("shareCardIncludeEquipment") private var shareCardIncludeEquipment = true
+    @AppStorage("statisticianMode") private var statisticianMode = false
 
     @State private var userProfile: UserProfile?
 
@@ -61,7 +75,7 @@ struct LoggerDetailSettingsView: View {
         return "\(commands.count) commands"
     }
 
-    private var loggerSection: some View {
+    private var modeInputSection: some View {
         Section {
             if let profile = userProfile, let licenseClass = profile.licenseClass {
                 HStack {
@@ -101,44 +115,110 @@ struct LoggerDetailSettingsView: View {
                         .foregroundStyle(.secondary)
                 }
             }
+        } header: {
+            Text("Mode & Input")
+        }
+    }
 
+    private var displaySection: some View {
+        Section {
             Toggle("Show frequency activity", isOn: $showActivityPanel)
-            Toggle("Keep screen on", isOn: $keepScreenOn)
-            Toggle("Auto-switch mode for frequency", isOn: $autoModeSwitch)
-            Toggle("Keep lookup info after logging", isOn: $keepLookupAfterLog)
-            Toggle("Hide field entry form", isOn: $hideFieldEntryForm)
 
             Picker("Notes display", selection: $notesDisplayMode) {
                 Text("Emoji").tag("emoji")
                 Text("Source names").tag("sources")
             }
+        } header: {
+            Text("Display")
+        }
+    }
 
+    private var behaviorSection: some View {
+        Section {
+            Toggle("Keep screen on", isOn: $keepScreenOn)
+            Toggle("Auto-switch mode for frequency", isOn: $autoModeSwitch)
+            Toggle("Keep lookup info after logging", isOn: $keepLookupAfterLog)
+            Toggle("Hide field entry form", isOn: $hideFieldEntryForm)
+        } header: {
+            Text("Behavior")
+        } footer: {
+            Text(
+                "Keep screen on prevents device sleep during sessions. "
+                    + "Keep lookup info shows the callsign card after logging "
+                    + "until you start typing a new callsign."
+            )
+        }
+    }
+
+    private var fieldsSection: some View {
+        Section {
+            Toggle("Their Grid", isOn: $showTheirGrid)
+            Toggle("Their Park", isOn: $showTheirPark)
+            Toggle("Operator", isOn: $showOperator)
+        } header: {
+            Text("Always Visible Fields")
+        } footer: {
+            Text(
+                "Notes and RST are always visible. "
+                    + "Other fields appear without tapping \"More Fields\"."
+            )
+        }
+    }
+
+    private var conditionsSection: some View {
+        Section {
+            Toggle(
+                "Record solar & weather at start",
+                isOn: $autoRecordConditions
+            )
+            Toggle("Poll solar conditions hourly", isOn: $solarPollingEnabled)
+                .onChange(of: solarPollingEnabled) {
+                    SolarPollingService.shared.startIfEnabled()
+                }
+        } header: {
+            Text("Conditions")
+        } footer: {
+            Text(
+                "Records current solar and weather conditions when starting a session. "
+                    + "Hourly polling captures solar conditions in the background "
+                    + "for a continuous conditions history graph."
+            )
+        }
+    }
+
+    private var bragSheetSection: some View {
+        Section {
+            Toggle(
+                "Include equipment on brag sheet",
+                isOn: $shareCardIncludeEquipment
+            )
+            Toggle("Professional Statistician Mode", isOn: $statisticianMode)
+        } header: {
+            Text("Brag Sheet & Stats")
+        } footer: {
+            Text(
+                "Equipment on brag sheet shows radio, antenna, key, and other gear. "
+                    + "Statistician mode adds charts to activation details "
+                    + "and extra stats to brag sheets."
+            )
+        }
+    }
+
+    private var webSDRSection: some View {
+        Section {
             NavigationLink {
                 WebSDRRecordingsView()
             } label: {
-                Text("WebSDR Recordings")
+                Text("Recordings")
             }
 
             NavigationLink {
                 WebSDRFavoritesView()
             } label: {
-                Text("WebSDR Favorites")
-            }
-
-            DisclosureGroup("Always visible fields") {
-                Toggle("Their Grid", isOn: $showTheirGrid)
-                Toggle("Their Park", isOn: $showTheirPark)
-                Toggle("Operator", isOn: $showOperator)
+                Text("Favorites")
             }
         } header: {
-            Text("Logger")
-        } footer: {
-            Text(
-                "Keep screen on prevents device sleep during sessions. "
-                    + "Keep lookup info shows the callsign card after logging until you start typing a new callsign. "
-                    + "Notes and RST are always visible. "
-                    + "Other fields appear without tapping \"More Fields\"."
-            )
+            Text("WebSDR")
         }
     }
 
