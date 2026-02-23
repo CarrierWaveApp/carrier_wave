@@ -4,6 +4,10 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Add activity program registry model and API client for server-driven activation types
+- Add ActivityProgramStore with local caching and bundled fallback programs
+
 ## [1.43.1] - 2026-02-22
 
 ### Fixed

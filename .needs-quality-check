@@ -1,0 +1,3 @@
+ActivityProgram.swift — New model: ActivityProgram, ProgramCapability, ADIFFieldMapping, ProgramListResponse
+ActivitiesClient+Programs.swift — New API extension: fetchPrograms(), fetchProgram(slug:)
+ActivityProgramStore.swift — New store: local caching, bundled fallback, periodic refresh
