@@ -130,14 +130,23 @@ struct RecordingPlayerView: View {
 
     private var timeLabelsRow: some View {
         HStack {
-            Text(formatUTCTime(engine.currentTime))
-                .font(.caption.monospacedDigit())
-                .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(formatOffset(engine.currentTime))
+                    .font(.caption.monospacedDigit())
+                Text(formatUTCTime(engine.currentTime))
+                    .font(.caption2.monospacedDigit())
+                    .foregroundStyle(.tertiary)
+            }
             Spacer()
-            Text(formatUTCTime(engine.duration))
-                .font(.caption.monospacedDigit())
-                .foregroundStyle(.secondary)
+            VStack(alignment: .trailing, spacing: 2) {
+                Text(formatOffset(engine.duration))
+                    .font(.caption.monospacedDigit())
+                Text(formatUTCTime(engine.duration))
+                    .font(.caption2.monospacedDigit())
+                    .foregroundStyle(.tertiary)
+            }
         }
+        .foregroundStyle(.secondary)
     }
 
     // MARK: - Transport
@@ -214,6 +223,7 @@ struct RecordingPlayerView: View {
                     activeLineIndex: engine.activeTranscriptLineIndex,
                     activeWordIndex: engine.activeTranscriptWordIndex,
                     currentTime: engine.currentTime,
+                    recordingStartedAt: recording.startedAt,
                     onSeek: { time in engine.seek(to: time) },
                     onTranscribe: cwswlServerURL.isEmpty ? nil : {
                         Task { await startTranscription() }

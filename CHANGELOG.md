@@ -7,6 +7,8 @@ All notable changes to Carrier Wave will be documented in this file.
 ### Added
 - Add activity program registry model and API client for server-driven activation types
 - Add ActivityProgramStore with local caching and bundled fallback programs
+- Add UTC timestamps to recording transcript lines (shown on each operator change)
+- Add chat-style conversation layout for 2-operator transcripts (OP 1 left, OP 2 right)
 
 ## [1.43.1] - 2026-02-22
 

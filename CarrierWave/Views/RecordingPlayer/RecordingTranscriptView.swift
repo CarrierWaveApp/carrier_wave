@@ -4,7 +4,8 @@ import SwiftUI
 
 /// Karaoke-style scrolling CW transcript, time-aligned to recording playback.
 /// Words highlight as playback passes them, and the active line stays centered.
-/// Overlapping transmissions are grouped with a connecting bracket.
+/// Two-operator conversations use a chat-style layout (OP 1 left, OP 2 right)
+/// with UTC timestamps on each operator change.
 struct RecordingTranscriptView: View {
     // MARK: Internal
 
@@ -13,6 +14,7 @@ struct RecordingTranscriptView: View {
     let activeLineIndex: Int?
     let activeWordIndex: Int?
     let currentTime: TimeInterval
+    let recordingStartedAt: Date
     var onSeek: ((TimeInterval) -> Void)?
     var onTranscribe: (() -> Void)?
 
@@ -30,6 +32,30 @@ struct RecordingTranscriptView: View {
     private static let operatorColors: [Color] = [
         .blue, .orange, .green, .purple, .pink, .cyan, .yellow, .red,
     ]
+
+    private static let utcTimeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm:ss"
+        formatter.timeZone = TimeZone(identifier: "UTC")
+        return formatter
+    }()
+
+    /// Use chat-style left/right layout when exactly 2 operators are present
+    private var isChatLayout: Bool {
+        guard let transcript else {
+            return false
+        }
+        let ops = Set(transcript.lines.compactMap(\.operatorId))
+        return ops.count == 2
+    }
+
+    /// The operator ID that gets left-aligned (lowest = primary station)
+    private var primaryOperatorId: Int {
+        guard let transcript else {
+            return 0
+        }
+        return transcript.lines.compactMap(\.operatorId).min() ?? 0
+    }
 
     private var emptyState: some View {
         VStack(spacing: 12) {
@@ -104,28 +130,34 @@ struct RecordingTranscriptView: View {
     ) -> some View {
         let isActive = lineIndex == activeLineIndex
         let opColor = operatorColor(for: line.operatorId)
+        let rightAligned = isChatLayout
+            && (line.operatorId ?? 0) != primaryOperatorId
 
         HStack(alignment: .top, spacing: 0) {
-            // Leading color bar — no vertical padding when continuing same operator
-            RoundedRectangle(cornerRadius: continuesOperator ? 0 : 1.5)
-                .fill(opColor)
-                .frame(width: 3)
-                .padding(.vertical, continuesOperator ? 0 : 2)
+            if rightAligned {
+                Spacer(minLength: 40)
+            }
+
+            if !rightAligned {
+                colorBar(opColor, continuesOperator: continuesOperator)
+            }
 
             VStack(alignment: .leading, spacing: 2) {
-                // Speaker label only on first line of a run
                 if !continuesOperator {
-                    Text(speakerLabel(for: line))
-                        .font(.caption2.monospaced().weight(.semibold))
-                        .foregroundStyle(opColor)
+                    lineHeader(line, opColor: opColor)
                 }
-
-                // Words with per-word highlighting
                 wordFlow(line: line, lineIndex: lineIndex)
             }
-            .padding(.leading, 8)
+            .padding(.leading, rightAligned ? 0 : 8)
+            .padding(.trailing, rightAligned ? 8 : 0)
 
-            Spacer(minLength: 0)
+            if rightAligned {
+                colorBar(opColor, continuesOperator: continuesOperator)
+            }
+
+            if !rightAligned {
+                Spacer(minLength: isChatLayout ? 40 : 0)
+            }
         }
         .padding(.top, continuesOperator ? 0 : (overlapsWithPrevious ? 2 : 6))
         .padding(.bottom, 2)
@@ -136,6 +168,28 @@ struct RecordingTranscriptView: View {
                 : Color.clear
         )
         .clipShape(RoundedRectangle(cornerRadius: continuesOperator ? 0 : 6))
+    }
+
+    private func colorBar(
+        _ color: Color, continuesOperator: Bool
+    ) -> some View {
+        RoundedRectangle(cornerRadius: continuesOperator ? 0 : 1.5)
+            .fill(color)
+            .frame(width: 3)
+            .padding(.vertical, continuesOperator ? 0 : 2)
+    }
+
+    private func lineHeader(
+        _ line: SDRTranscriptLine, opColor: Color
+    ) -> some View {
+        HStack(spacing: 6) {
+            Text(speakerLabel(for: line))
+                .font(.caption2.monospaced().weight(.semibold))
+                .foregroundStyle(opColor)
+            Text(formatUTCTime(line.startOffset))
+                .font(.caption2.monospacedDigit())
+                .foregroundStyle(.tertiary)
+        }
     }
 
     private func wordFlow(
@@ -201,6 +255,11 @@ struct RecordingTranscriptView: View {
             ? String(format: "%.0f MHz", mHz)
             : String(format: "%.3f MHz", mHz)
         return "\(freqStr) \u{00B7} \(segment.mode)"
+    }
+
+    private func formatUTCTime(_ offset: TimeInterval) -> String {
+        let date = recordingStartedAt.addingTimeInterval(offset)
+        return Self.utcTimeFormatter.string(from: date) + "z"
     }
 
     private func operatorColor(for operatorId: Int?) -> Color {

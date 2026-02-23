@@ -160,7 +160,12 @@ extension RecordingPlayerView {
                     transcriptionProgress = progress
                 }
             }
-            try? transcript.save(sessionId: recording.loggingSessionId)
+            do {
+                try transcript.save(sessionId: recording.loggingSessionId)
+            } catch {
+                Logger(subsystem: "com.jsvana.FullDuplex", category: "CW-SWL")
+                    .error("[CW-SWL] Failed to save transcript: \(error)")
+            }
             engine.setTranscript(transcript)
         } catch {
             Logger(subsystem: "com.jsvana.FullDuplex", category: "CW-SWL")
@@ -216,6 +221,13 @@ extension RecordingPlayerView {
         formatter.dateFormat = "HH:mm"
         formatter.timeZone = TimeZone(identifier: "UTC")
         return formatter.string(from: date) + "z"
+    }
+
+    func formatOffset(_ seconds: TimeInterval) -> String {
+        let total = Int(seconds)
+        let mins = total / 60
+        let secs = total % 60
+        return String(format: "%d:%02d", mins, secs)
     }
 
     func formatFrequency(_ kHz: Double) -> String {

@@ -96,6 +96,10 @@ struct SDRRecordingTranscript: Codable, Sendable {
         guard let url = SDRRecordingTranscript.sidecarURL(sessionId: sessionId) else {
             return
         }
+        let dir = url.deletingLastPathComponent()
+        try FileManager.default.createDirectory(
+            at: dir, withIntermediateDirectories: true
+        )
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         let data = try encoder.encode(self)
