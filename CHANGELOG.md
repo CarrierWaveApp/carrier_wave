@@ -4,6 +4,8 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.43.1] - 2026-02-22
+
 ### Fixed
 - Fix stale friend requests persisting after server-side deletion (retry with fresh token on INVALID_TOKEN, re-sync on action failure)
 

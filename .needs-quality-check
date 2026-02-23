@@ -1,1 +1,0 @@
-Fix stale friend request data: retry sync on INVALID_TOKEN, re-sync on action failure
