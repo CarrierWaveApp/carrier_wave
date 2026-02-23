@@ -5,6 +5,8 @@ All notable changes to Carrier Wave will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+- Fix spot comments appended repeatedly to QSO notes on every app restart
+- One-time repair to deduplicate existing QSOs with repeated spot notes
 - Fix duplicate service badges in QSO rows (collapse to one badge per service type)
 - Fix duplicate QSO records from iCloud sync (UUID collision repair on startup)
 - Fix duplicate ServicePresence records from iCloud sync (dedup repair on startup)

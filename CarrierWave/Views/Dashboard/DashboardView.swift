@@ -159,6 +159,7 @@ struct DashboardView: View {
                 await repairPhoneSSBDuplicatesIfNeeded()
                 await repairDuplicateQSOsIfNeeded()
                 await repairDuplicatePresenceIfNeeded()
+                await repairDuplicateSpotNotesIfNeeded()
             }
             .onChange(of: syncService.lastSyncDate) { _, _ in
                 // Recompute stats after sync completes

@@ -135,6 +135,14 @@ extension LoggingSessionManager {
                 if qso.callsign.uppercased() == spotter, timeDiff <= timeWindow {
                     // Attach comment to QSO
                     let spotNote = "[Spot: \(comment.spotter)] \(commentText)"
+
+                    // Skip if this exact spot note is already in the QSO notes
+                    // (handles app restart where in-memory dedup set was cleared)
+                    if let existingNotes = qso.notes, existingNotes.contains(spotNote) {
+                        attachedSpotCommentIds.insert(comment.spotId)
+                        break
+                    }
+
                     if let existingNotes = qso.notes, !existingNotes.isEmpty {
                         qso.notes = "\(existingNotes) | \(spotNote)"
                     } else {

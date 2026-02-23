@@ -212,6 +212,28 @@ extension DashboardView {
         }
     }
 
+    // MARK: - Duplicate Spot Note Repair
+
+    private static let duplicateSpotNoteRepairKey = "duplicateSpotNoteRepairCompleted"
+
+    /// One-time repair: deduplicate spot comments appended multiple times to QSO notes.
+    func repairDuplicateSpotNotesIfNeeded() async {
+        guard !UserDefaults.standard.bool(forKey: Self.duplicateSpotNoteRepairKey) else {
+            return
+        }
+
+        let service = DuplicateSpotNoteRepairService(container: modelContext.container)
+        do {
+            let result = try await service.repair()
+            if result.repaired > 0 {
+                print("Spot note dedup repair: fixed \(result.repaired) of \(result.scanned) QSOs")
+            }
+            UserDefaults.standard.set(true, forKey: Self.duplicateSpotNoteRepairKey)
+        } catch {
+            print("Spot note dedup repair failed: \(error)")
+        }
+    }
+
     // MARK: - K-Index Repair
 
     private static let kIndexRepairKey = "kIndexRepairCompleted"
