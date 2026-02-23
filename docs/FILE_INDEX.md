@@ -97,6 +97,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `TourState.swift` | UserDefaults-backed tour progress tracking |
 | `StreakInfo.swift` | Streak data model and calculation utilities |
 | `DashboardMetricType.swift` | Dashboard metric type enum, display properties, MetricDisplayValue |
+| `ActivityProgram.swift` | Activity program registry model (ActivityProgram, ProgramCapability, ADIFFieldMapping) |
 | `ActivityType.swift` | Activity type enum with icons and display names |
 | `Friendship.swift` | Friend connection model with status tracking |
 | `FriendSuggestion.swift` | Friend suggestion models (DismissedSuggestion, FriendSuggestion, DTO) |
@@ -210,6 +211,8 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `ActivityDetector.swift` | Detect notable activities from QSOs |
 | `ActivityDetector+Detection.swift` | Activity detection methods (DXCC, bands, modes, DX, streaks) |
 | `ActivitiesClient+Activities.swift` | Activity API endpoints (report, feed) |
+| `ActivitiesClient+Programs.swift` | Activity program registry API endpoints |
+| `ActivityProgramStore.swift` | Local cache for activity programs with bundled fallback |
 | `ActivityReporter.swift` | Report detected activities to server |
 | `SyncService+Activity.swift` | Hook activity detection into sync flow |
 | `ActivityFeedSyncService.swift` | Sync activity feed from server |
