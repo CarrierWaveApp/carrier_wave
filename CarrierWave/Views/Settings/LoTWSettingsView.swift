@@ -161,15 +161,31 @@ struct LoTWLoginSheet: View {
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
 
-                    HStack {
-                        Text("Username")
-                        Spacer()
-                        Text(username)
-                            .foregroundStyle(.secondary)
+                    if useCustomCallsign {
+                        TextField("Callsign", text: $username)
+                            .autocapitalization(.allCharacters)
+                            .autocorrectionDisabled()
+                    } else {
+                        HStack {
+                            Text("Callsign")
+                            Spacer()
+                            Text(username)
+                                .foregroundStyle(.secondary)
+                        }
                     }
 
                     SecureField("Password", text: $password)
                         .textContentType(.password)
+                }
+
+                Section {
+                    Toggle("Use a different callsign", isOn: $useCustomCallsign)
+                } footer: {
+                    Text(
+                        "Enable this if your LoTW account uses a different"
+                            + " callsign — for example, if you've changed calls"
+                            + " since creating your account."
+                    )
                 }
 
                 Section {
@@ -184,7 +200,7 @@ struct LoTWLoginSheet: View {
                                 .frame(maxWidth: .infinity)
                         }
                     }
-                    .disabled(password.isEmpty || isValidating)
+                    .disabled(username.isEmpty || password.isEmpty || isValidating)
                 }
             }
             .navigationTitle("LoTW Login")
@@ -197,6 +213,9 @@ struct LoTWLoginSheet: View {
             .onAppear {
                 loadProfileCallsign()
             }
+            .onChange(of: useCustomCallsign) { _, isCustom in
+                if !isCustom { loadProfileCallsign() }
+            }
         }
     }
 
@@ -207,12 +226,15 @@ struct LoTWLoginSheet: View {
     @State private var username = ""
     @State private var password = ""
     @State private var isValidating = false
+    @State private var useCustomCallsign = false
 
     private let lotwClient = LoTWClient()
 
     private func loadProfileCallsign() {
         if let profile = UserProfileService.shared.getProfile() {
             username = profile.callsign
+        } else {
+            useCustomCallsign = true
         }
     }
 
