@@ -79,6 +79,7 @@ extension DashboardView {
         if TabConfiguration.isTabEnabled(.activity) {
             selectedTab = .activity
         } else {
+            pendingMoreTabDestination = .activity
             selectedTab = .more
         }
     }

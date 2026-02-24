@@ -44,12 +44,7 @@ struct MoreTabView: View {
                 if !hiddenTabs.isEmpty {
                     Section {
                         ForEach(hiddenTabs, id: \.self) { tab in
-                            NavigationLink {
-                                // Use LazyView to defer view initialization until navigation.
-                                // This prevents @Query and other expensive initializations
-                                // from running when MoreTabView is first displayed.
-                                LazyView { tabContent(for: tab) }
-                            } label: {
+                            NavigationLink(value: tab) {
                                 Label(tab.title, systemImage: tab.icon)
                             }
                         }
@@ -65,6 +60,9 @@ struct MoreTabView: View {
                 }
             }
             .navigationTitle("More")
+            .navigationDestination(for: AppTab.self) { tab in
+                LazyView { tabContent(for: tab) }
+            }
         }
         .onReceive(NotificationCenter.default.publisher(for: .tabConfigurationChanged)) { _ in
             updateHiddenTabs()
@@ -104,6 +102,7 @@ struct MoreTabView: View {
                     syncService: syncService,
                     selectedTab: .constant(.dashboard),
                     settingsDestination: $settingsDestination,
+                    pendingMoreTabDestination: .constant(nil),
                     tourState: tourState,
                     navigateToActivityLog: .constant(false)
                 )

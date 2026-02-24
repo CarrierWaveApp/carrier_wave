@@ -140,9 +140,14 @@ struct ContentView: View {
                 showOnboarding = true
             }
         }
-        .onChange(of: selectedTab) { _, _ in
+        .onChange(of: selectedTab) { _, newTab in
             // Reset navigation paths when switching tabs to avoid stale submenu state
             moreTabNavigationPath = NavigationPath()
+            // Apply any pending deep navigation into the More tab
+            if newTab == .more, let destination = pendingMoreTabDestination {
+                pendingMoreTabDestination = nil
+                moreTabNavigationPath.append(destination)
+            }
         }
     }
 
@@ -163,6 +168,7 @@ struct ContentView: View {
     @State private var showIntroTour = false
     @State private var showOnboarding = false
     @State private var moreTabNavigationPath = NavigationPath()
+    @State private var pendingMoreTabDestination: AppTab?
     @State private var visibleTabs: [AppTab] = TabConfiguration.visibleTabs()
     @State private var iPadTabs: [AppTab] = TabConfiguration.iPadVisibleTabs()
     @State private var iPadShowsSettings = false
@@ -295,6 +301,7 @@ extension ContentView {
                     syncService: syncService,
                     selectedTab: $selectedTab,
                     settingsDestination: $settingsDestination,
+                    pendingMoreTabDestination: $pendingMoreTabDestination,
                     tourState: tourState,
                     navigateToActivityLog: $pendingActivityLogNavigation
                 )

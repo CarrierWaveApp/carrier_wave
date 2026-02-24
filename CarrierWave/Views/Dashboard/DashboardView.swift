@@ -16,6 +16,7 @@ struct DashboardView: View {
     @ObservedObject var syncService: SyncService
     @Binding var selectedTab: AppTab?
     @Binding var settingsDestination: SettingsDestination?
+    @Binding var pendingMoreTabDestination: AppTab?
     let tourState: TourState
     @Binding var navigateToActivityLog: Bool
 
