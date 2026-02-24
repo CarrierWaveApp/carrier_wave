@@ -141,12 +141,9 @@ struct ContentView: View {
             }
         }
         .onChange(of: selectedTab) { _, newTab in
-            // Reset navigation paths when switching tabs to avoid stale submenu state
-            moreTabNavigationPath = NavigationPath()
-            // Apply any pending deep navigation into the More tab
-            if newTab == .more, let destination = pendingMoreTabDestination {
+            // Clear pending deep link when navigating away from More
+            if newTab != .more {
                 pendingMoreTabDestination = nil
-                moreTabNavigationPath.append(destination)
             }
         }
     }
@@ -167,7 +164,6 @@ struct ContentView: View {
     @State private var potaClient: POTAClient?
     @State private var showIntroTour = false
     @State private var showOnboarding = false
-    @State private var moreTabNavigationPath = NavigationPath()
     @State private var pendingMoreTabDestination: AppTab?
     @State private var visibleTabs: [AppTab] = TabConfiguration.visibleTabs()
     @State private var iPadTabs: [AppTab] = TabConfiguration.iPadVisibleTabs()
@@ -366,7 +362,7 @@ extension ContentView {
         MoreTabView(
             potaAuthService: potaAuthService,
             settingsDestination: $settingsDestination,
-            navigationPath: $moreTabNavigationPath,
+            pendingDeepLink: $pendingMoreTabDestination,
             mapFilterState: mapFilterState,
             tourState: tourState,
             syncService: syncService

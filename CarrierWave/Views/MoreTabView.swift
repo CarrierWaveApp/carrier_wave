@@ -31,20 +31,22 @@ struct MoreTabView: View {
 
     @ObservedObject var potaAuthService: POTAAuthService
     @Binding var settingsDestination: SettingsDestination?
-    @Binding var navigationPath: NavigationPath
+    @Binding var pendingDeepLink: AppTab?
     @Bindable var mapFilterState: MapFilterState
 
     let tourState: TourState
     let syncService: SyncService?
 
     var body: some View {
-        NavigationStack(path: $navigationPath) {
+        NavigationStack {
             List {
                 // Show hidden configurable tabs
                 if !hiddenTabs.isEmpty {
                     Section {
                         ForEach(hiddenTabs, id: \.self) { tab in
-                            NavigationLink(value: tab) {
+                            NavigationLink {
+                                LazyView { tabContent(for: tab) }
+                            } label: {
                                 Label(tab.title, systemImage: tab.icon)
                             }
                         }
@@ -60,7 +62,7 @@ struct MoreTabView: View {
                 }
             }
             .navigationTitle("More")
-            .navigationDestination(for: AppTab.self) { tab in
+            .navigationDestination(item: $pendingDeepLink) { tab in
                 LazyView { tabContent(for: tab) }
             }
         }
