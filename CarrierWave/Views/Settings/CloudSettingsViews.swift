@@ -106,6 +106,13 @@ struct LoFiSettingsView: View {
         .onAppear {
             checkStatus()
         }
+        .onChange(of: useCustomCallsign) { _, isCustom in
+            if !isCustom {
+                if let profile = UserProfileService.shared.getProfile() {
+                    callsign = profile.callsign
+                }
+            }
+        }
         .miniTour(.lofiSetup, tourState: tourState)
     }
 
@@ -117,6 +124,7 @@ struct LoFiSettingsView: View {
     @State private var isConfigured = false
     @State private var isLinked = false
     @State private var isLoading = false
+    @State private var useCustomCallsign = false
     @State private var isRedownloading = false
     @State private var redownloadResult: String?
     @State private var showingError = false
@@ -168,11 +176,17 @@ struct LoFiSettingsView: View {
     @ViewBuilder
     private var setupSection: some View {
         Section {
-            HStack {
-                Text("Callsign")
-                Spacer()
-                Text(callsign)
-                    .foregroundStyle(.secondary)
+            if useCustomCallsign {
+                TextField("Callsign", text: $callsign)
+                    .autocapitalization(.allCharacters)
+                    .autocorrectionDisabled()
+            } else {
+                HStack {
+                    Text("Callsign")
+                    Spacer()
+                    Text(callsign)
+                        .foregroundStyle(.secondary)
+                }
             }
 
             TextField("Email", text: $email)
@@ -183,7 +197,21 @@ struct LoFiSettingsView: View {
             Text("Setup")
         } footer: {
             Text(
-                "Your callsign is used to access your LoFi account. Email is for device verification."
+                "Your callsign is used to access your LoFi account."
+                    + " Email is for device verification."
+            )
+        }
+
+        Section {
+            Toggle(
+                "Use a different callsign",
+                isOn: $useCustomCallsign
+            )
+        } footer: {
+            Text(
+                "Enable this if your LoFi account uses a different"
+                    + " callsign — for example, if you've changed calls"
+                    + " since creating your account."
             )
         }
 
@@ -199,7 +227,7 @@ struct LoFiSettingsView: View {
                         .frame(maxWidth: .infinity)
                 }
             }
-            .disabled(email.isEmpty || isLoading)
+            .disabled(callsign.isEmpty || email.isEmpty || isLoading)
         }
 
         Section {
@@ -222,9 +250,10 @@ struct LoFiSettingsView: View {
         isConfigured = lofiClient.isConfigured
         isLinked = lofiClient.isLinked
 
-        // Always use profile callsign (non-editable)
         if let profile = UserProfileService.shared.getProfile() {
             callsign = profile.callsign
+        } else {
+            useCustomCallsign = true
         }
         if let existingEmail = lofiClient.getEmail() {
             email = existingEmail

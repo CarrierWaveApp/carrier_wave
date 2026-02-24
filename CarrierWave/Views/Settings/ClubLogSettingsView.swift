@@ -156,8 +156,8 @@ struct ClubLogLoginSheet: View {
             Form {
                 Section {
                     Text(
-                        "Enter your Club Log email, Application Password, "
-                            + "callsign, and API key."
+                        "Enter your Club Log email, Application Password,"
+                            + " and API key."
                     )
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
@@ -171,9 +171,18 @@ struct ClubLogLoginSheet: View {
                     SecureField("App Password", text: $password)
                         .textContentType(.password)
 
-                    TextField("Callsign", text: $callsign)
-                        .autocapitalization(.allCharacters)
-                        .autocorrectionDisabled()
+                    if useCustomCallsign {
+                        TextField("Callsign", text: $callsign)
+                            .autocapitalization(.allCharacters)
+                            .autocorrectionDisabled()
+                    } else {
+                        HStack {
+                            Text("Callsign")
+                            Spacer()
+                            Text(callsign)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
 
                     TextField("API Key", text: $apiKey)
                         .autocapitalization(.none)
@@ -182,6 +191,19 @@ struct ClubLogLoginSheet: View {
                     Text(
                         "Use your Application Password from Club Log Settings, "
                             + "not your main account password."
+                    )
+                }
+
+                Section {
+                    Toggle(
+                        "Use a different callsign",
+                        isOn: $useCustomCallsign
+                    )
+                } footer: {
+                    Text(
+                        "Enable this if your Club Log account uses a"
+                            + " different callsign — for example, if you've"
+                            + " changed calls since creating your account."
                     )
                 }
 
@@ -213,6 +235,9 @@ struct ClubLogLoginSheet: View {
             .onAppear {
                 loadProfileCallsign()
             }
+            .onChange(of: useCustomCallsign) { _, isCustom in
+                if !isCustom { loadProfileCallsign() }
+            }
         }
     }
 
@@ -225,12 +250,15 @@ struct ClubLogLoginSheet: View {
     @State private var callsign = ""
     @State private var apiKey = ""
     @State private var isValidating = false
+    @State private var useCustomCallsign = false
 
     private let clublogClient = ClubLogClient()
 
     private func loadProfileCallsign() {
         if let profile = UserProfileService.shared.getProfile() {
             callsign = profile.callsign
+        } else {
+            useCustomCallsign = true
         }
     }
 
