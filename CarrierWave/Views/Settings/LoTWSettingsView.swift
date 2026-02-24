@@ -214,7 +214,9 @@ struct LoTWLoginSheet: View {
                 loadProfileCallsign()
             }
             .onChange(of: useCustomCallsign) { _, isCustom in
-                if !isCustom { loadProfileCallsign() }
+                if !isCustom {
+                    loadProfileCallsign()
+                }
             }
         }
     }
