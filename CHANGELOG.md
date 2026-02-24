@@ -4,6 +4,8 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.44.0] - 2026-02-24
+
 ### Added
 - Add "Use a different callsign" toggle to LoTW, Club Log, and LoFi service setup for accounts registered under a previous or different callsign
 - Add activity program registry model and API client for server-driven activation types
