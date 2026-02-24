@@ -7,6 +7,8 @@ import SwiftUI
 struct FriendActivityCard: View {
     // MARK: Internal
 
+    var onActivityTap: () -> Void = {}
+
     var body: some View {
         TimelineView(.periodic(from: .now, by: 30)) { _ in
             VStack(alignment: .leading, spacing: 12) {
@@ -50,13 +52,24 @@ struct FriendActivityCard: View {
     }
 
     private var header: some View {
-        HStack {
-            Image(systemName: "person.2.wave.2.fill")
-                .foregroundStyle(.blue)
-            Text("Friend Activity")
-                .font(.headline)
-            Spacer()
+        Button {
+            onActivityTap()
+        } label: {
+            HStack {
+                Image(systemName: "person.2.wave.2.fill")
+                    .foregroundStyle(.blue)
+                Text("Friend Activity")
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+                Spacer()
+                if !friendActivities.isEmpty {
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                }
+            }
         }
+        .buttonStyle(.plain)
     }
 
     private var emptyState: some View {
@@ -68,7 +81,12 @@ struct FriendActivityCard: View {
     private var activityRows: some View {
         VStack(spacing: 8) {
             ForEach(friendActivities.prefix(3)) { item in
-                compactActivityRow(item)
+                Button {
+                    onActivityTap()
+                } label: {
+                    compactActivityRow(item)
+                }
+                .buttonStyle(.plain)
             }
         }
     }

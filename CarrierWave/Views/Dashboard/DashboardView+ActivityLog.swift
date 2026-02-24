@@ -72,6 +72,14 @@ extension DashboardView {
     }
 
     var friendActivityCard: some View {
-        FriendActivityCard()
+        FriendActivityCard(onActivityTap: navigateToActivityFeed)
+    }
+
+    private func navigateToActivityFeed() {
+        if TabConfiguration.isTabEnabled(.activity) {
+            selectedTab = .activity
+        } else {
+            selectedTab = .more
+        }
     }
 }
