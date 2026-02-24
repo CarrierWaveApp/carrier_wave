@@ -28,6 +28,7 @@ struct LoggerDetailSettingsView: View {
     @AppStorage("loggerShowActivityPanel") private var showActivityPanel = true
     @AppStorage("loggerShowLicenseWarnings") private var showLicenseWarnings = true
     @AppStorage("loggerKeepScreenOn") private var keepScreenOn = true
+    @AppStorage("shareSessionOnEnd") private var shareSessionOnEnd = true
     @AppStorage("loggerAutoModeSwitch") private var autoModeSwitch = true
     @AppStorage("callsignNotesDisplayMode") private var notesDisplayMode = "emoji"
 
@@ -139,6 +140,7 @@ struct LoggerDetailSettingsView: View {
             Toggle("Auto-switch mode for frequency", isOn: $autoModeSwitch)
             Toggle("Keep lookup info after logging", isOn: $keepLookupAfterLog)
             Toggle("Hide field entry form", isOn: $hideFieldEntryForm)
+            Toggle("Share to activity feed on end", isOn: $shareSessionOnEnd)
         } header: {
             Text("Behavior")
         } footer: {

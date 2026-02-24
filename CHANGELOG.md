@@ -4,6 +4,12 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Add toggle to disable auto-sharing session summary to activity feed (Logger Settings > Sessions)
+
+### Fixed
+- Fix ADIF files shared via email appearing as inline text instead of file attachments
+
 ## [1.44.0] - 2026-02-24
 
 ### Added

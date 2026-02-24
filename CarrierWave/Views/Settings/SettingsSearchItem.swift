@@ -204,6 +204,12 @@ extension SettingsSearchIndex {
             breadcrumb: "Logger",
             destination: .activityLogSettings
         ),
+        SettingsSearchItem(
+            title: "Share to activity feed on session end",
+            keywords: ["share", "activity", "feed", "session", "end", "auto"],
+            breadcrumb: "Logger",
+            destination: .logger
+        ),
     ]
 
     private static let potaItems: [SettingsSearchItem] = [

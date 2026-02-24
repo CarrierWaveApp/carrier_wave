@@ -237,7 +237,7 @@ struct ADIFExportSheet: View {
 enum ADIFFileType {
     /// ADIF UTType - prefer registered type from Info.plist, fall back to runtime declaration
     nonisolated static let utType = UTType("org.adif.adi")
-        ?? UTType(filenameExtension: "adi", conformingTo: .plainText)!
+        ?? UTType(filenameExtension: "adi", conformingTo: .data)!
 }
 
 // MARK: - ShareableADIF

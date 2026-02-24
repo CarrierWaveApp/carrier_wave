@@ -68,9 +68,13 @@ extension LoggingSessionManager {
         try? modelContext.save()
 
         // Report session completed activity (fire and forget)
-        let completedSession = session
-        Task { [weak self] in
-            await self?.reportSessionCompleted(completedSession)
+        let autoShare = UserDefaults.standard.object(forKey: "shareSessionOnEnd") == nil
+            || UserDefaults.standard.bool(forKey: "shareSessionOnEnd")
+        if autoShare {
+            let completedSession = session
+            Task { [weak self] in
+                await self?.reportSessionCompleted(completedSession)
+            }
         }
 
         WidgetDataWriter.clearSession()

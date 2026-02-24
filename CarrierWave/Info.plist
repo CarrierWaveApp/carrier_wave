@@ -35,7 +35,7 @@
 			<string>ADIF Log File</string>
 			<key>UTTypeConformsTo</key>
 			<array>
-				<string>public.plain-text</string>
+				<string>public.data</string>
 			</array>
 			<key>UTTypeTagSpecification</key>
 			<dict>
