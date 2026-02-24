@@ -185,10 +185,22 @@ extension ActivityView {
     }
 
     func hideActivity(_ item: ActivityItem) {
+        let serverId = item.serverId
+        let isOwn = item.isOwn
         withAnimation {
             item.isHidden = true
             try? modelContext.save()
             allActivityItems.removeAll { $0.id == item.id }
+        }
+        // Delete from server if this is an own activity with a server ID
+        if isOwn, let serverId {
+            Task {
+                let reporter = ActivityReporter()
+                try? await reporter.deleteActivity(
+                    serverId: serverId,
+                    sourceURL: "https://activities.carrierwave.app"
+                )
+            }
         }
     }
 }

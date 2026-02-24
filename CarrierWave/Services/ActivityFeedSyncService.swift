@@ -62,7 +62,8 @@ final class ActivityFeedSyncService: ObservableObject {
                 callsign: item.callsign,
                 activityType: activityType,
                 timestamp: item.timestamp,
-                isOwn: false
+                isOwn: false,
+                serverId: item.id
             )
             activityItem.details = convertDetails(from: item.details)
             modelContext.insert(activityItem)

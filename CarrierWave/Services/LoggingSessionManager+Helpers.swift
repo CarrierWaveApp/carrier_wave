@@ -113,9 +113,11 @@ extension LoggingSessionManager {
         // Save local activity items
         detector.createActivityItems(from: detected)
 
-        // Report to server (fire and forget, errors silently logged)
+        // Report to server and store server IDs on local items
         let reporter = ActivityReporter()
-        await reporter.reportActivities(detected, sourceURL: "https://activities.carrierwave.app")
+        await reporter.reportActivities(
+            detected, sourceURL: "https://activities.carrierwave.app", modelContext: modelContext
+        )
 
         // Notify UI of new activities
         NotificationCenter.default.post(

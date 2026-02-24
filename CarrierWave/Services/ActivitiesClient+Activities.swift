@@ -32,6 +32,27 @@ extension ActivitiesClient {
         return apiResponse.data
     }
 
+    // MARK: - Delete Activity
+
+    /// Delete a previously reported activity from the server
+    func deleteActivity(
+        activityId: UUID,
+        sourceURL: String,
+        authToken: String
+    ) async throws {
+        guard let url = URL(string: sourceURL + "/v1/activities/\(activityId.uuidString)") else {
+            throw ActivitiesError.invalidServerURL
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+
+        let (data, response) = try await performActivityRequest(request)
+        try validateActivityResponse(response, data: data)
+    }
+
     // MARK: - Get Feed
 
     /// Fetch activity feed (friends + clubs)

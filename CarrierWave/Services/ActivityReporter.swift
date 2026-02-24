@@ -13,8 +13,12 @@ final class ActivityReporter {
 
     let client: ActivitiesClient
 
-    /// Report detected activities to the server
-    func reportActivities(_ activities: [DetectedActivity], sourceURL: String) async {
+    /// Report detected activities to the server, storing server IDs on matching local items
+    func reportActivities(
+        _ activities: [DetectedActivity],
+        sourceURL: String,
+        modelContext: ModelContext? = nil
+    ) async {
         // Check if user has opted out of sharing activities (default: share)
         if UserDefaults.standard.object(forKey: "shareActivitiesEnabled") != nil,
            !UserDefaults.standard.bool(forKey: "shareActivitiesEnabled")
@@ -30,11 +34,15 @@ final class ActivityReporter {
         for activity in activities {
             do {
                 let request = buildRequest(from: activity)
-                _ = try await client.reportActivity(
+                let response = try await client.reportActivity(
                     activity: request,
                     sourceURL: sourceURL,
                     authToken: authToken
                 )
+                // Store server ID on matching local ActivityItem
+                if let modelContext {
+                    setServerId(response.id, for: activity, in: modelContext)
+                }
             } catch {
                 // Log error but continue with other activities
                 print("Failed to report activity: \(error.localizedDescription)")
@@ -42,7 +50,43 @@ final class ActivityReporter {
         }
     }
 
+    /// Delete an activity from the server by its server ID
+    func deleteActivity(
+        serverId: UUID,
+        sourceURL: String
+    ) async throws {
+        guard let authToken = await client.ensureAuthToken() else {
+            return
+        }
+
+        try await client.deleteActivity(
+            activityId: serverId,
+            sourceURL: sourceURL,
+            authToken: authToken
+        )
+    }
+
     // MARK: Private
+
+    private func setServerId(
+        _ serverId: UUID,
+        for activity: DetectedActivity,
+        in modelContext: ModelContext
+    ) {
+        let typeRaw = activity.type.rawValue
+        let descriptor = FetchDescriptor<ActivityItem>(
+            predicate: #Predicate {
+                $0.isOwn && $0.activityTypeRawValue == typeRaw && $0.serverId == nil
+            },
+            sortBy: [SortDescriptor(\ActivityItem.timestamp, order: .reverse)]
+        )
+        if let item = (try? modelContext.fetch(descriptor))?.first(where: {
+            abs($0.timestamp.timeIntervalSince(activity.timestamp)) < 60
+        }) {
+            item.serverId = serverId
+            try? modelContext.save()
+        }
+    }
 
     private func buildRequest(from activity: DetectedActivity) -> ReportActivityRequest {
         var details = ReportActivityDetails()

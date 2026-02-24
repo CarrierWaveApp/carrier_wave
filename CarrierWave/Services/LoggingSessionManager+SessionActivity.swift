@@ -53,11 +53,13 @@ extension LoggingSessionManager {
 
             if let authToken = await reporter.client.ensureAuthToken() {
                 do {
-                    _ = try await reporter.client.reportActivity(
+                    let response = try await reporter.client.reportActivity(
                         activity: request,
                         sourceURL: sourceURL,
                         authToken: authToken
                     )
+                    item.serverId = response.id
+                    try? modelContext.save()
                 } catch {
                     print("Failed to report session activity: \(error.localizedDescription)")
                 }

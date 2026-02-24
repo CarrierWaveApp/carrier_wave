@@ -13,6 +13,8 @@ All notable changes to Carrier Wave will be documented in this file.
 - Add State field to logger QSO edit sheet (shown when tapping right of callsign)
 - Add "Share activity to feed" toggle in Activities settings (default on)
 - Add per-item hide option via ••• menu on activity feed items
+- Add server-side activity deletion when hiding own activities from feed
+- Store server ID on ActivityItem for own reported and feed-synced activities
 
 ### Fixed
 - Fix scroll position not returning to top when tapping callsign to edit in logger

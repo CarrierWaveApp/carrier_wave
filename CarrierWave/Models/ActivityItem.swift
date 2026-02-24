@@ -14,7 +14,8 @@ nonisolated final class ActivityItem {
         timestamp: Date = Date(),
         detailsData: Data = Data(),
         isOwn: Bool = false,
-        challengeId: UUID? = nil
+        challengeId: UUID? = nil,
+        serverId: UUID? = nil
     ) {
         self.id = id
         self.callsign = callsign
@@ -23,6 +24,7 @@ nonisolated final class ActivityItem {
         self.detailsData = detailsData
         self.isOwn = isOwn
         self.challengeId = challengeId
+        self.serverId = serverId
     }
 
     // MARK: Internal
@@ -34,6 +36,7 @@ nonisolated final class ActivityItem {
     var detailsData = Data()
     var isOwn = false
     var challengeId: UUID?
+    var serverId: UUID?
     var isHidden = false
 
     var activityType: ActivityType {

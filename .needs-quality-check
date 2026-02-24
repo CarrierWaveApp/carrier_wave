@@ -1,0 +1,7 @@
+Add server-side activity deletion when hiding own activities from feed
+- Added serverId property to ActivityItem model
+- Added deleteActivity method to ActivitiesClient+Activities
+- Updated ActivityReporter to store server ID after reporting
+- Updated ActivityFeedSyncService to set serverId on feed items
+- Updated hideActivity to call server DELETE for own activities
+- Updated SyncService+Activity and LoggingSessionManager+Helpers to pass modelContext

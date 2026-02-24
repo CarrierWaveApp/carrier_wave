@@ -36,8 +36,10 @@ extension SyncService {
         // Create local activity items
         detector.createActivityItems(from: detected)
 
-        // Report to server (fire and forget)
-        await reporter.reportActivities(detected, sourceURL: activitySourceURL)
+        // Report to server and store server IDs on local items
+        await reporter.reportActivities(
+            detected, sourceURL: activitySourceURL, modelContext: modelContext
+        )
 
         // Post notification for UI updates
         NotificationCenter.default.post(
