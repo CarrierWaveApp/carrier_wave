@@ -9,6 +9,7 @@ struct ActivityItemRow: View {
     let item: ActivityItem
     var onShare: (() -> Void)?
     var onHide: (() -> Void)?
+    var onDeleteFromServer: (() -> Void)?
     var onCallsignTap: ((String) -> Void)?
 
     var body: some View {
@@ -17,7 +18,8 @@ struct ActivityItemRow: View {
                 item: item,
                 onCallsignTap: onCallsignTap,
                 onShare: onShare,
-                onHide: onHide
+                onHide: onHide,
+                onDeleteFromServer: onDeleteFromServer
             )
         } else {
             standardRow
@@ -219,7 +221,7 @@ struct ActivityItemRow: View {
 
                 Spacer()
 
-                if onShare != nil || onHide != nil {
+                if onShare != nil || onHide != nil || onDeleteFromServer != nil {
                     itemMenu
                 }
             }
@@ -237,6 +239,13 @@ struct ActivityItemRow: View {
                     onShare()
                 } label: {
                     Label("Share", systemImage: "square.and.arrow.up")
+                }
+            }
+            if let onDeleteFromServer {
+                Button(role: .destructive) {
+                    onDeleteFromServer()
+                } label: {
+                    Label("Hide from everyone", systemImage: "trash")
                 }
             }
             if let onHide {

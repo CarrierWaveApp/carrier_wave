@@ -137,7 +137,7 @@ extension SessionBragSheetCard {
 
             Spacer()
 
-            if onShare != nil || onHide != nil {
+            if onShare != nil || onHide != nil || onDeleteFromServer != nil {
                 footerMenu
             }
         }
@@ -153,6 +153,13 @@ extension SessionBragSheetCard {
                     onShare()
                 } label: {
                     Label("Share", systemImage: "square.and.arrow.up")
+                }
+            }
+            if let onDeleteFromServer {
+                Button(role: .destructive) {
+                    onDeleteFromServer()
+                } label: {
+                    Label("Hide from everyone", systemImage: "trash")
                 }
             }
             if let onHide {

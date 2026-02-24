@@ -141,6 +141,9 @@ extension ActivityView {
                             item: item,
                             onShare: { shareActivity(item) },
                             onHide: { hideActivity(item) },
+                            onDeleteFromServer: item.isOwn && item.serverId != nil
+                                ? { deleteActivityFromServer(item) }
+                                : nil,
                             onCallsignTap: { callsign in
                                 navigateToProfile(callsign: callsign)
                             }
@@ -185,22 +188,28 @@ extension ActivityView {
     }
 
     func hideActivity(_ item: ActivityItem) {
-        let serverId = item.serverId
-        let isOwn = item.isOwn
         withAnimation {
             item.isHidden = true
             try? modelContext.save()
             allActivityItems.removeAll { $0.id == item.id }
         }
-        // Delete from server if this is an own activity with a server ID
-        if isOwn, let serverId {
-            Task {
-                let reporter = ActivityReporter()
-                try? await reporter.deleteActivity(
-                    serverId: serverId,
-                    sourceURL: "https://activities.carrierwave.app"
-                )
-            }
+    }
+
+    func deleteActivityFromServer(_ item: ActivityItem) {
+        guard let serverId = item.serverId else {
+            return
+        }
+        withAnimation {
+            item.isHidden = true
+            try? modelContext.save()
+            allActivityItems.removeAll { $0.id == item.id }
+        }
+        Task {
+            let reporter = ActivityReporter()
+            try? await reporter.deleteActivity(
+                serverId: serverId,
+                sourceURL: "https://activities.carrierwave.app"
+            )
         }
     }
 }

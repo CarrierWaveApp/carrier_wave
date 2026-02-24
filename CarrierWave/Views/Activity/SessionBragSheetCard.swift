@@ -22,6 +22,7 @@ struct SessionBragSheetCard: View {
     var onCallsignTap: ((String) -> Void)?
     var onShare: (() -> Void)?
     var onHide: (() -> Void)?
+    var onDeleteFromServer: (() -> Void)?
 
     var body: some View {
         VStack(spacing: 0) {
