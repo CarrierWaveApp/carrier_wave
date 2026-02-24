@@ -89,42 +89,47 @@ private struct ActivityGridContent: View {
                                     let logCount = countFor(date: date, in: activityLogData)
                                     let total = actCount + logCount
 
-                                    cellView(
-                                        activationCount: actCount,
-                                        activityLogCount: logCount
-                                    )
-                                    .frame(width: cellSize, height: cellSize)
-                                    .clipShape(RoundedRectangle(cornerRadius: 2))
-                                    .contentShape(Rectangle())
-                                    .accessibilityLabel(
-                                        accessibilityLabel(
-                                            date: date, activation: actCount,
-                                            activityLog: logCount, total: total
+                                    if isFutureDate(date) {
+                                        Color.clear
+                                            .frame(width: cellSize, height: cellSize)
+                                    } else {
+                                        cellView(
+                                            activationCount: actCount,
+                                            activityLogCount: logCount
                                         )
-                                    )
-                                    .accessibilityHint("Tap to show details")
-                                    .onTapGesture {
-                                        if selectedDate == date {
-                                            selectedDate = nil
-                                        } else {
-                                            selectedDate = date
-                                        }
-                                    }
-                                    .popover(
-                                        isPresented: Binding(
-                                            get: { selectedDate == date },
-                                            set: {
-                                                if !$0 {
-                                                    selectedDate = nil
-                                                }
+                                        .frame(width: cellSize, height: cellSize)
+                                        .clipShape(RoundedRectangle(cornerRadius: 2))
+                                        .contentShape(Rectangle())
+                                        .accessibilityLabel(
+                                            accessibilityLabel(
+                                                date: date, activation: actCount,
+                                                activityLog: logCount, total: total
+                                            )
+                                        )
+                                        .accessibilityHint("Tap to show details")
+                                        .onTapGesture {
+                                            if selectedDate == date {
+                                                selectedDate = nil
+                                            } else {
+                                                selectedDate = date
                                             }
-                                        ),
-                                        arrowEdge: .top
-                                    ) {
-                                        popoverContent(
-                                            date: date, activation: actCount,
-                                            activityLog: logCount, total: total
-                                        )
+                                        }
+                                        .popover(
+                                            isPresented: Binding(
+                                                get: { selectedDate == date },
+                                                set: {
+                                                    if !$0 {
+                                                        selectedDate = nil
+                                                    }
+                                                }
+                                            ),
+                                            arrowEdge: .top
+                                        ) {
+                                            popoverContent(
+                                                date: date, activation: actCount,
+                                                activityLog: logCount, total: total
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -337,6 +342,10 @@ private struct ActivityGridContent: View {
         let weeksBack = totalColumns - 1 - column
         let daysBack = weeksBack * 7 + (todayWeekday - 1 - row)
         return calendar.date(byAdding: .day, value: -daysBack, to: today) ?? today
+    }
+
+    private func isFutureDate(_ date: Date) -> Bool {
+        date > calendar.startOfDay(for: Date())
     }
 
     private func countFor(date: Date, in data: [Date: Int]) -> Int {
