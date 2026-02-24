@@ -9,6 +9,17 @@ All notable changes to Carrier Wave will be documented in this file.
 - Add ActivityProgramStore with local caching and bundled fallback programs
 - Add UTC timestamps to recording transcript lines (shown on each operator change)
 - Add chat-style conversation layout for 2-operator transcripts (OP 1 left, OP 2 right)
+- Add State field to logger QSO edit sheet (shown when tapping right of callsign)
+- Add "Share activity to feed" toggle in Activities settings (default on)
+- Add per-item hide option via ••• menu on activity feed items
+
+### Fixed
+- Fix scroll position not returning to top when tapping callsign to edit in logger
+- Fix quick entry (space + state) creating new QSO instead of updating during edit mode
+- Fix form field changes (state, grid, park, RST, notes) not saved when editing QSO inline
+- Fix state override not persisting when editing QSO (e.g., FL instead of home QTH PA)
+- Fix potential crash from UICollectionView re-render when starting inline QSO edit
+- Mark edited QSOs as cloud-dirty so iCloud sync picks up changes
 
 ## [1.43.1] - 2026-02-22
 

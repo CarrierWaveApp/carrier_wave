@@ -137,20 +137,42 @@ extension SessionBragSheetCard {
 
             Spacer()
 
-            if let onShare {
-                Button {
-                    onShare()
-                } label: {
-                    Image(systemName: "square.and.arrow.up")
-                        .font(.caption)
-                        .foregroundStyle(.white.opacity(0.6))
-                }
-                .buttonStyle(.plain)
+            if onShare != nil || onHide != nil {
+                footerMenu
             }
         }
         .padding(.horizontal, 16)
         .padding(.top, 12)
         .padding(.bottom, 16)
+    }
+
+    var footerMenu: some View {
+        Menu {
+            if let onShare {
+                Button {
+                    onShare()
+                } label: {
+                    Label("Share", systemImage: "square.and.arrow.up")
+                }
+            }
+            if let onHide {
+                Button(role: .destructive) {
+                    onHide()
+                } label: {
+                    Label(
+                        "Hide this \(item.activityType.feedItemName)",
+                        systemImage: "eye.slash"
+                    )
+                }
+            }
+        } label: {
+            Image(systemName: "ellipsis")
+                .font(.caption)
+                .foregroundStyle(.white.opacity(0.6))
+                .frame(width: 28, height: 28)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Internal Helpers

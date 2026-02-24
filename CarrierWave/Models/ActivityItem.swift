@@ -34,6 +34,7 @@ nonisolated final class ActivityItem {
     var detailsData = Data()
     var isOwn = false
     var challengeId: UUID?
+    var isHidden = false
 
     var activityType: ActivityType {
         get { ActivityType(rawValue: activityTypeRawValue) ?? .dxContact }

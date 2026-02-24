@@ -8,6 +8,7 @@ struct ActivityItemRow: View {
 
     let item: ActivityItem
     var onShare: (() -> Void)?
+    var onHide: (() -> Void)?
     var onCallsignTap: ((String) -> Void)?
 
     var body: some View {
@@ -15,7 +16,8 @@ struct ActivityItemRow: View {
             SessionBragSheetCard(
                 item: item,
                 onCallsignTap: onCallsignTap,
-                onShare: onShare
+                onShare: onShare,
+                onHide: onHide
             )
         } else {
             standardRow
@@ -217,15 +219,8 @@ struct ActivityItemRow: View {
 
                 Spacer()
 
-                if let onShare {
-                    Button {
-                        onShare()
-                    } label: {
-                        Image(systemName: "square.and.arrow.up")
-                            .font(.caption)
-                    }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(.secondary)
+                if onShare != nil || onHide != nil {
+                    itemMenu
                 }
             }
         }
@@ -233,6 +228,35 @@ struct ActivityItemRow: View {
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
+    }
+
+    private var itemMenu: some View {
+        Menu {
+            if let onShare {
+                Button {
+                    onShare()
+                } label: {
+                    Label("Share", systemImage: "square.and.arrow.up")
+                }
+            }
+            if let onHide {
+                Button(role: .destructive) {
+                    onHide()
+                } label: {
+                    Label(
+                        "Hide this \(item.activityType.feedItemName)",
+                        systemImage: "eye.slash"
+                    )
+                }
+            }
+        } label: {
+            Image(systemName: "ellipsis")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .frame(width: 28, height: 28)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 
     private func formatDistance(_ km: Double) -> String {

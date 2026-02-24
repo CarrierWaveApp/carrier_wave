@@ -1,3 +1,4 @@
+import SwiftData
 import SwiftUI
 
 // MARK: - ActivityView+Sections
@@ -139,6 +140,7 @@ extension ActivityView {
                         ActivityItemRow(
                             item: item,
                             onShare: { shareActivity(item) },
+                            onHide: { hideActivity(item) },
                             onCallsignTap: { callsign in
                                 navigateToProfile(callsign: callsign)
                             }
@@ -180,5 +182,13 @@ extension ActivityView {
     func shareActivity(_ item: ActivityItem) {
         itemToShare = item
         showingShareSheet = true
+    }
+
+    func hideActivity(_ item: ActivityItem) {
+        withAnimation {
+            item.isHidden = true
+            try? modelContext.save()
+            allActivityItems.removeAll { $0.id == item.id }
+        }
     }
 }

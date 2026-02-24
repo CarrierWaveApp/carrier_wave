@@ -300,6 +300,7 @@ struct ActivityView: View {
 extension ActivityView {
     func loadActivityItems() {
         var descriptor = FetchDescriptor<ActivityItem>(
+            predicate: #Predicate { !$0.isHidden },
             sortBy: [SortDescriptor(\ActivityItem.timestamp, order: .reverse)]
         )
         descriptor.fetchLimit = 200

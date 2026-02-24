@@ -36,6 +36,17 @@ struct ActivitiesSettingsView: View {
             }
 
             Section {
+                Toggle("Share activity to feed", isOn: $shareActivities)
+            } header: {
+                Text("Sharing")
+            } footer: {
+                Text(
+                    "When enabled, your milestones and session summaries appear "
+                        + "in friends' activity feeds."
+                )
+            }
+
+            Section {
                 Toggle("Friend spot alerts", isOn: $friendSpotNotifications)
             } header: {
                 Text("Notifications")
@@ -139,6 +150,7 @@ struct ActivitiesSettingsView: View {
     @AppStorage("loggerDefaultCallsign") private var stationCallsign = ""
     @AppStorage("activitiesServerEnabled") private var activitiesEnabled = false
     @AppStorage("friendSpotNotificationsEnabled") private var friendSpotNotifications = true
+    @AppStorage("shareActivitiesEnabled") private var shareActivities = true
 
     @Query(sort: \ChallengeSource.name) private var sources: [ChallengeSource]
 

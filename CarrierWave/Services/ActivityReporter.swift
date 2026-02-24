@@ -15,6 +15,13 @@ final class ActivityReporter {
 
     /// Report detected activities to the server
     func reportActivities(_ activities: [DetectedActivity], sourceURL: String) async {
+        // Check if user has opted out of sharing activities (default: share)
+        if UserDefaults.standard.object(forKey: "shareActivitiesEnabled") != nil,
+           !UserDefaults.standard.bool(forKey: "shareActivitiesEnabled")
+        {
+            return
+        }
+
         guard let authToken = await client.ensureAuthToken() else {
             // Not authenticated, skip reporting
             return

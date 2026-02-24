@@ -42,23 +42,26 @@ extension LoggingSessionManager {
         modelContext.insert(item)
         try? modelContext.save()
 
-        // Report to server
-        let reporter = ActivityReporter()
-        let request = buildReportRequest(details: details)
-        let sourceURL = "https://activities.carrierwave.app"
+        // Report to server (if sharing is enabled)
+        let sharingEnabled = UserDefaults.standard.object(forKey: "shareActivitiesEnabled") == nil
+            || UserDefaults.standard.bool(forKey: "shareActivitiesEnabled")
 
-        guard let authToken = await reporter.client.ensureAuthToken() else {
-            return
-        }
+        if sharingEnabled {
+            let reporter = ActivityReporter()
+            let request = buildReportRequest(details: details)
+            let sourceURL = "https://activities.carrierwave.app"
 
-        do {
-            _ = try await reporter.client.reportActivity(
-                activity: request,
-                sourceURL: sourceURL,
-                authToken: authToken
-            )
-        } catch {
-            print("Failed to report session activity: \(error.localizedDescription)")
+            if let authToken = await reporter.client.ensureAuthToken() {
+                do {
+                    _ = try await reporter.client.reportActivity(
+                        activity: request,
+                        sourceURL: sourceURL,
+                        authToken: authToken
+                    )
+                } catch {
+                    print("Failed to report session activity: \(error.localizedDescription)")
+                }
+            }
         }
 
         // Notify UI

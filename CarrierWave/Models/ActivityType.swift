@@ -55,4 +55,23 @@ enum ActivityType: String, Codable, CaseIterable {
         case .sessionCompleted: "Session Complete"
         }
     }
+
+    /// Short noun for "Hide this ___" menu labels
+    var feedItemName: String {
+        switch self {
+        case .challengeTierUnlock,
+             .challengeCompletion: "achievement"
+        case .newDXCCEntity,
+             .newBand,
+             .newMode: "milestone"
+        case .dxContact,
+             .workedFriend: "contact"
+        case .potaActivation,
+             .sotaActivation: "activation"
+        case .dailyStreak,
+             .potaDailyStreak: "streak"
+        case .personalBest: "record"
+        case .sessionCompleted: "session"
+        }
+    }
 }
