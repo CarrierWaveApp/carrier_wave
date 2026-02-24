@@ -17,6 +17,12 @@ extension LoggerView {
             return
         }
 
+        // If editing an existing QSO, always route through logQSO (which handles edits)
+        if editingQSO != nil, canLog {
+            logQSO()
+            return
+        }
+
         // Check for quick entry mode
         if quickEntryResult != nil, canLog {
             logQuickEntry()
@@ -69,9 +75,13 @@ extension LoggerView {
         resetFormAfterLog()
     }
 
-    /// Update only the callsign of an existing QSO (preserves timestamp and notes)
+    /// Update an existing QSO with current form field values
     func updateExistingQSOCallsign(_ qso: QSO) {
-        let newCallsign = callsignInput.trimmingCharacters(in: .whitespaces).uppercased()
+        let newCallsign: String = if let qeResult = quickEntryResult {
+            qeResult.callsign.trimmingCharacters(in: .whitespaces).uppercased()
+        } else {
+            callsignInput.trimmingCharacters(in: .whitespaces).uppercased()
+        }
 
         guard !newCallsign.isEmpty else {
             ToastManager.shared.error("Callsign cannot be empty")
@@ -79,36 +89,58 @@ extension LoggerView {
         }
 
         qso.callsign = newCallsign
+        applyFormFieldsToQSO(qso)
+        applyLookupToEditedQSO(qso, callsign: newCallsign)
 
-        // Only use lookupResult if it matches the new callsign (it may be stale)
-        let primaryCallsign = extractPrimaryCallsign(newCallsign)
-        if let info = lookupResult, info.callsign == primaryCallsign {
-            qso.name = info.name
-            qso.theirGrid = info.grid
-            qso.state = info.state
-            qso.country = info.country
-            qso.qth = info.qth
-            qso.theirLicenseClass = info.licenseClass
-        } else {
-            // Clear stale metadata and fetch for the new callsign
-            qso.name = nil
-            qso.theirGrid = nil
-            qso.state = nil
-            qso.country = nil
-            qso.qth = nil
-            qso.theirLicenseClass = nil
-
-            Task {
-                await fetchAndUpdateQSOMetadata(qso, callsign: newCallsign)
-            }
-        }
-
+        qso.cloudDirtyFlag = true
+        qso.modifiedAt = Date()
         try? modelContext.save()
 
         refreshSessionQSOs()
         resetFormAfterLog()
         editingQSO = nil
-        ToastManager.shared.success("Callsign updated")
+        ToastManager.shared.success("QSO updated")
+    }
+
+    /// Apply quick entry and form field values to a QSO being edited
+    private func applyFormFieldsToQSO(_ qso: QSO) {
+        if let v = quickEntryResult?.state.nonEmpty ?? theirState.nonEmpty {
+            qso.state = v
+        }
+        if let v = quickEntryResult?.theirGrid.nonEmpty ?? theirGrid.nonEmpty {
+            qso.theirGrid = v
+        }
+        if let v = quickEntryResult?.theirPark.nonEmpty ?? theirPark.nonEmpty {
+            qso.theirParkReference = v
+        }
+        if let v = quickEntryResult?.notes.nonEmpty ?? notes.nonEmpty {
+            qso.notes = v
+        }
+        if let v = quickEntryResult?.rstSent ?? rstSent.nonEmpty {
+            qso.rstSent = v
+        }
+        if let v = quickEntryResult?.rstReceived ?? rstReceived.nonEmpty {
+            qso.rstReceived = v
+        }
+    }
+
+    /// Apply callsign lookup data to an edited QSO, or fetch if no match
+    private func applyLookupToEditedQSO(_ qso: QSO, callsign: String) {
+        let primaryCallsign = extractPrimaryCallsign(callsign)
+        if let info = lookupResult, info.callsign == primaryCallsign {
+            qso.name = info.name
+            if qso.theirGrid == nil {
+                qso.theirGrid = info.grid
+            }
+            if qso.state == nil {
+                qso.state = info.state
+            }
+            qso.country = info.country
+            qso.qth = info.qth
+            qso.theirLicenseClass = info.licenseClass
+        } else {
+            Task { await fetchAndUpdateQSOMetadata(qso, callsign: callsign) }
+        }
     }
 
     /// Fetch callsign metadata and update QSO (called when editing without existing lookup)
@@ -166,12 +198,19 @@ extension LoggerView {
 
     // MARK: - Editing
 
-    /// Start editing an existing QSO's callsign
+    /// Start editing an existing QSO
     func startEditingCallsign(_ qso: QSO) {
         editingQSO = qso
         callsignInput = qso.callsign
+        theirState = qso.state ?? ""
+        theirGrid = qso.theirGrid ?? ""
+        theirPark = qso.theirParkReference ?? ""
+        notes = qso.notes ?? ""
+        rstSent = qso.rstSent ?? ""
+        rstReceived = qso.rstReceived ?? ""
+        operatorName = ""
         callsignFieldFocused = true
-        ToastManager.shared.info("Editing callsign - tap Update to save")
+        ToastManager.shared.info("Editing QSO - tap Save to update")
     }
 
     /// Cancel editing and clear the form

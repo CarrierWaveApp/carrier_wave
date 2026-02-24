@@ -57,6 +57,8 @@ extension LoggerView {
                     if let command = detectedCommand {
                         executeCommand(command)
                         callsignInput = ""
+                    } else if editingQSO != nil {
+                        logQSO()
                     } else if quickEntryResult != nil {
                         logQuickEntry()
                     } else {
@@ -240,7 +242,12 @@ extension LoggerView {
                                         refreshSessionQSOs()
                                     },
                                     onEditCallsign: { qsoToEdit in
-                                        startEditingCallsign(qsoToEdit)
+                                        // Defer to next run loop to avoid
+                                        // UICollectionView crash when state
+                                        // changes trigger List updates
+                                        DispatchQueue.main.async {
+                                            startEditingCallsign(qsoToEdit)
+                                        }
                                     }
                                 )
                                 .swipeActions(

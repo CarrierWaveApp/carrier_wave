@@ -62,6 +62,16 @@ struct LoggerQSOEditSheet: View {
                     }
 
                     HStack {
+                        Text("State")
+                        Spacer()
+                        TextField("ST", text: $state)
+                            .multilineTextAlignment(.trailing)
+                            .textInputAutocapitalization(.characters)
+                            .autocorrectionDisabled()
+                            .frame(width: 60)
+                    }
+
+                    HStack {
                         Text("Grid")
                         Spacer()
                         TextField("Grid", text: $grid)
@@ -165,6 +175,7 @@ struct LoggerQSOEditSheet: View {
     @State private var rstSent = ""
     @State private var rstReceived = ""
     @State private var name = ""
+    @State private var state = ""
     @State private var grid = ""
     @State private var theirPark = ""
     @State private var notes = ""
@@ -177,6 +188,7 @@ struct LoggerQSOEditSheet: View {
         rstSent = qso.rstSent ?? "599"
         rstReceived = qso.rstReceived ?? "599"
         name = qso.name ?? ""
+        state = qso.state ?? ""
         grid = qso.theirGrid ?? ""
         theirPark = qso.theirParkReference ?? ""
         notes = qso.notes ?? ""
@@ -191,9 +203,13 @@ struct LoggerQSOEditSheet: View {
         qso.rstSent = rstSent.isEmpty ? nil : rstSent
         qso.rstReceived = rstReceived.isEmpty ? nil : rstReceived
         qso.name = name.isEmpty ? nil : name
+        qso.state = state.trimmingCharacters(in: .whitespaces).uppercased().isEmpty
+            ? nil : state.trimmingCharacters(in: .whitespaces).uppercased()
         qso.theirGrid = grid.isEmpty ? nil : grid
         qso.theirParkReference = theirPark.isEmpty ? nil : theirPark
         qso.notes = notes.isEmpty ? nil : notes
+        qso.cloudDirtyFlag = true
+        qso.modifiedAt = Date()
         try? modelContext.save()
 
         if callsignChanged {

@@ -57,51 +57,61 @@ extension LoggerView {
                 }
             )
 
-            ScrollView {
-                VStack(spacing: 12) {
-                    // Only show QSO form when session is active
-                    if sessionManager?.hasActiveSession == true {
-                        callsignInputSection
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(spacing: 12) {
+                        // Only show QSO form when session is active
+                        if sessionManager?.hasActiveSession == true {
+                            callsignInputSection
+                                .id("callsignInput")
 
-                        // POTA duplicate/new band warning
-                        if let status = potaDuplicateStatus {
-                            POTAStatusBanner(status: status)
-                                .transition(
-                                    .asymmetric(
-                                        insertion: .move(edge: .top).combined(
-                                            with: .opacity
-                                        ),
-                                        removal: .opacity
+                            // POTA duplicate/new band warning
+                            if let status = potaDuplicateStatus {
+                                POTAStatusBanner(status: status)
+                                    .transition(
+                                        .asymmetric(
+                                            insertion: .move(edge: .top).combined(
+                                                with: .opacity
+                                            ),
+                                            removal: .opacity
+                                        )
                                     )
-                                )
-                        }
-
-                        // Show callsign info or error when keyboard is not visible
-                        callsignLookupDisplay
-
-                        // Compact fields: State, RSTs, with More expansion
-                        if !hideFieldEntryForm {
-                            compactFieldsSection
-                        }
-
-                        // Cancel button when editing a QSO
-                        if editingQSO != nil {
-                            Button {
-                                cancelEditingCallsign()
-                            } label: {
-                                Text("Cancel Edit")
-                                    .font(.subheadline)
                             }
-                            .buttonStyle(.bordered)
-                            .accessibilityLabel("Cancel editing callsign")
+
+                            // Show callsign info or error when keyboard is not visible
+                            callsignLookupDisplay
+
+                            // Compact fields: State, RSTs, with More expansion
+                            if !hideFieldEntryForm {
+                                compactFieldsSection
+                            }
+
+                            // Cancel button when editing a QSO
+                            if editingQSO != nil {
+                                Button {
+                                    cancelEditingCallsign()
+                                } label: {
+                                    Text("Cancel Edit")
+                                        .font(.subheadline)
+                                }
+                                .buttonStyle(.bordered)
+                                .accessibilityLabel("Cancel editing callsign")
+                            }
+                        }
+
+                        qsoListSection
+                    }
+                    .padding()
+                    // Add bottom padding when a panel is open so Log QSO button remains accessible
+                    .padding(.bottom, isAnyPanelOpen ? 280 : 0)
+                }
+                .onChange(of: editingQSO?.id) { _, newValue in
+                    if newValue != nil {
+                        withAnimation {
+                            proxy.scrollTo("callsignInput", anchor: .top)
                         }
                     }
-
-                    qsoListSection
                 }
-                .padding()
-                // Add bottom padding when a panel is open so Log QSO button remains accessible
-                .padding(.bottom, isAnyPanelOpen ? 280 : 0)
             }
 
             // Persistent command strip on iPad (keyboard accessory has numbers only)
