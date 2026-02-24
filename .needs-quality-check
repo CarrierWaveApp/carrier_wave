@@ -5,3 +5,6 @@ Add server-side activity deletion when hiding own activities from feed
 - Updated ActivityFeedSyncService to set serverId on feed items
 - Updated hideActivity to call server DELETE for own activities
 - Updated SyncService+Activity and LoggingSessionManager+Helpers to pass modelContext
+Fix MainActor isolation crash in SpotSummaryView.regionPillRow
+- ViewThatFits evaluates children on background rendering thread, crashing when accessing @MainActor-isolated SpotMonitoringService
+- Snapshot regionsWithSpots into local variable before ViewThatFits, pass as parameter to regionPillRow

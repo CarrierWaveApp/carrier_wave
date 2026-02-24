@@ -86,10 +86,14 @@ struct SpotSummaryView: View {
     }
 
     private var regionPills: some View {
-        ViewThatFits(in: .horizontal) {
-            regionPillRow(max: 4)
-            regionPillRow(max: 3)
-            regionPillRow(max: 2)
+        // Snapshot region data before ViewThatFits — it evaluates children
+        // on a background rendering thread, which crashes if it accesses
+        // @MainActor-isolated SpotMonitoringService properties.
+        let regions = summary.regionsWithSpots
+        return ViewThatFits(in: .horizontal) {
+            regionPillRow(regions: regions, max: 4)
+            regionPillRow(regions: regions, max: 3)
+            regionPillRow(regions: regions, max: 2)
         }
     }
 
@@ -123,14 +127,17 @@ struct SpotSummaryView: View {
         }
     }
 
-    private func regionPillRow(max count: Int) -> some View {
+    private func regionPillRow(
+        regions: [(region: SpotRegion, count: Int)],
+        max count: Int
+    ) -> some View {
         HStack(spacing: 4) {
-            ForEach(summary.regionsWithSpots.prefix(count), id: \.region) { item in
+            ForEach(regions.prefix(count), id: \.region) { item in
                 RegionPill(region: item.region, count: item.count)
             }
 
-            if summary.regionsWithSpots.count > count {
-                Text("+\(summary.regionsWithSpots.count - count)")
+            if regions.count > count {
+                Text("+\(regions.count - count)")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
