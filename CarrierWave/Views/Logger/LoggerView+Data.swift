@@ -62,29 +62,6 @@ extension LoggerView {
         }
     }
 
-    /// Refresh the list of active/paused sessions (for the no-session view)
-    func refreshActiveSessions() {
-        guard let manager = sessionManager else {
-            activeSessions = []
-            activeSessionQSOCounts = [:]
-            return
-        }
-
-        activeSessions = manager.fetchActiveSessions()
-
-        // Load QSO counts for each active session
-        var counts: [UUID: Int] = [:]
-        for session in activeSessions {
-            let sessionId = session.id
-            var descriptor = FetchDescriptor<QSO>(
-                predicate: #Predicate { $0.loggingSessionId == sessionId && !$0.isHidden }
-            )
-            descriptor.fetchLimit = 500
-            counts[sessionId] = (try? modelContext.fetch(descriptor))?.count ?? 0
-        }
-        activeSessionQSOCounts = counts
-    }
-
     // MARK: - POTA Spots
 
     /// Refresh POTA spots for nearby frequency detection

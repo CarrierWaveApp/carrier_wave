@@ -10,11 +10,13 @@ struct LoggerView: View {
 
     init(
         tourState: TourState,
+        sessionManager: LoggingSessionManager? = nil,
         onSessionEnd: (() -> Void)? = nil,
         onSpotCommand: ((SpotCommandAction) -> Void)? = nil,
         pendingSpotSelection: Binding<SpotSelection?>? = nil
     ) {
         self.tourState = tourState
+        externalSessionManager = sessionManager
         self.onSessionEnd = onSessionEnd
         self.onSpotCommand = onSpotCommand
         _externalSpotSelection = pendingSpotSelection ?? .constant(nil)
@@ -66,15 +68,6 @@ struct LoggerView: View {
     @AppStorage("loggerAutoModeSwitch") var autoModeSwitch = true
     @AppStorage("loggerKeepLookupAfterLog") var keepLookupAfterLog = true
     @AppStorage("loggerHideFieldEntryForm") var hideFieldEntryForm = false
-
-    /// Active/paused sessions available to continue or finish
-    @State var activeSessions: [LoggingSession] = []
-    /// QSO counts for active sessions (keyed by session ID)
-    @State var activeSessionQSOCounts: [UUID: Int] = [:]
-    /// Finish confirmation for an active session
-    @State var sessionToFinish: LoggingSession?
-    /// Delete confirmation for an active session
-    @State var sessionToDelete: LoggingSession?
 
     @State var rstSent = ""
     @State var rstReceived = ""
@@ -158,6 +151,10 @@ struct LoggerView: View {
 
     /// iPad sidebar: spot selected from sidebar, processed via .onChange
     @Binding var externalSpotSelection: SpotSelection?
+
+    /// External session manager passed from parent (SessionsTabView).
+    /// When set, LoggerView uses this instead of creating its own.
+    let externalSessionManager: LoggingSessionManager?
 
     /// Tour state for mini-tour
     let tourState: TourState

@@ -67,7 +67,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 |------|---------|
 | `CarrierWave/CarrierWaveApp.swift` | App entry point, SwiftData container setup |
 | `CarrierWave/ContentView.swift` | Root TabView/NavigationSplitView for programmatic tab switching |
-| `CarrierWave/TabConfiguration.swift` | AppTab enum, TabConfiguration manager, SettingsDestination |
+| `CarrierWave/TabConfiguration.swift` | AppTab enum, TabConfiguration manager, SettingsDestination, tab migration |
 
 ## Models (`CarrierWave/Models/`)
 | File | Purpose |
@@ -376,6 +376,8 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 ## Views - Sessions (`CarrierWave/Views/Sessions/`)
 | File | Purpose |
 |------|---------|
+| `SessionsTabView.swift` | Top-level Sessions tab container: switches between idle (sessions list) and active (logger) based on session state |
+| `SessionsIdleView.swift` | Idle view showing active/paused sessions and completed sessions history |
 | `SessionsView.swift` | Unified sessions list merging POTA activations and all sessions, with rich content |
 | `SessionsView+Actions.swift` | Data loading, POTA actions, session deletion, and helpers for SessionsView |
 | `SessionsView+Share.swift` | Brag sheet generation and equipment list building for share cards |
@@ -407,7 +409,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 ## Views - Logger (`CarrierWave/Views/Logger/`)
 | File | Purpose |
 |------|---------|
-| `LoggerContainerView.swift` | iPad two-pane wrapper: HStack with logger + spots sidebar on regular, plain logger on compact |
+| `LoggerContainerView.swift` | iPad two-pane wrapper: HStack with logger + spots sidebar on regular, plain logger on compact. Accepts external sessionManager from SessionsTabView |
 | `LoggerSpotsSidebarView.swift` | Tabbed sidebar with segmented picker for POTA/RBN/P2P spots |
 | `SpotSelection.swift` | SpotSelection enum, SidebarTab enum, SpotCommandAction enum for sidebar integration |
 | `SidebarPOTASpotsView.swift` | POTA spots adapted for persistent sidebar display (auto-refresh, no dismiss) |
@@ -516,7 +518,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 ## Views - Logs (`CarrierWave/Views/Logs/`)
 | File | Purpose |
 |------|---------|
-| `LogsContainerView.swift` | Container with segmented picker for QSOs, POTA Activations, and Sessions |
+| `LogsContainerView.swift` | Container for QSOs list (sessions moved to Sessions tab) |
 | `LogsListView.swift` | Searchable/filterable QSO list content |
 | `LogsListHelperViews.swift` | Helper views (QueryWarningBanner, QueryHelpSheet, QSORow, ServicePresenceBadge) |
 | `QSODetailView.swift` | QSO detail view showing all metadata, sync status, and source info with edit button |

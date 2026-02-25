@@ -26,7 +26,7 @@ enum AppTab: String, Hashable, CaseIterable, Codable {
 
     /// Default hidden tabs (not shown in tab bar initially)
     static var defaultHidden: Set<AppTab> {
-        [.logger, .cwDecoder, .activity]
+        [.cwDecoder, .activity]
     }
 
     /// Tabs that are completely disabled and should never appear anywhere
@@ -38,7 +38,7 @@ enum AppTab: String, Hashable, CaseIterable, Codable {
     var title: String {
         switch self {
         case .dashboard: "Dashboard"
-        case .logger: "Logger"
+        case .logger: "Sessions"
         case .logs: "Logs"
         case .cwDecoder: "CW"
         case .map: "Map"
@@ -50,7 +50,7 @@ enum AppTab: String, Hashable, CaseIterable, Codable {
     var icon: String {
         switch self {
         case .dashboard: "square.grid.2x2"
-        case .logger: "pencil.and.list.clipboard"
+        case .logger: "clock.arrow.trianglehead.counterclockwise.rotate.90"
         case .logs: "list.bullet"
         case .cwDecoder: "waveform"
         case .map: "map"
@@ -62,7 +62,7 @@ enum AppTab: String, Hashable, CaseIterable, Codable {
     var description: String {
         switch self {
         case .dashboard: "QSO statistics and sync status"
-        case .logger: "Log QSOs during activations"
+        case .logger: "Logging sessions and activation history"
         case .logs: "View and search logged QSOs"
         case .cwDecoder: "CW transcription and decoding"
         case .map: "QSO locations on a map"
@@ -183,6 +183,26 @@ enum TabConfiguration {
     static func reset() {
         UserDefaults.standard.removeObject(forKey: orderKey)
         UserDefaults.standard.removeObject(forKey: hiddenKey)
+    }
+
+    /// One-time migration: unhide .logger (now "Sessions") for users who had it hidden.
+    /// Gated by UserDefaults key so it runs only once.
+    static func migrateLoggerToSessions() {
+        let migrationKey = "tabMigration_loggerToSessions_v1"
+        guard !UserDefaults.standard.bool(forKey: migrationKey) else {
+            return
+        }
+        UserDefaults.standard.set(true, forKey: migrationKey)
+
+        // Only act if user has saved tab config (otherwise defaults apply)
+        guard UserDefaults.standard.data(forKey: hiddenKey) != nil else {
+            return
+        }
+        var hidden = hiddenTabs()
+        if hidden.contains(.logger) {
+            hidden.remove(.logger)
+            saveHidden(hidden)
+        }
     }
 
     // MARK: Private

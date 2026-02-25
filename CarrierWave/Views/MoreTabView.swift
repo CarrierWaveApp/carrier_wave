@@ -112,7 +112,11 @@ struct MoreTabView: View {
                 Text("Dashboard unavailable")
             }
         case .logger:
-            LoggerView(tourState: tourState, onSessionEnd: {})
+            SessionsTabView(
+                tourState: tourState,
+                potaClient: nil,
+                potaAuth: potaAuthService
+            )
         case .logs:
             LogsContainerView(
                 potaClient: nil,

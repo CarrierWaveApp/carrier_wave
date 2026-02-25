@@ -9,8 +9,8 @@ struct LoggerContainerView: View {
     // MARK: Internal
 
     let tourState: TourState
+    let sessionManager: LoggingSessionManager?
     let onSessionEnd: (() -> Void)?
-    var onSessionStateChange: ((Bool) -> Void)?
 
     var body: some View {
         Group {
@@ -74,6 +74,7 @@ struct LoggerContainerView: View {
         HStack(spacing: 0) {
             LoggerView(
                 tourState: tourState,
+                sessionManager: sessionManager,
                 onSessionEnd: onSessionEnd,
                 onSpotCommand: handleSpotCommand,
                 pendingSpotSelection: $pendingSpotSelection
@@ -102,6 +103,7 @@ struct LoggerContainerView: View {
     private var iPhoneLayout: some View {
         LoggerView(
             tourState: tourState,
+            sessionManager: sessionManager,
             onSessionEnd: onSessionEnd
         )
     }
@@ -163,7 +165,7 @@ struct LoggerContainerView: View {
             sessionMode = session.mode
             isPOTAActivation = session.activationType == .pota
             roveStops = session.roveStops
-            onSessionStateChange?(true)
+            // Session state tracked by SessionsTabView
 
             // Fetch QSOs for the map sidebar tab
             refreshSessionQSOs(sessionId: session.id, context: context)
@@ -179,7 +181,7 @@ struct LoggerContainerView: View {
             isPOTAActivation = false
             sessionQSOs = []
             roveStops = []
-            onSessionStateChange?(false)
+            // Session state tracked by SessionsTabView
         }
     }
 

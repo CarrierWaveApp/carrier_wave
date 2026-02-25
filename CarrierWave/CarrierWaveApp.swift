@@ -29,6 +29,9 @@ struct CarrierWaveApp: App {
     // MARK: Lifecycle
 
     init() {
+        // One-time tab migration: unhide Sessions tab for existing users
+        TabConfiguration.migrateLoggerToSessions()
+
         // Set default cw-swl server URL if not yet configured
         if (UserDefaults.standard.string(forKey: "cwswlServerURL") ?? "").isEmpty {
             UserDefaults.standard.set("https://swl.carrierwave.app", forKey: "cwswlServerURL")

@@ -39,6 +39,8 @@ struct SessionsView: View {
     let potaClient: POTAClient?
     let potaAuth: POTAAuthService
     let tourState: TourState
+    var isEmbedded = false
+    var activeSessionsHeader: (() -> AnyView)?
 
     // MARK: - Shared State (accessed by +Actions extension)
 
@@ -112,14 +114,14 @@ struct SessionsView: View {
 
     var body: some View {
         Group {
-            if sessions.isEmpty, orphanActivations.isEmpty {
+            if sessions.isEmpty, orphanActivations.isEmpty, activeSessionsHeader == nil {
                 emptyState
             } else {
                 sessionsList
             }
         }
         .miniTour(.potaActivations, tourState: tourState)
-        .navigationTitle("Sessions")
+        .navigationTitle(isEmbedded ? "" : "Sessions")
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 if isAuthenticated, potaClient != nil {
@@ -284,6 +286,10 @@ extension SessionsView {
 
     var sessionsList: some View {
         List {
+            if let header = activeSessionsHeader {
+                header()
+            }
+
             if isInMaintenance {
                 Section { maintenanceBanner }
             }

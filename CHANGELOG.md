@@ -4,6 +4,12 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- Merge Sessions and Logger into a single Sessions tab with state-driven view switching (idle shows session history, active shows logger)
+- Remove segmented picker from Logs tab (now QSOs-only; sessions moved to Sessions tab)
+- Rename Logger tab to Sessions with new icon; unhide by default for new and existing users
+- Session manager lifecycle owned by SessionsTabView, shared down to logger
+
 ### Fixed
 - Fix duplicate POTA QSO uploads caused by remote map overwrite when same park activated twice in one day (use formUnion instead of assignment)
 - Add pre-upload dedup filter checking QSOs against POTA remote map as defense-in-depth
