@@ -152,10 +152,6 @@ extension LoggerView {
                 }
             }
         }
-        .sheet(isPresented: $showFT8SetupWizard) {
-            FT8SetupWizardView(isPresented: $showFT8SetupWizard)
-                .interactiveDismissDisabled()
-        }
     }
 
     // MARK: - Panel Overlays

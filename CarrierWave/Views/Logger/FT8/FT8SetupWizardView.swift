@@ -43,7 +43,6 @@ struct FT8SetupWizardView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Skip") {
-                        ft8SetupComplete = true
                         isPresented = false
                     }
                 }
@@ -63,6 +62,8 @@ struct FT8SetupWizardView: View {
         }
         .padding(.horizontal)
         .padding(.vertical, 8)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Step \(currentStep + 1) of 3")
     }
 
     private var navigationButtons: some View {
@@ -210,6 +211,7 @@ extension FT8SetupWizardView {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("\(title). \(description)\(recommended ? ". Recommended" : "")")
+        .accessibilityAddTraits(connectionType == id ? [.isSelected] : [])
     }
 }
 
@@ -311,7 +313,7 @@ extension FT8SetupWizardView {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(label)
-        .accessibilityAddTraits(checklistItems.contains(id) ? [.isSelected] : [])
+        .accessibilityValue(checklistItems.contains(id) ? "Checked" : "Unchecked")
     }
 }
 

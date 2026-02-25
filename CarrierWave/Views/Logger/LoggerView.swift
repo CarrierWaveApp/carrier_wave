@@ -238,6 +238,10 @@ struct LoggerView: View {
                 }
                 .toastContainer()
                 .miniTour(.logger, tourState: tourState)
+                .sheet(isPresented: $showFT8SetupWizard) {
+                    FT8SetupWizardView(isPresented: $showFT8SetupWizard)
+                        .interactiveDismissDisabled()
+                }
         }
     }
 }
