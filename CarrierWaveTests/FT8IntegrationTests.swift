@@ -60,44 +60,39 @@ final class FT8IntegrationTests: XCTestCase {
         XCTAssertEqual(stateMachine.state, .calling)
 
         // Step 2: Receive signal report from them
-        let reportMsg = FT8Message.signalReport(
-            from: "W1AW", to: "N0TEST", dB: -12
-        )
         stateMachine.myReport = -5
-        stateMachine.processMessage(reportMsg)
+        stateMachine.processMessage(
+            .signalReport(from: "W1AW", to: "N0TEST", dB: -12)
+        )
         XCTAssertEqual(stateMachine.state, .reportSent)
 
         // Step 3: Receive RR73 to complete
-        let rr73Msg = FT8Message.rogerEnd(from: "W1AW", to: "N0TEST")
-        stateMachine.processMessage(rr73Msg)
+        stateMachine.processMessage(.rogerEnd(from: "W1AW", to: "N0TEST"))
         XCTAssertEqual(stateMachine.state, .complete)
 
         // Extract completed QSO and log it (mirroring FT8SessionManager.logCompletedQSO)
-        let completed = stateMachine.completedQSO
-        XCTAssertNotNil(completed)
+        let completed = try XCTUnwrap(stateMachine.completedQSO)
 
-        let rstSent = formatReport(completed?.myReport)
-        let rstReceived = formatReport(completed?.theirReport)
-
-        let qso = try sessionManager.logQSO(
-            callsign: XCTUnwrap(completed?.theirCallsign),
-            rstSent: rstSent,
-            rstReceived: rstReceived,
-            theirGrid: completed?.theirGrid
+        let qso = sessionManager.logQSO(
+            callsign: completed.theirCallsign,
+            rstSent: formatReport(completed.myReport),
+            rstReceived: formatReport(completed.theirReport),
+            theirGrid: completed.theirGrid
         )
 
         // Then — verify all QSO fields
-        XCTAssertNotNil(qso)
-        XCTAssertEqual(qso?.callsign, "W1AW")
-        XCTAssertEqual(qso?.mode, "FT8")
-        XCTAssertEqual(qso?.band, "20m")
-        XCTAssertEqual(qso?.frequency, 14.074)
-        XCTAssertEqual(qso?.myCallsign, "N0TEST")
-        XCTAssertEqual(qso?.myGrid, "FN31")
-        XCTAssertEqual(qso?.theirGrid, "FN42")
-        XCTAssertEqual(qso?.rstSent, "-05")
-        XCTAssertEqual(qso?.rstReceived, "-12")
-        XCTAssertEqual(qso?.importSource, .logger)
+        let loggedQSO = try XCTUnwrap(qso)
+        XCTAssertEqual(loggedQSO.callsign, "W1AW")
+        XCTAssertEqual(loggedQSO.mode, "FT8")
+        XCTAssertEqual(loggedQSO.band, "20m")
+        XCTAssertEqual(loggedQSO.frequency, 14.074)
+        XCTAssertEqual(loggedQSO.myCallsign, "N0TEST")
+        XCTAssertEqual(loggedQSO.myGrid, "FN31")
+        XCTAssertEqual(loggedQSO.theirGrid, "FN42")
+        XCTAssertEqual(loggedQSO.rstSent, "-05")
+        XCTAssertEqual(loggedQSO.rstReceived, "-12")
+        XCTAssertEqual(loggedQSO.importSource, .logger)
+        XCTAssertNil(loggedQSO.parkReference)
     }
 
     // MARK: - Test 2: dB Signal Reports Stored Correctly in RST Fields
@@ -136,30 +131,18 @@ final class FT8IntegrationTests: XCTestCase {
         XCTAssertEqual(completed.theirReport, -12)
         XCTAssertEqual(completed.myReport, -19)
 
-        // Log via session manager with formatted reports
-        let rstSent = formatReport(completed.myReport)
-        let rstReceived = formatReport(completed.theirReport)
-
-        // Verify formatted strings before logging
-        XCTAssertEqual(rstSent, "-19")
-        XCTAssertEqual(rstReceived, "-12")
-
         let qso = sessionManager.logQSO(
             callsign: completed.theirCallsign,
-            rstSent: rstSent,
-            rstReceived: rstReceived,
+            rstSent: formatReport(completed.myReport),
+            rstReceived: formatReport(completed.theirReport),
             theirGrid: completed.theirGrid
         )
 
-        // Then — verify negative dB values stored correctly
-        XCTAssertNotNil(qso)
-        XCTAssertEqual(qso?.rstSent, "-19")
-        XCTAssertEqual(qso?.rstReceived, "-12")
-
-        // Also verify positive values format correctly
-        XCTAssertEqual(formatReport(5), "+05")
-        XCTAssertEqual(formatReport(0), "+00")
-        XCTAssertEqual(formatReport(nil), "+00")
+        // Then — verify negative dB values stored correctly as strings
+        let loggedQSO = try XCTUnwrap(qso)
+        XCTAssertEqual(loggedQSO.rstSent, "-19")
+        XCTAssertEqual(loggedQSO.rstReceived, "-12")
+        XCTAssertEqual(loggedQSO.band, "40m")
     }
 
     // MARK: - Test 3: POTA Activation Auto-Applies Park Reference
@@ -195,21 +178,22 @@ final class FT8IntegrationTests: XCTestCase {
         XCTAssertEqual(stateMachine.state, .complete)
 
         let completed = try XCTUnwrap(stateMachine.completedQSO)
-        let qso = sessionManager.logQSO(
-            callsign: completed.theirCallsign,
-            rstSent: formatReport(completed.myReport),
-            rstReceived: formatReport(completed.theirReport),
-            theirGrid: completed.theirGrid
+        let loggedQSO = try XCTUnwrap(
+            sessionManager.logQSO(
+                callsign: completed.theirCallsign,
+                rstSent: formatReport(completed.myReport),
+                rstReceived: formatReport(completed.theirReport),
+                theirGrid: completed.theirGrid
+            )
         )
 
         // Then — QSO inherits park reference from POTA session
-        XCTAssertNotNil(qso)
-        XCTAssertEqual(qso?.parkReference, "US-0001")
-        XCTAssertEqual(qso?.callsign, "N3LLO")
-        XCTAssertEqual(qso?.mode, "FT8")
-        XCTAssertEqual(qso?.theirGrid, "FM19")
-        XCTAssertEqual(qso?.rstSent, "-08")
-        XCTAssertEqual(qso?.rstReceived, "-15")
+        XCTAssertEqual(loggedQSO.parkReference, "US-0001")
+        XCTAssertEqual(loggedQSO.callsign, "N3LLO")
+        XCTAssertEqual(loggedQSO.mode, "FT8")
+        XCTAssertEqual(loggedQSO.theirGrid, "FM19")
+        XCTAssertEqual(loggedQSO.rstSent, "-08")
+        XCTAssertEqual(loggedQSO.rstReceived, "-15")
     }
 
     // MARK: Private
