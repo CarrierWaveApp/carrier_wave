@@ -8,27 +8,41 @@ import SwiftUI
 struct FT8ControlBar: View {
     // MARK: Internal
 
+    let isReceiving: Bool
     @Binding var operatingMode: FT8OperatingMode
 
     let qsoCount: Int
     let parkReference: String?
+    let onStart: () -> Void
     let onStop: () -> Void
 
     var body: some View {
         VStack(spacing: 8) {
             HStack(spacing: 12) {
                 modeButton("Listen", mode: .listen, systemImage: "headphones")
+                    .disabled(!isReceiving)
                 modeButton(
                     "Call CQ",
                     mode: .callCQ(modifier: nil),
                     systemImage: "antenna.radiowaves.left.and.right"
                 )
-                Button(action: onStop) {
-                    Label("Stop", systemImage: "stop.fill")
-                        .font(.caption.bold())
+                .disabled(!isReceiving)
+
+                if isReceiving {
+                    Button(action: onStop) {
+                        Label("Stop", systemImage: "stop.fill")
+                            .font(.caption.bold())
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(.red)
+                } else {
+                    Button(action: onStart) {
+                        Label("Start", systemImage: "play.fill")
+                            .font(.caption.bold())
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(.green)
                 }
-                .buttonStyle(.bordered)
-                .tint(.red)
             }
 
             HStack {

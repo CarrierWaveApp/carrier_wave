@@ -33,18 +33,23 @@ struct FT8SessionView: View {
                 myCallsign: ft8Manager.qsoStateMachine.myCallsign,
                 onCallStation: { ft8Manager.callStation($0) }
             )
+            .frame(minHeight: 120)
 
             FT8ActiveQSOCard(stateMachine: ft8Manager.qsoStateMachine)
 
             Divider()
 
             FT8ControlBar(
+                isReceiving: ft8Manager.isReceiving,
                 operatingMode: Binding(
                     get: { ft8Manager.operatingMode },
                     set: { ft8Manager.setMode($0) }
                 ),
                 qsoCount: ft8Manager.qsoCount,
                 parkReference: parkReference,
+                onStart: {
+                    Task { try? await ft8Manager.start() }
+                },
                 onStop: {
                     Task { await ft8Manager.stop() }
                 }
@@ -58,13 +63,22 @@ struct FT8SessionView: View {
     // MARK: Private
 
     private var bandSelector: some View {
-        HStack {
-            Picker("Band", selection: Bindable(ft8Manager).selectedBand) {
+        HStack(spacing: 6) {
+            Menu {
                 ForEach(FT8Constants.supportedBands, id: \.self) { band in
-                    Text(band).tag(band)
+                    Button(band) {
+                        ft8Manager.selectedBand = band
+                    }
                 }
+            } label: {
+                HStack(spacing: 2) {
+                    Text(ft8Manager.selectedBand)
+                        .font(.body.bold())
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(.caption2)
+                }
+                .foregroundStyle(.primary)
             }
-            .pickerStyle(.menu)
 
             Text("\u{00B7}")
                 .foregroundStyle(.secondary)
