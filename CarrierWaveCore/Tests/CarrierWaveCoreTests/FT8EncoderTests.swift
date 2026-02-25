@@ -8,12 +8,12 @@ import Testing
 
 @Suite("FT8 Encoder Tests")
 struct FT8EncoderTests {
+    // MARK: Internal
+
     @Test("Encode CQ message produces correct sample count")
     func encodeCQSampleCount() throws {
         let samples = try FT8Encoder.encode(message: "CQ K1ABC FN42")
-        // 79 symbols * 0.160s * 12000 Hz = 151,680 samples
-        #expect(samples.count == FT8Constants
-            .totalSymbols * Int(Double(FT8Constants.sampleRate) * FT8Constants.symbolPeriod))
+        #expect(samples.count == expectedSampleCount)
     }
 
     @Test("Encoded audio is not silence")
@@ -46,44 +46,32 @@ struct FT8EncoderTests {
         let texts = results.map(\.rawText)
         #expect(
             texts.contains("CQ K1ABC FN42"),
-            "Round-trip should recover the original message. Got: \(texts)"
+            "Round-trip should recover the original message (\(results.count) decoded). Got: \(texts)"
         )
     }
 
     @Test("Encode signal report message")
     func encodeSignalReport() throws {
         let samples = try FT8Encoder.encode(message: "W9XYZ K1ABC -11")
-        #expect(
-            samples.count == FT8Constants.totalSymbols
-                * Int(Double(FT8Constants.sampleRate) * FT8Constants.symbolPeriod)
-        )
+        #expect(samples.count == expectedSampleCount)
     }
 
     @Test("Encode RR73 message")
     func encodeRR73() throws {
         let samples = try FT8Encoder.encode(message: "W9XYZ K1ABC RR73")
-        #expect(
-            samples.count == FT8Constants.totalSymbols
-                * Int(Double(FT8Constants.sampleRate) * FT8Constants.symbolPeriod)
-        )
+        #expect(samples.count == expectedSampleCount)
     }
 
     @Test("Encode free text message")
     func encodeFreeText() throws {
         let samples = try FT8Encoder.encode(message: "TNX BOB 73 GL")
-        #expect(
-            samples.count == FT8Constants.totalSymbols
-                * Int(Double(FT8Constants.sampleRate) * FT8Constants.symbolPeriod)
-        )
+        #expect(samples.count == expectedSampleCount)
     }
 
     @Test("Encode CQ POTA message")
     func encodeCQPOTA() throws {
         let samples = try FT8Encoder.encode(message: "CQ POTA K7ABC CN87")
-        #expect(
-            samples.count == FT8Constants.totalSymbols
-                * Int(Double(FT8Constants.sampleRate) * FT8Constants.symbolPeriod)
-        )
+        #expect(samples.count == expectedSampleCount)
     }
 
     @Test("Invalid message returns error")
@@ -100,5 +88,12 @@ struct FT8EncoderTests {
         // Same length but different content
         #expect(at1000.count == at2000.count)
         #expect(at1000 != at2000)
+    }
+
+    // MARK: Private
+
+    /// Expected sample count: 79 symbols * 0.160s * 12000 Hz = 151,680
+    private var expectedSampleCount: Int {
+        FT8Constants.totalSymbols * Int(Double(FT8Constants.sampleRate) * FT8Constants.symbolPeriod)
     }
 }

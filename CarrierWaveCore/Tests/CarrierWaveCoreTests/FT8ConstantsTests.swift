@@ -3,6 +3,7 @@
 //  CarrierWaveCoreTests
 //
 
+import CFT8
 import Testing
 @testable import CarrierWaveCore
 
@@ -24,6 +25,11 @@ struct FT8ConstantsTests {
     func derivedConstants() {
         #expect(FT8Constants.txDuration == Double(FT8Constants.totalSymbols) * FT8Constants.symbolPeriod)
         #expect(FT8Constants.samplesPerSlot == FT8Constants.sampleRate * Int(FT8Constants.slotDuration))
+    }
+
+    @Test("Swift totalSymbols matches C library FT8_NN constant")
+    func totalSymbolsCrossValidation() {
+        #expect(FT8Constants.totalSymbols == Int(FT8_NN))
     }
 
     // MARK: - Dial Frequencies

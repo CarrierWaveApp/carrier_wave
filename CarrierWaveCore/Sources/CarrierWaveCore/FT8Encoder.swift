@@ -51,10 +51,16 @@ public enum FT8Encoder: Sendable {
         }
 
         var tones = [UInt8](repeating: 0, count: Int(FT8_NN))
-        withUnsafePointer(to: &ftxMessage.payload) { payloadPtr in
-            payloadPtr.withMemoryRebound(to: UInt8.self, capacity: Int(FTX_PAYLOAD_LENGTH_BYTES)) { ptr in
-                ft8_encode(ptr, &tones)
+        // payload is uint8_t[10] bridged as a tuple; use withUnsafeBytes to get a raw pointer
+        withUnsafeBytes(of: &ftxMessage.payload) { rawBuffer in
+            guard let base = rawBuffer.baseAddress else {
+                return
             }
+            ft8_encode(base.assumingMemoryBound(to: UInt8.self), &tones)
+        }
+
+        guard tones.contains(where: { $0 != 0 }) else {
+            throw FT8Error.encodingFailed("ft8_encode produced empty tone sequence for: \(message)")
         }
 
         return tones
@@ -84,7 +90,7 @@ public enum FT8Encoder: Sendable {
                 let idx = symbolIndex * symbolSamples + sampleOffset
                 samples[idx] = Float(sin(phase))
                 phase += phaseIncrement
-                if phase > twoPi {
+                if phase >= twoPi {
                     phase -= twoPi
                 }
             }
