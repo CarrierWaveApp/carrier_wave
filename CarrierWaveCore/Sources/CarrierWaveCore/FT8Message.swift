@@ -218,7 +218,7 @@ extension FT8Message {
 // MARK: - FT8DecodeResult
 
 /// Result from decoding an FT8 signal, combining the parsed message with signal metadata
-public struct FT8DecodeResult: Sendable, Equatable {
+public struct FT8DecodeResult: Sendable, Identifiable {
     // MARK: Lifecycle
 
     public init(message: FT8Message, snr: Int, deltaTime: Double, frequency: Double, rawText: String) {
@@ -230,6 +230,9 @@ public struct FT8DecodeResult: Sendable, Equatable {
     }
 
     // MARK: Public
+
+    /// Stable identity for SwiftUI diffing (excluded from equality).
+    public let id = UUID()
 
     /// The parsed FT8 message
     public let message: FT8Message
@@ -245,4 +248,17 @@ public struct FT8DecodeResult: Sendable, Equatable {
 
     /// Original undecoded message text
     public let rawText: String
+}
+
+// MARK: Equatable
+
+/// Manual Equatable: two results with the same content are equal regardless of `id`.
+extension FT8DecodeResult: Equatable {
+    public static func == (lhs: FT8DecodeResult, rhs: FT8DecodeResult) -> Bool {
+        lhs.message == rhs.message
+            && lhs.snr == rhs.snr
+            && lhs.deltaTime == rhs.deltaTime
+            && lhs.frequency == rhs.frequency
+            && lhs.rawText == rhs.rawText
+    }
 }

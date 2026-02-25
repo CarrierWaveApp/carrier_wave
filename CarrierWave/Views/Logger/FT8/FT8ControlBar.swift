@@ -58,6 +58,10 @@ struct FT8ControlBar: View {
         systemImage: String
     ) -> some View {
         Button {
+            // When re-selecting callCQ, preserve the current modifier
+            if case .callCQ = mode, case .callCQ = operatingMode {
+                return
+            }
             operatingMode = mode
         } label: {
             Label(title, systemImage: systemImage)

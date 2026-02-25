@@ -17,7 +17,7 @@ struct FT8SessionView: View {
         VStack(spacing: 0) {
             bandSelector
 
-            FT8WaterfallView(data: waterfallData)
+            FT8WaterfallView(data: ft8Manager.waterfallData)
                 .frame(height: 80)
 
             FT8CycleIndicatorView(
@@ -29,7 +29,7 @@ struct FT8SessionView: View {
 
             FT8DecodeListView(
                 decodes: ft8Manager.decodeResults,
-                currentCycleDecodes: ft8Manager.currentCycleDecodes,
+                currentCycleIDs: Set(ft8Manager.currentCycleDecodes.map(\.id)),
                 myCallsign: ft8Manager.qsoStateMachine.myCallsign,
                 onCallStation: { ft8Manager.callStation($0) }
             )
@@ -57,11 +57,9 @@ struct FT8SessionView: View {
 
     // MARK: Private
 
-    @State private var waterfallData = FT8WaterfallData()
-
     private var bandSelector: some View {
         HStack {
-            Picker("Band", selection: $ft8Manager.selectedBand) {
+            Picker("Band", selection: Bindable(ft8Manager).selectedBand) {
                 ForEach(FT8Constants.supportedBands, id: \.self) { band in
                     Text(band).tag(band)
                 }

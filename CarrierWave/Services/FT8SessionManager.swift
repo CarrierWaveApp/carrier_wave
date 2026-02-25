@@ -48,6 +48,7 @@ final class FT8SessionManager {
     private(set) var operatingMode: FT8OperatingMode = .listen
     private(set) var qsoCount = 0
     private(set) var audioLevel: Float = 0
+    private(set) var waterfallData = FT8WaterfallData()
 
     var selectedFrequency: Double = 14.074
 
@@ -89,6 +90,7 @@ final class FT8SessionManager {
         await audioEngine.stop()
         isReceiving = false
         isTransmitting = false
+        waterfallData.clear()
     }
 
     // MARK: - Mode Control
@@ -138,6 +140,7 @@ final class FT8SessionManager {
     // MARK: - Decoding
 
     private func handleDecodedSlot(_ samples: [Float]) {
+        waterfallData.processAudio(samples)
         let results = FT8Decoder.decode(samples: samples)
         currentCycleDecodes = results
         decodeResults.append(contentsOf: results)

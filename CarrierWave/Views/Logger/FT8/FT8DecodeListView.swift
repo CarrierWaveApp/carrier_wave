@@ -10,7 +10,7 @@ struct FT8DecodeListView: View {
     // MARK: Internal
 
     let decodes: [FT8DecodeResult]
-    let currentCycleDecodes: [FT8DecodeResult]
+    let currentCycleIDs: Set<FT8DecodeResult.ID>
     let myCallsign: String
     let onCallStation: (FT8DecodeResult) -> Void
 
@@ -18,9 +18,8 @@ struct FT8DecodeListView: View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 2) {
-                    ForEach(Array(decodes.enumerated()), id: \.offset) { index, result in
-                        decodeRow(result, isNew: currentCycleDecodes.contains(result))
-                            .id(index)
+                    ForEach(decodes) { result in
+                        decodeRow(result, isNew: currentCycleIDs.contains(result.id))
                             .onTapGesture {
                                 if result.message.isCallable {
                                     onCallStation(result)
@@ -30,9 +29,12 @@ struct FT8DecodeListView: View {
                 }
                 .padding(.horizontal)
             }
-            .onChange(of: decodes.count) {
-                if let last = decodes.indices.last {
-                    proxy.scrollTo(last, anchor: .bottom)
+            .onChange(of: decodes.count) { oldCount, newCount in
+                guard newCount > oldCount else {
+                    return
+                }
+                if let last = decodes.last {
+                    proxy.scrollTo(last.id, anchor: .bottom)
                 }
             }
         }

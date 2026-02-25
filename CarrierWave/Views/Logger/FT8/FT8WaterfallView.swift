@@ -11,14 +11,17 @@ struct FT8WaterfallView: View {
     let data: FT8WaterfallData
 
     var body: some View {
+        // Snapshot @MainActor data before entering Canvas rendering thread
+        let rows = data.magnitudes
+        let bins = data.frequencyBins
+
         Canvas { context, size in
-            let rows = data.magnitudes
-            guard !rows.isEmpty, data.frequencyBins > 0 else {
+            guard !rows.isEmpty, bins > 0 else {
                 return
             }
 
             let rowHeight = size.height / CGFloat(min(rows.count, 60))
-            let binWidth = size.width / CGFloat(data.frequencyBins)
+            let binWidth = size.width / CGFloat(bins)
 
             for (rowIdx, row) in rows.suffix(60).enumerated() {
                 for (binIdx, magnitude) in row.enumerated() {
