@@ -46,17 +46,17 @@ public enum FT8Decoder: Sendable {
 
     // MARK: - WAV Loading
 
-    /// Load a 12 kHz mono WAV file into Float samples.
+    /// Load a 12 kHz mono 16-bit PCM WAV file into Float samples.
     public static func loadWAV(url: URL) throws -> [Float] {
         let data = try Data(contentsOf: url)
         guard data.count >= 44 else {
             throw FT8Error.invalidWAV("File too small for WAV header")
         }
 
-        let header = parseWAVHeader(data)
+        let header = try parseWAVHeader(data)
         try validateWAVHeader(header)
 
-        return extractSamples(from: data)
+        return extractSamples(from: data, dataOffset: header.dataOffset)
     }
 
     // MARK: Private
@@ -67,6 +67,8 @@ public enum FT8Decoder: Sendable {
         let sampleRate: UInt32
         let bitsPerSample: UInt16
         let numChannels: UInt16
+        let audioFormat: UInt16
+        let dataOffset: Int
     }
 
     /// Maximum number of candidate signals to search for.
@@ -78,6 +80,21 @@ public enum FT8Decoder: Sendable {
     /// Maximum LDPC decoder iterations.
     private static let maxLDPCIterations: Int32 = 25
 
+    /// Time oversampling rate (subdivisions per symbol period).
+    private static let timeOSR = 2
+
+    /// Frequency oversampling rate (subdivisions per tone spacing).
+    private static let freqOSR = 2
+
+    /// "RIFF" as a little-endian UInt32 (0x46464952).
+    private static let riffMarker: UInt32 = 0x4646_4952
+
+    /// "WAVE" as a little-endian UInt32 (0x45564157).
+    private static let waveMarker: UInt32 = 0x4556_4157
+
+    /// "data" as a little-endian UInt32 (0x61746164).
+    private static let dataMarker: UInt32 = 0x6174_6164
+
     // MARK: - Monitor Setup
 
     private static func configureMonitor(
@@ -88,8 +105,8 @@ public enum FT8Decoder: Sendable {
             f_min: minFrequency,
             f_max: maxFrequency,
             sample_rate: Int32(FT8Constants.sampleRate),
-            time_osr: 2,
-            freq_osr: 2,
+            time_osr: Int32(timeOSR),
+            freq_osr: Int32(freqOSR),
             protocol: FTX_PROTOCOL_FT8
         )
 
@@ -100,12 +117,15 @@ public enum FT8Decoder: Sendable {
 
     private static func feedSamples(_ samples: [Float], to monitor: inout monitor_t) {
         let blockSize = Int(monitor.block_size)
-        var offset = 0
-        while offset + blockSize <= samples.count {
-            samples.withUnsafeBufferPointer { buffer in
-                monitor_process(&monitor, buffer.baseAddress! + offset)
+        samples.withUnsafeBufferPointer { buffer in
+            guard let base = buffer.baseAddress else {
+                return
             }
-            offset += blockSize
+            var offset = 0
+            while offset + blockSize <= samples.count {
+                monitor_process(&monitor, base + offset)
+                offset += blockSize
+            }
         }
     }
 
@@ -137,11 +157,10 @@ public enum FT8Decoder: Sendable {
         var hashIF = makeHashInterface()
         var results: [FT8DecodeResult] = []
         var seenMessages = Set<String>()
-        var mutableCandidates = candidates
 
-        for idx in mutableCandidates.indices {
+        for candidate in candidates {
             guard let result = decodeCandidate(
-                &mutableCandidates[idx],
+                candidate,
                 waterfall: &waterfall,
                 hashInterface: &hashIF,
                 minFrequency: minFrequency,
@@ -156,7 +175,7 @@ public enum FT8Decoder: Sendable {
     }
 
     private static func decodeCandidate(
-        _ candidate: inout ftx_candidate_t,
+        _ candidate: ftx_candidate_t,
         waterfall: inout ftx_waterfall_t,
         hashInterface: inout ftx_callsign_hash_interface_t,
         minFrequency: Float,
@@ -164,10 +183,11 @@ public enum FT8Decoder: Sendable {
     ) -> FT8DecodeResult? {
         var message = ftx_message_t()
         var status = ftx_decode_status_t()
+        var mutableCandidate = candidate
 
         let decoded = ftx_decode_candidate(
             &waterfall,
-            &candidate,
+            &mutableCandidate,
             maxLDPCIterations,
             &message,
             &status
@@ -190,7 +210,8 @@ public enum FT8Decoder: Sendable {
         let freqHz = statusFrequency(status, candidate: candidate, minFrequency: minFrequency)
         let timeSec = statusTime(status, candidate: candidate)
 
-        // Approximate SNR from candidate sync score (matches ft8_lib demo approach)
+        // Sync score scaled to approximate SNR range. This is NOT a true dB SNR —
+        // proper SNR requires noise floor estimation from the waterfall.
         let snr = Int(round(Double(candidate.score) * 0.5))
 
         let parsed = FT8Message.parse(messageText)
@@ -211,8 +232,8 @@ public enum FT8Decoder: Sendable {
         if status.freq > 0 {
             return Double(status.freq)
         }
-        // Fallback: compute from candidate offset
-        return Double(candidate.freq_offset) * FT8Constants.toneSpacing / 2.0
+        // Fallback: compute from candidate offset (divided by freq oversampling rate)
+        return Double(candidate.freq_offset) * FT8Constants.toneSpacing / Double(freqOSR)
             + Double(minFrequency)
     }
 
@@ -223,8 +244,8 @@ public enum FT8Decoder: Sendable {
         if status.time != 0 {
             return Double(status.time)
         }
-        // Fallback: compute from candidate offset
-        return Double(candidate.time_offset) * FT8Constants.symbolPeriod / 2.0
+        // Fallback: compute from candidate offset (divided by time oversampling rate)
+        return Double(candidate.time_offset) * FT8Constants.symbolPeriod / Double(timeOSR)
     }
 
     // MARK: - Hash Interface
@@ -241,17 +262,61 @@ public enum FT8Decoder: Sendable {
         )
     }
 
-    private static func parseWAVHeader(_ data: Data) -> WAVHeader {
-        data.withUnsafeBytes { ptr in
-            WAVHeader(
-                sampleRate: ptr.load(fromByteOffset: 24, as: UInt32.self),
-                bitsPerSample: ptr.load(fromByteOffset: 34, as: UInt16.self),
-                numChannels: ptr.load(fromByteOffset: 22, as: UInt16.self)
+    private static func parseWAVHeader(_ data: Data) throws -> WAVHeader {
+        try data.withUnsafeBytes { ptr in
+            // Validate RIFF container and WAVE format
+            let riff = UInt32(littleEndian: ptr.load(fromByteOffset: 0, as: UInt32.self))
+            guard riff == riffMarker else {
+                throw FT8Error.invalidWAV("Not a RIFF file")
+            }
+            let wave = UInt32(littleEndian: ptr.load(fromByteOffset: 8, as: UInt32.self))
+            guard wave == waveMarker else {
+                throw FT8Error.invalidWAV("Not a WAVE file")
+            }
+
+            let audioFormat = UInt16(littleEndian: ptr.load(fromByteOffset: 20, as: UInt16.self))
+            let numChannels = UInt16(littleEndian: ptr.load(fromByteOffset: 22, as: UInt16.self))
+            let sampleRate = UInt32(littleEndian: ptr.load(fromByteOffset: 24, as: UInt32.self))
+            let bitsPerSample = UInt16(littleEndian: ptr.load(fromByteOffset: 34, as: UInt16.self))
+
+            // Scan for the "data" chunk (may not be at offset 44 if extra chunks exist)
+            let dataOffset = try findDataChunk(in: ptr, fileSize: data.count)
+
+            return WAVHeader(
+                sampleRate: sampleRate,
+                bitsPerSample: bitsPerSample,
+                numChannels: numChannels,
+                audioFormat: audioFormat,
+                dataOffset: dataOffset
             )
         }
     }
 
+    /// Scan RIFF chunks starting after the WAVE header to find the "data" chunk.
+    /// Returns the byte offset where audio sample data begins.
+    private static func findDataChunk(
+        in ptr: UnsafeRawBufferPointer,
+        fileSize: Int
+    ) throws -> Int {
+        var offset = 12 // Skip "RIFF" (4) + size (4) + "WAVE" (4)
+        while offset + 8 <= fileSize {
+            let chunkID = UInt32(littleEndian: ptr.load(fromByteOffset: offset, as: UInt32.self))
+            let chunkSize = Int(UInt32(littleEndian: ptr.load(
+                fromByteOffset: offset + 4,
+                as: UInt32.self
+            )))
+            if chunkID == dataMarker {
+                return offset + 8 // Data starts after chunk ID (4) + size (4)
+            }
+            offset += 8 + chunkSize
+        }
+        throw FT8Error.invalidWAV("No data chunk found in WAV file")
+    }
+
     private static func validateWAVHeader(_ header: WAVHeader) throws {
+        guard header.audioFormat == 1 else {
+            throw FT8Error.invalidWAV("Expected PCM format (1), got \(header.audioFormat)")
+        }
         guard header.sampleRate == 12_000 else {
             throw FT8Error.invalidWAV("Expected 12000 Hz, got \(header.sampleRate)")
         }
@@ -263,15 +328,15 @@ public enum FT8Decoder: Sendable {
         }
     }
 
-    private static func extractSamples(from data: Data) -> [Float] {
-        let audioData = data.dropFirst(44) // Standard WAV header size
+    private static func extractSamples(from data: Data, dataOffset: Int) -> [Float] {
+        let audioData = data.dropFirst(dataOffset)
         let sampleCount = audioData.count / 2 // 16-bit = 2 bytes per sample
 
         var samples = [Float](repeating: 0, count: sampleCount)
         audioData.withUnsafeBytes { ptr in
             let int16Ptr = ptr.bindMemory(to: Int16.self)
             for idx in 0 ..< sampleCount {
-                samples[idx] = Float(int16Ptr[idx]) / 32_768.0
+                samples[idx] = Float(Int16(littleEndian: int16Ptr[idx])) / 32_768.0
             }
         }
         return samples
