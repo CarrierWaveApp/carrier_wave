@@ -16,32 +16,41 @@ extension LoggerView {
                         compactSessionHeader(session)
                     }
 
-                    callsignInputSection
+                    if sessionManager?.activeSession?.mode == "FT8",
+                       let manager = ft8Manager
+                    {
+                        FT8SessionView(
+                            ft8Manager: manager,
+                            parkReference: sessionManager?.activeSession?.parkReference
+                        )
+                    } else {
+                        callsignInputSection
 
-                    // POTA duplicate/new band warning
-                    if let status = potaDuplicateStatus {
-                        POTAStatusBanner(status: status)
-                            .transition(
-                                .asymmetric(
-                                    insertion: .move(edge: .top).combined(with: .opacity),
-                                    removal: .opacity
+                        // POTA duplicate/new band warning
+                        if let status = potaDuplicateStatus {
+                            POTAStatusBanner(status: status)
+                                .transition(
+                                    .asymmetric(
+                                        insertion: .move(edge: .top).combined(with: .opacity),
+                                        removal: .opacity
+                                    )
                                 )
-                            )
-                    }
-
-                    callsignLookupDisplay
-
-                    compactFieldsSection
-
-                    if editingQSO != nil {
-                        Button {
-                            cancelEditingCallsign()
-                        } label: {
-                            Text("Cancel Edit")
-                                .font(.subheadline)
                         }
-                        .buttonStyle(.bordered)
-                        .accessibilityLabel("Cancel editing callsign")
+
+                        callsignLookupDisplay
+
+                        compactFieldsSection
+
+                        if editingQSO != nil {
+                            Button {
+                                cancelEditingCallsign()
+                            } label: {
+                                Text("Cancel Edit")
+                                    .font(.subheadline)
+                            }
+                            .buttonStyle(.bordered)
+                            .accessibilityLabel("Cancel editing callsign")
+                        }
                     }
                 }
                 .padding()

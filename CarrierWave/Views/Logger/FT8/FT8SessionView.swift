@@ -9,7 +9,7 @@ import SwiftUI
 struct FT8SessionView: View {
     // MARK: Internal
 
-    @State var ft8Manager: FT8SessionManager
+    let ft8Manager: FT8SessionManager
 
     let parkReference: String?
 
