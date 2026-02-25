@@ -121,34 +121,20 @@ actor BackupService {
     }
 
     /// Count visible, non-metadata QSOs using SwiftData.
-    /// Matches the dashboard's totalQSOs calculation exactly:
-    /// fetch non-hidden, dedup by UUID, exclude metadata modes.
-    @MainActor
-    static func visibleQSOCount(
+    /// Runs on a background ModelContext to avoid blocking the main thread.
+    nonisolated static func visibleQSOCount(
         in container: ModelContainer
     ) -> Int {
         let context = ModelContext(container)
-        var descriptor = FetchDescriptor<QSO>(
-            predicate: #Predicate { !$0.isHidden }
+        let descriptor = FetchDescriptor<QSO>(
+            predicate: #Predicate {
+                !$0.isHidden
+                    && $0.mode != "WEATHER"
+                    && $0.mode != "SOLAR"
+                    && $0.mode != "NOTE"
+            }
         )
-        descriptor.propertiesToFetch = [\.mode]
-        guard let qsos = try? context.fetch(descriptor) else {
-            return 0
-        }
-        var seenIds = Set<UUID>()
-        seenIds.reserveCapacity(qsos.count)
-        var count = 0
-        for qso in qsos {
-            guard seenIds.insert(qso.id).inserted else {
-                continue
-            }
-            if !Self.metadataModes.contains(
-                qso.mode.uppercased()
-            ) {
-                count += 1
-            }
-        }
-        return count
+        return (try? context.fetchCount(descriptor)) ?? 0
     }
 
     // MARK: - Snapshot

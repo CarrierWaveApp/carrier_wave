@@ -99,23 +99,6 @@ struct CarrierWaveApp: App {
             .sunlightMode(isSunlightMode)
             .preferredColorScheme(colorScheme)
             .task {
-                // Create launch backup before sync/import
-                if UserDefaults.standard.object(
-                    forKey: "autoBackupEnabled"
-                ) as? Bool ?? true,
-                    let storeURL = sharedModelContainer
-                    .configurations.first?.url
-                {
-                    let count = BackupService.visibleQSOCount(
-                        in: sharedModelContainer
-                    )
-                    await BackupService.shared.snapshot(
-                        trigger: .launch,
-                        storeURL: storeURL,
-                        qsoCount: count
-                    )
-                }
-
                 // Run one-time data repairs before sync starts
                 DataRepairService.runPendingRepairs()
 
@@ -141,6 +124,27 @@ struct CarrierWaveApp: App {
                     modelContext: sharedModelContainer.mainContext
                 )
                 await CallsignNotesCache.shared.ensureLoaded(sources: sources)
+            }
+            .task {
+                // Launch backup runs off the main thread to avoid blocking UI
+                guard UserDefaults.standard.object(
+                    forKey: "autoBackupEnabled"
+                ) as? Bool ?? true,
+                    let storeURL = sharedModelContainer
+                    .configurations.first?.url
+                else {
+                    return
+                }
+
+                let container = sharedModelContainer
+                let count = await Task.detached {
+                    BackupService.visibleQSOCount(in: container)
+                }.value
+                await BackupService.shared.snapshot(
+                    trigger: .launch,
+                    storeURL: storeURL,
+                    qsoCount: count
+                )
             }
             .onOpenURL { url in
                 handleURL(url)
