@@ -159,6 +159,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `SyncService+Upload.swift` | Upload logic for QRZ and POTA services |
 | `SyncService+UploadClubLog.swift` | Club Log upload methods (extracted from Upload) |
 | `SyncService+UploadHelpers.swift` | Shared upload validation and logging helpers |
+| `SyncService+POTAUploadDedup.swift` | Pre-upload dedup filter checking QSOs against POTA remote map |
 | `SyncService+Download.swift` | Download/import logic |
 | `SyncService+ForceRedownload.swift` | Force re-download all QSOs from each service |
 | `SyncService+Process.swift` | Async QSO processing during sync (process, reconcile QRZ/POTA presence) |

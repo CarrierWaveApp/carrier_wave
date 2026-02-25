@@ -4,6 +4,17 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- Fix duplicate POTA QSO uploads caused by remote map overwrite when same park activated twice in one day (use formUnion instead of assignment)
+- Add pre-upload dedup filter checking QSOs against POTA remote map as defense-in-depth
+- Fix fetchQSOsNeedingUpload loading all QSOs into memory; query from ServicePresence side instead
+- Add diagnostic logging to POTA gap repair to surface dedup key mismatches
+- Reject QSOs with invalid/unknown band before POTA upload and alert user to fix data
+- Fix POTA duplicate upload loop caused by gap repair re-flagging confirmed QSOs due to dedup key mismatch
+- Fix reconciliation orphan reset re-uploading QSOs whose job aged out of POTA log
+- Normalize callsigns across all POTA dedup key comparisons (strip /P, /M, /QRP suffixes)
+- Normalize modes in POTA dedup keys (USB/LSB/FM/AM → SSB to match POTA's convention)
+
 ## [1.45.0] - 2026-02-24
 
 ### Added

@@ -84,6 +84,14 @@ extension QSOProcessingActor {
 
             let localDedupKey = buildLocalDedupKey(qso)
             if !remoteSet.contains(localDedupKey) {
+                // Log the mismatch for diagnostics (first 10 gaps only)
+                if state.gapsFound < 10 {
+                    let closest = findClosestRemoteKey(localDedupKey, in: remoteSet)
+                    print("[POTA GapRepair] Gap: local=\(localDedupKey) "
+                        + "closest=\(closest ?? "none") "
+                        + "activation=\(activationKey) "
+                        + "remoteCount=\(remoteSet.count)")
+                }
                 presence.isPresent = false
                 presence.needsUpload = true
                 state.gapsFound += 1
@@ -140,6 +148,11 @@ extension QSOProcessingActor {
         guard presence.isPresent, !qso.isHidden, !presence.uploadRejected else {
             return false
         }
+        // Skip QSOs previously confirmed present — dedup key format differences
+        // between local and POTA cause false-positive gaps that trigger re-upload loops.
+        if presence.lastConfirmedAt != nil {
+            return false
+        }
         guard !Self.gapRepairMetadataModes.contains(qso.mode.uppercased()) else {
             return false
         }
@@ -184,10 +197,11 @@ extension QSOProcessingActor {
 
     /// Build a dedup key from a local QSO for comparison against the remote set.
     /// Format: "WORKEDCALL|BAND|MODE|HHMM" where HHMM is 2-minute bucketed.
+    /// Mode is normalized to match POTA's convention (USB/LSB/FM/AM → SSB).
     private func buildLocalDedupKey(_ qso: QSO) -> String {
         let call = qso.callsign.uppercased().trimmingCharacters(in: .whitespaces)
         let band = qso.band.uppercased().trimmingCharacters(in: .whitespaces)
-        let mode = qso.mode.uppercased().trimmingCharacters(in: .whitespaces)
+        let mode = POTAClient.normalizeModeForDedup(qso.mode)
         let time = bucketTime(qso.timestamp)
         return "\(call)|\(band)|\(mode)|\(time)"
     }
@@ -202,5 +216,12 @@ extension QSOProcessingActor {
         let minute = components.minute ?? 0
         let bucketed = minute - (minute % 2)
         return String(format: "%02d%02d", hour, bucketed)
+    }
+
+    /// Find the closest matching remote dedup key for diagnostics.
+    /// Matches on callsign prefix to find the most relevant comparison.
+    private func findClosestRemoteKey(_ localKey: String, in remoteSet: Set<String>) -> String? {
+        let localCall = localKey.split(separator: "|").first.map(String.init) ?? ""
+        return remoteSet.first { $0.hasPrefix(localCall + "|") }
     }
 }
