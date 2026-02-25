@@ -26,6 +26,12 @@ extension SessionDetailView {
                         .foregroundStyle(.secondary)
                 }
 
+                statStrip(
+                    qsoCount: activation.qsoCount,
+                    duration: activation.formattedDuration,
+                    rate: activationRate
+                )
+
                 activationMetadataGrid
 
                 QSOTimelineView(qsos: activation.qsos)
@@ -34,7 +40,23 @@ extension SessionDetailView {
                     conditionsRow
                 }
             }
+
+            if shouldShowUpload {
+                inlineUploadRow
+            }
         }
+    }
+
+    private var activationRate: String? {
+        guard let activation, activation.duration > 0 else {
+            return nil
+        }
+        let hours = activation.duration / 3_600
+        guard hours > 0 else {
+            return nil
+        }
+        let rate = Double(activation.qsoCount) / hours
+        return String(format: "%.1f", rate)
     }
 
     var shouldShowUpload: Bool {
@@ -103,16 +125,6 @@ extension SessionDetailView {
         }
         var items: [MetadataItem] = []
 
-        let qsoLabel = "\(activation.qsoCount) QSO\(activation.qsoCount == 1 ? "" : "s")"
-        items.append(MetadataItem(icon: "antenna.radiowaves.left.and.right", label: qsoLabel))
-        if activation.duration > 0 {
-            items.append(MetadataItem(icon: "clock", label: activation.formattedDuration))
-            let hours = activation.duration / 3_600
-            if hours > 0 {
-                let rate = Double(activation.qsoCount) / hours
-                items.append(MetadataItem(icon: "speedometer", label: String(format: "%.1f/hr", rate)))
-            }
-        }
         if !activation.uniqueBands.isEmpty {
             items.append(MetadataItem(
                 icon: "dial.medium.fill",
@@ -153,57 +165,58 @@ extension SessionDetailView {
 // MARK: - Upload Section
 
 extension SessionDetailView {
-    var potaUploadSection: some View {
-        Section {
-            if isUploading {
-                HStack {
-                    ProgressView()
-                        .controlSize(.small)
-                    Text("Uploading...")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                    Spacer()
+    @ViewBuilder
+    private var inlineUploadRow: some View {
+        if isUploading {
+            HStack {
+                ProgressView()
+                    .controlSize(.small)
+                Text("Uploading...")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                Spacer()
+            }
+        } else if let activation, let onUpload {
+            Button {
+                isUploading = true
+                Task {
+                    let errors = await onUpload()
+                    uploadErrors = errors
+                    isUploading = false
                 }
-            } else if let activation, let onUpload {
-                Button {
-                    isUploading = true
-                    Task {
-                        let errors = await onUpload()
-                        uploadErrors = errors
-                        isUploading = false
-                    }
-                } label: {
-                    Label(
-                        "Upload \(activation.pendingCount) QSO\(activation.pendingCount == 1 ? "" : "s") to POTA",
-                        systemImage: "arrow.up.circle.fill"
-                    )
-                    .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
-                .disabled(isInMaintenance)
-                .listRowInsets(
-                    EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16)
+            } label: {
+                Label(
+                    "Upload \(activation.pendingCount) QSO\(activation.pendingCount == 1 ? "" : "s") to POTA",
+                    systemImage: "arrow.up.circle.fill"
                 )
+                .frame(maxWidth: .infinity)
             }
+            .buttonStyle(.borderedProminent)
+            .disabled(isInMaintenance)
+            .listRowInsets(
+                EdgeInsets(
+                    top: 8, leading: 16, bottom: 8, trailing: 16
+                )
+            )
+        }
 
-            if !uploadErrors.isEmpty {
-                ForEach(
-                    uploadErrors.sorted(by: { $0.key < $1.key }),
-                    id: \.key
-                ) { park, error in
-                    HStack(spacing: 8) {
-                        Image(systemName: "exclamationmark.triangle.fill")
-                            .foregroundStyle(.orange)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(park).font(.subheadline).fontWeight(.medium)
-                            Text(error).font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
+        if !uploadErrors.isEmpty {
+            ForEach(
+                uploadErrors.sorted(by: { $0.key < $1.key }),
+                id: \.key
+            ) { park, error in
+                HStack(spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(park)
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                        Text(error).font(.caption)
+                            .foregroundStyle(.secondary)
                     }
                 }
             }
-        } header: {
-            Label("Upload", systemImage: "arrow.up.circle")
         }
     }
 

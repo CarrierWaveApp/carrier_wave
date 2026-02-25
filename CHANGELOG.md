@@ -8,6 +8,8 @@ All notable changes to Carrier Wave will be documented in this file.
 - Add expandable spots summary row to sessions list showing region pills, distance range, and spot detail (matches logger aggregation pattern)
 
 ### Changed
+- Improve session detail view flow: move QSO list up to primary position (after header and map), collapse equipment/notes/photos into a "Details" disclosure group, move POTA upload button inline with activation info
+- Add stat strip (QSO count, duration, rate) to session and activation headers replacing flat LabeledContent rows; unify metadata grid pattern between POTA and non-POTA sessions
 - Show inline map preview in session detail view (tap to open full-screen map); remove "View Map" from overflow menu
 - Move spots section to bottom of session detail view, make collapsible (collapsed by default)
 - Show spot comment text below each spot row in session detail

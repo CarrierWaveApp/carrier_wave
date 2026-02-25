@@ -63,7 +63,7 @@ struct SessionDetailView: View {
             if activation != nil {
                 potaInfoSection
             } else if let session {
-                infoSection(session)
+                sessionSummarySection(session)
             }
 
             if let session, session.isRove {
@@ -71,6 +71,12 @@ struct SessionDetailView: View {
             }
 
             mapSection
+
+            qsoSection
+
+            if let recording {
+                recordingSection(recording)
+            }
 
             if let stats = activationStatistics, statisticianMode {
                 Section("Statistics") {
@@ -80,28 +86,12 @@ struct SessionDetailView: View {
             }
 
             if let session {
-                equipmentSection(session)
-                if session.attendees != nil || session.notes != nil {
-                    notesSection(session)
-                }
-                if !session.photoFilenames.isEmpty {
-                    photosSection(session)
-                }
-            }
-
-            if let recording {
-                recordingSection(recording)
-            }
-
-            if shouldShowUpload {
-                potaUploadSection
+                detailsSection(session)
             }
 
             if !matchingJobs.isEmpty {
                 potaJobsSection
             }
-
-            qsoSection
 
             if let session {
                 SessionSpotsSection(session: session)
