@@ -1,1 +1,2 @@
 Added spot-vs-QSO contact validation: CallsignEditDistance (CarrierWaveCore), SpotContactValidator (service), SpotContactMismatchBanner (view), wired into LoggerView layout/data/menu
+Brag Sheet Stats — Model and computation layer for period brag sheets (13 new files)

@@ -131,6 +131,27 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `SolarSnapshot.swift` | Hourly solar conditions snapshot from background polling |
 | `StationProfile.swift` | Station profile struct and UserDefaults-backed storage |
 
+## Brag Sheet Models (`CarrierWave/Models/BragSheet/`)
+| File | Purpose |
+|------|---------|
+| `BragSheetStatType.swift` | All brag sheet stat type enums with display metadata and category mapping |
+| `BragSheetCategory.swift` | Category groupings for organizing stats (totals, distance, POTA, etc.) |
+| `BragSheetPeriod.swift` | Time period enum (weekly/monthly/all-time) with date range computation |
+| `BragSheetPreset.swift` | Curated preset configurations (General, DXer, QRP, Activator, etc.) |
+| `BragSheetConfiguration.swift` | Per-period config model with UserDefaults persistence |
+| `BragSheetStatValue.swift` | Computed stat value variants for display (count, distance, contact, etc.) |
+
+## Brag Sheet Services (`CarrierWave/Services/BragSheet/`)
+| File | Purpose |
+|------|---------|
+| `BragSheetSnapshot.swift` | Lightweight Sendable QSO snapshot for brag sheet computation |
+| `BragSheetComputationActor.swift` | Background actor for computing brag sheet stats from QSO data |
+| `BragSheetComputationActor+Totals.swift` | Totals and Speed & Rate stat computation |
+| `BragSheetComputationActor+Distance.swift` | Distance, Power, and Geographic Reach stat computation |
+| `BragSheetComputationActor+Records.swift` | Volume Records, Streaks, CW, and Signal Quality stat computation |
+| `BragSheetComputationActor+POTA.swift` | POTA and Fun & Unique stat computation |
+| `ContinentMapper.swift` | DXCC entity number to continent mapping |
+
 ## Services (`CarrierWave/Services/`)
 | File | Purpose |
 |------|---------|

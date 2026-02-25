@@ -4,6 +4,9 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Add period brag sheet stats infrastructure: model layer (stat types, categories, presets, configuration) and background computation actor for weekly/monthly/all-time stats
+
 ## [1.46.0] - 2026-02-25
 
 ### Added
