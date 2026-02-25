@@ -13,6 +13,7 @@ Pure logic library that can be tested without iOS Simulator. Run tests with `mak
 | `Sources/CarrierWaveCore/ADIFParser.swift` | ADIF file format parsing |
 | `Sources/CarrierWaveCore/BandUtilities.swift` | Band derivation from frequency |
 | `Sources/CarrierWaveCore/CallsignDetector.swift` | Callsign regex detection, RST/grid/power parsing |
+| `Sources/CarrierWaveCore/CallsignEditDistance.swift` | Levenshtein edit distance for callsign comparison |
 | `Sources/CarrierWaveCore/CWTextElement.swift` | CW text element types for transcript highlighting |
 | `Sources/CarrierWaveCore/DeduplicationMatcher.swift` | Duplicate detection logic |
 | `Sources/CarrierWaveCore/DetectedCallsign.swift` | Detected callsign with context |
@@ -271,6 +272,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `SpotsService.swift` | Combined RBN + POTA spots service |
 | `P2PService.swift` | Park-to-park discovery via RBN skimmers near user's grid |
 | `SpotCommentsService.swift` | Background polling for POTA spot comments |
+| `SpotContactValidator.swift` | Spot-vs-QSO callsign mismatch detection (edit distance) |
 | `SpotMonitoringService.swift` | Background RBN/POTA spot polling (activator + hunter modes) |
 | `WorkedBeforeCache.swift` | Actor-based cache for worked-before spot checking |
 | `FT8AudioEngine.swift` | AVAudioEngine actor for FT8 RX/TX audio routing |
@@ -476,6 +478,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `POTAUploadPromptSheet.swift` | Post-session modal prompting POTA upload |
 | `SpotFilters.swift` | Band and mode filter enums for spots |
 | `QuickEntryPreview.swift` | Quick entry token display with color-coded badges |
+| `SpotContactMismatchBanner.swift` | Banner showing spot-vs-QSO callsign near-misses |
 | `SpotSummaryView.swift` | Compact spot monitoring summary with region breakdown |
 | `WebSDRPanelView.swift` | WebSDR connection status, recording controls, level meter |
 | `WebSDRPanelView+Subviews.swift` | Extension with level meter, buffer indicator, reconnecting/error views |

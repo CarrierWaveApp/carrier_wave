@@ -80,6 +80,10 @@ extension LoggerView {
             isPresented: $showEndSessionConfirmation,
             titleVisibility: .visible
         ) {
+            Button("Review Spot Mismatches") {
+                spotMismatchesDismissed = false
+                refreshSpotMismatches()
+            }
             Button("Pause Session") {
                 sessionManager?.pauseSession()
             }
