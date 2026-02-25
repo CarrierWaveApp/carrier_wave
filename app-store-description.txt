@@ -1,0 +1,19 @@
+Carrier Wave is a fast, modern QSO logger for amateur radio operators. Log contacts from the field or the shack, sync to your favorite services, and track your progress - all from your iPhone, iPad, or Apple Watch.
+
+KEY FEATURES
+
+- Fast command-driven logging with quick-entry shortcuts and keyboard accessory bar
+- Sync contacts to QRZ.com, Parks on the Air (POTA), and Ham2K LoFi
+- Real-time POTA and Reverse Beacon Network (RBN) spot monitoring with map view
+- POTA activation management with rove support, auto-spotting, and two-fer parks
+- CW recording and AI-powered transcription with karaoke-style playback
+- iCloud sync across all your devices
+- Automatic and manual database backups with iCloud Drive mirroring
+- ADIF import and export
+- Detailed statistics: bands, modes, DXCC entities, grids, states, parks
+- Social activity feed with friends list and on-air notifications
+- Apple Watch companion with live session updates and solar conditions
+- Landscape and iPad layouts with resizable sidebar panes
+- Accessibility: VoiceOver, Dynamic Type, and Reduce Motion support
+
+Carrier Wave is built for operators who want a fast, reliable logger that stays out of their way. Whether you are activating a park, chasing DX, or working a contest, it is designed to keep up with you.
