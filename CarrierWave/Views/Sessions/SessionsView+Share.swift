@@ -58,7 +58,6 @@ extension SessionsView {
             session: session,
             onShare: { activationToShare = activation },
             onExport: { activationToExport = activation },
-            onMap: { activationToMap = activation },
             activation: activation,
             activationMetadata: activationMetadata(for: activation),
             parkName: parkName(for: activation.parkReference),
@@ -94,14 +93,6 @@ extension SessionsView {
             },
             onExport: activations.first.map { act in
                 { activationToExport = act }
-            },
-            onMap: activations.isEmpty ? nil : {
-                roveStopsForMap = session.mergedRoveStops
-                if activations.count > 1 {
-                    activationToMap = mergedRoveActivation(activations)
-                } else if let act = activations.first {
-                    activationToMap = act
-                }
             },
             activation: merged,
             activationMetadata: meta,

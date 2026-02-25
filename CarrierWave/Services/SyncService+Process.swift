@@ -177,9 +177,10 @@ extension SyncService {
             guard let callsign = job.callsignUsed else {
                 continue
             }
+            let normalizedCall = POTAClient.normalizeCallsign(callsign)
 
             if let utcDate = job.utcDateString {
-                let key = "\(job.reference.uppercased())|\(callsign.uppercased())|\(utcDate)"
+                let key = "\(job.reference.uppercased())|\(normalizedCall)|\(utcDate)"
 
                 if job.status == .completed || job.status == .duplicate {
                     keys.confirmed.insert(key)
@@ -190,11 +191,11 @@ extension SyncService {
                 }
             } else if job.status == .completed || job.status == .duplicate {
                 let parkCallsign =
-                    "\(job.reference.uppercased())|\(callsign.uppercased())"
+                    "\(job.reference.uppercased())|\(normalizedCall)"
                 keys.nilDateConfirmed.insert(parkCallsign)
             } else if job.status.isFailure {
                 let parkCallsign =
-                    "\(job.reference.uppercased())|\(callsign.uppercased())"
+                    "\(job.reference.uppercased())|\(normalizedCall)"
                 keys.nilDateFailed.insert(parkCallsign)
             }
         }

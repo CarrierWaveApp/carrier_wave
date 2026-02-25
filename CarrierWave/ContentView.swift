@@ -308,11 +308,10 @@ extension ContentView {
     }
 
     var loggerTabContent: some View {
-        LoggerContainerView(
+        SessionsTabView(
             tourState: tourState,
-            onSessionEnd: {
-                selectedTab = .logs
-            },
+            potaClient: potaClient,
+            potaAuth: potaAuthService,
             onSessionStateChange: { hasSession in
                 loggerHasActiveSession = hasSession
             }

@@ -163,22 +163,6 @@ extension SyncService {
         return (result: result, maintenanceSkipped: false)
     }
 
-    /// Log QSOs that need POTA upload but have no park reference
-    private func logPOTAQSOsWithoutPark(_ qsos: [QSO]) async {
-        guard !qsos.isEmpty else {
-            return
-        }
-        let callsigns = qsos.prefix(5).map(\.callsign).joined(separator: ", ")
-        let more = qsos.count > 5 ? " (+\(qsos.count - 5) more)" : ""
-        await MainActor.run {
-            SyncDebugLog.shared.warning(
-                "\(qsos.count) QSO(s) need POTA upload but have no park reference: "
-                    + "\(callsigns)\(more)",
-                service: .pota
-            )
-        }
-    }
-
     /// Log failed QSOs for debugging (call from MainActor)
     @MainActor
     private func logFailedQSOs(_ qsos: [QSO], reason: String) {
@@ -265,26 +249,30 @@ extension SyncService {
     }
 
     func fetchQSOsNeedingUpload() throws -> [QSO] {
-        // Defense-in-depth: filter to primary callsign even though ImportService
-        // should not create upload markers for non-primary callsign QSOs.
-        // This catches any legacy data or edge cases.
-        let primaryCallsign = CallsignAliasService.shared.getCurrentCallsign()?.uppercased()
+        // Query from ServicePresence side — only loads records with needsUpload=true
+        // instead of fetching all 50k+ QSOs and filtering in memory.
+        let presenceDescriptor = FetchDescriptor<ServicePresence>(
+            predicate: #Predicate<ServicePresence> { $0.needsUpload == true }
+        )
+        let pendingPresence = try modelContext.fetch(presenceDescriptor)
 
-        let descriptor = FetchDescriptor<QSO>()
-        let allQSOs = try modelContext.fetch(descriptor)
-        return allQSOs.filter { qso in
-            // Never upload hidden (soft-deleted) QSOs
-            guard !qso.isHidden else {
-                return false
+        let primaryCallsign = CallsignAliasService.shared.getCurrentCallsign()?.uppercased()
+        var seen = Set<PersistentIdentifier>()
+        var result: [QSO] = []
+
+        for presence in pendingPresence {
+            guard let qso = presence.qso,
+                  !qso.isHidden,
+                  seen.insert(qso.persistentModelID).inserted
+            else {
+                continue
             }
-            // Must have at least one service needing upload
-            guard qso.servicePresence.contains(where: \.needsUpload) else {
-                return false
-            }
-            // Must match primary callsign (or be empty, or no primary configured)
             let qsoCallsign = qso.myCallsign.uppercased()
-            return qsoCallsign.isEmpty || primaryCallsign == nil || qsoCallsign == primaryCallsign
+            if qsoCallsign.isEmpty || primaryCallsign == nil || qsoCallsign == primaryCallsign {
+                result.append(qso)
+            }
         }
+        return result
     }
 
     func uploadToQRZ(qsos: [QSO]) async throws -> (uploaded: Int, skipped: Int) {
@@ -333,21 +321,25 @@ extension SyncService {
         // Filter out metadata pseudo-modes before processing
         let realQsos = qsos.filter { !Self.metadataModes.contains($0.mode.uppercased()) }
 
-        // Group by (park, UTC date) so each upload matches a single POTA activation.
-        // Without date grouping, multi-date uploads create jobs whose firstQSO date
-        // only covers one date, causing the reconciliation to reset QSOs from other
-        // dates back to needsUpload (producing duplicate uploads on every sync).
-        var expandedByParkAndDate: [String: [QSO]] = [:]
-        for qso in realQsos {
-            guard let parkRef = qso.parkReference, !parkRef.isEmpty else {
-                continue
-            }
+        var expandedByParkAndDate = groupQSOsByParkAndDate(realQsos)
 
-            let parks = POTAClient.splitParkReferences(parkRef)
-            let dateStr = Self.utcDateFormatter.string(from: qso.timestamp)
-            for park in parks {
-                let key = "\(park)|\(dateStr)"
-                expandedByParkAndDate[key, default: []].append(qso)
+        // Reject QSOs with invalid bands — POTA will reject them anyway
+        let badBandQSOs = filterInvalidBandQSOs(&expandedByParkAndDate)
+        if !badBandQSOs.isEmpty {
+            await logBadBandQSOs(badBandQSOs)
+        }
+
+        // Filter out QSOs that POTA already has (prevents duplicate upload loop).
+        // Uses potaRemoteQSOMap downloaded in the same sync cycle — O(1) lookups.
+        let skippedDuplicates = filterAlreadyUploadedPOTAQSOs(&expandedByParkAndDate)
+        expandedByParkAndDate = expandedByParkAndDate.filter { !$0.value.isEmpty }
+
+        if skippedDuplicates > 0 {
+            await MainActor.run {
+                SyncDebugLog.shared.info(
+                    "Pre-upload dedup: skipped \(skippedDuplicates) QSO(s) already on POTA",
+                    service: .pota
+                )
             }
         }
 
@@ -382,6 +374,26 @@ extension SyncService {
         return totalUploaded
     }
 
+    /// Group QSOs by (park, UTC date) so each upload matches a single POTA activation.
+    /// Without date grouping, multi-date uploads create jobs whose firstQSO date
+    /// only covers one date, causing the reconciliation to reset QSOs from other
+    /// dates back to needsUpload (producing duplicate uploads on every sync).
+    private func groupQSOsByParkAndDate(_ qsos: [QSO]) -> [String: [QSO]] {
+        var result: [String: [QSO]] = [:]
+        for qso in qsos {
+            guard let parkRef = qso.parkReference, !parkRef.isEmpty else {
+                continue
+            }
+            let parks = POTAClient.splitParkReferences(parkRef)
+            let dateStr = Self.utcDateFormatter.string(from: qso.timestamp)
+            for park in parks {
+                let key = "\(park)|\(dateStr)"
+                result[key, default: []].append(qso)
+            }
+        }
+        return result
+    }
+
     /// UTC date formatter for grouping QSOs by activation date
     private static let utcDateFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -389,26 +401,6 @@ extension SyncService {
         formatter.timeZone = TimeZone(identifier: "UTC")
         return formatter
     }()
-
-    /// Log POTA upload start with metadata filtering info and content summary
-    private func logPOTAUploadStart(qsos: [QSO], realQsos: [QSO], parkCount: Int) async {
-        let metadataCount = qsos.count - realQsos.count
-        await MainActor.run {
-            if metadataCount > 0 {
-                SyncDebugLog.shared.debug(
-                    "Filtered out \(metadataCount) metadata QSO(s) from POTA upload",
-                    service: .pota
-                )
-            }
-            let bands = Set(realQsos.map(\.band)).sorted().joined(separator: ", ")
-            let modes = Set(realQsos.map(\.mode)).sorted().joined(separator: ", ")
-            SyncDebugLog.shared.debug(
-                "POTA upload: \(realQsos.count) QSO(s) across \(parkCount) park(s) "
-                    + "bands=[\(bands)] modes=[\(modes)]",
-                service: .pota
-            )
-        }
-    }
 
     /// Upload QSOs for a single park to POTA (handles both single-park and two-fer QSOs)
     private func uploadParkToPOTA(parkRef: String, parkQSOs: [QSO]) async -> (

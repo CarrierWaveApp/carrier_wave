@@ -14,7 +14,6 @@ struct SessionDetailView: View {
     var session: LoggingSession?
     var onShare: (() -> Void)?
     var onExport: (() -> Void)?
-    var onMap: (() -> Void)?
 
     // MARK: POTA Properties (nil/empty when not a POTA activation)
 
@@ -64,11 +63,19 @@ struct SessionDetailView: View {
             if activation != nil {
                 potaInfoSection
             } else if let session {
-                infoSection(session)
+                sessionSummarySection(session)
             }
 
             if let session, session.isRove {
                 roveStopsSection(session)
+            }
+
+            mapSection
+
+            qsoSection
+
+            if let recording {
+                recordingSection(recording)
             }
 
             if let stats = activationStatistics, statisticianMode {
@@ -79,29 +86,16 @@ struct SessionDetailView: View {
             }
 
             if let session {
-                equipmentSection(session)
-                if session.attendees != nil || session.notes != nil {
-                    notesSection(session)
-                }
-                if !session.photoFilenames.isEmpty {
-                    photosSection(session)
-                }
-                SessionSpotsSection(session: session)
-            }
-
-            if let recording {
-                recordingSection(recording)
-            }
-
-            if shouldShowUpload {
-                potaUploadSection
+                detailsSection(session)
             }
 
             if !matchingJobs.isEmpty {
                 potaJobsSection
             }
 
-            qsoSection
+            if let session {
+                SessionSpotsSection(session: session)
+            }
         }
         .navigationTitle(navigationTitle)
         .navigationBarTitleDisplayMode(.inline)
@@ -189,7 +183,7 @@ struct SessionDetailView: View {
     }
 
     private var hasActions: Bool {
-        onShare != nil || onExport != nil || onMap != nil
+        onShare != nil || onExport != nil
     }
 
     private var actionsMenu: some View {
@@ -201,13 +195,6 @@ struct SessionDetailView: View {
                             showEditSheet = true
                         } label: {
                             Label("Edit Info", systemImage: "pencil")
-                        }
-                    }
-                    if let onMap {
-                        Button {
-                            onMap()
-                        } label: {
-                            Label("View Map", systemImage: "map")
                         }
                     }
                     if let onExport {

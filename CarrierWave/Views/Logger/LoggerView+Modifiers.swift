@@ -219,13 +219,13 @@ extension LoggerView {
         content
             .onAppear {
                 if sessionManager == nil {
-                    sessionManager = LoggingSessionManager(modelContext: modelContext)
+                    sessionManager = externalSessionManager
+                        ?? LoggingSessionManager(modelContext: modelContext)
                 }
                 sessionManager?.friendCallsigns = Set(
                     acceptedFriends.map { $0.friendCallsign.uppercased() }
                 )
                 refreshSessionQSOs()
-                refreshActiveSessions()
                 Task { await refreshPOTASpots() }
             }
             .task {
@@ -248,7 +248,6 @@ extension LoggerView {
             }
             .onChange(of: sessionManager?.activeSession?.id) { _, _ in
                 refreshSessionQSOs()
-                refreshActiveSessions()
             }
             .onChange(of: externalSpotSelection) { _, newValue in
                 if let selection = newValue {
@@ -256,27 +255,5 @@ extension LoggerView {
                     externalSpotSelection = nil
                 }
             }
-            .onReceive(
-                NotificationCenter.default.publisher(for: .didReceiveWatchStartSession)
-            ) { notification in
-                handleWatchStartSession(notification)
-            }
-    }
-
-    private func handleWatchStartSession(_ notification: Notification) {
-        guard let request = notification.userInfo?["request"]
-            as? WatchStartSessionRequest,
-            sessionManager?.hasActiveSession != true
-        else {
-            return
-        }
-        let type = ActivationType(rawValue: request.activationType) ?? .casual
-        sessionManager?.startSession(
-            myCallsign: request.myCallsign,
-            mode: request.mode,
-            frequency: request.frequency,
-            activationType: type,
-            parkReference: request.parkReference
-        )
     }
 }

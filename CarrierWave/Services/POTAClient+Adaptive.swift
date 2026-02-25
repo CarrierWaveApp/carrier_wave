@@ -50,11 +50,15 @@ extension POTAClient {
             let qsos = try await fetchActivationWithTimeout(activation)
             state.processedKeys.insert(key)
 
-            // Build dedup keys from raw remote QSOs for gap repair
+            // Build dedup keys from raw remote QSOs for gap repair.
+            // Use formUnion — POTA may report multiple activations for the same
+            // park+callsign+date (e.g. morning and evening sessions). Overwriting
+            // with `=` would discard earlier sessions, causing gap repair to flag
+            // those QSOs as missing and re-upload them as duplicates.
             let activationKey = buildActivationKeyForRemote(activation)
             let dedupKeys = Set(qsos.compactMap { buildRemoteDedupKey($0) })
             if !dedupKeys.isEmpty {
-                state.remoteQSOMap[activationKey] = dedupKeys
+                state.remoteQSOMap[activationKey, default: Set()].formUnion(dedupKeys)
             }
 
             switch importMode {
@@ -181,13 +185,45 @@ extension POTAClient {
     }
 }
 
+// MARK: - POTA Dedup Key Normalization
+
+extension POTAClient {
+    /// Strip portable/mobile suffixes from callsigns for activation key matching.
+    /// POTA may store "K7ABC/P" while the local QSO has "K7ABC" or vice versa.
+    /// Strips trailing segments of 1-3 chars (common suffixes: /P, /M, /MM, /QRP, /R).
+    nonisolated static func normalizeCallsign(_ callsign: String) -> String {
+        var base = callsign.uppercased().trimmingCharacters(in: .whitespaces)
+        // Strip trailing short suffixes (e.g., /P, /M, /QRP)
+        while let slashRange = base.range(of: "/", options: .backwards) {
+            let suffix = base[base.index(after: slashRange.lowerBound)...]
+            guard suffix.count <= 3 else {
+                break
+            }
+            base = String(base[..<slashRange.lowerBound])
+        }
+        return base
+    }
+
+    /// Normalize mode for dedup key matching.
+    /// POTA normalizes phone sub-modes (USB, LSB, FM, AM) to "SSB" in its `mode` field.
+    /// We must do the same locally so keys match.
+    nonisolated static func normalizeModeForDedup(_ mode: String) -> String {
+        let upper = mode.uppercased().trimmingCharacters(in: .whitespaces)
+        if ModeEquivalence.phoneModes.contains(upper) {
+            return "SSB"
+        }
+        return upper
+    }
+}
+
 // MARK: - Remote Dedup Key Helpers
 
 extension POTAClient {
     /// Build an activation key from a remote activation for gap repair matching.
     /// Format: "PARKREF|CALLSIGN|YYYY-MM-DD"
     func buildActivationKeyForRemote(_ activation: POTARemoteActivation) -> String {
-        "\(activation.reference.uppercased())|\(activation.callsign.uppercased())|\(activation.date)"
+        let call = POTAClient.normalizeCallsign(activation.callsign)
+        return "\(activation.reference.uppercased())|\(call)|\(activation.date)"
     }
 
     /// Build a dedup key from a remote QSO for gap repair comparison.
@@ -198,7 +234,7 @@ extension POTAClient {
         }
         let call = qso.workedCallsign.uppercased().trimmingCharacters(in: .whitespaces)
         let bandStr = band.uppercased().trimmingCharacters(in: .whitespaces)
-        let modeStr = mode.uppercased().trimmingCharacters(in: .whitespaces)
+        let modeStr = POTAClient.normalizeModeForDedup(mode)
 
         // Parse qsoDateTime ("yyyy-MM-dd'T'HH:mm:ss") to extract HH:MM bucketed
         let time = bucketRemoteTime(qso.qsoDateTime)

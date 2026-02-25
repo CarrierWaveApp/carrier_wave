@@ -12,6 +12,33 @@ All notable changes to Carrier Wave will be documented in this file.
 - Add first-time FT8 setup wizard for audio connection and radio configuration
 - Add auto-logging of completed FT8 QSOs with dB signal reports
 - Add FT8 integration with existing POTA/QRZ/LoFi sync pipeline
+- Add expandable spots summary row to sessions list showing region pills, distance range, and spot detail (matches logger aggregation pattern)
+
+### Changed
+- Improve session detail view flow: move QSO list up to primary position (after header and map), collapse equipment/notes/photos into a "Details" disclosure group, move POTA upload button inline with activation info
+- Add stat strip (QSO count, duration, rate) to session and activation headers replacing flat LabeledContent rows; unify metadata grid pattern between POTA and non-POTA sessions
+- Show inline map preview in session detail view (tap to open full-screen map); remove "View Map" from overflow menu
+- Move spots section to bottom of session detail view, make collapsible (collapsed by default)
+- Show spot comment text below each spot row in session detail
+- Fix spot row text wrapping with lineLimit, fixedSize on region badges, and layoutPriority on callsign
+- Drop trailing `.0` from whole-number frequencies in spot rows
+- Remove debug text from spots summary row and spots section
+- Merge Sessions and Logger into a single Sessions tab with state-driven view switching (idle shows session history, active shows logger)
+- Remove segmented picker from Logs tab (now QSOs-only; sessions moved to Sessions tab)
+- Rename Logger tab to Sessions with new icon; unhide by default for new and existing users
+- Session manager lifecycle owned by SessionsTabView, shared down to logger
+
+### Fixed
+- Fix crash in SpotSummaryView and SessionSpotsSummaryRow when ViewThatFits evaluates region pill ForEach on background rendering thread (extract to standalone structs to avoid inheriting @MainActor isolation)
+- Fix duplicate POTA QSO uploads caused by remote map overwrite when same park activated twice in one day (use formUnion instead of assignment)
+- Add pre-upload dedup filter checking QSOs against POTA remote map as defense-in-depth
+- Fix fetchQSOsNeedingUpload loading all QSOs into memory; query from ServicePresence side instead
+- Add diagnostic logging to POTA gap repair to surface dedup key mismatches
+- Reject QSOs with invalid/unknown band before POTA upload and alert user to fix data
+- Fix POTA duplicate upload loop caused by gap repair re-flagging confirmed QSOs due to dedup key mismatch
+- Fix reconciliation orphan reset re-uploading QSOs whose job aged out of POTA log
+- Normalize callsigns across all POTA dedup key comparisons (strip /P, /M, /QRP suffixes)
+- Normalize modes in POTA dedup keys (USB/LSB/FM/AM → SSB to match POTA's convention)
 
 ## [1.45.0] - 2026-02-24
 

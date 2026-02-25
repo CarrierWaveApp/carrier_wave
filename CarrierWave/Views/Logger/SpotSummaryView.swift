@@ -92,12 +92,14 @@ struct SpotSummaryView: View {
     private var regionPills: some View {
         // Snapshot region data before ViewThatFits — it evaluates children
         // on a background rendering thread, which crashes if it accesses
-        // @MainActor-isolated SpotMonitoringService properties.
+        // @MainActor-isolated properties. The content must live in a
+        // standalone struct so ForEach closures don't inherit @MainActor
+        // isolation from SpotSummaryView.
         let regions = summary.regionsWithSpots
         return ViewThatFits(in: .horizontal) {
-            regionPillRow(regions: regions, max: 4)
-            regionPillRow(regions: regions, max: 3)
-            regionPillRow(regions: regions, max: 2)
+            RegionPillRowContent(regions: regions, max: 4)
+            RegionPillRowContent(regions: regions, max: 3)
+            RegionPillRowContent(regions: regions, max: 2)
         }
     }
 
@@ -129,24 +131,6 @@ struct SpotSummaryView: View {
             }
             .frame(maxHeight: 200)
         }
-    }
-
-    private func regionPillRow(
-        regions: [(region: SpotRegion, count: Int)],
-        max count: Int
-    ) -> some View {
-        HStack(spacing: 4) {
-            ForEach(regions.prefix(count), id: \.region) { item in
-                RegionPill(region: item.region, count: item.count)
-            }
-
-            if regions.count > count {
-                Text("+\(regions.count - count)")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .fixedSize()
     }
 
     private func errorRow(_ message: String) -> some View {
@@ -239,6 +223,32 @@ struct SpotSummaryView: View {
         case 5...: .orange
         default: .red
         }
+    }
+}
+
+// MARK: - RegionPillRowContent
+
+/// Standalone struct for region pills inside ViewThatFits.
+/// Must NOT be a method on SpotSummaryView — ViewThatFits evaluates children
+/// on a background rendering thread, and ForEach closures inside @MainActor
+/// methods inherit that isolation, causing dispatch_assert_queue_fail.
+private struct RegionPillRowContent: View {
+    let regions: [(region: SpotRegion, count: Int)]
+    let max: Int
+
+    var body: some View {
+        HStack(spacing: 4) {
+            ForEach(regions.prefix(max), id: \.region) { item in
+                RegionPill(region: item.region, count: item.count)
+            }
+
+            if regions.count > max {
+                Text("+\(regions.count - max)")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .fixedSize()
     }
 }
 

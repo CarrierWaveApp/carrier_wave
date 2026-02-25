@@ -108,8 +108,9 @@ extension QSOProcessingActor {
             let key = buildActivationKey(
                 parkRef: park, callsign: qso.myCallsign, timestamp: qso.timestamp
             )
+            let normalizedCall = POTAClient.normalizeCallsign(qso.myCallsign)
             let parkCallsignKey =
-                "\(park.uppercased())|\(qso.myCallsign.uppercased())"
+                "\(park.uppercased())|\(normalizedCall)"
             if reconcileSubmitted(
                 presence: presence, key: key, parkCallsignKey: parkCallsignKey,
                 keys: keys, counts: &counts
@@ -160,8 +161,16 @@ extension QSOProcessingActor {
             } else {
                 counts.inProgress += 1
             }
+        } else if presence.lastConfirmedAt != nil {
+            // No matching job, but QSO was previously confirmed on POTA.
+            // The job aged out of the POTA log — promote back to isPresent
+            // rather than re-uploading (which creates a duplicate).
+            presence.isSubmitted = false
+            presence.isPresent = true
+            presence.lastConfirmedAt = Date()
+            counts.confirmed += 1
         } else {
-            // No matching job at all — POTA likely silently dropped the upload.
+            // No matching job and never confirmed — POTA likely silently dropped it.
             presence.isSubmitted = false
             presence.needsUpload = true
             counts.orphanReset += 1
@@ -171,11 +180,14 @@ extension QSOProcessingActor {
 
     /// Build an activation key for matching against POTA jobs.
     /// Format: "PARKREF|CALLSIGN|YYYY-MM-DD"
+    /// Callsign is normalized to strip portable suffixes (/P, /M, etc.)
+    /// so local and remote keys match regardless of suffix usage.
     func buildActivationKey(parkRef: String, callsign: String, timestamp: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
         formatter.timeZone = TimeZone(identifier: "UTC")
         let dateStr = formatter.string(from: timestamp)
-        return "\(parkRef.uppercased())|\(callsign.uppercased())|\(dateStr)"
+        let normalizedCall = POTAClient.normalizeCallsign(callsign)
+        return "\(parkRef.uppercased())|\(normalizedCall)|\(dateStr)"
     }
 }
