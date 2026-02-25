@@ -145,6 +145,7 @@ extension FT8Message {
         if tokens.count == 4 {
             return .cq(call: tokens[2], grid: tokens[3], modifier: tokens[1])
         }
+        // CQ with 1 token (bare "CQ") or 5+ tokens doesn't match standard FT8 formats
         return .freeText(tokens.joined(separator: " "))
     }
 
@@ -181,23 +182,24 @@ extension FT8Message {
         return .freeText(tokens.joined(separator: " "))
     }
 
-    /// Checks if a string matches the Maidenhead grid pattern (e.g. FN42)
+    /// Checks if a string matches the Maidenhead grid field pattern (e.g. FN42)
+    /// Valid grids are two letters A-R followed by two digits
     private static func isGrid(_ text: String) -> Bool {
         guard text.count == 4 else {
             return false
         }
-        let chars = Array(text)
-        return chars[0].isLetter && chars[1].isLetter
+        let upper = text.uppercased()
+        let chars = Array(upper)
+        return ("A" ... "R").contains(chars[0]) && ("A" ... "R").contains(chars[1])
             && chars[2].isNumber && chars[3].isNumber
     }
 
     /// Parses a signal report string like "-11" or "+05" into a dB value
     private static func parseSignalReport(_ text: String) -> Int? {
-        guard text.count >= 2 else {
-            return nil
-        }
-        let first = text.first!
-        guard first == "+" || first == "-" else {
+        guard text.count >= 2,
+              let first = text.first,
+              first == "+" || first == "-"
+        else {
             return nil
         }
         return Int(text)

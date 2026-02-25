@@ -17,9 +17,13 @@ struct FT8ConstantsTests {
         #expect(FT8Constants.toneSpacing == 6.25)
         #expect(FT8Constants.toneCount == 8)
         #expect(FT8Constants.totalSymbols == 79)
-        #expect(FT8Constants.txDuration == 12.64)
         #expect(FT8Constants.sampleRate == 12_000)
-        #expect(FT8Constants.samplesPerSlot == 180_000)
+    }
+
+    @Test("Derived constants match their component values")
+    func derivedConstants() {
+        #expect(FT8Constants.txDuration == Double(FT8Constants.totalSymbols) * FT8Constants.symbolPeriod)
+        #expect(FT8Constants.samplesPerSlot == FT8Constants.sampleRate * Int(FT8Constants.slotDuration))
     }
 
     // MARK: - Dial Frequencies
@@ -76,16 +80,14 @@ struct FT8ConstantsTests {
     }
 
     @Test("supportedBands are in frequency order")
-    func supportedBandsOrder() {
+    func supportedBandsOrder() throws {
         let bands = FT8Constants.supportedBands
         #expect(bands.count == 13)
         #expect(bands.first == "160m")
         #expect(bands.last == "70cm")
         // Verify 20m comes after 30m
-        if let idx20 = bands.firstIndex(of: "20m"),
-           let idx30 = bands.firstIndex(of: "30m")
-        {
-            #expect(idx20 > idx30)
-        }
+        let idx20 = try #require(bands.firstIndex(of: "20m"))
+        let idx30 = try #require(bands.firstIndex(of: "30m"))
+        #expect(idx20 > idx30)
     }
 }

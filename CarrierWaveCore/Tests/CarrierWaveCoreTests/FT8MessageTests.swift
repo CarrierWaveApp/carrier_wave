@@ -188,6 +188,13 @@ struct FT8MessageTests {
         #expect(a != other)
     }
 
+    @Test("Out-of-range grid letters parsed as free text")
+    func outOfRangeGridLetters() {
+        // Maidenhead grids use A-R only; 'Z' is out of range
+        let msg = FT8Message.parse("K1ABC W9XYZ ZZ99")
+        #expect(msg == .freeText("K1ABC W9XYZ ZZ99"))
+    }
+
     @Test("CQ with empty grid returns nil for grid property")
     func cqEmptyGrid() {
         let msg = FT8Message.cq(call: "K1ABC", grid: "", modifier: nil)

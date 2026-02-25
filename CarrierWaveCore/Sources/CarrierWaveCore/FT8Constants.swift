@@ -25,13 +25,13 @@ public enum FT8Constants: Sendable {
     public static let totalSymbols = 79
 
     /// Actual transmission duration in seconds (79 symbols x 0.160s)
-    public static let txDuration: Double = 12.64
+    public static let txDuration: Double = .init(totalSymbols) * symbolPeriod
 
     /// Audio sample rate in Hz
     public static let sampleRate = 12_000
 
     /// Number of audio samples in one 15-second slot
-    public static let samplesPerSlot = 180_000
+    public static let samplesPerSlot = sampleRate * Int(slotDuration)
 
     /// Bands in ascending frequency order
     public static let supportedBands: [String] = [
