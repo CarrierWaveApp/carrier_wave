@@ -4,6 +4,8 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.46.0] - 2026-02-25
+
 ### Added
 - Add FT8 digital mode with full TX/RX capability via ft8_lib C library
 - Add FT8 session view with compact waterfall, decode list, and auto-sequencing
