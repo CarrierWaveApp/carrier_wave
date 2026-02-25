@@ -62,40 +62,49 @@ extension LoggerView {
                     VStack(spacing: 12) {
                         // Only show QSO form when session is active
                         if sessionManager?.hasActiveSession == true {
-                            callsignInputSection
-                                .id("callsignInput")
+                            if sessionManager?.activeSession?.mode == "FT8",
+                               let manager = ft8Manager
+                            {
+                                FT8SessionView(
+                                    ft8Manager: manager,
+                                    parkReference: sessionManager?.activeSession?.parkReference
+                                )
+                            } else {
+                                callsignInputSection
+                                    .id("callsignInput")
 
-                            // POTA duplicate/new band warning
-                            if let status = potaDuplicateStatus {
-                                POTAStatusBanner(status: status)
-                                    .transition(
-                                        .asymmetric(
-                                            insertion: .move(edge: .top).combined(
-                                                with: .opacity
-                                            ),
-                                            removal: .opacity
+                                // POTA duplicate/new band warning
+                                if let status = potaDuplicateStatus {
+                                    POTAStatusBanner(status: status)
+                                        .transition(
+                                            .asymmetric(
+                                                insertion: .move(edge: .top).combined(
+                                                    with: .opacity
+                                                ),
+                                                removal: .opacity
+                                            )
                                         )
-                                    )
-                            }
-
-                            // Show callsign info or error when keyboard is not visible
-                            callsignLookupDisplay
-
-                            // Compact fields: State, RSTs, with More expansion
-                            if !hideFieldEntryForm {
-                                compactFieldsSection
-                            }
-
-                            // Cancel button when editing a QSO
-                            if editingQSO != nil {
-                                Button {
-                                    cancelEditingCallsign()
-                                } label: {
-                                    Text("Cancel Edit")
-                                        .font(.subheadline)
                                 }
-                                .buttonStyle(.bordered)
-                                .accessibilityLabel("Cancel editing callsign")
+
+                                // Show callsign info or error when keyboard is not visible
+                                callsignLookupDisplay
+
+                                // Compact fields: State, RSTs, with More expansion
+                                if !hideFieldEntryForm {
+                                    compactFieldsSection
+                                }
+
+                                // Cancel button when editing a QSO
+                                if editingQSO != nil {
+                                    Button {
+                                        cancelEditingCallsign()
+                                    } label: {
+                                        Text("Cancel Edit")
+                                            .font(.subheadline)
+                                    }
+                                    .buttonStyle(.bordered)
+                                    .accessibilityLabel("Cancel editing callsign")
+                                }
                             }
                         }
 
@@ -121,6 +130,23 @@ extension LoggerView {
                 IPadCommandStrip(onCommand: { command in
                     executeCommand(command)
                 })
+            }
+        }
+        .onChange(of: sessionManager?.activeSession?.mode) { _, newMode in
+            if newMode == "FT8" {
+                if ft8Manager == nil, let session = sessionManager {
+                    ft8Manager = FT8SessionManager(
+                        myCallsign: session.activeSession?.myCallsign ?? "",
+                        myGrid: session.activeSession?.myGrid ?? "",
+                        modelContext: modelContext,
+                        loggingSessionManager: session
+                    )
+                }
+            } else {
+                if let manager = ft8Manager {
+                    Task { await manager.stop() }
+                    ft8Manager = nil
+                }
             }
         }
     }

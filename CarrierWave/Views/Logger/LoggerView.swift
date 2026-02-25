@@ -46,6 +46,9 @@ struct LoggerView: View {
     /// QSO being edited (for tap-to-edit callsign feature)
     @State var editingQSO: QSO?
 
+    /// FT8 session manager (created when session mode is FT8)
+    @State var ft8Manager: FT8SessionManager?
+
     /// QSO pending swipe-to-delete confirmation
     @State var qsoToDelete: QSO?
 
