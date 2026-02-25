@@ -80,14 +80,20 @@ nonisolated final class SessionSpot {
         "\(source)-\(callsign)-\(Int(frequencyKHz))-\(Int(timestamp.timeIntervalSince1970))"
     }
 
-    /// Whether this is a POTA spot
+    /// Whether this is a human/POTA spot (excludes RBN relays via POTA API)
     var isPOTA: Bool {
-        source == "pota"
+        source == "pota" && !isRBNRelay
     }
 
-    /// Whether this is an RBN spot
+    /// Whether this is an RBN spot (includes RBN relays via POTA API)
     var isRBN: Bool {
-        source == "rbn"
+        source == "rbn" || isRBNRelay
+    }
+
+    /// RBN spots relayed through POTA API have source "pota" but
+    /// comments starting with "RBN" (e.g. "RBN 10 dB 25 WPM via VE7CC-#")
+    var isRBNRelay: Bool {
+        source == "pota" && (comments?.hasPrefix("RBN") ?? false)
     }
 
     /// SpotRegion enum accessor

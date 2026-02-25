@@ -50,7 +50,7 @@ enum AppTab: String, Hashable, CaseIterable, Codable {
     var icon: String {
         switch self {
         case .dashboard: "square.grid.2x2"
-        case .logger: "clock.arrow.trianglehead.counterclockwise.rotate.90"
+        case .logger: "antenna.radiowaves.left.and.right"
         case .logs: "list.bullet"
         case .cwDecoder: "waveform"
         case .map: "map"

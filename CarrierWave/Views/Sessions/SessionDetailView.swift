@@ -86,7 +86,6 @@ struct SessionDetailView: View {
                 if !session.photoFilenames.isEmpty {
                     photosSection(session)
                 }
-                SessionSpotsSection(session: session)
             }
 
             if let recording {
@@ -102,6 +101,10 @@ struct SessionDetailView: View {
             }
 
             qsoSection
+
+            if let session {
+                SessionSpotsSection(session: session)
+            }
         }
         .navigationTitle(navigationTitle)
         .navigationBarTitleDisplayMode(.inline)

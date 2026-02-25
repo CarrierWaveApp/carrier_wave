@@ -108,7 +108,8 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `LoggingSession.swift` | Logging session model with activation type, frequency, mode, equipment |
 | `LoggingSession+Frequencies.swift` | Static frequency maps, band derivation, computed display properties |
 | `RoveStop.swift` | Codable model for individual park stops within a POTA rove session |
-| `LoggerCommand.swift` | Command enum for logger input (FREQ, BAND, MODE, SPOT, RBN, POTA, P2P, SOLAR, WEATHER, MAP, WEBSDR) |
+| `LoggerCommand.swift` | Command enum for logger input (FREQ, BAND, MODE, SPOT, QRT, RBN, POTA, P2P, SOLAR, WEATHER, MAP, WEBSDR) |
+| `LoggerCommand+Suggestions.swift` | Command autocomplete suggestions and CommandSuggestion type |
 | `WebSDRRecording.swift` | WebSDR recording metadata (host, file path, duration, session link) |
 | `SDRTranscriptModels.swift` | SDR transcript types (Word, Line, Transcript, DetectedQSORange) for cw-swl integration |
 | `WebSDRFavorite.swift` | Favorited KiwiSDR receiver model (iCloud synced) |
@@ -388,6 +389,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `SessionDetailView+QSOs.swift` | QSO list sections (flat and rove-grouped) and data loading |
 | `SessionDetailView+POTA.swift` | POTA-specific sections: activation info, metadata grid, upload, jobs, recording |
 | `SessionSpotsSection.swift` | Persisted spots display section for session detail (POTA highlighted, RBN collapsed) |
+| `SessionSpotsSummaryRow.swift` | Expandable spots summary row for sessions list (region pills, distance range, logger-style aggregation) |
 | `SessionMetadataEditSheet.swift` | Unified edit sheet for all session types (equipment, photos, notes) |
 | `PhotoViewer.swift` | Full-screen photo viewer with pinch-to-zoom |
 

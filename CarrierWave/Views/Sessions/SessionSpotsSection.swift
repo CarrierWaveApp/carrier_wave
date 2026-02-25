@@ -1,38 +1,58 @@
 import SwiftData
 import SwiftUI
 
+// MARK: - SpotGroup
+
+/// A run of consecutive spots of the same type (human or RBN) when sorted by time.
+/// Human spots are individual rows; consecutive RBN spots collapse into an accordion.
+enum SpotGroup: Identifiable {
+    case human(SessionSpot)
+    case rbnRun(id: UUID, spots: [SessionSpot])
+
+    // MARK: Internal
+
+    var id: UUID {
+        switch self {
+        case let .human(spot): spot.id
+        case let .rbnRun(id, _): id
+        }
+    }
+}
+
 // MARK: - SessionSpotsSection
 
 /// Section displaying persisted spots for a completed logging session.
-/// POTA/human spots shown individually at top, RBN spots collapsed by default.
+/// Collapsible by default. Human spots shown individually; consecutive RBN
+/// spots grouped into mini-accordions interspersed chronologically.
 struct SessionSpotsSection: View {
     // MARK: Internal
 
     let session: LoggingSession
 
     var body: some View {
-        Group {
-            if !spots.isEmpty {
-                Section(sectionTitle) {
-                    // POTA spots shown individually at top
-                    ForEach(potaSpots) { spot in
-                        SessionSpotRow(spot: spot, isPOTAHighlight: true)
-                    }
-
-                    // RBN spots collapsed by default
-                    if !rbnSpots.isEmpty {
-                        rbnSummaryRow
-                        if isRBNExpanded {
-                            ForEach(rbnSpots) { spot in
-                                SessionSpotRow(spot: spot, isPOTAHighlight: false)
-                            }
+        if !spots.isEmpty {
+            Section {
+                DisclosureGroup(isExpanded: $isSectionExpanded) {
+                    ForEach(spotGroups) { group in
+                        switch group {
+                        case let .human(spot):
+                            SessionSpotRow(
+                                spot: spot, isPOTAHighlight: spot.isPOTA
+                            )
+                        case let .rbnRun(_, rbnSpots):
+                            RBNRunRow(spots: rbnSpots)
                         }
                     }
+                } label: {
+                    Text(sectionTitle)
                 }
             }
-        }
-        .task {
-            await loadSpots()
+            .task { await loadSpots() }
+        } else {
+            Color.clear
+                .frame(height: 0)
+                .listRowSeparator(.hidden)
+                .task { await loadSpots() }
         }
     }
 
@@ -40,64 +60,41 @@ struct SessionSpotsSection: View {
 
     @Environment(\.modelContext) private var modelContext
     @State private var spots: [SessionSpot] = []
-    @State private var isRBNExpanded = false
-
-    private var potaSpots: [SessionSpot] {
-        spots.filter(\.isPOTA).sorted { $0.timestamp > $1.timestamp }
-    }
-
-    private var rbnSpots: [SessionSpot] {
-        spots.filter(\.isRBN).sorted { $0.timestamp > $1.timestamp }
-    }
+    @State private var isSectionExpanded = false
 
     private var sectionTitle: String {
         let count = spots.count
         return "\(count) Spot\(count == 1 ? "" : "s")"
     }
 
-    private var rbnSummaryRow: some View {
-        Button {
-            withAnimation(.easeInOut(duration: 0.2)) {
-                isRBNExpanded.toggle()
-            }
-        } label: {
-            HStack(spacing: 8) {
-                Image(systemName: "dot.radiowaves.up.forward")
-                    .foregroundStyle(.blue)
+    /// Group spots into runs: each human spot is standalone,
+    /// consecutive RBN spots are collapsed into a single accordion.
+    private var spotGroups: [SpotGroup] {
+        let sorted = spots.sorted { $0.timestamp > $1.timestamp }
+        var groups: [SpotGroup] = []
+        var currentRBNRun: [SessionSpot] = []
 
-                Text("\(rbnSpots.count) RBN spot\(rbnSpots.count == 1 ? "" : "s")")
-                    .font(.subheadline)
-
-                regionPills
-
-                Spacer()
-
-                Image(systemName: isRBNExpanded ? "chevron.up" : "chevron.down")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-            }
-        }
-        .buttonStyle(.plain)
-    }
-
-    private var regionPills: some View {
-        let grouped = Dictionary(grouping: rbnSpots, by: \.spotRegion)
-        let sorted = grouped.sorted { $0.value.count > $1.value.count }
-        return HStack(spacing: 4) {
-            ForEach(sorted.prefix(3), id: \.key) { region, regionSpots in
-                Text("\(region.shortName) \(regionSpots.count)")
-                    .font(.caption2)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Color.blue.opacity(0.15))
-                    .clipShape(RoundedRectangle(cornerRadius: 4))
-            }
-            if sorted.count > 3 {
-                Text("+\(sorted.count - 3)")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+        for spot in sorted {
+            if spot.isRBN {
+                currentRBNRun.append(spot)
+            } else {
+                if !currentRBNRun.isEmpty {
+                    groups.append(.rbnRun(
+                        id: currentRBNRun[0].id,
+                        spots: currentRBNRun
+                    ))
+                    currentRBNRun = []
+                }
+                groups.append(.human(spot))
             }
         }
+        if !currentRBNRun.isEmpty {
+            groups.append(.rbnRun(
+                id: currentRBNRun[0].id,
+                spots: currentRBNRun
+            ))
+        }
+        return groups
     }
 
     /// Use .task for performance compliance (no @Query)
@@ -116,6 +113,72 @@ struct SessionSpotsSection: View {
     }
 }
 
+// MARK: - RBNRunRow
+
+/// Collapsible row for a run of consecutive RBN spots.
+struct RBNRunRow: View {
+    // MARK: Internal
+
+    let spots: [SessionSpot]
+
+    var body: some View {
+        Button {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                isExpanded.toggle()
+            }
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "dot.radiowaves.up.forward")
+                    .foregroundStyle(.blue)
+
+                Text("\(spots.count) RBN")
+                    .font(.subheadline)
+
+                regionPills
+
+                Spacer()
+
+                Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
+        }
+        .buttonStyle(.plain)
+
+        if isExpanded {
+            ForEach(spots) { spot in
+                SessionSpotRow(spot: spot, isPOTAHighlight: false)
+            }
+        }
+    }
+
+    // MARK: Private
+
+    @State private var isExpanded = false
+
+    private var regionPills: some View {
+        let grouped = Dictionary(grouping: spots, by: \.spotRegion)
+        let sorted = grouped.sorted { $0.value.count > $1.value.count }
+        return HStack(spacing: 4) {
+            ForEach(sorted.prefix(3), id: \.key) { region, regionSpots in
+                Text("\(region.shortName) \(regionSpots.count)")
+                    .font(.caption2)
+                    .lineLimit(1)
+                    .fixedSize()
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Color.blue.opacity(0.15))
+                    .clipShape(RoundedRectangle(cornerRadius: 4))
+            }
+            if sorted.count > 3 {
+                Text("+\(sorted.count - 3)")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+}
+
 // MARK: - SessionSpotRow
 
 /// Individual spot row for the session detail view.
@@ -126,56 +189,14 @@ struct SessionSpotRow: View {
     let isPOTAHighlight: Bool
 
     var body: some View {
-        HStack(spacing: 8) {
-            // Source icon
-            if isPOTAHighlight {
-                Image(systemName: "leaf.fill")
-                    .font(.caption)
-                    .foregroundStyle(.green)
-            } else {
-                regionBadge
-            }
-
-            // Callsign or spotter
-            Text(displayCallsign)
-                .font(.system(.subheadline, design: .monospaced))
-
-            Spacer()
-
-            // Frequency
-            Text(formattedFrequency)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
-            // Mode
-            Text(spot.mode)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
-            // SNR / WPM for RBN
-            if let snr = spot.snr {
-                Text("\(snr) dB")
-                    .font(.caption2)
-                    .foregroundStyle(snrColor(snr))
-            }
-
-            if let wpm = spot.wpm {
-                Text("\(wpm) wpm")
+        VStack(alignment: .leading, spacing: 2) {
+            mainRow
+            if let comments = spot.comments, !comments.isEmpty {
+                Text(comments)
                     .font(.caption2)
                     .foregroundStyle(.secondary)
+                    .lineLimit(2)
             }
-
-            // Distance
-            if let meters = spot.distanceMeters {
-                Text(UnitFormatter.distance(meters / 1_000.0))
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-            }
-
-            // Time
-            Text(spot.timestamp.formatted(date: .omitted, time: .shortened))
-                .font(.caption)
-                .foregroundStyle(.secondary)
         }
     }
 
@@ -192,7 +213,59 @@ struct SessionSpotRow: View {
     }
 
     private var formattedFrequency: String {
-        String(format: "%.1f", spot.frequencyKHz)
+        let freq = spot.frequencyKHz
+        if freq == freq.rounded(.down) {
+            return String(format: "%.0f", freq)
+        }
+        return String(format: "%.1f", freq)
+    }
+
+    private var mainRow: some View {
+        HStack(spacing: 8) {
+            if isPOTAHighlight {
+                Image(systemName: "leaf.fill")
+                    .font(.caption)
+                    .foregroundStyle(.green)
+            } else {
+                regionBadge
+            }
+
+            Text(displayCallsign)
+                .font(.system(.subheadline, design: .monospaced))
+                .lineLimit(1)
+                .layoutPriority(1)
+
+            Spacer()
+
+            Text(formattedFrequency)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+
+            Text(spot.mode)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+
+            if let snr = spot.snr {
+                Text("\(snr) dB")
+                    .font(.caption2)
+                    .foregroundStyle(snrColor(snr))
+                    .lineLimit(1)
+            }
+
+            if let wpm = spot.wpm {
+                Text("\(wpm) wpm")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+
+            Text(spot.timestamp.formatted(date: .omitted, time: .shortened))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+        }
     }
 
     private var regionBadge: some View {
@@ -204,6 +277,8 @@ struct SessionSpotRow: View {
             .padding(.vertical, 2)
             .background(regionColor(spot.spotRegion))
             .clipShape(RoundedRectangle(cornerRadius: 4))
+            .fixedSize()
+            .lineLimit(1)
     }
 
     private func regionColor(_ region: SpotRegion) -> Color {

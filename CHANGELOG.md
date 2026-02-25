@@ -4,7 +4,15 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Add expandable spots summary row to sessions list showing region pills, distance range, and spot detail (matches logger aggregation pattern)
+
 ### Changed
+- Move spots section to bottom of session detail view, make collapsible (collapsed by default)
+- Show spot comment text below each spot row in session detail
+- Fix spot row text wrapping with lineLimit, fixedSize on region badges, and layoutPriority on callsign
+- Drop trailing `.0` from whole-number frequencies in spot rows
+- Remove debug text from spots summary row and spots section
 - Merge Sessions and Logger into a single Sessions tab with state-driven view switching (idle shows session history, active shows logger)
 - Remove segmented picker from Logs tab (now QSOs-only; sessions moved to Sessions tab)
 - Rename Logger tab to Sessions with new icon; unhide by default for new and existing users
