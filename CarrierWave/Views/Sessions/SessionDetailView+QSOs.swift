@@ -158,6 +158,18 @@ extension SessionDetailView {
         let spots = (try? modelContext.fetch(spotDescriptor)) ?? []
         if !spots.isEmpty {
             spotQSOMatch = SpotQSOMatch(qsos: qsos, spots: spots)
+
+            // Compute spot-vs-QSO mismatch warnings
+            let validQSOs = qsos.filter { qso in
+                let mode = qso.mode.uppercased()
+                return mode != "WEATHER" && mode != "SOLAR" && mode != "NOTE"
+            }
+            spotMismatches = SpotContactValidator.findMismatches(
+                spots: spots,
+                qsos: validQSOs
+            )
+        } else {
+            spotMismatches = []
         }
     }
 

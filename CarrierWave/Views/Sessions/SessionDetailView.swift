@@ -46,6 +46,8 @@ struct SessionDetailView: View {
     @State var activationStatistics: ActivationStatistics?
 
     @State var spotQSOMatch: SpotQSOMatch?
+    @State var spotMismatches: [SpotContactMismatch] = []
+    @State var spotMismatchesDismissed = false
     @State var showEditSheet = false
     @State var selectedPhoto: PhotoItem?
 
@@ -72,6 +74,24 @@ struct SessionDetailView: View {
             }
 
             mapSection
+
+            if !spotMismatchesDismissed, !spotMismatches.isEmpty {
+                Section {
+                    SpotContactMismatchBanner(
+                        mismatches: spotMismatches,
+                        onDismiss: {
+                            withAnimation { spotMismatchesDismissed = true }
+                        },
+                        onTapMismatch: { mismatch in
+                            if let qso = qsos.first(where: { $0.id == mismatch.qsoId }) {
+                                qsoToEdit = qso
+                            }
+                        }
+                    )
+                }
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets())
+            }
 
             qsoSection
 

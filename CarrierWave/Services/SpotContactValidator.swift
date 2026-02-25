@@ -25,13 +25,22 @@ struct SpotContactMismatch: Identifiable, Sendable {
 
 /// Compares session spots against logged QSOs to find potential mislogs.
 ///
-/// A spot callsign within edit distance 2 of a logged QSO callsign (but not
+/// Session spots record spots **about** the operator: RBN nodes hearing your
+/// signal, or POTA spotters spotting your activation. The `callsign` field is
+/// always YOUR callsign. The relevant field for mismatch detection is `spotter`
+/// on POTA spots — the hunter who spotted (and likely worked) you.
+///
+/// A spotter callsign within edit distance 2 of a logged QSO callsign (but not
 /// an exact match) suggests the operator may have copied the callsign wrong.
 enum SpotContactValidator {
     /// Maximum edit distance to consider a near-miss.
     static let maxEditDistance = 2
 
     /// Compare spots against QSOs for a session, returning potential mismatches.
+    ///
+    /// For POTA spots, compares the `spotter` (the hunter who spotted you) against
+    /// QSO callsigns. RBN spots are skipped — their spotters are skimmer nodes,
+    /// not stations you worked.
     ///
     /// - Parameters:
     ///   - spots: SessionSpot records for the session
@@ -45,33 +54,44 @@ enum SpotContactValidator {
             return []
         }
 
-        let spotCallsigns = Set(spots.map { $0.callsign.uppercased() })
+        // Extract spotter callsigns from POTA spots (non-self, non-RBN).
+        // These are hunters who spotted (and likely worked) the operator.
+        let spotterCallsigns = Set(
+            spots
+                .filter { $0.isPOTA && !$0.isSelfSpot }
+                .compactMap { $0.spotter?.uppercased() }
+        )
+
+        guard !spotterCallsigns.isEmpty else {
+            return []
+        }
+
         let qsoCallsigns = Set(qsos.map { $0.callsign.uppercased() })
 
-        // For each QSO callsign, check if any spot is a near-match
-        // Skip QSOs whose callsign exactly matches a spot (that's correct)
+        // For each QSO callsign, check if any spotter is a near-match
+        // Skip QSOs whose callsign exactly matches a spotter (that's correct)
         var bestByQSO: [UUID: SpotContactMismatch] = [:]
 
         for qso in qsos {
             let qsoCall = qso.callsign.uppercased()
 
-            // If this QSO callsign exactly matches a spot, no problem
-            if spotCallsigns.contains(qsoCall) {
+            // If this QSO callsign exactly matches a spotter, no problem
+            if spotterCallsigns.contains(qsoCall) {
                 continue
             }
 
-            // Find near-matches among spot callsigns
+            // Find near-matches among spotter callsigns
             let nearMatches = CallsignEditDistance.findNearMatches(
                 for: qsoCall,
                 maxDistance: maxEditDistance,
-                candidates: spotCallsigns
+                candidates: spotterCallsigns
             )
 
             guard let closest = nearMatches.first else {
                 continue
             }
 
-            // Also skip if the spot callsign was already logged as a different QSO
+            // Also skip if the spotter callsign was already logged as a different QSO
             // (the operator worked both stations, no mismatch)
             if qsoCallsigns.contains(closest.callsign) {
                 continue
@@ -79,7 +99,7 @@ enum SpotContactValidator {
 
             // Find the actual spot record for context
             let matchingSpot = spots.first {
-                $0.callsign.uppercased() == closest.callsign
+                $0.spotter?.uppercased() == closest.callsign
             }
 
             let mismatch = SpotContactMismatch(
