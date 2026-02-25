@@ -111,6 +111,79 @@ struct FT8QSOStateMachineTests {
         #expect(qso?.myReport == -7)
     }
 
+    // MARK: - TX Message Format
+
+    @Test("reportSent TX message formats negative dB correctly")
+    func reportSentNegativeDB() {
+        var sm = FT8QSOStateMachine(myCallsign: myCall, myGrid: myGrid)
+        sm.initiateCall(to: "W9XYZ", theirGrid: "EN37")
+        sm.processMessage(.signalReport(from: "W9XYZ", to: myCall, dB: -12))
+        sm.myReport = -7
+        #expect(sm.nextTXMessage == "W9XYZ \(myCall) -07")
+    }
+
+    @Test("reportSent TX message formats positive dB correctly")
+    func reportSentPositiveDB() {
+        var sm = FT8QSOStateMachine(myCallsign: myCall, myGrid: myGrid)
+        sm.initiateCall(to: "W9XYZ", theirGrid: "EN37")
+        sm.processMessage(.signalReport(from: "W9XYZ", to: myCall, dB: -12))
+        sm.myReport = 5
+        #expect(sm.nextTXMessage == "W9XYZ \(myCall) +05")
+    }
+
+    // MARK: - CQ Duplicate Prevention
+
+    @Test("CQ mode skips already-worked station")
+    func cqSkipsWorkedStation() {
+        var sm = FT8QSOStateMachine(myCallsign: myCall, myGrid: myGrid)
+        sm.setCQMode(modifier: nil)
+        sm.markWorked("W9XYZ")
+        sm.processMessage(.directed(from: "W9XYZ", to: myCall, grid: "EN37"))
+        #expect(sm.state == .idle, "Should not start QSO with worked station in CQ mode")
+    }
+
+    // MARK: - Third-Party Messages
+
+    @Test("Third-party message does not reset timeout counter")
+    func thirdPartyDoesNotResetTimeout() {
+        var sm = FT8QSOStateMachine(myCallsign: myCall, myGrid: myGrid)
+        sm.initiateCall(to: "W9XYZ", theirGrid: "EN37")
+
+        // Advance 7 cycles (one short of timeout)
+        for _ in 0 ..< 7 {
+            sm.advanceCycle()
+        }
+        // A different station calls us — should NOT reset timeout
+        sm.processMessage(.signalReport(from: "AA1BB", to: myCall, dB: -5))
+        sm.advanceCycle()
+        #expect(sm.state == .idle, "Third-party message should not prevent timeout")
+    }
+
+    // MARK: - Timeout Field Reset
+
+    @Test("Timeout resets QSO fields")
+    func timeoutResetsFields() {
+        var sm = FT8QSOStateMachine(myCallsign: myCall, myGrid: myGrid)
+        sm.initiateCall(to: "W9XYZ", theirGrid: "EN37")
+
+        for _ in 0 ..< 10 {
+            sm.advanceCycle()
+        }
+        #expect(sm.theirCallsign == nil)
+        #expect(sm.theirGrid == nil)
+        #expect(sm.theirReport == nil)
+    }
+
+    // MARK: - RR73 State Restrictions
+
+    @Test("RR73 from calling state does not complete QSO")
+    func rr73FromCallingIgnored() {
+        var sm = FT8QSOStateMachine(myCallsign: myCall, myGrid: myGrid)
+        sm.initiateCall(to: "W9XYZ", theirGrid: "EN37")
+        sm.processMessage(.rogerEnd(from: "W9XYZ", to: myCall))
+        #expect(sm.state == .calling, "RR73 in calling state should be ignored")
+    }
+
     // MARK: - Irrelevant Messages
 
     @Test("Ignores messages not directed at us")
@@ -121,5 +194,14 @@ struct FT8QSOStateMachineTests {
         // Message between other stations
         sm.processMessage(.signalReport(from: "AA1BB", to: "CC2DD", dB: -5))
         #expect(sm.state == .calling, "Should ignore messages not for us")
+    }
+
+    // MARK: - completedQSO Invariant
+
+    @Test("completedQSO returns nil when not complete")
+    func completedQSONilBeforeComplete() {
+        var sm = FT8QSOStateMachine(myCallsign: myCall, myGrid: myGrid)
+        sm.initiateCall(to: "W9XYZ", theirGrid: "EN37")
+        #expect(sm.completedQSO == nil)
     }
 }

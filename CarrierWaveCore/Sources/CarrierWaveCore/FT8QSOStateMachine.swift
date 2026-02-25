@@ -71,7 +71,7 @@ public struct FT8QSOStateMachine: Sendable {
             guard let their = theirCallsign, let report = myReport else {
                 return nil
             }
-            let sign = report >= 0 ? "+" : ""
+            let sign = report >= 0 ? "+" : "-"
             return "\(their) \(myCallsign) \(sign)\(String(format: "%02d", abs(report)))"
 
         case .reportReceived:
@@ -135,7 +135,10 @@ public struct FT8QSOStateMachine: Sendable {
             return
         }
 
-        guard message.isDirectedTo(myCallsign) else {
+        guard message.isDirectedTo(myCallsign),
+              let sender = message.callerCallsign,
+              sender.uppercased() == theirCallsign?.uppercased()
+        else {
             return
         }
         cyclesSinceLastResponse = 0
@@ -153,8 +156,8 @@ public struct FT8QSOStateMachine: Sendable {
              (.reportReceived, .end):
             markComplete()
 
-        case (_, .rogerEnd):
-            // RR73 at any stage completes the QSO
+        case (.reportSent, .rogerEnd):
+            // RR73 from reportSent also completes (skipping R+report)
             markComplete()
 
         default:
@@ -217,7 +220,8 @@ public struct FT8QSOStateMachine: Sendable {
             return false
         }
         guard case let .directed(from, to, grid) = message,
-              to.uppercased() == myCallsign.uppercased()
+              to.uppercased() == myCallsign.uppercased(),
+              !workedCallsigns.contains(from.uppercased())
         else {
             return false
         }
