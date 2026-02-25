@@ -38,6 +38,7 @@ class SyncService: ObservableObject {
     @Published var syncPhase: SyncPhase?
     @Published var syncProgress = SyncProgress()
     @Published var lastSyncResults: [ServiceType: ServiceSyncReport] = [:]
+    @Published var serviceSyncStates: [ServiceType: ServiceSyncPhase] = [:]
 
     let modelContext: ModelContext
     let qrzClient: QRZClient
@@ -68,10 +69,35 @@ class SyncService: ObservableObject {
         UserDefaults.standard.bool(forKey: "readOnlyMode")
     }
 
+    /// Initialize per-service sync states based on which services are configured
+    func initializeServiceSyncStates() {
+        var states: [ServiceType: ServiceSyncPhase] = [:]
+        if qrzClient.hasApiKey() {
+            states[.qrz] = .waiting
+        }
+        if potaAuthService.isConfigured, !POTAClient.isInMaintenanceWindow() {
+            states[.pota] = .waiting
+        }
+        if lofiClient.isConfigured, lofiClient.isLinked {
+            states[.lofi] = .waiting
+        }
+        if hamrsClient.isConfigured {
+            states[.hamrs] = .waiting
+        }
+        if lotwClient.hasCredentials() {
+            states[.lotw] = .waiting
+        }
+        if clublogClient.isConfigured {
+            states[.clublog] = .waiting
+        }
+        serviceSyncStates = states
+    }
+
     /// Full sync: download from all sources, deduplicate, upload to all destinations
     func syncAll() async throws -> SyncResult {
         isSyncing = true
         syncProgress.reset()
+        initializeServiceSyncStates()
         let debugLog = SyncDebugLog.shared
         debugLog.info("Starting full sync")
 
@@ -84,6 +110,7 @@ class SyncService: ObservableObject {
             isSyncing = false
             syncPhase = nil
             syncProgress.reset()
+            serviceSyncStates = [:]
             lastSyncDate = Date()
             debugLog.info("Sync complete")
         }

@@ -94,6 +94,9 @@ struct DashboardView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
+                    if syncService.isSyncing {
+                        SyncProgressCard(syncService: syncService)
+                    }
                     if verticalSizeClass == .compact {
                         // Landscape: two-column layout
                         combinedStreaksAndStatsCard
@@ -239,17 +242,12 @@ struct DashboardView: View {
 
     private var toolbarButtons: some View {
         HStack(spacing: 12) {
-            if debugMode {
+            if debugMode, !isSyncing {
                 Button {
                     Task { await performDownloadOnly() }
                 } label: {
-                    if isSyncing {
-                        syncProgressLabel
-                    } else {
-                        Image(systemName: "arrow.down.circle")
-                    }
+                    Image(systemName: "arrow.down.circle")
                 }
-                .disabled(isSyncing)
                 .accessibilityLabel("Download only")
             }
 
@@ -257,48 +255,13 @@ struct DashboardView: View {
                 Task { await performFullSync() }
             } label: {
                 if isSyncing {
-                    syncProgressLabel
+                    ProgressView()
                 } else {
                     Image(systemName: "arrow.triangle.2.circlepath")
                 }
             }
             .disabled(isSyncing)
             .accessibilityLabel("Sync all services")
-        }
-    }
-
-    @ViewBuilder
-    private var syncProgressLabel: some View {
-        if syncService.syncPhase == .processing,
-           let processingProgress = syncService.syncProgress.processingProgress
-        {
-            // Show progress bar for processing phase
-            HStack(spacing: 6) {
-                ProgressView(value: processingProgress)
-                    .frame(width: 60)
-                Text(syncService.syncProgress.processingPhase)
-                    .font(.caption)
-                    .lineLimit(1)
-            }
-        } else if let lofiProgress = syncService.syncProgress.lofiProgress {
-            // Show progress bar for LoFi sync (regardless of current phase, since downloads are parallel)
-            HStack(spacing: 6) {
-                ProgressView(value: lofiProgress)
-                    .frame(width: 60)
-                Text("\(syncService.syncProgress.lofiDownloadedQSOs)")
-                    .font(.caption)
-                    .monospacedDigit()
-            }
-        } else {
-            // Show spinner with count for other services
-            HStack(spacing: 4) {
-                ProgressView()
-                if syncService.syncProgress.downloadedQSOCount > 0 {
-                    Text("\(syncService.syncProgress.downloadedQSOCount)")
-                        .font(.caption)
-                        .monospacedDigit()
-                }
-            }
         }
     }
 

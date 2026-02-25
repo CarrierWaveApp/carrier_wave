@@ -215,13 +215,25 @@ extension SyncService {
     private func uploadQRZBatch(qsos: [QSO], timeout: TimeInterval) async -> (
         ServiceType, Result<Int, Error>
     ) {
-        await MainActor.run { self.syncPhase = .uploading(service: .qrz) }
+        await MainActor.run {
+            self.syncPhase = .uploading(service: .qrz)
+            self.serviceSyncStates[.qrz] = .uploading
+        }
         do {
             let result = try await withTimeout(seconds: timeout, service: .qrz) {
                 try await self.uploadToQRZ(qsos: qsos)
             }
+            let downloadedCount = serviceSyncStates[.qrz]?.downloadedCount ?? 0
+            await MainActor.run {
+                self.serviceSyncStates[.qrz] = .complete(
+                    downloaded: downloadedCount, uploaded: result.uploaded
+                )
+            }
             return (.qrz, .success(result.uploaded))
         } catch {
+            await MainActor.run {
+                self.serviceSyncStates[.qrz] = .error(error.localizedDescription)
+            }
             return (.qrz, .failure(error))
         }
     }
@@ -229,13 +241,25 @@ extension SyncService {
     private func uploadPOTABatch(qsos: [QSO], timeout: TimeInterval) async -> (
         ServiceType, Result<Int, Error>
     ) {
-        await MainActor.run { self.syncPhase = .uploading(service: .pota) }
+        await MainActor.run {
+            self.syncPhase = .uploading(service: .pota)
+            self.serviceSyncStates[.pota] = .uploading
+        }
         do {
             let count = try await withTimeout(seconds: timeout, service: .pota) {
                 try await self.uploadToPOTA(qsos: qsos)
             }
+            let downloadedCount = serviceSyncStates[.pota]?.downloadedCount ?? 0
+            await MainActor.run {
+                self.serviceSyncStates[.pota] = .complete(
+                    downloaded: downloadedCount, uploaded: count
+                )
+            }
             return (.pota, .success(count))
         } catch {
+            await MainActor.run {
+                self.serviceSyncStates[.pota] = .error(error.localizedDescription)
+            }
             return (.pota, .failure(error))
         }
     }
@@ -468,9 +492,8 @@ extension SyncService {
             )
         }
         SyncDebugLog.shared.info(
-            "Park \(parkRef): \(result.qsosAccepted) QSO(s) accepted, "
-                + "\(parkQSOs.count) marked submitted in \(durationMs)ms. "
-                + "message=\(result.message ?? "nil")",
+            "Park \(parkRef): \(result.qsosAccepted) accepted, "
+                + "\(parkQSOs.count) submitted in \(durationMs)ms. msg=\(result.message ?? "nil")",
             service: .pota
         )
     }

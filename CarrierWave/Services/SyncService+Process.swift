@@ -214,81 +214,48 @@ extension SyncService {
 
     /// Log the results of POTA presence reconciliation.
     private func logPOTAReconcileResult(_ result: QSOProcessingActor.POTAReconcileResult) {
-        logPOTASubmitResults(result)
-        logPOTADeadStateResults(result)
-
-        let totalChanges =
-            result.resetCount + result.confirmedCount
-                + result.failedResetCount + result.orphanResetCount
-                + result.staleResetCount + result.deadStateConfirmedCount
-                + result.deadStateResetCount
-        if totalChanges == 0, result.inProgressCount == 0 {
-            SyncDebugLog.shared.debug(
-                "POTA reconciliation: no changes needed", service: .pota
-            )
-        }
-    }
-
-    /// Log submit-related reconciliation results.
-    private func logPOTASubmitResults(_ result: QSOProcessingActor.POTAReconcileResult) {
         let debugLog = SyncDebugLog.shared
-        if result.resetCount > 0 {
-            debugLog.warning(
-                "POTA reconciliation: reset \(result.resetCount) presence record(s) "
-                    + "(DB said uploaded but no completed job found)",
-                service: .pota
+        let totalChanges =
+            result.confirmedCount + result.failedResetCount
+                + result.orphanResetCount + result.staleResetCount
+        if totalChanges == 0, result.inProgressCount == 0 {
+            debugLog.debug(
+                "POTA job reconciliation: no changes needed", service: .pota
             )
+            return
         }
+
         if result.confirmedCount > 0 {
             debugLog.info(
-                "POTA reconciliation: confirmed \(result.confirmedCount) submitted upload(s)",
+                "POTA job reconciliation: confirmed \(result.confirmedCount) submitted upload(s)",
                 service: .pota
             )
         }
         if result.failedResetCount > 0 {
             debugLog.warning(
-                "POTA reconciliation: reset \(result.failedResetCount) submitted upload(s) "
+                "POTA job reconciliation: reset \(result.failedResetCount) submitted upload(s) "
                     + "(job failed)",
                 service: .pota
             )
         }
         if result.orphanResetCount > 0 {
             debugLog.warning(
-                "POTA reconciliation: reset \(result.orphanResetCount) submitted upload(s) "
+                "POTA job reconciliation: reset \(result.orphanResetCount) submitted upload(s) "
                     + "(no matching job found - upload was likely silently dropped)",
                 service: .pota
             )
         }
         if result.inProgressCount > 0 {
             debugLog.info(
-                "POTA reconciliation: \(result.inProgressCount) upload(s) still in-progress "
+                "POTA job reconciliation: \(result.inProgressCount) upload(s) still in-progress "
                     + "(pending/processing - waiting for POTA to finish)",
                 service: .pota
             )
         }
         if result.staleResetCount > 0 {
             debugLog.warning(
-                "POTA reconciliation: reset \(result.staleResetCount) submitted upload(s) "
+                "POTA job reconciliation: reset \(result.staleResetCount) submitted upload(s) "
                     + "(job pending/processing >30 min - considered stale)",
-                service: .pota
-            )
-        }
-    }
-
-    /// Log dead-state reconciliation results.
-    private func logPOTADeadStateResults(_ result: QSOProcessingActor.POTAReconcileResult) {
-        let debugLog = SyncDebugLog.shared
-        if result.deadStateConfirmedCount > 0 {
-            debugLog.info(
-                "POTA reconciliation: confirmed \(result.deadStateConfirmedCount) "
-                    + "dead-state record(s) (POTA has the QSOs)",
-                service: .pota
-            )
-        }
-        if result.deadStateResetCount > 0 {
-            debugLog.warning(
-                "POTA reconciliation: reset \(result.deadStateResetCount) "
-                    + "dead-state record(s) to needsUpload (no confirmation found)",
                 service: .pota
             )
         }

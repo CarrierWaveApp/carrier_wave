@@ -61,61 +61,6 @@ extension QSOProcessingActor {
         return QRZDeadStateRepairResult(repairedCount: repairedCount)
     }
 
-    // MARK: - POTA Dead State Repair
-
-    /// Result of repairing POTA dead-state QSOs
-    struct POTADeadStateRepairResult: Sendable {
-        let repairedCount: Int
-    }
-
-    /// Repair POTA ServicePresence records stuck in dead state.
-    /// Dead state: isPresent=false, needsUpload=false, isSubmitted=false, uploadRejected=false.
-    /// Only repairs QSOs that have a non-empty park reference (eligible for POTA upload).
-    func repairPOTADeadStateQSOs(
-        container: ModelContainer
-    ) async throws -> POTADeadStateRepairResult {
-        let context = ModelContext(container)
-        context.autosaveEnabled = false
-
-        // Fetch all ServicePresence records in dead state
-        let descriptor = FetchDescriptor<ServicePresence>(
-            predicate: #Predicate<ServicePresence> {
-                !$0.isPresent && !$0.needsUpload && !$0.isSubmitted && !$0.uploadRejected
-            }
-        )
-        let records = try context.fetch(descriptor)
-
-        var repairedCount = 0
-        var unsavedCount = 0
-
-        for presence in records {
-            try Task.checkCancellation()
-
-            guard presence.serviceType == .pota else {
-                continue
-            }
-            guard let qso = presence.qso, !qso.isHidden else {
-                continue
-            }
-            // Only repair QSOs with a park reference (eligible for POTA upload)
-            guard let park = qso.parkReference, !park.isEmpty else {
-                continue
-            }
-
-            presence.needsUpload = true
-            repairedCount += 1
-            unsavedCount += 1
-
-            if unsavedCount >= 100 {
-                try context.save()
-                unsavedCount = 0
-            }
-        }
-
-        if unsavedCount > 0 {
-            try context.save()
-        }
-
-        return POTADeadStateRepairResult(repairedCount: repairedCount)
-    }
+    // POTA dead-state recovery is now handled by remote map gap repair
+    // (repairPOTAGaps in QSOProcessingActor+POTAGapRepair.swift)
 }

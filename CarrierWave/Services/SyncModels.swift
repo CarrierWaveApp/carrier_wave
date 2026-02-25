@@ -50,6 +50,30 @@ struct QRZSyncResult {
     let skipped: Int
 }
 
+// MARK: - ServiceSyncPhase
+
+/// Per-service sync phase for rich progress UI
+enum ServiceSyncPhase: Equatable {
+    case waiting
+    case downloading
+    case downloaded(count: Int)
+    case uploading
+    case uploaded(count: Int)
+    case complete(downloaded: Int, uploaded: Int)
+    case error(String)
+
+    // MARK: Internal
+
+    /// Extract the downloaded count from phases that carry it
+    var downloadedCount: Int? {
+        switch self {
+        case let .downloaded(count): count
+        case let .complete(downloaded, _): downloaded
+        default: nil
+        }
+    }
+}
+
 // MARK: - SyncPhase
 
 enum SyncPhase: Equatable {
@@ -77,6 +101,15 @@ struct SyncProgress {
     /// LoFi-specific: QSOs downloaded so far
     var lofiDownloadedQSOs: Int = 0
 
+    /// POTA-specific: activations processed so far
+    var potaProcessedActivations: Int = 0
+
+    /// POTA-specific: total activations to process
+    var potaTotalActivations: Int = 0
+
+    /// POTA-specific: what kind of processing (e.g., "Fetching" or "Mapping")
+    var potaPhase: String = ""
+
     /// Processing phase: total QSOs to process
     var processingTotalQSOs: Int = 0
 
@@ -94,6 +127,14 @@ struct SyncProgress {
         return min(Double(lofiDownloadedQSOs) / Double(total), 1.0)
     }
 
+    /// POTA progress as a fraction (0.0 to 1.0), or nil if not active
+    var potaProgress: Double? {
+        guard potaTotalActivations > 0 else {
+            return nil
+        }
+        return min(Double(potaProcessedActivations) / Double(potaTotalActivations), 1.0)
+    }
+
     /// Processing progress as a fraction (0.0 to 1.0), or nil if not processing
     var processingProgress: Double? {
         guard processingTotalQSOs > 0 else {
@@ -109,6 +150,9 @@ struct SyncProgress {
         lofiTotalQSOs = nil
         lofiTotalOperations = nil
         lofiDownloadedQSOs = 0
+        potaProcessedActivations = 0
+        potaTotalActivations = 0
+        potaPhase = ""
         processingTotalQSOs = 0
         processingProcessedQSOs = 0
         processingPhase = ""

@@ -80,7 +80,10 @@ extension SyncService {
     private func downloadFromQRZ(timeout: TimeInterval) async -> (
         ServiceType, Result<[FetchedQSO], Error>
     ) {
-        await MainActor.run { self.syncPhase = .downloading(service: .qrz) }
+        await MainActor.run {
+            self.syncPhase = .downloading(service: .qrz)
+            self.serviceSyncStates[.qrz] = .downloading
+        }
         let debugLog = SyncDebugLog.shared
 
         // Use incremental sync if we have a last download date
@@ -116,51 +119,73 @@ extension SyncService {
             // Save sync timestamp on success
             qrzClient.saveLastDownloadDate(syncStartTime)
 
-            await MainActor.run { self.syncProgress.addDownloaded(fetched.count, for: .qrz) }
+            await MainActor.run {
+                self.syncProgress.addDownloaded(fetched.count, for: .qrz)
+                self.serviceSyncStates[.qrz] = .downloaded(count: fetched.count)
+            }
             return (.qrz, .success(fetched))
         } catch {
             debugLog.error("QRZ download failed: \(error.localizedDescription)", service: .qrz)
+            await MainActor.run {
+                self.serviceSyncStates[.qrz] = .error(error.localizedDescription)
+            }
             return (.qrz, .failure(error))
+        }
+    }
+
+    private func logPOTASyncState(debugLog: SyncDebugLog) {
+        if let syncState = potaClient.loadSyncState() {
+            let formatter = DateFormatter()
+            formatter.dateStyle = .medium
+            formatter.timeStyle = .short
+            debugLog.info(
+                "Starting incremental POTA download "
+                    + "(since \(formatter.string(from: syncState.lastSyncDate)))",
+                service: .pota
+            )
+        } else {
+            debugLog.info("Starting full POTA download (no previous sync)", service: .pota)
         }
     }
 
     private func downloadFromPOTA(timeout: TimeInterval) async -> (
         ServiceType, Result<[FetchedQSO], Error>
     ) {
-        await MainActor.run { self.syncPhase = .downloading(service: .pota) }
-        let debugLog = SyncDebugLog.shared
-
-        // Log incremental sync status
-        if let syncState = potaClient.loadSyncState() {
-            let formatter = DateFormatter()
-            formatter.dateStyle = .medium
-            formatter.timeStyle = .short
-            debugLog.info(
-                "Starting incremental POTA download (since \(formatter.string(from: syncState.lastSyncDate)))",
-                service: .pota
-            )
-        } else {
-            debugLog.info("Starting full POTA download (no previous sync)", service: .pota)
+        await MainActor.run {
+            self.syncPhase = .downloading(service: .pota)
+            self.serviceSyncStates[.pota] = .downloading
         }
+        let debugLog = SyncDebugLog.shared
+        logPOTASyncState(debugLog: debugLog)
 
         do {
             let (qsos, remoteMap) = try await withTimeout(seconds: timeout, service: .pota) {
-                try await self.potaClient.fetchAllQSOs()
+                try await self.potaClient.fetchAllQSOs { [weak self] processed, total, phase in
+                    Task { @MainActor [weak self] in
+                        guard let self else {
+                            return
+                        }
+                        var updated = syncProgress
+                        updated.potaProcessedActivations = processed
+                        updated.potaTotalActivations = total
+                        updated.potaPhase = phase
+                        syncProgress = updated
+                    }
+                }
             }
             potaRemoteQSOMap = remoteMap
-            debugLog.info("Downloaded \(qsos.count) QSOs from POTA", service: .pota)
             let fetched = qsos.map { FetchedQSO.fromPOTA($0) }
-            for (index, qso) in fetched.prefix(5).enumerated() {
-                debugLog.logRawQSO(
-                    service: .pota,
-                    rawJSON: "POTA QSO: \(qsos[index].callsign) @ \(qsos[index].timestamp)",
-                    parsedFields: qso.debugFields
-                )
+            debugLog.info("Downloaded \(fetched.count) QSOs from POTA", service: .pota)
+            await MainActor.run {
+                self.syncProgress.addDownloaded(fetched.count, for: .pota)
+                self.serviceSyncStates[.pota] = .downloaded(count: fetched.count)
             }
-            await MainActor.run { self.syncProgress.addDownloaded(fetched.count, for: .pota) }
             return (.pota, .success(fetched))
         } catch {
             debugLog.error("POTA download failed: \(error.localizedDescription)", service: .pota)
+            await MainActor.run {
+                self.serviceSyncStates[.pota] = .error(error.localizedDescription)
+            }
             return (.pota, .failure(error))
         }
     }
@@ -168,7 +193,10 @@ extension SyncService {
     private func downloadFromLoFi(timeout: TimeInterval) async -> (
         ServiceType, Result<[FetchedQSO], Error>
     ) {
-        await MainActor.run { self.syncPhase = .downloading(service: .lofi) }
+        await MainActor.run {
+            self.syncPhase = .downloading(service: .lofi)
+            self.serviceSyncStates[.lofi] = .downloading
+        }
         let debugLog = SyncDebugLog.shared
         debugLog.info("Starting LoFi download", service: .lofi)
         logLoFiSyncState(debugLog: debugLog)
@@ -188,10 +216,16 @@ extension SyncService {
                 service: .lofi
             )
             logLoFiSampleQSOs(qsos: qsos, fetched: fetchedList, debugLog: debugLog)
-            await MainActor.run { self.syncProgress.addDownloaded(fetchedList.count, for: .lofi) }
+            await MainActor.run {
+                self.syncProgress.addDownloaded(fetchedList.count, for: .lofi)
+                self.serviceSyncStates[.lofi] = .downloaded(count: fetchedList.count)
+            }
             return (.lofi, .success(fetchedList))
         } catch {
             debugLog.error("LoFi download failed: \(error.localizedDescription)", service: .lofi)
+            await MainActor.run {
+                self.serviceSyncStates[.lofi] = .error(error.localizedDescription)
+            }
             return (.lofi, .failure(error))
         }
     }
@@ -296,7 +330,10 @@ extension SyncService {
     private func downloadFromHAMRS(timeout: TimeInterval) async -> (
         ServiceType, Result<[FetchedQSO], Error>
     ) {
-        await MainActor.run { self.syncPhase = .downloading(service: .hamrs) }
+        await MainActor.run {
+            self.syncPhase = .downloading(service: .hamrs)
+            self.serviceSyncStates[.hamrs] = .downloading
+        }
         let debugLog = SyncDebugLog.shared
         debugLog.info("Starting HAMRS download", service: .hamrs)
         do {
@@ -304,59 +341,35 @@ extension SyncService {
                 try await self.hamrsClient.fetchAllQSOs()
             }
             debugLog.info("Downloaded \(qsos.count) raw QSOs from HAMRS", service: .hamrs)
-
-            var skippedCount = 0
-            var fetchedList: [FetchedQSO] = []
-            for (hamrsQso, logbook) in qsos {
-                if let fetched = FetchedQSO.fromHAMRS(hamrsQso, logbook: logbook) {
-                    fetchedList.append(fetched)
-                } else {
-                    skippedCount += 1
-                    debugLog.warning(
-                        """
-                        Skipped QSO: call=\(hamrsQso.call ?? "nil"), \
-                        band=\(hamrsQso.band ?? "nil"), mode=\(hamrsQso.mode ?? "nil")
-                        """,
-                        service: .hamrs
-                    )
-                }
-            }
+            let fetchedList = qsos.compactMap { FetchedQSO.fromHAMRS($0.0, logbook: $0.1) }
             debugLog.info(
-                "After filtering: \(fetchedList.count) valid, \(skippedCount) skipped",
+                "After filtering: \(fetchedList.count) valid, \(qsos.count - fetchedList.count) skipped",
                 service: .hamrs
             )
-
-            for fetched in fetchedList.prefix(5) {
-                debugLog.logRawQSO(
-                    service: .hamrs,
-                    rawJSON: "HAMRS QSO: \(fetched.callsign) @ \(fetched.timestamp)",
-                    parsedFields: fetched.debugFields
-                )
+            await MainActor.run {
+                self.syncProgress.addDownloaded(fetchedList.count, for: .hamrs)
+                self.serviceSyncStates[.hamrs] = .downloaded(count: fetchedList.count)
             }
-            await MainActor.run { self.syncProgress.addDownloaded(fetchedList.count, for: .hamrs) }
             return (.hamrs, .success(fetchedList))
         } catch HAMRSError.subscriptionInactive {
             debugLog.warning("HAMRS subscription inactive - skipping download", service: .hamrs)
+            await MainActor.run {
+                self.serviceSyncStates[.hamrs] = .downloaded(count: 0)
+            }
             return (.hamrs, .success([]))
         } catch {
             debugLog.error("HAMRS download failed: \(error.localizedDescription)", service: .hamrs)
+            await MainActor.run {
+                self.serviceSyncStates[.hamrs] = .error(error.localizedDescription)
+            }
             return (.hamrs, .failure(error))
         }
     }
 
-    private func downloadFromLoTW(timeout: TimeInterval) async -> (
-        ServiceType, Result<[FetchedQSO], Error>
-    ) {
-        await MainActor.run { self.syncPhase = .downloading(service: .lotw) }
-        let debugLog = SyncDebugLog.shared
-        let rxSince = lotwClient.getLastQSORxDate()
-        debugLog.info("Starting LoTW download", service: .lotw)
-
-        // Get all user callsigns (current + previous) to fetch QSOs for all of them
+    private func fetchLoTWCallsigns(debugLog: SyncDebugLog) async -> [String] {
         let userCallsigns = await MainActor.run {
             Array(CallsignAliasService.shared.getAllUserCallsigns())
         }
-
         if userCallsigns.isEmpty {
             debugLog.warning(
                 "No callsigns configured - fetching all QSOs for LoTW account", service: .lotw
@@ -367,6 +380,21 @@ extension SyncService {
                 service: .lotw
             )
         }
+        return userCallsigns
+    }
+
+    private func downloadFromLoTW(timeout: TimeInterval) async -> (
+        ServiceType, Result<[FetchedQSO], Error>
+    ) {
+        await MainActor.run {
+            self.syncPhase = .downloading(service: .lotw)
+            self.serviceSyncStates[.lotw] = .downloading
+        }
+        let debugLog = SyncDebugLog.shared
+        let rxSince = lotwClient.getLastQSORxDate()
+        debugLog.info("Starting LoTW download", service: .lotw)
+
+        let userCallsigns = await fetchLoTWCallsigns(debugLog: debugLog)
 
         do {
             let response = try await withTimeout(seconds: timeout, service: .lotw) {
@@ -390,10 +418,16 @@ extension SyncService {
                     parsedFields: fetched[index].debugFields
                 )
             }
-            await MainActor.run { self.syncProgress.addDownloaded(fetched.count, for: .lotw) }
+            await MainActor.run {
+                self.syncProgress.addDownloaded(fetched.count, for: .lotw)
+                self.serviceSyncStates[.lotw] = .downloaded(count: fetched.count)
+            }
             return (.lotw, .success(fetched))
         } catch {
             debugLog.error("LoTW download failed: \(error.localizedDescription)", service: .lotw)
+            await MainActor.run {
+                self.serviceSyncStates[.lotw] = .error(error.localizedDescription)
+            }
             return (.lotw, .failure(error))
         }
     }
@@ -401,7 +435,10 @@ extension SyncService {
     private func downloadFromClubLog(timeout: TimeInterval) async -> (
         ServiceType, Result<[FetchedQSO], Error>
     ) {
-        await MainActor.run { self.syncPhase = .downloading(service: .clublog) }
+        await MainActor.run {
+            self.syncPhase = .downloading(service: .clublog)
+            self.serviceSyncStates[.clublog] = .downloading
+        }
         let debugLog = SyncDebugLog.shared
 
         let lastDownload = clublogClient.getLastDownloadDate()
@@ -436,6 +473,7 @@ extension SyncService {
 
             await MainActor.run {
                 self.syncProgress.addDownloaded(fetched.count, for: .clublog)
+                self.serviceSyncStates[.clublog] = .downloaded(count: fetched.count)
             }
             return (.clublog, .success(fetched))
         } catch {
@@ -443,6 +481,9 @@ extension SyncService {
                 "Club Log download failed: \(error.localizedDescription)",
                 service: .clublog
             )
+            await MainActor.run {
+                self.serviceSyncStates[.clublog] = .error(error.localizedDescription)
+            }
             return (.clublog, .failure(error))
         }
     }

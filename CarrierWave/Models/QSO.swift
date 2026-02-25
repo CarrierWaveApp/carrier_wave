@@ -281,9 +281,11 @@ nonisolated final class QSO {
         presence(for: service)?.isPresent ?? false
     }
 
-    /// Check if QSO needs upload to a service
+    /// Check if QSO needs upload to a service.
+    /// Uses .contains instead of presence(for:) to handle two-fer QSOs with
+    /// multiple POTA ServicePresence records — .first may return the wrong one.
     func needsUpload(to service: ServiceType) -> Bool {
-        presence(for: service)?.needsUpload ?? false
+        servicePresence.contains { $0.serviceType == service && $0.needsUpload }
     }
 
     /// Mark QSO as present in a service

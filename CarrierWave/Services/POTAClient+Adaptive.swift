@@ -22,13 +22,25 @@ struct POTADownloadState {
     var remoteQSOMap: POTARemoteQSOMap = [:]
 }
 
+// MARK: - POTAImportMode
+
+/// Controls whether an activation's QSOs are imported (converted to FetchedQSO)
+/// or only added to the remote map for gap repair.
+enum POTAImportMode {
+    /// Fetch QSOs, convert to FetchedQSO, and add to remoteQSOMap (default for new activations)
+    case importAndMap
+    /// Fetch QSOs and add to remoteQSOMap only, skip FetchedQSO conversion (for already-processed)
+    case mapOnly
+}
+
 // MARK: - POTAClient Adaptive Download
 
 extension POTAClient {
     /// Process a single activation and return fetched QSOs
     func processActivation(
         _ activation: POTARemoteActivation,
-        state: inout POTADownloadState
+        state: inout POTADownloadState,
+        importMode: POTAImportMode = .importAndMap
     ) async throws -> ActivationResult {
         let debugLog = SyncDebugLog.shared
         let key = "\(activation.reference)|\(activation.date)"
@@ -36,7 +48,6 @@ extension POTAClient {
 
         do {
             let qsos = try await fetchActivationWithTimeout(activation)
-            let fetched = qsos.compactMap { convertToFetchedQSO($0, activation: activation) }
             state.processedKeys.insert(key)
 
             // Build dedup keys from raw remote QSOs for gap repair
@@ -46,11 +57,21 @@ extension POTAClient {
                 state.remoteQSOMap[activationKey] = dedupKeys
             }
 
-            debugLog.debug(
-                "Fetched \(activation.reference) \(activation.date): \(qsos.count) QSOs",
-                service: .pota
-            )
-            return .success(fetched)
+            switch importMode {
+            case .importAndMap:
+                let fetched = qsos.compactMap { convertToFetchedQSO($0, activation: activation) }
+                debugLog.debug(
+                    "Fetched \(activation.reference) \(activation.date): \(qsos.count) QSOs",
+                    service: .pota
+                )
+                return .success(fetched)
+            case .mapOnly:
+                debugLog.debug(
+                    "Mapped \(activation.reference) \(activation.date): \(qsos.count) QSOs (map only)",
+                    service: .pota
+                )
+                return .success([])
+            }
         } catch {
             let elapsed = Date().timeIntervalSince(startTime)
 

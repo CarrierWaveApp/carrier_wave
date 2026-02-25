@@ -4,11 +4,20 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Add rich per-service sync progress card on dashboard during sync (shows waiting/downloading/downloaded/uploading/complete state for each service)
+- Add POTA activation progress bar and LoFi QSO progress bar in sync card
+
 ### Changed
 - Show descriptive phase text during transcription (uploading, analyzing, decoding, finalizing) with byte-level upload progress
+- Simplify toolbar during sync to just a spinner (detail now lives in sync progress card)
 
 ### Fixed
 - Fix transcript not loading from disk when reopening a recording (compact player pre-loaded the engine, causing full player to skip transcript load)
+- Fix two-fer QSOs silently dropped from POTA upload batches (needsUpload checked wrong ServicePresence record)
+- Fix confirmed POTA QSOs perpetually reset to needsUpload when old jobs purged from POTA job log
+- Fix POTA remote map incomplete on incremental syncs (now fetches all activations for gap repair)
+- Add activation-level progress reporting during POTA sync (shows fetch/map phase and activation count)
 
 ## [1.44.1] - 2026-02-24
 

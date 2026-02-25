@@ -1,4 +1,5 @@
 import Foundation
+import os
 
 #if canImport(UIKit)
     import UIKit
@@ -15,6 +16,11 @@ final class ActivitiesClient {
     }
 
     // MARK: Internal
+
+    static let logger = Logger(
+        subsystem: Bundle.main.bundleIdentifier ?? "CarrierWave",
+        category: "ActivitiesClient"
+    )
 
     let keychain = KeychainHelper.shared
 
@@ -68,10 +74,10 @@ final class ActivitiesClient {
                 deviceName: Self.deviceName,
                 sourceURL: baseURL
             )
-            print("[ActivitiesClient] Auto-registered to recover auth token")
+            Self.logger.info("Auto-registered to recover auth token")
             return response.deviceToken
         } catch {
-            print("[ActivitiesClient] Auto-registration failed: \(error)")
+            Self.logger.error("Auto-registration failed: \(error)")
             return nil
         }
     }

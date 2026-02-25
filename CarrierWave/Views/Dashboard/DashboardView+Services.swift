@@ -18,7 +18,7 @@ extension DashboardView {
     var servicesList: some View {
         ServiceListView(
             services: buildServiceInfoList(),
-            syncPhase: syncService.syncPhase,
+            serviceSyncStates: syncService.serviceSyncStates,
             onServiceTap: { serviceId in
                 selectedService = serviceId
             }

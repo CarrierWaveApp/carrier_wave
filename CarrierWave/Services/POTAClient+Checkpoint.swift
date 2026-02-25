@@ -91,11 +91,21 @@ extension POTAClient {
 
     // MARK: - Fetch All QSOs
 
-    /// Fetch all QSOs with adaptive batching and incremental sync
-    /// On first sync: processes all activations
-    /// On subsequent syncs: only processes new activations not in saved state
-    /// Adjusts batch size based on timeouts and API responsiveness
-    func fetchAllQSOs() async throws -> (qsos: [POTAFetchedQSO], remoteQSOMap: POTARemoteQSOMap) {
+    /// Progress callback for POTA download.
+    /// - Parameters:
+    ///   - processed: activations processed so far
+    ///   - total: total activations to process
+    ///   - phase: current phase description ("Fetching" or "Mapping")
+    typealias POTAProgressCallback = @Sendable (Int, Int, String) -> Void
+
+    /// Fetch all QSOs with adaptive batching and incremental sync.
+    /// On first sync: processes all activations with .importAndMap.
+    /// On subsequent syncs: new activations use .importAndMap, already-processed
+    /// activations use .mapOnly (builds remote map without re-importing).
+    /// This ensures the remoteQSOMap is always complete for gap repair.
+    func fetchAllQSOs(
+        progress: POTAProgressCallback? = nil
+    ) async throws -> (qsos: [POTAFetchedQSO], remoteQSOMap: POTARemoteQSOMap) {
         let debugLog = SyncDebugLog.shared
         let activations = try await fetchActivations()
 
@@ -106,17 +116,42 @@ extension POTAClient {
             activations: activations, state: mutableState, savedState: savedState
         )
 
-        let remainingActivations = filterRemainingActivations(activations, state: mutableState)
-        guard !remainingActivations.isEmpty else {
-            debugLog.info("No new activations to process (incremental sync)", service: .pota)
-            clearDownloadCheckpoint()
-            return (qsos: mutableState.allFetched, remoteQSOMap: mutableState.remoteQSOMap)
+        let newActivations = filterRemainingActivations(activations, state: mutableState)
+        let alreadyProcessed = activations.filter { activation in
+            let key = "\(activation.reference)|\(activation.date)"
+            return mutableState.processedKeys.contains(key)
         }
 
-        debugLog.info("Processing \(remainingActivations.count) new activations", service: .pota)
+        let totalActivations = newActivations.count + alreadyProcessed.count
+        debugLog.info(
+            "Processing \(newActivations.count) new + \(alreadyProcessed.count) "
+                + "already-processed activations (map only)",
+            service: .pota
+        )
 
-        try await processAllBatches(remainingActivations, state: &mutableState)
-        finalizeDownload(state: mutableState, newActivationCount: remainingActivations.count)
+        // Fire initial progress so the UI shows the POTA progress bar immediately
+        progress?(0, totalActivations, "Fetching")
+
+        // Process new activations with full import
+        let newCount = newActivations.count
+        if !newActivations.isEmpty {
+            try await processAllBatches(
+                newActivations, state: &mutableState, importMode: .importAndMap
+            ) { batchProcessed in
+                progress?(batchProcessed, totalActivations, "Fetching")
+            }
+        }
+
+        // Process already-processed activations for remote map only
+        if !alreadyProcessed.isEmpty {
+            try await processAllBatches(
+                alreadyProcessed, state: &mutableState, importMode: .mapOnly
+            ) { batchProcessed in
+                progress?(newCount + batchProcessed, totalActivations, "Mapping")
+            }
+        }
+
+        finalizeDownload(state: mutableState, newActivationCount: newActivations.count)
 
         return (qsos: mutableState.allFetched, remoteQSOMap: mutableState.remoteQSOMap)
     }
@@ -142,7 +177,9 @@ extension POTAClient {
     /// Process all remaining activations in batches
     private func processAllBatches(
         _ remainingActivations: [POTARemoteActivation],
-        state: inout POTADownloadState
+        state: inout POTADownloadState,
+        importMode: POTAImportMode = .importAndMap,
+        onProgress: (@Sendable (Int) -> Void)? = nil
     ) async throws {
         var activationIndex = 0
         while activationIndex < remainingActivations.count {
@@ -154,13 +191,14 @@ extension POTAClient {
                 state: state
             )
 
-            let result = try await processBatch(batch, state: &state)
+            let result = try await processBatch(batch, state: &state, importMode: importMode)
 
             if result.succeeded {
                 handleBatchSuccess(
                     batchCount: batch.count, batchElapsed: result.elapsed, state: &state
                 )
                 activationIndex = batchEnd
+                onProgress?(activationIndex)
             }
 
             if state.consecutiveFailures >= 5 {
@@ -192,12 +230,13 @@ extension POTAClient {
 
     private func processBatch(
         _ batch: [POTARemoteActivation],
-        state: inout POTADownloadState
+        state: inout POTADownloadState,
+        importMode: POTAImportMode = .importAndMap
     ) async throws -> (succeeded: Bool, elapsed: TimeInterval) {
         let batchStartTime = Date()
 
         for activation in batch {
-            let result = try await processActivation(activation, state: &state)
+            let result = try await processActivation(activation, state: &state, importMode: importMode)
 
             switch result {
             case let .success(fetched):
@@ -448,26 +487,13 @@ extension POTAClient {
 
         if let totals = details.totals {
             for (key, breakdown) in totals {
+                let modes = "CW=\(breakdown.cw) DATA=\(breakdown.data) PHONE=\(breakdown.phone)"
                 debugLog.debug(
-                    "  Job \(jobId) totals[\(key)]: "
-                        + "park=\(breakdown.activationPark ?? "n/a") "
-                        + "date=\(breakdown.activationDate ?? "n/a") "
-                        + "CW=\(breakdown.cw) DATA=\(breakdown.data) "
-                        + "PHONE=\(breakdown.phone) TOTAL=\(breakdown.total)",
+                    "  Job \(jobId) [\(key)]: \(breakdown.activationPark ?? "n/a") "
+                        + "\(breakdown.activationDate ?? "n/a") \(modes) T=\(breakdown.total)",
                     service: .pota
                 )
             }
-        }
-    }
-}
-
-// MARK: - Array Chunking Extension
-
-extension Array {
-    /// Splits array into chunks of the specified size
-    nonisolated func chunked(into size: Int) -> [[Element]] {
-        stride(from: 0, to: count, by: size).map {
-            Array(self[$0 ..< Swift.min($0 + size, count)])
         }
     }
 }

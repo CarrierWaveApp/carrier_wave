@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import os
 import SwiftData
 import UIKit
 
@@ -14,6 +15,11 @@ final class ActivitiesSyncService: ObservableObject {
     }
 
     // MARK: Internal
+
+    static let logger = Logger(
+        subsystem: Bundle.main.bundleIdentifier ?? "CarrierWave",
+        category: "ActivitiesSyncService"
+    )
 
     @Published var isSyncing = false
     @Published var lastSyncDate: Date?

@@ -9,6 +9,7 @@ extension SyncService {
     func downloadOnly() async throws -> SyncResult {
         isSyncing = true
         syncProgress.reset()
+        initializeServiceSyncStates()
         let debugLog = SyncDebugLog.shared
         debugLog.info("Starting download-only sync")
 
@@ -16,6 +17,7 @@ extension SyncService {
             isSyncing = false
             syncPhase = nil
             syncProgress.reset()
+            serviceSyncStates = [:]
             lastSyncDate = Date()
             debugLog.info("Download-only sync complete")
         }
@@ -103,8 +105,7 @@ extension SyncService {
         // Repair QRZ dead-state QSOs (isPresent=false, needsUpload=false)
         await repairQRZDeadStateAsync()
 
-        // Repair POTA dead-state QSOs (isPresent=false, needsUpload=false)
-        await repairPOTADeadStateAsync()
+        // POTA dead-state recovery is handled by remote map gap repair (repairPOTAGapsAsync)
 
         // Clear upload flags on hidden (soft-deleted) QSOs
         await clearHiddenQSOUploadFlagsAsync()

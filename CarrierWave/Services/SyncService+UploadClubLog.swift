@@ -34,13 +34,25 @@ extension SyncService {
     func uploadClubLogBatch(qsos: [QSO], timeout: TimeInterval) async -> (
         ServiceType, Result<Int, Error>
     ) {
-        await MainActor.run { self.syncPhase = .uploading(service: .clublog) }
+        await MainActor.run {
+            self.syncPhase = .uploading(service: .clublog)
+            self.serviceSyncStates[.clublog] = .uploading
+        }
         do {
             let result = try await withTimeout(seconds: timeout, service: .clublog) {
                 try await self.uploadToClubLog(qsos: qsos)
             }
+            let downloadedCount = serviceSyncStates[.clublog]?.downloadedCount ?? 0
+            await MainActor.run {
+                self.serviceSyncStates[.clublog] = .complete(
+                    downloaded: downloadedCount, uploaded: result.uploaded
+                )
+            }
             return (.clublog, .success(result.uploaded))
         } catch {
+            await MainActor.run {
+                self.serviceSyncStates[.clublog] = .error(error.localizedDescription)
+            }
             return (.clublog, .failure(error))
         }
     }

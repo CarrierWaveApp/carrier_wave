@@ -167,7 +167,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `SyncService+Report.swift` | Per-service sync report building |
 | `SyncService+Helpers.swift` | Sync helpers (reconciliation, uploads, data repair) |
 | `DataRepairService.swift` | One-time data repairs gated by UserDefaults (runs on app launch) |
-| `SyncModels.swift` | Sync result types, progress tracking, service sync reports |
+| `SyncModels.swift` | Sync result types, progress tracking, per-service sync phase, reports |
 | `QSOProcessingActor.swift` | Background actor for QSO processing without blocking UI |
 | `QSOProcessingActor+Merge.swift` | QSO merge, creation, and park reference extraction helpers |
 | `QSOProcessingActor+DeadStateRepair.swift` | Repair QRZ/POTA dead-state ServicePresence records |
@@ -498,6 +498,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `StatsComputationActor.swift` | Background actor for QSO statistics computation |
 | `StatsComputationActor+Extensions.swift` | Extensions for activations and favorites computation |
 | `ServiceListView.swift` | Vertical stacked service list with status indicators |
+| `SyncProgressCard.swift` | Per-service sync progress card shown during sync |
 | `ServiceDetailSheet.swift` | Service detail sheet for tap-through actions |
 | `SyncReportViews.swift` | Sync report header, stat chips, status badge, step row |
 | `SyncFunnelDetailView.swift` | Expandable sync funnel timeline, reconciliation, warnings |

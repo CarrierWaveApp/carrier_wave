@@ -94,7 +94,7 @@ struct ServiceInfo: Identifiable {
 /// A single row in the services list following HIG grouped list style
 struct ServiceRow: View {
     let service: ServiceInfo
-    let syncPhase: SyncPhase?
+    let serviceSyncStates: [ServiceType: ServiceSyncPhase]
 
     var body: some View {
         HStack(spacing: 12) {
@@ -112,8 +112,11 @@ struct ServiceRow: View {
             Spacer()
 
             // Stats or status text
-            if service.isSyncing, let phase = syncPhase, let serviceType = service.serviceType {
-                SyncingIndicator(phase: phase, serviceType: serviceType)
+            if service.isSyncing, let serviceType = service.serviceType {
+                SyncingIndicator(
+                    servicePhase: serviceSyncStates[serviceType],
+                    serviceType: serviceType
+                )
             } else if let primary = service.primaryStat {
                 HStack(spacing: 8) {
                     // Stack stats vertically, right-aligned
@@ -166,7 +169,7 @@ struct ServiceRow: View {
 struct SyncingIndicator: View {
     // MARK: Internal
 
-    let phase: SyncPhase
+    let servicePhase: ServiceSyncPhase?
     let serviceType: ServiceType
 
     var body: some View {
@@ -178,7 +181,7 @@ struct SyncingIndicator: View {
             Text(statusText)
                 .font(.subheadline)
         }
-        .foregroundStyle(isActiveForService ? .blue : .secondary)
+        .foregroundStyle(isActive ? .blue : .secondary)
         .onAppear {
             guard !reduceMotion else {
                 return
@@ -194,24 +197,28 @@ struct SyncingIndicator: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var rotation: Double = 0
 
-    private var isActiveForService: Bool {
-        switch phase {
-        case let .downloading(svc),
-             let .uploading(svc):
-            svc == serviceType
-        case .processing:
+    private var isActive: Bool {
+        switch servicePhase {
+        case .downloading,
+             .uploading:
             true
+        default:
+            false
         }
     }
 
     private var statusText: String {
-        switch phase {
-        case let .downloading(svc) where svc == serviceType:
+        switch servicePhase {
+        case .downloading:
             "Downloading"
-        case let .uploading(svc) where svc == serviceType:
+        case .uploading:
             "Uploading"
-        case .processing:
-            "Processing"
+        case .downloaded:
+            "Downloaded"
+        case .complete:
+            "Complete"
+        case .error:
+            "Error"
         default:
             "Waiting"
         }
@@ -223,7 +230,7 @@ struct SyncingIndicator: View {
 /// Vertical stacked list of all services following HIG grouped list style
 struct ServiceListView: View {
     let services: [ServiceInfo]
-    let syncPhase: SyncPhase?
+    let serviceSyncStates: [ServiceType: ServiceSyncPhase]
     let onServiceTap: (ServiceIdentifier) -> Void
 
     var body: some View {
@@ -243,7 +250,7 @@ struct ServiceListView: View {
                     Button {
                         onServiceTap(service.id)
                     } label: {
-                        ServiceRow(service: service, syncPhase: syncPhase)
+                        ServiceRow(service: service, serviceSyncStates: serviceSyncStates)
                     }
                     .buttonStyle(.plain)
 
@@ -324,7 +331,7 @@ struct ServiceListView: View {
                 isSyncing: false
             ),
         ],
-        syncPhase: nil,
+        serviceSyncStates: [:],
         onServiceTap: { _ in }
     )
     .padding()

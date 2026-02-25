@@ -10,22 +10,20 @@ extension QSOProcessingActor {
     static let staleJobThreshold: TimeInterval = 30 * 60 // 30 minutes
 
     struct POTAReconcileResult: Sendable {
-        let resetCount: Int
         let confirmedCount: Int
         let failedResetCount: Int
         let orphanResetCount: Int
         let inProgressCount: Int
         let staleResetCount: Int
-        let deadStateConfirmedCount: Int
-        let deadStateResetCount: Int
     }
 
-    /// Reconcile POTA ServicePresence records against completed upload jobs.
-    /// If a QSO's POTA presence says isPresent=true but no completed job covers
-    /// that activation (park + callsign + UTC date), reset it to needsUpload=true.
-    /// Also confirms submitted QSOs that have a completed job, resets submitted
-    /// QSOs whose jobs failed, leaves recent in-progress jobs alone, and resets
-    /// stale in-progress jobs (pending/processing >30 min).
+    /// Reconcile POTA ServicePresence records in isSubmitted state against upload jobs.
+    /// Jobs are only used for isSubmitted→isPresent transitions:
+    /// - isSubmitted + confirmed job → promote to isPresent
+    /// - isSubmitted + failed job → reset to needsUpload
+    /// - isSubmitted + in-progress job → leave alone (or reset if stale >30min)
+    /// - isSubmitted + no matching job → reset to needsUpload (orphan)
+    /// Whether isPresent records are actually on POTA is verified by remote map gap repair.
     func reconcilePOTAPresence(
         activationKeys: SyncService.POTAActivationKeys,
         container: ModelContainer
@@ -50,11 +48,9 @@ extension QSOProcessingActor {
         }
 
         return POTAReconcileResult(
-            resetCount: counts.reset, confirmedCount: counts.confirmed,
+            confirmedCount: counts.confirmed,
             failedResetCount: counts.failedReset, orphanResetCount: counts.orphanReset,
-            inProgressCount: counts.inProgress, staleResetCount: counts.staleReset,
-            deadStateConfirmedCount: counts.deadStateConfirmed,
-            deadStateResetCount: counts.deadStateReset
+            inProgressCount: counts.inProgress, staleResetCount: counts.staleReset
         )
     }
 }
@@ -63,18 +59,14 @@ extension QSOProcessingActor {
 
 extension QSOProcessingActor {
     struct ReconcileCounts {
-        var reset = 0
         var confirmed = 0
         var failedReset = 0
         var orphanReset = 0
         var inProgress = 0
         var staleReset = 0
-        var deadStateConfirmed = 0
-        var deadStateReset = 0
 
         var hasChanges: Bool {
-            reset > 0 || confirmed > 0 || failedReset > 0 || orphanReset > 0
-                || staleReset > 0 || deadStateConfirmed > 0 || deadStateReset > 0
+            confirmed > 0 || failedReset > 0 || orphanReset > 0 || staleReset > 0
         }
     }
 
@@ -89,6 +81,10 @@ extension QSOProcessingActor {
         keys: SyncService.POTAActivationKeys,
         counts: inout ReconcileCounts
     ) {
+        // Only reconcile isSubmitted records — job log tracks upload status
+        guard presence.isSubmitted else {
+            return
+        }
         guard let qso = presence.qso else {
             return
         }
@@ -114,7 +110,7 @@ extension QSOProcessingActor {
             )
             let parkCallsignKey =
                 "\(park.uppercased())|\(qso.myCallsign.uppercased())"
-            if applyReconciliation(
+            if reconcileSubmitted(
                 presence: presence, key: key, parkCallsignKey: parkCallsignKey,
                 keys: keys, counts: &counts
             ) {
@@ -132,41 +128,6 @@ extension QSOProcessingActor {
             return ParkReference.split(qsoPark)
         }
         return []
-    }
-
-    /// Apply reconciliation logic for a single (presence, key) pair.
-    /// Returns true if the presence was handled and no further parks need checking.
-    @discardableResult
-    private func applyReconciliation(
-        presence: ServicePresence,
-        key: String,
-        parkCallsignKey: String,
-        keys: SyncService.POTAActivationKeys,
-        counts: inout ReconcileCounts
-    ) -> Bool {
-        if presence.isPresent {
-            if !keys.confirmed.contains(key),
-               !keys.nilDateConfirmed.contains(parkCallsignKey)
-            {
-                presence.isPresent = false
-                presence.needsUpload = true
-                counts.reset += 1
-                return true
-            }
-        } else if presence.isSubmitted {
-            return reconcileSubmitted(
-                presence: presence, key: key,
-                parkCallsignKey: parkCallsignKey,
-                keys: keys, counts: &counts
-            )
-        } else {
-            return reconcileDeadState(
-                presence: presence, key: key,
-                parkCallsignKey: parkCallsignKey,
-                keys: keys, counts: &counts
-            )
-        }
-        return false
     }
 
     /// Reconcile a submitted presence record against POTA job log.
@@ -204,28 +165,6 @@ extension QSOProcessingActor {
             presence.isSubmitted = false
             presence.needsUpload = true
             counts.orphanReset += 1
-        }
-        return true
-    }
-
-    /// Reconcile a dead-state presence record (not present, not submitted).
-    private func reconcileDeadState(
-        presence: ServicePresence,
-        key: String,
-        parkCallsignKey: String,
-        keys: SyncService.POTAActivationKeys,
-        counts: inout ReconcileCounts
-    ) -> Bool {
-        if keys.confirmed.contains(key)
-            || keys.nilDateConfirmed.contains(parkCallsignKey)
-        {
-            presence.isPresent = true
-            presence.needsUpload = false
-            presence.lastConfirmedAt = Date()
-            counts.deadStateConfirmed += 1
-        } else {
-            presence.needsUpload = true
-            counts.deadStateReset += 1
         }
         return true
     }

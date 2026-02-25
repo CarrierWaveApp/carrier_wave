@@ -239,7 +239,9 @@ enum KeyboardAccessoryBuilder {
     ) -> UIButton {
         let button = UIButton(type: .system)
         button.setTitle(title, for: .normal)
-        button.titleLabel?.font = .monospacedSystemFont(ofSize: 18, weight: .medium)
+        let baseFont = UIFont.monospacedSystemFont(ofSize: 18, weight: .medium)
+        button.titleLabel?.font = UIFontMetrics(forTextStyle: .body).scaledFont(for: baseFont)
+        button.titleLabel?.adjustsFontForContentSizeCategory = true
         button.setTitleColor(.label, for: .normal)
         button.backgroundColor = .tertiarySystemBackground
         button.layer.cornerRadius = 6
@@ -263,7 +265,8 @@ enum KeyboardAccessoryBuilder {
         config.contentInsets = NSDirectionalEdgeInsets(top: 6, leading: 10, bottom: 6, trailing: 10)
         config.titleTextAttributesTransformer = UIConfigurationTextAttributesTransformer { attrs in
             var modified = attrs
-            modified.font = UIFont.systemFont(ofSize: 12, weight: .medium)
+            let base = UIFont.systemFont(ofSize: 12, weight: .medium)
+            modified.font = UIFontMetrics(forTextStyle: .caption1).scaledFont(for: base)
             return modified
         }
         button.configuration = config

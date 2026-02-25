@@ -187,7 +187,9 @@ struct CallsignTextField: UIViewRepresentable {
     func makeUIView(context: Context) -> UITextField {
         let textField = UITextField()
         textField.placeholder = placeholder
-        textField.font = UIFont.monospacedSystemFont(ofSize: fontSize, weight: .regular)
+        let baseFont = UIFont.monospacedSystemFont(ofSize: fontSize, weight: .regular)
+        textField.font = UIFontMetrics(forTextStyle: .body).scaledFont(for: baseFont)
+        textField.adjustsFontForContentSizeCategory = true
         textField.autocapitalizationType = .allCharacters
         textField.autocorrectionType = .no
         textField.spellCheckingType = .no

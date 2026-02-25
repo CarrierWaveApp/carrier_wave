@@ -19,8 +19,12 @@ struct SpotSummaryView: View {
             VStack(spacing: 0) {
                 summaryBanner
                     .onTapGesture {
-                        withAnimation(.easeInOut(duration: 0.2)) {
+                        if UIAccessibility.isReduceMotionEnabled {
                             isExpanded.toggle()
+                        } else {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                isExpanded.toggle()
+                            }
                         }
                     }
 

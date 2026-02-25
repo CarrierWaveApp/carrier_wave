@@ -1,4 +1,5 @@
 import Foundation
+import os
 import SwiftData
 import UIKit
 
@@ -155,10 +156,10 @@ extension ActivitiesSyncService {
                 deviceName: UIDevice.current.name,
                 sourceURL: sourceURL
             )
-            print("[ActivitiesSyncService] Re-registered after INVALID_TOKEN")
+            Self.logger.info("Re-registered after INVALID_TOKEN")
             return response.deviceToken
         } catch {
-            print("[ActivitiesSyncService] Re-registration failed: \(error)")
+            Self.logger.error("Re-registration failed: \(error)")
             return nil
         }
     }

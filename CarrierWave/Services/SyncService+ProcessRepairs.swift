@@ -6,27 +6,29 @@ import SwiftData
 
 extension SyncService {
     /// Compare local POTA QSOs against what POTA's API returned per-activation.
-    /// Flags missing QSOs as needsUpload=true for re-upload.
+    /// Flags missing QSOs as needsUpload=true and recovers dead-state records.
     func repairPOTAGapsAsync(remoteQSOMap: POTARemoteQSOMap) async {
         do {
             let result = try await Self.processingActor.repairPOTAGaps(
                 remoteQSOMap: remoteQSOMap,
                 container: modelContext.container
             )
-            if result.gapsFound > 0 {
+            if result.gapsFound > 0 || result.deadStateRecovered > 0 {
                 SyncDebugLog.shared.warning(
-                    "POTA gap repair: checked \(result.activationsChecked) activations, "
-                        + "found \(result.gapsFound) missing QSOs -- flagged for re-upload",
+                    "POTA remote reconciliation: checked \(result.activationsChecked) activations, "
+                        + "found \(result.gapsFound) missing QSOs, "
+                        + "recovered \(result.deadStateRecovered) dead-state record(s)",
                     service: .pota
                 )
             } else {
                 SyncDebugLog.shared.debug(
-                    "POTA gap repair: checked \(result.activationsChecked) activations, no gaps",
+                    "POTA remote reconciliation: checked \(result.activationsChecked) activations, "
+                        + "no gaps or dead-state records",
                     service: .pota
                 )
             }
         } catch {
-            SyncDebugLog.shared.error("POTA gap repair failed: \(error)", service: .pota)
+            SyncDebugLog.shared.error("POTA remote reconciliation failed: \(error)", service: .pota)
         }
     }
 
@@ -153,27 +155,6 @@ extension SyncService {
             }
         } catch {
             SyncDebugLog.shared.error("Failed to repair QRZ dead-state QSOs: \(error)")
-        }
-    }
-
-    /// Repair POTA ServicePresence records stuck in dead state
-    /// (isPresent=false, needsUpload=false, not submitted, not rejected).
-    func repairPOTADeadStateAsync() async {
-        do {
-            let result = try await Self.processingActor.repairPOTADeadStateQSOs(
-                container: modelContext.container
-            )
-            if result.repairedCount > 0 {
-                SyncDebugLog.shared.warning(
-                    "Repaired \(result.repairedCount) POTA dead-state QSO(s) "
-                        + "(reset to needsUpload=true)",
-                    service: .pota
-                )
-            }
-        } catch {
-            SyncDebugLog.shared.error(
-                "Failed to repair POTA dead-state QSOs: \(error)", service: .pota
-            )
         }
     }
 

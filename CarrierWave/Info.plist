@@ -9,6 +9,8 @@
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Carrier Wave connects to personal radio automation servers on your local network for CW transcription and QSO logging.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>audio</string>
