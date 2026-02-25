@@ -20,7 +20,7 @@ struct RecordingPlayerView: View {
     @State var isTranscribing = false
     @State var transcriptionProgress: Float = 0
     @State var transcriptionError: String?
-    @AppStorage("cwswlServerURL") var cwswlServerURL = "http://192.168.1.94:8080"
+    @AppStorage("cwswlServerURL") var cwswlServerURL = "https://swl.carrierwave.app"
 
     // MARK: - Helpers
 
