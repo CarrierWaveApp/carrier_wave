@@ -15,6 +15,7 @@ All notable changes to Carrier Wave will be documented in this file.
 - Add auto-logging of completed FT8 QSOs with dB signal reports
 - Add FT8 integration with existing POTA/QRZ/LoFi sync pipeline
 - Add expandable spots summary row to sessions list showing region pills, distance range, and spot detail (matches logger aggregation pattern)
+- Link spots and QSOs in session detail view: QSO rows show antenna icon when matching human spot exists, human spot rows show checkmark/dashed-circle for logged/unlogged status
 
 ### Changed
 - Improve session detail view flow: move QSO list up to primary position (after header and map), collapse equipment/notes/photos into a "Details" disclosure group, move POTA upload button inline with activation info

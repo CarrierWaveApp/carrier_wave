@@ -28,6 +28,7 @@ struct SessionSpotsSection: View {
     // MARK: Internal
 
     let session: LoggingSession
+    var spotQSOMatch: SpotQSOMatch?
 
     var body: some View {
         if !spots.isEmpty {
@@ -37,7 +38,9 @@ struct SessionSpotsSection: View {
                         switch group {
                         case let .human(spot):
                             SessionSpotRow(
-                                spot: spot, isPOTAHighlight: spot.isPOTA
+                                spot: spot,
+                                isPOTAHighlight: spot.isPOTA,
+                                isLogged: spotQSOMatch?.spotWasLogged(spot)
                             )
                         case let .rbnRun(_, rbnSpots):
                             RBNRunRow(spots: rbnSpots)
@@ -187,6 +190,7 @@ struct SessionSpotRow: View {
 
     let spot: SessionSpot
     let isPOTAHighlight: Bool
+    var isLogged: Bool?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
@@ -222,7 +226,11 @@ struct SessionSpotRow: View {
 
     private var mainRow: some View {
         HStack(spacing: 8) {
-            if isPOTAHighlight {
+            if spot.isSelfSpot {
+                Image(systemName: "megaphone.fill")
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+            } else if isPOTAHighlight {
                 Image(systemName: "leaf.fill")
                     .font(.caption)
                     .foregroundStyle(.green)
@@ -265,6 +273,15 @@ struct SessionSpotRow: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
+
+            if !spot.isSelfSpot, let isLogged {
+                Image(
+                    systemName: isLogged
+                        ? "checkmark.circle.fill" : "circle.dashed"
+                )
+                .font(.caption)
+                .foregroundStyle(isLogged ? .green : .secondary)
+            }
         }
     }
 

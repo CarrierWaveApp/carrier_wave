@@ -45,6 +45,7 @@ struct SessionDetailView: View {
     @State var activationSession: LoggingSession?
     @State var activationStatistics: ActivationStatistics?
 
+    @State var spotQSOMatch: SpotQSOMatch?
     @State var showEditSheet = false
     @State var selectedPhoto: PhotoItem?
 
@@ -94,7 +95,10 @@ struct SessionDetailView: View {
             }
 
             if let session {
-                SessionSpotsSection(session: session)
+                SessionSpotsSection(
+                    session: session,
+                    spotQSOMatch: spotQSOMatch
+                )
             }
         }
         .navigationTitle(navigationTitle)

@@ -125,6 +125,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `BandPlan+Activities.swift` | Frequency activity data (QRP, SSTV, FT8, CWT, nets) and time windows |
 | `UserProfile.swift` | User's amateur radio profile (callsign, name, QTH, grid, license) |
 | `SessionSpot.swift` | Persisted RBN/POTA spot recorded during a logging session |
+| `SpotQSOMatch.swift` | Cross-references session QSOs and spots by callsign+band for display linking |
 | `SpotRegion.swift` | Geographic region classification for spots (SpotRegion, EnrichedSpot, SpotSummary) |
 | `ActivityLog.swift` | Activity log SwiftData model for persistent hunter workflow |
 | `SDRParameterEvent.swift` | SDR parameter change event and recording segment types for tracking freq/mode changes |
