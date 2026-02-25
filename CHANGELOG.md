@@ -22,6 +22,7 @@ All notable changes to Carrier Wave will be documented in this file.
 - Session manager lifecycle owned by SessionsTabView, shared down to logger
 
 ### Fixed
+- Fix crash in SpotSummaryView and SessionSpotsSummaryRow when ViewThatFits evaluates region pill ForEach on background rendering thread (extract to standalone structs to avoid inheriting @MainActor isolation)
 - Fix duplicate POTA QSO uploads caused by remote map overwrite when same park activated twice in one day (use formUnion instead of assignment)
 - Add pre-upload dedup filter checking QSOs against POTA remote map as defense-in-depth
 - Fix fetchQSOsNeedingUpload loading all QSOs into memory; query from ServicePresence side instead

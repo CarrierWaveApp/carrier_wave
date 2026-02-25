@@ -74,41 +74,16 @@ extension SessionSpotsSummaryRow {
     }
 
     /// Region pills using ViewThatFits for adaptive layout.
-    /// Data is snapshotted before ViewThatFits to avoid background-thread access.
+    /// Data is snapshotted before ViewThatFits, and ForEach lives in a
+    /// standalone struct to avoid inheriting @MainActor isolation (ViewThatFits
+    /// evaluates children on a background rendering thread).
     private var regionPills: some View {
         let regions = spotsGroupedByRegion
         return ViewThatFits(in: .horizontal) {
-            regionPillRow(regions, max: 4)
-            regionPillRow(regions, max: 3)
-            regionPillRow(regions, max: 2)
+            SessionRegionPillRow(regions: regions, max: 4)
+            SessionRegionPillRow(regions: regions, max: 3)
+            SessionRegionPillRow(regions: regions, max: 2)
         }
-    }
-
-    private func regionPillRow(
-        _ regions: [(region: SpotRegion, count: Int)],
-        max limit: Int
-    ) -> some View {
-        HStack(spacing: 4) {
-            ForEach(regions.prefix(limit), id: \.region) { item in
-                HStack(spacing: 2) {
-                    Text(item.region.shortName)
-                        .font(.caption2)
-                        .fontWeight(.medium)
-                    Text("\(item.count)")
-                        .font(.caption2)
-                }
-                .padding(.horizontal, 6)
-                .padding(.vertical, 2)
-                .background(Color.blue.opacity(0.15))
-                .clipShape(RoundedRectangle(cornerRadius: 4))
-            }
-            if regions.count > limit {
-                Text("+\(regions.count - limit)")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .fixedSize()
     }
 
     private var expandedContent: some View {
@@ -156,5 +131,40 @@ extension SessionSpotsSummaryRow {
         )
         descriptor.fetchLimit = 500
         spots = (try? modelContext.fetch(descriptor)) ?? []
+    }
+}
+
+// MARK: - SessionRegionPillRow
+
+/// Standalone struct for region pills inside ViewThatFits.
+/// Must NOT be a method on the parent view — ViewThatFits evaluates children
+/// on a background rendering thread, and ForEach closures inside @MainActor
+/// methods inherit that isolation, causing dispatch_assert_queue_fail.
+private struct SessionRegionPillRow: View {
+    let regions: [(region: SpotRegion, count: Int)]
+    let max: Int
+
+    var body: some View {
+        HStack(spacing: 4) {
+            ForEach(regions.prefix(max), id: \.region) { item in
+                HStack(spacing: 2) {
+                    Text(item.region.shortName)
+                        .font(.caption2)
+                        .fontWeight(.medium)
+                    Text("\(item.count)")
+                        .font(.caption2)
+                }
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(Color.blue.opacity(0.15))
+                .clipShape(RoundedRectangle(cornerRadius: 4))
+            }
+            if regions.count > max {
+                Text("+\(regions.count - max)")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .fixedSize()
     }
 }
