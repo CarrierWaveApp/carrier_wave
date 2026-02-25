@@ -6,8 +6,8 @@ extern "C"
 {
 #endif
 
-#include <ft8/decode.h>
-#include <fft/kiss_fftr.h>
+#include "../ft8/decode.h"
+#include "../fft/kiss_fftr.h"
 
 /// Configuration options for FT4/FT8 monitor
 typedef struct
