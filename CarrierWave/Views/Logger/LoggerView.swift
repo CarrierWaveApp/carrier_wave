@@ -49,6 +49,10 @@ struct LoggerView: View {
     /// FT8 session manager (created when session mode is FT8)
     @State var ft8Manager: FT8SessionManager?
 
+    /// FT8 setup wizard presentation
+    @State var showFT8SetupWizard = false
+    @AppStorage("ft8SetupComplete") var ft8SetupComplete = false
+
     /// QSO pending swipe-to-delete confirmation
     @State var qsoToDelete: QSO?
 

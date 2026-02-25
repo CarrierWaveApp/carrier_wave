@@ -142,12 +142,19 @@ extension LoggerView {
                         loggingSessionManager: session
                     )
                 }
+                if !ft8SetupComplete {
+                    showFT8SetupWizard = true
+                }
             } else {
                 if let manager = ft8Manager {
                     Task { await manager.stop() }
                     ft8Manager = nil
                 }
             }
+        }
+        .sheet(isPresented: $showFT8SetupWizard) {
+            FT8SetupWizardView(isPresented: $showFT8SetupWizard)
+                .interactiveDismissDisabled()
         }
     }
 
