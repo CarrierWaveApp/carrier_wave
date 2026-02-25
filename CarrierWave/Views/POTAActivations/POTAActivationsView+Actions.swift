@@ -210,7 +210,6 @@ extension POTAActivationsContentView {
             session: findSession(for: activation),
             onShare: { activationToShare = activation },
             onExport: { activationToExport = activation },
-            onMap: { activationToMap = activation },
             activation: activation,
             activationMetadata: metadata(for: activation),
             parkName: parkName(for: activation.parkReference),

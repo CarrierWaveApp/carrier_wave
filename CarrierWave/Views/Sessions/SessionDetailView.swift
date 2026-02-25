@@ -14,7 +14,6 @@ struct SessionDetailView: View {
     var session: LoggingSession?
     var onShare: (() -> Void)?
     var onExport: (() -> Void)?
-    var onMap: (() -> Void)?
 
     // MARK: POTA Properties (nil/empty when not a POTA activation)
 
@@ -70,6 +69,8 @@ struct SessionDetailView: View {
             if let session, session.isRove {
                 roveStopsSection(session)
             }
+
+            mapSection
 
             if let stats = activationStatistics, statisticianMode {
                 Section("Statistics") {
@@ -192,7 +193,7 @@ struct SessionDetailView: View {
     }
 
     private var hasActions: Bool {
-        onShare != nil || onExport != nil || onMap != nil
+        onShare != nil || onExport != nil
     }
 
     private var actionsMenu: some View {
@@ -204,13 +205,6 @@ struct SessionDetailView: View {
                             showEditSheet = true
                         } label: {
                             Label("Edit Info", systemImage: "pencil")
-                        }
-                    }
-                    if let onMap {
-                        Button {
-                            onMap()
-                        } label: {
-                            Label("View Map", systemImage: "map")
                         }
                     }
                     if let onExport {

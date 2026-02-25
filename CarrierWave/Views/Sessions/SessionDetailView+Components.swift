@@ -4,6 +4,7 @@
 // RoveStopDetailRow, RoveParkGroup, PhotoItem, session info sections.
 
 import CarrierWaveCore
+import MapKit
 import SwiftUI
 
 // MARK: - Session Info Sections
@@ -160,6 +161,124 @@ extension SessionDetailView {
         }
         let rate = Double(qsos.count) / hours
         return String(format: "%.1f", rate)
+    }
+}
+
+// MARK: - Map Section
+
+extension SessionDetailView {
+    @ViewBuilder
+    var mapSection: some View {
+        let mappable = displayQSOs.filter { qso in
+            guard let grid = qso.theirGrid, grid.count >= 4 else {
+                return false
+            }
+            return MaidenheadConverter.coordinate(from: grid) != nil
+        }
+        if !mappable.isEmpty {
+            Section("Map") {
+                NavigationLink {
+                    mapDestination
+                } label: {
+                    mapPreview(mappable: mappable)
+                }
+                .buttonStyle(.plain)
+                .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var mapDestination: some View {
+        if let activation {
+            ActivationMapView(
+                activation: activation,
+                parkName: parkName,
+                metadata: activationMetadata,
+                roveStops: session?.isRove == true
+                    ? (session?.mergedRoveStops ?? []) : []
+            )
+        } else {
+            SidebarMapView(
+                sessionQSOs: qsos,
+                myGrid: session?.myGrid,
+                roveStops: session?.isRove == true
+                    ? (session?.mergedRoveStops ?? []) : []
+            )
+            .navigationTitle("Session Map")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+
+    private func mapPreview(mappable: [QSO]) -> some View {
+        let myGridStr = session?.myGrid ?? activation?.qsos.first?.myGrid
+        let myCoord: CLLocationCoordinate2D? = if let grid = myGridStr, grid.count >= 4 {
+            MaidenheadConverter.coordinate(from: grid)
+        } else {
+            nil
+        }
+        return ZStack(alignment: .bottomTrailing) {
+            mapPreviewContent(mappable: mappable, myCoord: myCoord)
+                .frame(height: 200)
+
+            HStack(spacing: 4) {
+                Image(systemName: "map.fill")
+                Text("\(mappable.count) QSOs")
+                Image(systemName: "chevron.right")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
+            .font(.caption2)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(.thinMaterial, in: Capsule())
+            .padding(8)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Session map with \(mappable.count) QSOs")
+        .accessibilityHint("Tap to view full map")
+        .accessibilityAddTraits(.isButton)
+    }
+
+    private func mapPreviewContent(
+        mappable: [QSO], myCoord: CLLocationCoordinate2D?
+    ) -> some View {
+        Map(interactionModes: []) {
+            ForEach(mappable) { qso in
+                if let grid = qso.theirGrid,
+                   let coord = MaidenheadConverter.coordinate(from: grid)
+                {
+                    Annotation(qso.callsign, coordinate: coord, anchor: .center) {
+                        Circle()
+                            .fill(.green)
+                            .frame(width: 8, height: 8)
+                            .overlay(Circle().stroke(.white, lineWidth: 1))
+                    }
+                }
+            }
+            if let myCoord {
+                Annotation("Me", coordinate: myCoord, anchor: .center) {
+                    Circle()
+                        .fill(.blue)
+                        .frame(width: 10, height: 10)
+                        .overlay(Circle().stroke(.white, lineWidth: 2))
+                }
+                ForEach(mappable) { qso in
+                    if let grid = qso.theirGrid,
+                       let theirCoord = MaidenheadConverter.coordinate(from: grid)
+                    {
+                        MapPolyline(
+                            coordinates: ActivationMapHelpers.geodesicPath(
+                                from: myCoord, to: theirCoord, segments: 20
+                            )
+                        )
+                        .stroke(.blue.opacity(0.4), lineWidth: 1.5)
+                    }
+                }
+            }
+        }
+        .mapStyle(.standard(elevation: .flat))
+        .allowsHitTesting(false)
     }
 }
 

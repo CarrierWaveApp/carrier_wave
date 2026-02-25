@@ -8,6 +8,7 @@ All notable changes to Carrier Wave will be documented in this file.
 - Add expandable spots summary row to sessions list showing region pills, distance range, and spot detail (matches logger aggregation pattern)
 
 ### Changed
+- Show inline map preview in session detail view (tap to open full-screen map); remove "View Map" from overflow menu
 - Move spots section to bottom of session detail view, make collapsible (collapsed by default)
 - Show spot comment text below each spot row in session detail
 - Fix spot row text wrapping with lineLimit, fixedSize on region badges, and layoutPriority on callsign
