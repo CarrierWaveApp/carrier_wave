@@ -4,6 +4,8 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.45.0] - 2026-02-24
+
 ### Added
 - Add rich per-service sync progress card on dashboard during sync (shows waiting/downloading/downloaded/uploading/complete state for each service)
 - Add POTA activation progress bar and LoFi QSO progress bar in sync card
