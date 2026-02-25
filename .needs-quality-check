@@ -1,0 +1,1 @@
+Added spot-vs-QSO contact validation: CallsignEditDistance (CarrierWaveCore), SpotContactValidator (service), SpotContactMismatchBanner (view), wired into LoggerView layout/data/menu

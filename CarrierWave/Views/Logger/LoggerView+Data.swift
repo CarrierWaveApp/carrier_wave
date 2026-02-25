@@ -29,6 +29,7 @@ extension LoggerView {
             sessionQSOs = []
         }
         refreshUTCDayQSOs()
+        refreshSpotMismatches()
     }
 
     /// Refresh all QSOs for the current UTC day (for POTA duplicate detection across sessions)
@@ -60,6 +61,35 @@ extension LoggerView {
         } catch {
             utcDayQSOs = []
         }
+    }
+
+    // MARK: - Spot Contact Validation
+
+    /// Recompute spot-vs-QSO mismatches for the current session.
+    /// Called after QSO list changes (log, edit, delete).
+    func refreshSpotMismatches() {
+        guard !spotMismatchesDismissed,
+              let session = sessionManager?.activeSession
+        else {
+            spotMismatches = []
+            return
+        }
+
+        let spots = SpotContactValidator.fetchSessionSpots(
+            sessionId: session.id,
+            modelContext: modelContext
+        )
+
+        // Filter QSOs to non-metadata modes
+        let validQSOs = sessionQSOs.filter { qso in
+            let mode = qso.mode.uppercased()
+            return mode != "WEATHER" && mode != "SOLAR" && mode != "NOTE"
+        }
+
+        spotMismatches = SpotContactValidator.findMismatches(
+            spots: spots,
+            qsos: validQSOs
+        )
     }
 
     // MARK: - POTA Spots

@@ -57,6 +57,22 @@ extension LoggerView {
                 }
             )
 
+            // Spot-vs-QSO mismatch banner
+            if !spotMismatchesDismissed {
+                SpotContactMismatchBannerContainer(
+                    mismatches: spotMismatches,
+                    onDismiss: {
+                        withAnimation { spotMismatchesDismissed = true }
+                    },
+                    onTapMismatch: { mismatch in
+                        if let qso = sessionQSOs.first(where: { $0.id == mismatch.qsoId }) {
+                            startEditingCallsign(qso)
+                            callsignInput = mismatch.spotCallsign
+                        }
+                    }
+                )
+            }
+
             ScrollViewReader { proxy in
                 ScrollView {
                     VStack(spacing: 12) {

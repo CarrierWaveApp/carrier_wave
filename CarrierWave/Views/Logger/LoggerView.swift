@@ -64,6 +64,11 @@ struct LoggerView: View {
     /// Dismissed warning messages (to avoid re-showing dismissed warnings)
     @State var dismissedWarnings: Set<String> = []
 
+    /// Spot-vs-QSO callsign mismatches (near-misses within edit distance 2)
+    @State var spotMismatches: [SpotContactMismatch] = []
+    /// Whether the user permanently dismissed the mismatch banner for this session
+    @State var spotMismatchesDismissed = false
+
     // MARK: - Stored Properties (internal for cross-file extensions)
 
     @Query(filter: #Predicate<Friendship> { $0.statusRawValue == "accepted" })
