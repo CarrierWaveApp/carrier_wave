@@ -1,0 +1,247 @@
+//
+//  FT8QSOStateMachine.swift
+//  CarrierWaveCore
+//
+
+import Foundation
+
+// MARK: - FT8QSOStateMachine
+
+/// Pure-logic state machine for FT8 QSO exchanges.
+/// Drives the auto-sequencer: given the current state and incoming messages,
+/// determines the next TX message and when a QSO is complete.
+public struct FT8QSOStateMachine: Sendable {
+    // MARK: Lifecycle
+
+    // MARK: - Init
+
+    public init(myCallsign: String, myGrid: String) {
+        self.myCallsign = myCallsign
+        self.myGrid = myGrid
+    }
+
+    // MARK: Public
+
+    // MARK: - Types
+
+    public enum State: Sendable, Equatable {
+        /// Not in a QSO; listening or calling CQ.
+        case idle
+        /// Sent our grid/call, waiting for signal report.
+        case calling
+        /// Sent signal report, waiting for R+report or RR73.
+        case reportSent
+        /// Received R+report, sending RR73.
+        case reportReceived
+        /// QSO done — ready to log.
+        case complete
+    }
+
+    public struct CompletedQSO: Sendable {
+        public let theirCallsign: String
+        public let theirGrid: String?
+        public let theirReport: Int?
+        public let myReport: Int?
+        public let startTime: Date
+    }
+
+    public private(set) var state: State = .idle
+    public let myCallsign: String
+    public let myGrid: String
+
+    public private(set) var theirCallsign: String?
+    public private(set) var theirGrid: String?
+    public private(set) var theirReport: Int?
+    public var myReport: Int?
+
+    // MARK: - TX Message Generation
+
+    public var nextTXMessage: String? {
+        switch state {
+        case .idle:
+            return cqMessage
+
+        case .calling:
+            guard let their = theirCallsign else {
+                return nil
+            }
+            return "\(their) \(myCallsign) \(myGrid)"
+
+        case .reportSent:
+            guard let their = theirCallsign, let report = myReport else {
+                return nil
+            }
+            let sign = report >= 0 ? "+" : ""
+            return "\(their) \(myCallsign) \(sign)\(String(format: "%02d", abs(report)))"
+
+        case .reportReceived:
+            guard let their = theirCallsign else {
+                return nil
+            }
+            return "\(their) \(myCallsign) RR73"
+
+        case .complete:
+            return nil
+        }
+    }
+
+    // MARK: - Completed QSO
+
+    public var completedQSO: CompletedQSO? {
+        guard state == .complete, let call = theirCallsign else {
+            return nil
+        }
+        return CompletedQSO(
+            theirCallsign: call,
+            theirGrid: theirGrid,
+            theirReport: theirReport,
+            myReport: myReport,
+            startTime: qsoStartTime ?? Date()
+        )
+    }
+
+    // MARK: - CQ Mode
+
+    public mutating func setCQMode(modifier: String?) {
+        isCQMode = true
+        cqModifier = modifier
+        state = .idle
+    }
+
+    public mutating func setListenMode() {
+        isCQMode = false
+        state = .idle
+        resetQSO()
+    }
+
+    // MARK: - Initiate Call (S&P)
+
+    public mutating func initiateCall(to callsign: String, theirGrid: String?) {
+        guard !workedCallsigns.contains(callsign.uppercased()) else {
+            return
+        }
+
+        theirCallsign = callsign
+        self.theirGrid = theirGrid
+        state = .calling
+        cyclesSinceLastResponse = 0
+        qsoStartTime = Date()
+    }
+
+    // MARK: - Process Incoming Message
+
+    public mutating func processMessage(_ message: FT8Message) {
+        if handleCQResponse(message) {
+            return
+        }
+
+        guard message.isDirectedTo(myCallsign) else {
+            return
+        }
+        cyclesSinceLastResponse = 0
+
+        switch (state, message) {
+        case let (.calling, .signalReport(_, _, dB)):
+            theirReport = dB
+            state = .reportSent
+
+        case let (.reportSent, .rogerReport(_, _, dB)):
+            theirReport = dB
+            state = .reportReceived
+
+        case (.reportReceived, .rogerEnd),
+             (.reportReceived, .end):
+            markComplete()
+
+        case (_, .rogerEnd):
+            // RR73 at any stage completes the QSO
+            markComplete()
+
+        default:
+            break
+        }
+    }
+
+    // MARK: - Cycle Management
+
+    public mutating func advanceCycle() {
+        guard state != .idle, state != .complete else {
+            return
+        }
+        cyclesSinceLastResponse += 1
+        if cyclesSinceLastResponse >= maxCyclesBeforeTimeout {
+            state = .idle
+            resetQSO()
+        }
+    }
+
+    // MARK: - Worked Stations
+
+    public mutating func markWorked(_ callsign: String) {
+        workedCallsigns.insert(callsign.uppercased())
+    }
+
+    public func hasWorked(_ callsign: String) -> Bool {
+        workedCallsigns.contains(callsign.uppercased())
+    }
+
+    // MARK: - Reset
+
+    public mutating func resetForNextQSO() {
+        state = .idle
+        resetQSO()
+    }
+
+    // MARK: Private
+
+    private var cqModifier: String?
+    private var isCQMode = false
+    private var cyclesSinceLastResponse = 0
+    private var maxCyclesBeforeTimeout = 8
+    private var workedCallsigns = Set<String>()
+    private var qsoStartTime: Date?
+
+    private var cqMessage: String? {
+        guard isCQMode else {
+            return nil
+        }
+        if let mod = cqModifier {
+            return "CQ \(mod) \(myCallsign) \(myGrid)"
+        }
+        return "CQ \(myCallsign) \(myGrid)"
+    }
+
+    /// Handle a CQ response in CQ mode. Returns true if handled.
+    private mutating func handleCQResponse(_ message: FT8Message) -> Bool {
+        guard isCQMode, state == .idle else {
+            return false
+        }
+        guard case let .directed(from, to, grid) = message,
+              to.uppercased() == myCallsign.uppercased()
+        else {
+            return false
+        }
+        theirCallsign = from
+        theirGrid = grid
+        state = .reportSent
+        cyclesSinceLastResponse = 0
+        qsoStartTime = Date()
+        return true
+    }
+
+    private mutating func markComplete() {
+        state = .complete
+        if let call = theirCallsign {
+            workedCallsigns.insert(call.uppercased())
+        }
+    }
+
+    private mutating func resetQSO() {
+        theirCallsign = nil
+        theirGrid = nil
+        theirReport = nil
+        myReport = nil
+        cyclesSinceLastResponse = 0
+        qsoStartTime = nil
+    }
+}
