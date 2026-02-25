@@ -1,0 +1,12 @@
+module CFT8 {
+    header "../ft8/constants.h"
+    header "../ft8/crc.h"
+    header "../ft8/decode.h"
+    header "../ft8/encode.h"
+    header "../ft8/ldpc.h"
+    header "../ft8/message.h"
+    header "../ft8/text.h"
+    header "../common/monitor.h"
+    header "../common/common.h"
+    export *
+}

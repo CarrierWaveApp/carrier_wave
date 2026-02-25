@@ -20,7 +20,17 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "CarrierWaveCore"
+            name: "CFT8",
+            path: "Sources/CFT8",
+            publicHeadersPath: "include",
+            cSettings: [
+                .define("HAVE_STPCPY"),
+                .headerSearchPath("."),
+            ]
+        ),
+        .target(
+            name: "CarrierWaveCore",
+            dependencies: ["CFT8"]
         ),
         .executableTarget(
             name: "LoFiCLI",
@@ -28,7 +38,10 @@ let package = Package(
         ),
         .testTarget(
             name: "CarrierWaveCoreTests",
-            dependencies: ["CarrierWaveCore"]
+            dependencies: ["CarrierWaveCore"],
+            resources: [
+                .copy("Resources/ft8-samples"),
+            ]
         ),
     ]
 )
