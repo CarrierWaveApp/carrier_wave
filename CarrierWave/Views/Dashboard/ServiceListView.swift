@@ -142,6 +142,7 @@ struct ServiceRow: View {
                         Image(systemName: "exclamationmark.circle.fill")
                             .font(.subheadline)
                             .foregroundStyle(.orange)
+                            .accessibilityLabel("Attention needed")
                     }
                 }
             } else {
