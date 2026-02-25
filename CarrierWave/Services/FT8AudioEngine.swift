@@ -3,8 +3,10 @@
 //  CarrierWave
 //
 
+import Accelerate
 import AVFoundation
 import CarrierWaveCore
+import os
 
 // MARK: - FT8AudioEngine
 
@@ -21,14 +23,22 @@ actor FT8AudioEngine {
         try session.setCategory(
             .playAndRecord,
             mode: .measurement, // Disables voice processing — critical for data modes
-            options: [.allowBluetoothHFP, .defaultToSpeaker]
+            options: []
         )
 
         try session.setPreferredSampleRate(48_000) // Prefer 48kHz for clean 4:1 decimation
         try session.setPreferredIOBufferDuration(0.02) // 20ms buffers
         try session.setActive(true)
 
+        // Validate we got the sample rate we need for integer-ratio decimation
+        let actualRate = session.sampleRate
+        let ratio = actualRate / targetSampleRate
+        guard ratio == ratio.rounded(), ratio >= 1 else {
+            throw FT8AudioEngineError.unsupportedSampleRate(actualRate)
+        }
+
         setupPlayerNode()
+        observeInterruptions()
     }
 
     // MARK: - Start/Stop
@@ -78,7 +88,9 @@ actor FT8AudioEngine {
         }
 
         player.scheduleBuffer(buffer)
-        player.play()
+        if !player.isPlaying {
+            player.play()
+        }
     }
 
     // MARK: - Audio Level
@@ -89,15 +101,34 @@ actor FT8AudioEngine {
 
     // MARK: Private
 
+    private static let log = Logger(
+        subsystem: "com.jsvana.CarrierWave",
+        category: "FT8AudioEngine"
+    )
+
+    /// 15-tap low-pass FIR filter for 4:1 decimation (cutoff ~0.4 Nyquist).
+    /// Coefficients designed with a Hamming window.
+    nonisolated private static let antiAliasFilter: [Float] = [
+        0.0025, 0.0072, 0.0210, 0.0445, 0.0748,
+        0.1050, 0.1250, 0.1300, 0.1250, 0.1050,
+        0.0748, 0.0445, 0.0210, 0.0072, 0.0025,
+    ]
+
     private let engine = AVAudioEngine()
     private var playerNode: AVAudioPlayerNode?
     private var isRunning = false
     private var inputBuffer: [Float] = []
     private let targetSampleRate = Double(FT8Constants.sampleRate)
 
+    /// Maximum buffer size: 2 full slots. Drop old audio if falling behind.
+    private let maxBufferSamples = FT8Constants.samplesPerSlot * 2
+
     // Callbacks
     private var onSlotReady: (@Sendable ([Float]) -> Void)?
     private var onAudioLevel: (@Sendable (Float) -> Void)?
+
+    /// Interruption observer
+    private var interruptionObserver: (any NSObjectProtocol)?
 
     private static func extractSamples(from buffer: AVAudioPCMBuffer) -> [Float] {
         guard let channelData = buffer.floatChannelData else {
@@ -107,24 +138,44 @@ actor FT8AudioEngine {
         return Array(UnsafeBufferPointer(start: channelData[0], count: count))
     }
 
-    /// Decimate audio from device sample rate to target rate.
-    /// For 48kHz → 12kHz, this is a simple 4:1 decimation.
+    /// Low-pass filter + decimate from device sample rate to target rate.
+    /// Uses vDSP_desamp for anti-aliased decimation.
     nonisolated private static func decimate(
         _ samples: [Float],
-        fromRate: Double,
-        toRate: Double
+        ratio: Int
     ) -> [Float] {
-        let ratio = Int(fromRate / toRate)
         guard ratio > 1 else {
             return samples
         }
 
-        // Simple decimation — take every Nth sample.
-        // A proper anti-aliasing filter should be added for production use.
-        var result = [Float]()
-        result.reserveCapacity(samples.count / ratio)
-        for i in stride(from: 0, to: samples.count, by: ratio) {
-            result.append(samples[i])
+        let outputCount = samples.count / ratio
+        guard outputCount > 0 else {
+            return []
+        }
+
+        var result = [Float](repeating: 0, count: outputCount)
+        samples.withUnsafeBufferPointer { inputBuf in
+            guard let inputPtr = inputBuf.baseAddress else {
+                return
+            }
+            result.withUnsafeMutableBufferPointer { outputBuf in
+                guard let outputPtr = outputBuf.baseAddress else {
+                    return
+                }
+                antiAliasFilter.withUnsafeBufferPointer { filterBuf in
+                    guard let filterPtr = filterBuf.baseAddress else {
+                        return
+                    }
+                    vDSP_desamp(
+                        inputPtr,
+                        vDSP_Stride(ratio),
+                        filterPtr,
+                        outputPtr,
+                        vDSP_Length(outputCount),
+                        vDSP_Length(antiAliasFilter.count)
+                    )
+                }
+            }
         }
         return result
     }
@@ -133,7 +184,7 @@ actor FT8AudioEngine {
         let inputNode = engine.inputNode
         let inputFormat = inputNode.outputFormat(forBus: 0)
         let deviceSampleRate = inputFormat.sampleRate
-        let targetRate = targetSampleRate
+        let decimationRatio = Int(deviceSampleRate / targetSampleRate)
 
         inputNode.installTap(onBus: 0, bufferSize: 4_096, format: inputFormat) {
             [weak self] buffer, _ in
@@ -141,11 +192,7 @@ actor FT8AudioEngine {
                 return
             }
             let samples = Self.extractSamples(from: buffer)
-            let resampled = Self.decimate(
-                samples,
-                fromRate: deviceSampleRate,
-                toRate: targetRate
-            )
+            let resampled = Self.decimate(samples, ratio: decimationRatio)
             Task { await self.appendSamples(resampled) }
         }
     }
@@ -160,6 +207,7 @@ actor FT8AudioEngine {
             channels: 1,
             interleaved: false
         ) else {
+            Self.log.error("Failed to create output audio format")
             return
         }
 
@@ -170,17 +218,91 @@ actor FT8AudioEngine {
     private func appendSamples(_ samples: [Float]) {
         inputBuffer.append(contentsOf: samples)
 
-        // Report audio level
+        // Cap buffer to prevent unbounded growth if processing falls behind
+        if inputBuffer.count > maxBufferSamples {
+            inputBuffer.removeFirst(inputBuffer.count - maxBufferSamples)
+        }
+
+        // Report audio level using vDSP for efficiency
         if let levelCallback = onAudioLevel, !samples.isEmpty {
-            let rms = sqrt(samples.map { $0 * $0 }.reduce(0, +) / Float(samples.count))
+            var rms: Float = 0
+            samples.withUnsafeBufferPointer { buf in
+                guard let ptr = buf.baseAddress else {
+                    return
+                }
+                vDSP_rmsqv(ptr, 1, &rms, vDSP_Length(samples.count))
+            }
             levelCallback(rms)
         }
 
-        // When we have a full 15-second slot, deliver it
+        // When we have a full 15-second slot (180,000 samples at 12kHz), deliver it
         if inputBuffer.count >= FT8Constants.samplesPerSlot {
             let slot = Array(inputBuffer.prefix(FT8Constants.samplesPerSlot))
             inputBuffer.removeFirst(FT8Constants.samplesPerSlot)
             onSlotReady?(slot)
+        }
+    }
+
+    // MARK: - Interruption Handling
+
+    private func observeInterruptions() {
+        interruptionObserver = NotificationCenter.default.addObserver(
+            forName: AVAudioSession.interruptionNotification,
+            object: nil,
+            queue: nil
+        ) { [weak self] notification in
+            // Extract Sendable values from notification before crossing actor boundary
+            guard let userInfo = notification.userInfo,
+                  let typeValue = userInfo[AVAudioSessionInterruptionTypeKey] as? UInt
+            else {
+                return
+            }
+            let optionsValue = userInfo[AVAudioSessionInterruptionOptionKey] as? UInt
+            Task { await self?.handleInterruption(type: typeValue, options: optionsValue) }
+        }
+    }
+
+    private func handleInterruption(type typeValue: UInt, options optionsValue: UInt?) {
+        guard let type = AVAudioSession.InterruptionType(rawValue: typeValue) else {
+            return
+        }
+
+        switch type {
+        case .began:
+            Self.log.info("Audio session interrupted — stopping engine")
+            stop()
+
+        case .ended:
+            let shouldResume = optionsValue.map {
+                AVAudioSession.InterruptionOptions(rawValue: $0).contains(.shouldResume)
+            } ?? false
+
+            if shouldResume, let callback = onSlotReady {
+                Self.log.info("Audio interruption ended — resuming")
+                do {
+                    try start(onSlotReady: callback)
+                } catch {
+                    Self.log.error("Failed to restart after interruption: \(error)")
+                }
+            }
+
+        @unknown default:
+            break
+        }
+    }
+}
+
+// MARK: - FT8AudioEngineError
+
+enum FT8AudioEngineError: Error, LocalizedError {
+    case unsupportedSampleRate(Double)
+
+    // MARK: Internal
+
+    var errorDescription: String? {
+        switch self {
+        case let .unsupportedSampleRate(rate):
+            "Device sample rate \(rate) Hz does not support integer-ratio decimation to 12 kHz"
         }
     }
 }
