@@ -4,6 +4,15 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Add FT8 digital mode with full TX/RX capability via ft8_lib C library
+- Add FT8 session view with compact waterfall, decode list, and auto-sequencing
+- Add QSO state machine for automatic FT8 message exchange (CQ and Search & Pounce modes)
+- Add FT8 encoder with GFSK tone synthesis for transmission
+- Add first-time FT8 setup wizard for audio connection and radio configuration
+- Add auto-logging of completed FT8 QSOs with dB signal reports
+- Add FT8 integration with existing POTA/QRZ/LoFi sync pipeline
+
 ## [1.45.0] - 2026-02-24
 
 ### Added

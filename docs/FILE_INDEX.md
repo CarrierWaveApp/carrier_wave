@@ -36,6 +36,12 @@ Pure logic library that can be tested without iOS Simulator. Run tests with `mak
 | `Sources/CarrierWaveCore/QueryLanguage/QueryParser+FieldTerms.swift` | Field term and bare term parsing |
 | `Sources/CarrierWaveCore/QueryLanguage/QueryParser+Conditions.swift` | Condition building (date, numeric, status, source, wildcards) |
 | `Sources/CarrierWaveCore/QueryLanguage/QueryAnalyzer.swift` | Query performance analysis and warnings |
+| `Sources/CFT8/` | Vendored ft8_lib C library (MIT license) — FT8 encode/decode with KISS FFT and LDPC codec |
+| `Sources/CarrierWaveCore/FT8Constants.swift` | FT8 dial frequencies, supported bands, timing constants |
+| `Sources/CarrierWaveCore/FT8Message.swift` | FT8 message types (CQ, directed, signal report, RR73) and decode result |
+| `Sources/CarrierWaveCore/FT8Decoder.swift` | Swift wrapper over ft8_lib C decoder |
+| `Sources/CarrierWaveCore/FT8Encoder.swift` | FT8 GFSK tone synthesis for transmission |
+| `Sources/CarrierWaveCore/FT8QSOStateMachine.swift` | Pure-logic state machine for FT8 QSO exchanges (CQ and S&P modes) |
 | `Sources/CarrierWaveCore/LoFi/LoFiCredentialStore.swift` | Protocol + key enum for credential storage |
 | `Sources/CarrierWaveCore/LoFi/LoFiLogger.swift` | Protocol for logging |
 | `Sources/CarrierWaveCore/LoFi/LoFiModels.swift` | LoFi API request/response models (operations, registration) |
@@ -265,6 +271,9 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `SpotCommentsService.swift` | Background polling for POTA spot comments |
 | `SpotMonitoringService.swift` | Background RBN/POTA spot polling (activator + hunter modes) |
 | `WorkedBeforeCache.swift` | Actor-based cache for worked-before spot checking |
+| `FT8AudioEngine.swift` | AVAudioEngine actor for FT8 RX/TX audio routing |
+| `FT8SessionManager.swift` | FT8 session orchestrator — decoding, auto-sequencing, QSO logging |
+| `FT8WaterfallData.swift` | Observable waterfall magnitude data for FT8 spectrum display |
 | `BandPlanService.swift` | Validates frequency/mode against license class privileges |
 | `FrequencyActivityService.swift` | Aggregates nearby frequency activity from RBN |
 | `HamDBClient.swift` | HamDB.org API client for US callsign license class lookup |
@@ -467,6 +476,17 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `WebSDRPanelView+Subviews.swift` | Extension with level meter, buffer indicator, reconnecting/error views |
 | `WebSDRPickerSheet.swift` | KiwiSDR receiver selection with favorites, enrichment, and band matching |
 | `WebSDRReceiverRow.swift` | Enriched receiver row with antenna badges, SNR, band match |
+
+## Views - Logger FT8 (`CarrierWave/Views/Logger/FT8/`)
+| File | Purpose |
+|------|---------|
+| `FT8SessionView.swift` | Main FT8 session view with band selector, waterfall, decode list, and controls |
+| `FT8WaterfallView.swift` | Canvas-based spectrogram waterfall display |
+| `FT8DecodeListView.swift` | Scrollable list of decoded FT8 messages with tap-to-call |
+| `FT8ActiveQSOCard.swift` | Active QSO progress card showing state machine status |
+| `FT8ControlBar.swift` | Operating mode controls (Listen, CQ, S&P) with QSO counter |
+| `FT8CycleIndicatorView.swift` | 15-second cycle progress indicator with TX/RX state |
+| `FT8SetupWizardView.swift` | First-time FT8 setup wizard (audio connection, radio setup, verify audio) |
 
 ## Views - CW Transcription (`CarrierWave/Views/CWTranscription/`)
 | File | Purpose |
@@ -728,9 +748,15 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `KIndexRepairServiceTests.swift` | K-index repair service tests (cutoff date, field preservation) |
 | `BackupServiceTests.swift` | Backup service tests (snapshot, manifest, integrity, restore marker) |
 | `BandPlanServiceTests.swift` | Band plan validation tests (license class privileges) |
+| `FT8IntegrationTests.swift` | FT8 end-to-end integration tests (QSO creation, dB reports, POTA park reference) |
 | `PerformanceTests/QSOStatisticsPerformanceTests.swift` | Performance regression tests (50k/500k QSOs) |
 
 ## CarrierWaveCore Tests (`CarrierWaveCore/Tests/CarrierWaveCoreTests/`)
 | File | Purpose |
 |------|---------|
+| `FT8ConstantsTests.swift` | FT8 constants tests (dial frequencies, supported bands) |
+| `FT8MessageTests.swift` | FT8 message parsing and classification tests |
+| `FT8DecoderTests.swift` | FT8 decoder tests (WAV sample decoding) |
+| `FT8EncoderTests.swift` | FT8 encoder tests (tone generation, round-trip) |
+| `FT8QSOStateMachineTests.swift` | FT8 QSO state machine tests (S&P, CQ, timeout, duplicate) |
 | `AntennaDescriptionParserTests.swift` | Antenna description parsing tests (models, bands, direction) |
