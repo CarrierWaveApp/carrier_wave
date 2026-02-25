@@ -4,8 +4,22 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- Show descriptive phase text during transcription (uploading, analyzing, decoding, finalizing) with byte-level upload progress
+
+### Fixed
+- Fix transcript not loading from disk when reopening a recording (compact player pre-loaded the engine, causing full player to skip transcript load)
+
+## [1.44.1] - 2026-02-24
+
 ### Added
 - Add toggle to disable auto-sharing session summary to activity feed (Logger Settings > Sessions)
+- Add local network usage description for connecting to personal radio servers
+- Add UIFontMetrics scaling to keyboard accessory and callsign text field fonts
+- Add Reduce Motion support to spot summary expansion animation
+
+### Changed
+- Replace print() logging with structured os.Logger in activities client and sync service
 
 ### Fixed
 - Fix ADIF files shared via email appearing as inline text instead of file attachments

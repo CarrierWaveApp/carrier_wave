@@ -5,6 +5,50 @@ nonisolated(unsafe) private let log = Logger(
     subsystem: "com.jsvana.FullDuplex", category: "CW-SWL"
 )
 
+// MARK: - TranscriptionPhase
+
+/// Describes the current step of the transcription pipeline for UI display.
+enum TranscriptionPhase: Sendable {
+    case uploading(fraction: Float)
+    case starting
+    case analyzing
+    case decoding(progress: Float)
+    case finalizing
+
+    // MARK: Internal
+
+    var displayText: String {
+        switch self {
+        case let .uploading(fraction):
+            "Uploading recording... \(Int(fraction * 100))%"
+        case .starting:
+            "Starting transcription..."
+        case .analyzing:
+            "Analyzing frequencies..."
+        case let .decoding(progress):
+            "Decoding CW... \(Int(progress * 100))%"
+        case .finalizing:
+            "Finalizing transcript..."
+        }
+    }
+
+    /// Overall progress 0..1 across the full pipeline.
+    var overallProgress: Float {
+        switch self {
+        case let .uploading(fraction):
+            fraction * 0.15
+        case .starting:
+            0.15
+        case .analyzing:
+            0.20
+        case let .decoding(progress):
+            0.20 + progress * 0.75
+        case .finalizing:
+            0.98
+        }
+    }
+}
+
 // MARK: - TranscriptionStatus
 
 /// Status of an async transcription job on the cw-swl server
@@ -52,7 +96,10 @@ actor CWSWLClient {
     // MARK: Internal
 
     /// Upload a local recording file for transcription
-    func uploadRecording(fileURL: URL) async throws -> UUID {
+    func uploadRecording(
+        fileURL: URL,
+        onProgress: (@Sendable (Float) -> Void)? = nil
+    ) async throws -> UUID {
         let base = try baseURL()
         log.info("[CW-SWL] Base URL: \(base)")
         let url = base.appendingPathComponent("api/v1/recordings/upload")
@@ -79,10 +126,12 @@ actor CWSWLClient {
         body.append(data)
         body.append("\r\n--\(boundary)--\r\n")
 
-        request.httpBody = body
-
         log.info("[CW-SWL] Sending upload request (\(body.count) bytes)...")
-        let (responseData, response) = try await performRequest(request)
+
+        let delegate = onProgress.map { UploadProgressDelegate(onProgress: $0) }
+        let (responseData, response) = try await performUpload(
+            request, body: body, delegate: delegate
+        )
         let httpResponse = response as? HTTPURLResponse
         log.info("[CW-SWL] Upload response: \(httpResponse?.statusCode ?? -1)")
         guard let httpResponse, httpResponse.statusCode == 201 else {
@@ -156,13 +205,15 @@ actor CWSWLClient {
     /// Times out after 5 minutes of polling.
     func transcribe(
         fileURL: URL,
-        progress: @Sendable @escaping (Float) -> Void
+        progress: @Sendable @escaping (TranscriptionPhase) -> Void
     ) async throws -> SDRRecordingTranscript {
-        let recordingId = try await uploadRecording(fileURL: fileURL)
-        progress(0.05)
+        let recordingId = try await uploadRecording(fileURL: fileURL) { fraction in
+            progress(.uploading(fraction: fraction))
+        }
+        progress(.starting)
 
         let jobId = try await startTranscription(recordingId: recordingId)
-        progress(0.1)
+        progress(.analyzing)
 
         // Poll until complete (timeout after 5 minutes)
         let deadline = ContinuousClock.now + .seconds(300)
@@ -172,9 +223,17 @@ actor CWSWLClient {
 
             switch status {
             case let .inProgress(serverProgress):
-                progress(0.1 + serverProgress * 0.9)
+                // Server reports 0..1; map to phases based on known pipeline
+                if serverProgress < 0.10 {
+                    progress(.analyzing)
+                } else if serverProgress < 0.95 {
+                    // Remap 0.10..0.95 → 0..1 for the decoding sub-progress
+                    let decodeFraction = (serverProgress - 0.10) / 0.85
+                    progress(.decoding(progress: decodeFraction))
+                } else {
+                    progress(.finalizing)
+                }
             case let .completed(transcript):
-                progress(1.0)
                 return transcript
             case let .failed(message):
                 throw CWSWLError.transcriptionFailed(message)
@@ -203,6 +262,24 @@ actor CWSWLClient {
     ) async throws -> (Data, URLResponse) {
         do {
             return try await session.data(for: request)
+        } catch let error as URLError
+            where error.code == .cannotConnectToHost
+            || error.code == .timedOut
+            || error.code == .cannotFindHost
+        {
+            throw CWSWLError.serverUnreachable
+        }
+    }
+
+    private func performUpload(
+        _ request: URLRequest,
+        body: Data,
+        delegate: UploadProgressDelegate?
+    ) async throws -> (Data, URLResponse) {
+        do {
+            return try await session.upload(
+                for: request, from: body, delegate: delegate
+            )
         } catch let error as URLError
             where error.code == .cannotConnectToHost
             || error.code == .timedOut
@@ -258,6 +335,34 @@ private struct TranscriptionStatusResponse: nonisolated Decodable, Sendable {
     let progress: Float?
     let transcript: SDRRecordingTranscript?
     let errorMessage: String?
+}
+
+// MARK: - UploadProgressDelegate
+
+private final class UploadProgressDelegate: NSObject, URLSessionTaskDelegate, Sendable {
+    // MARK: Lifecycle
+
+    init(onProgress: @escaping @Sendable (Float) -> Void) {
+        self.onProgress = onProgress
+    }
+
+    // MARK: Internal
+
+    let onProgress: @Sendable (Float) -> Void
+
+    func urlSession(
+        _: URLSession,
+        task _: URLSessionTask,
+        didSendBodyData _: Int64,
+        totalBytesSent: Int64,
+        totalBytesExpectedToSend: Int64
+    ) {
+        guard totalBytesExpectedToSend > 0 else {
+            return
+        }
+        let fraction = Float(totalBytesSent) / Float(totalBytesExpectedToSend)
+        onProgress(fraction)
+    }
 }
 
 // MARK: - Data Extension

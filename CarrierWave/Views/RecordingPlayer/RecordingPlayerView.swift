@@ -18,7 +18,7 @@ struct RecordingPlayerView: View {
     @State var loadedQSOs: [QSO]?
     @State var isQSOListExpanded = false
     @State var isTranscribing = false
-    @State var transcriptionProgress: Float = 0
+    @State var transcriptionPhase: TranscriptionPhase = .uploading(fraction: 0)
     @State var transcriptionError: String?
     @AppStorage("cwswlServerURL") var cwswlServerURL = "https://swl.carrierwave.app"
 
@@ -235,12 +235,14 @@ struct RecordingPlayerView: View {
 
     private var transcriptionProgressView: some View {
         VStack(spacing: 12) {
-            ProgressView(value: transcriptionProgress)
+            ProgressView(value: transcriptionPhase.overallProgress)
                 .progressViewStyle(.linear)
                 .frame(maxWidth: 200)
-            Text("Transcribing... \(Int(transcriptionProgress * 100))%")
+            Text(transcriptionPhase.displayText)
                 .font(.caption)
                 .foregroundStyle(.secondary)
+                .contentTransition(.numericText())
+                .animation(.default, value: transcriptionPhase.displayText)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

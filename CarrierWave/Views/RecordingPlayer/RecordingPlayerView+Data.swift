@@ -148,16 +148,16 @@ extension RecordingPlayerView {
             .info("[CW-SWL] Starting transcription: \(fileURL.lastPathComponent), exists=\(exists), size=\(size)")
 
         isTranscribing = true
-        transcriptionProgress = 0
+        transcriptionPhase = .uploading(fraction: 0)
         transcriptionError = nil
 
         let client = CWSWLClient()
         do {
             let transcript = try await client.transcribe(
                 fileURL: fileURL
-            ) { progress in
+            ) { phase in
                 Task { @MainActor in
-                    transcriptionProgress = progress
+                    transcriptionPhase = phase
                 }
             }
             do {
@@ -193,17 +193,22 @@ extension RecordingPlayerView {
     }
 
     func loadIfNeeded() async {
-        guard !engine.isLoaded, let fileURL = recording.fileURL else {
+        let sessionId = recording.loggingSessionId
+        guard let fileURL = recording.fileURL else {
             return
         }
-        let timestamps = sortedQSOs.map(\.timestamp)
-        try? engine.load(
-            fileURL: fileURL,
-            qsoTimestamps: timestamps,
-            recordingStart: recording.startedAt,
-            segments: recording.segments
-        )
-        engine.loadTranscript(sessionId: recording.loggingSessionId)
+        if !engine.isLoaded {
+            let timestamps = sortedQSOs.map(\.timestamp)
+            try? engine.load(
+                fileURL: fileURL,
+                qsoTimestamps: timestamps,
+                recordingStart: recording.startedAt,
+                segments: recording.segments
+            )
+        }
+        if engine.transcript == nil {
+            engine.loadTranscript(sessionId: sessionId)
+        }
     }
 
     // MARK: - Formatting
