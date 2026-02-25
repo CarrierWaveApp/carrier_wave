@@ -41,7 +41,9 @@ enum SpotContactValidator {
         spots: [SessionSpot],
         qsos: [QSO]
     ) -> [SpotContactMismatch] {
-        guard !spots.isEmpty, !qsos.isEmpty else { return [] }
+        guard !spots.isEmpty, !qsos.isEmpty else {
+            return []
+        }
 
         let spotCallsigns = Set(spots.map { $0.callsign.uppercased() })
         let qsoCallsigns = Set(qsos.map { $0.callsign.uppercased() })
@@ -54,7 +56,9 @@ enum SpotContactValidator {
             let qsoCall = qso.callsign.uppercased()
 
             // If this QSO callsign exactly matches a spot, no problem
-            if spotCallsigns.contains(qsoCall) { continue }
+            if spotCallsigns.contains(qsoCall) {
+                continue
+            }
 
             // Find near-matches among spot callsigns
             let nearMatches = CallsignEditDistance.findNearMatches(
@@ -63,11 +67,15 @@ enum SpotContactValidator {
                 candidates: spotCallsigns
             )
 
-            guard let closest = nearMatches.first else { continue }
+            guard let closest = nearMatches.first else {
+                continue
+            }
 
             // Also skip if the spot callsign was already logged as a different QSO
             // (the operator worked both stations, no mismatch)
-            if qsoCallsigns.contains(closest.callsign) { continue }
+            if qsoCallsigns.contains(closest.callsign) {
+                continue
+            }
 
             // Find the actual spot record for context
             let matchingSpot = spots.first {

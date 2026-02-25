@@ -5,6 +5,8 @@ import SwiftUI
 /// Banner showing potential callsign mismatches between session spots and logged QSOs.
 /// Appears at the top of the session and can be permanently dismissed.
 struct SpotContactMismatchBanner: View {
+    // MARK: Internal
+
     let mismatches: [SpotContactMismatch]
     let onDismiss: () -> Void
     let onTapMismatch: (SpotContactMismatch) -> Void
@@ -52,6 +54,8 @@ struct SpotContactMismatchBanner: View {
                 .stroke(Color.yellow.opacity(0.3), lineWidth: 1)
         )
     }
+
+    // MARK: Private
 
     private var headerText: String {
         if mismatches.count == 1 {

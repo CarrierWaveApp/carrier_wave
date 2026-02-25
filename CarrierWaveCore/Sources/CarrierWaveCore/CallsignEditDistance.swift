@@ -13,8 +13,12 @@ public enum CallsignEditDistance {
         let m = a.count
         let n = b.count
 
-        if m == 0 { return n }
-        if n == 0 { return m }
+        if m == 0 {
+            return n
+        }
+        if n == 0 {
+            return m
+        }
 
         var previousRow = Array(0 ... n)
         var currentRow = [Int](repeating: 0, count: n + 1)
@@ -48,10 +52,14 @@ public enum CallsignEditDistance {
 
         for candidate in candidates {
             let candidateUpper = candidate.uppercased()
-            guard candidateUpper != upper else { continue }
+            guard candidateUpper != upper else {
+                continue
+            }
 
             // Quick length check: if lengths differ by more than maxDistance, skip
-            if abs(candidateUpper.count - upper.count) > maxDistance { continue }
+            if abs(candidateUpper.count - upper.count) > maxDistance {
+                continue
+            }
 
             let dist = distance(upper, candidateUpper)
             if dist > 0, dist <= maxDistance {
