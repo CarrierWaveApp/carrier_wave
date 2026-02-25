@@ -60,6 +60,10 @@ final class FT8SessionManager {
     // MARK: - Start/Stop
 
     func start() async throws {
+        guard !isReceiving else {
+            return
+        }
+
         try await audioEngine.configure()
         try await audioEngine.start { [weak self] samples in
             Task { @MainActor in
@@ -103,9 +107,12 @@ final class FT8SessionManager {
 
     func callStation(_ result: FT8DecodeResult) {
         guard case let .cq(call, grid, _) = result.message else {
+            Self.log.debug("callStation called with non-CQ message")
             return
         }
         setMode(.searchAndPounce)
+        // TX on the same parity as the CQ was heard (CQ station's TX slot)
+        transmitOnEven = isEvenSlot
         qsoStateMachine.initiateCall(to: call, theirGrid: grid.isEmpty ? nil : grid)
     }
 
@@ -124,6 +131,7 @@ final class FT8SessionManager {
     private var cycleTimer: Timer?
     private var isEvenSlot = true
     private var transmitOnEven = true
+    private var currentSlotStartTime = Date()
     private let modelContext: ModelContext
     private let loggingSessionManager: LoggingSessionManager
 
@@ -139,17 +147,16 @@ final class FT8SessionManager {
             decodeResults.removeFirst(decodeResults.count - Self.maxDecodeResults)
         }
 
-        // Process each decode through the state machine
+        // Process each decode and check for completion after each message
         for result in results {
             qsoStateMachine.processMessage(result.message)
-        }
 
-        // Check if QSO completed
-        if qsoStateMachine.state == .complete,
-           let completed = qsoStateMachine.completedQSO
-        {
-            logCompletedQSO(completed)
-            qsoStateMachine.resetForNextQSO()
+            if qsoStateMachine.state == .complete,
+               let completed = qsoStateMachine.completedQSO
+            {
+                logCompletedQSO(completed)
+                qsoStateMachine.resetForNextQSO()
+            }
         }
     }
 
@@ -169,9 +176,9 @@ final class FT8SessionManager {
                 frequency: 1_500 // Default audio offset
             )
             isTransmitting = true
-            Task {
-                await audioEngine.playTones(samples)
-                isTransmitting = false
+            Task { @MainActor [weak self] in
+                await self?.audioEngine.playTones(samples)
+                self?.isTransmitting = false
             }
         } catch {
             Self.log.error("FT8 encode failed: \(error)")
@@ -187,32 +194,38 @@ final class FT8SessionManager {
         let slotSeconds = seconds.truncatingRemainder(dividingBy: FT8Constants.slotDuration)
         let nextSlotStart = FT8Constants.slotDuration - slotSeconds
 
-        isEvenSlot = Int(seconds / FT8Constants.slotDuration).isMultiple(of: 2)
+        // Initialize to the NEXT slot's parity (onSlotBoundary will toggle)
+        isEvenSlot = !Int(seconds / FT8Constants.slotDuration).isMultiple(of: 2)
+        currentSlotStartTime = now
 
-        // Fire at next slot boundary, then repeating every 15 seconds
+        // Fire at next slot boundary, then repeating every 15 seconds.
+        // Use MainActor.assumeIsolated to avoid async Task hop for timing-critical code.
         slotTimer = Timer.scheduledTimer(
             withTimeInterval: nextSlotStart,
             repeats: false
         ) { [weak self] _ in
-            Task { @MainActor in
-                self?.onSlotBoundary()
-                self?.slotTimer = Timer.scheduledTimer(
+            MainActor.assumeIsolated {
+                guard let self else {
+                    return
+                }
+                self.onSlotBoundary()
+                self.slotTimer = Timer.scheduledTimer(
                     withTimeInterval: FT8Constants.slotDuration,
                     repeats: true
                 ) { [weak self] _ in
-                    Task { @MainActor in
+                    MainActor.assumeIsolated {
                         self?.onSlotBoundary()
                     }
                 }
             }
         }
 
-        // Countdown timer (fires every second)
+        // Countdown timer — compute from wall clock to avoid drift
         cycleTimer = Timer.scheduledTimer(
             withTimeInterval: 1.0,
             repeats: true
         ) { [weak self] _ in
-            Task { @MainActor in
+            MainActor.assumeIsolated {
                 self?.updateCountdown()
             }
         }
@@ -220,6 +233,7 @@ final class FT8SessionManager {
 
     private func onSlotBoundary() {
         isEvenSlot.toggle()
+        currentSlotStartTime = Date()
         cycleTimeRemaining = FT8Constants.slotDuration
         qsoStateMachine.advanceCycle()
 
@@ -230,7 +244,8 @@ final class FT8SessionManager {
     }
 
     private func updateCountdown() {
-        cycleTimeRemaining = max(0, cycleTimeRemaining - 1.0)
+        let elapsed = Date().timeIntervalSince(currentSlotStartTime)
+        cycleTimeRemaining = max(0, FT8Constants.slotDuration - elapsed)
     }
 
     // MARK: - QSO Logging
@@ -252,7 +267,7 @@ final class FT8SessionManager {
 
     private func formatReport(_ report: Int?) -> String {
         guard let report else {
-            return "0"
+            return "+00" // Neutral fallback for unknown FT8 dB report
         }
         let sign = report >= 0 ? "+" : "-"
         return "\(sign)\(String(format: "%02d", abs(report)))"
