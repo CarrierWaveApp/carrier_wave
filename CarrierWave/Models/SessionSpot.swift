@@ -85,6 +85,11 @@ nonisolated final class SessionSpot {
         source == "pota" && !isRBNRelay
     }
 
+    /// Whether the activator spotted themselves (announcement, not an incoming spot)
+    var isSelfSpot: Bool {
+        isPOTA && spotter?.uppercased() == callsign.uppercased()
+    }
+
     /// Whether this is an RBN spot (includes RBN relays via POTA API)
     var isRBN: Bool {
         source == "rbn" || isRBNRelay
@@ -99,6 +104,11 @@ nonisolated final class SessionSpot {
     /// SpotRegion enum accessor
     var spotRegion: SpotRegion {
         SpotRegion(rawValue: region) ?? .other
+    }
+
+    /// Derived amateur band from frequency (e.g. "20m")
+    var band: String? {
+        BandUtilities.deriveBand(from: frequencyKHz)
     }
 
     /// Frequency in MHz

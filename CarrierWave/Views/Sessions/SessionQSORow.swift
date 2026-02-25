@@ -9,9 +9,16 @@ struct SessionQSORow: View {
     // MARK: Internal
 
     let qso: QSO
+    var isSpotted: Bool = false
 
     var body: some View {
         HStack(spacing: 8) {
+            if isSpotted {
+                Image(systemName: "antenna.radiowaves.left.and.right")
+                    .font(.caption)
+                    .foregroundStyle(.teal)
+            }
+
             Text(qso.callsign)
                 .font(.subheadline.monospaced().weight(.semibold))
 

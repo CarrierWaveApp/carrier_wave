@@ -255,12 +255,19 @@ struct POTAQSORow: View {
 
     let qso: QSO
     var parks: [String] = [] // For two-fer per-park status display
+    var isSpotted: Bool = false
 
     var body: some View {
         DisclosureGroup(isExpanded: $isExpanded) {
             SessionQSOExpandedDetail(qso: qso)
         } label: {
             HStack(spacing: 8) {
+                if isSpotted {
+                    Image(systemName: "antenna.radiowaves.left.and.right")
+                        .font(.caption)
+                        .foregroundStyle(.teal)
+                }
+
                 Text(qso.callsign)
                     .font(.subheadline.monospaced().weight(.semibold))
                 Spacer()

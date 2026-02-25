@@ -26,9 +26,15 @@ extension SessionDetailView {
                     qsoToEdit = qso
                 } label: {
                     if activation != nil {
-                        POTAQSORow(qso: qso, parks: activation?.parks ?? [])
+                        POTAQSORow(
+                            qso: qso, parks: activation?.parks ?? [],
+                            isSpotted: spotQSOMatch?.qsoWasSpotted(qso) ?? false
+                        )
                     } else {
-                        SessionQSORow(qso: qso)
+                        SessionQSORow(
+                            qso: qso,
+                            isSpotted: spotQSOMatch?.qsoWasSpotted(qso) ?? false
+                        )
                     }
                 }
                 .tint(.primary)
@@ -53,9 +59,15 @@ extension SessionDetailView {
                         qsoToEdit = qso
                     } label: {
                         if activation != nil {
-                            POTAQSORow(qso: qso, parks: activation?.parks ?? [])
+                            POTAQSORow(
+                                qso: qso, parks: activation?.parks ?? [],
+                                isSpotted: spotQSOMatch?.qsoWasSpotted(qso) ?? false
+                            )
                         } else {
-                            SessionQSORow(qso: qso)
+                            SessionQSORow(
+                                qso: qso,
+                                isSpotted: spotQSOMatch?.qsoWasSpotted(qso) ?? false
+                            )
                         }
                     }
                     .tint(.primary)
@@ -135,6 +147,18 @@ extension SessionDetailView {
         descriptor.fetchLimit = 500
 
         qsos = (try? modelContext.fetch(descriptor)) ?? []
+
+        // Build spot/QSO cross-reference for display linking
+        let sessionId = session.id
+        let spotPredicate = #Predicate<SessionSpot> { spot in
+            spot.loggingSessionId == sessionId
+        }
+        var spotDescriptor = FetchDescriptor<SessionSpot>(predicate: spotPredicate)
+        spotDescriptor.fetchLimit = 500
+        let spots = (try? modelContext.fetch(spotDescriptor)) ?? []
+        if !spots.isEmpty {
+            spotQSOMatch = SpotQSOMatch(qsos: qsos, spots: spots)
+        }
     }
 
     func applyEditResult(_ result: SessionMetadataEditResult) {
