@@ -1,12 +1,83 @@
 // Summit Picker Sheet
 //
 // Sheet for selecting a SOTA summit. Shows nearby summits by
-// device GPS location and supports filtering by summit code or
-// name. Single-select — tapping a row selects and dismisses.
+// device GPS location with activation/QSO history, and supports
+// filtering by summit code or name. Single-select — tapping a
+// row selects and dismisses.
 
 import CarrierWaveCore
 import CoreLocation
+import SwiftData
 import SwiftUI
+
+// MARK: - SummitStats
+
+/// Activation and QSO counts for a summit
+struct SummitStats: Sendable {
+    let activationCount: Int
+    let qsoCount: Int
+}
+
+// MARK: - SummitStatsLoader
+
+/// Background actor for computing per-summit activation and QSO counts
+private actor SummitStatsLoader {
+    // MARK: Internal
+
+    func loadStats(container: ModelContainer) async -> [String: SummitStats] {
+        let context = ModelContext(container)
+        context.autosaveEnabled = false
+
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        dateFormatter.timeZone = TimeZone(identifier: "UTC")
+
+        var stats: [String: (qsoCount: Int, dates: Set<String>)] = [:]
+        let batchSize = 1_000
+        var offset = 0
+
+        while true {
+            var descriptor = FetchDescriptor<QSO>(
+                predicate: #Predicate { $0.sotaRef != nil && !$0.isHidden }
+            )
+            descriptor.fetchLimit = batchSize
+            descriptor.fetchOffset = offset
+
+            guard let batch = try? context.fetch(descriptor) else {
+                break
+            }
+            if batch.isEmpty {
+                break
+            }
+
+            for qso in batch {
+                guard let summit = qso.sotaRef, !summit.isEmpty,
+                      !Self.metadataModes.contains(qso.mode.uppercased())
+                else {
+                    continue
+                }
+                let key = summit.uppercased()
+                let dateStr = dateFormatter.string(from: qso.timestamp)
+                var entry = stats[key, default: (qsoCount: 0, dates: [])]
+                entry.qsoCount += 1
+                entry.dates.insert(dateStr)
+                stats[key] = entry
+            }
+
+            offset += batchSize
+            await Task.yield()
+        }
+
+        return stats.mapValues {
+            SummitStats(activationCount: $0.dates.count, qsoCount: $0.qsoCount)
+        }
+    }
+
+    // MARK: Private
+
+    /// Metadata pseudo-modes that should not count as QSOs
+    private static let metadataModes: Set<String> = ["WEATHER", "SOLAR", "NOTE"]
+}
 
 // MARK: - SummitPickerSheet
 
@@ -39,14 +110,20 @@ struct SummitPickerSheet: View {
         .task {
             await loadNearbySummits()
         }
+        .task {
+            await loadSummitStats()
+        }
     }
 
     // MARK: Private
+
+    @Environment(\.modelContext) private var modelContext
 
     @State private var searchText = ""
     @State private var locationManager = ParkLocationManager()
     @State private var nearbySummits: [(summit: SOTASummit, distanceKm: Double)] = []
     @State private var searchResults: [SOTASummit] = []
+    @State private var summitStats: [String: SummitStats] = [:]
     @State private var isLoadingNearby = true
 
     /// Summits matching the search query
@@ -118,7 +195,8 @@ struct SummitPickerSheet: View {
             ForEach(filteredSummits, id: \.summit.code) { item in
                 SummitRow(
                     summit: item.summit,
-                    distance: item.distance
+                    distance: item.distance,
+                    stats: summitStats[item.summit.code.uppercased()]
                 ) {
                     onSelect(item.summit)
                 }
@@ -138,7 +216,8 @@ struct SummitPickerSheet: View {
                 ForEach(nearbySummits, id: \.summit.code) { item in
                     SummitRow(
                         summit: item.summit,
-                        distance: item.distanceKm
+                        distance: item.distanceKm,
+                        stats: summitStats[item.summit.code.uppercased()]
                     ) {
                         onSelect(item.summit)
                     }
@@ -242,16 +321,23 @@ struct SummitPickerSheet: View {
             limit: 30
         )
     }
+
+    private func loadSummitStats() async {
+        let container = modelContext.container
+        let loader = SummitStatsLoader()
+        summitStats = await loader.loadStats(container: container)
+    }
 }
 
 // MARK: - SummitRow
 
-/// Row displaying a summit with optional distance
+/// Row displaying a summit with optional distance and activation stats
 struct SummitRow: View {
     // MARK: Internal
 
     let summit: SOTASummit
     var distance: Double?
+    var stats: SummitStats?
     let onSelect: () -> Void
 
     var body: some View {
@@ -271,6 +357,9 @@ struct SummitRow: View {
                     HStack(spacing: 8) {
                         altitudeBadge
                         pointsBadge
+                        if let stats, stats.qsoCount > 0 {
+                            statsBadge(stats)
+                        }
                     }
                 }
 
@@ -316,5 +405,23 @@ struct SummitRow: View {
             .padding(.vertical, 2)
             .background(Color.orange.opacity(0.1))
             .clipShape(Capsule())
+    }
+
+    private func statsBadge(_ stats: SummitStats) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: "antenna.radiowaves.left.and.right")
+                .font(.caption2)
+            Text("\(stats.activationCount)")
+                .font(.caption.monospacedDigit())
+            Text("·")
+                .font(.caption)
+            Text("\(stats.qsoCount) Qs")
+                .font(.caption.monospacedDigit())
+        }
+        .foregroundStyle(.blue)
+        .padding(.horizontal, 6)
+        .padding(.vertical, 2)
+        .background(Color.blue.opacity(0.1))
+        .clipShape(Capsule())
     }
 }
