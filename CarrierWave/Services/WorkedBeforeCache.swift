@@ -14,7 +14,7 @@ struct WorkedBeforeResult: Sendable {
     /// Bands worked today
     let todayBands: Set<String>
 
-    /// Bands worked historically (not today)
+    /// Bands worked on the previous UTC day
     let previousBands: Set<String>
 
     /// Whether this is a new DXCC entity
@@ -65,13 +65,13 @@ actor WorkedBeforeCache {
         }
     }
 
-    /// Check a batch of callsigns against historical data
+    /// Check a batch of callsigns against previous UTC day data
     func checkCallsigns(
         _ callsigns: [String],
         container: ModelContainer
     ) async {
         // Only look up callsigns we haven't checked yet
-        let unchecked = callsigns.filter { allTimeWorked[$0.uppercased()] == nil }
+        let unchecked = callsigns.filter { previousDayWorked[$0.uppercased()] == nil }
         guard !unchecked.isEmpty else {
             return
         }
@@ -79,10 +79,18 @@ actor WorkedBeforeCache {
         let context = ModelContext(container)
         context.autosaveEnabled = false
 
+        // Previous UTC day range (yesterday 00:00Z to today 00:00Z)
+        var calendar = Calendar.current
+        calendar.timeZone = TimeZone(identifier: "UTC")!
+        let startOfToday = calendar.startOfDay(for: Date())
+        let startOfYesterday = calendar.date(byAdding: .day, value: -1, to: startOfToday)!
+
         for callsign in unchecked {
             let upper = callsign.uppercased()
             let predicate = #Predicate<QSO> { qso in
                 qso.callsign == upper && !qso.isHidden
+                    && qso.timestamp >= startOfYesterday
+                    && qso.timestamp < startOfToday
             }
             var descriptor = FetchDescriptor<QSO>(predicate: predicate)
             descriptor.fetchLimit = 50
@@ -92,7 +100,7 @@ actor WorkedBeforeCache {
             } else {
                 []
             }
-            allTimeWorked[upper] = bands
+            previousDayWorked[upper] = bands
         }
     }
 
@@ -100,15 +108,12 @@ actor WorkedBeforeCache {
     func result(for callsign: String, band: String) -> WorkedBeforeResult {
         let upper = callsign.uppercased()
         let today = todayWorked[upper] ?? []
-        let allTime = allTimeWorked[upper] ?? []
-
-        // Historical bands = all-time minus today
-        let previous = allTime.subtracting(today)
+        let previousDay = previousDayWorked[upper] ?? []
 
         // DXCC checking is deferred to Phase 3
         return WorkedBeforeResult(
             todayBands: today,
-            previousBands: previous,
+            previousBands: previousDay,
             isNewDXCC: false
         )
     }
@@ -117,12 +122,11 @@ actor WorkedBeforeCache {
     func recordQSO(callsign: String, band: String) {
         let upper = callsign.uppercased()
         todayWorked[upper, default: []].insert(band)
-        allTimeWorked[upper, default: []].insert(band)
     }
 
-    /// Clear historical cache so next checkCallsigns re-queries from DB
+    /// Clear previous-day cache so next checkCallsigns re-queries from DB
     func invalidateHistory() {
-        allTimeWorked.removeAll()
+        previousDayWorked.removeAll()
     }
 
     // MARK: Private
@@ -130,6 +134,6 @@ actor WorkedBeforeCache {
     /// callsign -> bands worked today
     private var todayWorked: [String: Set<String>] = [:]
 
-    /// callsign -> all bands ever worked (lazy-loaded per callsign)
-    private var allTimeWorked: [String: Set<String>] = [:]
+    /// callsign -> bands worked on the previous UTC day (lazy-loaded per callsign)
+    private var previousDayWorked: [String: Set<String>] = [:]
 }
