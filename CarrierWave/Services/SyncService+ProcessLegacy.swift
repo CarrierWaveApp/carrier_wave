@@ -314,7 +314,23 @@ extension SyncService {
 
     /// Create a QSO from merged fetched data
     func createQSO(from fetched: FetchedQSO) -> QSO {
-        QSO(
+        // Apply comment park action for park refs found in notes
+        let notesRef = fetched.notes.flatMap { ParkReference.extractFromFreeText($0) }
+        var parkReference = fetched.parkReference
+        var theirParkReference = fetched.theirParkReference
+
+        if let notesRef {
+            switch CommentParkAction.current {
+            case .ignore:
+                break
+            case .theirPark:
+                theirParkReference = theirParkReference.nonEmpty ?? notesRef
+            case .myPark:
+                parkReference = FetchedQSO.combineParkReferences(parkReference, notesRef)
+            }
+        }
+
+        return QSO(
             callsign: fetched.callsign,
             band: fetched.band,
             mode: fetched.mode,
@@ -325,8 +341,8 @@ extension SyncService {
             myCallsign: fetched.myCallsign,
             myGrid: fetched.myGrid,
             theirGrid: fetched.theirGrid,
-            parkReference: fetched.parkReference,
-            theirParkReference: fetched.theirParkReference,
+            parkReference: parkReference,
+            theirParkReference: theirParkReference,
             notes: fetched.notes,
             importSource: fetched.source.toImportSource,
             rawADIF: fetched.rawADIF,

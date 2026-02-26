@@ -172,6 +172,34 @@ struct SyncProgress {
     }
 }
 
+// MARK: - SyncImportConfirmation
+
+/// Shown to the user after download when many new QSOs are detected.
+/// The user can confirm to proceed or cancel.
+struct SyncImportConfirmation {
+    /// Per-service breakdown of downloaded QSO counts
+    let downloadedByService: [ServiceType: Int]
+
+    /// Total downloaded across all services
+    var totalDownloaded: Int {
+        downloadedByService.values.reduce(0, +)
+    }
+
+    /// Threshold: show confirmation when total downloaded exceeds this
+    static let threshold = 50
+
+    /// Continuation to resume or cancel the sync
+    let continuation: CheckedContinuation<Bool, Never>
+
+    /// Human-readable summary of what was downloaded
+    var summary: String {
+        let parts = downloadedByService
+            .sorted { $0.value > $1.value }
+            .map { "\($0.value) from \($0.key.displayName)" }
+        return parts.joined(separator: ", ")
+    }
+}
+
 // MARK: - SyncResult
 
 struct SyncResult {

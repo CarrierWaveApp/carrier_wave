@@ -44,6 +44,17 @@ extension SyncService {
             }
         }
 
+        // PHASE 1.5: Confirm with user if large download detected
+        if allFetched.count >= SyncImportConfirmation.threshold {
+            let shouldProceed = await requestImportConfirmation(
+                downloadedByService: result.downloaded
+            )
+            if !shouldProceed {
+                debugLog.info("User cancelled download-only sync (\(allFetched.count) QSOs)")
+                return result
+            }
+        }
+
         // PHASE 2: Process and deduplicate (on background thread)
         syncPhase = .processing
         let processResult = try await processDownloadedQSOsAsync(allFetched)
@@ -89,6 +100,28 @@ extension SyncService {
             object: nil,
             userInfo: ["newQSOCount": count]
         )
+    }
+
+    /// Pause sync and ask user to confirm importing a large batch of QSOs.
+    /// Returns true if user confirms, false if cancelled.
+    func requestImportConfirmation(
+        downloadedByService: [ServiceType: Int]
+    ) async -> Bool {
+        await withCheckedContinuation { continuation in
+            importConfirmation = SyncImportConfirmation(
+                downloadedByService: downloadedByService,
+                continuation: continuation
+            )
+        }
+    }
+
+    /// Called by UI to resolve the pending import confirmation.
+    func resolveImportConfirmation(proceed: Bool) {
+        guard let confirmation = importConfirmation else {
+            return
+        }
+        importConfirmation = nil
+        confirmation.continuation.resume(returning: proceed)
     }
 
     /// Repair orphaned QSOs, clear invalid upload flags, and refresh context.

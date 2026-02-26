@@ -8,6 +8,7 @@ struct DataToolsSettingsView: View {
 
     var body: some View {
         List {
+            importSection
             backupsSection
             dataSection
             deduplicationSection
@@ -46,6 +47,23 @@ struct DataToolsSettingsView: View {
     @State private var showingDedupeResult = false
     @State private var dedupeResultMessage = ""
     @State private var lastBackupText = ""
+    @AppStorage("commentParkAction") private var commentParkAction = "theirPark"
+
+    private var importSection: some View {
+        Section {
+            Picker("Park Ref in Comment", selection: $commentParkAction) {
+                ForEach(CommentParkAction.allCases, id: \.rawValue) { action in
+                    Text(action.label).tag(action.rawValue)
+                }
+            }
+            .pickerStyle(.menu)
+        } header: {
+            Text("Import Behavior")
+        } footer: {
+            let action = CommentParkAction(rawValue: commentParkAction) ?? .theirPark
+            Text(action.description)
+        }
+    }
 
     private var backupsSection: some View {
         Section {

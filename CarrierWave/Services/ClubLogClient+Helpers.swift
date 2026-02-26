@@ -1,3 +1,4 @@
+import CarrierWaveCore
 import Foundation
 
 // MARK: - ADIF Parsing & Generation
@@ -79,7 +80,9 @@ extension ClubLogClient {
             addField("SIG", "POTA")
             addField("SIG_INFO", theirPark)
         }
-        addField("COMMENT", qso.notes)
+        // Strip park references from COMMENT — they're in the proper SIG_INFO fields
+        let cleanedNotes = qso.notes.flatMap { ParkReference.stripFromFreeText($0) } ?? qso.notes
+        addField("COMMENT", cleanedNotes)
 
         return fields.joined(separator: " ") + " <EOR>"
     }

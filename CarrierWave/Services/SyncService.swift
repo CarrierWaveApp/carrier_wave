@@ -40,6 +40,10 @@ class SyncService: ObservableObject {
     @Published var lastSyncResults: [ServiceType: ServiceSyncReport] = [:]
     @Published var serviceSyncStates: [ServiceType: ServiceSyncPhase] = [:]
 
+    /// Set when a large download needs user confirmation before importing.
+    /// The UI should observe this and show a confirmation dialog.
+    @Published var importConfirmation: SyncImportConfirmation?
+
     let modelContext: ModelContext
     let qrzClient: QRZClient
     let potaClient: POTAClient
@@ -123,6 +127,17 @@ class SyncService: ObservableObject {
         // PHASE 1: Download from all sources in parallel
         let downloadResults = await downloadFromAllSources()
         let allFetched = collectDownloadResults(downloadResults, into: &result)
+
+        // PHASE 1.5: Confirm with user if large download detected
+        if allFetched.count >= SyncImportConfirmation.threshold {
+            let shouldProceed = await requestImportConfirmation(
+                downloadedByService: result.downloaded
+            )
+            if !shouldProceed {
+                debugLog.info("User cancelled sync after download (\(allFetched.count) QSOs)")
+                return result
+            }
+        }
 
         // PHASE 2: Process and deduplicate (on background thread)
         syncPhase = .processing

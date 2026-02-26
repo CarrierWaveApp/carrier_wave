@@ -229,8 +229,10 @@ actor ADIFExportService {
         appendPOTAFields(to: &fields, snapshot: snapshot, parkReference: parkReference)
         appendConfirmationFields(to: &fields, snapshot: snapshot)
 
+        // Strip park references from COMMENT — they're in the proper SIG_INFO fields
         if let notes = snapshot.notes, !notes.isEmpty {
-            fields.append(formatField("COMMENT", notes))
+            let cleaned = ParkReference.stripFromFreeText(notes) ?? notes
+            fields.append(formatField("COMMENT", cleaned))
         }
 
         return fields.joined() + "<EOR>"

@@ -202,7 +202,9 @@ extension QRZClient {
             addField("sig", "POTA")
             addField("sig_info", theirPark)
         }
-        addField("comment", qso.notes)
+        // Strip park references from comment — they're in the proper sig_info fields
+        let cleanedNotes = qso.notes.flatMap { ParkReference.stripFromFreeText($0) } ?? qso.notes
+        addField("comment", cleanedNotes)
 
         return fields.joined(separator: " ") + " <eor>"
     }

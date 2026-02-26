@@ -224,6 +224,7 @@ struct DashboardView: View {
                 showingAlert: $showingPhoneSSBRepairAlert,
                 onRepair: { await performPhoneSSBDuplicateRepair() }
             )
+            .syncImportConfirmationAlert(syncService: syncService)
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     toolbarButtons

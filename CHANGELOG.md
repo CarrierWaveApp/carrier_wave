@@ -5,6 +5,9 @@ All notable changes to Carrier Wave will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Comment park action setting: choose how park references in ADIF COMMENT fields are handled — ignore, set as "their park" (default), or set as "my park"
+- Sync import confirmation: prompt user before importing when more than 50 QSOs are downloaded
+- Strip park references from COMMENT field on ADIF export to prevent downstream re-parsing by POTA/QRZ/Club Log
 - Cross-device iCloud sync: fetch changes on foreground re-entry (scenePhase), network recovery (NWPathMonitor), and 30s polling during active logging sessions
 - SOTA spots from SOTAwatch API in unified HUNT spots panel
 - Multi-program sessions: activate POTA and SOTA simultaneously

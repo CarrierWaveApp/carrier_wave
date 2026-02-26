@@ -424,6 +424,10 @@ extension View {
             )
         )
     }
+
+    func syncImportConfirmationAlert(syncService: SyncService) -> some View {
+        modifier(SyncImportConfirmationAlert(syncService: syncService))
+    }
 }
 
 // MARK: - PhoneSSBDuplicateRepairAlert
@@ -450,6 +454,41 @@ struct PhoneSSBDuplicateRepairAlert: ViewModifier {
                     Tap "Merge Duplicates" to combine them and preserve all sync status.
                     """
                 )
+            }
+    }
+}
+
+// MARK: - SyncImportConfirmationAlert
+
+struct SyncImportConfirmationAlert: ViewModifier {
+    @ObservedObject var syncService: SyncService
+
+    func body(content: Content) -> some View {
+        content
+            .alert(
+                "Large Sync Detected",
+                isPresented: Binding(
+                    get: { syncService.importConfirmation != nil },
+                    set: { if !$0 { syncService.resolveImportConfirmation(proceed: false) } }
+                )
+            ) {
+                Button("Import") {
+                    syncService.resolveImportConfirmation(proceed: true)
+                }
+                Button("Cancel", role: .cancel) {
+                    syncService.resolveImportConfirmation(proceed: false)
+                }
+            } message: {
+                if let confirmation = syncService.importConfirmation {
+                    Text(
+                        """
+                        Downloaded \(confirmation.totalDownloaded) QSOs \
+                        (\(confirmation.summary)).
+
+                        Do you want to import them?
+                        """
+                    )
+                }
             }
     }
 }

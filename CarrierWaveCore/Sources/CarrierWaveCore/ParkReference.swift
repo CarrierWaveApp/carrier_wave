@@ -101,6 +101,27 @@ public enum ParkReference: Sendable {
         return valid.isEmpty ? nil : valid.joined(separator: ", ")
     }
 
+    /// Remove park references from free-text, returning the cleaned string.
+    /// Use this when exporting ADIF to prevent downstream systems from re-parsing
+    /// park refs that are already in the proper SIG_INFO/MY_SIG_INFO fields.
+    /// Returns nil if the result is empty after stripping.
+    public static func stripFromFreeText(_ text: String) -> String? {
+        let pattern = #"\b[A-Za-z]{1,2}-\d{4,5}\b"#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else {
+            return text
+        }
+        let nsString = text as NSString
+        let stripped = regex.stringByReplacingMatches(
+            in: text, range: NSRange(location: 0, length: nsString.length),
+            withTemplate: ""
+        )
+        // Clean up leftover separators and whitespace
+        let cleaned = stripped
+            .replacingOccurrences(of: "  ", with: " ")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return cleaned.isEmpty ? nil : cleaned
+    }
+
     /// Sanitize a potentially multi-park reference, fixing each individual park.
     /// Drops parks that can't be sanitized.
     public static func sanitizeMulti(_ parkRef: String) -> String? {

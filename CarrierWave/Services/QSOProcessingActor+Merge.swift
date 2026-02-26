@@ -23,13 +23,22 @@ extension QSOProcessingActor {
             markPresent(qso: existing, service: fetched.source, context: context)
         }
 
-        // After merging all sources, try extracting park ref from notes into theirParkReference
-        // Comment-extracted refs are the other station's park, not our activation park
-        if existing.theirParkReference?.isEmpty ?? true,
-           let notes = existing.notes,
+        // After merging all sources, apply comment park action for notes-extracted refs
+        if let notes = existing.notes,
            let extracted = ParkReference.extractFromFreeText(notes)
         {
-            existing.theirParkReference = extracted
+            switch commentParkAction {
+            case .ignore:
+                break
+            case .theirPark:
+                if existing.theirParkReference?.isEmpty ?? true {
+                    existing.theirParkReference = extracted
+                }
+            case .myPark:
+                if !existing.isActivityLogQSO, existing.parkReference?.isEmpty ?? true {
+                    existing.parkReference = extracted
+                }
+            }
         }
     }
 
@@ -51,12 +60,28 @@ extension QSOProcessingActor {
             )
         }
 
-        // Comment-extracted refs are the other station's park, not our activation
-        let theirFromNotes = fetched.notes.flatMap { ParkReference.extractFromFreeText($0) }
-        existing.theirParkReference =
-            existing.theirParkReference.nonEmpty
-                ?? fetched.theirParkReference.flatMap { ParkReference.sanitize($0) }
-                ?? theirFromNotes
+        // Apply comment park action for notes-extracted park refs
+        let notesRef = fetched.notes.flatMap { ParkReference.extractFromFreeText($0) }
+        switch commentParkAction {
+        case .ignore:
+            existing.theirParkReference =
+                existing.theirParkReference.nonEmpty
+                    ?? fetched.theirParkReference.flatMap { ParkReference.sanitize($0) }
+        case .theirPark:
+            existing.theirParkReference =
+                existing.theirParkReference.nonEmpty
+                    ?? fetched.theirParkReference.flatMap { ParkReference.sanitize($0) }
+                    ?? notesRef
+        case .myPark:
+            existing.theirParkReference =
+                existing.theirParkReference.nonEmpty
+                    ?? fetched.theirParkReference.flatMap { ParkReference.sanitize($0) }
+            if !existing.isActivityLogQSO, let notesRef {
+                existing.parkReference = FetchedQSO.combineParkReferences(
+                    existing.parkReference, notesRef
+                )
+            }
+        }
         existing.notes = existing.notes.nonEmpty ?? fetched.notes
         existing.rawADIF = existing.rawADIF.nonEmpty ?? fetched.rawADIF
         existing.name = existing.name.nonEmpty ?? fetched.name
@@ -171,10 +196,21 @@ extension QSOProcessingActor {
 
     /// Create a QSO from merged fetched data.
     func createQSO(from fetched: FetchedQSO) -> QSO {
-        // Only explicit MY_SIG_INFO / MY_POTA_REF sets parkReference (activator's park)
-        // Comment-extracted refs go to theirParkReference (the other station's park)
-        let theirFromNotes = fetched.notes.flatMap { ParkReference.extractFromFreeText($0) }
-        let theirParkReference = fetched.theirParkReference.nonEmpty ?? theirFromNotes
+        // Apply comment park action for park refs found in notes
+        let notesRef = fetched.notes.flatMap { ParkReference.extractFromFreeText($0) }
+        var parkReference = fetched.parkReference
+        var theirParkReference = fetched.theirParkReference
+
+        if let notesRef {
+            switch commentParkAction {
+            case .ignore:
+                break
+            case .theirPark:
+                theirParkReference = theirParkReference.nonEmpty ?? notesRef
+            case .myPark:
+                parkReference = FetchedQSO.combineParkReferences(parkReference, notesRef)
+            }
+        }
 
         return QSO(
             callsign: fetched.callsign,
@@ -187,7 +223,7 @@ extension QSOProcessingActor {
             myCallsign: fetched.myCallsign,
             myGrid: fetched.myGrid,
             theirGrid: fetched.theirGrid,
-            parkReference: fetched.parkReference,
+            parkReference: parkReference,
             theirParkReference: theirParkReference,
             notes: fetched.notes,
             importSource: fetched.source.toImportSource,

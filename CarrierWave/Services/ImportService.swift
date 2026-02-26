@@ -209,11 +209,22 @@ class ImportService: ObservableObject {
             throw ImportError.missingTimestamp
         }
 
-        // MY_SIG_INFO → my activation park; comment-extracted refs are their park (hunting)
-        let parkReference = record.mySigInfo.flatMap { ParkReference.sanitizeMulti($0) }
-        let theirFromComment = record.comment.flatMap { ParkReference.extractFromFreeText($0) }
-        let theirParkReference = record.sigInfo.flatMap { ParkReference.sanitize($0) }
-            ?? theirFromComment
+        // MY_SIG_INFO → my activation park
+        var parkReference = record.mySigInfo.flatMap { ParkReference.sanitizeMulti($0) }
+        var theirParkReference = record.sigInfo.flatMap { ParkReference.sanitize($0) }
+
+        // Apply user's comment park action for park refs found in COMMENT
+        let commentRef = record.comment.flatMap { ParkReference.extractFromFreeText($0) }
+        if let commentRef {
+            switch CommentParkAction.current {
+            case .ignore:
+                break
+            case .theirPark:
+                theirParkReference = theirParkReference ?? commentRef
+            case .myPark:
+                parkReference = parkReference ?? commentRef
+            }
+        }
 
         return QSO(
             callsign: record.callsign, band: record.band, mode: record.mode,

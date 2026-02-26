@@ -9,6 +9,10 @@ import SwiftData
 actor QSOProcessingActor {
     // MARK: Internal
 
+    /// How to handle park references found in comment/notes fields.
+    /// Set before each processing run via processDownloadedQSOs().
+    var commentParkAction: CommentParkAction = .theirPark
+
     /// Result of processing, returned to main actor
     struct ProcessingResult: Sendable {
         let created: Int
@@ -30,8 +34,10 @@ actor QSOProcessingActor {
     func processDownloadedQSOs(
         _ fetched: [FetchedQSO],
         container: ModelContainer,
+        commentParkAction: CommentParkAction = .theirPark,
         onProgress: (@Sendable (ProgressInfo) -> Void)? = nil
     ) async throws -> ProcessingResult {
+        self.commentParkAction = commentParkAction
         var logMessages: [String] = []
 
         // Create background context

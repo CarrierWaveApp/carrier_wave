@@ -1,0 +1,14 @@
+Add CommentParkAction enum to Types.swift for controlling ADIF COMMENT park ref behavior
+Add comment park action setting to DataToolsSettingsView (Import Behavior section)
+Apply CommentParkAction in ImportService.createQSO, ImportService.createQSOFromQRZ
+Apply CommentParkAction in QSOProcessingActor+Merge (mergeIntoExisting, mergeFields, createQSO)
+Pass commentParkAction from SyncService+Process to QSOProcessingActor
+Apply CommentParkAction in SyncService+ProcessLegacy.createQSO
+Add SyncImportConfirmation model to SyncModels.swift
+Add importConfirmation published property and confirmation flow to SyncService
+Add requestImportConfirmation/resolveImportConfirmation to SyncService+Helpers
+Add SyncImportConfirmationAlert ViewModifier and View extension
+Wire sync confirmation alert into DashboardView
+Add ParkReference.stripFromFreeText() to CarrierWaveCore
+Strip park refs from COMMENT on export in POTAClient+ADIF, ADIFExportService, QRZClient+ADIF, ClubLogClient+Helpers
+Update CHANGELOG.md with new features
