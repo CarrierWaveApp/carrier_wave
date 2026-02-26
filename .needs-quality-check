@@ -17,3 +17,4 @@ Add exportConfirmation property and helper methods to SyncService+Helpers
 Add export confirmation checkpoint to SyncService+Upload.uploadToAllDestinations
 Add export confirmation to single-service upload phases in SyncService+SingleSync
 Add SyncExportConfirmationAlert ViewModifier and wire into DashboardView
+WorkedBeforeCache: Scope previous band checks to previous UTC day only (was querying all time)
