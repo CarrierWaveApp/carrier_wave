@@ -13,6 +13,7 @@ All notable changes to Carrier Wave will be documented in this file.
 ### Added
 - Add always-visible FT8 debug panel with audio level meter, decode stats, and input picker
 - Add audio input selection for FT8 sessions
+- Add FT8DecodeEnricher service for enriching raw decodes with DXCC entity, distance, bearing, and worked-before flags
 
 ## [1.46.0] - 2026-02-25
 

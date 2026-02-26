@@ -279,6 +279,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `WorkedBeforeCache.swift` | Actor-based cache for worked-before spot checking |
 | `FT8AudioEngine.swift` | AVAudioEngine actor for FT8 RX/TX audio routing |
 | `FT8AudioEngine+InputSelection.swift` | Audio input enumeration and selection for FT8 sessions |
+| `FT8DecodeEnricher.swift` | Enriches raw FT8 decodes with DXCC entity, distance, bearing, worked-before flags |
 | `FT8SessionManager.swift` | FT8 session orchestrator — decoding, auto-sequencing, QSO logging |
 | `FT8WaterfallData.swift` | Observable waterfall magnitude data for FT8 spectrum display |
 | `BandPlanService.swift` | Validates frequency/mode against license class privileges |
@@ -760,6 +761,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `KIndexRepairServiceTests.swift` | K-index repair service tests (cutoff date, field preservation) |
 | `BackupServiceTests.swift` | Backup service tests (snapshot, manifest, integrity, restore marker) |
 | `BandPlanServiceTests.swift` | Band plan validation tests (license class privileges) |
+| `FT8DecodeEnricherTests.swift` | FT8 decode enricher unit tests (entity, distance, dupe, new DXCC, section classification) |
 | `FT8IntegrationTests.swift` | FT8 end-to-end integration tests (QSO creation, dB reports, POTA park reference) |
 | `PerformanceTests/QSOStatisticsPerformanceTests.swift` | Performance regression tests (50k/500k QSOs) |
 
