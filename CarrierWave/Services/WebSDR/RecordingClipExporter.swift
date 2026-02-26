@@ -5,6 +5,8 @@ import Foundation
 
 /// Metadata to embed in an exported SDR recording clip
 struct RecordingClipMetadata: Sendable {
+    // MARK: Internal
+
     let receiverName: String
     let frequencyKHz: Double
     let mode: String
@@ -27,6 +29,8 @@ struct RecordingClipMetadata: Sendable {
         return "QSOs: \(calls)\(suffix)"
     }
 
+    // MARK: Private
+
     private func formatFrequency() -> String {
         let mHz = frequencyKHz / 1_000
         if mHz == mHz.rounded() {
@@ -40,6 +44,8 @@ struct RecordingClipMetadata: Sendable {
 
 /// Exports a time-range clip from a WebSDR recording as M4A.
 enum RecordingClipExporter {
+    // MARK: Internal
+
     /// Export a clip from sourceURL between startTime and endTime.
     /// Optionally embeds metadata tags in the exported file.
     /// Returns the URL of the exported M4A file in a temp directory.

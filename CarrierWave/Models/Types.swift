@@ -47,6 +47,12 @@ enum CommentParkAction: String, CaseIterable, Sendable {
 
     // MARK: Internal
 
+    /// Read the current setting from UserDefaults (thread-safe)
+    static var current: CommentParkAction {
+        let raw = UserDefaults.standard.string(forKey: "commentParkAction") ?? "theirPark"
+        return CommentParkAction(rawValue: raw) ?? .theirPark
+    }
+
     var label: String {
         switch self {
         case .ignore: "Ignore"
@@ -61,12 +67,6 @@ enum CommentParkAction: String, CaseIterable, Sendable {
         case .theirPark: "Set as the other station's park (hunter QSO)"
         case .myPark: "Set as your activation park (activator QSO)"
         }
-    }
-
-    /// Read the current setting from UserDefaults (thread-safe)
-    static var current: CommentParkAction {
-        let raw = UserDefaults.standard.string(forKey: "commentParkAction") ?? "theirPark"
-        return CommentParkAction(rawValue: raw) ?? .theirPark
     }
 }
 

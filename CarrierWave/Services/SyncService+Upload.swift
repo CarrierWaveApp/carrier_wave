@@ -36,22 +36,8 @@ extension SyncService {
         }
 
         // Confirm with user if large upload detected
-        if let qsos = qsosNeedingUpload,
-           qsos.count >= SyncExportConfirmation.threshold
-        {
-            let uploadCounts = countUploadsByService(qsos)
-            let shouldProceed = await requestExportConfirmation(
-                uploadByService: uploadCounts
-            )
-            if !shouldProceed {
-                await MainActor.run {
-                    SyncDebugLog.shared.info(
-                        "User cancelled upload (\(qsos.count) QSOs)",
-                        service: nil
-                    )
-                }
-                return (results: results, potaMaintenanceSkipped: false)
-            }
+        if await shouldCancelExport(qsosNeedingUpload: qsosNeedingUpload) {
+            return (results: results, potaMaintenanceSkipped: false)
         }
 
         // QRZ upload
@@ -78,6 +64,29 @@ extension SyncService {
         }
 
         return (results: results, potaMaintenanceSkipped: potaMaintenanceSkipped)
+    }
+
+    /// Check if user wants to cancel a large export
+    private func shouldCancelExport(qsosNeedingUpload: [QSO]?) async -> Bool {
+        guard let qsos = qsosNeedingUpload,
+              qsos.count >= SyncExportConfirmation.threshold
+        else {
+            return false
+        }
+        let uploadCounts = countUploadsByService(qsos)
+        let shouldProceed = await requestExportConfirmation(
+            uploadByService: uploadCounts
+        )
+        if !shouldProceed {
+            await MainActor.run {
+                SyncDebugLog.shared.info(
+                    "User cancelled upload (\(qsos.count) QSOs)",
+                    service: nil
+                )
+            }
+            return true
+        }
+        return false
     }
 
     /// Upload to QRZ if configured, with debug logging
@@ -474,51 +483,5 @@ extension SyncService {
             }
             return (uploaded: 0, failed: parkQSOs.count)
         }
-    }
-
-    /// Count how many QSOs need upload per service (for export confirmation)
-    func countUploadsByService(_ qsos: [QSO]) -> [ServiceType: Int] {
-        var counts: [ServiceType: Int] = [:]
-        let services: [ServiceType] = [.qrz, .pota, .clublog]
-        for service in services {
-            let count = qsos.filter { $0.needsUpload(to: service) }.count
-            if count > 0 {
-                counts[service] = count
-            }
-        }
-        return counts
-    }
-
-    /// Mark QSOs as submitted after successful park upload and log state transitions
-    @MainActor
-    private func markParkQSOsSubmitted(
-        parkRef: String, parkQSOs: [QSO],
-        result: POTAUploadResult, durationMs: Int
-    ) {
-        for qso in parkQSOs {
-            let beforeState =
-                qso.potaPresence(forPark: parkRef).map {
-                    "isPresent=\($0.isPresent), isSubmitted=\($0.isSubmitted), "
-                        + "needsUpload=\($0.needsUpload)"
-                } ?? "no presence"
-            qso.markSubmittedToPark(parkRef, context: modelContext)
-            let afterState =
-                qso.potaPresence(forPark: parkRef).map {
-                    "isPresent=\($0.isPresent), isSubmitted=\($0.isSubmitted), "
-                        + "needsUpload=\($0.needsUpload)"
-                } ?? "no presence"
-
-            let dateStr = Self.uploadDebugDateFormatter.string(from: qso.timestamp)
-            SyncDebugLog.shared.debug(
-                "markSubmittedToPark \(parkRef): \(qso.callsign) @ \(dateStr) "
-                    + "[\(beforeState)] -> [\(afterState)]",
-                service: .pota
-            )
-        }
-        SyncDebugLog.shared.info(
-            "Park \(parkRef): \(result.qsosAccepted) accepted, "
-                + "\(parkQSOs.count) submitted in \(durationMs)ms. msg=\(result.message ?? "nil")",
-            service: .pota
-        )
     }
 }

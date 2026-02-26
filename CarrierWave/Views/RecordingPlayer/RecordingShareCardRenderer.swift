@@ -1,22 +1,35 @@
 import SwiftUI
 
+// MARK: - ShareCardInput
+
+/// Input parameters for rendering a share card
+struct ShareCardInput {
+    let recording: WebSDRRecording
+    let clipStart: TimeInterval
+    let clipEnd: TimeInterval
+    let qsos: [QSO]
+    let transcriptSnippet: String?
+    let amplitudes: [Float]
+    let duration: TimeInterval
+}
+
 // MARK: - RecordingShareCardRenderer
 
 /// Renders RecordingShareCardView to UIImage for sharing.
 @MainActor
 enum RecordingShareCardRenderer {
+    // MARK: Internal
+
     /// Render a recording share card to UIImage
-    static func render(
-        recording: WebSDRRecording,
-        clipStart: TimeInterval,
-        clipEnd: TimeInterval,
-        qsos: [QSO],
-        transcriptSnippet: String?,
-        amplitudes: [Float],
-        duration: TimeInterval
-    ) async -> RecordingShareCardData? {
+    static func render(_ input: ShareCardInput) async -> RecordingShareCardData? {
+        let recording = input.recording
+        let clipStart = input.clipStart
+        let clipEnd = input.clipEnd
+        let transcriptSnippet = input.transcriptSnippet
+        let amplitudes = input.amplitudes
+        let duration = input.duration
         // Filter QSOs to those within clip range
-        let clipQSOs = qsos.filter { qso in
+        let clipQSOs = input.qsos.filter { qso in
             let offset = qso.timestamp.timeIntervalSince(recording.startedAt)
             return offset >= clipStart - 90 && offset <= clipEnd + 15
         }

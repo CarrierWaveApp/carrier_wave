@@ -18,6 +18,8 @@ struct RecordingShareCardData: Identifiable {
 /// Shows a mini waveform, receiver info, frequency/mode, QSO callsigns,
 /// and optional CW transcript excerpt.
 struct RecordingShareCardView: View {
+    // MARK: Internal
+
     let recording: WebSDRRecording
     let clipStart: TimeInterval
     let clipEnd: TimeInterval
@@ -252,8 +254,8 @@ extension RecordingShareCardView {
 
 private extension Array {
     subscript(safe range: Range<Int>) -> ArraySlice<Element> {
-        let lower = max(range.lowerBound, startIndex)
-        let upper = min(range.upperBound, endIndex)
+        let lower = Swift.max(range.lowerBound, startIndex)
+        let upper = Swift.min(range.upperBound, endIndex)
         guard lower < upper else {
             return []
         }

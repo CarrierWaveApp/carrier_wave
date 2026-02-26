@@ -74,4 +74,50 @@ extension SyncService {
         formatter.timeZone = TimeZone(identifier: "UTC")
         return formatter
     }()
+
+    /// Count how many QSOs need upload per service (for export confirmation)
+    func countUploadsByService(_ qsos: [QSO]) -> [ServiceType: Int] {
+        var counts: [ServiceType: Int] = [:]
+        let services: [ServiceType] = [.qrz, .pota, .clublog]
+        for service in services {
+            let count = qsos.filter { $0.needsUpload(to: service) }.count
+            if count > 0 {
+                counts[service] = count
+            }
+        }
+        return counts
+    }
+
+    /// Mark QSOs as submitted after successful park upload and log state transitions
+    @MainActor
+    func markParkQSOsSubmitted(
+        parkRef: String, parkQSOs: [QSO],
+        result: POTAUploadResult, durationMs: Int
+    ) {
+        for qso in parkQSOs {
+            let beforeState =
+                qso.potaPresence(forPark: parkRef).map {
+                    "isPresent=\($0.isPresent), isSubmitted=\($0.isSubmitted), "
+                        + "needsUpload=\($0.needsUpload)"
+                } ?? "no presence"
+            qso.markSubmittedToPark(parkRef, context: modelContext)
+            let afterState =
+                qso.potaPresence(forPark: parkRef).map {
+                    "isPresent=\($0.isPresent), isSubmitted=\($0.isSubmitted), "
+                        + "needsUpload=\($0.needsUpload)"
+                } ?? "no presence"
+
+            let dateStr = Self.uploadDebugDateFormatter.string(from: qso.timestamp)
+            SyncDebugLog.shared.debug(
+                "markSubmittedToPark \(parkRef): \(qso.callsign) @ \(dateStr) "
+                    + "[\(beforeState)] -> [\(afterState)]",
+                service: .pota
+            )
+        }
+        SyncDebugLog.shared.info(
+            "Park \(parkRef): \(result.qsosAccepted) accepted, "
+                + "\(parkQSOs.count) submitted in \(durationMs)ms. msg=\(result.message ?? "nil")",
+            service: .pota
+        )
+    }
 }

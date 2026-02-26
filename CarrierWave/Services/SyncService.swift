@@ -133,14 +133,8 @@ class SyncService: ObservableObject {
         let allFetched = collectDownloadResults(downloadResults, into: &result)
 
         // PHASE 1.5: Confirm with user if large download detected
-        if allFetched.count >= SyncImportConfirmation.threshold {
-            let shouldProceed = await requestImportConfirmation(
-                downloadedByService: result.downloaded
-            )
-            if !shouldProceed {
-                debugLog.info("User cancelled sync after download (\(allFetched.count) QSOs)")
-                return result
-            }
+        if await shouldCancelAfterDownload(allFetched, downloaded: result.downloaded) {
+            return result
         }
 
         // PHASE 2: Process and deduplicate (on background thread)
@@ -180,6 +174,25 @@ class SyncService: ObservableObject {
     }
 
     // MARK: Private
+
+    /// Check if user wants to cancel after a large download
+    private func shouldCancelAfterDownload(
+        _ allFetched: [FetchedQSO], downloaded: [ServiceType: Int]
+    ) async -> Bool {
+        guard allFetched.count >= SyncImportConfirmation.threshold else {
+            return false
+        }
+        let shouldProceed = await requestImportConfirmation(
+            downloadedByService: downloaded
+        )
+        if !shouldProceed {
+            SyncDebugLog.shared.info(
+                "User cancelled sync after download (\(allFetched.count) QSOs)"
+            )
+            return true
+        }
+        return false
+    }
 
     // MARK: - Pre-Sync Backup
 

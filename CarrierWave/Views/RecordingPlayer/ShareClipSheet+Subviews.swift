@@ -252,7 +252,7 @@ extension ShareClipSheet {
     func renderShareCard() async {
         isRenderingCard = true
         let snippetText = transcriptLinesInRange().joined(separator: "\n")
-        let data = await RecordingShareCardRenderer.render(
+        let data = await RecordingShareCardRenderer.render(ShareCardInput(
             recording: recording,
             clipStart: rangeStart,
             clipEnd: rangeEnd,
@@ -260,7 +260,7 @@ extension ShareClipSheet {
             transcriptSnippet: snippetText.isEmpty ? nil : snippetText,
             amplitudes: engine.amplitudeEnvelope,
             duration: engine.duration
-        )
+        ))
         shareCardData = data
         isRenderingCard = false
     }
@@ -335,7 +335,11 @@ extension ShareClipSheet {
 // MARK: - ShareableClipItem
 
 /// Item for multi-item ShareLink with caption
-struct ShareableClipItem: Identifiable {
+struct ShareableClipItem: Identifiable, Transferable {
+    static var transferRepresentation: some TransferRepresentation {
+        ProxyRepresentation(exporting: \.url)
+    }
+
     let id = UUID()
     let url: URL
     let caption: String

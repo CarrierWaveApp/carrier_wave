@@ -91,7 +91,11 @@ extension QSOProcessingActor {
         existing.power = existing.power ?? fetched.power
         existing.sotaRef = existing.sotaRef.nonEmpty ?? fetched.sotaRef
 
-        // QRZ-specific
+        mergeSourceSpecificFields(from: fetched, into: existing)
+    }
+
+    /// Merge source-specific fields (QRZ, LoTW) from fetched QSO into existing.
+    private func mergeSourceSpecificFields(from fetched: FetchedQSO, into existing: QSO) {
         if fetched.source == .qrz {
             existing.qrzLogId = existing.qrzLogId ?? fetched.qrzLogId
             existing.qrzConfirmed = existing.qrzConfirmed || fetched.qrzConfirmed
@@ -99,7 +103,6 @@ extension QSOProcessingActor {
             existing.dxcc = existing.dxcc ?? fetched.dxcc
         }
 
-        // LoTW-specific
         if fetched.source == .lotw {
             if fetched.lotwConfirmed {
                 existing.lotwConfirmed = true

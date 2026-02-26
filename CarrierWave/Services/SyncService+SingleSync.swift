@@ -321,7 +321,9 @@ extension SyncService {
             let shouldProceed = await requestExportConfirmation(
                 uploadByService: [.qrz: qsosToUpload.count]
             )
-            guard shouldProceed else { return (0, 0) }
+            guard shouldProceed else {
+                return (0, 0)
+            }
         }
         let result = try await withTimeout(seconds: syncTimeoutSeconds, service: .qrz) {
             try await self.uploadToQRZ(qsos: qsosToUpload)
@@ -361,7 +363,9 @@ extension SyncService {
             let shouldProceed = await requestExportConfirmation(
                 uploadByService: [.pota: qsosToUpload.count]
             )
-            guard shouldProceed else { return 0 }
+            guard shouldProceed else {
+                return 0
+            }
         }
         let uploaded = try await withTimeout(seconds: syncTimeoutSeconds, service: .pota) {
             try await self.uploadToPOTA(qsos: qsosToUpload)

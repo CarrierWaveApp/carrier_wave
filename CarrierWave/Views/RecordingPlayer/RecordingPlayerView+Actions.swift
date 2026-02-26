@@ -12,6 +12,30 @@ struct ShareClipSheet: View {
     let engine: RecordingPlaybackEngine
     let qsos: [QSO]
 
+    @State var rangeStart: TimeInterval = 0
+    @State var rangeEnd: TimeInterval = 0
+    @State var isDraggingStart = false
+    @State var isDraggingEnd = false
+    @State var isExporting = false
+    @State var isPreviewing = false
+    @State var exportedURL: URL?
+    @State var exportError: String?
+    @State var isRenderingCard = false
+    @State var shareCardData: RecordingShareCardData?
+
+    var sortedQSOs: [QSO] {
+        qsos.sorted { $0.timestamp < $1.timestamp }
+    }
+
+    var qsoOffsets: [TimeInterval] {
+        let start = recording.startedAt
+        return sortedQSOs.map { $0.timestamp.timeIntervalSince(start) }
+    }
+
+    var clipDuration: TimeInterval {
+        rangeEnd - rangeStart
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -54,28 +78,4 @@ struct ShareClipSheet: View {
     // MARK: Private
 
     @Environment(\.dismiss) private var dismiss
-
-    @State var rangeStart: TimeInterval = 0
-    @State var rangeEnd: TimeInterval = 0
-    @State var isDraggingStart = false
-    @State var isDraggingEnd = false
-    @State var isExporting = false
-    @State var isPreviewing = false
-    @State var exportedURL: URL?
-    @State var exportError: String?
-    @State var isRenderingCard = false
-    @State var shareCardData: RecordingShareCardData?
-
-    var sortedQSOs: [QSO] {
-        qsos.sorted { $0.timestamp < $1.timestamp }
-    }
-
-    var qsoOffsets: [TimeInterval] {
-        let start = recording.startedAt
-        return sortedQSOs.map { $0.timestamp.timeIntervalSince(start) }
-    }
-
-    var clipDuration: TimeInterval {
-        rangeEnd - rangeStart
-    }
 }
