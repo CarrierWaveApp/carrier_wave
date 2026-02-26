@@ -9,11 +9,22 @@ All notable changes to Carrier Wave will be documented in this file.
 - Update FT8 waterfall to scroll downward with newest data at top
 - Add Hz frequency labels below FT8 waterfall (500-2500 Hz axis)
 - Stream audio continuously to FT8 waterfall instead of every 15 seconds
+- Redesign FT8 decode list with three sections: Directed at You, Calling CQ, and All Activity (collapsed)
+- Redesign FT8 active QSO card with step indicator (Call → Rpt → 73) and abort button
+- Collapse FT8 debug panel behind tappable status pill showing audio health and decode count
+- Add landscape two-column layout for FT8 session view (waterfall/controls left, decodes right)
 
 ### Added
 - Add always-visible FT8 debug panel with audio level meter, decode stats, and input picker
 - Add audio input selection for FT8 sessions
 - Add FT8DecodeEnricher service for enriching raw decodes with DXCC entity, distance, bearing, and worked-before flags
+- Add enriched FT8 decode rows with DXCC entity, distance, grid, and achievement badges (New DXCC/State/Grid/Band/Dupe)
+- Add compact mode toggle for FT8 CQ section via context menu on section header
+- Add haptic feedback for directed-at-you decodes, CQ row taps, QSO completion, and POTA 10-QSO milestone
+- Add session summary toast showing band, duration, and QSO count when stopping FT8
+- Add haversine distance and bearing calculation to MaidenheadConverter
+- Add FT8 status pill view with color-coded audio health and decode count
+- Add SNR color badge with strong/medium/weak tiers
 
 ## [1.46.0] - 2026-02-25
 

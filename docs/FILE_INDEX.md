@@ -18,7 +18,7 @@ Pure logic library that can be tested without iOS Simulator. Run tests with `mak
 | `Sources/CarrierWaveCore/DeduplicationMatcher.swift` | Duplicate detection logic |
 | `Sources/CarrierWaveCore/DetectedCallsign.swift` | Detected callsign with context |
 | `Sources/CarrierWaveCore/FrequencyFormatter.swift` | Frequency formatting and parsing |
-| `Sources/CarrierWaveCore/MaidenheadConverter.swift` | Grid square ↔ coordinate conversion |
+| `Sources/CarrierWaveCore/MaidenheadConverter.swift` | Grid square ↔ coordinate conversion, haversine distance, and bearing |
 | `Sources/CarrierWaveCore/ModeEquivalence.swift` | Mode family classification and equivalence |
 | `Sources/CarrierWaveCore/MorseCode.swift` | Morse code tables and timing utilities |
 | `Sources/CarrierWaveCore/MorseEditDistance.swift` | Levenshtein distance on morse patterns |
@@ -492,14 +492,19 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 ## Views - Logger FT8 (`CarrierWave/Views/Logger/FT8/`)
 | File | Purpose |
 |------|---------|
-| `FT8SessionView.swift` | Main FT8 session view with band selector, waterfall, decode list, and controls |
+| `FT8SessionView.swift` | Main FT8 session view with portrait/landscape layouts, status pill, and session summary toast |
 | `FT8WaterfallView.swift` | Canvas-based spectrogram waterfall display |
-| `FT8DebugPanel.swift` | Always-visible debug panel with audio level, decode stats, input picker |
-| `FT8DecodeListView.swift` | Scrollable list of decoded FT8 messages with tap-to-call |
-| `FT8ActiveQSOCard.swift` | Active QSO progress card showing state machine status |
-| `FT8ControlBar.swift` | Operating mode controls (Listen, CQ, S&P) with QSO counter |
+| `FT8DebugPanel.swift` | Collapsible debug panel with audio level, decode stats, input picker |
+| `FT8DecodeListView.swift` | Segmented decode list (directed/CQ/all activity) with compact mode toggle |
+| `FT8ActiveQSOCard.swift` | Active QSO card with step indicator (Call → Rpt → 73) and abort button |
+| `FT8ControlBar.swift` | Operating mode controls (Listen, CQ, S&P) with QSO/POTA counter |
 | `FT8CycleIndicatorView.swift` | 15-second cycle progress indicator with TX/RX state |
 | `FT8SetupWizardView.swift` | First-time FT8 setup wizard (audio connection, radio setup, verify audio) |
+| `FT8EnrichedDecodeRow.swift` | Multi-line enriched decode row with callsign, SNR badge, entity, distance, and achievement badges |
+| `FT8CompactDecodeRow.swift` | Single-line compact decode row for space-constrained display |
+| `FT8BadgeViews.swift` | Achievement badges (New DXCC/State/Grid/Band/Dupe) and SNR color badge |
+| `FT8StatusPillView.swift` | Compact status pill showing audio health, decode count, and connection state |
+| `FT8SessionSummaryToast.swift` | Session summary toast showing band, duration, and QSO count on stop |
 
 ## Views - CW Transcription (`CarrierWave/Views/CWTranscription/`)
 | File | Purpose |
