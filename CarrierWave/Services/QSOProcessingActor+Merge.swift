@@ -23,14 +23,13 @@ extension QSOProcessingActor {
             markPresent(qso: existing, service: fetched.source, context: context)
         }
 
-        // After merging all sources, try extracting park ref from notes if still missing
-        // Skip for activity log QSOs — they are hunter QSOs and should never get parkReference
-        if !existing.isActivityLogQSO,
-           existing.parkReference?.isEmpty ?? true,
+        // After merging all sources, try extracting park ref from notes into theirParkReference
+        // Comment-extracted refs are the other station's park, not our activation park
+        if existing.theirParkReference?.isEmpty ?? true,
            let notes = existing.notes,
            let extracted = ParkReference.extractFromFreeText(notes)
         {
-            existing.parkReference = extracted
+            existing.theirParkReference = extracted
         }
     }
 
@@ -42,20 +41,22 @@ extension QSOProcessingActor {
         existing.myGrid = existing.myGrid.nonEmpty ?? fetched.myGrid
         existing.theirGrid = existing.theirGrid.nonEmpty ?? fetched.theirGrid
 
-        // Combine explicit park references; also check fetched notes for embedded refs
+        // Combine explicit park references (only from MY_SIG_INFO / MY_POTA_REF)
         // Skip for activity log QSOs — they are hunter QSOs and should never get parkReference
         if !existing.isActivityLogQSO {
             let fetchedPark = fetched.parkReference.flatMap { ParkReference.sanitizeMulti($0) }
-                ?? fetched.notes.flatMap { ParkReference.extractFromFreeText($0) }
             existing.parkReference = FetchedQSO.combineParkReferences(
                 existing.parkReference,
                 fetchedPark
             )
         }
 
+        // Comment-extracted refs are the other station's park, not our activation
+        let theirFromNotes = fetched.notes.flatMap { ParkReference.extractFromFreeText($0) }
         existing.theirParkReference =
             existing.theirParkReference.nonEmpty
                 ?? fetched.theirParkReference.flatMap { ParkReference.sanitize($0) }
+                ?? theirFromNotes
         existing.notes = existing.notes.nonEmpty ?? fetched.notes
         existing.rawADIF = existing.rawADIF.nonEmpty ?? fetched.rawADIF
         existing.name = existing.name.nonEmpty ?? fetched.name
@@ -170,10 +171,10 @@ extension QSOProcessingActor {
 
     /// Create a QSO from merged fetched data.
     func createQSO(from fetched: FetchedQSO) -> QSO {
-        // Use explicit park reference if available; fall back to extracting from comment
-        // (WSJT-X and other loggers often put the park in the comment field)
-        let parkReference = fetched.parkReference
-            ?? fetched.notes.flatMap { ParkReference.extractFromFreeText($0) }
+        // Only explicit MY_SIG_INFO / MY_POTA_REF sets parkReference (activator's park)
+        // Comment-extracted refs go to theirParkReference (the other station's park)
+        let theirFromNotes = fetched.notes.flatMap { ParkReference.extractFromFreeText($0) }
+        let theirParkReference = fetched.theirParkReference.nonEmpty ?? theirFromNotes
 
         return QSO(
             callsign: fetched.callsign,
@@ -186,8 +187,8 @@ extension QSOProcessingActor {
             myCallsign: fetched.myCallsign,
             myGrid: fetched.myGrid,
             theirGrid: fetched.theirGrid,
-            parkReference: parkReference,
-            theirParkReference: fetched.theirParkReference,
+            parkReference: fetched.parkReference,
+            theirParkReference: theirParkReference,
             notes: fetched.notes,
             importSource: fetched.source.toImportSource,
             rawADIF: fetched.rawADIF,

@@ -76,9 +76,11 @@ extension ImportService {
     }
 
     func createQSOFromQRZ(_ qrzQso: QRZFetchedQSO, myCallsign: String) -> QSO {
-        // Use MY_SIG_INFO if available; fall back to extracting park refs from comment
+        // MY_SIG_INFO → my activation park; notes-extracted refs are their park (hunting)
         let parkReference = qrzQso.parkReference.flatMap { ParkReference.sanitizeMulti($0) }
-            ?? qrzQso.notes.flatMap { ParkReference.extractFromFreeText($0) }
+        let theirFromNotes = qrzQso.notes.flatMap { ParkReference.extractFromFreeText($0) }
+        let theirParkReference = qrzQso.theirParkReference.flatMap { ParkReference.sanitize($0) }
+            ?? theirFromNotes
 
         return QSO(
             callsign: qrzQso.callsign, band: qrzQso.band, mode: qrzQso.mode,
@@ -87,7 +89,7 @@ extension ImportService {
             myCallsign: qrzQso.myCallsign ?? myCallsign, myGrid: qrzQso.myGrid,
             theirGrid: qrzQso.theirGrid,
             parkReference: parkReference,
-            theirParkReference: qrzQso.theirParkReference.flatMap { ParkReference.sanitize($0) },
+            theirParkReference: theirParkReference,
             notes: qrzQso.notes, importSource: .qrz,
             rawADIF: qrzQso.rawADIF, qrzLogId: qrzQso.qrzLogId,
             qrzConfirmed: qrzQso.qrzConfirmed, lotwConfirmedDate: qrzQso.lotwConfirmedDate,

@@ -39,8 +39,8 @@ final class CommentParkRefRepairServiceTests: XCTestCase {
         XCTAssertEqual(result.updated, 0)
     }
 
-    /// Regression: predicate must handle QSOs with nil parkReference.
-    func testPredicateHandlesNilParkReference() async throws {
+    /// Regression: predicate must handle QSOs with nil theirParkReference.
+    func testPredicateHandlesNilTheirParkReference() async throws {
         let qso = QSO(
             callsign: "W1AW", band: "20m", mode: "CW",
             timestamp: Date(), myCallsign: "N0TEST",
@@ -56,8 +56,8 @@ final class CommentParkRefRepairServiceTests: XCTestCase {
         XCTAssertEqual(result.scanned, 1)
     }
 
-    /// Regression: predicate must handle QSOs with empty-string parkReference.
-    func testPredicateHandlesEmptyStringParkReference() async throws {
+    /// Regression: predicate must handle QSOs with empty-string theirParkReference.
+    func testPredicateHandlesEmptyStringTheirParkReference() async throws {
         let qso = QSO(
             callsign: "W1AW", band: "20m", mode: "CW",
             timestamp: Date(), myCallsign: "N0TEST",
@@ -75,8 +75,8 @@ final class CommentParkRefRepairServiceTests: XCTestCase {
 
     // MARK: - Backfill Logic
 
-    /// QSO with park ref in notes and no parkReference gets updated.
-    func testBackfillExtractsParkRefFromNotes() async throws {
+    /// QSO with park ref in notes and no theirParkReference gets updated.
+    func testBackfillExtractsParkRefFromNotesToTheirParkRef() async throws {
         let qso = QSO(
             callsign: "W1AW", band: "20m", mode: "CW",
             timestamp: Date(), myCallsign: "N0TEST",
@@ -92,18 +92,20 @@ final class CommentParkRefRepairServiceTests: XCTestCase {
         XCTAssertEqual(result.scanned, 1)
         XCTAssertEqual(result.updated, 1)
 
-        // Re-fetch to verify
+        // Re-fetch to verify — should go to theirParkReference, not parkReference
         let descriptor = FetchDescriptor<QSO>()
         let fetched = try context.fetch(descriptor)
-        XCTAssertEqual(fetched.first?.parkReference, "US-0001")
+        XCTAssertEqual(fetched.first?.theirParkReference, "US-0001")
+        XCTAssertNil(fetched.first?.parkReference, "parkReference should remain nil")
     }
 
-    /// QSO that already has a parkReference is skipped (not scanned).
-    func testBackfillSkipsQSOsWithExistingParkRef() async throws {
+    /// QSO that already has a theirParkReference is skipped (not scanned).
+    func testBackfillSkipsQSOsWithExistingTheirParkRef() async throws {
         let qso = QSO(
             callsign: "W1AW", band: "20m", mode: "CW",
             timestamp: Date(), myCallsign: "N0TEST",
-            parkReference: "US-0002", notes: "POTA US-0001 activation",
+            parkReference: nil, theirParkReference: "US-0002",
+            notes: "POTA US-0001 activation",
             importSource: .adifFile
         )
         context.insert(qso)
@@ -112,7 +114,7 @@ final class CommentParkRefRepairServiceTests: XCTestCase {
         let service = CommentParkRefRepairService(container: container)
         let result = try await service.backfill()
 
-        XCTAssertEqual(result.scanned, 0, "QSO with existing parkReference should be excluded by predicate")
+        XCTAssertEqual(result.scanned, 0, "QSO with existing theirParkReference should be excluded by predicate")
     }
 
     /// QSO with nil notes is skipped (not scanned).
@@ -202,12 +204,12 @@ final class CommentParkRefRepairServiceTests: XCTestCase {
             parkReference: "", notes: "Just a regular QSO",
             importSource: .adifFile
         )
-        // 3: already has parkReference (skipped)
+        // 3: already has theirParkReference (skipped)
         let q3 = QSO(
             callsign: "N2XYZ", band: "20m", mode: "FT8",
             timestamp: Date(), myCallsign: "N0TEST",
-            parkReference: "US-0099", notes: "US-0099",
-            importSource: .adifFile
+            parkReference: nil, theirParkReference: "US-0099",
+            notes: "US-0099", importSource: .adifFile
         )
         // 4: hidden (skipped)
         let q4 = QSO(

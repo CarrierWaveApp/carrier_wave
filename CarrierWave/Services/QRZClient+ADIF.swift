@@ -1,3 +1,4 @@
+import CarrierWaveCore
 import Foundation
 
 // MARK: - QRZClient ADIF Helpers
@@ -168,10 +169,14 @@ extension QRZClient {
 
         addField("call", qso.callsign)
         addField("band", qso.band)
-        addField("mode", qso.mode)
+        let modeSubmode = ModeEquivalence.adifModeSubmode(qso.mode)
+        addField("mode", modeSubmode.mode)
+        if let submode = modeSubmode.submode {
+            addField("submode", submode)
+        }
 
         if let freq = qso.frequency {
-            addField("freq", String(format: "%.4f", freq))
+            addField("freq", String(format: "%.6f", freq))
         }
 
         let dateFormatter = DateFormatter()

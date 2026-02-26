@@ -54,7 +54,7 @@ extension DashboardView {
 
     // MARK: - Comment Park Reference Backfill
 
-    private static let commentParkRefBackfillKey = "commentParkRefBackfillCompleted"
+    private static let commentParkRefBackfillKey = "commentParkRefBackfillV2Completed"
 
     /// One-time backfill: extract park references from ADIF comment fields.
     /// Runs silently on background thread, only once.
@@ -231,6 +231,31 @@ extension DashboardView {
             UserDefaults.standard.set(true, forKey: Self.duplicateSpotNoteRepairKey)
         } catch {
             print("Spot note dedup repair failed: \(error)")
+        }
+    }
+
+    // MARK: - Hunting Park Reference Repair
+
+    private static let huntingParkRefRepairKey = "huntingParkRefRepairCompleted"
+
+    /// One-time repair: move comment-extracted park refs from parkReference to theirParkReference.
+    /// Fixes QSOs where hunting contacts were misidentified as activations.
+    func repairHuntingParkRefsIfNeeded() async {
+        guard !UserDefaults.standard.bool(forKey: Self.huntingParkRefRepairKey) else {
+            return
+        }
+
+        let service = HuntingParkRefRepairService(container: modelContext.container)
+        do {
+            let result = try await service.repair()
+            if result.repaired > 0 {
+                let msg = "Hunting park ref repair: fixed \(result.repaired)"
+                    + " of \(result.scanned) QSOs"
+                print(msg)
+            }
+            UserDefaults.standard.set(true, forKey: Self.huntingParkRefRepairKey)
+        } catch {
+            print("Hunting park ref repair failed: \(error)")
         }
     }
 

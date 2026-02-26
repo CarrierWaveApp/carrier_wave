@@ -3,9 +3,8 @@ import Foundation
 import SwiftData
 
 /// One-time backfill: extract park references from ADIF comment (notes) fields
-/// on QSOs that have no parkReference but contain valid park refs in their notes.
-/// WSJT-X and other loggers often put the park in the comment field rather than
-/// MY_SIG_INFO, so QSOs imported before the extraction logic was added may be missing them.
+/// on QSOs that have no theirParkReference but contain valid park refs in their notes.
+/// Comment-extracted refs are the other station's park (hunting), not our activation park.
 actor CommentParkRefRepairService {
     // MARK: Lifecycle
 
@@ -36,7 +35,7 @@ actor CommentParkRefRepairService {
             var descriptor = FetchDescriptor<QSO>(
                 predicate: #Predicate<QSO> { qso in
                     !qso.isActivityLogQSO
-                        && qso.parkReference == nil
+                        && qso.theirParkReference == nil
                         && qso.notes != nil
                         && !qso.isHidden
                 }
@@ -57,7 +56,7 @@ actor CommentParkRefRepairService {
                 else {
                     continue
                 }
-                qso.parkReference = extracted
+                qso.theirParkReference = extracted
                 totalUpdated += 1
             }
 

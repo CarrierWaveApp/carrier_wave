@@ -107,6 +107,21 @@ public enum ModeEquivalence: Sendable {
         return mode
     }
 
+    /// ADIF parent mode and optional submode for a given mode string.
+    /// USB/LSB → (SSB, USB/LSB), PSK31 → (PSK, PSK31), FT8 → (FT8, nil), etc.
+    public static func adifModeSubmode(_ mode: String) -> (mode: String, submode: String?) {
+        let upper = mode.uppercased()
+        switch upper {
+        case "USB",
+             "LSB":
+            return ("SSB", upper)
+        case "PSK31":
+            return ("PSK", "PSK31")
+        default:
+            return (upper, nil)
+        }
+    }
+
     /// Deduplicates a collection of mode strings by mode family,
     /// preferring specific modes over generic ones.
     /// e.g., ["PHONE", "SSB", "CW"] → ["SSB", "CW"]

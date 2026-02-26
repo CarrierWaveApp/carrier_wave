@@ -156,4 +156,62 @@ struct ModeEquivalenceTests {
         let result = ModeEquivalence.deduplicatedModes(["CW", "SSB", "FT8"])
         #expect(result == ["CW", "FT8", "SSB"])
     }
+
+    // MARK: - ADIF Mode/Submode Tests
+
+    @Test("USB splits to SSB + USB")
+    func adifModeSubmodeUSB() {
+        let result = ModeEquivalence.adifModeSubmode("USB")
+        #expect(result.mode == "SSB")
+        #expect(result.submode == "USB")
+    }
+
+    @Test("LSB splits to SSB + LSB")
+    func adifModeSubmodeLSB() {
+        let result = ModeEquivalence.adifModeSubmode("LSB")
+        #expect(result.mode == "SSB")
+        #expect(result.submode == "LSB")
+    }
+
+    @Test("PSK31 splits to PSK + PSK31")
+    func adifModeSubmodePSK31() {
+        let result = ModeEquivalence.adifModeSubmode("PSK31")
+        #expect(result.mode == "PSK")
+        #expect(result.submode == "PSK31")
+    }
+
+    @Test("FT8 has no submode")
+    func adifModeSubmodeFT8() {
+        let result = ModeEquivalence.adifModeSubmode("FT8")
+        #expect(result.mode == "FT8")
+        #expect(result.submode == nil)
+    }
+
+    @Test("CW has no submode")
+    func adifModeSubmodeCW() {
+        let result = ModeEquivalence.adifModeSubmode("CW")
+        #expect(result.mode == "CW")
+        #expect(result.submode == nil)
+    }
+
+    @Test("SSB has no submode")
+    func adifModeSubmodeSSB() {
+        let result = ModeEquivalence.adifModeSubmode("SSB")
+        #expect(result.mode == "SSB")
+        #expect(result.submode == nil)
+    }
+
+    @Test("FM has no submode")
+    func adifModeSubmodeFM() {
+        let result = ModeEquivalence.adifModeSubmode("FM")
+        #expect(result.mode == "FM")
+        #expect(result.submode == nil)
+    }
+
+    @Test("Case insensitive mode/submode")
+    func adifModeSubmodeCaseInsensitive() {
+        let result = ModeEquivalence.adifModeSubmode("usb")
+        #expect(result.mode == "SSB")
+        #expect(result.submode == "USB")
+    }
 }

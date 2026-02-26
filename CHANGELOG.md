@@ -13,6 +13,9 @@ All notable changes to Carrier Wave will be documented in this file.
 - Source filter (All/POTA/SOTA/RBN) in activity log spot filter
 - SOTA spot rows with summit reference, name, and points display
 - SOTA source badges in activity log spot rows
+- P2P fields (SIG, SIG_INFO, POTA_REF) in POTA upload ADIF
+- MODE/SUBMODE splitting in ADIF generation (USB→SSB+USB, LSB→SSB+LSB, PSK31→PSK+PSK31)
+- One-time data repair to fix hunting QSOs misidentified as activations
 
 ### Changed
 - POTA spots command renamed to HUNT with binoculars icon
@@ -20,6 +23,11 @@ All notable changes to Carrier Wave will be documented in this file.
 - Spots panel header changed to "Activator Spots" with binoculars icon
 - iPad sidebar tab renamed from POTA to Hunt
 - Session display uses programsDisplayName and programsIcon for multi-program support
+- Standardize FREQ precision to 6 decimal places in POTA and QRZ ADIF uploads
+
+### Fixed
+- Fix comment-extracted park references incorrectly assigned to parkReference (activator field) instead of theirParkReference, causing hunting QSOs to be uploaded as bogus single-QSO activations
+- Add MY_POTA_REF as fallback for mySigInfo in ADIF parser
 
 ## [1.47.0] - 2026-02-26
 

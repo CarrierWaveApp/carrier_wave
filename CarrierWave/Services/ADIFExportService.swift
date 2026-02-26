@@ -239,7 +239,11 @@ actor ADIFExportService {
     private func appendCoreFields(to fields: inout [String], snapshot: QSOExportSnapshot) {
         fields.append(formatField("CALL", snapshot.callsign))
         fields.append(formatField("BAND", snapshot.band))
-        fields.append(formatField("MODE", snapshot.mode))
+        let modeSubmode = ModeEquivalence.adifModeSubmode(snapshot.mode)
+        fields.append(formatField("MODE", modeSubmode.mode))
+        if let submode = modeSubmode.submode {
+            fields.append(formatField("SUBMODE", submode))
+        }
 
         if let freq = snapshot.frequency {
             fields.append(formatField("FREQ", String(format: "%.6f", freq)))

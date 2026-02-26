@@ -1,3 +1,4 @@
+import CarrierWaveCore
 import Foundation
 
 // MARK: - POTAClient ADIF Generation
@@ -56,11 +57,15 @@ extension POTAClient {
 
         // Core QSO fields
         fields.append(formatField("CALL", qso.callsign))
-        fields.append(formatField("MODE", qso.mode))
+        let modeSubmode = ModeEquivalence.adifModeSubmode(qso.mode)
+        fields.append(formatField("MODE", modeSubmode.mode))
+        if let submode = modeSubmode.submode {
+            fields.append(formatField("SUBMODE", submode))
+        }
         fields.append(formatField("BAND", qso.band))
 
         if let freq = qso.frequency {
-            fields.append(formatField("FREQ", String(format: "%.4f", freq)))
+            fields.append(formatField("FREQ", String(format: "%.6f", freq)))
         }
 
         let qsoDateFormatter = DateFormatter()
@@ -95,11 +100,7 @@ extension POTAClient {
             fields.append(formatField("MY_GRIDSQUARE", myGrid))
         }
 
-        // POTA fields
-        fields.append(formatField("QSLMSG", "POTA \(parkReference)"))
-        fields.append(formatField("MY_SIG", "POTA"))
-        fields.append(formatField("MY_SIG_INFO", parkReference))
-        fields.append(formatField("MY_POTA_REF", parkReference))
+        appendPOTAFields(to: &fields, qso: qso, parkReference: parkReference)
 
         // Comment
         if let notes = qso.notes, !notes.isEmpty {
@@ -107,6 +108,24 @@ extension POTAClient {
         }
 
         return fields.joined() + "<EOR>"
+    }
+
+    private func appendPOTAFields(to fields: inout [String], qso: QSO, parkReference: String) {
+        fields.append(formatField("MY_SIG", "POTA"))
+        fields.append(formatField("MY_SIG_INFO", parkReference))
+        fields.append(formatField("MY_POTA_REF", parkReference))
+
+        if let theirPark = qso.theirParkReference, !theirPark.isEmpty {
+            fields.append(formatField("SIG", "POTA"))
+            fields.append(formatField("SIG_INFO", theirPark))
+            fields.append(formatField("POTA_REF", theirPark))
+        }
+
+        var qslMsg = "POTA \(parkReference)"
+        if let theirPark = qso.theirParkReference, !theirPark.isEmpty {
+            qslMsg += " P2P \(theirPark)"
+        }
+        fields.append(formatField("QSLMSG", qslMsg))
     }
 
     /// Format a single ADIF field: <NAME:length>value

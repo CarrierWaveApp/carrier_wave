@@ -190,7 +190,7 @@ public struct ADIFParser: Sendable {
                 myGridsquare: fields["my_gridsquare"],
                 gridsquare: fields["gridsquare"],
                 sigInfo: fields["sig_info"] ?? fields["pota_ref"],
-                mySigInfo: fields["my_sig_info"],
+                mySigInfo: fields["my_sig_info"] ?? fields["my_pota_ref"],
                 comment: fields["comment"] ?? fields["notes"],
                 dxcc: fields["dxcc"].flatMap { Int($0) },
                 country: fields["country"],

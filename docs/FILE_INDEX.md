@@ -257,7 +257,8 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `WPMBackfillService.swift` | One-time backfill of average WPM from stored spot comments into ActivationMetadata |
 | `ConditionsBackfillService.swift` | One-time backfill parsing text solar/weather into structured ActivationMetadata fields |
 | `TwoferDuplicateRepairService.swift` | Detect and merge duplicate QSOs from two-fer park reference mismatches |
-| `CommentParkRefRepairService.swift` | One-time backfill extracting park references from ADIF comment/notes fields |
+| `CommentParkRefRepairService.swift` | One-time backfill extracting park references from comment/notes into theirParkReference |
+| `HuntingParkRefRepairService.swift` | One-time repair moving comment-extracted park refs from parkReference to theirParkReference |
 | `DuplicateSpotNoteRepairService.swift` | One-time repair deduplicating repeated spot comments in QSO notes |
 | `KIndexRepairService.swift` | One-time repair clearing corrupted K-index=0 data from before HamQSL XML fix |
 | `ActivityLogQSORepairService.swift` | One-time repair flagging activity log QSOs and fixing misplaced parkReference |
@@ -810,6 +811,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `Helpers/QSOFactory.swift` | Synthetic QSO generator for testing (duplicates, metadata, edge cases) |
 | `Helpers/TestModelContainer.swift` | Shared test infrastructure for SwiftData tests |
 | `CommentParkRefRepairServiceTests.swift` | Comment park ref backfill predicate regression and logic tests |
+| `HuntingParkRefRepairServiceTests.swift` | Hunting park ref repair: rawADIF detection and notes-matching tests |
 | `KIndexRepairServiceTests.swift` | K-index repair service tests (cutoff date, field preservation) |
 | `BackupServiceTests.swift` | Backup service tests (snapshot, manifest, integrity, restore marker) |
 | `BandPlanServiceTests.swift` | Band plan validation tests (license class privileges) |

@@ -209,10 +209,11 @@ class ImportService: ObservableObject {
             throw ImportError.missingTimestamp
         }
 
-        // Use MY_SIG_INFO if available; fall back to extracting park refs from comment
-        // (WSJT-X and other loggers often put the park in the comment field)
+        // MY_SIG_INFO → my activation park; comment-extracted refs are their park (hunting)
         let parkReference = record.mySigInfo.flatMap { ParkReference.sanitizeMulti($0) }
-            ?? record.comment.flatMap { ParkReference.extractFromFreeText($0) }
+        let theirFromComment = record.comment.flatMap { ParkReference.extractFromFreeText($0) }
+        let theirParkReference = record.sigInfo.flatMap { ParkReference.sanitize($0) }
+            ?? theirFromComment
 
         return QSO(
             callsign: record.callsign, band: record.band, mode: record.mode,
@@ -221,7 +222,7 @@ class ImportService: ObservableObject {
             myCallsign: record.myCallsign ?? myCallsign, myGrid: record.myGridsquare,
             theirGrid: record.gridsquare,
             parkReference: parkReference,
-            theirParkReference: record.sigInfo.flatMap { ParkReference.sanitize($0) },
+            theirParkReference: theirParkReference,
             notes: record.comment, importSource: source, rawADIF: record.rawADIF
         )
     }
