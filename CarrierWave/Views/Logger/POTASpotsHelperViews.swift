@@ -53,12 +53,12 @@ struct POTASpotsFilterSheet: View {
 
 // MARK: - POTASpotsLoadingView
 
-/// Loading state view for POTA spots
+/// Loading state view for spots
 struct POTASpotsLoadingView: View {
     var body: some View {
         VStack(spacing: 12) {
             ProgressView()
-            Text("Loading POTA spots...")
+            Text("Loading spots...")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -117,12 +117,37 @@ struct POTASpotsErrorView: View {
 
 // MARK: - POTASpotsBandHeader
 
-/// Section header for band grouping
+/// Section header for POTA band grouping
 struct POTASpotsBandHeader: View {
     let band: String
 
     var body: some View {
         HStack {
+            Text(band)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+            Spacer()
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(Color(.secondarySystemGroupedBackground))
+    }
+}
+
+// MARK: - SOTASpotsBandHeader
+
+/// Section header for SOTA band grouping with mountain icon and brown accent
+struct SOTASpotsBandHeader: View {
+    let band: String
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "mountain.2.fill")
+                .font(.caption2)
+                .foregroundStyle(.brown)
+            Text("SOTA")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.brown)
             Text(band)
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)

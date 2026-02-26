@@ -12,7 +12,7 @@ enum SpotSortOrder: String, CaseIterable {
 
 // MARK: - ActivityLogSpotsList
 
-/// Spot list for the hunter workflow. Shows POTA + RBN spots with
+/// Spot list for the hunter workflow. Shows POTA, SOTA, and RBN spots with
 /// worked-before badges, filtering, and sort options.
 struct ActivityLogSpotsList: View {
     // MARK: Internal
@@ -109,7 +109,7 @@ struct ActivityLogSpotsList: View {
         )
     }
 
-    /// Dedup by callsign+band, preferring POTA over RBN and newest timestamp.
+    /// Dedup by callsign+band, preferring POTA > SOTA > RBN and newest timestamp.
     /// When huntedBehavior is .hide, filters out spots already worked today on same band.
     private var dedupedSpots: [EnrichedSpot] {
         var best: [String: EnrichedSpot] = [:]
@@ -117,6 +117,7 @@ struct ActivityLogSpotsList: View {
             let key = "\(spot.spot.callsign.uppercased())|\(spot.spot.band)"
             if let existing = best[key] {
                 let preferNew = spot.spot.source == .pota && existing.spot.source != .pota
+                    || spot.spot.source == .sota && existing.spot.source == .rbn
                     || spot.spot.source == existing.spot.source
                     && spot.spot.timestamp > existing.spot.timestamp
                 if preferNew {
@@ -205,7 +206,7 @@ struct ActivityLogSpotsList: View {
             Text("No spots yet")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
-            Text("Spots from POTA and RBN refresh automatically every 45 seconds")
+            Text("Spots from POTA, SOTA, and RBN refresh automatically every 45 seconds")
                 .font(.caption)
                 .foregroundStyle(.tertiary)
                 .multilineTextAlignment(.center)

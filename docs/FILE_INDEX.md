@@ -501,6 +501,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `LoggerKeyboardAccessory.swift` | Number row and command buttons above keyboard |
 | `KeyboardAccessoryBuilder.swift` | UIKit builder for keyboard accessory view |
 | `POTASpotRow.swift` | Individual POTA spot row component |
+| `SOTASpotRow.swift` | Individual SOTA spot row component with summit info |
 | `POTASpotsView.swift` | POTA activator spots panel with filtering |
 | `POTASpotsHelperViews.swift` | Helper views for POTA spots (filter sheet, loading, empty, error states) |
 | `P2PPanelView.swift` | Park-to-park opportunities panel with SNR display |

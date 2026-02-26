@@ -7,6 +7,7 @@ import SwiftUI
 struct SpotFilters: Equatable {
     enum SourceFilter: String, CaseIterable {
         case pota = "POTA"
+        case sota = "SOTA"
         case rbn = "RBN"
 
         // MARK: Internal
@@ -50,7 +51,11 @@ struct SpotFilters: Equatable {
             }
 
             if !sources.isEmpty {
-                let spotSource: SourceFilter = spot.spot.source == .pota ? .pota : .rbn
+                let spotSource: SourceFilter = switch spot.spot.source {
+                case .pota: .pota
+                case .sota: .sota
+                case .rbn: .rbn
+                }
                 if !sources.contains(spotSource) {
                     return false
                 }

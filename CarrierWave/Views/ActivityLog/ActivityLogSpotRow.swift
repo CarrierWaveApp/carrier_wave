@@ -81,6 +81,16 @@ struct ActivityLogSpotRow: View {
                     .clipShape(RoundedRectangle(cornerRadius: 3))
             }
 
+            if spot.spot.source == .sota {
+                Text("SOTA")
+                    .font(.caption2)
+                    .foregroundStyle(.brown)
+                    .padding(.horizontal, 4)
+                    .padding(.vertical, 1)
+                    .background(Color.brown.opacity(0.15))
+                    .clipShape(RoundedRectangle(cornerRadius: 3))
+            }
+
             if isFriend {
                 Text("FRIEND")
                     .font(.caption2.weight(.semibold))
@@ -111,6 +121,30 @@ struct ActivityLogSpotRow: View {
                 }
                 if let state = spot.spot.stateAbbr {
                     statePill(state)
+                }
+            }
+        } else if let summitCode = spot.spot.summitCode {
+            HStack(spacing: 4) {
+                Image(systemName: "mountain.2.fill")
+                    .font(.caption2)
+                    .foregroundStyle(.brown)
+                Text(summitCode)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                if let summitName = spot.spot.summitName {
+                    Text("- \(summitName)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+                if let pts = spot.spot.summitPoints, pts > 0 {
+                    Text("\(pts)pts")
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(.brown)
+                        .padding(.horizontal, 4)
+                        .padding(.vertical, 1)
+                        .background(Color.brown.opacity(0.15))
+                        .clipShape(RoundedRectangle(cornerRadius: 3))
                 }
             }
         } else if let snr = spot.spot.snr {
