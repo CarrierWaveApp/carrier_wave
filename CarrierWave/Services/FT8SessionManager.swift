@@ -7,6 +7,7 @@ import CarrierWaveCore
 import Foundation
 import os
 import SwiftData
+import UIKit
 
 // MARK: - FT8OperatingMode
 
@@ -330,6 +331,13 @@ final class FT8SessionManager {
         qsoCount += 1
         decodeEnricher.markWorkedThisSession(completed.theirCallsign)
         Self.log.info("FT8 QSO logged: \(completed.theirCallsign)")
+
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
+
+        // POTA milestone: extra haptic when reaching 10 valid QSOs
+        if qsoCount == 10 {
+            UINotificationFeedbackGenerator().notificationOccurred(.warning)
+        }
     }
 
     private func formatReport(_ report: Int?) -> String {

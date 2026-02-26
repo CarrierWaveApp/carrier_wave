@@ -5,6 +5,7 @@
 
 import CarrierWaveCore
 import SwiftUI
+import UIKit
 
 struct FT8DecodeListView: View {
     // MARK: Internal
@@ -24,6 +25,7 @@ struct FT8DecodeListView: View {
             }
             .onChange(of: directedDecodes.count) { oldCount, newCount in
                 if newCount > oldCount, let first = directedDecodes.first {
+                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
                     withAnimation {
                         proxy.scrollTo(first.id, anchor: .top)
                     }
@@ -101,6 +103,7 @@ struct FT8DecodeListView: View {
                 .id(enriched.id)
                 .onTapGesture {
                     if enriched.decode.message.isCallable {
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
                         onCallStation(enriched.decode)
                     }
                 }
