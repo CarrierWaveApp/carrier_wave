@@ -22,6 +22,8 @@ final class AsyncBragSheetStats {
 
     var configuration: BragSheetConfiguration = .load()
 
+    private(set) var cachedSnapshots: [BragSheetQSOSnapshot]?
+
     /// The result for the currently selected period.
     var currentResult: BragSheetComputedResult? {
         result(for: selectedPeriod)
@@ -78,7 +80,6 @@ final class AsyncBragSheetStats {
 
     private var computeTask: Task<Void, Never>?
     private let actor = BragSheetComputationActor()
-    private var cachedSnapshots: [BragSheetQSOSnapshot]?
 
     private func startComputation(from container: ModelContainer) {
         isComputing = true

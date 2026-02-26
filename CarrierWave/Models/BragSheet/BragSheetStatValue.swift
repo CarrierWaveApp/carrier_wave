@@ -92,6 +92,11 @@ nonisolated extension BragSheetStatValue {
         self != .noData
     }
 
+    /// Whether this stat can be shown on a share card (has data and a single-value summary).
+    var isShareable: Bool {
+        hasData && heroValue != "--"
+    }
+
     /// Primary display string for the hero row (large number).
     var heroValue: String {
         switch self {

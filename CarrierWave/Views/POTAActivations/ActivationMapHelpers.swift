@@ -35,8 +35,8 @@ enum ActivationMapHelpers {
 
         let centerLat = (minLat + maxLat) / 2
         let centerLon = (minLon + maxLon) / 2
-        let latSpan = max(maxLat - minLat, 5) * 1.3
-        let lonSpan = max(maxLon - minLon, 5) * 1.3
+        let latSpan = min(max(maxLat - minLat, 5) * 1.3, 180)
+        let lonSpan = min(max(maxLon - minLon, 5) * 1.3, 360)
 
         return MKCoordinateRegion(
             center: CLLocationCoordinate2D(latitude: centerLat, longitude: centerLon),

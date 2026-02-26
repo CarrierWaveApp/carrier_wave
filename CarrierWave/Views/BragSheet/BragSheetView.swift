@@ -38,29 +38,27 @@ struct BragSheetView: View {
                 }
             }
             ToolbarItem(placement: .primaryAction) {
-                Button {
-                    showingShareSheet = true
-                } label: {
-                    Image(systemName: "square.and.arrow.up")
+                if isGeneratingShareImage {
+                    ProgressView()
+                } else {
+                    Button {
+                        Task { await generateShareImage() }
+                    } label: {
+                        Image(systemName: "square.and.arrow.up")
+                    }
+                    .disabled(
+                        bragStats.currentResult == nil
+                            || bragStats.currentResult?.qsoCount == 0
+                    )
                 }
-                .disabled(bragStats.currentResult == nil || bragStats.currentResult?.qsoCount == 0)
             }
         }
         .sheet(isPresented: $showingCustomize) {
             BragSheetCustomizeView(bragStats: bragStats)
         }
         .sheet(isPresented: $showingShareSheet) {
-            if let result = bragStats.currentResult {
-                let config = bragStats.configuration.config(for: bragStats.selectedPeriod)
-                let callsign = CallsignAliasService.shared.getCurrentCallsign() ?? "Me"
-                BragShareCardSheet(
-                    content: .forBragSheet(
-                        result: result,
-                        config: config,
-                        period: bragStats.selectedPeriod,
-                        callsign: callsign
-                    )
-                )
+            if let image = renderedShareImage {
+                BragShareImageSheet(image: image)
             }
         }
         .task {
@@ -70,8 +68,11 @@ struct BragSheetView: View {
 
     // MARK: Private
 
+    @AppStorage("statisticianMode") private var statisticianMode = false
     @State private var showingCustomize = false
     @State private var showingShareSheet = false
+    @State private var isGeneratingShareImage = false
+    @State private var renderedShareImage: UIImage?
 
     // MARK: - Period Picker
 
@@ -120,73 +121,109 @@ struct BragSheetView: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 40)
     }
+
+    private func generateShareImage() async {
+        guard let result = bragStats.currentResult else {
+            return
+        }
+        isGeneratingShareImage = true
+        let period = bragStats.selectedPeriod
+        let config = bragStats.configuration.config(for: period)
+        let callsign = CallsignAliasService.shared.getCurrentCallsign() ?? "Me"
+        let stats = statisticianData(for: period)
+        let snapshots = filteredSnapshots(for: period)
+
+        let image = await BragSheetShareRenderer.renderWithMap(
+            input: .init(
+                result: result,
+                config: config,
+                period: period,
+                callsign: callsign,
+                statisticianStats: stats,
+                snapshots: snapshots
+            )
+        )
+
+        isGeneratingShareImage = false
+        renderedShareImage = image
+        if image != nil {
+            showingShareSheet = true
+        }
+    }
+
+    private func filteredSnapshots(
+        for period: BragSheetPeriod
+    ) -> [BragSheetQSOSnapshot] {
+        guard let snapshots = bragStats.cachedSnapshots else {
+            return []
+        }
+        guard period != .allTime else {
+            return snapshots
+        }
+        let dateRange = period.dateRange()
+        return snapshots.filter {
+            $0.timestamp >= dateRange.start && $0.timestamp <= dateRange.end
+        }
+    }
+
+    private func statisticianData(
+        for period: BragSheetPeriod
+    ) -> BragSheetStatisticianData? {
+        guard statisticianMode,
+              let snapshots = bragStats.cachedSnapshots
+        else {
+            return nil
+        }
+        let dateRange = period.dateRange()
+        let filtered = period == .allTime
+            ? snapshots
+            : snapshots.filter {
+                $0.timestamp >= dateRange.start && $0.timestamp <= dateRange.end
+            }
+        return BragSheetStatisticianData.compute(from: filtered)
+    }
 }
 
-// MARK: - BragShareCardSheet
+// MARK: - BragShareImageSheet
 
-/// Sheet showing a preview of the brag sheet share card with a Share button.
-struct BragShareCardSheet: View {
-    // MARK: Internal
-
+/// Sheet showing the pre-rendered brag sheet image with a Share button.
+struct BragShareImageSheet: View {
     @Environment(\.dismiss) var dismiss
 
-    let content: ShareCardContent
+    let image: UIImage
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section("Preview") {
-                    ShareCardView(content: content)
-                        .scaleEffect(0.6)
-                        .frame(height: 320)
+            ScrollView {
+                Image(uiImage: image)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .cornerRadius(12)
+                    .shadow(radius: 4)
+                    .padding()
+            }
+            .safeAreaInset(edge: .bottom) {
+                ShareLink(
+                    item: ShareableImage(uiImage: image),
+                    preview: SharePreview(
+                        "Brag Sheet", image: Image(uiImage: image)
+                    )
+                ) {
+                    Label("Share", systemImage: "square.and.arrow.up")
                         .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
                 }
-
-                Section {
-                    Button {
-                        showingShareSheet = true
-                    } label: {
-                        HStack {
-                            Spacer()
-                            Label("Share", systemImage: "square.and.arrow.up")
-                                .fontWeight(.semibold)
-                            Spacer()
-                        }
-                    }
-                }
+                .buttonStyle(.borderedProminent)
+                .padding()
+                .background(.bar)
             }
             .navigationTitle("Share Brag Sheet")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        dismiss()
-                    }
+                    Button("Cancel") { dismiss() }
                 }
-            }
-            .sheet(isPresented: $showingShareSheet) {
-                BragShareSheetView(content: content)
             }
         }
     }
-
-    // MARK: Private
-
-    @State private var showingShareSheet = false
-}
-
-// MARK: - BragShareSheetView
-
-struct BragShareSheetView: UIViewControllerRepresentable {
-    let content: ShareCardContent
-
-    func makeUIViewController(context _: Context) -> UIActivityViewController {
-        let image = ShareCardRenderer.render(content: content) ?? UIImage()
-        return UIActivityViewController(
-            activityItems: [image],
-            applicationActivities: nil
-        )
-    }
-
-    func updateUIViewController(_: UIActivityViewController, context _: Context) {}
 }

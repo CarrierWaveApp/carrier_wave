@@ -582,6 +582,9 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `BragSheetStatRendering.swift` | Subtitle display helpers and BragInlineTableCell for bandTable/modeStreakList |
 | `BragSheetCustomizeView.swift` | Customization sheet with preset chips and category-grouped stat toggles |
 | `BragSheetCustomizeView+StatRow.swift` | Individual stat row with enable toggle and hero star button |
+| `BragSheetShareCardView.swift` | Share card view for brag sheet with dark purple gradient, map, stats grid |
+| `BragSheetShareRenderer.swift` | Renders brag sheet share card to UIImage with MKMapSnapshotter map |
+| `BragSheetStatisticianSection.swift` | Professional Statistician Mode section with box plots and distributions |
 
 ## Views - Logs (`CarrierWave/Views/Logs/`)
 | File | Purpose |

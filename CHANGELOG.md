@@ -9,6 +9,11 @@ All notable changes to Carrier Wave will be documented in this file.
 - Add isDeleted guards to QSO service presence helpers to prevent accessing invalidated SwiftData backing data
 
 ### Changed
+- Theme brag sheet share card with dark purple gradient matching session brag sheet cards
+- Add map with clustered QSO markers to brag sheet share card (known issue: map background misaligns at wide geographic spans)
+- Add Professional Statistician Mode section to brag sheet share card (box plots, distributions)
+- Pre-render brag sheet share image with full-size preview and ShareLink
+- Change weekly share card headline to "Last 7 Days in Radio"
 - Derive FT8 dial frequency from band selection (no manual frequency entry)
 - Update FT8 waterfall to scroll downward with newest data at top
 - Add Hz frequency labels below FT8 waterfall (500-2500 Hz axis)
