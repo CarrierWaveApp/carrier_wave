@@ -44,7 +44,7 @@ struct LoggerContainerView: View {
     @Environment(\.modelContext) private var modelContext
 
     // Sidebar state
-    @State private var sidebarTab: SidebarTab = .pota
+    @State private var sidebarTab: SidebarTab = .hunt
     @State private var rbnTargetCallsign: String?
     @State private var pendingSpotSelection: SpotSelection?
 
@@ -132,8 +132,8 @@ struct LoggerContainerView: View {
 
     private func handleSpotCommand(_ action: SpotCommandAction) {
         switch action {
-        case .showPOTA:
-            sidebarTab = .pota
+        case .showHunt:
+            sidebarTab = .hunt
         case let .showRBN(callsign):
             rbnTargetCallsign = callsign
             sidebarTab = .mySpots

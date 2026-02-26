@@ -17,8 +17,8 @@ enum LoggerCommand: Equatable {
     /// Show RBN spots panel for a callsign (nil = user's callsign)
     case rbn(callsign: String?)
 
-    /// Show POTA spots panel
-    case pota
+    /// Show activator spots panel (POTA + SOTA)
+    case hunt
 
     /// Show P2P (park-to-park) opportunities panel
     case p2p
@@ -74,7 +74,8 @@ enum LoggerCommand: Equatable {
         QRT             - Self-spot QRT to POTA
         RBN [callsign]  - Show RBN/POTA spots
                           e.g., RBN W1AW (or just RBN for your spots)
-        POTA            - Show POTA activator spots (or SPOTS)
+        HUNT            - Show activator spots (POTA + SOTA)
+                          (or POTA, SPOTS)
         P2P             - Find park-to-park opportunities
                           (POTA activations only)
         SOLAR           - Show solar conditions
@@ -111,8 +112,8 @@ enum LoggerCommand: Equatable {
             } else {
                 "Show your spots"
             }
-        case .pota:
-            "Show POTA spots"
+        case .hunt:
+            "Show activator spots"
         case .p2p:
             "Find P2P opportunities"
         case .solar:
@@ -151,8 +152,8 @@ enum LoggerCommand: Equatable {
             "mappin.and.ellipse"
         case .rbn:
             "dot.radiowaves.up.forward"
-        case .pota:
-            "tree.fill"
+        case .hunt:
+            "binoculars"
         case .p2p:
             "arrow.left.arrow.right"
         case .solar:
@@ -199,7 +200,7 @@ enum LoggerCommand: Equatable {
         if let cmd = parseRBN(trimmed: trimmed, upper: upper) {
             return cmd
         }
-        if let cmd = parsePOTA(upper: upper) {
+        if let cmd = parseHunt(upper: upper) {
             return cmd
         }
         if let cmd = parseP2P(upper: upper) {
@@ -292,9 +293,9 @@ enum LoggerCommand: Equatable {
         return nil
     }
 
-    private static func parsePOTA(upper: String) -> LoggerCommand? {
-        if upper == "POTA" || upper == "SPOTS" {
-            return .pota
+    private static func parseHunt(upper: String) -> LoggerCommand? {
+        if upper == "HUNT" || upper == "POTA" || upper == "SPOTS" {
+            return .hunt
         }
         return nil
     }

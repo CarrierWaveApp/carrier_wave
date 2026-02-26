@@ -69,10 +69,10 @@ extension LoggerCommand {
             command: "RBN W1AW", description: "Show spots for callsign",
             icon: "dot.radiowaves.up.forward", prefixes: ["RB"], exact: ["R"]
         ),
-        // POTA
+        // HUNT
         CommandSuggestion(
-            command: "POTA", description: "Show POTA activator spots",
-            icon: "tree.fill", prefixes: ["PO"], exact: ["P"]
+            command: "HUNT", description: "Show activator spots",
+            icon: "binoculars", prefixes: ["HU"]
         ),
         // P2P
         CommandSuggestion(

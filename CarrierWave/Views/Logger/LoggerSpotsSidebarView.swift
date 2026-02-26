@@ -36,7 +36,7 @@ struct LoggerSpotsSidebarView: View {
         if isPOTAActivation {
             SidebarTab.allCases
         } else {
-            [.pota, .mySpots, .map]
+            [.hunt, .mySpots, .map]
         }
     }
 
@@ -58,7 +58,7 @@ struct LoggerSpotsSidebarView: View {
     @ViewBuilder
     private var tabContent: some View {
         switch selectedTab {
-        case .pota:
+        case .hunt:
             SidebarPOTASpotsView(
                 userCallsign: userCallsign,
                 initialBand: currentBand,

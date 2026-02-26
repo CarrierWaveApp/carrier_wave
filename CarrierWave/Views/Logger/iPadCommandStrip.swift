@@ -39,7 +39,7 @@ struct IPadCommandStrip: View {
 
     @AppStorage("commandRowEnabled") private var commandRowEnabled = false
     @AppStorage("commandRowCommands") private var commandsString =
-        "rbn,solar,weather,spot,pota,p2p"
+        "rbn,solar,weather,spot,hunt,p2p"
 
     @State private var configuredCommands: [CommandRowItem] = []
     @State private var isKeyboardVisible = false
@@ -100,6 +100,10 @@ struct IPadCommandStrip: View {
         let keys = commandsString.isEmpty
             ? []
             : commandsString.components(separatedBy: ",")
-        configuredCommands = keys.compactMap { CommandRowItem(rawValue: $0) }
+        // Migrate legacy "pota" key to "hunt" for backward compatibility
+        configuredCommands = keys.compactMap { key -> CommandRowItem? in
+            let migrated = key == "pota" ? "hunt" : key
+            return CommandRowItem(rawValue: migrated)
+        }
     }
 }

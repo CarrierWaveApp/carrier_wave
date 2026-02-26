@@ -4,7 +4,7 @@ import Foundation
 
 /// Tab selection for the iPad spots sidebar
 enum SidebarTab: String, CaseIterable, Identifiable {
-    case pota = "POTA"
+    case hunt = "Hunt"
     case mySpots = "My Spots"
     case p2p = "P2P"
     case map = "Map"
@@ -45,7 +45,7 @@ enum SpotSelection: Equatable {
 /// Actions from LoggerView commands that the container intercepts on iPad
 /// to switch sidebar tabs instead of opening overlay panels
 enum SpotCommandAction {
-    case showPOTA
+    case showHunt
     case showRBN(callsign: String?)
     case showP2P
     case showMap

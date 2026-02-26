@@ -19,7 +19,7 @@ extension Notification.Name {
 /// Represents a configurable command for the keyboard accessory row
 enum CommandRowItem: String, CaseIterable {
     case rbn
-    case pota
+    case hunt
     case p2p
     case solar
     case weather
@@ -33,7 +33,7 @@ enum CommandRowItem: String, CaseIterable {
     var label: String {
         switch self {
         case .rbn: "RBN"
-        case .pota: "POTA"
+        case .hunt: "HUNT"
         case .p2p: "P2P"
         case .solar: "SOLAR"
         case .weather: "WX"
@@ -47,7 +47,7 @@ enum CommandRowItem: String, CaseIterable {
     var icon: String {
         switch self {
         case .rbn: "dot.radiowaves.up.forward"
-        case .pota: "tree.fill"
+        case .hunt: "binoculars"
         case .p2p: "arrow.left.arrow.right"
         case .solar: "sun.max"
         case .weather: "cloud.sun"
@@ -61,7 +61,7 @@ enum CommandRowItem: String, CaseIterable {
     var description: String {
         switch self {
         case .rbn: "Show RBN spots"
-        case .pota: "Show POTA activator spots"
+        case .hunt: "Show activator spots"
         case .p2p: "Find park-to-park opportunities"
         case .solar: "Show solar conditions"
         case .weather: "Show weather conditions"
@@ -75,7 +75,7 @@ enum CommandRowItem: String, CaseIterable {
     var command: LoggerCommand {
         switch self {
         case .rbn: .rbn(callsign: nil)
-        case .pota: .pota
+        case .hunt: .hunt
         case .p2p: .p2p
         case .solar: .solar
         case .weather: .weather
@@ -111,7 +111,7 @@ struct CommandRowSettingsView: View {
 
     // MARK: Private
 
-    private static let defaultCommands = "rbn,solar,weather,spot,pota,p2p"
+    private static let defaultCommands = "rbn,solar,weather,spot,hunt,p2p"
 
     @AppStorage("commandRowEnabled") private var commandRowEnabled = false
     @AppStorage("commandRowCommands") private var commandsString = defaultCommands
@@ -218,7 +218,11 @@ struct CommandRowSettingsView: View {
 
     private func refreshCommands() {
         let keys = commandsString.isEmpty ? [] : commandsString.components(separatedBy: ",")
-        enabledCommands = keys.compactMap { CommandRowItem(rawValue: $0) }
+        // Migrate legacy "pota" key to "hunt" for backward compatibility
+        enabledCommands = keys.compactMap { key -> CommandRowItem? in
+            let migrated = key == "pota" ? "hunt" : key
+            return CommandRowItem(rawValue: migrated)
+        }
         availableCommands = CommandRowItem.allCases.filter { !enabledCommands.contains($0) }
     }
 

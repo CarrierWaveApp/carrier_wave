@@ -4,6 +4,12 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- Rename `POTA` logger command to `HUNT` (shows activator spots); keep `POTA` and `SPOTS` as parsing aliases for backward compatibility
+- Change HUNT command icon from `tree.fill` to `binoculars`
+- Rename `SidebarTab.pota` to `.hunt` and `SpotCommandAction.showPOTA` to `.showHunt`
+- Migrate saved command row configurations: "pota" key is automatically treated as "hunt" on load
+
 ### Added
 - Cross-device iCloud sync: fetch changes on foreground re-entry (scenePhase), network recovery (NWPathMonitor), and 30s polling during active logging sessions
 - Add SOTAwatch API client (`SOTAClient`) for fetching active SOTA spots from api2.sota.org.uk

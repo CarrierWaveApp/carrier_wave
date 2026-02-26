@@ -23,11 +23,11 @@ extension LoggerView {
 
     func executeSheetCommand(_ command: LoggerCommand) {
         switch command {
-        case .pota:
+        case .hunt:
             if sessionManager?.activeSession?.isRove == true {
                 showNextStopSheet = true
             } else if let onSpotCommand {
-                onSpotCommand(.showPOTA)
+                onSpotCommand(.showHunt)
             } else {
                 showPOTAPanel = true
             }
