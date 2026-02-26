@@ -5,3 +5,4 @@ SOTAClient: New actor for fetching SOTA spots from api2.sota.org.uk
 SOTAClientTests: New test file for SOTASpot JSON decoding and computed properties
 refactor: rename POTA command to HUNT — LoggerCommand.pota→.hunt, SidebarTab.pota→.hunt, SpotCommandAction.showPOTA→.showHunt, CommandRowItem.pota→.hunt; backward-compat migration in refreshCommands/refreshConfig
 feat: integrate SOTA spots into SpotMonitoringService — SpotSource.sota added, UnifiedSpot gets SOTA fields, hunter poll fetches SOTA concurrently, RBNPanelView/SidebarRBNSpotsView/SpotsMiniMapView handle .sota case
+Task 5: Added programsRawValue to LoggingSession, computed programs/isPOTA/isSOTA/isCasual, updated startSession signature

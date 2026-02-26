@@ -91,6 +91,7 @@ final class LoggingSessionManager {
         myCallsign: String,
         mode: String,
         frequency: Double? = nil,
+        programs: Set<String> = [],
         activationType: ActivationType = .casual,
         parkReference: String? = nil,
         sotaReference: String? = nil,
@@ -114,6 +115,7 @@ final class LoggingSessionManager {
             startedAt: Date(),
             frequency: frequency,
             mode: mode,
+            programs: programs,
             activationType: activationType,
             parkReference: parkReference.flatMap { ParkReference.sanitizeMulti($0) },
             sotaReference: sotaReference,
@@ -128,7 +130,7 @@ final class LoggingSessionManager {
         )
 
         // Set up rove mode with first stop
-        if isRove, activationType == .pota, let park = session.parkReference {
+        if isRove, session.isPOTA, let park = session.parkReference {
             session.isRove = true
             let firstStop = RoveStop(
                 parkReference: park,

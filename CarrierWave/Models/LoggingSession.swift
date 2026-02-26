@@ -51,6 +51,7 @@ nonisolated final class LoggingSession {
         startedAt: Date = Date(),
         frequency: Double? = nil,
         mode: String = "CW",
+        programs: Set<String> = [],
         activationType: ActivationType = .casual,
         parkReference: String? = nil,
         sotaReference: String? = nil,
@@ -81,6 +82,13 @@ nonisolated final class LoggingSession {
         self.myMic = myMic
         self.extraEquipment = extraEquipment
         self.attendees = attendees
+
+        // Set programs from explicit parameter, or derive from activationType
+        if !programs.isEmpty {
+            self.programs = programs
+        } else if activationType != .casual {
+            self.programs = [activationType.rawValue]
+        }
     }
 
     // MARK: Internal
@@ -98,6 +106,10 @@ nonisolated final class LoggingSession {
 
     /// Stored as raw value for SwiftData compatibility
     var activationTypeRawValue: String = ActivationType.casual.rawValue
+
+    /// Programs active in this session, stored as JSON array of slugs (e.g., ["pota","sota"]).
+    /// Empty array = casual. Replaces activationTypeRawValue as source of truth.
+    var programsRawValue: String = ""
 
     /// Session status stored as raw value
     var statusRawValue: String = LoggingSessionStatus.active.rawValue
@@ -197,6 +209,53 @@ nonisolated final class LoggingSession {
     var activationType: ActivationType {
         get { ActivationType(rawValue: activationTypeRawValue) ?? .casual }
         set { activationTypeRawValue = newValue.rawValue }
+    }
+
+    /// The set of active programs for this session.
+    /// Reads from programsRawValue if set, otherwise migrates from activationTypeRawValue.
+    var programs: Set<String> {
+        get {
+            guard !programsRawValue.isEmpty,
+                  let data = programsRawValue.data(using: .utf8),
+                  let slugs = try? JSONDecoder().decode([String].self, from: data)
+            else {
+                // Migration: derive from old activationTypeRawValue
+                if activationTypeRawValue == "casual" || activationTypeRawValue.isEmpty {
+                    return []
+                }
+                return [activationTypeRawValue]
+            }
+            return Set(slugs)
+        }
+        set {
+            let sorted = newValue.sorted()
+            if let data = try? JSONEncoder().encode(sorted) {
+                programsRawValue = String(data: data, encoding: .utf8) ?? ""
+            }
+            // Keep activationTypeRawValue in sync for backward compat
+            if newValue.isEmpty {
+                activationTypeRawValue = "casual"
+            } else if newValue.count == 1, let first = newValue.first {
+                activationTypeRawValue = first
+            } else {
+                activationTypeRawValue = sorted.first ?? "casual"
+            }
+        }
+    }
+
+    /// Whether this is a POTA activation
+    var isPOTA: Bool {
+        programs.contains("pota")
+    }
+
+    /// Whether this is a SOTA activation
+    var isSOTA: Bool {
+        programs.contains("sota")
+    }
+
+    /// Whether this is a casual (no-program) session
+    var isCasual: Bool {
+        programs.isEmpty
     }
 
     /// Session status enum accessor
