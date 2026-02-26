@@ -144,6 +144,21 @@ final class ActivityProgramStore: ObservableObject {
                 sigField: nil, sigInfoField: nil
             )
         ),
+        ActivityProgram(
+            slug: "aoa",
+            name: "Agents on Air",
+            shortName: "AoA",
+            icon: "eye",
+            website: nil,
+            referenceLabel: "Mission Reference",
+            referenceFormat: "^M-[a-z0-9]{4}$",
+            referenceExample: "M-a01f",
+            multiRefAllowed: false,
+            activationThreshold: nil,
+            supportsRove: false,
+            capabilities: [.referenceField, .hunter, .dataEntry, .dataVerification],
+            adifFields: nil
+        ),
     ]
 
     private let client: ActivitiesClient?

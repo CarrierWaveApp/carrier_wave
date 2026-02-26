@@ -116,6 +116,8 @@ extension LoggingSession {
             return "\(myCallsign) SOTA"
         case .casual:
             return "\(myCallsign) Casual"
+        case .aoa:
+            return "\(myCallsign) AoA"
         }
     }
 
@@ -124,7 +126,8 @@ extension LoggingSession {
         switch activationType {
         case .pota: parkReference
         case .sota: sotaReference
-        case .casual: nil
+        case .casual,
+             .aoa: nil
         }
     }
 

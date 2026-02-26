@@ -25,6 +25,12 @@ enum ProgramCapability: String, Codable, Sendable, CaseIterable {
 
     /// Tracks activation progress (e.g., X/10 QSOs)
     case progressTracking
+
+    /// Has an in-QSO data entry field (e.g., passkey exchange)
+    case dataEntry
+
+    /// Supports data verification after QSO (e.g., code validation)
+    case dataVerification
 }
 
 // MARK: - ADIFFieldMapping

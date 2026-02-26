@@ -9,6 +9,7 @@ enum ActivationType: String, Codable, CaseIterable {
     case casual
     case pota
     case sota
+    case aoa
 
     // MARK: Internal
 
@@ -17,6 +18,7 @@ enum ActivationType: String, Codable, CaseIterable {
         case .casual: "Casual"
         case .pota: "POTA"
         case .sota: "SOTA"
+        case .aoa: "AoA"
         }
     }
 
@@ -25,6 +27,7 @@ enum ActivationType: String, Codable, CaseIterable {
         case .casual: "radio"
         case .pota: "tree"
         case .sota: "mountain.2"
+        case .aoa: "eye"
         }
     }
 }
