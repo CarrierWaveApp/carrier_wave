@@ -566,10 +566,22 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `StreakDetailView.swift` | Streak statistics detail view with mode/band breakdowns |
 | `EquipmentStatsActor.swift` | Background actor for equipment usage stats from LoggingSession data |
 | `AsyncEquipmentStats.swift` | Observable wrapper for equipment stats with background computation |
+| `AsyncBragSheetStats.swift` | Observable wrapper for brag sheet stats with 3-period parallel computation |
+| `DashboardView+BragSheet.swift` | Dashboard entry card with NavigationLink to brag sheet |
 | `EquipmentUsageCard.swift` | Dashboard card showing top equipment, QSO magnet, combos, gathering dust |
 | `EquipmentDetailView.swift` | Sortable equipment ranking drilldown with category filtering |
 | `FriendsOnAirCard.swift` | Dashboard card showing friends in current POTA spots |
 | `FriendActivityCard.swift` | Dashboard card showing recent friend activity feed items |
+
+## Views - Brag Sheet (`CarrierWave/Views/BragSheet/`)
+| File | Purpose |
+|------|---------|
+| `BragSheetView.swift` | Main brag sheet view with period picker, hero section, stat grid |
+| `BragSheetView+HeroSection.swift` | Hero cards (up to 4) with BragHeroCard component |
+| `BragSheetView+StatGrid.swift` | 2-column grid of stat cells with BragStatGridCell component |
+| `BragSheetStatRendering.swift` | Subtitle display helpers and BragInlineTableCell for bandTable/modeStreakList |
+| `BragSheetCustomizeView.swift` | Customization sheet with preset chips and category-grouped stat toggles |
+| `BragSheetCustomizeView+StatRow.swift` | Individual stat row with enable toggle and hero star button |
 
 ## Views - Logs (`CarrierWave/Views/Logs/`)
 | File | Purpose |

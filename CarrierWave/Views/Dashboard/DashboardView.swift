@@ -72,6 +72,9 @@ struct DashboardView: View {
     /// Service presence counts - computed in background
     @State var presenceCounts = AsyncServicePresenceCounts()
 
+    /// Brag sheet statistics - pre-computes all periods in background
+    @State var bragSheetStats = AsyncBragSheetStats()
+
     let lofiClient = LoFiClient.appDefault()
     let qrzClient = QRZClient()
     let hamrsClient = HAMRSClient()
@@ -109,6 +112,7 @@ struct DashboardView: View {
                                 conditionsCard
                             }
                             VStack(spacing: 16) {
+                                bragSheetEntryCard
                                 favoritesCard
                                 equipmentCard
                                 servicesList
@@ -121,6 +125,7 @@ struct DashboardView: View {
                         friendActivityCard
                         streaksCard
                         summaryCard
+                        bragSheetEntryCard
                         favoritesCard
                         equipmentCard
                         conditionsCard
@@ -142,6 +147,7 @@ struct DashboardView: View {
                 asyncStats.compute(from: modelContext)
                 equipmentStats.compute(from: modelContext.container)
                 presenceCounts.compute(from: modelContext)
+                bragSheetStats.compute(from: modelContext.container)
             }
             .task {
                 // Check for callsign aliases after stats are computed (only once per session)
@@ -175,6 +181,7 @@ struct DashboardView: View {
                     asyncStats.recompute(from: modelContext)
                     equipmentStats.recompute(from: modelContext.container)
                     presenceCounts.recompute(from: modelContext)
+                    bragSheetStats.recompute(from: modelContext.container)
                 }
             }
             .onReceive(NotificationCenter.default.publisher(for: .didClearQSOs)) { _ in
@@ -185,6 +192,7 @@ struct DashboardView: View {
                 // Recompute after reset to show zeros
                 asyncStats.compute(from: modelContext)
                 equipmentStats.compute(from: modelContext.container)
+                bragSheetStats.recompute(from: modelContext.container)
             }
             // NOTE: No .onDisappear cancellation - computation continues in background
             // when user switches tabs. This is intentional because:
