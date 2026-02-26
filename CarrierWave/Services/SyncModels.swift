@@ -200,6 +200,34 @@ struct SyncImportConfirmation {
     }
 }
 
+// MARK: - SyncExportConfirmation
+
+/// Shown to the user before upload when many QSOs are queued for export.
+/// The user can confirm to proceed or cancel.
+struct SyncExportConfirmation {
+    /// Per-service breakdown of QSOs queued for upload
+    let uploadByService: [ServiceType: Int]
+
+    /// Total QSOs queued across all services
+    var totalToUpload: Int {
+        uploadByService.values.reduce(0, +)
+    }
+
+    /// Uses the same threshold as import confirmation
+    static let threshold = SyncImportConfirmation.threshold
+
+    /// Continuation to resume or cancel the upload
+    let continuation: CheckedContinuation<Bool, Never>
+
+    /// Human-readable summary of what will be uploaded
+    var summary: String {
+        let parts = uploadByService
+            .sorted { $0.value > $1.value }
+            .map { "\($0.value) to \($0.key.displayName)" }
+        return parts.joined(separator: ", ")
+    }
+}
+
 // MARK: - SyncResult
 
 struct SyncResult {

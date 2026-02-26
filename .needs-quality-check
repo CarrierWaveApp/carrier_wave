@@ -12,3 +12,8 @@ Wire sync confirmation alert into DashboardView
 Add ParkReference.stripFromFreeText() to CarrierWaveCore
 Strip park refs from COMMENT on export in POTAClient+ADIF, ADIFExportService, QRZClient+ADIF, ClubLogClient+Helpers
 Update CHANGELOG.md with new features
+Add SyncExportConfirmation model to SyncModels.swift
+Add exportConfirmation property and helper methods to SyncService+Helpers
+Add export confirmation checkpoint to SyncService+Upload.uploadToAllDestinations
+Add export confirmation to single-service upload phases in SyncService+SingleSync
+Add SyncExportConfirmationAlert ViewModifier and wire into DashboardView

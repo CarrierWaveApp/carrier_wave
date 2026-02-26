@@ -124,6 +124,28 @@ extension SyncService {
         confirmation.continuation.resume(returning: proceed)
     }
 
+    /// Pause sync and ask user to confirm uploading a large batch of QSOs.
+    /// Returns true if user confirms, false if cancelled.
+    func requestExportConfirmation(
+        uploadByService: [ServiceType: Int]
+    ) async -> Bool {
+        await withCheckedContinuation { continuation in
+            exportConfirmation = SyncExportConfirmation(
+                uploadByService: uploadByService,
+                continuation: continuation
+            )
+        }
+    }
+
+    /// Called by UI to resolve the pending export confirmation.
+    func resolveExportConfirmation(proceed: Bool) {
+        guard let confirmation = exportConfirmation else {
+            return
+        }
+        exportConfirmation = nil
+        confirmation.continuation.resume(returning: proceed)
+    }
+
     /// Repair orphaned QSOs, clear invalid upload flags, and refresh context.
     /// Common post-processing step for both full and single-service syncs.
     func performDataRepairs() async {

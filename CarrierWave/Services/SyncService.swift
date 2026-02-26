@@ -44,6 +44,10 @@ class SyncService: ObservableObject {
     /// The UI should observe this and show a confirmation dialog.
     @Published var importConfirmation: SyncImportConfirmation?
 
+    /// Set when a large number of QSOs are queued for upload.
+    /// The UI should observe this and show a confirmation dialog.
+    @Published var exportConfirmation: SyncExportConfirmation?
+
     let modelContext: ModelContext
     let qrzClient: QRZClient
     let potaClient: POTAClient
