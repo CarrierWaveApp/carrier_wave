@@ -104,7 +104,7 @@ extension SessionStartSheet {
         }
     }
 
-    func frequencyOptionalCallout(for type: ActivationType) -> some View {
+    func frequencyOptionalCallout() -> some View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: "info.circle.fill")
                 .foregroundStyle(.blue)
@@ -127,12 +127,114 @@ extension SessionStartSheet {
 
     var activationSection: some View {
         ActivationSectionView(
-            activationType: $activationType,
+            selectedPrograms: $selectedPrograms,
             parkReference: $parkReference,
             sotaReference: $sotaReference,
             isRove: $isRove,
             userGrid: myGrid.isEmpty ? defaultGrid : myGrid,
             defaultCountry: "US"
         )
+    }
+
+    var modeSection: some View {
+        Section("Mode") {
+            Picker("Mode", selection: $selectedMode) {
+                ForEach(["CW", "SSB", "FT8", "FT4", "RTTY", "AM", "FM"], id: \.self) { mode in
+                    Text(mode).tag(mode)
+                }
+            }
+            .pickerStyle(.segmented)
+        }
+    }
+
+    var frequencySection: some View {
+        Section {
+            HStack {
+                TextField("14.060", text: $frequency)
+                    .keyboardType(.decimalPad)
+                    .font(.title3.monospaced())
+
+                Text("MHz")
+                    .foregroundStyle(.secondary)
+            }
+
+            DisclosureGroup(
+                "Band Suggestions",
+                isExpanded: $showBandSuggestions
+            ) {
+                FrequencyBandView(
+                    selectedMode: selectedMode,
+                    frequency: $frequency,
+                    detailBand: $bandDetail
+                )
+            }
+
+            // Prominent callout for POTA/SOTA when no frequency entered
+            if frequency.isEmpty,
+               !selectedPrograms.isEmpty
+            {
+                frequencyOptionalCallout()
+            }
+        } header: {
+            HStack {
+                Text("Frequency")
+                Spacer()
+                Button {
+                    showBandPlanSheet = true
+                } label: {
+                    Label("Band Plan", systemImage: "info.circle")
+                        .font(.caption)
+                }
+            }
+        } footer: {
+            Text(
+                "Enter as MHz (14.060), kHz (14060), or dot-separated (14.030.50)."
+                    + " You can also type \"14060 kHz\" or \"14.060 MHz\"."
+            )
+        }
+    }
+
+    var optionsSection: some View {
+        Section {
+            Button {
+                saveDefaults()
+            } label: {
+                HStack {
+                    Label("Save as Defaults", systemImage: "square.and.arrow.down")
+                    Spacer()
+                    if showSavedConfirmation {
+                        Label("Saved", systemImage: "checkmark.circle.fill")
+                            .foregroundStyle(.green)
+                            .labelStyle(.iconOnly)
+                            .transition(.scale.combined(with: .opacity))
+                    }
+                }
+            }
+        } header: {
+            Text("Options")
+        } footer: {
+            Text("Defaults are used when starting a new session")
+        }
+    }
+
+    func loadSavedPrograms() {
+        if !defaultPrograms.isEmpty,
+           let data = defaultPrograms.data(using: .utf8),
+           let slugs = try? JSONDecoder().decode([String].self, from: data)
+        {
+            selectedPrograms = Set(slugs)
+        } else {
+            // Migration: load from old defaultActivationType
+            let oldDefault = UserDefaults.standard.string(
+                forKey: "loggerDefaultActivationType"
+            ) ?? "casual"
+            if oldDefault == "pota" {
+                selectedPrograms = ["pota"]
+            } else if oldDefault == "sota" {
+                selectedPrograms = ["sota"]
+            } else {
+                selectedPrograms = []
+            }
+        }
     }
 }

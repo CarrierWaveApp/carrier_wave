@@ -8,3 +8,4 @@ feat: integrate SOTA spots into SpotMonitoringService — SpotSource.sota added,
 Task 5: Added programsRawValue to LoggingSession, computed programs/isPOTA/isSOTA/isCasual, updated startSession signature
 Task 8: Added SOTA source filter, SOTA spot row, SOTA spots to spots panels and activity log
 Task 6: Migrated activationType == .pota/.sota/.casual to isPOTA/isSOTA/isCasual across services and views, added programsDisplayName/programsIcon helpers
+Task 7: Replaced activation type segmented picker with POTA/SOTA toggle chips, updated SessionStartValidation to use Set<String>, added ProgramChip view, migrated defaults persistence from activationType to JSON-encoded programs array

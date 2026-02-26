@@ -15,7 +15,7 @@ struct SessionStartSheet: View {
     @AppStorage("loggerDefaultGrid") var defaultGrid = ""
     @State var selectedMode = "CW"
     @State var frequency = ""
-    @State var activationType: ActivationType = .casual
+    @State var selectedPrograms: Set<String> = []
     @State var parkReference = ""
     @State var sotaReference = ""
     @State var isRove = false
@@ -41,6 +41,20 @@ struct SessionStartSheet: View {
     @State var extraEquipmentText = ""
     @State var attendeesText = ""
     @State var sessionNotes = ""
+
+    @AppStorage("loggerDefaultPrograms") var defaultPrograms = ""
+    @AppStorage("loggerDefaultParkReference") var defaultParkReference = ""
+    @AppStorage("loggerDefaultPower") var defaultPower = ""
+    @AppStorage("loggerDefaultRadio") var defaultRadio = ""
+    @AppStorage("loggerDefaultAntenna") var defaultAntenna = ""
+    @AppStorage("loggerDefaultKey") var defaultKey = ""
+    @AppStorage("loggerDefaultMic") var defaultMic = ""
+
+    /// UI state
+    @State var showSavedConfirmation = false
+    @State var showBandPlanSheet = false
+    @State var bandDetail: BandSuggestion?
+    @State var showBandSuggestions = false
 
     /// The full constructed callsign (prefix/base/suffix)
     var fullCallsign: String {
@@ -121,9 +135,7 @@ struct SessionStartSheet: View {
                 if selectedMic == nil, !defaultMic.isEmpty {
                     selectedMic = defaultMic
                 }
-                if let savedActivationType = ActivationType(rawValue: defaultActivationType) {
-                    activationType = savedActivationType
-                }
+                loadSavedPrograms()
                 if !defaultParkReference.isEmpty {
                     parkReference = defaultParkReference
                 }
@@ -195,25 +207,12 @@ struct SessionStartSheet: View {
 
     // MARK: Private
 
-    @AppStorage("loggerDefaultActivationType") private var defaultActivationType = "casual"
-    @AppStorage("loggerDefaultParkReference") private var defaultParkReference = ""
-    @AppStorage("loggerDefaultPower") private var defaultPower = ""
-    @AppStorage("loggerDefaultRadio") private var defaultRadio = ""
-    @AppStorage("loggerDefaultAntenna") private var defaultAntenna = ""
-    @AppStorage("loggerDefaultKey") private var defaultKey = ""
-    @AppStorage("loggerDefaultMic") private var defaultMic = ""
-
-    /// UI state
-    @State private var showSavedConfirmation = false
-    @State private var showBandPlanSheet = false
-    @State private var bandDetail: BandSuggestion?
-    @State private var showBandSuggestions = false
     @State private var hasLoadedDefaults = false
 
     private var canStart: Bool {
         SessionStartValidation.canStart(
             callsign: defaultCallsign,
-            activationType: activationType,
+            programs: selectedPrograms,
             parkReference: parkReference,
             sotaReference: sotaReference,
             frequency: parsedFrequency
@@ -223,7 +222,7 @@ struct SessionStartSheet: View {
     private var startDisabledReason: String? {
         SessionStartValidation.disabledReason(
             callsign: defaultCallsign,
-            activationType: activationType,
+            programs: selectedPrograms,
             parkReference: parkReference,
             sotaReference: sotaReference,
             frequency: parsedFrequency
@@ -243,89 +242,6 @@ struct SessionStartSheet: View {
         }
         return watts
     }
-
-    // MARK: - Sections
-
-    private var modeSection: some View {
-        Section("Mode") {
-            Picker("Mode", selection: $selectedMode) {
-                ForEach(["CW", "SSB", "FT8", "FT4", "RTTY", "AM", "FM"], id: \.self) { mode in
-                    Text(mode).tag(mode)
-                }
-            }
-            .pickerStyle(.segmented)
-        }
-    }
-
-    private var frequencySection: some View {
-        Section {
-            HStack {
-                TextField("14.060", text: $frequency)
-                    .keyboardType(.decimalPad)
-                    .font(.title3.monospaced())
-
-                Text("MHz")
-                    .foregroundStyle(.secondary)
-            }
-
-            DisclosureGroup(
-                "Band Suggestions",
-                isExpanded: $showBandSuggestions
-            ) {
-                FrequencyBandView(
-                    selectedMode: selectedMode,
-                    frequency: $frequency,
-                    detailBand: $bandDetail
-                )
-            }
-
-            // Prominent callout for POTA/SOTA when no frequency entered
-            if frequency.isEmpty,
-               activationType == .pota || activationType == .sota
-            {
-                frequencyOptionalCallout(for: activationType)
-            }
-        } header: {
-            HStack {
-                Text("Frequency")
-                Spacer()
-                Button {
-                    showBandPlanSheet = true
-                } label: {
-                    Label("Band Plan", systemImage: "info.circle")
-                        .font(.caption)
-                }
-            }
-        } footer: {
-            Text(
-                "Enter as MHz (14.060), kHz (14060), or dot-separated (14.030.50)."
-                    + " You can also type \"14060 kHz\" or \"14.060 MHz\"."
-            )
-        }
-    }
-
-    private var optionsSection: some View {
-        Section {
-            Button {
-                saveDefaults()
-            } label: {
-                HStack {
-                    Label("Save as Defaults", systemImage: "square.and.arrow.down")
-                    Spacer()
-                    if showSavedConfirmation {
-                        Label("Saved", systemImage: "checkmark.circle.fill")
-                            .foregroundStyle(.green)
-                            .labelStyle(.iconOnly)
-                            .transition(.scale.combined(with: .opacity))
-                    }
-                }
-            }
-        } header: {
-            Text("Options")
-        } footer: {
-            Text("Defaults are used when starting a new session")
-        }
-    }
 }
 
 // MARK: - Actions
@@ -340,9 +256,9 @@ extension SessionStartSheet {
             myCallsign: fullCallsign,
             mode: selectedMode,
             frequency: parsedFrequency,
-            activationType: activationType,
-            parkReference: activationType == .pota ? parkReference.uppercased() : nil,
-            sotaReference: activationType == .sota ? sotaReference.uppercased() : nil,
+            programs: selectedPrograms,
+            parkReference: selectedPrograms.contains("pota") ? parkReference.uppercased() : nil,
+            sotaReference: selectedPrograms.contains("sota") ? sotaReference.uppercased() : nil,
             myGrid: myGrid.isEmpty ? nil : myGrid.uppercased(),
             power: parsedPower,
             myRig: selectedRadio,
@@ -372,8 +288,12 @@ extension SessionStartSheet {
         if !myGrid.isEmpty {
             defaultGrid = myGrid.uppercased()
         }
-        defaultActivationType = activationType.rawValue
-        if activationType == .pota {
+        // Save programs as JSON array
+        let sorted = selectedPrograms.sorted()
+        if let data = try? JSONEncoder().encode(sorted) {
+            defaultPrograms = String(data: data, encoding: .utf8) ?? ""
+        }
+        if selectedPrograms.contains("pota") {
             defaultParkReference = parkReference.uppercased()
         } else {
             defaultParkReference = ""

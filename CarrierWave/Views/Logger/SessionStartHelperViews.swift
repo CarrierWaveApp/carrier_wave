@@ -45,11 +45,52 @@ struct CallsignBreakdownView: View {
     }
 }
 
+// MARK: - ProgramChip
+
+/// Toggle chip for selecting an operating program (POTA, SOTA)
+struct ProgramChip: View {
+    let label: String
+    let icon: String
+    let isSelected: Bool
+    let onToggle: () -> Void
+
+    var body: some View {
+        Button(action: onToggle) {
+            HStack(spacing: 4) {
+                Image(systemName: isSelected ? "checkmark" : icon)
+                    .font(.caption.weight(.semibold))
+                Text(label)
+                    .font(.subheadline.weight(.medium))
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(
+                isSelected
+                    ? Color.accentColor.opacity(0.15)
+                    : Color(.tertiarySystemFill)
+            )
+            .foregroundStyle(isSelected ? .accentColor : .primary)
+            .clipShape(Capsule())
+            .overlay(
+                Capsule()
+                    .strokeBorder(
+                        isSelected ? Color.accentColor : Color.clear,
+                        lineWidth: 1
+                    )
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+}
+
 // MARK: - ActivationSectionView
 
-/// Extracted view for activation type selection
+/// Extracted view for program selection with toggle chips
 struct ActivationSectionView: View {
-    @Binding var activationType: ActivationType
+    // MARK: Internal
+
+    @Binding var selectedPrograms: Set<String>
     @Binding var parkReference: String
     @Binding var sotaReference: String
     @Binding var isRove: Bool
@@ -60,46 +101,82 @@ struct ActivationSectionView: View {
     var defaultCountry: String = "US"
 
     var body: some View {
-        Section("Activation Type") {
-            Picker("Type", selection: $activationType) {
-                ForEach(ActivationType.allCases, id: \.self) { type in
-                    Label(type.displayName, systemImage: type.icon)
-                        .tag(type)
-                }
+        Section {
+            programChips
+            if selectedPrograms.contains("pota") {
+                potaFields
             }
-            .pickerStyle(.segmented)
-
-            if activationType == .pota {
-                ParkEntryField(
-                    parkReference: $parkReference,
-                    label: "Parks",
-                    placeholder: "1234 or US-1234",
-                    userGrid: userGrid,
-                    defaultCountry: defaultCountry
-                )
-
-                Toggle(isOn: $isRove) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("This is a rove")
-                            .font(.subheadline.weight(.medium))
-                        Text("Visit multiple parks in one session")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
+            if selectedPrograms.contains("sota") {
+                sotaFields
             }
-
-            if activationType == .sota {
-                SummitEntryField(
-                    sotaReference: $sotaReference,
-                    userGrid: userGrid
-                )
+        } header: {
+            Text("Programs")
+        } footer: {
+            if selectedPrograms.isEmpty {
+                Text("No program selected — casual session")
             }
         }
-        .onChange(of: activationType) { _, newValue in
-            if newValue != .pota {
-                isRove = false
+    }
+
+    // MARK: Private
+
+    private var programChips: some View {
+        HStack(spacing: 12) {
+            ProgramChip(
+                label: "POTA",
+                icon: "tree",
+                isSelected: selectedPrograms.contains("pota"),
+                onToggle: { toggleProgram("pota") }
+            )
+            ProgramChip(
+                label: "SOTA",
+                icon: "mountain.2",
+                isSelected: selectedPrograms.contains("sota"),
+                onToggle: { toggleProgram("sota") }
+            )
+            Spacer()
+        }
+        .padding(.vertical, 4)
+    }
+
+    @ViewBuilder
+    private var potaFields: some View {
+        ParkEntryField(
+            parkReference: $parkReference,
+            label: "Parks",
+            placeholder: "1234 or US-1234",
+            userGrid: userGrid,
+            defaultCountry: defaultCountry
+        )
+        Toggle(isOn: $isRove) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("This is a rove")
+                    .font(.subheadline.weight(.medium))
+                Text("Visit multiple parks in one session")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
+        }
+    }
+
+    private var sotaFields: some View {
+        SummitEntryField(
+            sotaReference: $sotaReference,
+            userGrid: userGrid
+        )
+    }
+
+    private func toggleProgram(_ slug: String) {
+        withAnimation(.easeInOut(duration: 0.2)) {
+            if selectedPrograms.contains(slug) {
+                selectedPrograms.remove(slug)
+            } else {
+                selectedPrograms.insert(slug)
+            }
+        }
+        // Clear rove when POTA is deselected
+        if slug == "pota", !selectedPrograms.contains("pota") {
+            isRove = false
         }
     }
 }
@@ -110,7 +187,7 @@ struct ActivationSectionView: View {
 enum SessionStartValidation {
     static func canStart(
         callsign: String,
-        activationType: ActivationType,
+        programs: Set<String>,
         parkReference: String,
         sotaReference: String,
         frequency _: Double?
@@ -118,20 +195,22 @@ enum SessionStartValidation {
         guard !callsign.isEmpty, callsign.count >= 3 else {
             return false
         }
-
-        switch activationType {
-        case .pota:
-            return !parkReference.trimmingCharacters(in: .whitespaces).isEmpty
-        case .sota:
-            return !sotaReference.trimmingCharacters(in: .whitespaces).isEmpty
-        case .casual:
-            return true
+        if programs.contains("pota"),
+           parkReference.trimmingCharacters(in: .whitespaces).isEmpty
+        {
+            return false
         }
+        if programs.contains("sota"),
+           sotaReference.trimmingCharacters(in: .whitespaces).isEmpty
+        {
+            return false
+        }
+        return true
     }
 
     static func disabledReason(
         callsign: String,
-        activationType: ActivationType,
+        programs: Set<String>,
         parkReference: String,
         sotaReference: String,
         frequency _: Double?
@@ -139,20 +218,16 @@ enum SessionStartValidation {
         if callsign.isEmpty || callsign.count < 3 {
             return "Set your callsign in Settings → About Me"
         }
-
-        switch activationType {
-        case .pota:
-            if parkReference.trimmingCharacters(in: .whitespaces).isEmpty {
-                return "POTA requires park reference"
-            }
-        case .sota:
-            if sotaReference.trimmingCharacters(in: .whitespaces).isEmpty {
-                return "SOTA requires summit reference"
-            }
-        case .casual:
-            break
+        if programs.contains("pota"),
+           parkReference.trimmingCharacters(in: .whitespaces).isEmpty
+        {
+            return "POTA requires park reference"
         }
-
+        if programs.contains("sota"),
+           sotaReference.trimmingCharacters(in: .whitespaces).isEmpty
+        {
+            return "SOTA requires summit reference"
+        }
         return nil
     }
 }
