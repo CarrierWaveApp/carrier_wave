@@ -263,8 +263,12 @@ nonisolated final class LoggingSession {
         if programs.isEmpty {
             return "Casual"
         }
-        let names = programs.sorted().compactMap { slug in
-            ActivationType(rawValue: slug)?.displayName
+        let names = programs.sorted().map { slug -> String in
+            switch slug {
+            case "pota": "POTA"
+            case "sota": "SOTA"
+            default: slug.uppercased()
+            }
         }
         return names.joined(separator: " + ")
     }

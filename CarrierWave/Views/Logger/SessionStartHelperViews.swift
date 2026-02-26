@@ -69,7 +69,7 @@ struct ProgramChip: View {
                     ? Color.accentColor.opacity(0.15)
                     : Color(.tertiarySystemFill)
             )
-            .foregroundStyle(isSelected ? .accentColor : .primary)
+            .foregroundStyle(isSelected ? Color.accentColor : Color.primary)
             .clipShape(Capsule())
             .overlay(
                 Capsule()
