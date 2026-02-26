@@ -90,15 +90,10 @@ struct ActivationSectionView: View {
             }
 
             if activationType == .sota {
-                HStack {
-                    Text("Summit")
-                        .foregroundStyle(.secondary)
-                    Spacer()
-                    TextField("W4C/CM-001", text: $sotaReference)
-                        .textInputAutocapitalization(.characters)
-                        .multilineTextAlignment(.trailing)
-                        .font(.subheadline.monospaced())
-                }
+                SummitEntryField(
+                    sotaReference: $sotaReference,
+                    userGrid: userGrid
+                )
             }
         }
         .onChange(of: activationType) { _, newValue in

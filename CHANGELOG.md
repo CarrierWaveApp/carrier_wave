@@ -7,6 +7,7 @@ All notable changes to Carrier Wave will be documented in this file.
 ### Fixed
 - Fix crash in Phone/SSB duplicate repair when ServicePresence records are concurrently deleted by presence dedup service (race condition between repair services)
 - Add isDeleted guards to QSO service presence helpers to prevent accessing invalidated SwiftData backing data
+- Fix SOTA QSOs not inheriting summit reference from session (fixes activity detection and ADIF export)
 
 ### Changed
 - Theme brag sheet share card with dark purple gradient matching session brag sheet cards
@@ -24,6 +25,9 @@ All notable changes to Carrier Wave will be documented in this file.
 - Add landscape two-column layout for FT8 session view (waterfall/controls left, decodes right)
 
 ### Added
+- Add SOTA summit database: download summitslist.csv with 30-day auto-refresh
+- Add summit picker with GPS nearby search and name/code search
+- Add summit entry field in session start replacing plain text input
 - Add shareable brag sheet cards via share button in brag sheet toolbar
 - Add brag sheet dashboard card with drill-down to full stat view (weekly/monthly/all-time periods)
 - Add brag sheet customization sheet with preset chips and per-stat enable/hero toggles
