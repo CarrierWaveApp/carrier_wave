@@ -424,6 +424,14 @@ extension View {
             )
         )
     }
+
+    func syncImportConfirmationAlert(syncService: SyncService) -> some View {
+        modifier(SyncImportConfirmationAlert(syncService: syncService))
+    }
+
+    func syncExportConfirmationAlert(syncService: SyncService) -> some View {
+        modifier(SyncExportConfirmationAlert(syncService: syncService))
+    }
 }
 
 // MARK: - PhoneSSBDuplicateRepairAlert
@@ -450,6 +458,76 @@ struct PhoneSSBDuplicateRepairAlert: ViewModifier {
                     Tap "Merge Duplicates" to combine them and preserve all sync status.
                     """
                 )
+            }
+    }
+}
+
+// MARK: - SyncImportConfirmationAlert
+
+struct SyncImportConfirmationAlert: ViewModifier {
+    @ObservedObject var syncService: SyncService
+
+    func body(content: Content) -> some View {
+        content
+            .alert(
+                "Large Sync Detected",
+                isPresented: Binding(
+                    get: { syncService.importConfirmation != nil },
+                    set: { if !$0 { syncService.resolveImportConfirmation(proceed: false) } }
+                )
+            ) {
+                Button("Import") {
+                    syncService.resolveImportConfirmation(proceed: true)
+                }
+                Button("Cancel", role: .cancel) {
+                    syncService.resolveImportConfirmation(proceed: false)
+                }
+            } message: {
+                if let confirmation = syncService.importConfirmation {
+                    Text(
+                        """
+                        Downloaded \(confirmation.totalDownloaded) QSOs \
+                        (\(confirmation.summary)).
+
+                        Do you want to import them?
+                        """
+                    )
+                }
+            }
+    }
+}
+
+// MARK: - SyncExportConfirmationAlert
+
+struct SyncExportConfirmationAlert: ViewModifier {
+    @ObservedObject var syncService: SyncService
+
+    func body(content: Content) -> some View {
+        content
+            .alert(
+                "Large Upload Detected",
+                isPresented: Binding(
+                    get: { syncService.exportConfirmation != nil },
+                    set: { if !$0 { syncService.resolveExportConfirmation(proceed: false) } }
+                )
+            ) {
+                Button("Upload") {
+                    syncService.resolveExportConfirmation(proceed: true)
+                }
+                Button("Cancel", role: .cancel) {
+                    syncService.resolveExportConfirmation(proceed: false)
+                }
+            } message: {
+                if let confirmation = syncService.exportConfirmation {
+                    Text(
+                        """
+                        \(confirmation.totalToUpload) QSOs are queued for upload \
+                        (\(confirmation.summary)).
+
+                        Do you want to upload them?
+                        """
+                    )
+                }
             }
     }
 }

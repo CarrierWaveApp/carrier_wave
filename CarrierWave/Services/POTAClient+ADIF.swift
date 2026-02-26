@@ -102,9 +102,10 @@ extension POTAClient {
 
         appendPOTAFields(to: &fields, qso: qso, parkReference: parkReference)
 
-        // Comment
+        // Comment — strip park references since they're in the proper SIG_INFO fields
         if let notes = qso.notes, !notes.isEmpty {
-            fields.append(formatField("COMMENT", notes))
+            let cleaned = ParkReference.stripFromFreeText(notes) ?? notes
+            fields.append(formatField("COMMENT", cleaned))
         }
 
         return fields.joined() + "<EOR>"

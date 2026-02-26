@@ -35,6 +35,25 @@ extension SyncService {
             }
         }
 
+        // Confirm with user if large upload detected
+        if let qsos = qsosNeedingUpload,
+           qsos.count >= SyncExportConfirmation.threshold
+        {
+            let uploadCounts = countUploadsByService(qsos)
+            let shouldProceed = await requestExportConfirmation(
+                uploadByService: uploadCounts
+            )
+            if !shouldProceed {
+                await MainActor.run {
+                    SyncDebugLog.shared.info(
+                        "User cancelled upload (\(qsos.count) QSOs)",
+                        service: nil
+                    )
+                }
+                return (results: results, potaMaintenanceSkipped: false)
+            }
+        }
+
         // QRZ upload
         if let qrzResult = await uploadQRZIfConfigured(
             qsosNeedingUpload: qsosNeedingUpload, timeout: timeout
@@ -455,6 +474,19 @@ extension SyncService {
             }
             return (uploaded: 0, failed: parkQSOs.count)
         }
+    }
+
+    /// Count how many QSOs need upload per service (for export confirmation)
+    func countUploadsByService(_ qsos: [QSO]) -> [ServiceType: Int] {
+        var counts: [ServiceType: Int] = [:]
+        let services: [ServiceType] = [.qrz, .pota, .clublog]
+        for service in services {
+            let count = qsos.filter { $0.needsUpload(to: service) }.count
+            if count > 0 {
+                counts[service] = count
+            }
+        }
+        return counts
     }
 
     /// Mark QSOs as submitted after successful park upload and log state transitions

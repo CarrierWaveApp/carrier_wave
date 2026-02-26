@@ -317,6 +317,12 @@ extension SyncService {
         syncPhase = .uploading(service: .qrz)
         serviceSyncStates[.qrz] = .uploading
         let qsosToUpload = try fetchQSOsNeedingUpload().filter { $0.needsUpload(to: .qrz) }
+        if qsosToUpload.count >= SyncExportConfirmation.threshold {
+            let shouldProceed = await requestExportConfirmation(
+                uploadByService: [.qrz: qsosToUpload.count]
+            )
+            guard shouldProceed else { return (0, 0) }
+        }
         let result = try await withTimeout(seconds: syncTimeoutSeconds, service: .qrz) {
             try await self.uploadToQRZ(qsos: qsosToUpload)
         }
@@ -351,6 +357,12 @@ extension SyncService {
         let qsosToUpload = try fetchQSOsNeedingUpload().filter {
             $0.needsUpload(to: .pota) && $0.parkReference?.isEmpty == false
         }
+        if qsosToUpload.count >= SyncExportConfirmation.threshold {
+            let shouldProceed = await requestExportConfirmation(
+                uploadByService: [.pota: qsosToUpload.count]
+            )
+            guard shouldProceed else { return 0 }
+        }
         let uploaded = try await withTimeout(seconds: syncTimeoutSeconds, service: .pota) {
             try await self.uploadToPOTA(qsos: qsosToUpload)
         }
@@ -373,6 +385,17 @@ extension SyncService {
         let qsosToUpload = try fetchQSOsNeedingUpload()
             .filter { $0.needsUpload(to: .clublog) }
         if !qsosToUpload.isEmpty {
+            if qsosToUpload.count >= SyncExportConfirmation.threshold {
+                let shouldProceed = await requestExportConfirmation(
+                    uploadByService: [.clublog: qsosToUpload.count]
+                )
+                guard shouldProceed else {
+                    serviceSyncStates[.clublog] = .complete(
+                        downloaded: downloadedCount, uploaded: 0
+                    )
+                    return 0
+                }
+            }
             let result = try await withTimeout(
                 seconds: syncTimeoutSeconds, service: .clublog
             ) {

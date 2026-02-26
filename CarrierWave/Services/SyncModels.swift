@@ -172,6 +172,62 @@ struct SyncProgress {
     }
 }
 
+// MARK: - SyncImportConfirmation
+
+/// Shown to the user after download when many new QSOs are detected.
+/// The user can confirm to proceed or cancel.
+struct SyncImportConfirmation {
+    /// Per-service breakdown of downloaded QSO counts
+    let downloadedByService: [ServiceType: Int]
+
+    /// Total downloaded across all services
+    var totalDownloaded: Int {
+        downloadedByService.values.reduce(0, +)
+    }
+
+    /// Threshold: show confirmation when total downloaded exceeds this
+    static let threshold = 50
+
+    /// Continuation to resume or cancel the sync
+    let continuation: CheckedContinuation<Bool, Never>
+
+    /// Human-readable summary of what was downloaded
+    var summary: String {
+        let parts = downloadedByService
+            .sorted { $0.value > $1.value }
+            .map { "\($0.value) from \($0.key.displayName)" }
+        return parts.joined(separator: ", ")
+    }
+}
+
+// MARK: - SyncExportConfirmation
+
+/// Shown to the user before upload when many QSOs are queued for export.
+/// The user can confirm to proceed or cancel.
+struct SyncExportConfirmation {
+    /// Per-service breakdown of QSOs queued for upload
+    let uploadByService: [ServiceType: Int]
+
+    /// Total QSOs queued across all services
+    var totalToUpload: Int {
+        uploadByService.values.reduce(0, +)
+    }
+
+    /// Uses the same threshold as import confirmation
+    static let threshold = SyncImportConfirmation.threshold
+
+    /// Continuation to resume or cancel the upload
+    let continuation: CheckedContinuation<Bool, Never>
+
+    /// Human-readable summary of what will be uploaded
+    var summary: String {
+        let parts = uploadByService
+            .sorted { $0.value > $1.value }
+            .map { "\($0.value) to \($0.key.displayName)" }
+        return parts.joined(separator: ", ")
+    }
+}
+
 // MARK: - SyncResult
 
 struct SyncResult {

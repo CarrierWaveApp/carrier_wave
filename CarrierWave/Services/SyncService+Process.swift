@@ -52,7 +52,8 @@ extension SyncService {
     /// Returns counts and created QSO IDs; use fetchCreatedQSOs() to get actual QSO objects.
     func processDownloadedQSOsAsync(_ fetched: [FetchedQSO]) async throws -> ProcessResult {
         let result = try await Self.processingActor.processDownloadedQSOs(
-            fetched, container: modelContext.container
+            fetched, container: modelContext.container,
+            commentParkAction: CommentParkAction.current
         ) { progress in
             Task { @MainActor in
                 self.syncProgress.updateProcessing(
