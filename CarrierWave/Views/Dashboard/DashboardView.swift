@@ -160,10 +160,12 @@ struct DashboardView: View {
                 await repairPOTAMidnightSplitIfNeeded()
                 await repairKIndexIfNeeded()
                 await repairActivityLogQSOsIfNeeded()
-                await repairPhoneSSBDuplicatesIfNeeded()
                 await repairDuplicateQSOsIfNeeded()
                 await repairDuplicatePresenceIfNeeded()
                 await repairDuplicateSpotNotesIfNeeded()
+                // Phone/SSB repair runs last because it shows a user-facing alert.
+                // Presence dedup must finish first so the repair doesn't race with it.
+                await repairPhoneSSBDuplicatesIfNeeded()
             }
             .onChange(of: syncService.lastSyncDate) { _, _ in
                 // Recompute stats after sync completes

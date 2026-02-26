@@ -273,7 +273,7 @@ nonisolated final class QSO {
 
     /// Get presence record for a specific service
     func presence(for service: ServiceType) -> ServicePresence? {
-        servicePresence.first { $0.serviceType == service }
+        servicePresence.first { !$0.isDeleted && $0.serviceType == service }
     }
 
     /// Check if QSO is present in a service
@@ -285,7 +285,7 @@ nonisolated final class QSO {
     /// Uses .contains instead of presence(for:) to handle two-fer QSOs with
     /// multiple POTA ServicePresence records — .first may return the wrong one.
     func needsUpload(to service: ServiceType) -> Bool {
-        servicePresence.contains { $0.serviceType == service && $0.needsUpload }
+        servicePresence.contains { !$0.isDeleted && $0.serviceType == service && $0.needsUpload }
     }
 
     /// Mark QSO as present in a service
@@ -359,7 +359,7 @@ nonisolated final class QSO {
 
     /// Get all POTA presence records for this QSO (may have multiple for two-fers)
     func potaPresenceRecords() -> [ServicePresence] {
-        servicePresence.filter { $0.serviceType == .pota }
+        servicePresence.filter { !$0.isDeleted && $0.serviceType == .pota }
     }
 
     // MARK: Private

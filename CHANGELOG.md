@@ -4,6 +4,10 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- Fix crash in Phone/SSB duplicate repair when ServicePresence records are concurrently deleted by presence dedup service (race condition between repair services)
+- Add isDeleted guards to QSO service presence helpers to prevent accessing invalidated SwiftData backing data
+
 ### Changed
 - Derive FT8 dial frequency from band selection (no manual frequency entry)
 - Update FT8 waterfall to scroll downward with newest data at top

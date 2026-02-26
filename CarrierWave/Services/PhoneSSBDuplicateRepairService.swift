@@ -199,7 +199,7 @@ actor PhoneSSBDuplicateRepairService {
 
     /// Transfer service presence records from loser to winner
     private func absorbServicePresence(from loser: QSO, into winner: QSO) {
-        for presence in loser.servicePresence {
+        for presence in loser.servicePresence where !presence.isDeleted {
             if presence.serviceType == .pota, let parkRef = presence.parkReference {
                 if let existing = winner.potaPresence(forPark: parkRef) {
                     if presence.isPresent, !existing.isPresent {

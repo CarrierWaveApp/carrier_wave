@@ -11,7 +11,8 @@ extension QSO {
     func potaPresence(forPark park: String) -> ServicePresence? {
         let normalizedPark = park.uppercased()
         return servicePresence.first {
-            $0.serviceType == .pota && $0.parkReference?.uppercased() == normalizedPark
+            !$0.isDeleted && $0.serviceType == .pota
+                && $0.parkReference?.uppercased() == normalizedPark
         }
     }
 
