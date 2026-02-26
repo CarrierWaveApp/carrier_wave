@@ -2,7 +2,7 @@ import Foundation
 
 // MARK: - DXCC Europe Region Data
 
-extension DescriptionLookup {
+nonisolated extension DescriptionLookup {
     /// DXCC entities for Europe (UK, Western, Eastern, Scandinavia, Baltic, Russia)
     nonisolated static let dxccEntitiesEurope: [(prefixes: [String], entity: DXCCEntity)] = [
         // ==================== Europe ====================

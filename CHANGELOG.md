@@ -29,6 +29,7 @@ All notable changes to Carrier Wave will be documented in this file.
 - Add haversine distance and bearing calculation to MaidenheadConverter
 - Add FT8 status pill view with color-coded audio health and decode count
 - Add SNR color badge with strong/medium/weak tiers
+- Add period brag sheet stats infrastructure: model layer (stat types, categories, presets, configuration) and background computation actor for weekly/monthly/all-time stats
 
 ## [1.46.0] - 2026-02-25
 

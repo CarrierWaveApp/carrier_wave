@@ -2,14 +2,14 @@ import Foundation
 
 // MARK: - DXCCEntity
 
-struct DXCCEntity: Hashable {
+nonisolated struct DXCCEntity: Hashable {
     let number: Int
     let name: String
 }
 
 // MARK: - DescriptionLookup
 
-enum DescriptionLookup {
+nonisolated enum DescriptionLookup {
     // MARK: - Entity Descriptions (Callsign Prefix -> Country)
 
     static func entityDescription(for prefix: String) -> String {

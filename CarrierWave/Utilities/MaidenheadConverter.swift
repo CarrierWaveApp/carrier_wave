@@ -3,7 +3,7 @@ import CoreLocation
 
 /// Converts Maidenhead grid locators to coordinates
 /// Wraps CarrierWaveCore's MaidenheadConverter to provide CLLocationCoordinate2D
-enum MaidenheadConverter {
+nonisolated enum MaidenheadConverter {
     /// Convert a Maidenhead grid locator to coordinates (center of grid square)
     /// Supports 4-char (e.g., "FN31") and 6-char (e.g., "FN31pr") formats
     /// - Parameter grid: The grid locator string (case insensitive)

@@ -2,7 +2,7 @@ import Foundation
 
 // MARK: - DXCC Asia & Oceania Region Data
 
-extension DescriptionLookup {
+nonisolated extension DescriptionLookup {
     /// DXCC entities for Middle East, South Asia, East Asia, Southeast Asia, Oceania
     nonisolated static let dxccEntitiesAsiaOceania: [(prefixes: [String], entity: DXCCEntity)] = [
         // ==================== Middle East ====================

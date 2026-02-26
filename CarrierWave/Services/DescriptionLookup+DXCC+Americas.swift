@@ -2,7 +2,7 @@ import Foundation
 
 // MARK: - DXCC Americas Region Data
 
-extension DescriptionLookup {
+nonisolated extension DescriptionLookup {
     /// DXCC entities for US, Canada, Mexico, South/Central America, Caribbean
     nonisolated static let dxccEntitiesAmericas: [(prefixes: [String], entity: DXCCEntity)] = [
         // ==================== US & Territories ====================

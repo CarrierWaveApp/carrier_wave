@@ -4,7 +4,7 @@ import Foundation
 
 /// Centralized unit formatting that respects the user's imperial/metric preference.
 /// All inputs use the canonical unit (km for distance, °F for temperature, mph for wind).
-enum UnitFormatter {
+nonisolated enum UnitFormatter {
     // MARK: Internal
 
     /// Whether the user prefers metric units

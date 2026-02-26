@@ -2,7 +2,7 @@ import Foundation
 
 // MARK: - DXCC Africa & Other Region Data
 
-extension DescriptionLookup {
+nonisolated extension DescriptionLookup {
     /// DXCC entities for Africa, Indian Ocean, Atlantic Ocean, special entities
     nonisolated static let dxccEntitiesAfricaOther: [(prefixes: [String], entity: DXCCEntity)] = [
         // ==================== Africa ====================

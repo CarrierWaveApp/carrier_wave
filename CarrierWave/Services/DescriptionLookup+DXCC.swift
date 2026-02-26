@@ -2,7 +2,7 @@ import Foundation
 
 // MARK: - DescriptionLookup DXCC Data
 
-extension DescriptionLookup {
+nonisolated extension DescriptionLookup {
     /// Look up DXCC entity by entity number
     /// Returns entity with name, or nil if not found
     nonisolated static func dxccEntity(forNumber number: Int) -> DXCCEntity? {

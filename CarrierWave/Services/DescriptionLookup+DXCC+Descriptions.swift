@@ -2,7 +2,7 @@ import Foundation
 
 // MARK: - Entity Descriptions (for simple prefix -> country name lookup)
 
-extension DescriptionLookup {
+nonisolated extension DescriptionLookup {
     /// Common callsign prefix to country name mappings for entityDescription
     static let entityDescriptions: [String: String] = [
         // USA
