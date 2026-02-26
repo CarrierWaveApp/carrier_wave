@@ -41,6 +41,7 @@ Pure logic library that can be tested without iOS Simulator. Run tests with `mak
 | `Sources/CarrierWaveCore/FT8Constants.swift` | FT8 dial frequencies, supported bands, timing constants |
 | `Sources/CarrierWaveCore/FT8Message.swift` | FT8 message types (CQ, directed, signal report, RR73) and decode result |
 | `Sources/CarrierWaveCore/FT8Decoder.swift` | Swift wrapper over ft8_lib C decoder |
+| `Sources/CarrierWaveCore/FT8EnrichedDecode.swift` | Enriched FT8 decode with DXCC, state, distance, worked-before flags, section classification |
 | `Sources/CarrierWaveCore/FT8Encoder.swift` | FT8 GFSK tone synthesis for transmission |
 | `Sources/CarrierWaveCore/FT8QSOStateMachine.swift` | Pure-logic state machine for FT8 QSO exchanges (CQ and S&P modes) |
 | `Sources/CarrierWaveCore/LoFi/LoFiCredentialStore.swift` | Protocol + key enum for credential storage |
@@ -769,5 +770,6 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `FT8MessageTests.swift` | FT8 message parsing and classification tests |
 | `FT8DecoderTests.swift` | FT8 decoder tests (WAV sample decoding) |
 | `FT8EncoderTests.swift` | FT8 encoder tests (tone generation, round-trip) |
+| `FT8EnrichedDecodeTests.swift` | FT8 enriched decode tests (section classification, sort priority, SNR tier) |
 | `FT8QSOStateMachineTests.swift` | FT8 QSO state machine tests (S&P, CQ, timeout, duplicate) |
 | `AntennaDescriptionParserTests.swift` | Antenna description parsing tests (models, bands, direction) |
