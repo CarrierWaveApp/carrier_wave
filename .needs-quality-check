@@ -2,3 +2,4 @@ Cross-device iCloud sync: foreground re-sync (scenePhase), network recovery (NWP
 - CloudSyncService.swift: added fetchChangesFromCloud(), network monitor, active session polling
 - CloudSyncEngine.swift: added fetchChanges() method
 - CarrierWaveApp.swift: added scenePhase observer triggering fetchChangesFromCloud()
+- CloudSyncEngine+Outbound.swift: fix ActivationMetadata full-table scan (predicate on cloudDirtyFlag)
