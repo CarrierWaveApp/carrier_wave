@@ -325,9 +325,13 @@ enum BandPlanService {
     ) -> [FrequencyWarning] {
         BandPlan.activitiesMatching(frequencyMHz: frequencyMHz)
             .filter { $0.isActive() }
-            .map { activity in
+            .compactMap { activity in
                 let freqStr = FrequencyFormatter.formatWithUnit(activity.centerMHz)
                 if activity.matchesMode(mode) {
+                    // Skip "you're on the FT8/FT4 frequency" — you always use it
+                    if activity.type == .digitalFT {
+                        return nil
+                    }
                     return FrequencyWarning(
                         type: .activityInfo,
                         message: "\(freqStr) is the \(activity.description)",

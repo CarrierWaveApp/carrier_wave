@@ -368,6 +368,12 @@ extension LoggerView {
 
     /// Check if there are POTA spots near the current frequency
     func checkNearbySpots(frequencyMHz: Double, mode: String) -> FrequencyWarning? {
+        // FT8/FT4 always operate on the same frequency — nearby spot warnings are noise
+        let upperMode = mode.uppercased()
+        if upperMode == "FT8" || upperMode == "FT4" {
+            return nil
+        }
+
         let tolerance = spotToleranceKHz(for: mode)
         let freqKHz = frequencyMHz * 1_000
 
