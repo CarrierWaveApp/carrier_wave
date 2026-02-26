@@ -32,7 +32,7 @@ extension LoggingSessionManager {
         session.end()
 
         // Split POTA sessions at UTC midnight so each covers one activation date
-        if session.activationType == .pota {
+        if session.isPOTA {
             splitPOTAAtUTCMidnight(session)
         }
 

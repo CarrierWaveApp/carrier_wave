@@ -38,7 +38,7 @@ struct SessionMetadataEditSheet: View {
         self.userGrid = userGrid
         self.onSave = onSave
         self.onCancel = onCancel
-        isPOTA = session.activationType == .pota
+        isPOTA = session.isPOTA
 
         _title = State(initialValue: session.customTitle ?? metadata?.title ?? "")
         _wattsText = State(initialValue: (session.power ?? metadata?.watts).map { String($0) } ?? "")

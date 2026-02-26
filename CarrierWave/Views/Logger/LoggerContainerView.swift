@@ -163,7 +163,7 @@ struct LoggerContainerView: View {
             sessionGrid = session.myGrid
             sessionBand = session.band
             sessionMode = session.mode
-            isPOTAActivation = session.activationType == .pota
+            isPOTAActivation = session.isPOTA
             roveStops = session.roveStops
             // Session state tracked by SessionsTabView
 

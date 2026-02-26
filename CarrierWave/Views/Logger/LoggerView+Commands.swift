@@ -103,7 +103,7 @@ extension LoggerView {
 
     func executeP2PCommand() {
         // P2P only works during POTA activations
-        guard sessionManager?.activeSession?.activationType == .pota else {
+        guard sessionManager?.activeSession?.isPOTA == true else {
             ToastManager.shared.error("P2P is only available during POTA activations")
             return
         }
@@ -171,7 +171,7 @@ extension LoggerView {
 
     func postSpot(comment: String? = nil) async {
         guard let session = sessionManager?.activeSession,
-              session.activationType == .pota,
+              session.isPOTA,
               let parkRef = session.parkReference,
               let freq = session.frequency
         else {

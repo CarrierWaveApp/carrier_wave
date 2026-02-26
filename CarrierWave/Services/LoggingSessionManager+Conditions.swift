@@ -24,7 +24,7 @@ extension LoggingSessionManager {
         let grid = session.myGrid
         let sessionDate = session.startedAt
         let parkRef = session.parkReference
-        let isPOTA = session.activationType == .pota && parkRef != nil && !parkRef!.isEmpty
+        let isPOTA = session.isPOTA && parkRef != nil && !parkRef!.isEmpty
 
         Task {
             let conditions = await fetchConditions(grid: grid)

@@ -43,7 +43,7 @@ extension LoggingSessionManager {
 
         guard potaAutoSpotEnabled,
               let session = activeSession,
-              session.activationType == .pota
+              session.isPOTA
         else {
             return
         }
@@ -74,7 +74,7 @@ extension LoggingSessionManager {
     /// Uses the first (primary) park reference for comments lookup
     func startSpotCommentsPolling() {
         guard let session = activeSession,
-              session.activationType == .pota,
+              session.isPOTA,
               let parkRef = session.parkReference
         else {
             return
@@ -174,7 +174,7 @@ extension LoggingSessionManager {
         }
 
         // Include POTA spots only for POTA activations
-        let includePOTA = session.activationType == .pota
+        let includePOTA = session.isPOTA
 
         // Wire up spot persistence callback before starting
         spotMonitoringService.onSpotsReceived = { [weak self] enrichedSpots in
@@ -246,7 +246,7 @@ extension LoggingSessionManager {
 
     /// Post spots to POTA for all parks in the session (supports n-fer)
     func postSpot(comment: String? = nil, showToast: Bool = false) async {
-        guard let session = activeSession, session.activationType == .pota,
+        guard let session = activeSession, session.isPOTA,
               let parkRef = session.parkReference, let freq = session.frequency,
               !session.myCallsign.isEmpty
         else {
@@ -336,7 +336,7 @@ extension LoggingSessionManager {
     /// Post QRT spots for all parks if enabled and the session had spots
     func postQRTSpotIfNeeded(for session: LoggingSession) async {
         guard potaQRTSpotEnabled,
-              session.activationType == .pota,
+              session.isPOTA,
               let parkRef = session.parkReference,
               let freq = session.frequency,
               !session.myCallsign.isEmpty

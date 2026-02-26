@@ -31,7 +31,7 @@ extension SessionsView {
             qsoMap[sessionId] = qsos
 
             // Build POTAActivation(s) for POTA sessions
-            if session.activationType == .pota, !qsos.isEmpty {
+            if session.isPOTA, !qsos.isEmpty {
                 let grouped = POTAActivation.groupQSOs(qsos)
                 if !grouped.isEmpty {
                     activationMap[sessionId] = grouped

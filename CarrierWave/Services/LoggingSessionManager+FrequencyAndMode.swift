@@ -33,7 +33,7 @@ extension LoggingSessionManager {
         // Skip if tuning to a spot -- don't self-spot on the hunted station's frequency
         // Only auto-spot if the user has auto-spotting enabled
         if isFirstSet, potaAutoSpotEnabled,
-           session.activationType == .pota, !isTuningToSpot
+           session.isPOTA, !isTuningToSpot
         {
             Task {
                 await postSpot()
@@ -54,7 +54,7 @@ extension LoggingSessionManager {
 
         // Check if this QSY should prompt for a POTA spot
         let shouldPromptForSpot =
-            potaQSYSpotEnabled && session.activationType == .pota
+            potaQSYSpotEnabled && session.isPOTA
                 && !isFirstSet && !isTuningToSpot && oldFrequency != frequency
                 && isValidForQSYSpot(frequency: frequency, mode: modeToSuggest ?? currentMode)
 
@@ -91,7 +91,7 @@ extension LoggingSessionManager {
         // Return whether this is a QSY that could be spotted
         // Only prompt if QSY spots are enabled in settings
         return potaQSYSpotEnabled
-            && session.activationType == .pota
+            && session.isPOTA
             && oldMode != mode
     }
 
@@ -105,7 +105,7 @@ extension LoggingSessionManager {
     /// Only valid for POTA activations
     func updateParkReference(_ parkReference: String?) {
         guard let session = activeSession,
-              session.activationType == .pota
+              session.isPOTA
         else {
             return
         }

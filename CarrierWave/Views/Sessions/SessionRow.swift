@@ -67,7 +67,7 @@ struct SessionRow: View {
     }
 
     private var isPOTA: Bool {
-        session.activationType == .pota && !activations.isEmpty
+        session.isPOTA && !activations.isEmpty
     }
 
     private var shouldShowUpload: Bool {
@@ -115,7 +115,7 @@ struct SessionRow: View {
 
     private var headerRow: some View {
         HStack {
-            Image(systemName: session.activationType.icon)
+            Image(systemName: session.programsIcon)
                 .foregroundStyle(.secondary)
             Text(session.startedAt.formatted(date: .abbreviated, time: .omitted))
                 .font(.headline)

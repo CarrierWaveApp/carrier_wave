@@ -140,11 +140,11 @@ extension LoggerView {
     func sessionControlsBar(_ session: LoggingSession) -> some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack {
-                if session.activationType == .pota, !session.isRove {
+                if session.isPOTA, !session.isRove {
                     parkHeaderView(session)
                 }
 
-                if session.activationType == .pota,
+                if session.isPOTA,
                    let parkRef = session.parkReference,
                    let commentsService = sessionManager?.spotCommentsService
                 {
@@ -238,7 +238,7 @@ extension LoggerView {
                     Text(band)
                 }
             }
-        } else if session.activationType == .pota || session.activationType == .sota {
+        } else if session.isPOTA || session.isSOTA {
             bandCapsule(color: .orange) { Text("Set Freq") }
         } else {
             bandCapsule(color: .blue) { Text("Band").foregroundStyle(.secondary) }

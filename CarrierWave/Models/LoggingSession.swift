@@ -258,6 +258,31 @@ nonisolated final class LoggingSession {
         programs.isEmpty
     }
 
+    /// Display name for the session's programs (e.g., "POTA", "POTA + SOTA", "Casual")
+    var programsDisplayName: String {
+        if programs.isEmpty {
+            return "Casual"
+        }
+        let names = programs.sorted().compactMap { slug in
+            ActivationType(rawValue: slug)?.displayName
+        }
+        return names.joined(separator: " + ")
+    }
+
+    /// Icon for the session's primary program
+    var programsIcon: String {
+        if isPOTA, isSOTA {
+            return "tree"
+        } // POTA takes precedence for icon
+        if isPOTA {
+            return "tree"
+        }
+        if isSOTA {
+            return "mountain.2"
+        }
+        return "radio"
+    }
+
     /// Session status enum accessor
     var status: LoggingSessionStatus {
         get { LoggingSessionStatus(rawValue: statusRawValue) ?? .active }

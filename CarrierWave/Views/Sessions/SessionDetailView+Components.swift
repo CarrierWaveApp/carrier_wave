@@ -179,7 +179,7 @@ extension SessionDetailView {
         var items: [MetadataItem] = []
         items.append(MetadataItem(
             icon: "flag.fill",
-            label: session.activationType.displayName
+            label: session.programsDisplayName
         ))
         if let freq = session.frequency {
             items.append(MetadataItem(

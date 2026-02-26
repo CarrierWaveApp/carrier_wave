@@ -17,7 +17,7 @@ struct ActiveSessionRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Image(systemName: session.activationType.icon)
+                Image(systemName: session.programsIcon)
                     .foregroundStyle(.secondary)
                     .font(.subheadline)
 

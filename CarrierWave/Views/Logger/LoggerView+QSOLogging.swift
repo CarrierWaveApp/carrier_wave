@@ -267,7 +267,7 @@ extension LoggerView {
         }
 
         // Check if this is a POTA session with unuploaded QSOs
-        if session.activationType == .pota,
+        if session.isPOTA,
            !potaUploadPromptDisabled
         {
             // Find QSOs that need upload to POTA

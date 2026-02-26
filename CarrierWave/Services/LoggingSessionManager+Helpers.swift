@@ -140,7 +140,7 @@ extension LoggingSessionManager {
         }
 
         // POTA (only if this is a POTA activation, use cached value)
-        if activeSession?.activationType == .pota,
+        if activeSession?.isPOTA == true,
            potaConfigured
         {
             qso.markNeedsUpload(to: .pota, context: modelContext)

@@ -36,7 +36,7 @@ extension LoggerView {
     /// POTA contacts are unique per callsign + band + park + UTC day, not per session.
     func refreshUTCDayQSOs() {
         guard let session = sessionManager?.activeSession,
-              session.activationType == .pota
+              session.isPOTA
         else {
             utcDayQSOs = []
             return
@@ -130,7 +130,7 @@ extension LoggerView {
         }
 
         guard let session = sessionManager?.activeSession,
-              session.activationType == .pota,
+              session.isPOTA,
               !callsignInput.isEmpty,
               callsignInput.count >= 3,
               detectedCommand == nil
