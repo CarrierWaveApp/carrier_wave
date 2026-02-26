@@ -138,7 +138,7 @@ final class ActivityProgramStore: ObservableObject {
             multiRefAllowed: false,
             activationThreshold: 4,
             supportsRove: false,
-            capabilities: [.referenceField, .adifUpload],
+            capabilities: [.referenceField, .adifUpload, .browseSpots],
             adifFields: ADIFFieldMapping(
                 mySig: "SOTA", mySigInfo: "ref",
                 sigField: nil, sigInfoField: nil
