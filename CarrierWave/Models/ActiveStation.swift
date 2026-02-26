@@ -7,6 +7,7 @@ import SwiftUI
 struct ActiveStation: Identifiable, Sendable {
     enum Source: Sendable {
         case pota(park: String)
+        case sota(summit: String, points: Int)
         case rbn(snr: Int)
     }
 
@@ -49,6 +50,7 @@ struct ActiveStation: Identifiable, Sendable {
     var sourceLabel: String {
         switch source {
         case let .pota(park): park
+        case let .sota(summit, _): summit
         case let .rbn(snr): "\(snr) dB"
         }
     }
@@ -75,6 +77,20 @@ struct ActiveStation: Identifiable, Sendable {
             mode: spot.mode,
             timestamp: spot.timestamp,
             source: .rbn(snr: spot.snr)
+        )
+    }
+
+    static func fromSOTA(_ spot: SOTASpot) -> ActiveStation? {
+        guard let mhz = spot.frequencyMHz else {
+            return nil
+        }
+        return ActiveStation(
+            id: "sota-\(spot.id)",
+            callsign: spot.activatorCallsign,
+            frequencyMHz: mhz,
+            mode: spot.mode.uppercased(),
+            timestamp: spot.parsedTimestamp ?? Date(),
+            source: .sota(summit: spot.summitCode, points: spot.points)
         )
     }
 }

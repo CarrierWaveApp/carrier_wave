@@ -1,1 +1,2 @@
 ActivityProgramStore: Added .browseSpots capability to SOTA program definition
+ActiveStation: Added .sota(summit:points:) case to Source enum, added fromSOTA(_:) factory method
