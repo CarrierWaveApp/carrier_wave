@@ -98,7 +98,7 @@ struct SettingsMainView: View {
             case .lotw:
                 LoTWSettingsView(syncService: syncService)
             case .clublog:
-                ClubLogSettingsView(syncService: syncService)
+                ClubLogSettingsView()
             case .icloud:
                 CloudSyncSettingsView()
             }

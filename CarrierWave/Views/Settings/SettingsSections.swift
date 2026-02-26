@@ -10,15 +10,12 @@ struct SyncSourcesSection: View {
     let qrzClient: QRZClient
     let hamrsClient: HAMRSClient
     let lotwClient: LoTWClient
-    let clublogClient: ClubLogClient
     @ObservedObject var iCloudMonitor: ICloudMonitor
 
     let qrzIsConfigured: Bool
     let qrzCallsign: String?
     let lotwIsConfigured: Bool
     let lotwUsername: String?
-    let clublogIsConfigured: Bool
-    let clublogCallsign: String?
     let challengeSources: [ChallengeSource]
     let tourState: TourState
 
@@ -128,15 +125,9 @@ struct SyncSourcesSection: View {
                 HStack {
                     Text("Club Log")
                     Spacer()
-                    if clublogIsConfigured {
-                        if let callsign = clublogCallsign {
-                            Text(callsign)
-                                .foregroundStyle(.secondary)
-                        }
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundStyle(.green)
-                            .accessibilityLabel("Connected")
-                    }
+                    Text("Coming Soon")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
             }
 

@@ -20,14 +20,11 @@ struct SyncSourcesSettingsView: View {
                 qrzClient: qrzClient,
                 hamrsClient: hamrsClient,
                 lotwClient: lotwClient,
-                clublogClient: clublogClient,
                 iCloudMonitor: iCloudMonitor,
                 qrzIsConfigured: qrzIsConfigured,
                 qrzCallsign: qrzCallsign,
                 lotwIsConfigured: lotwIsConfigured,
                 lotwUsername: lotwUsername,
-                clublogIsConfigured: clublogIsConfigured,
-                clublogCallsign: clublogCallsign,
                 challengeSources: challengeSources,
                 tourState: tourState
             )
@@ -47,14 +44,11 @@ struct SyncSourcesSettingsView: View {
     @State private var qrzCallsign: String?
     @State private var lotwIsConfigured = false
     @State private var lotwUsername: String?
-    @State private var clublogIsConfigured = false
-    @State private var clublogCallsign: String?
 
     private let lofiClient = LoFiClient.appDefault()
     private let qrzClient = QRZClient()
     private let hamrsClient = HAMRSClient()
     private let lotwClient = LoTWClient()
-    private let clublogClient = ClubLogClient()
 
     private func loadServiceStatus() {
         qrzIsConfigured = qrzClient.hasApiKey()
@@ -66,8 +60,5 @@ struct SyncSourcesSettingsView: View {
                 lotwUsername = creds.username
             }
         }
-
-        clublogIsConfigured = clublogClient.isConfigured
-        clublogCallsign = clublogClient.getCallsign()
     }
 }

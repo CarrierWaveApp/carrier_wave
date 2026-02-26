@@ -76,8 +76,9 @@ final class ClubLogClient {
     let keychain = KeychainHelper.shared
     let userAgent = "CarrierWave/1.0"
 
+    /// Club Log integration is under construction — always report as not configured
     var isConfigured: Bool {
-        hasCredentials() && (try? getApiKey()) != nil
+        false
     }
 
     // MARK: - Credential Management

@@ -119,18 +119,16 @@ extension DashboardView {
     }
 
     private var clublogServiceInfo: ServiceInfo {
+        // Club Log is under construction — always hide from dashboard
         ServiceInfo(
             id: .service(.clublog),
             name: "Club Log",
-            status: clublogIsConfigured ? .connected : .notConfigured,
-            primaryStat: clublogIsConfigured
-                ? "\(uploadedCount(for: .clublog)) synced" : nil,
-            secondaryStat: pendingCount(for: .clublog) > 0
-                ? "\(pendingCount(for: .clublog)) pending" : nil,
-            tertiaryInfo: clublogIsConfigured
-                ? syncService.lastSyncResults[.clublog]?.summaryText : "Not configured",
-            showWarning: pendingCount(for: .clublog) > 0,
-            isSyncing: syncService.isSyncing
+            status: .notConfigured,
+            primaryStat: nil,
+            secondaryStat: nil,
+            tertiaryInfo: "Coming soon",
+            showWarning: false,
+            isSyncing: false
         )
     }
 
