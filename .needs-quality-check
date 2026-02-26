@@ -1,0 +1,4 @@
+Cross-device iCloud sync: foreground re-sync (scenePhase), network recovery (NWPathMonitor), active session polling (30s timer)
+- CloudSyncService.swift: added fetchChangesFromCloud(), network monitor, active session polling
+- CloudSyncEngine.swift: added fetchChanges() method
+- CarrierWaveApp.swift: added scenePhase observer triggering fetchChangesFromCloud()

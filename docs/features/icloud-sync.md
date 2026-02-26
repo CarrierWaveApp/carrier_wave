@@ -249,6 +249,39 @@ This ensures existing photos are never deleted unless the replacement copy is co
 | iCloud sync metadata | SwiftData (CloudSyncMetadata) | Rebuilt on next sync |
 | App settings | UserDefaults + iCloud KVS | Restored via SettingsSyncService |
 
+## Cross-Device Sync Triggers
+
+CloudSyncService uses multiple triggers to ensure changes appear on other devices within seconds:
+
+| Trigger | When | Mechanism |
+|---------|------|-----------|
+| App launch | Engine starts | `CKSyncEngine.fetchChanges()` on initial start |
+| Local change | 500ms after save | `ModelContext.didSave` → `schedulePendingChanges()` |
+| Push notification | Remote change | `AppDelegate` → `handleRemoteNotification()` → `fetchChanges()` |
+| Foreground re-entry | App becomes active | `scenePhase == .active` → `fetchChangesFromCloud()` |
+| Network recovery | Connectivity restored | `NWPathMonitor` detects path → `fetchChangesFromCloud()` |
+| Active session poll | Every 30s during session | Timer polls while `activeLoggingSessionId` is set |
+| Manual | User taps "Sync Now" | `forceFullSync()` |
+
+### Foreground re-sync
+
+When the app returns to the foreground (`scenePhase` transitions to `.active`), CloudSyncService
+immediately fetches changes from CloudKit. This handles the primary cross-device use case: user
+makes changes on Device A, then picks up Device B.
+
+### Network recovery
+
+An `NWPathMonitor` tracks connectivity. When the network transitions from unavailable to satisfied,
+a fetch is triggered to pick up any changes that arrived while offline or any push notifications
+that were missed.
+
+### Active session polling
+
+During active logging sessions, a 30-second timer polls for remote changes. This ensures QSOs
+logged on another device appear quickly even if push notifications are delayed. The timer is
+managed via KVO observation of the `activeLoggingSessionId` UserDefaults key — no coupling
+to LoggingSessionManager required.
+
 ## Related Documents
 
 - [Service Sync](sync.md) — QRZ, POTA, LoFi, Club Log, LoTW sync
