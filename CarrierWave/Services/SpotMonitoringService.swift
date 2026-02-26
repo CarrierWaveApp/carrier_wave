@@ -147,6 +147,10 @@ final class SpotMonitoringService {
     @ObservationIgnored
     private var rbnClient: RBNClient?
 
+    /// SOTA client for hunter mode
+    @ObservationIgnored
+    private var sotaClient: SOTAClient?
+
     /// Window for hunter spots (30 minutes — broader than activator mode)
     private let hunterSpotWindowMinutes = 30
 
@@ -189,14 +193,15 @@ final class SpotMonitoringService {
         }
     }
 
-    /// Fetch ALL spots for hunter mode (RBN + POTA, not filtered by callsign)
+    /// Fetch ALL spots for hunter mode (RBN + POTA + SOTA, not filtered by callsign)
     private func fetchAllSpots() async {
         let cutoff = Date().addingTimeInterval(-Double(hunterSpotWindowMinutes) * 60)
 
-        let rbnUnified = await fetchHunterRBNSpots(since: cutoff)
-        let potaUnified = await fetchHunterPOTASpots(since: cutoff)
+        async let rbnUnified = fetchHunterRBNSpots(since: cutoff)
+        async let potaUnified = fetchHunterPOTASpots(since: cutoff)
+        async let sotaUnified = fetchHunterSOTASpots(since: cutoff)
 
-        var allSpots = rbnUnified + potaUnified
+        var allSpots = await rbnUnified + potaUnified + sotaUnified
         allSpots.sort { $0.timestamp > $1.timestamp }
 
         // Enrich RBN spots with state from HamDB
@@ -234,6 +239,9 @@ final class SpotMonitoringService {
                 parkRef: nil,
                 parkName: nil,
                 comments: nil,
+                summitCode: nil,
+                summitName: nil,
+                summitPoints: nil,
                 locationDesc: nil,
                 stateAbbr: nil
             )
@@ -267,8 +275,49 @@ final class SpotMonitoringService {
                 parkRef: spot.reference,
                 parkName: spot.parkName,
                 comments: spot.comments,
+                summitCode: nil,
+                summitName: nil,
+                summitPoints: nil,
                 locationDesc: spot.locationDesc,
                 stateAbbr: UnifiedSpot.parseState(from: spot.locationDesc)
+            )
+        }
+    }
+
+    /// Fetch all SOTA spots for hunter mode
+    private func fetchHunterSOTASpots(since cutoff: Date) async -> [UnifiedSpot] {
+        if sotaClient == nil {
+            sotaClient = SOTAClient()
+        }
+        guard let sotaSpots = try? await sotaClient!.fetchSpots(count: 50) else {
+            return []
+        }
+        return sotaSpots.compactMap { spot in
+            guard let freqKHz = spot.frequencyKHz,
+                  let timestamp = spot.parsedTimestamp,
+                  timestamp >= cutoff
+            else {
+                return nil
+            }
+            return UnifiedSpot(
+                id: "sota-\(spot.id)",
+                callsign: spot.activatorCallsign,
+                frequencyKHz: freqKHz,
+                mode: spot.mode.uppercased(),
+                timestamp: timestamp,
+                source: .sota,
+                snr: nil,
+                wpm: nil,
+                spotter: spot.spotterCallsign,
+                spotterGrid: nil,
+                parkRef: nil,
+                parkName: nil,
+                comments: spot.comments,
+                summitCode: spot.fullSummitReference,
+                summitName: spot.summitName,
+                summitPoints: spot.points,
+                locationDesc: nil,
+                stateAbbr: nil
             )
         }
     }
@@ -290,63 +339,66 @@ final class SpotMonitoringService {
                     for: callsign, minutes: spotWindowMinutes
                 )
             } else {
-                // RBN only for non-POTA sessions
-                if rbnClient == nil {
-                    rbnClient = RBNClient()
-                }
-                let rbnSpots = try await rbnClient!.spots(for: callsign, hours: 1, limit: 50)
-                let cutoff = Date().addingTimeInterval(-Double(spotWindowMinutes) * 60)
-                spots =
-                    rbnSpots
-                        .filter { $0.timestamp >= cutoff }
-                        .map { spot in
-                            UnifiedSpot(
-                                id: "rbn-\(spot.id)",
-                                callsign: spot.callsign,
-                                frequencyKHz: spot.frequency,
-                                mode: spot.mode,
-                                timestamp: spot.timestamp,
-                                source: .rbn,
-                                snr: spot.snr,
-                                wpm: spot.wpm,
-                                spotter: spot.spotter,
-                                spotterGrid: spot.spotterGrid,
-                                parkRef: nil,
-                                parkName: nil,
-                                comments: nil,
-                                locationDesc: nil,
-                                stateAbbr: nil
-                            )
-                        }
+                spots = try await fetchActivatorRBNSpots(for: callsign)
             }
 
-            // Enrich spots with distance and region
             let enrichedSpots = enrichSpots(spots)
-
-            // Build summary
             summary = buildSummary(from: enrichedSpots)
             lastError = nil
-
-            // Check for friend spots
             friendNotifier.checkSpots(enrichedSpots)
-
-            // Notify listener for persistence
             onSpotsReceived?(enrichedSpots)
         } catch {
             lastError = error.localizedDescription
-            // Keep existing summary on error
         }
     }
 
+    /// Fetch RBN-only spots for a specific callsign (activator mode, non-POTA)
+    private func fetchActivatorRBNSpots(for callsign: String) async throws -> [UnifiedSpot] {
+        if rbnClient == nil {
+            rbnClient = RBNClient()
+        }
+        let rbnSpots = try await rbnClient!.spots(for: callsign, hours: 1, limit: 50)
+        let cutoff = Date().addingTimeInterval(-Double(spotWindowMinutes) * 60)
+        return rbnSpots
+            .filter { $0.timestamp >= cutoff }
+            .map { spot in
+                UnifiedSpot(
+                    id: "rbn-\(spot.id)",
+                    callsign: spot.callsign,
+                    frequencyKHz: spot.frequency,
+                    mode: spot.mode,
+                    timestamp: spot.timestamp,
+                    source: .rbn,
+                    snr: spot.snr,
+                    wpm: spot.wpm,
+                    spotter: spot.spotter,
+                    spotterGrid: spot.spotterGrid,
+                    parkRef: nil,
+                    parkName: nil,
+                    comments: nil,
+                    summitCode: nil,
+                    summitName: nil,
+                    summitPoints: nil,
+                    locationDesc: nil,
+                    stateAbbr: nil
+                )
+            }
+    }
+}
+
+// MARK: - SpotMonitoringService + Enrichment
+
+@MainActor
+private extension SpotMonitoringService {
     /// Enrich RBN spots with US state from HamDB callsign lookup
-    private func enrichWithStates(_ spots: [UnifiedSpot]) async -> [UnifiedSpot] {
+    func enrichWithStates(_ spots: [UnifiedSpot]) async -> [UnifiedSpot] {
         let hamDB = HamDBClient()
         var lookupCount = 0
 
         var result: [UnifiedSpot] = []
         for var spot in spots {
-            // POTA spots already have state from locationDesc
-            if spot.source == .pota {
+            // POTA and SOTA spots don't need HamDB state lookups
+            if spot.source == .pota || spot.source == .sota {
                 result.append(spot)
                 continue
             }
@@ -375,7 +427,7 @@ final class SpotMonitoringService {
     }
 
     /// Enrich spots with distance and region information
-    private func enrichSpots(_ spots: [UnifiedSpot]) -> [EnrichedSpot] {
+    func enrichSpots(_ spots: [UnifiedSpot]) -> [EnrichedSpot] {
         spots.map { spot in
             let spotterCoord: CLLocationCoordinate2D? =
                 if let grid = spot.spotterGrid {
@@ -402,29 +454,24 @@ final class SpotMonitoringService {
     }
 
     /// Build a summary from enriched spots
-    private func buildSummary(from spots: [EnrichedSpot]) -> SpotSummary {
-        // Group by region
+    func buildSummary(from spots: [EnrichedSpot]) -> SpotSummary {
         var byRegion: [SpotRegion: [EnrichedSpot]] = [:]
         for spot in spots {
             byRegion[spot.region, default: []].append(spot)
         }
 
-        // Calculate distance range
         let distances = spots.compactMap(\.distanceMeters)
-        let minDistance = distances.min()
-        let maxDistance = distances.max()
-
         return SpotSummary(
             spots: spots,
             byRegion: byRegion,
-            minDistanceMeters: minDistance,
-            maxDistanceMeters: maxDistance,
+            minDistanceMeters: distances.min(),
+            maxDistanceMeters: distances.max(),
             timestamp: Date()
         )
     }
 
     /// Calculate great-circle distance between two coordinates
-    private func calculateDistance(
+    func calculateDistance(
         from coord1: CLLocationCoordinate2D,
         to coord2: CLLocationCoordinate2D
     ) -> Double {

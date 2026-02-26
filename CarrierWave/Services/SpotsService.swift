@@ -14,6 +14,7 @@ import SwiftUI
 enum SpotSource: Sendable {
     case rbn
     case pota
+    case sota
 }
 
 // MARK: - UnifiedSpot
@@ -39,6 +40,11 @@ struct UnifiedSpot: Identifiable, Sendable {
     let parkRef: String?
     let parkName: String?
     let comments: String?
+
+    // SOTA-specific fields
+    var summitCode: String?
+    var summitName: String?
+    var summitPoints: Int?
 
     // Location fields
     let locationDesc: String? // POTA raw (e.g., "US-WY")
@@ -382,6 +388,9 @@ actor SpotsService {
                 parkRef: nil,
                 parkName: nil,
                 comments: nil,
+                summitCode: nil,
+                summitName: nil,
+                summitPoints: nil,
                 locationDesc: nil,
                 stateAbbr: nil
             )
@@ -411,6 +420,9 @@ actor SpotsService {
                 parkRef: spot.reference,
                 parkName: spot.parkName,
                 comments: spot.comments,
+                summitCode: nil,
+                summitName: nil,
+                summitPoints: nil,
                 locationDesc: spot.locationDesc,
                 stateAbbr: UnifiedSpot.parseState(from: spot.locationDesc)
             )
