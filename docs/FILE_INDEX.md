@@ -130,6 +130,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `SpotRegion.swift` | Geographic region classification for spots (SpotRegion, EnrichedSpot, SpotSummary) |
 | `ActivityLog.swift` | Activity log SwiftData model for persistent hunter workflow |
 | `SDRParameterEvent.swift` | SDR parameter change event and recording segment types for tracking freq/mode changes |
+| `SOTASummit.swift` | SOTA summit data struct (code, name, altitude, points, coordinates) |
 | `SolarSnapshot.swift` | Hourly solar conditions snapshot from background polling |
 | `StationProfile.swift` | Station profile struct and UserDefaults-backed storage |
 
@@ -169,6 +170,8 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `POTAClient+Adaptive.swift` | POTA adaptive batch processing for rate limiting |
 | `POTAClient+ParkDetail.swift` | Public POTA park stats, leaderboard, and activations API models + loader |
 | `POTAParksCache.swift` | POTA park reference to name lookup cache |
+| `SOTASummitsCache.swift` | SOTA summit code to name lookup cache (30-day TTL) |
+| `SOTASummitsCache+Parsing.swift` | SOTA CSV parsing, name index building, and distance utilities |
 | `POTAAuthService.swift` | POTA OAuth flow handling (main service) |
 | `POTAAuthService+JavaScript.swift` | JavaScript helpers for POTA WebView auth |
 | `POTAAuthService+HeadlessAuth.swift` | Headless authentication with stored credentials |
@@ -480,6 +483,8 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `SessionEquipmentEditSheet.swift` | Compact equipment editor (radio, antenna, key, mic) for active sessions |
 | `ParkPickerSheet.swift` | Multi-select park search/nearby sheet for n-fer |
 | `ParkEntryField.swift` | Multi-park entry with chips, search picker, and shorthand |
+| `SummitPickerSheet.swift` | Single-select SOTA summit search/nearby sheet |
+| `SummitEntryField.swift` | SOTA summit entry with live name lookup and search picker |
 | `ParkDetailSheet.swift` | Park detail sheet with stats, leaderboard (top activators/hunters), and recent activations from POTA API |
 | `ActiveSessionRow.swift` | Compact row for active/paused sessions with Continue/Finish actions |
 | `LoggerSettingsView.swift` | (Deprecated) Logger settings moved to main SettingsView |
@@ -700,7 +705,9 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `POTAAuthWebView.swift` | POTA OAuth WebView |
 | `SyncDebugView.swift` | Sync debugging interface |
 | `AttributionsView.swift` | Third-party attributions |
-| `ExternalDataView.swift` | External data cache status and refresh (POTA parks) |
+| `ExternalDataView.swift` | External data cache status and refresh |
+| `ExternalDataView+POTASection.swift` | POTA parks cache status section |
+| `ExternalDataView+SOTASection.swift` | SOTA summits cache status section |
 | `BugReportView.swift` | Bug report form with dpaste upload and Discord instructions |
 | `CallsignAliasesSettingsView.swift` | Manage current and previous callsigns |
 | `SettingsSections.swift` | Sync Sources section with service navigation links |

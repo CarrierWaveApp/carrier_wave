@@ -119,6 +119,7 @@ struct CarrierWaveApp: App {
 
                 // Preload caches on app launch (loads from disk, refreshes in background)
                 await POTAParksCache.shared.ensureLoaded()
+                await SOTASummitsCache.shared.ensureLoaded()
                 // Fetch sources on main actor, then pass to cache actor
                 let sources = NotesSourceInfo.fetchAll(
                     modelContext: sharedModelContainer.mainContext

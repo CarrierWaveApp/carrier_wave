@@ -53,6 +53,7 @@ extension LoggingSessionManager {
             country: country,
             power: session.power,
             myRig: session.myRig,
+            sotaRef: session.activationType == .sota ? session.sotaReference : nil,
             theirLicenseClass: theirLicenseClass
         )
 

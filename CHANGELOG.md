@@ -7,6 +7,7 @@ All notable changes to Carrier Wave will be documented in this file.
 ### Fixed
 - Fix crash in Phone/SSB duplicate repair when ServicePresence records are concurrently deleted by presence dedup service (race condition between repair services)
 - Add isDeleted guards to QSO service presence helpers to prevent accessing invalidated SwiftData backing data
+- Fix SOTA QSOs not inheriting summit reference from session (fixes activity detection and ADIF export)
 
 ### Changed
 - Derive FT8 dial frequency from band selection (no manual frequency entry)
@@ -19,6 +20,9 @@ All notable changes to Carrier Wave will be documented in this file.
 - Add landscape two-column layout for FT8 session view (waterfall/controls left, decodes right)
 
 ### Added
+- Add SOTA summit database: download summitslist.csv with 30-day auto-refresh
+- Add summit picker with GPS nearby search and name/code search
+- Add summit entry field in session start replacing plain text input
 - Add always-visible FT8 debug panel with audio level meter, decode stats, and input picker
 - Add audio input selection for FT8 sessions
 - Add FT8DecodeEnricher service for enriching raw decodes with DXCC entity, distance, bearing, and worked-before flags
