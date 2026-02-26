@@ -2,7 +2,9 @@ import SwiftUI
 
 // MARK: - ShareClipSheet
 
-/// Sheet for selecting a time range and exporting a clip
+/// Sheet for selecting a time range from a recording and exporting/sharing a clip.
+/// Features draggable range handles, QSO markers, segment boundaries,
+/// playback preview, transcript snippet, and branded share card.
 struct ShareClipSheet: View {
     // MARK: Internal
 
@@ -12,44 +14,27 @@ struct ShareClipSheet: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 16) {
-                Text("Select clip range")
-                    .font(.headline)
+            ScrollView {
+                VStack(spacing: 16) {
+                    waveformWithHandles
+                    timeLabels
+                    durationLabel
 
-                RecordingWaveformView(
-                    amplitudes: engine.amplitudeEnvelope,
-                    duration: engine.duration,
-                    currentTime: engine.currentTime,
-                    qsoOffsets: [],
-                    activeQSOIndex: nil,
-                    height: 60,
-                    seekable: false
-                )
-                .overlay {
-                    rangeOverlay
+                    if engine.transcript != nil {
+                        transcriptSnippet
+                    }
+
+                    if let error = exportError {
+                        Text(error)
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                    }
+
+                    previewControls
+                    exportActions
                 }
-                .padding(.horizontal)
-
-                HStack {
-                    Text(formatTime(rangeStart))
-                    Spacer()
-                    Text(formatTime(rangeEnd))
-                }
-                .font(.caption.monospacedDigit())
-                .foregroundStyle(.secondary)
-                .padding(.horizontal)
-
-                durationLabel
-
-                if let error = exportError {
-                    Text(error)
-                        .font(.caption)
-                        .foregroundStyle(.red)
-                }
-
-                exportButton
+                .padding()
             }
-            .padding()
             .navigationTitle("Share Clip")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -58,6 +43,11 @@ struct ShareClipSheet: View {
                 }
             }
             .onAppear { setDefaultRange() }
+            .sheet(item: $shareCardData) { data in
+                RecordingSharePreviewSheet(data: data) {
+                    shareCardData = nil
+                }
+            }
         }
     }
 
@@ -65,104 +55,27 @@ struct ShareClipSheet: View {
 
     @Environment(\.dismiss) private var dismiss
 
-    @State private var rangeStart: TimeInterval = 0
-    @State private var rangeEnd: TimeInterval = 0
-    @State private var isExporting = false
-    @State private var exportedURL: URL?
-    @State private var exportError: String?
+    @State var rangeStart: TimeInterval = 0
+    @State var rangeEnd: TimeInterval = 0
+    @State var isDraggingStart = false
+    @State var isDraggingEnd = false
+    @State var isExporting = false
+    @State var isPreviewing = false
+    @State var exportedURL: URL?
+    @State var exportError: String?
+    @State var isRenderingCard = false
+    @State var shareCardData: RecordingShareCardData?
 
-    @ViewBuilder
-    private var exportButton: some View {
-        if let url = exportedURL {
-            ShareLink(item: url) {
-                Label("Share Clip", systemImage: "square.and.arrow.up")
-            }
-            .buttonStyle(.borderedProminent)
-        } else {
-            Button {
-                Task { await exportClip() }
-            } label: {
-                if isExporting {
-                    ProgressView()
-                } else {
-                    Label("Export Clip", systemImage: "scissors")
-                }
-            }
-            .buttonStyle(.borderedProminent)
-            .disabled(isExporting)
-        }
+    var sortedQSOs: [QSO] {
+        qsos.sorted { $0.timestamp < $1.timestamp }
     }
 
-    private var rangeOverlay: some View {
-        GeometryReader { geo in
-            let startX = xPos(rangeStart, in: geo.size.width)
-            let endX = xPos(rangeEnd, in: geo.size.width)
-
-            HStack(spacing: 0) {
-                Rectangle()
-                    .fill(Color.black.opacity(0.3))
-                    .frame(width: startX)
-                Spacer()
-                Rectangle()
-                    .fill(Color.black.opacity(0.3))
-                    .frame(width: geo.size.width - endX)
-            }
-        }
+    var qsoOffsets: [TimeInterval] {
+        let start = recording.startedAt
+        return sortedQSOs.map { $0.timestamp.timeIntervalSince(start) }
     }
 
-    private var durationLabel: some View {
-        let clipDuration = rangeEnd - rangeStart
-        return Text("Clip: \(formatTime(clipDuration))")
-            .font(.subheadline)
-    }
-
-    private func setDefaultRange() {
-        if let activeIdx = engine.activeQSOIndex {
-            let sorted = qsos.sorted { $0.timestamp < $1.timestamp }
-            if activeIdx < sorted.count {
-                let offset = sorted[activeIdx].timestamp
-                    .timeIntervalSince(recording.startedAt)
-                rangeStart = max(0, offset - 90)
-                rangeEnd = min(engine.duration, offset + 15)
-                return
-            }
-        }
-        rangeStart = 0
-        rangeEnd = min(60, engine.duration)
-    }
-
-    private func exportClip() async {
-        guard let fileURL = recording.fileURL else {
-            return
-        }
-        isExporting = true
-        exportError = nil
-
-        do {
-            let url = try await RecordingClipExporter.exportClip(
-                sourceURL: fileURL,
-                startTime: rangeStart,
-                endTime: rangeEnd
-            )
-            exportedURL = url
-        } catch {
-            exportError = error.localizedDescription
-        }
-
-        isExporting = false
-    }
-
-    private func xPos(_ time: TimeInterval, in width: CGFloat) -> CGFloat {
-        guard engine.duration > 0 else {
-            return 0
-        }
-        return CGFloat(time / engine.duration) * width
-    }
-
-    private func formatTime(_ seconds: TimeInterval) -> String {
-        let total = Int(seconds)
-        let mins = total / 60
-        let secs = total % 60
-        return String(format: "%d:%02d", mins, secs)
+    var clipDuration: TimeInterval {
+        rangeEnd - rangeStart
     }
 }

@@ -18,3 +18,9 @@ Add export confirmation checkpoint to SyncService+Upload.uploadToAllDestinations
 Add export confirmation to single-service upload phases in SyncService+SingleSync
 Add SyncExportConfirmationAlert ViewModifier and wire into DashboardView
 WorkedBeforeCache: Scope previous band checks to previous UTC day only (was querying all time)
+ShareClipSheet: added draggable range handles, QSO markers, segment boundaries, playback preview, transcript snippet
+ShareClipSheet+Subviews: extracted subviews extension for waveform overlay, handles, preview controls, export actions
+RecordingShareCardView: branded share card with waveform, receiver info, frequency/mode, QSOs, transcript excerpt
+RecordingShareCardRenderer: ImageRenderer-based rendering to UIImage
+RecordingSharePreviewSheet: preview sheet with Share and Save to Photos
+RecordingClipExporter: added metadata embedding (title, artist, description, date) in exported M4A
