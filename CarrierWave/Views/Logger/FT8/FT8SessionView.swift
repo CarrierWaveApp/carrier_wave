@@ -14,6 +14,62 @@ struct FT8SessionView: View {
     let parkReference: String?
 
     var body: some View {
+        Group {
+            if verticalSizeClass == .compact {
+                landscapeLayout
+            } else {
+                portraitLayout
+            }
+        }
+        .overlay(alignment: .top) {
+            if showSessionSummary, let summary = sessionSummary {
+                summary
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                    .onAppear {
+                        Task {
+                            try? await Task.sleep(for: .seconds(5))
+                            withAnimation { showSessionSummary = false }
+                        }
+                    }
+            }
+        }
+        .animation(.spring(duration: 0.3, bounce: 0.0), value: isDebugExpanded)
+        .animation(.spring(duration: 0.3, bounce: 0.0), value: showSessionSummary)
+        .task {
+            try? await ft8Manager.start()
+            sessionStartTime = Date()
+        }
+    }
+
+    // MARK: Private
+
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
+    @State private var isDebugExpanded = false
+    @State private var sessionStartTime: Date?
+    @State private var showSessionSummary = false
+    @State private var sessionSummary: FT8SessionSummaryToast?
+
+    private var currentQSODistanceMiles: Int? {
+        guard let theirGrid = ft8Manager.qsoStateMachine.theirGrid else {
+            return nil
+        }
+        return CarrierWaveCore.MaidenheadConverter.distanceMiles(
+            from: ft8Manager.qsoStateMachine.myGrid,
+            to: theirGrid
+        ).map(Int.init)
+    }
+
+    private var currentQSOEntity: String? {
+        guard let call = ft8Manager.qsoStateMachine.theirCallsign else {
+            return nil
+        }
+        let entity = DescriptionLookup.entityDescription(for: call)
+        return entity == "Unknown" ? nil : entity
+    }
+
+    // MARK: - Layouts
+
+    private var portraitLayout: some View {
         VStack(spacing: 0) {
             bandAndStatusRow
 
@@ -37,57 +93,78 @@ struct FT8SessionView: View {
 
             activeQSOCard
 
-            FT8DecodeListView(
-                enrichedDecodes: ft8Manager.enrichedDecodes,
-                currentCycleIDs: Set(ft8Manager.currentCycleEnriched.map(\.id)),
-                onCallStation: { ft8Manager.callStation($0) }
-            )
-            .frame(minHeight: 120)
+            decodeList
+                .frame(minHeight: 120)
 
             Divider()
 
-            FT8ControlBar(
-                isReceiving: ft8Manager.isReceiving,
-                operatingMode: Binding(
-                    get: { ft8Manager.operatingMode },
-                    set: { ft8Manager.setMode($0) }
-                ),
-                qsoCount: ft8Manager.qsoCount,
-                parkReference: parkReference,
-                onStart: {
-                    Task { try? await ft8Manager.start() }
-                },
-                onStop: {
-                    Task { await ft8Manager.stop() }
+            controlBar
+        }
+    }
+
+    private var landscapeLayout: some View {
+        VStack(spacing: 0) {
+            bandAndStatusRow
+            HStack(spacing: 0) {
+                VStack(spacing: 0) {
+                    FT8WaterfallView(
+                        data: ft8Manager.waterfallData,
+                        currentDecodes: ft8Manager.currentCycleDecodes
+                    )
+                    .frame(height: 140)
+
+                    activeQSOCard
+
+                    Spacer()
+
+                    controlBar
                 }
-            )
-        }
-        .animation(.spring(duration: 0.3, bounce: 0.0), value: isDebugExpanded)
-        .task {
-            try? await ft8Manager.start()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                Divider()
+
+                VStack(spacing: 0) {
+                    FT8CycleIndicatorView(
+                        isTransmitting: ft8Manager.isTransmitting,
+                        timeRemaining: ft8Manager.cycleTimeRemaining
+                    )
+
+                    decodeList
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
         }
     }
 
-    // MARK: Private
+    // MARK: - Shared Components
 
-    @State private var isDebugExpanded = false
-
-    private var currentQSODistanceMiles: Int? {
-        guard let theirGrid = ft8Manager.qsoStateMachine.theirGrid else {
-            return nil
-        }
-        return CarrierWaveCore.MaidenheadConverter.distanceMiles(
-            from: ft8Manager.qsoStateMachine.myGrid,
-            to: theirGrid
-        ).map(Int.init)
+    private var decodeList: some View {
+        FT8DecodeListView(
+            enrichedDecodes: ft8Manager.enrichedDecodes,
+            currentCycleIDs: Set(ft8Manager.currentCycleEnriched.map(\.id)),
+            onCallStation: { ft8Manager.callStation($0) }
+        )
     }
 
-    private var currentQSOEntity: String? {
-        guard let call = ft8Manager.qsoStateMachine.theirCallsign else {
-            return nil
-        }
-        let entity = DescriptionLookup.entityDescription(for: call)
-        return entity == "Unknown" ? nil : entity
+    private var controlBar: some View {
+        FT8ControlBar(
+            isReceiving: ft8Manager.isReceiving,
+            operatingMode: Binding(
+                get: { ft8Manager.operatingMode },
+                set: { ft8Manager.setMode($0) }
+            ),
+            qsoCount: ft8Manager.qsoCount,
+            parkReference: parkReference,
+            onStart: {
+                Task {
+                    try? await ft8Manager.start()
+                    sessionStartTime = Date()
+                }
+            },
+            onStop: {
+                showSummaryAndStop()
+            }
+        )
     }
 
     private var bandAndStatusRow: some View {
@@ -151,5 +228,16 @@ struct FT8SessionView: View {
                 ft8Manager.setMode(.listen)
             }
         )
+    }
+
+    private func showSummaryAndStop() {
+        let duration = sessionStartTime.map { Date().timeIntervalSince($0) } ?? 0
+        sessionSummary = FT8SessionSummaryToast(
+            band: ft8Manager.selectedBand,
+            qsoCount: ft8Manager.qsoCount,
+            duration: duration
+        )
+        Task { await ft8Manager.stop() }
+        withAnimation { showSessionSummary = true }
     }
 }
