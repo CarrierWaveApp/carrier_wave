@@ -50,8 +50,19 @@ final class FT8SessionManager {
     private(set) var audioLevel: Float = 0
     private(set) var waterfallData = FT8WaterfallData()
     private(set) var availableAudioInputs: [AudioInputInfo] = []
+    private(set) var enrichedDecodes: [FT8EnrichedDecode] = []
+    private(set) var currentCycleEnriched: [FT8EnrichedDecode] = []
+    private(set) var cyclesSinceLastDecode = 0
 
-    var selectedBand: String = "20m"
+    var selectedBand: String = "20m" {
+        didSet {
+            decodeEnricher = FT8DecodeEnricher(
+                myCallsign: qsoStateMachine.myCallsign,
+                myGrid: qsoStateMachine.myGrid,
+                currentBand: selectedBand
+            )
+        }
+    }
 
     var selectedFrequency: Double {
         FT8Constants.dialFrequency(forBand: selectedBand) ?? 14.074
@@ -143,6 +154,12 @@ final class FT8SessionManager {
     /// Maximum number of decode results to retain (~4 minutes of decodes).
     private static let maxDecodeResults = 500
 
+    private lazy var decodeEnricher = FT8DecodeEnricher(
+        myCallsign: qsoStateMachine.myCallsign,
+        myGrid: qsoStateMachine.myGrid,
+        currentBand: selectedBand
+    )
+
     private let audioEngine = FT8AudioEngine()
     private var slotTimer: Timer?
     private var cycleTimer: Timer?
@@ -167,6 +184,22 @@ final class FT8SessionManager {
         // Trim old decodes
         if decodeResults.count > Self.maxDecodeResults {
             decodeResults.removeFirst(decodeResults.count - Self.maxDecodeResults)
+        }
+
+        // Enrich decodes
+        currentCycleEnriched = decodeEnricher.enrich(results)
+        enrichedDecodes.append(contentsOf: currentCycleEnriched)
+
+        // Trim enriched decodes in sync with raw decodes
+        if enrichedDecodes.count > Self.maxDecodeResults {
+            enrichedDecodes.removeFirst(enrichedDecodes.count - Self.maxDecodeResults)
+        }
+
+        // Track cycles since last decode (for status pill)
+        if results.isEmpty {
+            cyclesSinceLastDecode += 1
+        } else {
+            cyclesSinceLastDecode = 0
         }
 
         // Process each decode and check for completion after each message
@@ -294,6 +327,7 @@ final class FT8SessionManager {
         )
 
         qsoCount += 1
+        decodeEnricher.markWorkedThisSession(completed.theirCallsign)
         Self.log.info("FT8 QSO logged: \(completed.theirCallsign)")
     }
 
