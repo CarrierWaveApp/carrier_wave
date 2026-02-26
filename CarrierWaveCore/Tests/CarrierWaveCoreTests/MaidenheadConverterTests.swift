@@ -6,6 +6,8 @@
 import Testing
 @testable import CarrierWaveCore
 
+// MARK: - MaidenheadConverterTests
+
 @Suite("Maidenhead Converter Tests")
 struct MaidenheadConverterTests {
     @Test("Convert 4-char grid to coordinate")
@@ -128,5 +130,46 @@ struct MaidenheadConverterTests {
         )
         #expect(northPole.count == 6)
         #expect(northPole.hasPrefix("JR"))
+    }
+}
+
+// MARK: - MaidenheadConverterDistanceTests
+
+@Suite("MaidenheadConverter Distance Tests")
+struct MaidenheadConverterDistanceTests {
+    @Test("Distance FN31 to FN42 is approximately 150 km")
+    func distanceFN31toFN42() throws {
+        let dist = MaidenheadConverter.distanceKm(from: "FN31", to: "FN42")
+        #expect(dist != nil)
+        #expect(try #require(dist) > 100 && dist! < 200)
+    }
+
+    @Test("Distance FN31 to PM95 is approximately 10900 km (US to Japan)")
+    func distanceFN31toPM95() throws {
+        let dist = MaidenheadConverter.distanceKm(from: "FN31", to: "PM95")
+        #expect(dist != nil)
+        #expect(try #require(dist) > 10_000 && dist! < 12_000)
+    }
+
+    @Test("Distance with invalid grid returns nil")
+    func distanceInvalidGrid() {
+        let dist = MaidenheadConverter.distanceKm(from: "FN31", to: "ZZ99")
+        #expect(dist == nil)
+    }
+
+    @Test("Bearing FN31 to PM95 is roughly northwest (280-340 degrees)")
+    func bearingToJapan() throws {
+        let brg = MaidenheadConverter.bearing(from: "FN31", to: "PM95")
+        #expect(brg != nil)
+        #expect(try #require(brg) > 280 && brg! < 340)
+    }
+
+    @Test("Distance in miles converts correctly")
+    func distanceMiles() throws {
+        let km = MaidenheadConverter.distanceKm(from: "FN31", to: "FN42")
+        let mi = MaidenheadConverter.distanceMiles(from: "FN31", to: "FN42")
+        #expect(km != nil && mi != nil)
+        let ratio = try #require(mi) / km!
+        #expect(ratio > 0.62 && ratio < 0.63)
     }
 }

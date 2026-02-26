@@ -121,3 +121,71 @@ public enum MaidenheadConverter: Sendable {
         coordinate(from: grid) != nil
     }
 }
+
+// MARK: - Distance & Bearing
+
+public extension MaidenheadConverter {
+    /// Haversine distance in kilometers between two Maidenhead grid squares
+    /// - Returns: Distance in km, or nil if either grid is invalid
+    static func distanceKm(from grid1: String, to grid2: String) -> Double? {
+        guard let c1 = coordinate(from: grid1),
+              let c2 = coordinate(from: grid2)
+        else {
+            return nil
+        }
+        return haversineKm(c1, c2)
+    }
+
+    /// Distance in miles between two Maidenhead grid squares
+    /// - Returns: Distance in miles, or nil if either grid is invalid
+    static func distanceMiles(from grid1: String, to grid2: String) -> Double? {
+        guard let km = distanceKm(from: grid1, to: grid2) else {
+            return nil
+        }
+        return km * 0.621371
+    }
+
+    /// Initial bearing (forward azimuth) in degrees from one grid to another
+    /// - Returns: Bearing in degrees (0-360), or nil if either grid is invalid
+    static func bearing(from grid1: String, to grid2: String) -> Double? {
+        guard let c1 = coordinate(from: grid1),
+              let c2 = coordinate(from: grid2)
+        else {
+            return nil
+        }
+        return initialBearing(c1, c2)
+    }
+}
+
+// MARK: - Private Helpers
+
+private extension MaidenheadConverter {
+    static let earthRadiusKm = 6_371.0
+
+    /// Haversine formula for great-circle distance between two coordinates
+    static func haversineKm(_ c1: Coordinate, _ c2: Coordinate) -> Double {
+        let lat1 = c1.latitude * .pi / 180.0
+        let lat2 = c2.latitude * .pi / 180.0
+        let dLat = (c2.latitude - c1.latitude) * .pi / 180.0
+        let dLon = (c2.longitude - c1.longitude) * .pi / 180.0
+
+        let a = sin(dLat / 2) * sin(dLat / 2)
+            + cos(lat1) * cos(lat2) * sin(dLon / 2) * sin(dLon / 2)
+        let angularDistance = 2 * atan2(sqrt(a), sqrt(1 - a))
+
+        return earthRadiusKm * angularDistance
+    }
+
+    /// Initial bearing (forward azimuth) from c1 to c2, in degrees 0-360
+    static func initialBearing(_ c1: Coordinate, _ c2: Coordinate) -> Double {
+        let lat1 = c1.latitude * .pi / 180.0
+        let lat2 = c2.latitude * .pi / 180.0
+        let dLon = (c2.longitude - c1.longitude) * .pi / 180.0
+
+        let x = sin(dLon) * cos(lat2)
+        let y = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(dLon)
+
+        let bearing = atan2(x, y) * 180.0 / .pi
+        return (bearing + 360.0).truncatingRemainder(dividingBy: 360.0)
+    }
+}
