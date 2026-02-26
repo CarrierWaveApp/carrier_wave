@@ -161,5 +161,6 @@ private struct SessionRegionPillRow: View {
                     .foregroundStyle(.secondary)
             }
         }
+        .fixedSize()
     }
 }
