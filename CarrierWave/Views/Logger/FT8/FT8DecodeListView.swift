@@ -9,32 +9,24 @@ import SwiftUI
 struct FT8DecodeListView: View {
     // MARK: Internal
 
-    let decodes: [FT8DecodeResult]
-    let currentCycleIDs: Set<FT8DecodeResult.ID>
-    let myCallsign: String
+    let enrichedDecodes: [FT8EnrichedDecode]
+    let currentCycleIDs: Set<UUID>
     let onCallStation: (FT8DecodeResult) -> Void
 
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: 2) {
-                    ForEach(decodes) { result in
-                        decodeRow(result, isNew: currentCycleIDs.contains(result.id))
-                            .onTapGesture {
-                                if result.message.isCallable {
-                                    onCallStation(result)
-                                }
-                            }
-                    }
+                LazyVStack(alignment: .leading, spacing: 0) {
+                    directedSection
+                    callingCQSection
+                    allActivitySection
                 }
-                .padding(.horizontal)
             }
-            .onChange(of: decodes.count) { oldCount, newCount in
-                guard newCount > oldCount else {
-                    return
-                }
-                if let last = decodes.last {
-                    proxy.scrollTo(last.id, anchor: .bottom)
+            .onChange(of: directedDecodes.count) { oldCount, newCount in
+                if newCount > oldCount, let first = directedDecodes.first {
+                    withAnimation {
+                        proxy.scrollTo(first.id, anchor: .top)
+                    }
                 }
             }
         }
@@ -42,31 +34,156 @@ struct FT8DecodeListView: View {
 
     // MARK: Private
 
-    private func decodeRow(_ result: FT8DecodeResult, isNew: Bool) -> some View {
-        HStack(spacing: 8) {
-            Text("\(result.snr)")
-                .font(.system(.caption, design: .monospaced))
-                .foregroundStyle(.secondary)
-                .frame(width: 32, alignment: .trailing)
+    @State private var isAllActivityExpanded = false
+    @AppStorage("ft8CompactMode") private var isCompactMode = false
 
-            Text(result.rawText)
-                .font(.system(.body, design: .monospaced))
-                .foregroundStyle(textColor(for: result))
-                .fontWeight(isNew ? .bold : .regular)
-
-            Spacer()
-        }
-        .padding(.vertical, 2)
-        .contentShape(Rectangle())
+    private var directedDecodes: [FT8EnrichedDecode] {
+        enrichedDecodes.filter { $0.section == .directedAtYou }
     }
 
-    private func textColor(for result: FT8DecodeResult) -> Color {
-        if result.message.isCallable {
-            return .green
+    private var cqDecodes: [FT8EnrichedDecode] {
+        enrichedDecodes
+            .filter { $0.section == .callingCQ }
+            .sorted { lhs, rhs in
+                if lhs.sortPriority != rhs.sortPriority {
+                    return lhs.sortPriority < rhs.sortPriority
+                }
+                return lhs.decode.snr > rhs.decode.snr
+            }
+    }
+
+    private var activityDecodes: [FT8EnrichedDecode] {
+        enrichedDecodes.filter { $0.section == .allActivity }
+    }
+
+    // MARK: - Directed Section
+
+    @ViewBuilder
+    private var directedSection: some View {
+        if !directedDecodes.isEmpty {
+            sectionHeader("DIRECTED AT YOU", count: directedDecodes.count, accent: .orange)
+
+            ForEach(directedDecodes) { enriched in
+                FT8DirectedDecodeRow(enriched: enriched)
+                    .id(enriched.id)
+                    .onTapGesture { onCallStation(enriched.decode) }
+            }
         }
-        if result.message.isDirectedTo(myCallsign) {
-            return .red
+    }
+
+    // MARK: - CQ Section
+
+    private var callingCQSection: some View {
+        Group {
+            sectionHeader("CALLING CQ", count: cqDecodes.count, accent: .blue)
+                .contextMenu {
+                    Button {
+                        isCompactMode.toggle()
+                    } label: {
+                        Label(
+                            isCompactMode ? "Expanded View" : "Compact View",
+                            systemImage: isCompactMode ? "list.bullet" : "list.dash"
+                        )
+                    }
+                }
+
+            ForEach(cqDecodes) { enriched in
+                Group {
+                    if isCompactMode {
+                        FT8CompactDecodeRow(enriched: enriched)
+                    } else {
+                        FT8EnrichedDecodeRow(
+                            enriched: enriched,
+                            isCurrentCycle: currentCycleIDs.contains(enriched.id)
+                        )
+                    }
+                }
+                .id(enriched.id)
+                .onTapGesture {
+                    if enriched.decode.message.isCallable {
+                        onCallStation(enriched.decode)
+                    }
+                }
+            }
         }
-        return .primary
+    }
+
+    // MARK: - All Activity Section
+
+    @ViewBuilder
+    private var allActivitySection: some View {
+        if !activityDecodes.isEmpty {
+            Button {
+                withAnimation(.spring(duration: 0.3, bounce: 0.0)) {
+                    isAllActivityExpanded.toggle()
+                }
+            } label: {
+                sectionHeader(
+                    "ALL ACTIVITY",
+                    count: activityDecodes.count,
+                    accent: .secondary,
+                    chevron: isAllActivityExpanded ? "chevron.up" : "chevron.down"
+                )
+            }
+            .buttonStyle(.plain)
+
+            if isAllActivityExpanded {
+                ForEach(activityDecodes) { enriched in
+                    compactActivityRow(enriched)
+                        .id(enriched.id)
+                }
+            }
+        }
+    }
+
+    // MARK: - Helpers
+
+    private func sectionHeader(
+        _ title: String,
+        count: Int,
+        accent: Color,
+        chevron: String? = nil
+    ) -> some View {
+        HStack {
+            Text(title)
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(accent)
+
+            Text("(\(count))")
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+
+            Spacer()
+
+            if let chevron {
+                Image(systemName: chevron)
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+    }
+
+    private func compactActivityRow(_ enriched: FT8EnrichedDecode) -> some View {
+        HStack(spacing: 6) {
+            if let from = enriched.decode.message.callerCallsign {
+                Text(from)
+                    .font(.caption.monospaced())
+            }
+            Image(systemName: "arrow.right")
+                .font(.system(size: 8))
+                .foregroundStyle(.tertiary)
+            Text(enriched.decode.rawText)
+                .font(.caption.monospaced())
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+            Spacer()
+            Text("\(enriched.decode.snr)")
+                .font(.caption2.monospacedDigit())
+                .foregroundStyle(.tertiary)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 2)
     }
 }

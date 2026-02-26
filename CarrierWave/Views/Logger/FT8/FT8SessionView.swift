@@ -15,15 +15,18 @@ struct FT8SessionView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            bandSelector
+            bandAndStatusRow
 
-            FT8DebugPanel(ft8Manager: ft8Manager)
+            if isDebugExpanded {
+                FT8DebugPanel(ft8Manager: ft8Manager)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
 
             FT8WaterfallView(
                 data: ft8Manager.waterfallData,
                 currentDecodes: ft8Manager.currentCycleDecodes
             )
-            .frame(height: 80)
+            .frame(height: 48)
 
             FT8CycleIndicatorView(
                 isTransmitting: ft8Manager.isTransmitting,
@@ -32,15 +35,14 @@ struct FT8SessionView: View {
 
             Divider()
 
+            activeQSOCard
+
             FT8DecodeListView(
-                decodes: ft8Manager.decodeResults,
-                currentCycleIDs: Set(ft8Manager.currentCycleDecodes.map(\.id)),
-                myCallsign: ft8Manager.qsoStateMachine.myCallsign,
+                enrichedDecodes: ft8Manager.enrichedDecodes,
+                currentCycleIDs: Set(ft8Manager.currentCycleEnriched.map(\.id)),
                 onCallStation: { ft8Manager.callStation($0) }
             )
             .frame(minHeight: 120)
-
-            FT8ActiveQSOCard(stateMachine: ft8Manager.qsoStateMachine)
 
             Divider()
 
@@ -60,6 +62,7 @@ struct FT8SessionView: View {
                 }
             )
         }
+        .animation(.spring(duration: 0.3, bounce: 0.0), value: isDebugExpanded)
         .task {
             try? await ft8Manager.start()
         }
@@ -67,7 +70,27 @@ struct FT8SessionView: View {
 
     // MARK: Private
 
-    private var bandSelector: some View {
+    @State private var isDebugExpanded = false
+
+    private var currentQSODistanceMiles: Int? {
+        guard let theirGrid = ft8Manager.qsoStateMachine.theirGrid else {
+            return nil
+        }
+        return CarrierWaveCore.MaidenheadConverter.distanceMiles(
+            from: ft8Manager.qsoStateMachine.myGrid,
+            to: theirGrid
+        ).map(Int.init)
+    }
+
+    private var currentQSOEntity: String? {
+        guard let call = ft8Manager.qsoStateMachine.theirCallsign else {
+            return nil
+        }
+        let entity = DescriptionLookup.entityDescription(for: call)
+        return entity == "Unknown" ? nil : entity
+    }
+
+    private var bandAndStatusRow: some View {
         HStack(spacing: 6) {
             Menu {
                 ForEach(FT8Constants.supportedBands, id: \.self) { band in
@@ -102,9 +125,31 @@ struct FT8SessionView: View {
                 .clipShape(Capsule())
 
             Spacer()
+
+            Button {
+                isDebugExpanded.toggle()
+            } label: {
+                FT8StatusPillView(
+                    audioLevel: ft8Manager.audioLevel,
+                    decodeCount: ft8Manager.currentCycleDecodes.count,
+                    cyclesSinceLastDecode: ft8Manager.cyclesSinceLastDecode
+                )
+            }
+            .buttonStyle(.plain)
         }
         .padding(.horizontal)
         .padding(.vertical, 8)
         .background(Color(.systemBackground))
+    }
+
+    private var activeQSOCard: some View {
+        FT8ActiveQSOCard(
+            stateMachine: ft8Manager.qsoStateMachine,
+            distanceMiles: currentQSODistanceMiles,
+            dxccEntity: currentQSOEntity,
+            onAbort: {
+                ft8Manager.setMode(.listen)
+            }
+        )
     }
 }

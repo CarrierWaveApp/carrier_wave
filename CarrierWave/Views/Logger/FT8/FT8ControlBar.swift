@@ -46,15 +46,12 @@ struct FT8ControlBar: View {
             }
 
             HStack {
-                Label("\(qsoCount) QSOs", systemImage: "list.bullet")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-
-                if let park = parkReference {
-                    Spacer()
-                    Text(park)
-                        .font(.caption.bold())
-                        .foregroundStyle(.orange)
+                if parkReference != nil {
+                    potaCounter
+                } else {
+                    Label("\(qsoCount) QSOs", systemImage: "list.bullet")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
                 Spacer()
             }
@@ -65,6 +62,28 @@ struct FT8ControlBar: View {
     }
 
     // MARK: Private
+
+    @ViewBuilder
+    private var potaCounter: some View {
+        let isValid = qsoCount >= 10
+        HStack(spacing: 4) {
+            if isValid {
+                Text("\(qsoCount)")
+                    .font(.caption.bold().monospacedDigit())
+                    .foregroundStyle(.green)
+                Image(systemName: "tree.fill")
+                    .font(.caption)
+                    .foregroundStyle(.green)
+            } else {
+                Text("\(qsoCount)/10")
+                    .font(.caption.bold().monospacedDigit())
+                    .foregroundStyle(.secondary)
+                Image(systemName: "tree.fill")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
 
     private func modeButton(
         _ title: String,

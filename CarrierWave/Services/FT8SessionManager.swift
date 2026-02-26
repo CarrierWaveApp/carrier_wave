@@ -31,6 +31,11 @@ final class FT8SessionManager {
         loggingSessionManager: LoggingSessionManager
     ) {
         qsoStateMachine = FT8QSOStateMachine(myCallsign: myCallsign, myGrid: myGrid)
+        decodeEnricher = FT8DecodeEnricher(
+            myCallsign: myCallsign,
+            myGrid: myGrid,
+            currentBand: "20m"
+        )
         self.modelContext = modelContext
         self.loggingSessionManager = loggingSessionManager
     }
@@ -154,11 +159,7 @@ final class FT8SessionManager {
     /// Maximum number of decode results to retain (~4 minutes of decodes).
     private static let maxDecodeResults = 500
 
-    private lazy var decodeEnricher = FT8DecodeEnricher(
-        myCallsign: qsoStateMachine.myCallsign,
-        myGrid: qsoStateMachine.myGrid,
-        currentBand: selectedBand
-    )
+    private var decodeEnricher: FT8DecodeEnricher
 
     private let audioEngine = FT8AudioEngine()
     private var slotTimer: Timer?

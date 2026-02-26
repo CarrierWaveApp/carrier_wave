@@ -1,1 +1,0 @@
-FT8SessionManager.swift: wired FT8DecodeEnricher into session manager (enriched decodes, cycle counter, band change handling, markWorkedThisSession)
