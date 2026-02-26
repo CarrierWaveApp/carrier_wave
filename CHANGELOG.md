@@ -4,6 +4,8 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.47.0] - 2026-02-26
+
 ### Fixed
 - Fix crash in Phone/SSB duplicate repair when ServicePresence records are concurrently deleted by presence dedup service (race condition between repair services)
 - Add isDeleted guards to QSO service presence helpers to prevent accessing invalidated SwiftData backing data
