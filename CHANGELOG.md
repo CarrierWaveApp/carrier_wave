@@ -32,6 +32,7 @@ All notable changes to Carrier Wave will be documented in this file.
 - P2P fields (SIG, SIG_INFO, POTA_REF) in POTA upload ADIF
 - MODE/SUBMODE splitting in ADIF generation (USB→SSB+USB, LSB→SSB+LSB, PSK31→PSK+PSK31)
 - One-time data repair to fix hunting QSOs misidentified as activations
+- Add Agents on Air (AoA) as an activity program with eye icon, mission reference field, and hunter/data entry capabilities
 
 ### Changed
 - POTA spots command renamed to HUNT with binoculars icon
