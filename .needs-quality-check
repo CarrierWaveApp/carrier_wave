@@ -1,2 +1,5 @@
 ActivityProgramStore: Added .browseSpots capability to SOTA program definition
 ActiveStation: Added .sota(summit:points:) case to Source enum, added fromSOTA(_:) factory method
+SOTASpot: New model for SOTAwatch API spot responses with frequency/timestamp computed properties
+SOTAClient: New actor for fetching SOTA spots from api2.sota.org.uk
+SOTAClientTests: New test file for SOTASpot JSON decoding and computed properties

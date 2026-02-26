@@ -90,7 +90,7 @@ struct ActiveStation: Identifiable, Sendable {
             frequencyMHz: mhz,
             mode: spot.mode.uppercased(),
             timestamp: spot.parsedTimestamp ?? Date(),
-            source: .sota(summit: spot.summitCode, points: spot.points)
+            source: .sota(summit: spot.fullSummitReference, points: spot.points)
         )
     }
 }

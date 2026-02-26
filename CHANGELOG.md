@@ -6,6 +6,8 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ### Added
 - Cross-device iCloud sync: fetch changes on foreground re-entry (scenePhase), network recovery (NWPathMonitor), and 30s polling during active logging sessions
+- Add SOTAwatch API client (`SOTAClient`) for fetching active SOTA spots from api2.sota.org.uk
+- Add `SOTASpot` model with frequency/timestamp parsing and summit reference utilities
 
 ## [1.47.0] - 2026-02-26
 

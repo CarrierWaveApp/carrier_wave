@@ -131,6 +131,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `ActivityLog.swift` | Activity log SwiftData model for persistent hunter workflow |
 | `SDRParameterEvent.swift` | SDR parameter change event and recording segment types for tracking freq/mode changes |
 | `SOTASummit.swift` | SOTA summit data struct (code, name, altitude, points, coordinates) |
+| `SOTASpot.swift` | SOTAwatch API spot model (activator, summit, frequency, mode, timestamp) |
 | `SolarSnapshot.swift` | Hourly solar conditions snapshot from background polling |
 | `StationProfile.swift` | Station profile struct and UserDefaults-backed storage |
 
@@ -172,6 +173,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `POTAParksCache.swift` | POTA park reference to name lookup cache |
 | `SOTASummitsCache.swift` | SOTA summit code to name lookup cache (30-day TTL) |
 | `SOTASummitsCache+Parsing.swift` | SOTA CSV parsing, name index building, and distance utilities |
+| `SOTAClient.swift` | SOTAwatch API actor for fetching active spots from api2.sota.org.uk |
 | `POTAAuthService.swift` | POTA OAuth flow handling (main service) |
 | `POTAAuthService+JavaScript.swift` | JavaScript helpers for POTA WebView auth |
 | `POTAAuthService+HeadlessAuth.swift` | Headless authentication with stored credentials |
@@ -786,6 +788,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `ImportServiceTests.swift` | Import service tests |
 | `LoFiClientTests.swift` | LoFi client tests |
 | `QRZClientTests.swift` | QRZ client tests |
+| `SOTAClientTests.swift` | SOTASpot JSON decoding, computed properties (frequency, timestamp, summit reference) |
 | `LoggingSessionManagerTests.swift` | Session lifecycle, query, and title tests |
 | `LoggingSessionManagerTests+QSOLogging.swift` | QSO logging, frequency/mode/park updates, and notes tests |
 | `LoggingSessionManagerTests+HiddenQSOs.swift` | Hidden QSO handling tests |
