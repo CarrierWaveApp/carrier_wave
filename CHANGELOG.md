@@ -5,6 +5,14 @@ All notable changes to Carrier Wave will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- SDR recording clip selector: draggable range handles for precise clip boundary selection
+- SDR recording clip selector: QSO markers and segment boundaries on clip waveform
+- SDR recording clip selector: playback preview to hear selected range before exporting
+- SDR recording clip selector: CW transcript snippet preview for selected range
+- SDR recording share card: branded image with waveform, receiver info, frequency/mode, QSOs, and transcript excerpt
+- SDR recording share card: save to Photos and share as image
+- SDR recording clip export: embedded M4A metadata (title, artist, description, date)
+- SDR recording clip share: transcript text included alongside audio
 - Comment park action setting: choose how park references in ADIF COMMENT fields are handled — ignore, set as "their park" (default), or set as "my park"
 - Sync import confirmation: prompt user before importing when more than 50 QSOs are downloaded
 - Sync export confirmation: prompt user before uploading when more than 50 QSOs are queued for upload

@@ -1,16 +1,53 @@
 import AVFoundation
 import Foundation
 
+// MARK: - RecordingClipMetadata
+
+/// Metadata to embed in an exported SDR recording clip
+struct RecordingClipMetadata: Sendable {
+    let receiverName: String
+    let frequencyKHz: Double
+    let mode: String
+    let recordingDate: Date
+    let callsigns: [String]
+
+    /// Formatted title for the audio file metadata
+    var title: String {
+        let freq = formatFrequency()
+        return "\(freq) \(mode) via \(receiverName)"
+    }
+
+    /// Formatted comment with QSO callsigns
+    var comment: String {
+        guard !callsigns.isEmpty else {
+            return "SDR Recording - \(receiverName)"
+        }
+        let calls = callsigns.prefix(10).joined(separator: ", ")
+        let suffix = callsigns.count > 10 ? " +\(callsigns.count - 10) more" : ""
+        return "QSOs: \(calls)\(suffix)"
+    }
+
+    private func formatFrequency() -> String {
+        let mHz = frequencyKHz / 1_000
+        if mHz == mHz.rounded() {
+            return String(format: "%.0f MHz", mHz)
+        }
+        return String(format: "%.3f MHz", mHz)
+    }
+}
+
 // MARK: - RecordingClipExporter
 
 /// Exports a time-range clip from a WebSDR recording as M4A.
 enum RecordingClipExporter {
     /// Export a clip from sourceURL between startTime and endTime.
+    /// Optionally embeds metadata tags in the exported file.
     /// Returns the URL of the exported M4A file in a temp directory.
     static func exportClip(
         sourceURL: URL,
         startTime: TimeInterval,
-        endTime: TimeInterval
+        endTime: TimeInterval,
+        metadata: RecordingClipMetadata? = nil
     ) async throws -> URL {
         let asset = AVURLAsset(url: sourceURL)
         let duration = try await asset.load(.duration)
@@ -38,9 +75,64 @@ enum RecordingClipExporter {
 
         session.timeRange = timeRange
 
+        if let metadata {
+            session.metadata = buildMetadataItems(from: metadata)
+        }
+
         try await session.export(to: outputURL, as: .m4a)
 
         return outputURL
+    }
+
+    // MARK: Private
+
+    /// Build AVMetadataItems for embedding in the exported M4A
+    private static func buildMetadataItems(
+        from metadata: RecordingClipMetadata
+    ) -> [AVMetadataItem] {
+        var items: [AVMetadataItem] = []
+
+        items.append(makeItem(
+            key: .commonKeyTitle,
+            keySpace: .common,
+            value: metadata.title
+        ))
+        items.append(makeItem(
+            key: .commonKeyArtist,
+            keySpace: .common,
+            value: metadata.receiverName
+        ))
+        items.append(makeItem(
+            key: .commonKeyDescription,
+            keySpace: .common,
+            value: metadata.comment
+        ))
+        items.append(makeItem(
+            key: .commonKeyAlbumName,
+            keySpace: .common,
+            value: "SDR Recordings"
+        ))
+
+        let dateFormatter = ISO8601DateFormatter()
+        items.append(makeItem(
+            key: .commonKeyCreationDate,
+            keySpace: .common,
+            value: dateFormatter.string(from: metadata.recordingDate)
+        ))
+
+        return items
+    }
+
+    private static func makeItem(
+        key: AVMetadataKey,
+        keySpace: AVMetadataKeySpace,
+        value: String
+    ) -> AVMetadataItem {
+        let item = AVMutableMetadataItem()
+        item.key = key as NSCopying & NSObjectProtocol
+        item.keySpace = keySpace
+        item.value = value as NSString
+        return item
     }
 }
 

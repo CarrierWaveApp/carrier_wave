@@ -392,7 +392,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `WebSDRSession.swift` | Coordinates WebSDR connection, recording, playback, and resilient reconnects |
 | `WebSDRSession+Internals.swift` | Internal helpers: audio stream processing, reconnect logic, recording lifecycle |
 | `RecordingPlaybackEngine.swift` | @Observable AVAudioPlayer wrapper with seeking, speed control, amplitude envelope, QSO sync, transcript tracking |
-| `RecordingClipExporter.swift` | M4A clip export from recordings using AVAssetExportSession |
+| `RecordingClipExporter.swift` | M4A clip export from recordings with AVAssetExportSession and metadata embedding |
 | `CWSWLClient.swift` | Actor for cw-swl server communication (upload, transcribe, poll, download transcript) |
 
 ## Services - Query Language (`CarrierWave/Services/QueryLanguage/`)
@@ -413,7 +413,11 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `RecordingWaveformView.swift` | Reusable amplitude waveform with QSO span regions, segment boundaries, playback head, drag-to-seek |
 | `CompactRecordingPlayer.swift` | Inline card for activation detail and sessions list |
 | `RecordingPlayerView.swift` | Full-screen player with transport controls, speed picker, transcript panel, collapsible QSO list |
-| `RecordingPlayerView+Actions.swift` | Share clip sheet with range selection and M4A export |
+| `RecordingPlayerView+Actions.swift` | Share clip sheet with draggable range handles, QSO markers, playback preview, and export |
+| `ShareClipSheet+Subviews.swift` | ShareClipSheet subviews: waveform overlay, handles, transcript snippet, export actions |
+| `RecordingShareCardView.swift` | Branded share card view for SDR recording clips (waveform, metadata, QSOs, transcript) |
+| `RecordingShareCardRenderer.swift` | Renders RecordingShareCardView to UIImage via ImageRenderer |
+| `RecordingSharePreviewSheet.swift` | Preview sheet for rendered share card with Share and Save to Photos |
 | `RecordingTranscriptView.swift` | Karaoke-style CW transcript with per-word highlighting, auto-scroll, segment dividers |
 
 ## Views - Sessions (`CarrierWave/Views/Sessions/`)
