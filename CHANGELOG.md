@@ -4,16 +4,22 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
-### Changed
-- Rename `POTA` logger command to `HUNT` (shows activator spots); keep `POTA` and `SPOTS` as parsing aliases for backward compatibility
-- Change HUNT command icon from `tree.fill` to `binoculars`
-- Rename `SidebarTab.pota` to `.hunt` and `SpotCommandAction.showPOTA` to `.showHunt`
-- Migrate saved command row configurations: "pota" key is automatically treated as "hunt" on load
-
 ### Added
 - Cross-device iCloud sync: fetch changes on foreground re-entry (scenePhase), network recovery (NWPathMonitor), and 30s polling during active logging sessions
-- Add SOTAwatch API client (`SOTAClient`) for fetching active SOTA spots from api2.sota.org.uk
-- Add `SOTASpot` model with frequency/timestamp parsing and summit reference utilities
+- SOTA spots from SOTAwatch API in unified HUNT spots panel
+- Multi-program sessions: activate POTA and SOTA simultaneously
+- HUNT logger command replacing POTA (POTA kept as alias)
+- Program toggle chips in session start sheet
+- Source filter (All/POTA/SOTA/RBN) in activity log spot filter
+- SOTA spot rows with summit reference, name, and points display
+- SOTA source badges in activity log spot rows
+
+### Changed
+- POTA spots command renamed to HUNT with binoculars icon
+- Session start uses toggle chips instead of segmented picker
+- Spots panel header changed to "Activator Spots" with binoculars icon
+- iPad sidebar tab renamed from POTA to Hunt
+- Session display uses programsDisplayName and programsIcon for multi-program support
 
 ## [1.47.0] - 2026-02-26
 
