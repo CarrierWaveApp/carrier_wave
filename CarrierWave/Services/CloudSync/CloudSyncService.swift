@@ -1,6 +1,7 @@
 import CloudKit
 import Combine
 import Foundation
+import Network
 import os
 import SwiftData
 
@@ -50,6 +51,9 @@ class CloudSyncService: ObservableObject {
         // Observe local data changes
         setupChangeObserver()
 
+        // Observe active logging session to enable/disable polling
+        setupActiveSessionObserver()
+
         // Check account and start if enabled
         Task {
             await checkAccountStatus()
@@ -88,6 +92,42 @@ class CloudSyncService: ObservableObject {
         await engine.schedulePendingChanges()
     }
 
+    /// Fetch latest changes from CloudKit.
+    /// Called on foreground re-entry and network recovery for seamless cross-device sync.
+    func fetchChangesFromCloud() async {
+        guard isEnabled, let engine else {
+            return
+        }
+        await engine.fetchChanges()
+    }
+
+    /// Start periodic sync polling for active logging sessions.
+    /// Polls every 30s so QSOs logged on another device appear quickly.
+    func startActiveSessionPolling() {
+        guard activeSessionPollTimer == nil else {
+            return
+        }
+        activeSessionPollTimer = Timer.scheduledTimer(
+            withTimeInterval: 30,
+            repeats: true
+        ) { [weak self] _ in
+            guard let self else {
+                return
+            }
+            Task { @MainActor in
+                await self.fetchChangesFromCloud()
+            }
+        }
+        logger.info("Started active session sync polling (30s)")
+    }
+
+    /// Stop periodic sync polling when logging session ends.
+    func stopActiveSessionPolling() {
+        activeSessionPollTimer?.invalidate()
+        activeSessionPollTimer = nil
+        logger.info("Stopped active session sync polling")
+    }
+
     // MARK: Private
 
     private let logger = Logger(
@@ -98,6 +138,11 @@ class CloudSyncService: ObservableObject {
     private var container: ModelContainer?
     private var engine: CloudSyncEngine?
     private var changeObserver: AnyCancellable?
+    private var networkMonitor: NWPathMonitor?
+    private var networkMonitorQueue = DispatchQueue(label: "cloudSync.networkMonitor")
+    private var wasDisconnected = false
+    private var activeSessionPollTimer: Timer?
+    private var activeSessionObserver: AnyCancellable?
 
     private func startSync() async {
         guard let engine else {
@@ -108,6 +153,7 @@ class CloudSyncService: ObservableObject {
             syncStatus = .syncing(detail: "Starting...")
             try await engine.start()
             await engine.schedulePendingChanges()
+            startNetworkMonitor()
             syncStatus = .upToDate
             lastSyncDate = Date()
             errorMessage = nil
@@ -123,6 +169,8 @@ class CloudSyncService: ObservableObject {
             return
         }
         await engine.stop()
+        stopNetworkMonitor()
+        stopActiveSessionPolling()
         syncStatus = .disabled
         pendingCount = 0
     }
@@ -157,6 +205,57 @@ class CloudSyncService: ObservableObject {
             logger.error("Failed to check iCloud account: \(error)")
             errorMessage = "Unable to check iCloud account status."
         }
+    }
+
+    // MARK: - Active Session Polling
+
+    private func setupActiveSessionObserver() {
+        let key = "activeLoggingSessionId"
+        // Check current state on setup
+        if UserDefaults.standard.string(forKey: key) != nil, isEnabled {
+            startActiveSessionPolling()
+        }
+        // Observe future changes via UserDefaults KVO
+        activeSessionObserver = UserDefaults.standard.publisher(for: \.activeLoggingSessionId)
+            .sink { [weak self] value in
+                guard let self, isEnabled else {
+                    return
+                }
+                if value != nil {
+                    startActiveSessionPolling()
+                } else {
+                    stopActiveSessionPolling()
+                }
+            }
+    }
+
+    // MARK: - Network Recovery
+
+    private func startNetworkMonitor() {
+        networkMonitor?.cancel()
+        let monitor = NWPathMonitor()
+        monitor.pathUpdateHandler = { [weak self] path in
+            guard let self else {
+                return
+            }
+            Task { @MainActor in
+                if path.status == .satisfied, self.wasDisconnected {
+                    self.logger.info("Network recovered — fetching cloud changes")
+                    self.wasDisconnected = false
+                    await self.fetchChangesFromCloud()
+                } else if path.status != .satisfied {
+                    self.wasDisconnected = true
+                }
+            }
+        }
+        monitor.start(queue: networkMonitorQueue)
+        networkMonitor = monitor
+    }
+
+    private func stopNetworkMonitor() {
+        networkMonitor?.cancel()
+        networkMonitor = nil
+        wasDisconnected = false
     }
 
     // MARK: - Change Observation
@@ -224,5 +323,15 @@ extension CloudSyncService {
 
     var isSyncing: Bool {
         syncStatus.isSyncing
+    }
+}
+
+// MARK: - UserDefaults KVO for Active Session
+
+extension UserDefaults {
+    /// KVO-observable property for the active logging session ID.
+    /// Used by CloudSyncService to start/stop polling during active sessions.
+    @objc dynamic var activeLoggingSessionId: String? {
+        string(forKey: "activeLoggingSessionId")
     }
 }

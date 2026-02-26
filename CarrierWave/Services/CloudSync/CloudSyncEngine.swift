@@ -77,6 +77,11 @@ actor CloudSyncEngine: CKSyncEngineDelegate {
         try? await syncEngine?.fetchChanges()
     }
 
+    /// Fetch latest changes from CloudKit (used for foreground re-sync)
+    func fetchChanges() async {
+        try? await syncEngine?.fetchChanges()
+    }
+
     // MARK: - CKSyncEngineDelegate
 
     nonisolated func handleEvent(

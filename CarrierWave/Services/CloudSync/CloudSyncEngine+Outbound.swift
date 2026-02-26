@@ -267,12 +267,15 @@ extension CloudSyncEngine {
             return nil
         }
 
-        let descriptor = FetchDescriptor<ActivationMetadata>()
-        guard let allMetadata = try? modelContext.fetch(descriptor) else {
+        // Only fetch dirty records — avoids full-table scan at 50k+ scale
+        let descriptor = FetchDescriptor<ActivationMetadata>(
+            predicate: #Predicate { $0.cloudDirtyFlag == true }
+        )
+        guard let dirtyMetadata = try? modelContext.fetch(descriptor) else {
             return nil
         }
 
-        for metadata in allMetadata where metadata.cloudDirtyFlag {
+        for metadata in dirtyMetadata {
             let syntheticID = CKRecordMapper.activationMetadataID(
                 parkReference: metadata.parkReference,
                 date: metadata.date

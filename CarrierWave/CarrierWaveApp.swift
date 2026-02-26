@@ -147,6 +147,13 @@ struct CarrierWaveApp: App {
                     qsoCount: count
                 )
             }
+            .onChange(of: scenePhase) { _, newPhase in
+                if newPhase == .active {
+                    Task {
+                        await CloudSyncService.shared.fetchChangesFromCloud()
+                    }
+                }
+            }
             .onOpenURL { url in
                 handleURL(url)
             }
@@ -156,6 +163,7 @@ struct CarrierWaveApp: App {
 
     // MARK: Private
 
+    @Environment(\.scenePhase) private var scenePhase
     @State private var tourState = TourState()
     @AppStorage("appearanceMode") private var appearanceMode = "system"
 
