@@ -17,8 +17,13 @@ struct FT8SessionView: View {
         VStack(spacing: 0) {
             bandSelector
 
-            FT8WaterfallView(data: ft8Manager.waterfallData)
-                .frame(height: 80)
+            FT8DebugPanel(ft8Manager: ft8Manager)
+
+            FT8WaterfallView(
+                data: ft8Manager.waterfallData,
+                currentDecodes: ft8Manager.currentCycleDecodes
+            )
+            .frame(height: 80)
 
             FT8CycleIndicatorView(
                 isTransmitting: ft8Manager.isTransmitting,

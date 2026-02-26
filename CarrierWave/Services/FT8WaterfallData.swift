@@ -35,18 +35,25 @@ final class FT8WaterfallData {
     let maxFrequency: Float = 3_000
 
     /// Process a chunk of audio samples and add rows to the waterfall.
+    /// Accumulates small chunks until there are enough samples for an FFT window.
     func processAudio(_ samples: [Float]) {
-        guard samples.count >= Self.fftSize, let setup = fftSetup else {
+        guard let setup = fftSetup else {
             return
         }
 
-        // Process in fftSize chunks
-        var offset = 0
-        while offset + Self.fftSize <= samples.count {
-            let chunk = Array(samples[offset ..< offset + Self.fftSize])
+        pendingSamples.append(contentsOf: samples)
+
+        // Process all complete fftSize windows from the accumulation buffer
+        while pendingSamples.count >= Self.fftSize {
+            let chunk = Array(pendingSamples.prefix(Self.fftSize))
+            pendingSamples.removeFirst(Self.fftSize)
             let spectrum = computeSpectrum(chunk, setup: setup)
             magnitudes.append(spectrum)
-            offset += Self.fftSize
+        }
+
+        // Cap pending buffer to prevent unbounded growth
+        if pendingSamples.count > Self.fftSize * 2 {
+            pendingSamples.removeFirst(pendingSamples.count - Self.fftSize * 2)
         }
 
         // Trim old rows
@@ -61,6 +68,7 @@ final class FT8WaterfallData {
 
     func clear() {
         magnitudes.removeAll()
+        pendingSamples.removeAll()
         frequencyBins = 0
     }
 
@@ -72,11 +80,20 @@ final class FT8WaterfallData {
     /// FFT size — must be power of two for vDSP_fft_zrip (5.86 Hz bins at 12 kHz).
     private static let fftSize = 2_048
 
+    /// dB floor for normalization (below this → black).
+    private static let dbFloor: Float = 10
+
+    /// dB range for normalization (dbFloor+dbRange → full red).
+    private static let dbRange: Float = 40
+
     /// Precomputed FFT setup (created once in init).
     @ObservationIgnored private var fftSetup: FFTSetup?
 
     /// Precomputed Hann window coefficients (created once in init).
     @ObservationIgnored private var hannWindow: [Float]
+
+    /// Accumulation buffer for small audio chunks between FFT windows.
+    @ObservationIgnored private var pendingSamples: [Float] = []
 
     private func computeSpectrum(_ samples: [Float], setup: FFTSetup) -> [Float] {
         let n = samples.count
@@ -152,11 +169,12 @@ final class FT8WaterfallData {
         let maxBin = min(Int(maxFrequency / binSpacing), halfN - 1)
         let usefulBins = Array(logMags[minBin ... maxBin])
 
-        // Normalize: map [-80, 0] dB to [0, 1], clamped
+        // Normalize: map [dbFloor, dbFloor+dbRange] dB to [0, 1], clamped.
+        // Unnormalized FFT magnitude-squared: silence ≈ -100 dB, noise ≈ 10-30 dB, signal ≈ 40-60 dB.
         var normalized = [Float](repeating: 0, count: usefulBins.count)
-        var offset: Float = 80
-        vDSP_vsadd(usefulBins, 1, &offset, &normalized, 1, vDSP_Length(usefulBins.count))
-        var divisor: Float = 80
+        var negFloor: Float = -Self.dbFloor
+        vDSP_vsadd(usefulBins, 1, &negFloor, &normalized, 1, vDSP_Length(usefulBins.count))
+        var divisor: Float = Self.dbRange
         vDSP_vsdiv(normalized, 1, &divisor, &normalized, 1, vDSP_Length(normalized.count))
 
         var low: Float = 0

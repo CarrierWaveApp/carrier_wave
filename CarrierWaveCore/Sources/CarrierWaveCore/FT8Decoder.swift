@@ -37,6 +37,9 @@ public enum FT8Decoder: Sendable {
         feedSamples(samples, to: &monitor)
 
         let candidates = findCandidates(in: &monitor.wf)
+        print(
+            "[FT8Decoder] Candidates found: \(candidates.count), scores: \(candidates.prefix(5).map { Int($0.score) })"
+        )
         return decodeCandidates(
             candidates,
             waterfall: &monitor.wf,

@@ -49,13 +49,12 @@ final class FT8SessionManager {
     private(set) var qsoCount = 0
     private(set) var audioLevel: Float = 0
     private(set) var waterfallData = FT8WaterfallData()
+    private(set) var availableAudioInputs: [AudioInputInfo] = []
 
-    var selectedFrequency: Double = 14.074
+    var selectedBand: String = "20m"
 
-    var selectedBand: String = "20m" {
-        didSet {
-            selectedFrequency = FT8Constants.dialFrequency(forBand: selectedBand) ?? 14.074
-        }
+    var selectedFrequency: Double {
+        FT8Constants.dialFrequency(forBand: selectedBand) ?? 14.074
     }
 
     // MARK: - Start/Stop
@@ -66,11 +65,9 @@ final class FT8SessionManager {
         }
 
         try await audioEngine.configure()
-        try await audioEngine.start { [weak self] samples in
-            Task { @MainActor in
-                self?.handleDecodedSlot(samples)
-            }
-        }
+        try await audioEngine.start(onSlotReady: { _ in
+            // Slot collection is now timer-driven via onSlotBoundary()
+        })
 
         await audioEngine.setAudioLevelCallback { [weak self] level in
             Task { @MainActor in
@@ -78,6 +75,13 @@ final class FT8SessionManager {
             }
         }
 
+        await audioEngine.setWaterfallCallback { [weak self] samples in
+            Task { @MainActor in
+                self?.waterfallData.processAudio(samples)
+            }
+        }
+
+        await refreshAudioInputs()
         startCycleTimer()
         isReceiving = true
     }
@@ -104,6 +108,17 @@ final class FT8SessionManager {
             qsoStateMachine.setCQMode(modifier: modifier)
         case .searchAndPounce:
             qsoStateMachine.setListenMode()
+        }
+    }
+
+    func refreshAudioInputs() async {
+        availableAudioInputs = await audioEngine.availableInputs()
+    }
+
+    func selectAudioInput(uid: String) {
+        Task {
+            try? await audioEngine.selectInput(uid: uid)
+            await refreshAudioInputs()
         }
     }
 
@@ -140,8 +155,12 @@ final class FT8SessionManager {
     // MARK: - Decoding
 
     private func handleDecodedSlot(_ samples: [Float]) {
-        waterfallData.processAudio(samples)
+        print("[FT8Decode] Slot received: \(samples.count) samples")
         let results = FT8Decoder.decode(samples: samples)
+        print("[FT8Decode] Result: \(results.count) messages decoded")
+        for result in results {
+            print("[FT8Decode]   \(result.rawText) @ \(Int(result.frequency)) Hz, SNR \(result.snr)")
+        }
         currentCycleDecodes = results
         decodeResults.append(contentsOf: results)
 
@@ -239,6 +258,16 @@ final class FT8SessionManager {
         currentSlotStartTime = Date()
         cycleTimeRemaining = FT8Constants.slotDuration
         qsoStateMachine.advanceCycle()
+
+        // Collect and decode audio from the completed slot
+        Task { @MainActor [weak self] in
+            guard let self else {
+                return
+            }
+            if let slot = await audioEngine.collectSlot() {
+                handleDecodedSlot(slot)
+            }
+        }
 
         // Transmit on our designated slot (even or odd)
         if isEvenSlot == transmitOnEven {

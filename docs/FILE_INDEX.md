@@ -277,6 +277,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `SpotMonitoringService.swift` | Background RBN/POTA spot polling (activator + hunter modes) |
 | `WorkedBeforeCache.swift` | Actor-based cache for worked-before spot checking |
 | `FT8AudioEngine.swift` | AVAudioEngine actor for FT8 RX/TX audio routing |
+| `FT8AudioEngine+InputSelection.swift` | Audio input enumeration and selection for FT8 sessions |
 | `FT8SessionManager.swift` | FT8 session orchestrator — decoding, auto-sequencing, QSO logging |
 | `FT8WaterfallData.swift` | Observable waterfall magnitude data for FT8 spectrum display |
 | `BandPlanService.swift` | Validates frequency/mode against license class privileges |
@@ -491,6 +492,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 |------|---------|
 | `FT8SessionView.swift` | Main FT8 session view with band selector, waterfall, decode list, and controls |
 | `FT8WaterfallView.swift` | Canvas-based spectrogram waterfall display |
+| `FT8DebugPanel.swift` | Always-visible debug panel with audio level, decode stats, input picker |
 | `FT8DecodeListView.swift` | Scrollable list of decoded FT8 messages with tap-to-call |
 | `FT8ActiveQSOCard.swift` | Active QSO progress card showing state machine status |
 | `FT8ControlBar.swift` | Operating mode controls (Listen, CQ, S&P) with QSO counter |

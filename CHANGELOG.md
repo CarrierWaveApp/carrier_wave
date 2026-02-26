@@ -4,6 +4,16 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- Derive FT8 dial frequency from band selection (no manual frequency entry)
+- Update FT8 waterfall to scroll downward with newest data at top
+- Add Hz frequency labels below FT8 waterfall (500-2500 Hz axis)
+- Stream audio continuously to FT8 waterfall instead of every 15 seconds
+
+### Added
+- Add always-visible FT8 debug panel with audio level meter, decode stats, and input picker
+- Add audio input selection for FT8 sessions
+
 ## [1.46.0] - 2026-02-25
 
 ### Added

@@ -57,6 +57,7 @@ actor FT8AudioEngine {
         engine.stop()
         isRunning = false
         onSlotReady = nil
+        onWaterfallChunk = nil
     }
 
     // MARK: - Transmit
@@ -93,10 +94,38 @@ actor FT8AudioEngine {
         }
     }
 
+    // MARK: - Slot Collection
+
+    /// Collect the most recent slot-worth of audio aligned to a UTC boundary.
+    /// Called by the session manager at each 15-second slot boundary.
+    /// Returns nil if insufficient audio has accumulated.
+    func collectSlot() -> [Float]? {
+        let needed = FT8Constants.samplesPerSlot
+        guard inputBuffer.count >= needed else {
+            print("[FT8Engine] collectSlot: only \(inputBuffer.count)/\(needed) samples, skipping")
+            return nil
+        }
+        // Take the most recent full slot (discard older excess)
+        let excess = inputBuffer.count - needed
+        if excess > 0 {
+            inputBuffer.removeFirst(excess)
+        }
+        let slot = Array(inputBuffer)
+        inputBuffer.removeAll()
+        print("[FT8Engine] collectSlot: \(slot.count) samples delivered (discarded \(excess) excess)")
+        return slot
+    }
+
     // MARK: - Audio Level
 
     func setAudioLevelCallback(_ callback: @escaping @Sendable (Float) -> Void) {
         onAudioLevel = callback
+    }
+
+    // MARK: - Waterfall
+
+    func setWaterfallCallback(_ callback: @escaping @Sendable ([Float]) -> Void) {
+        onWaterfallChunk = callback
     }
 
     // MARK: Private
@@ -126,6 +155,7 @@ actor FT8AudioEngine {
     // Callbacks
     private var onSlotReady: (@Sendable ([Float]) -> Void)?
     private var onAudioLevel: (@Sendable (Float) -> Void)?
+    private var onWaterfallChunk: (@Sendable ([Float]) -> Void)?
 
     /// Interruption observer
     private var interruptionObserver: (any NSObjectProtocol)?
@@ -235,12 +265,10 @@ actor FT8AudioEngine {
             levelCallback(rms)
         }
 
-        // When we have a full 15-second slot (180,000 samples at 12kHz), deliver it
-        if inputBuffer.count >= FT8Constants.samplesPerSlot {
-            let slot = Array(inputBuffer.prefix(FT8Constants.samplesPerSlot))
-            inputBuffer.removeFirst(FT8Constants.samplesPerSlot)
-            onSlotReady?(slot)
-        }
+        // Deliver chunks continuously for waterfall display (~2048 samples = ~170ms)
+        onWaterfallChunk?(samples)
+
+        // Slot delivery is now on-demand via collectSlot() called at UTC boundaries
     }
 
     // MARK: - Interruption Handling
