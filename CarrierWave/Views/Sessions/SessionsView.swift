@@ -313,6 +313,7 @@ extension SessionsView {
                 Section(group.month) {
                     ForEach(group.items) { item in
                         listItemRow(item)
+                            .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
                             .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                 Button(role: .destructive) {
                                     itemToDelete = item

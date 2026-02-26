@@ -40,7 +40,6 @@ struct SessionRow: View {
             statusRow
             if !isLandscape {
                 conditionsRow
-                SessionSpotsSummaryRow(sessionId: session.id)
                 if hasFailedJob {
                     failedJobBanner
                 }

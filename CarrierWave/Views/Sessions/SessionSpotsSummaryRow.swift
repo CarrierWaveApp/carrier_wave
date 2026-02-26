@@ -43,7 +43,7 @@ extension SessionSpotsSummaryRow {
                 isExpanded.toggle()
             }
         } label: {
-            HStack(spacing: 12) {
+            HStack(spacing: 6) {
                 HStack(spacing: 4) {
                     Image(systemName: "dot.radiowaves.up.forward")
                         .foregroundStyle(.blue)
@@ -53,12 +53,13 @@ extension SessionSpotsSummaryRow {
 
                 regionPills
 
-                Spacer()
+                Spacer(minLength: 4)
 
                 if let range = distanceRange {
                     Text(range)
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                        .fixedSize()
                 }
 
                 Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
@@ -161,6 +162,6 @@ private struct SessionRegionPillRow: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .fixedSize()
+        .lineLimit(1)
     }
 }
