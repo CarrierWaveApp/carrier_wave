@@ -1,1 +1,0 @@
-fix: restore .fixedSize() on region pill rows and add lineLimit(1) to status row pills in SessionRow — fixes compressed/malformed pills in session list
