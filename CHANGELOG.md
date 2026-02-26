@@ -19,6 +19,7 @@ All notable changes to Carrier Wave will be documented in this file.
 - Add landscape two-column layout for FT8 session view (waterfall/controls left, decodes right)
 
 ### Added
+- Add shareable brag sheet cards via share button in brag sheet toolbar
 - Add brag sheet dashboard card with drill-down to full stat view (weekly/monthly/all-time periods)
 - Add brag sheet customization sheet with preset chips and per-stat enable/hero toggles
 - Add always-visible FT8 debug panel with audio level meter, decode stats, and input picker

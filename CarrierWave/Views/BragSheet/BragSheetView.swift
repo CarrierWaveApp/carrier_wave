@@ -1,5 +1,6 @@
 import SwiftData
 import SwiftUI
+import UIKit
 
 // MARK: - BragSheetView
 
@@ -36,9 +37,31 @@ struct BragSheetView: View {
                     Text("Customize")
                 }
             }
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    showingShareSheet = true
+                } label: {
+                    Image(systemName: "square.and.arrow.up")
+                }
+                .disabled(bragStats.currentResult == nil || bragStats.currentResult?.qsoCount == 0)
+            }
         }
         .sheet(isPresented: $showingCustomize) {
             BragSheetCustomizeView(bragStats: bragStats)
+        }
+        .sheet(isPresented: $showingShareSheet) {
+            if let result = bragStats.currentResult {
+                let config = bragStats.configuration.config(for: bragStats.selectedPeriod)
+                let callsign = CallsignAliasService.shared.getCurrentCallsign() ?? "Me"
+                BragShareCardSheet(
+                    content: .forBragSheet(
+                        result: result,
+                        config: config,
+                        period: bragStats.selectedPeriod,
+                        callsign: callsign
+                    )
+                )
+            }
         }
         .task {
             bragStats.compute(from: modelContext.container)
@@ -48,6 +71,7 @@ struct BragSheetView: View {
     // MARK: Private
 
     @State private var showingCustomize = false
+    @State private var showingShareSheet = false
 
     // MARK: - Period Picker
 
@@ -96,4 +120,73 @@ struct BragSheetView: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 40)
     }
+}
+
+// MARK: - BragShareCardSheet
+
+/// Sheet showing a preview of the brag sheet share card with a Share button.
+struct BragShareCardSheet: View {
+    // MARK: Internal
+
+    @Environment(\.dismiss) var dismiss
+
+    let content: ShareCardContent
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Preview") {
+                    ShareCardView(content: content)
+                        .scaleEffect(0.6)
+                        .frame(height: 320)
+                        .frame(maxWidth: .infinity)
+                }
+
+                Section {
+                    Button {
+                        showingShareSheet = true
+                    } label: {
+                        HStack {
+                            Spacer()
+                            Label("Share", systemImage: "square.and.arrow.up")
+                                .fontWeight(.semibold)
+                            Spacer()
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Share Brag Sheet")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+            }
+            .sheet(isPresented: $showingShareSheet) {
+                BragShareSheetView(content: content)
+            }
+        }
+    }
+
+    // MARK: Private
+
+    @State private var showingShareSheet = false
+}
+
+// MARK: - BragShareSheetView
+
+struct BragShareSheetView: UIViewControllerRepresentable {
+    let content: ShareCardContent
+
+    func makeUIViewController(context _: Context) -> UIActivityViewController {
+        let image = ShareCardRenderer.render(content: content) ?? UIImage()
+        return UIActivityViewController(
+            activityItems: [image],
+            applicationActivities: nil
+        )
+    }
+
+    func updateUIViewController(_: UIActivityViewController, context _: Context) {}
 }

@@ -306,6 +306,37 @@ extension ShareCardContent {
         )
     }
 
+    /// Create a share card for brag sheet stats
+    static func forBragSheet(
+        result: BragSheetComputedResult,
+        config: BragSheetPeriodConfig,
+        period: BragSheetPeriod,
+        callsign: String
+    ) -> ShareCardContent {
+        let headline = switch period {
+        case .weekly: "My Week in Radio"
+        case .monthly: "My Month in Radio"
+        case .allTime: "All-Time Stats"
+        }
+
+        let stats: [ShareCardStat] = config.heroStats.prefix(4).compactMap { stat in
+            let value = result.value(for: stat)
+            guard value.hasData else {
+                return nil
+            }
+            return ShareCardStat(label: stat.displayName, value: value.heroValue)
+        }
+
+        return ShareCardContent(
+            iconName: "rosette",
+            headline: headline,
+            subheadline: nil,
+            stats: stats,
+            callsign: callsign,
+            dateRange: period.periodLabel()
+        )
+    }
+
     /// Create a summary card for a date range
     static func forSummary(_ data: SummaryCardData) -> ShareCardContent {
         var stats: [ShareCardStat] = [
