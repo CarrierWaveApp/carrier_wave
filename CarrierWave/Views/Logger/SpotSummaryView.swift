@@ -90,17 +90,13 @@ struct SpotSummaryView: View {
     }
 
     private var regionPills: some View {
-        // Snapshot region data before ViewThatFits — it evaluates children
-        // on a background rendering thread, which crashes if it accesses
-        // @MainActor-isolated properties. The content must live in a
+        // Snapshot region data into local let — RegionPillRowContent is a
         // standalone struct so ForEach closures don't inherit @MainActor
         // isolation from SpotSummaryView.
+        // Previously used ViewThatFits, but combined with .fixedSize() it
+        // caused deep layout recursion and watchdog timeouts.
         let regions = summary.regionsWithSpots
-        return ViewThatFits(in: .horizontal) {
-            RegionPillRowContent(regions: regions, max: 4)
-            RegionPillRowContent(regions: regions, max: 3)
-            RegionPillRowContent(regions: regions, max: 2)
-        }
+        return RegionPillRowContent(regions: regions, max: 4)
     }
 
     // MARK: - Expanded Content
@@ -228,10 +224,9 @@ struct SpotSummaryView: View {
 
 // MARK: - RegionPillRowContent
 
-/// Standalone struct for region pills inside ViewThatFits.
-/// Must NOT be a method on SpotSummaryView — ViewThatFits evaluates children
-/// on a background rendering thread, and ForEach closures inside @MainActor
-/// methods inherit that isolation, causing dispatch_assert_queue_fail.
+/// Standalone struct for region pills.
+/// Kept as a separate struct (not a method on SpotSummaryView) so ForEach
+/// closures don't inherit @MainActor isolation from the parent.
 private struct RegionPillRowContent: View {
     let regions: [(region: SpotRegion, count: Int)]
     let max: Int
@@ -248,7 +243,6 @@ private struct RegionPillRowContent: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .fixedSize()
     }
 }
 

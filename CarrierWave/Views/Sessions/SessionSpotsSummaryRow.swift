@@ -73,17 +73,14 @@ extension SessionSpotsSummaryRow {
         )
     }
 
-    /// Region pills using ViewThatFits for adaptive layout.
-    /// Data is snapshotted before ViewThatFits, and ForEach lives in a
-    /// standalone struct to avoid inheriting @MainActor isolation (ViewThatFits
-    /// evaluates children on a background rendering thread).
+    /// Region pills — show up to 4 with overflow indicator.
+    /// Previously used ViewThatFits for adaptive layout, but the combination
+    /// of ViewThatFits + .fixedSize() caused deep layout recursion (89+ levels)
+    /// leading to watchdog timeouts (0x8BADF00D) when the system tried to
+    /// terminate the app during an active layout pass.
     private var regionPills: some View {
         let regions = spotsGroupedByRegion
-        return ViewThatFits(in: .horizontal) {
-            SessionRegionPillRow(regions: regions, max: 4)
-            SessionRegionPillRow(regions: regions, max: 3)
-            SessionRegionPillRow(regions: regions, max: 2)
-        }
+        return SessionRegionPillRow(regions: regions, max: 4)
     }
 
     private var expandedContent: some View {
@@ -136,10 +133,9 @@ extension SessionSpotsSummaryRow {
 
 // MARK: - SessionRegionPillRow
 
-/// Standalone struct for region pills inside ViewThatFits.
-/// Must NOT be a method on the parent view — ViewThatFits evaluates children
-/// on a background rendering thread, and ForEach closures inside @MainActor
-/// methods inherit that isolation, causing dispatch_assert_queue_fail.
+/// Standalone struct for region pills.
+/// Kept as a separate struct (not a method on the parent view) so ForEach
+/// closures don't inherit @MainActor isolation from the parent.
 private struct SessionRegionPillRow: View {
     let regions: [(region: SpotRegion, count: Int)]
     let max: Int
@@ -165,6 +161,5 @@ private struct SessionRegionPillRow: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .fixedSize()
     }
 }
