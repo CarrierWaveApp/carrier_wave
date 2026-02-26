@@ -186,6 +186,7 @@ struct SessionRow: View {
             if let watts = session.power ?? metadata?.watts {
                 Text("\(watts)W")
                     .font(.caption)
+                    .lineLimit(1)
                     .padding(.horizontal, 5)
                     .padding(.vertical, 1)
                     .background(Color.purple.opacity(0.15))
@@ -196,6 +197,7 @@ struct SessionRow: View {
             if let wpm = metadata?.averageWPM {
                 Text("\(wpm) WPM")
                     .font(.caption)
+                    .lineLimit(1)
                     .padding(.horizontal, 5)
                     .padding(.vertical, 1)
                     .background(Color.blue.opacity(0.15))
@@ -206,6 +208,7 @@ struct SessionRow: View {
             if activations.isEmpty {
                 Text(session.mode)
                     .font(.caption)
+                    .lineLimit(1)
                     .padding(.horizontal, 5)
                     .padding(.vertical, 1)
                     .background(Color.green.opacity(0.15))

@@ -243,6 +243,7 @@ private struct RegionPillRowContent: View {
                     .foregroundStyle(.secondary)
             }
         }
+        .fixedSize()
     }
 }
 
