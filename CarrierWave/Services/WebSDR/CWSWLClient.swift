@@ -1,7 +1,7 @@
 import Foundation
 import os
 
-nonisolated(unsafe) private let log = Logger(
+nonisolated private let log = Logger(
     subsystem: "com.jsvana.FullDuplex", category: "CW-SWL"
 )
 

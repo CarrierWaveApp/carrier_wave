@@ -54,6 +54,13 @@ final class SettingsSyncService {
 
     static let shared = SettingsSyncService()
 
+    /// Register a callback that fires after each cloud pull.
+    /// Use for bridging UserDefaults → SwiftData (e.g., callsign notes sources).
+    /// Must be registered before `start()` to catch the initial pull.
+    func onPull(_ callback: @MainActor @escaping () -> Void) {
+        postPullCallbacks.append(callback)
+    }
+
     /// Start syncing. Call once from app entry point.
     func start() {
         guard !isRunning else {
@@ -78,7 +85,9 @@ final class SettingsSyncService {
             object: cloud,
             queue: .main
         ) { [weak self] _ in
-            self?.pullFromCloud()
+            MainActor.assumeIsolated {
+                self?.pullFromCloud()
+            }
         }
 
         // 5. Observe local changes (queue: .main prevents crashes when
@@ -88,10 +97,12 @@ final class SettingsSyncService {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            guard let self, !self.suppressEcho else {
-                return
+            MainActor.assumeIsolated {
+                guard let self, !self.suppressEcho else {
+                    return
+                }
+                self.pushToCloud()
             }
-            pushToCloud()
         }
 
         // 6. Trigger initial sync from iCloud
@@ -116,6 +127,10 @@ final class SettingsSyncService {
                 continue
             }
             writeToLocal(setting: setting, value: cloudValue, local: local)
+        }
+
+        for callback in postPullCallbacks {
+            callback()
         }
     }
 
@@ -146,6 +161,7 @@ final class SettingsSyncService {
     // MARK: Private
 
     private var isRunning = false
+    private var postPullCallbacks: [@MainActor () -> Void] = []
 
     /// Flag to suppress echo: when true, local writes from cloud pull
     /// won't trigger a push back to cloud.

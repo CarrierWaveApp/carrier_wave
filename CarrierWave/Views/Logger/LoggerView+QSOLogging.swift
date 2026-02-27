@@ -52,8 +52,9 @@ extension LoggerView {
         let gridToUse = theirGrid.nonEmpty ?? lookupResult?.grid
         let stateToUse = theirState.nonEmpty ?? lookupResult?.state
 
-        // Capture callsign before form reset for QRQ Crew check
+        // Capture callsign and QRZ info before form reset for QRQ Crew check
         let loggedCallsign = callsignInput.trimmingCharacters(in: .whitespaces).uppercased()
+        let loggedLookup = lookupResult
 
         _ = sessionManager?.logQSO(
             callsign: callsignInput,
@@ -79,7 +80,7 @@ extension LoggerView {
         resetFormAfterLog()
 
         // Check for QRQ Crew spot after form reset (non-blocking)
-        checkQRQCrewSpot(theirCallsign: loggedCallsign)
+        checkQRQCrewSpot(theirCallsign: loggedCallsign, theirQRZInfo: loggedLookup)
     }
 
     /// Update an existing QSO with current form field values
@@ -180,8 +181,9 @@ extension LoggerView {
             return
         }
 
-        // Capture callsign before form reset for QRQ Crew check
+        // Capture callsign and QRZ info before form reset for QRQ Crew check
         let loggedCallsign = qeResult.callsign.trimmingCharacters(in: .whitespaces).uppercased()
+        let loggedLookup = lookupResult
 
         // Build field values with fallback chain: quick entry > form > lookup
         let gridToUse = qeResult.theirGrid.nonEmpty ?? theirGrid.nonEmpty ?? lookupResult?.grid
@@ -210,7 +212,7 @@ extension LoggerView {
         resetFormAfterLog()
 
         // Check for QRQ Crew spot after form reset (non-blocking)
-        checkQRQCrewSpot(theirCallsign: loggedCallsign)
+        checkQRQCrewSpot(theirCallsign: loggedCallsign, theirQRZInfo: loggedLookup)
     }
 
     // MARK: - Editing
@@ -419,7 +421,10 @@ extension LoggerView {
     // MARK: - QRQ Crew Spot
 
     /// Check if both operators are QRQ Crew members and trigger spot flow
-    func checkQRQCrewSpot(theirCallsign: String) {
+    func checkQRQCrewSpot(
+        theirCallsign: String,
+        theirQRZInfo: CallsignInfo? = nil
+    ) {
         guard let session = sessionManager?.activeSession,
               session.isPOTA,
               let parkRef = session.parkReference
@@ -433,9 +438,16 @@ extension LoggerView {
         }
 
         Task {
+            // Look up user's own callsign for QRZ nickname
+            let myQRZInfo = await CallsignLookupService(
+                modelContext: modelContext
+            ).lookup(myCallsign)
+
             guard var spotInfo = await QRQCrewService.checkMembership(
                 myCallsign: myCallsign,
-                theirCallsign: theirCallsign
+                theirCallsign: theirCallsign,
+                myQRZInfo: myQRZInfo,
+                theirQRZInfo: theirQRZInfo
             ) else {
                 return
             }
@@ -451,7 +463,7 @@ extension LoggerView {
                 let autoSpot = UserDefaults.standard.bool(forKey: "qrqCrewAutoSpot")
                 let lastWPM = UserDefaults.standard.integer(forKey: "qrqCrewLastWPM")
 
-                if autoSpot, lastWPM > 0 {
+                if autoSpot, lastWPM >= QRQCrewService.minimumWPM {
                     // Auto-post with last-used WPM, no prompt
                     Task { await postQRQCrewSpot(spotInfo: spotInfo, wpm: lastWPM) }
                 } else {
@@ -465,6 +477,10 @@ extension LoggerView {
 
     /// Post the QRQ Crew spot message to POTA
     func postQRQCrewSpot(spotInfo: QRQCrewSpotInfo, wpm: Int) async {
+        guard wpm >= QRQCrewService.minimumWPM else {
+            return
+        }
+
         // Save the WPM for next auto-spot
         UserDefaults.standard.set(wpm, forKey: "qrqCrewLastWPM")
 

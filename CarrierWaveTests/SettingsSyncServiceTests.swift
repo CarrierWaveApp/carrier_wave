@@ -17,6 +17,7 @@ final class SettingsSyncServiceTests: XCTestCase {
         XCTAssertTrue(allKeys.contains("tabOrder"))
         XCTAssertTrue(allKeys.contains("userAntennaList"))
         XCTAssertTrue(allKeys.contains("stationProfiles"))
+        XCTAssertTrue(allKeys.contains("callsignNotesSources"))
         XCTAssertTrue(allKeys.contains("dashboardMetric1"))
         XCTAssertTrue(allKeys.contains("commandRowEnabled"))
     }
@@ -90,7 +91,7 @@ final class SettingsSyncServiceTests: XCTestCase {
     }
 
     func testDataTypeUsedForJSONBlobs() {
-        let dataKeys = ["tabOrder", "hiddenTabs", "stationProfiles"]
+        let dataKeys = ["tabOrder", "hiddenTabs", "stationProfiles", "callsignNotesSources"]
         for key in dataKeys {
             let setting = SettingsSyncRegistry.allSettings.first { $0.localKey == key }
             XCTAssertNotNil(setting, "Data key '\(key)' should be registered")

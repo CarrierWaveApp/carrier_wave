@@ -150,6 +150,9 @@ struct CallsignNotesSettingsView: View {
                     set: { newValue in
                         source.isEnabled = newValue
                         try? modelContext.save()
+                        CallsignNotesSourceSync.mirrorToDefaults(
+                            modelContext: modelContext
+                        )
                     }
                 )
             )
@@ -183,6 +186,7 @@ struct CallsignNotesSettingsView: View {
 
         do {
             try modelContext.save()
+            CallsignNotesSourceSync.mirrorToDefaults(modelContext: modelContext)
             // Trigger initial fetch
             Task { await refreshSource(source) }
         } catch {
@@ -194,6 +198,7 @@ struct CallsignNotesSettingsView: View {
     private func deleteSource(_ source: CallsignNotesSource) {
         modelContext.delete(source)
         try? modelContext.save()
+        CallsignNotesSourceSync.mirrorToDefaults(modelContext: modelContext)
     }
 
     private func deleteSources(at offsets: IndexSet) {
@@ -201,6 +206,7 @@ struct CallsignNotesSettingsView: View {
             modelContext.delete(sources[index])
         }
         try? modelContext.save()
+        CallsignNotesSourceSync.mirrorToDefaults(modelContext: modelContext)
     }
 
     private func refreshSource(_ source: CallsignNotesSource) async {

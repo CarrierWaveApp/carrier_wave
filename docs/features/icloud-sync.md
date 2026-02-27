@@ -53,7 +53,7 @@ protocol, and backup format. For service sync (QRZ, POTA, LoFi, etc.), see [sync
 | StationProfile | Stored locally; synced via iCloud KVS (SettingsSyncService) |
 | WebSDRRecording | Large binary audio files; local-only |
 | WebSDRFavorite | Future: claims iCloud sync but not yet implemented |
-| CallsignNotesSource | Future: user-configured notes sources |
+| CallsignNotesSource | Config (title, URL, isEnabled) synced via iCloud KVS (SettingsSyncService); transient state (lastFetched, entryCount, lastError) is device-local |
 
 ## Record Identity
 

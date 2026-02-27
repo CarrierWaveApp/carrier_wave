@@ -102,8 +102,20 @@ struct CarrierWaveApp: App {
                 // Run one-time data repairs before sync starts
                 DataRepairService.runPendingRepairs()
 
-                // Start iCloud settings sync
+                // Start iCloud settings sync (register callbacks before start)
+                let syncContainer = sharedModelContainer
+                SettingsSyncService.shared.onPull {
+                    CallsignNotesSourceSync.reconcileFromDefaults(
+                        modelContext: syncContainer.mainContext
+                    )
+                }
                 SettingsSyncService.shared.start()
+
+                // Mirror existing callsign notes sources to UserDefaults
+                // so they get pushed to iCloud on first sync
+                CallsignNotesSourceSync.mirrorToDefaults(
+                    modelContext: sharedModelContainer.mainContext
+                )
 
                 // Activate WatchConnectivity for Apple Watch companion
                 PhoneSessionDelegate.shared.activate()
@@ -300,24 +312,23 @@ struct CarrierWaveApp: App {
 }
 
 extension Notification.Name {
-    // nonisolated(unsafe) required: project uses -default-isolation=MainActor
-    nonisolated(unsafe) static let didReceiveADIFFile = Notification.Name("didReceiveADIFFile")
-    nonisolated(unsafe) static let didReceiveChallengeInvite = Notification.Name(
+    static let didReceiveADIFFile = Notification.Name("didReceiveADIFFile")
+    static let didReceiveChallengeInvite = Notification.Name(
         "didReceiveChallengeInvite"
     )
-    nonisolated(unsafe) static let didReceiveFriendInvite = Notification.Name(
+    static let didReceiveFriendInvite = Notification.Name(
         "didReceiveFriendInvite"
     )
-    nonisolated(unsafe) static let didReceiveWidgetDeepLink = Notification.Name(
+    static let didReceiveWidgetDeepLink = Notification.Name(
         "didReceiveWidgetDeepLink"
     )
-    nonisolated(unsafe) static let didSyncQSOs = Notification.Name("didSyncQSOs")
-    nonisolated(unsafe) static let didDetectActivities = Notification.Name("didDetectActivities")
-    nonisolated(unsafe) static let didClearQSOs = Notification.Name("didClearQSOs")
-    nonisolated(unsafe) static let didReceiveWatchStartSession = Notification.Name(
+    nonisolated static let didSyncQSOs = Notification.Name("didSyncQSOs")
+    static let didDetectActivities = Notification.Name("didDetectActivities")
+    static let didClearQSOs = Notification.Name("didClearQSOs")
+    static let didReceiveWatchStartSession = Notification.Name(
         "didReceiveWatchStartSession"
     )
-    nonisolated(unsafe) static let didRestoreFromBackup = Notification.Name(
+    static let didRestoreFromBackup = Notification.Name(
         "didRestoreFromBackup"
     )
 }

@@ -48,11 +48,11 @@ struct QRQCrewSpotSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Post Spot") {
-                        if let wpm = Int(wpmText), wpm > 0 {
+                        if let wpm = Int(wpmText), wpm >= QRQCrewService.minimumWPM {
                             onPost(wpm)
                         }
                     }
-                    .disabled(Int(wpmText) == nil || (Int(wpmText) ?? 0) <= 0)
+                    .disabled(!isValidSpeed)
                     .fontWeight(.semibold)
                 }
             }
@@ -63,6 +63,13 @@ struct QRQCrewSpotSheet: View {
     // MARK: Private
 
     @State private var wpmText = ""
+
+    private var isValidSpeed: Bool {
+        guard let wpm = Int(wpmText) else {
+            return false
+        }
+        return wpm >= QRQCrewService.minimumWPM
+    }
 
     private var headerSection: some View {
         VStack(spacing: 8) {
@@ -84,7 +91,7 @@ struct QRQCrewSpotSheet: View {
     }
 
     private var speedSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(spacing: 8) {
             Text("CW Speed (WPM)")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
@@ -92,12 +99,23 @@ struct QRQCrewSpotSheet: View {
             TextField("e.g. 35", text: $wpmText)
                 .keyboardType(.numberPad)
                 .textFieldStyle(.roundedBorder)
+                .multilineTextAlignment(.center)
                 .frame(maxWidth: 120)
+
+            let showError = if let wpm = Int(wpmText) {
+                wpm > 0 && wpm < QRQCrewService.minimumWPM
+            } else {
+                false
+            }
+            Text("QRQ Crew contacts require \(QRQCrewService.minimumWPM)+ WPM")
+                .font(.caption)
+                .foregroundStyle(.red)
+                .opacity(showError ? 1 : 0)
         }
     }
 
     private var previewSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(spacing: 8) {
             Text("Spot Preview")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)

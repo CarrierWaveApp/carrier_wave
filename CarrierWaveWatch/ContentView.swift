@@ -37,7 +37,9 @@ struct ContentView: View {
     private func startRefreshTimer() {
         refreshTimer?.invalidate()
         refreshTimer = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { _ in
-            refreshData()
+            MainActor.assumeIsolated {
+                refreshData()
+            }
         }
     }
 }

@@ -58,7 +58,7 @@ struct WatchStartSessionRequest: Codable, Sendable {
 /// from Watch and sends session updates.
 @MainActor
 @Observable
-final class PhoneSessionDelegate: NSObject, @preconcurrency WCSessionDelegate {
+final class PhoneSessionDelegate: NSObject, WCSessionDelegate {
     // MARK: Lifecycle
 
     override init() {

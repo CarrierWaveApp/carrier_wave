@@ -21,12 +21,12 @@ enum CKRecordMapper {
 
     // MARK: - Constants
 
-    nonisolated(unsafe) static let zoneName = "CarrierWaveData"
-    nonisolated(unsafe) static let zoneID = CKRecordZone.ID(
+    nonisolated static let zoneName = "CarrierWaveData"
+    nonisolated static let zoneID = CKRecordZone.ID(
         zoneName: zoneName, ownerName: CKCurrentUserDefaultName
     )
 
-    nonisolated(unsafe) static let metadataModes: Set<String> = ["WEATHER", "SOLAR", "NOTE"]
+    nonisolated static let metadataModes: Set<String> = ["WEATHER", "SOLAR", "NOTE"]
 
     // MARK: - Record Identity
 

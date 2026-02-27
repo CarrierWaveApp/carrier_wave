@@ -18,6 +18,7 @@ enum SettingsSyncRegistry {
         + tabConfig
         + equipmentLists
         + stationProfiles
+        + callsignNotesSources
         + activityLogSettings
         + keyboardConfig
         + dashboardMetrics
@@ -97,6 +98,12 @@ enum SettingsSyncRegistry {
 
     private static let stationProfiles: [SyncableSetting] = [
         .init("stationProfiles", type: .data),
+    ]
+
+    // MARK: - Callsign Notes Sources
+
+    private static let callsignNotesSources: [SyncableSetting] = [
+        .init("callsignNotesSources", type: .data),
     ]
 
     // MARK: - Activity Log Settings
