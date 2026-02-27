@@ -16,7 +16,10 @@ struct QRQCrewMemberInfo: Sendable {
 
     /// Display string for spot message (e.g., "Jay #10")
     var displayLabel: String {
-        "\(name) \(memberNumber)"
+        if !memberNumber.isEmpty, name.contains(memberNumber) {
+            return name
+        }
+        return "\(name) \(memberNumber)"
     }
 }
 
@@ -31,7 +34,7 @@ struct QRQCrewSpotInfo {
     /// Build the spot comment for a given WPM
     func spotComment(wpm: Int) -> String {
         "\(myInfo.displayLabel) just worked \(theirInfo.displayLabel)"
-            + " at \(wpm) WPM. Learn more at https://carrierwave.app/"
+            + " at \(wpm) WPM. Learn more at https://qrqcrew.club/"
     }
 }
 
