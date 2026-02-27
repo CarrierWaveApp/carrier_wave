@@ -8,6 +8,7 @@ struct POTAActivationSettingsView: View {
     var body: some View {
         List {
             spottingSection
+            qrqCrewSection
         }
         .navigationTitle("POTA Activations")
     }
@@ -18,6 +19,7 @@ struct POTAActivationSettingsView: View {
     @AppStorage("potaQSYSpotEnabled") private var potaQSYSpotEnabled = true
     @AppStorage("potaQRTSpotEnabled") private var potaQRTSpotEnabled = true
     @AppStorage("potaRoveQRTMessage") private var potaRoveQRTMessage = "QRT moving to next park"
+    @AppStorage("qrqCrewAutoSpot") private var qrqCrewAutoSpot = false
 
     private var spottingSection: some View {
         Section {
@@ -38,6 +40,21 @@ struct POTAActivationSettingsView: View {
                 "Auto-spot posts your frequency to POTA every 10 minutes. "
                     + "QSY spots prompt after frequency or mode changes. "
                     + "QRT spot notifies hunters when you end your activation."
+            )
+        }
+    }
+
+    private var qrqCrewSection: some View {
+        Section {
+            Toggle("Auto-post QRQ Crew spots", isOn: $qrqCrewAutoSpot)
+        } header: {
+            Text("QRQ Crew")
+        } footer: {
+            Text(
+                "When both you and the other operator are QRQ Crew members, "
+                    + "a spot is posted after logging the QSO. "
+                    + "When auto-post is on, the spot is posted automatically "
+                    + "using your last entered CW speed."
             )
         }
     }

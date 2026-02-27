@@ -117,6 +117,11 @@ struct CarrierWaveApp: App {
                 // Register for remote notifications (CKSyncEngine push)
                 UIApplication.shared.registerForRemoteNotifications()
 
+                // Seed QRQ Crew callsign notes source on first launch
+                QRQCrewService.seedNotesSourceIfNeeded(
+                    modelContext: sharedModelContainer.mainContext
+                )
+
                 // Preload caches on app launch (loads from disk, refreshes in background)
                 await POTAParksCache.shared.ensureLoaded()
                 await SOTASummitsCache.shared.ensureLoaded()

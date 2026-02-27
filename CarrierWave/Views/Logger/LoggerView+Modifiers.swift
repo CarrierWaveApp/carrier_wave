@@ -170,9 +170,24 @@ extension LoggerView {
             }
     }
 
-    /// POTA upload prompt and delete session sheets
+    /// QRQ Crew spot and POTA upload prompt and delete session sheets
     private func applyEndSessionSheets(_ content: some View) -> some View {
         content
+            .sheet(isPresented: $showQRQCrewSpotSheet) {
+                if let spotInfo = pendingQRQCrewSpot {
+                    QRQCrewSpotSheet(
+                        spotInfo: spotInfo,
+                        onPost: { wpm in
+                            showQRQCrewSpotSheet = false
+                            Task { await postQRQCrewSpot(spotInfo: spotInfo, wpm: wpm) }
+                        },
+                        onCancel: {
+                            showQRQCrewSpotSheet = false
+                            pendingQRQCrewSpot = nil
+                        }
+                    )
+                }
+            }
             .sheet(isPresented: $showPOTAUploadPrompt) {
                 POTAUploadPromptSheet(
                     parkReference: pendingSessionEndParkRef ?? "",

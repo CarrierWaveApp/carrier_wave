@@ -5,6 +5,10 @@ All notable changes to Carrier Wave will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- QRQ Crew spot: auto-seed QRQ Crew members list as a callsign notes source
+- QRQ Crew spot: detect when both operators are QRQ Crew members after logging a POTA QSO
+- QRQ Crew spot: prompt for CW speed and post a spot message with member names/numbers
+- QRQ Crew spot: auto-post setting to skip confirmation and use last entered WPM
 - SDR recording clip selector: draggable range handles for precise clip boundary selection
 - SDR recording clip selector: QSO markers and segment boundaries on clip waveform
 - SDR recording clip selector: playback preview to hear selected range before exporting

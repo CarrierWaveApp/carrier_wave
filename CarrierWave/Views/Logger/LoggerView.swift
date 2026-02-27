@@ -157,6 +157,10 @@ struct LoggerView: View {
     /// Deferred QSY prompt: stored when a sheet dismissal would swallow the alert
     @State var pendingQSYFrequency: Double?
 
+    // QRQ Crew spot
+    @State var showQRQCrewSpotSheet = false
+    @State var pendingQRQCrewSpot: QRQCrewSpotInfo?
+
     /// POTA spot tracking - stores session frequency before tuning to a spot
     @State var preSpotFrequency: Double?
     @State var spotsLastFetched: Date?
