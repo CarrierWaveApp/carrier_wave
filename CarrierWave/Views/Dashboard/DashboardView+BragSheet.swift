@@ -13,8 +13,19 @@ extension DashboardView {
                     .foregroundStyle(.tint)
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Brag Sheet")
-                        .font(.headline)
+                    HStack(spacing: 6) {
+                        Text("Brag Sheet")
+                            .font(.headline)
+
+                        Text("Under Construction")
+                            .font(.caption2)
+                            .fontWeight(.medium)
+                            .foregroundStyle(.orange)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.orange.opacity(0.15))
+                            .clipShape(Capsule())
+                    }
 
                     if bragSheetStats.isComputing {
                         Text("Computing...")
