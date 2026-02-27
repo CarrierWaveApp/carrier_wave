@@ -280,6 +280,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `CallsignLookupService.swift` | Two-tier callsign lookup: error/result types, core lookup logic, cache management |
 | `CallsignLookupService+QRZ.swift` | QRZ XML callbook API: session auth, callsign lookup, XML parsing |
 | `CallsignNotesCache.swift` | Persistent cache for Polo notes (loads from disk, refreshes daily) |
+| `QRQCrewService.swift` | QRQ Crew membership detection from callsign notes, spot message building |
 | `CWSuggestionEngine.swift` | Word suggestion engine with dictionaries and settings |
 | `LiveActivityAttributes.swift` | ActivityKit attributes and ContentState for logging session Live Activity |
 | `LiveActivityService.swift` | Live Activity lifecycle management (start, update, end, reconnect, cleanup) |
@@ -503,6 +504,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `FrequencyActivityView.swift` | Nearby frequency activity display with QRM assessment |
 | `FrequencyWarningBanner.swift` | Unified frequency warning banner (license violations + activity warnings) |
 | `LoggerToastView.swift` | Toast notification system for logger |
+| `QRQCrewSpotSheet.swift` | QRQ Crew spot prompt sheet (WPM entry + post confirmation) |
 | `LoggerKeyboardAccessory.swift` | Number row and command buttons above keyboard |
 | `KeyboardAccessoryBuilder.swift` | UIKit builder for keyboard accessory view |
 | `POTASpotRow.swift` | Individual POTA spot row component |

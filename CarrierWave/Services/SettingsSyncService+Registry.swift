@@ -66,6 +66,7 @@ enum SettingsSyncRegistry {
         .init("shareCardIncludeEquipment", type: .bool),
         .init("statisticianMode", type: .bool),
         .init("potaUploadPromptDisabled", type: .bool),
+        .init("qrqCrewAutoSpot", type: .bool),
     ]
 
     // MARK: - Appearance
