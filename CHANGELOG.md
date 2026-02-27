@@ -4,6 +4,8 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.48.0] - 2026-02-27
+
 ### Added
 - QRQ Crew spot: auto-seed QRQ Crew members list as a callsign notes source
 - QRQ Crew spot: detect when both operators are QRQ Crew members after logging a POTA QSO
