@@ -4,6 +4,13 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.48.1] - 2026-02-27
+
+### Fixed
+- Fix focus not returning to callsign text field after editing compact fields (RST, notes, etc.) and tapping LOG
+- Fix QRQ Crew spot detection using notes cache with nickname fallback
+- Fix QRQ Crew spot bugs and dashboard brag sheet badge display
+
 ## [1.48.0] - 2026-02-27
 
 ### Added
