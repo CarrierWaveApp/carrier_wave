@@ -66,6 +66,7 @@ enum KeyboardAccessoryBuilder {
         numberButtonAction: Selector,
         commandButtonAction: Selector,
         dismissAction: Selector,
+        submitAction: Selector,
         target: AnyObject,
         includeCommands: Bool = true
     ) -> UIView {
@@ -101,6 +102,7 @@ enum KeyboardAccessoryBuilder {
                 characters: characters,
                 numberAction: numberButtonAction,
                 dismissAction: dismissAction,
+                submitAction: submitAction,
                 target: target
             )
             mainStack.addArrangedSubview(numberRow)
@@ -201,6 +203,7 @@ enum KeyboardAccessoryBuilder {
         characters: [String],
         numberAction: Selector,
         dismissAction: Selector,
+        submitAction: Selector,
         target: AnyObject
     ) -> UIView {
         let container = UIView()
@@ -217,7 +220,7 @@ enum KeyboardAccessoryBuilder {
             stack.addArrangedSubview(button)
         }
 
-        stack.addArrangedSubview(createDismissButton(action: dismissAction, target: target))
+        stack.addArrangedSubview(createLogButton(action: submitAction, target: target))
 
         container.addSubview(stack)
 
@@ -281,14 +284,14 @@ enum KeyboardAccessoryBuilder {
         return button
     }
 
-    private static func createDismissButton(action: Selector, target: AnyObject) -> UIButton {
+    private static func createLogButton(action: Selector, target: AnyObject) -> UIButton {
         let button = UIButton(type: .system)
-        button.setImage(
-            UIImage(systemName: "keyboard.chevron.compact.down"),
-            for: .normal
-        )
-        button.tintColor = .label
-        button.backgroundColor = .tertiarySystemBackground
+        button.setTitle("LOG", for: .normal)
+        let baseFont = UIFont.systemFont(ofSize: 16, weight: .semibold)
+        button.titleLabel?.font = UIFontMetrics(forTextStyle: .body).scaledFont(for: baseFont)
+        button.titleLabel?.adjustsFontForContentSizeCategory = true
+        button.setTitleColor(.white, for: .normal)
+        button.backgroundColor = .systemGreen
         button.layer.cornerRadius = 6
         button.addTarget(target, action: action, for: .touchUpInside)
         return button

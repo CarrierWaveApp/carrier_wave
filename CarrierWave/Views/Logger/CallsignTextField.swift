@@ -126,6 +126,11 @@ struct CallsignTextField: UIViewRepresentable {
         }
 
         @objc
+        func submitTapped(_ sender: UIButton) {
+            parent.onSubmit()
+        }
+
+        @objc
         func dismissKeyboard(_ sender: UIButton) {
             // Explicitly resign first responder, then update SwiftUI state
             textField?.resignFirstResponder()
@@ -214,7 +219,7 @@ struct CallsignTextField: UIViewRepresentable {
         textField.autocapitalizationType = .allCharacters
         textField.autocorrectionType = .no
         textField.spellCheckingType = .no
-        textField.returnKeyType = .done
+        textField.returnKeyType = .send
         textField.clearButtonMode = .never
         textField.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         textField.setContentHuggingPriority(.defaultLow, for: .horizontal)
@@ -284,6 +289,7 @@ struct CallsignTextField: UIViewRepresentable {
             numberButtonAction: #selector(Coordinator.numberButtonTapped(_:)),
             commandButtonAction: #selector(Coordinator.commandButtonTapped(_:)),
             dismissAction: #selector(Coordinator.dismissKeyboard(_:)),
+            submitAction: #selector(Coordinator.submitTapped(_:)),
             target: coordinator,
             includeCommands: showCommands
         )
