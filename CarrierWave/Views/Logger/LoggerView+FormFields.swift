@@ -138,15 +138,16 @@ extension LoggerView {
                     label: "State",
                     placeholder: lookupResult?.state ?? "ST",
                     text: $theirState,
+                    field: .state,
                     width: 50
                 )
 
                 // RST Sent
-                compactField(label: "Sent", placeholder: defaultRST, text: $rstSent, width: 50)
+                compactField(label: "Sent", placeholder: defaultRST, text: $rstSent, field: .rstSent, width: 50)
                     .keyboardType(.numberPad)
 
                 // RST Rcvd
-                compactField(label: "Rcvd", placeholder: defaultRST, text: $rstReceived, width: 50)
+                compactField(label: "Rcvd", placeholder: defaultRST, text: $rstReceived, field: .rstReceived, width: 50)
                     .keyboardType(.numberPad)
 
                 Spacer()
@@ -174,27 +175,31 @@ extension LoggerView {
                         compactField(
                             label: "Grid",
                             placeholder: lookupResult?.grid ?? "",
-                            text: $theirGrid
+                            text: $theirGrid,
+                            field: .grid
                         )
-                        compactField(label: "Park", placeholder: "", text: $theirPark)
+                        compactField(label: "Park", placeholder: "", text: $theirPark, field: .park)
                     }
                     if sessionManager?.activeSession?.activationType == .aoa {
                         compactField(
                             label: "Code Exchange",
                             placeholder: "Exchanged code",
-                            text: $aoaCode
+                            text: $aoaCode,
+                            field: .aoaCode
                         )
                     }
                     compactField(
                         label: "Operator",
                         placeholder: lookupResult?.displayName ?? "",
                         text: $operatorName,
+                        field: .operatorName,
                         isMonospaced: false
                     )
                     compactField(
                         label: "Notes",
                         placeholder: "",
                         text: $notes,
+                        field: .notes,
                         isMonospaced: false
                     )
                 }
@@ -350,6 +355,7 @@ extension LoggerView {
         label: String,
         placeholder: String,
         text: Binding<String>,
+        field: CompactField,
         width: CGFloat? = nil,
         isMonospaced: Bool = true
     ) -> some View {
@@ -366,6 +372,7 @@ extension LoggerView {
                 .background(Color(.tertiarySystemGroupedBackground))
                 .clipShape(RoundedRectangle(cornerRadius: 8))
                 .frame(width: width)
+                .focused($compactFieldFocus, equals: field)
         }
     }
 

@@ -2,6 +2,21 @@ import CarrierWaveCore
 import SwiftData
 import SwiftUI
 
+// MARK: - CompactField
+
+/// Focus tracking for compact form fields (RST, State, Grid, etc.)
+/// so they can be explicitly defocused when returning focus to the callsign field.
+enum CompactField: Hashable {
+    case state
+    case rstSent
+    case rstReceived
+    case grid
+    case park
+    case aoaCode
+    case operatorName
+    case notes
+}
+
 // MARK: - LoggerView
 
 /// Main logging view for QSO entry
@@ -42,6 +57,7 @@ struct LoggerView: View {
     // Input fields
     @State var callsignInput = ""
     @FocusState var callsignFieldFocused: Bool
+    @FocusState var compactFieldFocus: CompactField?
     @State var showWebSDRPanel = false
     /// Session end/delete confirmation
     @State var showEndSessionConfirmation = false

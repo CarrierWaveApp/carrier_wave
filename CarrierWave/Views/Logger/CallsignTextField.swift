@@ -6,6 +6,12 @@
 import SwiftUI
 import UIKit
 
+extension Notification.Name {
+    /// Posted to directly focus the callsign UITextField, bypassing SwiftUI's @FocusState.
+    /// Used after logging to reliably return focus even when another field's keyboard is dismissing.
+    static let focusCallsignField = Notification.Name("focusCallsignField")
+}
+
 // MARK: - CallsignTextField
 
 /// A text field optimized for callsign entry that maintains cursor position
@@ -145,6 +151,15 @@ struct CallsignTextField: UIViewRepresentable {
                     self?.rebuildAccessoryView()
                 }
             }
+            focusObserver = NotificationCenter.default.addObserver(
+                forName: .focusCallsignField,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                Task { @MainActor in
+                    self?.textField?.becomeFirstResponder()
+                }
+            }
         }
 
         func stopObservingConfigurationChanges() {
@@ -156,6 +171,10 @@ struct CallsignTextField: UIViewRepresentable {
                 NotificationCenter.default.removeObserver(observer)
                 commandConfigObserver = nil
             }
+            if let observer = focusObserver {
+                NotificationCenter.default.removeObserver(observer)
+                focusObserver = nil
+            }
         }
 
         // MARK: Private
@@ -164,6 +183,8 @@ struct CallsignTextField: UIViewRepresentable {
         private var keyboardConfigObserver: NSObjectProtocol?
         /// Observer for command row configuration changes
         private var commandConfigObserver: NSObjectProtocol?
+        /// Observer for direct focus requests (bypasses @FocusState)
+        private var focusObserver: NSObjectProtocol?
 
         private func rebuildAccessoryView() {
             guard let textField else {
