@@ -106,7 +106,7 @@ struct QRQCrewSpotSheet: View {
             let comment = wpm > 0
                 ? spotInfo.spotComment(wpm: wpm)
                 : spotInfo.spotComment(wpm: 0)
-                    .replacingOccurrences(of: "at 0 WPM", with: "at __ WPM")
+                .replacingOccurrences(of: "at 0 WPM", with: "at __ WPM")
 
             Text(comment)
                 .font(.caption)

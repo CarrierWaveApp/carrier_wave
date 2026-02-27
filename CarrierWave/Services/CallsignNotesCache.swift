@@ -149,7 +149,8 @@ actor CallsignNotesCache {
         }
 
         let oneDayAgo = Date().addingTimeInterval(-24 * 60 * 60)
-        if metadata.downloadedAt < oneDayAgo {
+        let sourcesChanged = metadata.sourceCount != sources.count
+        if sourcesChanged || metadata.downloadedAt < oneDayAgo {
             status = .downloading
             do {
                 try await downloadAndCache(sources: sources)

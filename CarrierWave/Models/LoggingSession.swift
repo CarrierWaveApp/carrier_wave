@@ -34,9 +34,15 @@ enum ActivationType: String, Codable, CaseIterable {
     /// Derive activation type from selected programs set.
     /// Priority: pota > sota > aoa > casual
     static func from(programs: Set<String>) -> ActivationType {
-        if programs.contains("pota") { return .pota }
-        if programs.contains("sota") { return .sota }
-        if programs.contains("aoa") { return .aoa }
+        if programs.contains("pota") {
+            return .pota
+        }
+        if programs.contains("sota") {
+            return .sota
+        }
+        if programs.contains("aoa") {
+            return .aoa
+        }
         return .casual
     }
 }

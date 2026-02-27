@@ -64,23 +64,27 @@ enum QRQCrewService {
 
     /// Check if both the user and the other operator are QRQ Crew members.
     /// Returns spot info if both are members, nil otherwise.
+    /// Uses the callsign notes cache (matchingSources) for membership
+    /// and nicknames for display names.
     static func checkMembership(
         myCallsign: String,
         theirCallsign: String
     ) async -> QRQCrewSpotInfo? {
-        guard let myNotes = await CallsignNotesCache.shared.info(for: myCallsign),
-              let theirNotes = await CallsignNotesCache.shared.info(for: theirCallsign)
+        let myBase = extractBaseCallsign(myCallsign)
+        let theirBase = extractBaseCallsign(theirCallsign)
+
+        let myNotes = await lookupNotes(myCallsign, base: myBase)
+        let theirNotes = await lookupNotes(theirCallsign, base: theirBase)
+
+        guard let myNotes, isMember(myNotes),
+              let theirNotes, isMember(theirNotes)
         else {
             return nil
         }
 
-        guard let myInfo = extractMemberInfo(from: myNotes),
-              let theirInfo = extractMemberInfo(from: theirNotes)
-        else {
-            return nil
-        }
+        let myInfo = memberInfo(callsign: myBase, from: myNotes)
+        let theirInfo = memberInfo(callsign: theirBase, from: theirNotes)
 
-        // No park reference needed here; caller supplies it
         return QRQCrewSpotInfo(
             myInfo: myInfo,
             theirInfo: theirInfo,
@@ -90,33 +94,71 @@ enum QRQCrewService {
 
     // MARK: Private
 
-    /// Extract QRQ Crew member info from a CallsignInfo, if it matches.
-    /// Checks matchingSources for "QRQ Crew" and parses name + member number.
-    private static func extractMemberInfo(from info: CallsignInfo) -> QRQCrewMemberInfo? {
-        // Must have QRQ Crew as a matching source
-        guard let sources = info.matchingSources,
-              sources.contains(where: { $0 == sourceTitle })
-        else {
-            return nil
+    /// Look up callsign in notes cache, falling back to base callsign
+    private static func lookupNotes(
+        _ callsign: String,
+        base: String
+    ) async -> CallsignInfo? {
+        if let info = await CallsignNotesCache.shared.info(for: callsign) {
+            return info
         }
+        if base != callsign.uppercased() {
+            return await CallsignNotesCache.shared.info(for: base)
+        }
+        return nil
+    }
 
-        // Try to extract member number (#NN) from name or note
+    /// Check if a notes entry has QRQ Crew as a matching source
+    private static func isMember(_ info: CallsignInfo) -> Bool {
+        info.matchingSources?.contains(sourceTitle) ?? false
+    }
+
+    /// Build member info from notes entry, using nickname for display name
+    private static func memberInfo(
+        callsign: String,
+        from info: CallsignInfo
+    ) -> QRQCrewMemberInfo {
+        // Extract member number from name/note text if available
         let combined = [info.name, info.note].compactMap { $0 }.joined(separator: " ")
-        guard let memberNumber = extractMemberNumber(from: combined) else {
-            return nil
-        }
+        let memberNumber = extractMemberNumber(from: combined) ?? ""
 
-        // Extract the name (text before the member number)
-        let name = extractName(from: combined, memberNumber: memberNumber)
-        guard !name.isEmpty else {
-            return nil
-        }
+        // Prefer nickname > firstName > name from notes
+        let displayName = info.nickname?.capitalized
+            ?? info.firstName?.capitalized
+            ?? info.displayName
+            ?? callsign
 
         return QRQCrewMemberInfo(
-            callsign: info.callsign,
-            name: name,
+            callsign: callsign,
+            name: displayName,
             memberNumber: memberNumber
         )
+    }
+
+    /// Extract base callsign by stripping known prefix/suffix patterns
+    private static func extractBaseCallsign(_ callsign: String) -> String {
+        let parts = callsign.uppercased().split(separator: "/").map(String.init)
+        guard parts.count > 1 else {
+            return callsign.uppercased()
+        }
+
+        let knownSuffixes: Set<String> = [
+            "P", "M", "MM", "AM", "QRP", "R", "A", "B", "LH", "LGT",
+        ]
+
+        if parts.count == 2 {
+            let first = parts[0]
+            let second = parts[1]
+            if knownSuffixes.contains(second) || second.count <= 2 {
+                return first
+            }
+            if first.count <= 3, !first.contains(where: \.isNumber) {
+                return second
+            }
+            return first.count >= second.count ? first : second
+        }
+
+        return parts.max(by: { $0.count < $1.count }) ?? callsign.uppercased()
     }
 
     /// Extract "#NN" member number pattern from text
@@ -125,15 +167,5 @@ enum QRQCrewService {
             return nil
         }
         return String(text[range])
-    }
-
-    /// Extract the display name (everything before the member number, cleaned up)
-    private static func extractName(from text: String, memberNumber: String) -> String {
-        guard let range = text.range(of: memberNumber) else {
-            return text.trimmingCharacters(in: .whitespaces)
-        }
-        return text[..<range.lowerBound]
-            .trimmingCharacters(in: .whitespaces)
-            .trimmingCharacters(in: CharacterSet(charactersIn: "- "))
     }
 }
