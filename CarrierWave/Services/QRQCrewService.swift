@@ -32,6 +32,8 @@ struct QRQCrewSpotInfo {
     let myInfo: QRQCrewMemberInfo
     let theirInfo: QRQCrewMemberInfo
     let parkReference: String
+    /// Fastest WPM seen from RBN spots (auto-populated into the speed field)
+    let rbnWPM: Int?
 
     /// Build the spot comment for a given WPM
     func spotComment(wpm: Int) -> String {
@@ -144,7 +146,8 @@ enum QRQCrewService {
         return QRQCrewSpotInfo(
             myInfo: myInfo,
             theirInfo: theirInfo,
-            parkReference: ""
+            parkReference: "",
+            rbnWPM: nil
         )
     }
 

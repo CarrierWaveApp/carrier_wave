@@ -5,11 +5,19 @@ import SwiftUI
 extension LoggerView {
     // MARK: - QRQ Crew Spot
 
-    /// Check if both operators are QRQ Crew members and trigger spot flow
+    /// Check if both operators are QRQ Crew members and trigger spot flow.
+    /// QRQ Crew spots only apply on UTC Fridays.
     func checkQRQCrewSpot(
         theirCallsign: String,
         theirQRZInfo: CallsignInfo? = nil
     ) {
+        // QRQ Crew spots only apply on UTC Fridays
+        var utcCalendar = Calendar(identifier: .gregorian)
+        utcCalendar.timeZone = TimeZone(identifier: "UTC")!
+        guard utcCalendar.component(.weekday, from: Date()) == 6 else {
+            return
+        }
+
         guard let session = sessionManager?.activeSession,
               session.isPOTA,
               let parkRef = session.parkReference
@@ -37,25 +45,24 @@ extension LoggerView {
                 return
             }
 
-            // Fill in the park reference
+            // Get fastest RBN WPM from spot comments
+            let fastestWPM: Int? = await MainActor.run {
+                let comments = sessionManager?.spotCommentsService.comments ?? []
+                let wpms = comments.filter(\.isAutomatedSpot).compactMap(\.wpm)
+                return wpms.max()
+            }
+
+            // Fill in the park reference and RBN WPM
             spotInfo = QRQCrewSpotInfo(
                 myInfo: spotInfo.myInfo,
                 theirInfo: spotInfo.theirInfo,
-                parkReference: parkRef
+                parkReference: parkRef,
+                rbnWPM: fastestWPM
             )
 
             await MainActor.run {
-                let autoSpot = UserDefaults.standard.bool(forKey: "qrqCrewAutoSpot")
-                let lastWPM = UserDefaults.standard.integer(forKey: "qrqCrewLastWPM")
-
-                if autoSpot, lastWPM >= QRQCrewService.minimumWPM {
-                    // Auto-post with last-used WPM, no prompt
-                    Task { await postQRQCrewSpot(spotInfo: spotInfo, wpm: lastWPM) }
-                } else {
-                    // Show prompt for WPM and confirmation
-                    pendingQRQCrewSpot = spotInfo
-                    showQRQCrewSpotSheet = true
-                }
+                pendingQRQCrewSpot = spotInfo
+                showQRQCrewSpotSheet = true
             }
         }
     }
@@ -65,9 +72,6 @@ extension LoggerView {
         guard wpm >= QRQCrewService.minimumWPM else {
             return
         }
-
-        // Save the WPM for next auto-spot
-        UserDefaults.standard.set(wpm, forKey: "qrqCrewLastWPM")
 
         let comment = spotInfo.spotComment(wpm: wpm)
         await sessionManager?.postSpot(comment: comment, showToast: true)

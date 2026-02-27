@@ -18,6 +18,7 @@ struct QRQCrewSpotSheet: View {
         self.spotInfo = spotInfo
         self.onPost = onPost
         self.onCancel = onCancel
+        _wpmText = State(initialValue: spotInfo.rbnWPM.map(String.init) ?? "")
     }
 
     // MARK: Internal
@@ -62,7 +63,7 @@ struct QRQCrewSpotSheet: View {
 
     // MARK: Private
 
-    @State private var wpmText = ""
+    @State private var wpmText: String
 
     private var isValidSpeed: Bool {
         guard let wpm = Int(wpmText) else {
@@ -101,6 +102,12 @@ struct QRQCrewSpotSheet: View {
                 .textFieldStyle(.roundedBorder)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 120)
+
+            if spotInfo.rbnWPM != nil {
+                Text("from RBN (fastest)")
+                    .font(.caption2)
+                    .foregroundStyle(.blue)
+            }
 
             let showError = if let wpm = Int(wpmText) {
                 wpm > 0 && wpm < QRQCrewService.minimumWPM

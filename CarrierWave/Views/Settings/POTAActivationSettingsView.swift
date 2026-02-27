@@ -19,7 +19,6 @@ struct POTAActivationSettingsView: View {
     @AppStorage("potaQSYSpotEnabled") private var potaQSYSpotEnabled = true
     @AppStorage("potaQRTSpotEnabled") private var potaQRTSpotEnabled = true
     @AppStorage("potaRoveQRTMessage") private var potaRoveQRTMessage = "QRT moving to next park"
-    @AppStorage("qrqCrewAutoSpot") private var qrqCrewAutoSpot = false
 
     private var spottingSection: some View {
         Section {
@@ -46,15 +45,15 @@ struct POTAActivationSettingsView: View {
 
     private var qrqCrewSection: some View {
         Section {
-            Toggle("Auto-post QRQ Crew spots", isOn: $qrqCrewAutoSpot)
+            Text("QRQ Crew spots are posted on UTC Fridays when both operators are members.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
         } header: {
             Text("QRQ Crew")
         } footer: {
             Text(
-                "When both you and the other operator are QRQ Crew members, "
-                    + "a spot is posted after logging the QSO. "
-                    + "When auto-post is on, the spot is posted automatically "
-                    + "using your last entered CW speed."
+                "CW speed is auto-populated from RBN. "
+                    + "Spots are only posted at \(QRQCrewService.minimumWPM)+ WPM."
             )
         }
     }
