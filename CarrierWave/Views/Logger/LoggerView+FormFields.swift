@@ -367,6 +367,8 @@ extension LoggerView {
                 .font(isMonospaced ? .subheadline.monospaced() : .subheadline)
                 .textInputAutocapitalization(.characters)
                 .autocorrectionDisabled()
+                .submitLabel(.send)
+                .onSubmit { handleInputSubmit() }
                 .padding(.horizontal, 8)
                 .frame(height: fieldHeight)
                 .background(Color(.tertiarySystemGroupedBackground))
