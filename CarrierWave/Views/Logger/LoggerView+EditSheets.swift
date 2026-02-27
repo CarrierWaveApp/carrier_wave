@@ -90,6 +90,18 @@ struct LoggerQSOEditSheet: View {
                     }
                 }
 
+                if qso.aoaCode != nil || isAoASession {
+                    Section("AoA") {
+                        HStack {
+                            Text("Code Exchange")
+                            Spacer()
+                            TextField("Exchanged code", text: $aoaCode)
+                                .multilineTextAlignment(.trailing)
+                                .frame(width: 120)
+                        }
+                    }
+                }
+
                 Section("Notes") {
                     TextField("Notes", text: $notes, axis: .vertical)
                         .lineLimit(3 ... 6)
@@ -179,7 +191,19 @@ struct LoggerQSOEditSheet: View {
     @State private var grid = ""
     @State private var theirPark = ""
     @State private var notes = ""
+    @State private var aoaCode = ""
     @State private var showDeleteConfirmation = false
+
+    /// Whether the QSO's session is an AoA activation
+    private var isAoASession: Bool {
+        guard let sessionId = qso.loggingSessionId else {
+            return false
+        }
+        let predicate = #Predicate<LoggingSession> { $0.id == sessionId }
+        let descriptor = FetchDescriptor<LoggingSession>(predicate: predicate)
+        let sessions = (try? modelContext.fetch(descriptor)) ?? []
+        return sessions.first?.activationType == .aoa
+    }
 
     private func loadQSOData() {
         callsign = qso.callsign
@@ -192,6 +216,7 @@ struct LoggerQSOEditSheet: View {
         grid = qso.theirGrid ?? ""
         theirPark = qso.theirParkReference ?? ""
         notes = qso.notes ?? ""
+        aoaCode = qso.aoaCode ?? ""
     }
 
     private func saveChanges() {
@@ -208,6 +233,7 @@ struct LoggerQSOEditSheet: View {
         qso.theirGrid = grid.isEmpty ? nil : grid
         qso.theirParkReference = theirPark.isEmpty ? nil : theirPark
         qso.notes = notes.isEmpty ? nil : notes
+        qso.aoaCode = aoaCode.isEmpty ? nil : aoaCode
         qso.cloudDirtyFlag = true
         qso.modifiedAt = Date()
         try? modelContext.save()

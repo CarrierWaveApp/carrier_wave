@@ -67,7 +67,8 @@ extension LoggerView {
             state: stateToUse,
             country: lookupResult?.country,
             qth: lookupResult?.qth,
-            theirLicenseClass: lookupResult?.licenseClass
+            theirLicenseClass: lookupResult?.licenseClass,
+            aoaCode: aoaCode.nonEmpty
         )
 
         UINotificationFeedbackGenerator().notificationOccurred(.success)
@@ -127,6 +128,9 @@ extension LoggerView {
         }
         if let v = quickEntryResult?.rstReceived ?? rstReceived.nonEmpty {
             qso.rstReceived = v
+        }
+        if let v = aoaCode.nonEmpty {
+            qso.aoaCode = v
         }
     }
 
@@ -197,7 +201,8 @@ extension LoggerView {
             state: stateToUse,
             country: lookupResult?.country,
             qth: lookupResult?.qth,
-            theirLicenseClass: lookupResult?.licenseClass
+            theirLicenseClass: lookupResult?.licenseClass,
+            aoaCode: aoaCode.nonEmpty
         )
 
         refreshSessionQSOs()
@@ -221,6 +226,7 @@ extension LoggerView {
         rstSent = qso.rstSent ?? ""
         rstReceived = qso.rstReceived ?? ""
         operatorName = ""
+        aoaCode = qso.aoaCode ?? ""
         callsignFieldFocused = true
         ToastManager.shared.info("Editing QSO - tap Save to update")
     }
@@ -264,6 +270,7 @@ extension LoggerView {
             operatorName = ""
             rstSent = ""
             rstReceived = ""
+            aoaCode = ""
             editingQSO = nil
         }
         callsignFieldFocused = true

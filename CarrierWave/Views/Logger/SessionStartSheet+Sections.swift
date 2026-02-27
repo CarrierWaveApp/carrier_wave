@@ -130,6 +130,7 @@ extension SessionStartSheet {
             selectedPrograms: $selectedPrograms,
             parkReference: $parkReference,
             sotaReference: $sotaReference,
+            missionReference: $missionReference,
             isRove: $isRove,
             userGrid: myGrid.isEmpty ? defaultGrid : myGrid,
             defaultCountry: "US"

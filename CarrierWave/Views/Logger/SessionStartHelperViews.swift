@@ -93,6 +93,7 @@ struct ActivationSectionView: View {
     @Binding var selectedPrograms: Set<String>
     @Binding var parkReference: String
     @Binding var sotaReference: String
+    @Binding var missionReference: String
     @Binding var isRove: Bool
 
     /// User's grid square for nearby parks
@@ -108,6 +109,9 @@ struct ActivationSectionView: View {
             }
             if selectedPrograms.contains("sota") {
                 sotaFields
+            }
+            if selectedPrograms.contains("aoa") {
+                aoaFields
             }
         } header: {
             Text("Programs")
@@ -133,6 +137,12 @@ struct ActivationSectionView: View {
                 icon: "mountain.2",
                 isSelected: selectedPrograms.contains("sota"),
                 onToggle: { toggleProgram("sota") }
+            )
+            ProgramChip(
+                label: "AoA",
+                icon: "eye",
+                isSelected: selectedPrograms.contains("aoa"),
+                onToggle: { toggleProgram("aoa") }
             )
             Spacer()
         }
@@ -166,6 +176,18 @@ struct ActivationSectionView: View {
         )
     }
 
+    private var aoaFields: some View {
+        HStack {
+            Text("Mission")
+            Spacer()
+            TextField("M-a01f", text: $missionReference)
+                .multilineTextAlignment(.trailing)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .frame(width: 120)
+        }
+    }
+
     private func toggleProgram(_ slug: String) {
         withAnimation(.easeInOut(duration: 0.2)) {
             if selectedPrograms.contains(slug) {
@@ -181,52 +203,62 @@ struct ActivationSectionView: View {
     }
 }
 
+// MARK: - SessionStartInput
+
+/// Input for session start validation
+struct SessionStartInput {
+    let callsign: String
+    let programs: Set<String>
+    let parkReference: String
+    let sotaReference: String
+    let missionReference: String
+    let frequency: Double?
+}
+
 // MARK: - SessionStartValidation
 
 /// Validation logic for session start requirements
 enum SessionStartValidation {
-    static func canStart(
-        callsign: String,
-        programs: Set<String>,
-        parkReference: String,
-        sotaReference: String,
-        frequency _: Double?
-    ) -> Bool {
-        guard !callsign.isEmpty, callsign.count >= 3 else {
+    static func canStart(_ input: SessionStartInput) -> Bool {
+        guard !input.callsign.isEmpty, input.callsign.count >= 3 else {
             return false
         }
-        if programs.contains("pota"),
-           parkReference.trimmingCharacters(in: .whitespaces).isEmpty
+        if input.programs.contains("pota"),
+           input.parkReference.trimmingCharacters(in: .whitespaces).isEmpty
         {
             return false
         }
-        if programs.contains("sota"),
-           sotaReference.trimmingCharacters(in: .whitespaces).isEmpty
+        if input.programs.contains("sota"),
+           input.sotaReference.trimmingCharacters(in: .whitespaces).isEmpty
+        {
+            return false
+        }
+        if input.programs.contains("aoa"),
+           input.missionReference.trimmingCharacters(in: .whitespaces).isEmpty
         {
             return false
         }
         return true
     }
 
-    static func disabledReason(
-        callsign: String,
-        programs: Set<String>,
-        parkReference: String,
-        sotaReference: String,
-        frequency _: Double?
-    ) -> String? {
-        if callsign.isEmpty || callsign.count < 3 {
+    static func disabledReason(_ input: SessionStartInput) -> String? {
+        if input.callsign.isEmpty || input.callsign.count < 3 {
             return "Set your callsign in Settings → About Me"
         }
-        if programs.contains("pota"),
-           parkReference.trimmingCharacters(in: .whitespaces).isEmpty
+        if input.programs.contains("pota"),
+           input.parkReference.trimmingCharacters(in: .whitespaces).isEmpty
         {
             return "POTA requires park reference"
         }
-        if programs.contains("sota"),
-           sotaReference.trimmingCharacters(in: .whitespaces).isEmpty
+        if input.programs.contains("sota"),
+           input.sotaReference.trimmingCharacters(in: .whitespaces).isEmpty
         {
             return "SOTA requires summit reference"
+        }
+        if input.programs.contains("aoa"),
+           input.missionReference.trimmingCharacters(in: .whitespaces).isEmpty
+        {
+            return "AoA requires mission reference"
         }
         return nil
     }

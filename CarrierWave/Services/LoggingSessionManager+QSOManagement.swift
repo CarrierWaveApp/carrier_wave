@@ -18,7 +18,8 @@ extension LoggingSessionManager {
         state: String? = nil,
         country: String? = nil,
         qth: String? = nil,
-        theirLicenseClass: String? = nil
+        theirLicenseClass: String? = nil,
+        aoaCode: String? = nil
     ) -> QSO? {
         guard let session = activeSession else {
             return nil
@@ -59,6 +60,7 @@ extension LoggingSessionManager {
 
         // Set the logging session ID
         qso.loggingSessionId = session.id
+        qso.aoaCode = aoaCode
         qso.cloudDirtyFlag = true
         qso.modifiedAt = Date()
 

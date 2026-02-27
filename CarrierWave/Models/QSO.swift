@@ -31,6 +31,7 @@ nonisolated final class QSO {
         myRig: String? = nil,
         stationProfileName: String? = nil,
         sotaRef: String? = nil,
+        aoaCode: String? = nil,
         qrzLogId: String? = nil,
         qrzConfirmed: Bool = false,
         lotwConfirmedDate: Date? = nil,
@@ -63,6 +64,7 @@ nonisolated final class QSO {
         self.myRig = myRig
         self.stationProfileName = stationProfileName
         self.sotaRef = sotaRef
+        self.aoaCode = aoaCode
         self.qrzLogId = qrzLogId
         self.qrzConfirmed = qrzConfirmed
         self.lotwConfirmedDate = lotwConfirmedDate
@@ -101,6 +103,9 @@ nonisolated final class QSO {
     var myRig: String?
     var stationProfileName: String?
     var sotaRef: String?
+
+    /// Code exchanged during AoA mission QSO
+    var aoaCode: String?
 
     // QRZ sync tracking
     var qrzLogId: String?
@@ -247,6 +252,9 @@ nonisolated final class QSO {
             score += 1
         }
         if theirLicenseClass != nil {
+            score += 1
+        }
+        if aoaCode != nil {
             score += 1
         }
         return score

@@ -18,6 +18,7 @@ struct SessionStartSheet: View {
     @State var selectedPrograms: Set<String> = []
     @State var parkReference = ""
     @State var sotaReference = ""
+    @State var missionReference = ""
     @State var isRove = false
     @State var myGrid = ""
     @State var powerText = ""
@@ -209,24 +210,23 @@ struct SessionStartSheet: View {
 
     @State private var hasLoadedDefaults = false
 
-    private var canStart: Bool {
-        SessionStartValidation.canStart(
+    private var validationInput: SessionStartInput {
+        SessionStartInput(
             callsign: defaultCallsign,
             programs: selectedPrograms,
             parkReference: parkReference,
             sotaReference: sotaReference,
+            missionReference: missionReference,
             frequency: parsedFrequency
         )
     }
 
+    private var canStart: Bool {
+        SessionStartValidation.canStart(validationInput)
+    }
+
     private var startDisabledReason: String? {
-        SessionStartValidation.disabledReason(
-            callsign: defaultCallsign,
-            programs: selectedPrograms,
-            parkReference: parkReference,
-            sotaReference: sotaReference,
-            frequency: parsedFrequency
-        )
+        SessionStartValidation.disabledReason(validationInput)
     }
 
     private var parsedFrequency: Double? {
@@ -252,13 +252,17 @@ extension SessionStartSheet {
         let trimmedAttendees = attendeesText.trimmingCharacters(in: .whitespaces)
         let trimmedNotes = sessionNotes.trimmingCharacters(in: .whitespaces)
 
+        let trimmedMission = missionReference.trimmingCharacters(in: .whitespaces)
+
         sessionManager?.startSession(
             myCallsign: fullCallsign,
             mode: selectedMode,
             frequency: parsedFrequency,
             programs: selectedPrograms,
+            activationType: ActivationType.from(programs: selectedPrograms),
             parkReference: selectedPrograms.contains("pota") ? parkReference.uppercased() : nil,
             sotaReference: selectedPrograms.contains("sota") ? sotaReference.uppercased() : nil,
+            missionReference: selectedPrograms.contains("aoa") && !trimmedMission.isEmpty ? trimmedMission : nil,
             myGrid: myGrid.isEmpty ? nil : myGrid.uppercased(),
             power: parsedPower,
             myRig: selectedRadio,

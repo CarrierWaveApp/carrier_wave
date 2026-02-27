@@ -30,6 +30,15 @@ enum ActivationType: String, Codable, CaseIterable {
         case .aoa: "eye"
         }
     }
+
+    /// Derive activation type from selected programs set.
+    /// Priority: pota > sota > aoa > casual
+    static func from(programs: Set<String>) -> ActivationType {
+        if programs.contains("pota") { return .pota }
+        if programs.contains("sota") { return .sota }
+        if programs.contains("aoa") { return .aoa }
+        return .casual
+    }
 }
 
 // MARK: - LoggingSessionStatus
@@ -58,6 +67,7 @@ nonisolated final class LoggingSession {
         activationType: ActivationType = .casual,
         parkReference: String? = nil,
         sotaReference: String? = nil,
+        missionReference: String? = nil,
         myGrid: String? = nil,
         notes: String? = nil,
         power: Int? = nil,
@@ -76,6 +86,7 @@ nonisolated final class LoggingSession {
         activationTypeRawValue = activationType.rawValue
         self.parkReference = parkReference
         self.sotaReference = sotaReference
+        self.missionReference = missionReference
         self.myGrid = myGrid
         self.notes = notes
         self.power = power
@@ -122,6 +133,9 @@ nonisolated final class LoggingSession {
 
     /// SOTA summit reference (e.g., "W4C/CM-001")
     var sotaReference: String?
+
+    /// AoA mission reference (e.g., "M-a01f")
+    var missionReference: String?
 
     /// Operator's grid square
     var myGrid: String?

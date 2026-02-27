@@ -117,6 +117,9 @@ extension LoggingSession {
         case .casual:
             return "\(myCallsign) Casual"
         case .aoa:
+            if let mission = missionReference {
+                return "\(myCallsign) AoA \(mission)"
+            }
             return "\(myCallsign) AoA"
         }
     }
@@ -126,8 +129,8 @@ extension LoggingSession {
         switch activationType {
         case .pota: parkReference
         case .sota: sotaReference
-        case .casual,
-             .aoa: nil
+        case .aoa: missionReference
+        case .casual: nil
         }
     }
 

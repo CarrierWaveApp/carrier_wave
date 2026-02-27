@@ -178,6 +178,13 @@ extension LoggerView {
                         )
                         compactField(label: "Park", placeholder: "", text: $theirPark)
                     }
+                    if sessionManager?.activeSession?.activationType == .aoa {
+                        compactField(
+                            label: "Code Exchange",
+                            placeholder: "Exchanged code",
+                            text: $aoaCode
+                        )
+                    }
                     compactField(
                         label: "Operator",
                         placeholder: lookupResult?.displayName ?? "",

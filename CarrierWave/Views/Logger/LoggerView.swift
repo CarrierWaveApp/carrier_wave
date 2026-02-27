@@ -95,6 +95,7 @@ struct LoggerView: View {
     @State var operatorName = ""
     @State var theirGrid = ""
     @State var theirState = ""
+    @State var aoaCode = ""
 
     // Callsign lookup
     @State var lookupResult: CallsignInfo?

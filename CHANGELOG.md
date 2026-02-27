@@ -33,6 +33,10 @@ All notable changes to Carrier Wave will be documented in this file.
 - MODE/SUBMODE splitting in ADIF generation (USB→SSB+USB, LSB→SSB+LSB, PSK31→PSK+PSK31)
 - One-time data repair to fix hunting QSOs misidentified as activations
 - Add Agents on Air (AoA) as an activity program with eye icon, mission reference field, and hunter/data entry capabilities
+- Add AoA mission reference field in session start (required to begin AoA session)
+- Add AoA per-QSO code exchange field in logger expanded fields
+- Display AoA mission reference in session title and session list
+- Add AoA code exchange editing in QSO edit sheet
 
 ### Changed
 - POTA spots command renamed to HUNT with binoculars icon
