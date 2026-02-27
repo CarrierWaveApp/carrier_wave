@@ -347,9 +347,10 @@ struct LazyStreakDetailView: View {
             if let existingStats = asyncStats.getStats() {
                 stats = existingStats
             } else {
-                // Fall back to computing fresh if needed
+                // Fall back to computing fresh if needed (capped to avoid full-table scan)
                 var descriptor = FetchDescriptor<QSO>(predicate: #Predicate { !$0.isHidden })
                 descriptor.sortBy = [SortDescriptor(\.timestamp, order: .reverse)]
+                descriptor.fetchLimit = 10_000
                 if let qsos = try? modelContext.fetch(descriptor) {
                     stats = QSOStatistics(qsos: qsos)
                 }
@@ -387,9 +388,10 @@ private struct LazyStatDetailView: View {
             if let stats = asyncStats.getStats() {
                 items = stats.items(for: category)
             } else {
-                // Fall back to computing fresh if needed
+                // Fall back to computing fresh if needed (capped to avoid full-table scan)
                 var descriptor = FetchDescriptor<QSO>(predicate: #Predicate { !$0.isHidden })
                 descriptor.sortBy = [SortDescriptor(\.timestamp, order: .reverse)]
+                descriptor.fetchLimit = 10_000
                 if let qsos = try? modelContext.fetch(descriptor) {
                     let stats = QSOStatistics(qsos: qsos)
                     items = stats.items(for: category)

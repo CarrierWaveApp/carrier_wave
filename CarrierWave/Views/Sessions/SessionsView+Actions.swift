@@ -55,7 +55,7 @@ extension SessionsView {
                 $0.parkReference != nil && !$0.isHidden && !$0.isActivityLogQSO
             }
         )
-        descriptor.fetchLimit = 5_000
+        descriptor.fetchLimit = 500
         let parkQSOs = (try? modelContext.fetch(descriptor)) ?? []
 
         let sessionIds = Set(sessions.map(\.id))

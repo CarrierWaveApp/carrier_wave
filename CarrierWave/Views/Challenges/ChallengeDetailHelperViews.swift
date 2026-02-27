@@ -259,14 +259,18 @@ struct GoalListView: View {
         await Task.yield()
 
         let qualifyingIds = participation.progress.qualifyingQSOIds
-        let descriptor = FetchDescriptor<QSO>(
+        let qualifyingIdSet = Set(qualifyingIds)
+
+        // Fetch only non-hidden QSOs with a cap to avoid unbounded full-table scan
+        var descriptor = FetchDescriptor<QSO>(
+            predicate: #Predicate { !$0.isHidden },
             sortBy: [SortDescriptor(\.timestamp, order: .forward)]
         )
+        descriptor.fetchLimit = max(qualifyingIdSet.count * 2, 1_000)
 
         do {
-            let allQSOs = try modelContext.fetch(descriptor)
-            let qualifyingIdSet = Set(qualifyingIds)
-            let qualifyingQSOs = allQSOs.filter { qualifyingIdSet.contains($0.id) }
+            let candidateQSOs = try modelContext.fetch(descriptor)
+            let qualifyingQSOs = candidateQSOs.filter { qualifyingIdSet.contains($0.id) }
 
             var result: [String: QSO] = [:]
             for qso in qualifyingQSOs {

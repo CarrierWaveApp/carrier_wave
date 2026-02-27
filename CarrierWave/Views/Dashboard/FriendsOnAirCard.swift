@@ -48,6 +48,7 @@ struct FriendsOnAirCard: View {
 
     @State private var friendSpots: [(callsign: String, spot: POTASpot)] = []
     @State private var isLoading = true
+    @State private var potaClient = POTAClient(authService: POTAAuthService())
 
     private var friendCallsigns: Set<String> {
         Set(acceptedFriends.map { $0.friendCallsign.uppercased() })
@@ -121,8 +122,7 @@ struct FriendsOnAirCard: View {
         }
 
         do {
-            let client = POTAClient(authService: POTAAuthService())
-            let spots = try await client.fetchActiveSpots()
+            let spots = try await potaClient.fetchActiveSpots()
             friendSpots = spots
                 .filter { friendCallsigns.contains($0.activator.uppercased()) }
                 .map { (callsign: $0.activator.uppercased(), spot: $0) }

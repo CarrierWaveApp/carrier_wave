@@ -200,17 +200,13 @@ struct SyncDebugView: View {
 
     private func loadServiceCounts() {
         var counts: [ServiceType: Int] = [:]
-        do {
-            let descriptor = FetchDescriptor<ServicePresence>()
-            let allPresence = try modelContext.fetch(descriptor)
-            for service in ServiceType.allCases {
-                counts[service] =
-                    allPresence.filter { $0.serviceType == service && $0.isPresent }.count
+        for service in ServiceType.allCases {
+            let serviceRaw = service.rawValue
+            let predicate = #Predicate<ServicePresence> {
+                $0.serviceTypeRawValue == serviceRaw && $0.isPresent
             }
-        } catch {
-            for service in ServiceType.allCases {
-                counts[service] = 0
-            }
+            let descriptor = FetchDescriptor<ServicePresence>(predicate: predicate)
+            counts[service] = (try? modelContext.fetchCount(descriptor)) ?? 0
         }
         serviceCounts = counts
     }

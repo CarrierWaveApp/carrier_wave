@@ -136,7 +136,7 @@ struct SummaryCardSheet: View {
         let endDate = range.end
         let descriptor = FetchDescriptor<QSO>(
             predicate: #Predicate { qso in
-                qso.timestamp >= startDate && qso.timestamp <= endDate
+                qso.timestamp >= startDate && qso.timestamp <= endDate && !qso.isHidden
             }
         )
 

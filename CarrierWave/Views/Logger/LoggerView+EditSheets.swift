@@ -193,17 +193,7 @@ struct LoggerQSOEditSheet: View {
     @State private var notes = ""
     @State private var aoaCode = ""
     @State private var showDeleteConfirmation = false
-
-    /// Whether the QSO's session is an AoA activation
-    private var isAoASession: Bool {
-        guard let sessionId = qso.loggingSessionId else {
-            return false
-        }
-        let predicate = #Predicate<LoggingSession> { $0.id == sessionId }
-        let descriptor = FetchDescriptor<LoggingSession>(predicate: predicate)
-        let sessions = (try? modelContext.fetch(descriptor)) ?? []
-        return sessions.first?.activationType == .aoa
-    }
+    @State private var isAoASession = false
 
     private func loadQSOData() {
         callsign = qso.callsign
@@ -217,6 +207,14 @@ struct LoggerQSOEditSheet: View {
         theirPark = qso.theirParkReference ?? ""
         notes = qso.notes ?? ""
         aoaCode = qso.aoaCode ?? ""
+
+        // Load AoA session state once instead of on every render
+        if let sessionId = qso.loggingSessionId {
+            let predicate = #Predicate<LoggingSession> { $0.id == sessionId }
+            let descriptor = FetchDescriptor<LoggingSession>(predicate: predicate)
+            let sessions = (try? modelContext.fetch(descriptor)) ?? []
+            isAoASession = sessions.first?.activationType == .aoa
+        }
     }
 
     private func saveChanges() {

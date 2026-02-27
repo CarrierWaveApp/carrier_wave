@@ -154,7 +154,7 @@ struct ActivityLogSettingsView: View {
                     "POTA upload requires an activation session with a park reference."
             )
         }
-        .onAppear {
+        .task {
             qrzConnected = qrzClient.hasApiKey()
             lofiConnected = lofiClient.isConfigured
         }

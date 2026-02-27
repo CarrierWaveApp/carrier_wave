@@ -235,14 +235,14 @@ struct ChallengesView: View {
 
         // Fetch all QSOs and evaluate against active challenges
         // The progress engine will handle deduplication internally
-        let descriptor = FetchDescriptor<QSO>(
+        var descriptor = FetchDescriptor<QSO>(
             sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
         )
+        descriptor.fetchLimit = 100
 
         do {
             let recentQSOs = try modelContext.fetch(descriptor)
-            // Evaluate only the most recent QSOs (last 100) for performance
-            for qso in recentQSOs.prefix(100) {
+            for qso in recentQSOs {
                 engine.evaluateQSO(qso, notificationsEnabled: false)
             }
             try modelContext.save()

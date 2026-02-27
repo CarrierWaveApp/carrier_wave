@@ -308,14 +308,16 @@ extension ContentView {
     }
 
     var loggerTabContent: some View {
-        SessionsTabView(
-            tourState: tourState,
-            potaClient: potaClient,
-            potaAuth: potaAuthService,
-            onSessionStateChange: { hasSession in
-                loggerHasActiveSession = hasSession
-            }
-        )
+        LazyTabContent {
+            SessionsTabView(
+                tourState: tourState,
+                potaClient: potaClient,
+                potaAuth: potaAuthService,
+                onSessionStateChange: { hasSession in
+                    loggerHasActiveSession = hasSession
+                }
+            )
+        }
     }
 
     var logsTabContent: some View {

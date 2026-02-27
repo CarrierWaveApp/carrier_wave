@@ -27,13 +27,16 @@ struct ActivityLogView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                NavigationLink {
-                    ActivityLogSettingsView()
+                Button {
+                    showingSettings = true
                 } label: {
                     Image(systemName: "gearshape")
                 }
                 .accessibilityLabel("Hunter log settings")
             }
+        }
+        .navigationDestination(isPresented: $showingSettings) {
+            ActivityLogSettingsView()
         }
         .sheet(isPresented: $showingProfilePicker) {
             StationProfilePicker(
@@ -96,11 +99,22 @@ struct ActivityLogView: View {
             }
         }
         .task {
+            guard !hasLoaded else {
+                return
+            }
+            hasLoaded = true
+
             manager.refreshTodayStats()
             recentQSOs = manager.fetchRecentQSOs()
-            await workedBeforeCache.loadToday(
-                container: modelContext.container
+
+            // Capture container before crossing isolation boundary
+            let container = modelContext.container
+
+            // Fire heavy cache load concurrently with monitoring setup
+            async let cacheLoad: Void = workedBeforeCache.loadToday(
+                container: container
             )
+
             spotMonitor.friendNotifier.updateFriends(
                 Set(acceptedFriends.map { $0.friendCallsign.uppercased() })
             )
@@ -108,6 +122,8 @@ struct ActivityLogView: View {
                 myGrid: manager.activeLog?.currentGrid
             )
             requestGPSGridIfNeeded()
+
+            await cacheLoad
         }
         .onChange(of: locationService.currentGrid) { _, newGrid in
             if let newGrid,
@@ -127,10 +143,12 @@ struct ActivityLogView: View {
     @AppStorage("spotRegionFilter") private var spotRegionFilterRaw = ""
     @AppStorage("huntedSpotBehavior") private var huntedSpotBehaviorRaw = HuntedSpotBehavior.crossOut.rawValue
 
+    @State private var showingSettings = false
     @State private var showingProfilePicker = false
     @State private var showingFilterSheet = false
     @State private var showingLocationChange = false
     @State private var showingGoalAlert = false
+    @State private var hasLoaded = false
     @State private var detectedGrid = ""
     @State private var recentQSOs: [QSO] = []
     @State private var currentMode = "CW"
