@@ -29,6 +29,7 @@ struct SessionStartSheet: View {
     @State var selectedSuffix: CallsignSuffix = .none
     @State var customSuffix = ""
 
+    @State var showPrefixSuffix = false
     @State var showRadioPicker = false
     @State var showAntennaPicker = false
     @State var showKeyPicker = false
