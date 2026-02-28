@@ -111,6 +111,12 @@ struct CarrierWaveApp: App {
                 }
                 SettingsSyncService.shared.start()
 
+                // Register for remote notifications (CKSyncEngine push)
+                UIApplication.shared.registerForRemoteNotifications()
+
+                // Yield so the first frame commits before heavy initialization
+                await Task.yield()
+
                 // Mirror existing callsign notes sources to UserDefaults
                 // so they get pushed to iCloud on first sync
                 CallsignNotesSourceSync.mirrorToDefaults(
@@ -126,22 +132,21 @@ struct CarrierWaveApp: App {
                 // Start iCloud QSO sync (CKSyncEngine)
                 CloudSyncService.shared.configure(container: sharedModelContainer)
 
-                // Register for remote notifications (CKSyncEngine push)
-                UIApplication.shared.registerForRemoteNotifications()
-
                 // Seed QRQ Crew callsign notes source on first launch
                 QRQCrewService.seedNotesSourceIfNeeded(
                     modelContext: sharedModelContainer.mainContext
                 )
 
-                // Preload caches on app launch (loads from disk, refreshes in background)
-                await POTAParksCache.shared.ensureLoaded()
-                await SOTASummitsCache.shared.ensureLoaded()
+                // Preload caches concurrently (loads from disk, refreshes in background)
+                async let parksLoad: Void = POTAParksCache.shared.ensureLoaded()
+                async let summitsLoad: Void = SOTASummitsCache.shared.ensureLoaded()
                 // Fetch sources on main actor, then pass to cache actor
                 let sources = NotesSourceInfo.fetchAll(
                     modelContext: sharedModelContainer.mainContext
                 )
-                await CallsignNotesCache.shared.ensureLoaded(sources: sources)
+                async let notesLoad: Void = CallsignNotesCache.shared
+                    .ensureLoaded(sources: sources)
+                _ = await (parksLoad, summitsLoad, notesLoad)
             }
             .task {
                 // Launch backup runs off the main thread to avoid blocking UI

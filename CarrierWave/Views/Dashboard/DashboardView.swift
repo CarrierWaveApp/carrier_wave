@@ -95,63 +95,51 @@ struct DashboardView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 16) {
-                    if syncService.isSyncing {
-                        SyncProgressCard(syncService: syncService)
-                    }
-                    if verticalSizeClass == .compact {
-                        // Landscape: two-column layout
-                        combinedStreaksAndStatsCard
-                        HStack(alignment: .top, spacing: 16) {
-                            VStack(spacing: 16) {
-                                activityCard
-                                activityLogCard
-                                friendsOnAirCard
-                                friendActivityCard
-                                conditionsCard
-                            }
-                            VStack(spacing: 16) {
-                                bragSheetEntryCard
-                                favoritesCard
-                                equipmentCard
-                                servicesList
-                            }
-                        }
-                    } else {
-                        activityCard
-                        activityLogCard
-                        friendsOnAirCard
-                        friendActivityCard
-                        streaksCard
-                        summaryCard
-                        bragSheetEntryCard
-                        favoritesCard
-                        equipmentCard
-                        conditionsCard
-                        servicesList
-                    }
+            Group {
+                if hasLoadedDashboard {
+                    dashboardScrollContent
+                } else {
+                    // Widget deep link or first load: lightweight placeholder
+                    Color(.systemGroupedBackground)
+                        .ignoresSafeArea()
                 }
-                .padding()
             }
-            .background(Color(.systemGroupedBackground))
             .onAppear {
-                loadQRZConfig()
-                refreshServiceStatus()
+                // Always create manager (needed for widget deep link navigation)
                 if activityLogManager == nil {
                     activityLogManager = ActivityLogManager(modelContext: modelContext)
                 }
             }
             .task {
-                // Compute stats and presence counts in background on first load
+                // Brief delay so widget deep link URL can propagate on cold start.
+                // onOpenURL fires after initial view setup, so navigateToActivityLog
+                // may still be false in .onAppear even on a widget launch.
+                try? await Task.sleep(for: .milliseconds(100))
+                if !navigateToActivityLog {
+                    loadDashboardFully()
+                }
+            }
+            .onChange(of: navigateToActivityLog) { _, isNavigating in
+                // User popped back from widget deep link — now load the dashboard
+                if !isNavigating, !hasLoadedDashboard {
+                    loadDashboardFully()
+                }
+            }
+            .task(id: hasLoadedDashboard) {
+                guard hasLoadedDashboard else {
+                    return
+                }
+                // Compute stats and presence counts in background
                 asyncStats.compute(from: modelContext)
                 equipmentStats.compute(from: modelContext.container)
                 presenceCounts.compute(from: modelContext)
                 bragSheetStats.compute(from: modelContext.container)
             }
-            .task {
-                // Check for callsign aliases after stats are computed (only once per session)
-                // Wait a bit for asyncStats to populate uniqueMyCallsigns
+            .task(id: hasLoadedDashboard) {
+                guard hasLoadedDashboard else {
+                    return
+                }
+                // Check for callsign aliases after stats are computed (only once)
                 guard !hasCheckedCallsignAliases else {
                     return
                 }
@@ -170,13 +158,9 @@ struct DashboardView: View {
                 await repairDuplicateQSOsIfNeeded()
                 await repairDuplicatePresenceIfNeeded()
                 await repairDuplicateSpotNotesIfNeeded()
-                // Phone/SSB repair runs last because it shows a user-facing alert.
-                // Presence dedup must finish first so the repair doesn't race with it.
                 await repairPhoneSSBDuplicatesIfNeeded()
             }
             .onChange(of: syncService.lastSyncDate) { _, _ in
-                // Recompute stats after sync completes
-                // Delay to ensure background saves are fully committed to SQLite
                 Task {
                     try? await Task.sleep(for: .milliseconds(300))
                     asyncStats.recompute(from: modelContext)
@@ -186,20 +170,13 @@ struct DashboardView: View {
                 }
             }
             .onReceive(NotificationCenter.default.publisher(for: .didClearQSOs)) { _ in
-                // Reset and recompute stats after QSOs are cleared
                 asyncStats.reset()
                 equipmentStats.reset()
                 presenceCounts.recompute(from: modelContext)
-                // Recompute after reset to show zeros
                 asyncStats.compute(from: modelContext)
                 equipmentStats.compute(from: modelContext.container)
                 bragSheetStats.recompute(from: modelContext.container)
             }
-            // NOTE: No .onDisappear cancellation - computation continues in background
-            // when user switches tabs. This is intentional because:
-            // 1. TabView keeps the view alive, so @State persists
-            // 2. Cooperative yielding (Task.yield) prevents blocking other tabs
-            // 3. Results will be ready when user returns to dashboard
             .callsignAliasDetectionAlert(
                 unconfiguredCallsigns: $unconfiguredCallsigns,
                 showingAlert: $showingCallsignAliasAlert,
@@ -228,7 +205,9 @@ struct DashboardView: View {
             .syncExportConfirmationAlert(syncService: syncService)
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    toolbarButtons
+                    if hasLoadedDashboard {
+                        toolbarButtons
+                    }
                 }
             }
             .sheet(item: $selectedService) { service in
@@ -237,7 +216,7 @@ struct DashboardView: View {
             .sheet(isPresented: $showingActivityLogSetup) {
                 ActivityLogSetupSheet(manager: activityLogManager)
             }
-            .navigationDestination(isPresented: $navigateToActivityLog) {
+            .navigationDestination(isPresented: activityLogNavBinding) {
                 if let manager = activityLogManager {
                     ActivityLogView(manager: manager)
                 }
@@ -247,9 +226,66 @@ struct DashboardView: View {
 
     // MARK: Private
 
+    /// Whether the full dashboard (cards, stats, services) has been loaded.
+    /// False on widget cold start — only the navigation destination renders.
+    @State private var hasLoadedDashboard = false
+
     /// Track whether we've already run the one-time checks (callsign aliases, POTA repair)
     /// to avoid re-running expensive queries on every tab switch
     @State private var hasCheckedCallsignAliases = false
+
+    /// Gate navigation on manager readiness — prevents NavigationStack corruption
+    /// when a widget deep link sets `navigateToActivityLog = true` before
+    /// `activityLogManager` is created in `.onAppear`.
+    private var activityLogNavBinding: Binding<Bool> {
+        Binding(
+            get: { navigateToActivityLog && activityLogManager != nil },
+            set: { navigateToActivityLog = $0 }
+        )
+    }
+
+    /// The full dashboard ScrollView with all cards.
+    private var dashboardScrollContent: some View {
+        ScrollView {
+            VStack(spacing: 16) {
+                if syncService.isSyncing {
+                    SyncProgressCard(syncService: syncService)
+                }
+                if verticalSizeClass == .compact {
+                    combinedStreaksAndStatsCard
+                    HStack(alignment: .top, spacing: 16) {
+                        VStack(spacing: 16) {
+                            activityCard
+                            activityLogCard
+                            friendsOnAirCard
+                            friendActivityCard
+                            conditionsCard
+                        }
+                        VStack(spacing: 16) {
+                            bragSheetEntryCard
+                            favoritesCard
+                            equipmentCard
+                            servicesList
+                        }
+                    }
+                } else {
+                    activityCard
+                    activityLogCard
+                    friendsOnAirCard
+                    friendActivityCard
+                    streaksCard
+                    summaryCard
+                    bragSheetEntryCard
+                    favoritesCard
+                    equipmentCard
+                    conditionsCard
+                    servicesList
+                }
+            }
+            .padding()
+        }
+        .background(Color(.systemGroupedBackground))
+    }
 
     // MARK: - Toolbar
 
@@ -314,6 +350,17 @@ struct DashboardView: View {
         .background(Color(.systemGray6))
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .animation(.easeInOut(duration: 0.2), value: asyncStats.isComputing)
+    }
+
+    /// Load the full dashboard: Keychain reads, service status, stats.
+    /// Skipped on widget cold start, runs when user pops back or on normal launch.
+    private func loadDashboardFully() {
+        guard !hasLoadedDashboard else {
+            return
+        }
+        loadQRZConfig()
+        refreshServiceStatus()
+        hasLoadedDashboard = true
     }
 }
 

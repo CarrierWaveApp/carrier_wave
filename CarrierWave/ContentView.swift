@@ -67,6 +67,20 @@ struct ContentView: View {
             if lockedSizeClass == nil {
                 lockedSizeClass = horizontalSizeClass
             }
+            if tourState.shouldShowIntroTour() {
+                showIntroTour = true
+            } else if tourState.shouldShowOnboarding() {
+                showOnboarding = true
+            }
+            if restoredBackup != nil {
+                showingRestoreAlert = true
+            }
+        }
+        .task {
+            // Deferred from .onAppear so the first frame commits before
+            // heavy service initialization (Keychain, SwiftData, CKSyncEngine).
+            // dashboardTabContent gates on syncService != nil, so the first
+            // frame shows a lightweight ProgressView — satisfying the watchdog.
             iCloudMonitor.startMonitoring()
             if syncService == nil {
                 syncService = SyncService(
@@ -76,14 +90,6 @@ struct ContentView: View {
             }
             if potaClient == nil {
                 potaClient = POTAClient(authService: potaAuthService)
-            }
-            if tourState.shouldShowIntroTour() {
-                showIntroTour = true
-            } else if tourState.shouldShowOnboarding() {
-                showOnboarding = true
-            }
-            if restoredBackup != nil {
-                showingRestoreAlert = true
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .didReceiveADIFFile)) { notification in
