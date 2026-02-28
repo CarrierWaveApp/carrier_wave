@@ -14,7 +14,7 @@ struct LoggerContainerView: View {
 
     var body: some View {
         Group {
-            if (lockedSizeClass ?? horizontalSizeClass) == .regular {
+            if isIPad, (lockedSizeClass ?? horizontalSizeClass) == .regular {
                 iPadLayout
             } else {
                 iPhoneLayout
@@ -34,6 +34,12 @@ struct LoggerContainerView: View {
     }
 
     // MARK: Private
+
+    /// True only on iPad — prevents iOS 26's `.regular` horizontal size class
+    /// on large iPhones from triggering the two-pane iPad layout.
+    private var isIPad: Bool {
+        UIDevice.current.userInterfaceIdiom == .pad
+    }
 
     /// Locked layout mode — set once on first appearance, never changes.
     /// Prevents size class transitions (e.g., rotation on iPhone Max)
