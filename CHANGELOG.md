@@ -4,6 +4,8 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.49.0] - 2026-02-27
+
 ### Added
 - Export full QSO log as ADIF file from Settings > Data & Tools, with batched background export, determinate progress bar, and share/save/clipboard actions
 
