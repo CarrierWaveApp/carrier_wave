@@ -79,6 +79,7 @@ struct OnboardingView: View {
         } message: {
             Text(errorMessage)
         }
+        .onAppear { detectExistingConnections() }
     }
 
     var stepContent: some View {

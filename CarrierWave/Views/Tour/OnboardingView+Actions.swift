@@ -259,4 +259,22 @@ extension OnboardingView {
         tourState.completeOnboarding()
         dismiss()
     }
+
+    /// Pre-populate connectedServices from keychain so services connected during
+    /// the intro tour show as already connected in the onboarding flow.
+    func detectExistingConnections() {
+        let qrzClient = QRZClient()
+        if qrzClient.hasApiKey() {
+            connectedServices.insert("qrz")
+        }
+
+        if potaAuth.isAuthenticated {
+            connectedServices.insert("pota")
+        }
+
+        let lotwClient = LoTWClient()
+        if lotwClient.hasCredentials() {
+            connectedServices.insert("lotw")
+        }
+    }
 }
