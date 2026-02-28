@@ -4,6 +4,9 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- Fix crash in POTA activation grouping when split key has unexpected format (index out of range)
+
 ## [1.50.0] - 2026-02-28
 
 ### Added
