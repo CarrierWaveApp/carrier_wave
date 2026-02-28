@@ -104,24 +104,37 @@ struct DashboardView: View {
                         .ignoresSafeArea()
                 }
             }
-            .onAppear {
-                // Always create manager (needed for widget deep link navigation)
+            .task {
+                // Create manager in .task (not .onAppear) so the first frame
+                // commits without blocking on SwiftData fetches + Keychain reads.
                 if activityLogManager == nil {
                     activityLogManager = ActivityLogManager(modelContext: modelContext)
                 }
-            }
-            .task {
-                // Brief delay so widget deep link URL can propagate on cold start.
-                // onOpenURL fires after initial view setup, so navigateToActivityLog
-                // may still be false in .onAppear even on a widget launch.
-                try? await Task.sleep(for: .milliseconds(100))
-                if !navigateToActivityLog {
+
+                if navigateToActivityLog {
+                    // Widget deep link: yield so the first DashboardView frame
+                    // commits before NavigationStack resolves the push destination.
+                    // Without this, ActivityLogView construction blocks the first frame.
+                    await Task.yield()
+                    readyToNavigate = true
+                } else {
                     loadDashboardFully()
                 }
             }
             .onChange(of: navigateToActivityLog) { _, isNavigating in
+                if isNavigating, activityLogManager == nil {
+                    // Deep link arrived before .task — create manager for navigation
+                    activityLogManager = ActivityLogManager(modelContext: modelContext)
+                }
+                if isNavigating {
+                    // Defer push so current frame commits first
+                    Task { @MainActor in
+                        readyToNavigate = true
+                    }
+                }
                 // User popped back from widget deep link — now load the dashboard
                 if !isNavigating, !hasLoadedDashboard {
+                    readyToNavigate = false
                     loadDashboardFully()
                 }
             }
@@ -234,13 +247,21 @@ struct DashboardView: View {
     /// to avoid re-running expensive queries on every tab switch
     @State private var hasCheckedCallsignAliases = false
 
-    /// Gate navigation on manager readiness — prevents NavigationStack corruption
-    /// when a widget deep link sets `navigateToActivityLog = true` before
-    /// `activityLogManager` is created in `.onAppear`.
+    /// Deferred navigation flag — set after a yield so the first DashboardView
+    /// frame commits before NavigationStack resolves the push destination.
+    @State private var readyToNavigate = false
+
+    /// Gate navigation on manager readiness AND deferred flag — prevents
+    /// NavigationStack from pushing during initial layout.
     private var activityLogNavBinding: Binding<Bool> {
         Binding(
-            get: { navigateToActivityLog && activityLogManager != nil },
-            set: { navigateToActivityLog = $0 }
+            get: { readyToNavigate && activityLogManager != nil },
+            set: { newValue in
+                navigateToActivityLog = newValue
+                if !newValue {
+                    readyToNavigate = false
+                }
+            }
         )
     }
 
@@ -314,43 +335,7 @@ struct DashboardView: View {
         }
     }
 
-    // MARK: - Activity Card
-
-    private var activityCard: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text("Activity")
-                    .font(.headline)
-                Spacer()
-                Text("\(asyncStats.totalQSOs) QSOs")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            ActivityGrid(
-                activationData: asyncStats.activationActivityByDate,
-                activityLogData: asyncStats.activityLogActivityByDate
-            )
-
-            // Show progress bar while computing
-            if asyncStats.isComputing {
-                VStack(alignment: .leading, spacing: 4) {
-                    ProgressView(value: asyncStats.progress)
-                        .tint(.blue)
-                    if !asyncStats.progressPhase.isEmpty {
-                        Text(asyncStats.progressPhase)
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .transition(.opacity)
-            }
-        }
-        .padding()
-        .background(Color(.systemGray6))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .animation(.easeInOut(duration: 0.2), value: asyncStats.isComputing)
-    }
+    // Activity card is in DashboardView+ActivityLog.swift
 
     /// Load the full dashboard: Keychain reads, service status, stats.
     /// Skipped on widget cold start, runs when user pops back or on normal launch.

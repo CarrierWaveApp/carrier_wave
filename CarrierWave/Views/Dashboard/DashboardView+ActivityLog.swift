@@ -1,8 +1,44 @@
 import SwiftUI
 
-// MARK: - Activity Log Card & Favorites Card
+// MARK: - Activity Card, Activity Log Card & Favorites Card
 
 extension DashboardView {
+    var activityCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("Activity")
+                    .font(.headline)
+                Spacer()
+                Text("\(asyncStats.totalQSOs) QSOs")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            ActivityGrid(
+                activationData: asyncStats.activationActivityByDate,
+                activityLogData: asyncStats.activityLogActivityByDate
+            )
+
+            // Show progress bar while computing
+            if asyncStats.isComputing {
+                VStack(alignment: .leading, spacing: 4) {
+                    ProgressView(value: asyncStats.progress)
+                        .tint(.blue)
+                    if !asyncStats.progressPhase.isEmpty {
+                        Text(asyncStats.progressPhase)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .transition(.opacity)
+            }
+        }
+        .padding()
+        .background(Color(.systemGray6))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .animation(.easeInOut(duration: 0.2), value: asyncStats.isComputing)
+    }
+
     var activityLogCard: some View {
         Group {
             if let manager = activityLogManager {

@@ -126,11 +126,18 @@ struct CarrierWaveApp: App {
                 // Activate WatchConnectivity for Apple Watch companion
                 PhoneSessionDelegate.shared.activate()
 
+                // Yield between initialization blocks to avoid starving the main run loop.
+                // Without these yields, all operations serialize on the main actor
+                // with no opportunity for UI updates or deep link processing.
+                await Task.yield()
+
                 // Start hourly solar conditions polling
                 SolarPollingService.shared.configure(container: sharedModelContainer)
 
-                // Start iCloud QSO sync (CKSyncEngine)
+                // Start iCloud QSO sync (CKSyncEngine — heavyweight init)
                 CloudSyncService.shared.configure(container: sharedModelContainer)
+
+                await Task.yield()
 
                 // Seed QRQ Crew callsign notes source on first launch
                 QRQCrewService.seedNotesSourceIfNeeded(

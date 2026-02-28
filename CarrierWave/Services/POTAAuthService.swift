@@ -89,7 +89,8 @@ class POTAAuthService: NSObject, ObservableObject {
 
     override init() {
         super.init()
-        loadStoredToken()
+        // Token loading deferred to loadStoredToken() called from ContentView.task
+        // to avoid blocking the main thread with a synchronous Keychain read.
     }
 
     // MARK: Internal

@@ -13,14 +13,21 @@ struct ActivityLogView: View {
     @Environment(\.modelContext) var modelContext
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 16) {
-                headerSection
-                quickLogSection
-                spotsSection
-                recentQSOsSection
+        Group {
+            if hasLoaded {
+                ScrollView {
+                    VStack(spacing: 16) {
+                        headerSection
+                        quickLogSection
+                        spotsSection
+                        recentQSOsSection
+                    }
+                    .padding()
+                }
+            } else {
+                Color(.systemGroupedBackground)
+                    .ignoresSafeArea()
             }
-            .padding()
         }
         .background(Color(.systemGroupedBackground))
         .navigationTitle("Hunter Log")
@@ -102,13 +109,27 @@ struct ActivityLogView: View {
             guard !hasLoaded else {
                 return
             }
-            hasLoaded = true
 
             manager.refreshTodayStats()
             recentQSOs = manager.fetchRecentQSOs()
 
+            // Mark loaded so the view body switches from placeholder to content.
+            // This frame commits before heavy spot monitoring begins below.
+            hasLoaded = true
+
+            // Yield so the first content frame renders before spot monitoring
+            // starts 3 network requests + HamDB lookups on @MainActor.
+            await Task.yield()
+
             // Capture container before crossing isolation boundary
             let container = modelContext.container
+
+            // Load accepted friends (deferred from @Query to avoid blocking
+            // view construction with a synchronous SwiftData fetch on cold start)
+            let friendDescriptor = FetchDescriptor<Friendship>(
+                predicate: #Predicate<Friendship> { $0.statusRawValue == "accepted" }
+            )
+            acceptedFriends = (try? modelContext.fetch(friendDescriptor)) ?? []
 
             // Fire heavy cache load concurrently with monitoring setup
             async let cacheLoad: Void = workedBeforeCache.loadToday(
@@ -154,8 +175,7 @@ struct ActivityLogView: View {
     @State private var currentMode = "CW"
     @State private var currentFrequency: Double?
     @State private var spotFilters = SpotFilters()
-    @Query(filter: #Predicate<Friendship> { $0.statusRawValue == "accepted" })
-    private var acceptedFriends: [Friendship]
+    @State private var acceptedFriends: [Friendship] = []
 
     @State private var spotMonitor = SpotMonitoringService()
     @State private var workedBeforeCache = WorkedBeforeCache()

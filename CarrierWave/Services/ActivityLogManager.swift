@@ -17,7 +17,8 @@ final class ActivityLogManager {
         self.modelContext = modelContext
         loadActiveLog()
         refreshCurrentProfile()
-        cacheServiceConfiguration()
+        // cacheServiceConfiguration() deferred to first markForUpload() call
+        // to avoid 3 synchronous Keychain reads blocking the main thread.
     }
 
     // MARK: Internal
@@ -328,10 +329,11 @@ final class ActivityLogManager {
     /// UserDefaults key for persisting active log ID across launches
     private static let activeLogIdKey = "activeActivityLogId"
 
-    /// Cached service configuration
+    /// Cached service configuration (loaded lazily on first QSO log)
     private var qrzConfigured = false
     private var lofiConfigured = false
     private var clublogConfigured = false
+    private var hasLoadedServiceConfig = false
 
     private func todayStartUTC() -> Date {
         var calendar = Calendar.current
@@ -341,6 +343,13 @@ final class ActivityLogManager {
 
     /// Mark QSO for upload to QRZ and LoFi only (never POTA)
     private func markForUpload(_ qso: QSO) {
+        // Lazy-load service config on first QSO log to avoid
+        // blocking init() with synchronous Keychain reads.
+        if !hasLoadedServiceConfig {
+            cacheServiceConfiguration()
+            hasLoadedServiceConfig = true
+        }
+
         // Skip metadata pseudo-modes
         guard !Self.metadataModes.contains(qso.mode.uppercased()) else {
             return
@@ -395,7 +404,8 @@ final class ActivityLogManager {
             let logs = try modelContext.fetch(descriptor)
             if let log = logs.first, log.isActive {
                 activeLog = log
-                refreshTodayStats()
+                // Today stats deferred to first refreshTodayStats() call
+                // to avoid an expensive SwiftData query during init.
             } else {
                 clearActiveLogId()
             }

@@ -4,6 +4,9 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- Fix app freeze on cold start from spots widget tap by deferring synchronous Keychain reads and SwiftData queries off the view construction path: lazy POTAAuthService token load, deferred ActivityLogManager service config and stats queries, replaced @Query with @State + .task in ContentView and ActivityLogView, batched state updates, and deferred navigation push
+
 ## [1.48.1] - 2026-02-27
 
 ### Fixed

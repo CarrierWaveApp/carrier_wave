@@ -81,16 +81,34 @@ struct ContentView: View {
             // heavy service initialization (Keychain, SwiftData, CKSyncEngine).
             // dashboardTabContent gates on syncService != nil, so the first
             // frame shows a lightweight ProgressView — satisfying the watchdog.
-            iCloudMonitor.startMonitoring()
+
+            // Async iCloud monitoring avoids 100-500ms main thread block from
+            // synchronous FileManager.url(forUbiquityContainerIdentifier:).
+            await iCloudMonitor.startMonitoring()
+
+            // Load POTA token from Keychain (deferred from init to avoid
+            // blocking the main thread during @StateObject creation).
+            potaAuthService.loadStoredToken()
+
+            // Yield so any pending onOpenURL → deep link notification
+            // propagates before DashboardView creation (gated on syncService).
+            await Task.yield()
+
+            // Create both services before setting state to avoid two
+            // consecutive ContentView body re-evaluations. Setting syncService
+            // triggers DashboardView creation via dashboardTabContent.
             if syncService == nil {
-                syncService = SyncService(
+                let newSync = SyncService(
                     modelContext: modelContext,
                     potaAuthService: potaAuthService
                 )
+                let newPota = POTAClient(authService: potaAuthService)
+                syncService = newSync
+                potaClient = newPota
             }
-            if potaClient == nil {
-                potaClient = POTAClient(authService: potaAuthService)
-            }
+
+            // Deferred from @Query to avoid main-thread SwiftData fetch during view init
+            refreshFriendRequestCount()
         }
         .onReceive(NotificationCenter.default.publisher(for: .didReceiveADIFFile)) { notification in
             if let url = notification.object as? URL {
@@ -156,12 +174,6 @@ struct ContentView: View {
 
     // MARK: Private
 
-    /// True only on iPad — prevents iOS 26's `.regular` horizontal size class
-    /// on large iPhones from triggering the iPad sidebar navigation.
-    private var isIPad: Bool {
-        UIDevice.current.userInterfaceIdiom == .pad
-    }
-
     /// Locked layout mode — set once on first appearance, never changes.
     /// Prevents size class transitions (e.g., orientation change on iPad or iPhone Max)
     /// from destroying the entire view hierarchy and resetting @State in child views.
@@ -184,16 +196,18 @@ struct ContentView: View {
     @State private var pendingActivityLogNavigation = false
     @State private var loggerHasActiveSession = false
     @State private var showingRestoreAlert = false
-
-    @Query(
-        filter: #Predicate<Friendship> { $0.statusRawValue == "pending" && $0.isOutgoing == false }
-    )
-    private var incomingFriendRequests: [Friendship]
+    @State private var incomingFriendRequestCount = 0
 
     private let lofiClient = LoFiClient.appDefault()
     private let qrzClient = QRZClient()
     private let hamrsClient = HAMRSClient()
     private let lotwClient = LoTWClient()
+
+    /// True only on iPad — prevents iOS 26's `.regular` horizontal size class
+    /// on large iPhones from triggering the iPad sidebar navigation.
+    private var isIPad: Bool {
+        UIDevice.current.userInterfaceIdiom == .pad
+    }
 
     // MARK: - iPhone Navigation (TabView)
 
@@ -216,7 +230,7 @@ struct ContentView: View {
             List(selection: $selectedTab) {
                 ForEach(iPadTabs, id: \.self) { tab in
                     Label(tab.title, systemImage: tab.icon)
-                        .badge(tab == .activity ? incomingFriendRequests.count : 0)
+                        .badge(tab == .activity ? incomingFriendRequestCount : 0)
                         .tag(tab)
                 }
 
@@ -272,7 +286,7 @@ struct ContentView: View {
                         Label(tab.title, systemImage: tab.icon)
                     }
                     .tag(tab)
-                    .badge(tab == .activity ? incomingFriendRequests.count : 0)
+                    .badge(tab == .activity ? incomingFriendRequestCount : 0)
             }
         }
         .toolbar(shouldHideTabBar ? .hidden : .visible, for: .tabBar)
@@ -372,14 +386,16 @@ extension ContentView {
     }
 
     var moreTabContent: some View {
-        MoreTabView(
-            potaAuthService: potaAuthService,
-            settingsDestination: $settingsDestination,
-            pendingDeepLink: $pendingMoreTabDestination,
-            mapFilterState: mapFilterState,
-            tourState: tourState,
-            syncService: syncService
-        )
+        LazyTabContent {
+            MoreTabView(
+                potaAuthService: potaAuthService,
+                settingsDestination: $settingsDestination,
+                pendingDeepLink: $pendingMoreTabDestination,
+                mapFilterState: mapFilterState,
+                tourState: tourState,
+                syncService: syncService
+            )
+        }
     }
 
     @ViewBuilder
@@ -393,6 +409,15 @@ extension ContentView {
         case .activity: activityTabContent
         case .more: moreTabContent
         }
+    }
+
+    func refreshFriendRequestCount() {
+        let descriptor = FetchDescriptor<Friendship>(
+            predicate: #Predicate<Friendship> {
+                $0.statusRawValue == "pending" && $0.isOutgoing == false
+            }
+        )
+        incomingFriendRequestCount = (try? modelContext.fetchCount(descriptor)) ?? 0
     }
 
     var restoreAlertMessage: String {

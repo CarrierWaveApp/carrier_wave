@@ -35,12 +35,6 @@ struct LoggerContainerView: View {
 
     // MARK: Private
 
-    /// True only on iPad — prevents iOS 26's `.regular` horizontal size class
-    /// on large iPhones from triggering the two-pane iPad layout.
-    private var isIPad: Bool {
-        UIDevice.current.userInterfaceIdiom == .pad
-    }
-
     /// Locked layout mode — set once on first appearance, never changes.
     /// Prevents size class transitions (e.g., rotation on iPhone Max)
     /// from destroying the entire view hierarchy and resetting @State.
@@ -68,6 +62,12 @@ struct LoggerContainerView: View {
     // Resizable sidebar — GestureState for flicker-free live dragging
     @AppStorage("iPadSidebarWidth") private var persistedSidebarWidth: Double = 340
     @GestureState private var dragOffset: CGFloat = 0
+
+    /// True only on iPad — prevents iOS 26's `.regular` horizontal size class
+    /// on large iPhones from triggering the two-pane iPad layout.
+    private var isIPad: Bool {
+        UIDevice.current.userInterfaceIdiom == .pad
+    }
 
     // MARK: - Layouts
 
