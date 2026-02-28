@@ -1,3 +1,4 @@
 LoggerContainerView.swift, ContentView.swift: Add UIDevice idiom guard to iPad layout checks to prevent iOS 26 .regular size class on iPhones from triggering two-pane layout
 BragSheetShareRenderer.swift: Add geodesic trace lines from operator to clusters, replace circle markers with traditional pin-shaped pins (smaller, less contrast)
 SessionBragSheetCard+Components.swift: Thicker white trace lines, replace circle markers with traditional pin-shaped SessionMapPin
+docs/features/radio-connection.md: Research and design document for CAT control / radio connection feature
