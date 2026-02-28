@@ -35,15 +35,28 @@ enum BragSheetShareRenderer {
         let callsign: String
         let statisticianStats: BragSheetStatisticianData?
         let snapshots: [BragSheetQSOSnapshot]
+
+        /// Most common operator grid (for drawing trace lines).
+        var myGrid: String? {
+            var counts: [String: Int] = [:]
+            for snap in snapshots {
+                guard let grid = snap.myGrid, grid.count >= 4 else { continue }
+                counts[String(grid.prefix(4)).uppercased(), default: 0] += 1
+            }
+            return counts.max(by: { $0.value < $1.value })?.key
+        }
     }
 
     /// Render a brag sheet share card with map to UIImage (async).
     static func renderWithMap(input: Input) async -> UIImage? {
         let clusters = await computeClusters(from: input.snapshots)
+        let myCoordinate = input.myGrid.flatMap {
+            MaidenheadConverter.coordinate(from: $0)
+        }
 
         let mapImage: UIImage? =
             if !clusters.isEmpty {
-                await drawMap(clusters: clusters)
+                await drawMap(clusters: clusters, myCoordinate: myCoordinate)
             } else {
                 nil
             }
@@ -154,9 +167,12 @@ enum BragSheetShareRenderer {
     /// cluster overlay. The background provides earth imagery context;
     /// cluster positions use our own projection for guaranteed visibility.
     private static func drawMap(
-        clusters: [BragSheetMapCluster]
+        clusters: [BragSheetMapCluster],
+        myCoordinate: CLLocationCoordinate2D? = nil
     ) async -> UIImage {
-        let viewport = computeViewport(clusters: clusters)
+        let viewport = computeViewport(
+            clusters: clusters, myCoordinate: myCoordinate
+        )
 
         // Try to get a map background from MKMapSnapshotter
         let background = await renderBackground(viewport: viewport)
@@ -180,20 +196,22 @@ enum BragSheetShareRenderer {
             drawGridLines(ctx: ctx, size: size, viewport: viewport)
         }
 
-        // Draw clusters using equirectangular projection
-        let maxCount = clusters.map(\.count).max() ?? 1
+        // Draw geodesic trace lines from operator to each cluster
+        if let myCoord = myCoordinate {
+            drawTraceLines(
+                ctx: ctx, size: size, viewport: viewport,
+                from: myCoord, clusters: clusters
+            )
+        }
+
+        // Draw pin markers using equirectangular projection
         for cluster in clusters {
             let pt = viewport.project(
                 cluster.coordinate.latitude,
                 cluster.coordinate.longitude,
                 imageSize: size
             )
-            let fraction = Double(cluster.count)
-                / Double(max(maxCount, 1))
-            let markerSize = CGFloat(10 + fraction * 30)
-            drawClusterMarker(
-                at: pt, in: ctx, size: markerSize, count: cluster.count
-            )
+            drawPinMarker(at: pt, in: ctx, count: cluster.count)
         }
 
         let image = UIGraphicsGetImageFromCurrentImageContext()
@@ -202,10 +220,15 @@ enum BragSheetShareRenderer {
     }
 
     private static func computeViewport(
-        clusters: [BragSheetMapCluster]
+        clusters: [BragSheetMapCluster],
+        myCoordinate: CLLocationCoordinate2D? = nil
     ) -> MapViewport {
-        let lats = clusters.map(\.coordinate.latitude)
-        let lons = clusters.map(\.coordinate.longitude)
+        var lats = clusters.map(\.coordinate.latitude)
+        var lons = clusters.map(\.coordinate.longitude)
+        if let myCoord = myCoordinate {
+            lats.append(myCoord.latitude)
+            lons.append(myCoord.longitude)
+        }
 
         guard let rawMinLat = lats.min(), let rawMaxLat = lats.max(),
               let rawMinLon = lons.min(), let rawMaxLon = lons.max()
@@ -336,63 +359,82 @@ enum BragSheetShareRenderer {
         }
     }
 
-    // MARK: - Cluster Drawing
+    // MARK: - Trace Lines
 
-    private static func drawClusterMarker(
-        at point: CGPoint, in context: CGContext,
-        size: CGFloat, count: Int
+    /// Draw geodesic trace lines from operator location to each cluster.
+    private static func drawTraceLines(
+        ctx: CGContext, size: CGSize, viewport: MapViewport,
+        from origin: CLLocationCoordinate2D,
+        clusters: [BragSheetMapCluster]
     ) {
-        let color = clusterColor(for: count)
+        let lineColor = UIColor.white.withAlphaComponent(0.5)
+        ctx.setStrokeColor(lineColor.cgColor)
+        ctx.setLineWidth(2.5)
+        ctx.setLineCap(.round)
 
-        // Glow effect
-        context.saveGState()
-        context.setShadow(
-            offset: .zero, blur: size * 0.6,
-            color: color.withAlphaComponent(0.4).cgColor
-        )
-        context.setFillColor(color.withAlphaComponent(0.5).cgColor)
-        context.fillEllipse(
-            in: CGRect(
-                x: point.x - size / 2, y: point.y - size / 2,
-                width: size, height: size
+        for cluster in clusters {
+            let path = ActivationMapHelpers.geodesicPath(
+                from: origin, to: cluster.coordinate, segments: 30
             )
-        )
-        context.restoreGState()
+            guard path.count >= 2 else { continue }
 
-        // Solid border
-        context.setStrokeColor(color.cgColor)
-        context.setLineWidth(1.5)
-        context.strokeEllipse(
-            in: CGRect(
-                x: point.x - size / 2, y: point.y - size / 2,
-                width: size, height: size
+            let firstPt = viewport.project(
+                path[0].latitude, path[0].longitude, imageSize: size
             )
-        )
-
-        // Count label for clusters with 2+ QSOs
-        if count >= 2, size >= 16 {
-            let text = "\(count)" as NSString
-            let fontSize: CGFloat = min(size * 0.4, 14)
-            let attrs: [NSAttributedString.Key: Any] = [
-                .font: UIFont.systemFont(ofSize: fontSize, weight: .bold),
-                .foregroundColor: UIColor.white,
-            ]
-            let textSize = text.size(withAttributes: attrs)
-            let textRect = CGRect(
-                x: point.x - textSize.width / 2,
-                y: point.y - textSize.height / 2,
-                width: textSize.width, height: textSize.height
-            )
-            text.draw(in: textRect, withAttributes: attrs)
+            ctx.move(to: firstPt)
+            for coord in path.dropFirst() {
+                let pt = viewport.project(
+                    coord.latitude, coord.longitude, imageSize: size
+                )
+                ctx.addLine(to: pt)
+            }
+            ctx.strokePath()
         }
     }
 
-    private static func clusterColor(for count: Int) -> UIColor {
+    // MARK: - Pin Drawing
+
+    /// Draw a traditional map pin at the given point.
+    /// Pin size is fixed/small; color varies by count.
+    private static func drawPinMarker(
+        at point: CGPoint, in ctx: CGContext, count: Int
+    ) {
+        let color = pinColor(for: count)
+        let pinHeight: CGFloat = 14
+        let headRadius: CGFloat = 4.5
+
+        // Pin tip is at `point`; head is above
+        let tipY = point.y
+        let headCenterY = tipY - pinHeight + headRadius
+
+        // Draw the needle (line from tip to bottom of head)
+        ctx.saveGState()
+        ctx.setStrokeColor(color.withAlphaComponent(0.7).cgColor)
+        ctx.setLineWidth(1.5)
+        ctx.setLineCap(.round)
+        ctx.move(to: CGPoint(x: point.x, y: tipY))
+        ctx.addLine(to: CGPoint(x: point.x, y: headCenterY + headRadius))
+        ctx.strokePath()
+
+        // Draw the head circle
+        ctx.setFillColor(color.withAlphaComponent(0.8).cgColor)
+        ctx.fillEllipse(
+            in: CGRect(
+                x: point.x - headRadius,
+                y: headCenterY - headRadius,
+                width: headRadius * 2,
+                height: headRadius * 2
+            )
+        )
+        ctx.restoreGState()
+    }
+
+    private static func pinColor(for count: Int) -> UIColor {
         switch count {
-        case 1 ... 5: UIColor.systemGreen
-        case 6 ... 20: UIColor.systemYellow
-        case 21 ... 50: UIColor.systemOrange
-        default: UIColor.systemRed
+        case 1 ... 5: UIColor(red: 0.55, green: 0.85, blue: 0.55, alpha: 1)
+        case 6 ... 20: UIColor(red: 0.90, green: 0.85, blue: 0.45, alpha: 1)
+        case 21 ... 50: UIColor(red: 0.90, green: 0.65, blue: 0.35, alpha: 1)
+        default: UIColor(red: 0.90, green: 0.45, blue: 0.40, alpha: 1)
         }
     }
 }
