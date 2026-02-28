@@ -15,6 +15,7 @@ struct BandPlanSheet: View {
         NavigationStack {
             List {
                 bandPicker
+                chartSection
                 segmentsSection
                 activitiesSection
             }
@@ -37,6 +38,7 @@ struct BandPlanSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var selectedBand: String = "20m"
+    @State private var chartDisplayMode: BandChartDisplayMode = .byClass
 
     // MARK: - Data
 
@@ -68,6 +70,12 @@ struct BandPlanSheet: View {
         BandPlan.activities.filter { $0.band == selectedBand }
     }
 
+    // MARK: - Chart
+
+    private var chartData: BandChartData {
+        BandChartData.build(for: selectedBand)
+    }
+
     // MARK: - Band Picker
 
     private var bandPicker: some View {
@@ -94,6 +102,31 @@ struct BandPlanSheet: View {
                 }
             }
             .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+        }
+    }
+
+    private var chartSection: some View {
+        Section {
+            Picker("Display", selection: $chartDisplayMode) {
+                ForEach(BandChartDisplayMode.allCases, id: \.self) { mode in
+                    Text(mode.rawValue).tag(mode)
+                }
+            }
+            .pickerStyle(.segmented)
+            .listRowSeparator(.hidden)
+
+            BandChartView(
+                chartData: chartData,
+                displayMode: chartDisplayMode,
+                userLicenseClass: userLicenseClass
+            ) { freq in
+                frequency = FrequencyFormatter.format(freq)
+                dismiss()
+            }
+            .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+
+            BandChartLegendView(displayMode: chartDisplayMode)
+                .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 4, trailing: 16))
         }
     }
 

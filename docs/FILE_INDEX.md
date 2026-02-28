@@ -122,8 +122,9 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `SDRTranscriptModels.swift` | SDR transcript types (Word, Line, Transcript, DetectedQSORange) for cw-swl integration |
 | `WebSDRFavorite.swift` | Favorited KiwiSDR receiver model (iCloud synced) |
 | `CallsignNotesSource.swift` | SwiftData model for user-configured callsign notes file sources |
-| `BandPlan.swift` | US amateur radio band plan data with license class privileges |
+| `BandPlan.swift` | US amateur radio band plan data with license class privileges and frequency dicts |
 | `BandPlan+Activities.swift` | Frequency activity data (QRP, SSTV, FT8, CWT, nets) and time windows |
+| `BandChartData.swift` | Precomputed chart data model for visual band plan display |
 | `UserProfile.swift` | User's amateur radio profile (callsign, name, QTH, grid, license) |
 | `SessionSpot.swift` | Persisted RBN/POTA spot recorded during a logging session |
 | `SpotQSOMatch.swift` | Cross-references session QSOs and spots by callsign+band for display linking |
@@ -487,7 +488,9 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `EquipmentPickerSheet.swift` | Generic equipment picker (antenna, key, mic) with user-managed list |
 | `SessionStartHelperViews.swift` | Helper views and validation for session start (CallsignBreakdown, ActivationSection, FrequencySuggestions) |
 | `LiveActivitySuggestionsView.swift` | Unified FrequencyBandView: static band frequencies + live POTA spots + nestled clear-frequency recommendations |
-| `BandPlanSheet.swift` | Interactive band plan reference with segments, license requirements, and activity frequencies |
+| `BandPlanSheet.swift` | Interactive band plan reference with visual chart, segments, license requirements, and activities |
+| `BandChartView.swift` | Visual ARRL-style band allocation chart with license class and mode zone display |
+| `BandChartLegendView.swift` | Color key legend for band chart display modes |
 | `RadioPickerSheet.swift` | Radio/rig picker sheet with user-managed list and RadioStorage helper |
 | `SessionEquipmentEditSheet.swift` | Compact equipment editor (radio, antenna, key, mic) for active sessions |
 | `ParkPickerSheet.swift` | Multi-select park search/nearby sheet for n-fer |

@@ -4,6 +4,29 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Add visual ARRL-style band chart to Band Plan sheet with license class and mode zone display modes
+- Add segmented picker to toggle between By Class and By Mode chart views
+- Add color-coded legend for chart display modes
+- Add tap-to-select frequency from chart zones
+- Add 60m channel dot rendering in band chart
+- Add FT8, RTTY, AM, and FM frequency dicts to BandPlan (single source of truth)
+
+### Changed
+- Consolidate duplicate frequency tables from LoggingSession into BandPlan
+
+### Fixed
+- Fix 160m band plan to include SSB/PHONE modes (was CW/DATA only)
+- Fix 80m Extra-only phone segment to correct range 3.600-3.800 MHz (was duplicating General range)
+- Fix 20m Extra phone segments merged into single 14.150-14.225 MHz (was two leftover Advanced splits)
+- Fix 15m Extra phone segments merged into single 21.200-21.275 MHz (same Advanced split issue)
+- Fix 10m Technician notes from "Tech CW only" to "Tech CW/Data" (DATA was already in modes)
+- Add missing 10m upper segment 28.500-29.700 MHz for Phone/AM/FM
+- Split 6m into CW-only (50.0-50.1) and all-modes (50.1-54.0) sub-bands
+- Split 2m into CW-only (144.0-144.1) and all-modes (144.1-148.0) sub-bands
+- Add missing 60m usage zones for ARRL band plan
+- Fix 80m CW suggested frequency from 3.530 to 3.560 MHz (QRP calling freq)
+
 ## [1.49.0] - 2026-02-27
 
 ### Added
