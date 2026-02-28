@@ -205,6 +205,7 @@ struct BandChartView: View {
         return Rectangle()
             .fill(licenseColor(licenseClass))
             .frame(width: max(pos.width, 2), height: barHeight)
+            .contentShape(Rectangle().size(width: max(pos.width, 44), height: 44))
             .position(x: pos.x + pos.width / 2, y: barHeight / 2)
             .onTapGesture {
                 onSelectFrequency((bar.startMHz + bar.endMHz) / 2)
@@ -234,6 +235,7 @@ struct BandChartView: View {
         return Rectangle()
             .fill(modeColor(zone.usage))
             .frame(width: max(pos.width, 2), height: 24)
+            .contentShape(Rectangle().size(width: max(pos.width, 44), height: 44))
             .position(x: pos.x + pos.width / 2, y: 12)
             .onTapGesture {
                 onSelectFrequency((zone.startMHz + zone.endMHz) / 2)

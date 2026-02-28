@@ -56,6 +56,7 @@ struct FriendsOnAirCard: View {
                     .clipShape(Capsule())
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                     .onAppear {
+                        AccessibilityNotification.Announcement("Start Activity Log first").post()
                         Task {
                             try? await Task.sleep(for: .seconds(2))
                             withAnimation { showNoLogToast = false }
@@ -126,6 +127,7 @@ struct FriendsOnAirCard: View {
                     friendSpotRow(callsign: item.callsign, spot: item.spot)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel(spotAccessibilityLabel(callsign: item.callsign, spot: item.spot))
             }
         }
     }
@@ -163,6 +165,11 @@ struct FriendsOnAirCard: View {
                     .foregroundStyle(spot.ageColor)
             }
         }
+    }
+
+    private func spotAccessibilityLabel(callsign: String, spot: POTASpot) -> String {
+        let band = BandUtilities.deriveBand(from: spot.frequencyKHz) ?? ""
+        return "\(callsign) at \(spot.reference), \(band) \(spot.mode), \(spot.timeAgo)"
     }
 
     private func handleSpotTap(_ spot: POTASpot) {
