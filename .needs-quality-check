@@ -1,1 +1,2 @@
 LoggerContainerView.swift, ContentView.swift: Add UIDevice idiom guard to iPad layout checks to prevent iOS 26 .regular size class on iPhones from triggering two-pane layout
+BragSheetShareRenderer.swift: Add geodesic trace lines from operator to clusters, replace circle markers with traditional pin-shaped pins (smaller, less contrast)
