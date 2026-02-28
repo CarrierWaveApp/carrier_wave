@@ -4,22 +4,28 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.50.0] - 2026-02-28
+
 ### Added
-- Add logger tour pages explaining quick entry and per-field entry settings
 - Add visual ARRL-style band chart to Band Plan sheet with license class and mode zone display modes
 - Add segmented picker to toggle between By Class and By Mode chart views
 - Add color-coded legend for chart display modes
 - Add tap-to-select frequency from chart zones
 - Add 60m channel dot rendering in band chart
 - Add FT8, RTTY, AM, and FM frequency dicts to BandPlan (single source of truth)
+- Add time display and tap-to-hunt to Friends On Air card
+- Add shared keychain group for cross-app credential sync with QSO Ledger
+- Add logger tour pages explaining quick entry and per-field entry settings
 
 ### Changed
 - Rename "State" field to "QTH" for better DX compatibility
 - Re-order compact fields from State | Sent | Rcvd to Sent | Rcvd | QTH (matches QSO exchange order)
 - Suppress QRZ lookup card while compact fields are focused to prevent layout shift
 - Consolidate duplicate frequency tables from LoggingSession into BandPlan
+- Collapse prefix/suffix behind disclosure group in session start wizard
 
 ### Fixed
+- Fix QRZ credentials entered during intro tour not appearing in onboarding flow
 - Fix 160m band plan to include SSB/PHONE modes (was CW/DATA only)
 - Fix 80m Extra-only phone segment to correct range 3.600-3.800 MHz (was duplicating General range)
 - Fix 20m Extra phone segments merged into single 14.150-14.225 MHz (was two leftover Advanced splits)
@@ -30,6 +36,7 @@ All notable changes to Carrier Wave will be documented in this file.
 - Split 2m into CW-only (144.0-144.1) and all-modes (144.1-148.0) sub-bands
 - Add missing 60m usage zones for ARRL band plan
 - Fix 80m CW suggested frequency from 3.530 to 3.560 MHz (QRP calling freq)
+- Improve band chart touch targets and Friends On Air VoiceOver accessibility
 
 ## [1.49.0] - 2026-02-27
 
