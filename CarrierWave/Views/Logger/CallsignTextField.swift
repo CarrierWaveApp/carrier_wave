@@ -220,6 +220,7 @@ struct CallsignTextField: UIViewRepresentable {
         textField.autocorrectionType = .no
         textField.spellCheckingType = .no
         textField.returnKeyType = .send
+        textField.enablesReturnKeyAutomatically = true
         textField.clearButtonMode = .never
         textField.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         textField.setContentHuggingPriority(.defaultLow, for: .horizontal)

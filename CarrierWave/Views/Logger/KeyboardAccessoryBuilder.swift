@@ -220,7 +220,7 @@ enum KeyboardAccessoryBuilder {
             stack.addArrangedSubview(button)
         }
 
-        stack.addArrangedSubview(createLogButton(action: submitAction, target: target))
+        stack.addArrangedSubview(createDismissButton(action: dismissAction, target: target))
 
         container.addSubview(stack)
 
@@ -284,14 +284,15 @@ enum KeyboardAccessoryBuilder {
         return button
     }
 
-    private static func createLogButton(action: Selector, target: AnyObject) -> UIButton {
+    private static func createDismissButton(action: Selector, target: AnyObject) -> UIButton {
         let button = UIButton(type: .system)
-        button.setTitle("LOG", for: .normal)
-        let baseFont = UIFont.systemFont(ofSize: 16, weight: .semibold)
-        button.titleLabel?.font = UIFontMetrics(forTextStyle: .body).scaledFont(for: baseFont)
-        button.titleLabel?.adjustsFontForContentSizeCategory = true
-        button.setTitleColor(.white, for: .normal)
-        button.backgroundColor = .systemGreen
+        let config = UIImage.SymbolConfiguration(pointSize: 16, weight: .semibold)
+        button.setImage(
+            UIImage(systemName: "keyboard.chevron.compact.down", withConfiguration: config),
+            for: .normal
+        )
+        button.tintColor = .secondaryLabel
+        button.backgroundColor = .tertiarySystemBackground
         button.layer.cornerRadius = 6
         button.addTarget(target, action: action, for: .touchUpInside)
         return button

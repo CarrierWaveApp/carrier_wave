@@ -439,7 +439,7 @@ extension LoggerView {
         } else if editingQSO != nil {
             return .orange
         }
-        return .green
+        return Color(uiColor: .systemBlue)
     }
 
     /// Accessibility label for the action button
