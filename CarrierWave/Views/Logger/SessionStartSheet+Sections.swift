@@ -7,9 +7,7 @@ extension SessionStartSheet {
     var callsignSection: some View {
         Section {
             callsignDisplayView
-            callsignPrefixRow
-            suffixPicker
-            customSuffixRow
+            prefixSuffixGroup
             gridRow
         } header: {
             Text("Station")
@@ -21,21 +19,23 @@ extension SessionStartSheet {
     @ViewBuilder
     var callsignDisplayView: some View {
         if !defaultCallsign.isEmpty {
-            VStack(spacing: 8) {
-                Text(fullCallsign)
-                    .font(.title2.monospaced().bold())
-                    .foregroundStyle(.primary)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
+            Text(fullCallsign)
+                .font(.title2.monospaced().bold())
+                .foregroundStyle(.primary)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8)
+                .listRowSeparator(.hidden)
+        }
+    }
 
-                if !callsignPrefix.isEmpty || selectedSuffix != .none {
-                    CallsignBreakdownView(
-                        prefix: callsignPrefix,
-                        baseCallsign: defaultCallsign,
-                        suffix: effectiveSuffix
-                    )
-                }
-            }
+    var prefixSuffixGroup: some View {
+        DisclosureGroup(
+            "Prefix / Suffix",
+            isExpanded: $showPrefixSuffix
+        ) {
+            callsignPrefixRow
+            suffixPicker
+            customSuffixRow
         }
     }
 
