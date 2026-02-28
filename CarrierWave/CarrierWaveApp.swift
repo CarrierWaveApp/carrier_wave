@@ -32,6 +32,9 @@ struct CarrierWaveApp: App {
         // One-time tab migration: unhide Sessions tab for existing users
         TabConfiguration.migrateLoggerToSessions()
 
+        // Mirror existing credentials to shared iCloud Keychain group for QSO Ledger
+        KeychainHelper.shared.migrateExistingToSharedGroup()
+
         // Set default cw-swl server URL if not yet configured
         if (UserDefaults.standard.string(forKey: "cwswlServerURL") ?? "").isEmpty {
             UserDefaults.standard.set("https://swl.carrierwave.app", forKey: "cwswlServerURL")

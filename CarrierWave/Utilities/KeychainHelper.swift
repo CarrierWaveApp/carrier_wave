@@ -41,6 +41,11 @@ struct KeychainHelper: Sendable {
         guard status == errSecSuccess else {
             throw KeychainError.unexpectedStatus(status)
         }
+
+        // Mirror eligible credentials to shared group for cross-app sync
+        if Self.sharedKeys.contains(key) {
+            try? saveToSharedGroup(data, for: key)
+        }
     }
 
     nonisolated func save(_ string: String, for key: String) throws {
@@ -96,11 +101,110 @@ struct KeychainHelper: Sendable {
         guard status == errSecSuccess || status == errSecItemNotFound else {
             throw KeychainError.unexpectedStatus(status)
         }
+
+        // Remove from shared group if this was a mirrored key
+        if Self.sharedKeys.contains(key) {
+            try? deleteFromSharedGroup(for: key)
+        }
+    }
+
+    /// One-time migration: copies all existing eligible credentials to the shared group.
+    /// Safe to call multiple times — writes are idempotent (delete-then-add).
+    nonisolated func migrateExistingToSharedGroup() {
+        var migrated = 0
+        var failed = 0
+        for key in Self.sharedKeys {
+            guard let data = try? read(for: key) else {
+                continue
+            }
+            do {
+                try saveToSharedGroup(data, for: key)
+                migrated += 1
+            } catch {
+                failed += 1
+                print("[Keychain] shared group write failed for \(key): \(error)")
+            }
+        }
+        print("[Keychain] shared group migration: \(migrated) migrated, \(failed) failed")
     }
 
     // MARK: Private
 
+    // Credential keys that are automatically mirrored to the shared keychain group.
+    // Ephemeral keys (session tokens, counters, timestamps, progress) are excluded.
+    // swiftformat:disable:next redundantNonisolated
+    nonisolated private static let sharedKeys: Set<String> = [
+        // QRZ Logbook
+        Keys.qrzApiKey, Keys.qrzCallsign,
+        // QRZ Callbook
+        Keys.qrzCallbookUsername, Keys.qrzCallbookPassword,
+        // POTA
+        Keys.potaUsername, Keys.potaPassword,
+        // LoFi
+        Keys.lofiAuthToken, Keys.lofiClientKey, Keys.lofiClientSecret,
+        Keys.lofiCallsign, Keys.lofiEmail,
+        // HAMRS
+        Keys.hamrsApiKey,
+        // Activities
+        Keys.activitiesAuthToken,
+        // LoTW
+        Keys.lotwUsername, Keys.lotwPassword,
+        // Club Log
+        Keys.clublogApiKey, Keys.clublogEmail,
+        Keys.clublogPassword, Keys.clublogCallsign,
+        // User identity
+        Keys.currentCallsign, Keys.previousCallsigns, Keys.userProfile,
+    ]
+
     private let service = "com.fullduplex.credentials"
+
+    /// Shared keychain service for cross-app credential sync via iCloud Keychain.
+    private let sharedService = "com.fullduplex.shared"
+    private let sharedAccessGroup = "7UE4RDLUSX.com.fullduplex.shared"
+
+    /// Mirrors a credential to the shared keychain group with iCloud Keychain sync.
+    /// Uses `try?` at call sites so local saves always succeed even if this fails.
+    nonisolated private func saveToSharedGroup(_ data: Data, for key: String) throws {
+        let deleteQuery: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: sharedService,
+            kSecAttrAccount as String: key,
+            kSecAttrAccessGroup as String: sharedAccessGroup,
+            kSecAttrSynchronizable as String: kSecAttrSynchronizableAny,
+        ]
+        SecItemDelete(deleteQuery as CFDictionary)
+
+        let addQuery: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: sharedService,
+            kSecAttrAccount as String: key,
+            kSecAttrAccessGroup as String: sharedAccessGroup,
+            kSecValueData as String: data,
+            kSecAttrSynchronizable as String: kCFBooleanTrue!,
+            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock,
+        ]
+
+        let status = SecItemAdd(addQuery as CFDictionary, nil)
+        guard status == errSecSuccess else {
+            throw KeychainError.unexpectedStatus(status)
+        }
+    }
+
+    /// Removes a credential from the shared keychain group.
+    nonisolated private func deleteFromSharedGroup(for key: String) throws {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: sharedService,
+            kSecAttrAccount as String: key,
+            kSecAttrAccessGroup as String: sharedAccessGroup,
+            kSecAttrSynchronizable as String: kSecAttrSynchronizableAny,
+        ]
+
+        let status = SecItemDelete(query as CFDictionary)
+        guard status == errSecSuccess || status == errSecItemNotFound else {
+            throw KeychainError.unexpectedStatus(status)
+        }
+    }
 }
 
 // MARK: KeychainHelper.Keys
