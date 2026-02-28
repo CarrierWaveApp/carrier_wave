@@ -50,17 +50,32 @@ struct SettingsMainView: View {
 
     var body: some View {
         if isInNavigationContext {
-            settingsContent
+            settingsListContent
         } else {
             NavigationStack(path: $navigationPath) {
-                settingsContent
+                settingsListContent
+                    .navigationDestination(
+                        for: SettingsDestination.self
+                    ) { dest in
+                        settingsDestinationView(for: dest)
+                    }
+                    .task(id: destination) {
+                        guard let dest = destination else {
+                            return
+                        }
+                        try? await Task.sleep(nanoseconds: 100_000_000)
+                        navigationPath.append(dest)
+                        destination = nil
+                    }
             }
         }
     }
 
     // MARK: Private
 
-    private var settingsContent: some View {
+    /// The settings List with sections and modifiers shared by both
+    /// standalone and embedded navigation contexts.
+    private var settingsListContent: some View {
         List {
             if searchText.isEmpty {
                 profileSection
@@ -78,41 +93,8 @@ struct SettingsMainView: View {
             }
         }
         .searchable(text: $searchText, prompt: "Search settings")
-        .navigationDestination(for: SettingsDestination.self) { dest in
-            switch dest {
-            case .qrz:
-                QRZSettingsView(syncService: syncService)
-            case .pota:
-                POTASettingsView(
-                    potaAuth: potaAuth,
-                    tourState: tourState,
-                    syncService: syncService
-                )
-            case .lofi:
-                LoFiSettingsView(
-                    tourState: tourState,
-                    syncService: syncService
-                )
-            case .hamrs:
-                HAMRSSettingsView(syncService: syncService)
-            case .lotw:
-                LoTWSettingsView(syncService: syncService)
-            case .clublog:
-                ClubLogSettingsView()
-            case .icloud:
-                CloudSyncSettingsView()
-            }
-        }
         .onAppear {
             userProfile = UserProfileService.shared.getProfile()
-        }
-        .task(id: destination) {
-            guard let dest = destination else {
-                return
-            }
-            try? await Task.sleep(nanoseconds: 100_000_000)
-            navigationPath.append(dest)
-            destination = nil
         }
         .alert("Error", isPresented: $showingError) {
             Button("OK") {}
@@ -150,6 +132,36 @@ struct SettingsMainView: View {
             if !isShowing {
                 userProfile = UserProfileService.shared.getProfile()
             }
+        }
+    }
+
+    /// Destination view for programmatic deep-link navigation
+    @ViewBuilder
+    private func settingsDestinationView(
+        for dest: SettingsDestination
+    ) -> some View {
+        switch dest {
+        case .qrz:
+            QRZSettingsView(syncService: syncService)
+        case .pota:
+            POTASettingsView(
+                potaAuth: potaAuth,
+                tourState: tourState,
+                syncService: syncService
+            )
+        case .lofi:
+            LoFiSettingsView(
+                tourState: tourState,
+                syncService: syncService
+            )
+        case .hamrs:
+            HAMRSSettingsView(syncService: syncService)
+        case .lotw:
+            LoTWSettingsView(syncService: syncService)
+        case .clublog:
+            ClubLogSettingsView()
+        case .icloud:
+            CloudSyncSettingsView()
         }
     }
 }

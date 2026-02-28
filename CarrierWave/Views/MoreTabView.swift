@@ -125,7 +125,8 @@ struct MoreTabView: View {
                 qrzClient: QRZClient(),
                 hamrsClient: HAMRSClient(),
                 lotwClient: LoTWClient(),
-                tourState: tourState
+                tourState: tourState,
+                isInNavigationContext: true
             )
         case .cwDecoder:
             CWTranscriptionView(onLog: { _ in })
@@ -135,11 +136,8 @@ struct MoreTabView: View {
     }
 
     private func updateHiddenTabs() {
-        let hidden = TabConfiguration.hiddenTabs()
-        let order = TabConfiguration.tabOrder()
-        // Get configurable tabs that are hidden, in their configured order
-        hiddenTabs = order.filter { tab in
-            tab != .more && hidden.contains(tab)
-        }
+        // Includes both explicitly hidden tabs and overflow tabs that
+        // don't fit on the tab bar (capped at TabConfiguration.maxTabBarTabs).
+        hiddenTabs = TabConfiguration.tabsForMoreList()
     }
 }

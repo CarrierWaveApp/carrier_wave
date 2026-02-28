@@ -78,11 +78,37 @@ enum AppTab: String, Hashable, CaseIterable, Codable {
 enum TabConfiguration {
     // MARK: Internal
 
-    /// Get the ordered list of visible tabs
+    /// Maximum configurable tabs on the tab bar (excluding .more).
+    /// Exceeding this causes iOS to create a system "More" navigation controller,
+    /// which nests our custom More tab and creates double navigation.
+    static let maxTabBarTabs = 4
+
+    /// Get the ordered list of visible tabs (capped to avoid system "More" nesting).
     static func visibleTabs() -> [AppTab] {
         let order = tabOrder()
         let hidden = hiddenTabs()
-        return order.filter { !hidden.contains($0) && !AppTab.disabledTabs.contains($0) }
+        var visible = order.filter {
+            $0 != .more && !hidden.contains($0) && !AppTab.disabledTabs.contains($0)
+        }
+        // Cap configurable tabs so total (configurable + .more) never exceeds 5.
+        // Overflow tabs appear in our custom More tab instead of triggering
+        // the system's "More" navigation controller.
+        if visible.count > maxTabBarTabs {
+            visible = Array(visible.prefix(maxTabBarTabs))
+        }
+        visible.append(.more)
+        return visible
+    }
+
+    /// Tabs that are NOT visible on the tab bar — either explicitly hidden
+    /// by the user or overflowed because only `maxTabBarTabs` fit.
+    /// MoreTabView uses this to populate its list.
+    static func tabsForMoreList() -> [AppTab] {
+        let order = tabOrder()
+        let visibleSet = Set(visibleTabs())
+        return order.filter { tab in
+            tab != .more && !visibleSet.contains(tab) && !AppTab.disabledTabs.contains(tab)
+        }
     }
 
     /// Get the current tab order (including hidden tabs, but excluding disabled tabs)
@@ -146,9 +172,10 @@ enum TabConfiguration {
         }
     }
 
-    /// Check if a specific tab is enabled
+    /// Check if a specific tab is visible on the tab bar
+    /// (accounts for both hidden tabs and overflow caps)
     static func isTabEnabled(_ tab: AppTab) -> Bool {
-        !hiddenTabs().contains(tab)
+        visibleTabs().contains(tab)
     }
 
     /// Set whether a tab is enabled
