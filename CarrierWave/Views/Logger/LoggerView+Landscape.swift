@@ -39,7 +39,9 @@ extension LoggerView {
 
                         callsignLookupDisplay
 
-                        compactFieldsSection
+                        if !hideFieldEntryForm {
+                            compactFieldsSection
+                        }
 
                         if editingQSO != nil {
                             Button {

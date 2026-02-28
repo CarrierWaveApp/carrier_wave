@@ -128,20 +128,11 @@ extension LoggerView {
 
     // MARK: - Compact Fields
 
-    /// Compact RST and State fields with inline More expansion
+    /// Compact RST and QTH fields with inline More expansion
     var compactFieldsSection: some View {
         VStack(spacing: 8) {
-            // Row 1: State, RST Sent, RST Rcvd, More chevron
+            // Row 1: RST Sent, RST Rcvd, QTH, More chevron
             HStack(spacing: 8) {
-                // State field
-                compactField(
-                    label: "State",
-                    placeholder: lookupResult?.state ?? "ST",
-                    text: $theirState,
-                    field: .state,
-                    width: 50
-                )
-
                 // RST Sent
                 compactField(label: "Sent", placeholder: defaultRST, text: $rstSent, field: .rstSent, width: 50)
                     .keyboardType(.numberPad)
@@ -149,6 +140,15 @@ extension LoggerView {
                 // RST Rcvd
                 compactField(label: "Rcvd", placeholder: defaultRST, text: $rstReceived, field: .rstReceived, width: 50)
                     .keyboardType(.numberPad)
+
+                // QTH field
+                compactField(
+                    label: "QTH",
+                    placeholder: lookupResult?.state ?? "QTH",
+                    text: $theirState,
+                    field: .state,
+                    width: 50
+                )
 
                 Spacer()
 

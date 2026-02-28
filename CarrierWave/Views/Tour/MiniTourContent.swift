@@ -55,10 +55,20 @@ enum MiniTourContent {
         ),
         TourPage(
             icon: "text.line.first.and.arrowtriangle.forward",
-            title: "Quick Entry",
+            title: "Logging a QSO",
             body: """
-            Type everything in one line: callsign, RST, state, park, and notes. \
-            Example: "AJ7CM 579 WA US-0189" auto-fills the form instantly.
+            Type a callsign and press Return to log instantly. \
+            Or type everything in one line — "AJ7CM 579 WA" fills RST \
+            and QTH automatically. Edit any QSO later by tapping it.
+            """
+        ),
+        TourPage(
+            icon: "slider.horizontal.3",
+            title: "Per-Field Entry",
+            body: """
+            Want to fill in RST or QTH before logging? \
+            Enable the field entry form in Logger settings to show \
+            Sent, Rcvd, and QTH fields below the callsign input.
             """
         ),
     ]
