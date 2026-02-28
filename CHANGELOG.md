@@ -4,8 +4,11 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.50.1] - 2026-02-28
+
 ### Fixed
 - Fix crash in POTA activation grouping when split key has unexpected format (index out of range)
+- Fix double-nesting navigation in More tab by capping visible tabs and isolating Settings deep-link machinery
 
 ## [1.50.0] - 2026-02-28
 
