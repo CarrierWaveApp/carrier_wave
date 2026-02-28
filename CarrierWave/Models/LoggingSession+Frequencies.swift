@@ -3,70 +3,6 @@ import Foundation
 // MARK: - LoggingSession Frequency Maps & Computed Properties
 
 extension LoggingSession {
-    /// Common CW frequencies by band
-    static let cwFrequencies: [String: Double] = [
-        "160m": 1.810,
-        "80m": 3.530,
-        "60m": 5.332,
-        "40m": 7.030,
-        "30m": 10.106,
-        "20m": 14.060,
-        "17m": 18.080,
-        "15m": 21.060,
-        "12m": 24.910,
-        "10m": 28.060,
-    ]
-
-    /// Common SSB frequencies by band
-    static let ssbFrequencies: [String: Double] = [
-        "160m": 1.900,
-        "80m": 3.850,
-        "40m": 7.200,
-        "20m": 14.250,
-        "17m": 18.140,
-        "15m": 21.300,
-        "12m": 24.950,
-        "10m": 28.400,
-    ]
-
-    /// Common FT8/FT4 frequencies by band
-    static let ft8Frequencies: [String: Double] = [
-        "160m": 1.840,
-        "80m": 3.573,
-        "40m": 7.074,
-        "30m": 10.136,
-        "20m": 14.074,
-        "17m": 18.100,
-        "15m": 21.074,
-        "12m": 24.915,
-        "10m": 28.074,
-        "6m": 50.313,
-    ]
-
-    /// Common RTTY frequencies by band
-    static let rttyFrequencies: [String: Double] = [
-        "80m": 3.580,
-        "40m": 7.080,
-        "20m": 14.080,
-        "15m": 21.080,
-        "10m": 28.080,
-    ]
-
-    /// Common AM calling frequencies by band
-    static let amFrequencies: [String: Double] = [
-        "80m": 3.885,
-        "40m": 7.290,
-        "20m": 14.286,
-    ]
-
-    /// Common FM simplex frequencies by band
-    static let fmFrequencies: [String: Double] = [
-        "10m": 29.600,
-        "6m": 52.525,
-        "2m": 146.520,
-        "70cm": 446.000,
-    ]
-
     /// Band derived from frequency
     var band: String? {
         guard let freq = frequency else {
@@ -156,21 +92,21 @@ extension LoggingSession {
         }
     }
 
-    /// Get suggested frequencies for a mode
-    static func suggestedFrequencies(for mode: String) -> [String: Double] {
+    /// Get suggested frequencies for a mode (delegates to BandPlan)
+    @MainActor static func suggestedFrequencies(for mode: String) -> [String: Double] {
         switch mode.uppercased() {
-        case "CW": cwFrequencies
+        case "CW": BandPlan.cwCallingFrequencies
         case "SSB",
              "USB",
              "LSB":
-            ssbFrequencies
+            BandPlan.ssbCallingFrequencies
         case "FT8",
              "FT4":
-            ft8Frequencies
-        case "RTTY": rttyFrequencies
-        case "AM": amFrequencies
-        case "FM": fmFrequencies
-        default: cwFrequencies
+            BandPlan.ft8Frequencies
+        case "RTTY": BandPlan.rttyFrequencies
+        case "AM": BandPlan.amFrequencies
+        case "FM": BandPlan.fmFrequencies
+        default: BandPlan.cwCallingFrequencies
         }
     }
 }

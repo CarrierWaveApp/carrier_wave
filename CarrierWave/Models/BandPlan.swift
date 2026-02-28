@@ -188,13 +188,10 @@ enum BandPlan {
     // MARK: - HF Bands
 
     static let segments: [BandSegment] = [
-        // 160 meters (1.8-2.0 MHz)
+        // 160 meters (1.8-2.0 MHz) — all classes General+ have identical privileges
         BandSegment(
-            band: "160m", startMHz: 1.800, endMHz: 2.000, modes: ["CW", "DATA"],
-            minimumLicense: .extra, notes: "Extra only"
-        ),
-        BandSegment(
-            band: "160m", startMHz: 1.800, endMHz: 2.000, modes: ["CW", "DATA"],
+            band: "160m", startMHz: 1.800, endMHz: 2.000,
+            modes: ["CW", "DATA", "SSB", "PHONE"],
             minimumLicense: .general, notes: nil
         ),
 
@@ -212,7 +209,7 @@ enum BandPlan {
             minimumLicense: .technician, notes: "Tech CW only"
         ),
         BandSegment(
-            band: "80m", startMHz: 3.800, endMHz: 4.000, modes: ["SSB", "PHONE"],
+            band: "80m", startMHz: 3.600, endMHz: 3.800, modes: ["SSB", "PHONE"],
             minimumLicense: .extra, notes: "Extra Phone"
         ),
         BandSegment(
@@ -280,11 +277,7 @@ enum BandPlan {
             minimumLicense: .general, notes: "General CW/Data"
         ),
         BandSegment(
-            band: "20m", startMHz: 14.150, endMHz: 14.175, modes: ["SSB", "PHONE"],
-            minimumLicense: .extra, notes: "Extra Phone"
-        ),
-        BandSegment(
-            band: "20m", startMHz: 14.175, endMHz: 14.225, modes: ["SSB", "PHONE"],
+            band: "20m", startMHz: 14.150, endMHz: 14.225, modes: ["SSB", "PHONE"],
             minimumLicense: .extra, notes: "Extra Phone"
         ),
         BandSegment(
@@ -316,11 +309,7 @@ enum BandPlan {
             minimumLicense: .technician, notes: "Tech CW only"
         ),
         BandSegment(
-            band: "15m", startMHz: 21.200, endMHz: 21.225, modes: ["SSB", "PHONE"],
-            minimumLicense: .extra, notes: "Extra Phone"
-        ),
-        BandSegment(
-            band: "15m", startMHz: 21.225, endMHz: 21.275, modes: ["SSB", "PHONE"],
+            band: "15m", startMHz: 21.200, endMHz: 21.275, modes: ["SSB", "PHONE"],
             minimumLicense: .extra, notes: "Extra Phone"
         ),
         BandSegment(
@@ -345,7 +334,7 @@ enum BandPlan {
         ),
         BandSegment(
             band: "10m", startMHz: 28.000, endMHz: 28.300, modes: ["CW", "DATA"],
-            minimumLicense: .technician, notes: "Tech CW only"
+            minimumLicense: .technician, notes: "Tech CW/Data"
         ),
         BandSegment(
             band: "10m", startMHz: 28.300, endMHz: 28.500, modes: ["CW", "SSB", "PHONE"],
@@ -356,13 +345,27 @@ enum BandPlan {
             minimumLicense: .technician, notes: "Tech CW/Phone"
         ),
 
-        // VHF/UHF (Technician+ full privileges)
         BandSegment(
-            band: "6m", startMHz: 50.000, endMHz: 54.000, modes: ["ALL"],
+            band: "10m", startMHz: 28.500, endMHz: 29.700,
+            modes: ["SSB", "PHONE", "AM", "FM"],
+            minimumLicense: .general, notes: "Phone/AM/FM"
+        ),
+
+        // VHF/UHF
+        BandSegment(
+            band: "6m", startMHz: 50.000, endMHz: 50.100, modes: ["CW"],
+            minimumLicense: .technician, notes: "CW only"
+        ),
+        BandSegment(
+            band: "6m", startMHz: 50.100, endMHz: 54.000, modes: ["ALL"],
             minimumLicense: .technician, notes: nil
         ),
         BandSegment(
-            band: "2m", startMHz: 144.000, endMHz: 148.000, modes: ["ALL"],
+            band: "2m", startMHz: 144.000, endMHz: 144.100, modes: ["CW"],
+            minimumLicense: .technician, notes: "CW only"
+        ),
+        BandSegment(
+            band: "2m", startMHz: 144.100, endMHz: 148.000, modes: ["ALL"],
             minimumLicense: .technician, notes: nil
         ),
         BandSegment(
@@ -388,12 +391,55 @@ enum BandPlan {
     // MARK: - Common SSB Frequencies
 
     static let ssbCallingFrequencies: [String: Double] = [
+        "160m": 1.900,
         "80m": 3.885,
-        "40m": 7.185,
-        "20m": 14.285,
-        "17m": 18.145,
-        "15m": 21.385,
+        "40m": 7.200,
+        "20m": 14.250,
+        "17m": 18.140,
+        "15m": 21.300,
         "12m": 24.950,
         "10m": 28.400,
+    ]
+
+    // MARK: - Common FT8/FT4 Frequencies
+
+    static let ft8Frequencies: [String: Double] = [
+        "160m": 1.840,
+        "80m": 3.573,
+        "40m": 7.074,
+        "30m": 10.136,
+        "20m": 14.074,
+        "17m": 18.100,
+        "15m": 21.074,
+        "12m": 24.915,
+        "10m": 28.074,
+        "6m": 50.313,
+    ]
+
+    // MARK: - Common RTTY Frequencies
+
+    static let rttyFrequencies: [String: Double] = [
+        "80m": 3.580,
+        "40m": 7.080,
+        "20m": 14.080,
+        "15m": 21.080,
+        "10m": 28.080,
+    ]
+
+    // MARK: - Common AM Calling Frequencies
+
+    static let amFrequencies: [String: Double] = [
+        "80m": 3.885,
+        "40m": 7.290,
+        "20m": 14.286,
+    ]
+
+    // MARK: - Common FM Simplex Frequencies
+
+    static let fmFrequencies: [String: Double] = [
+        "10m": 29.600,
+        "6m": 52.525,
+        "2m": 146.520,
+        "70cm": 446.000,
     ]
 }

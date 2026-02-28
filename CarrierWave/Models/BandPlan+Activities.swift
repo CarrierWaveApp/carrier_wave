@@ -218,6 +218,13 @@ extension BandPlan {
         UsageZone(band: "80m", startMHz: 3.600, endMHz: 3.700, usage: .cwAndDigital),
         UsageZone(band: "80m", startMHz: 3.700, endMHz: 4.000, usage: .phone),
 
+        // 60m (channelized — all channels allow CW/Data/USB)
+        UsageZone(band: "60m", startMHz: 5.332, endMHz: 5.332, usage: .cwAndDigital),
+        UsageZone(band: "60m", startMHz: 5.348, endMHz: 5.348, usage: .cwAndDigital),
+        UsageZone(band: "60m", startMHz: 5.358, endMHz: 5.358, usage: .cwAndDigital),
+        UsageZone(band: "60m", startMHz: 5.373, endMHz: 5.373, usage: .cwAndDigital),
+        UsageZone(band: "60m", startMHz: 5.405, endMHz: 5.405, usage: .cwAndDigital),
+
         // 40m
         UsageZone(band: "40m", startMHz: 7.000, endMHz: 7.040, usage: .cw),
         UsageZone(band: "40m", startMHz: 7.040, endMHz: 7.125, usage: .cwAndDigital),
