@@ -193,6 +193,48 @@ IC-705 supports CI-V over Bluetooth. Same protocol, different transport.
 
 ## UX Design
 
+### POTA Field Radio Landscape (2026 Survey, 1,181 votes)
+
+The most popular POTA portable radios and their iPad connectivity:
+
+| Rank | Radio | iPad CAT Path |
+|:----:|-------|---------------|
+| 1 | Yaesu FT-891 | Serial only — needs network relay |
+| 2 | Xiegu G90 | Serial only — needs network relay |
+| 3 | **Icom IC-705** | **WiFi built-in (AP mode for field)** |
+| 4 | Elecraft KX2 | SOTAcat WiFi bridge ($60) |
+| 5 | Elecraft KX3 | SOTAcat WiFi bridge ($60) |
+| 6 | Yaesu FT-818ND | Serial only — needs network relay |
+| 7 | Yaesu FT-710 | SCU-LAN interface |
+| 8 | Elecraft KH1 | SOTAcat WiFi bridge |
+
+The IC-705 is the clear first target: it's #3 overall, #1 among QRP portables, and the only popular radio with built-in WiFi for direct iPad connection with no extra hardware.
+
+### Existing App UX Precedents
+
+Key UX patterns from shipping apps, validated through the research:
+
+| Pattern | Used By | Adopt? |
+|---------|---------|:------:|
+| **Test Connection button** (green/red feedback) | WSJT-X, Log4OM | Yes |
+| **Green/red status LED** (persistent connection indicator) | N1MM+, Log4OM, RUMlogNG | Yes |
+| **"Follow TRX" toggle** (disable auto-sync without disconnecting) | RUMlogNG | Yes |
+| **Smart QSO clearing** (clear form when freq changes > threshold) | Log4OM | Consider |
+| **Spot click-to-tune** (one tap QSY from spot list) | N1MM+, MacLoggerDX, POTACAT | Phase 5 |
+| **AP mode for field** (radio creates WiFi hotspot, no internet) | SDR-Control + IC-705 | Yes |
+| **Manual radio selection** (not auto-detect — too unreliable) | All apps | Yes |
+| **CAT middleware** (connect to flrig/rigctld, not directly to radio) | N1MM+, MacLoggerDX | Phase 4 |
+
+### The Logger Integration Spectrum
+
+From the research, ham radio apps fall on a clear spectrum:
+
+1. **No CAT** — User types frequency manually. Error-prone, tedious.
+2. **Passive frequency reading** (read-only) — Logger polls radio, auto-fills frequency/mode/band. Logger never sends commands. **This is the sweet spot for a logging app.**
+3. **Full rig control** (read/write) — Logger can tune radio, change modes, etc. Complex UI. Belongs in dedicated apps like SDR-Control.
+
+**Carrier Wave should target level 2 (passive reading) as the MVP, with level 3 limited to spot-click-to-tune in a later phase.**
+
 ### Design Principles
 
 1. **Logger-first, not rig-control** — We auto-populate frequency/mode, we don't try to be a full radio front panel
@@ -317,9 +359,11 @@ The logger view gains a subtle but always-visible radio status indicator:
 
 **Behavior:**
 - Frequency/mode in the QSO form auto-update when radio changes band/mode
-- When the user manually edits frequency in the form, auto-sync pauses for that field
+- "Follow TRX" toggle on the radio bar (inspired by RUMlogNG): tap to pause auto-sync without disconnecting — useful for digital modes or manual override
+- When the user manually edits frequency in the form, auto-sync pauses for that field until next QSO
 - Tapping the radio bar opens a popover with disconnect option and full details
 - When radio is disconnected, the bar disappears — logger works exactly as before
+- Smart QSO clearing (inspired by Log4OM): if frequency changes by more than a configurable threshold while a callsign is entered, consider clearing the form (the operator likely moved on)
 
 #### D. Spot Clicking (Future Enhancement)
 
@@ -481,6 +525,18 @@ CarrierWave/
 - [SOTAcat — WiFi CAT for Elecraft KX radios](https://github.com/SOTAmat/SOTAcat)
 - [SotaCAT — Commercial version (Inverted Labs)](https://store.invertedlabs.com/product/sotacat/)
 - [Bluetooth CAT for KX2 — SM7IUN](https://sm7iun.se/station/kx2/)
+
+### UX Research & Logging Apps
+- [SDR-Control iPad Manual](https://documents.roskosch.de/sdr-control-ipad/)
+- [RUMlogNG CAT Settings](https://dl2rum.de/RUMlogNG/docs/en/pages/CAT-Prefs.html)
+- [RUMlogNG Transceiver Control](https://dl2rum.de/RUMlogNG/docs/en/pages/TRX-CAT.html)
+- [WSJT-X User Guide — Radio Settings](https://wsjt.sourceforge.io/wsjtx-doc/wsjtx-main-2.6.1.html)
+- [N1MM+ Interfacing Guide](https://n1mmwp.hamdocs.com/setup/interfacing/)
+- [Log4OM User Manual (PDF)](https://www.log4om.com/l4ong/usermanual/Log4OMNG_ENU.pdf)
+- [MacLoggerDX Radio Connection](https://www.dogparksoftware.com/MacLoggerDX%20Help/mldxfc_computer.html)
+- [Ham Radio Deluxe Rig Control](https://www.hamradiodeluxe.com/features/rigcontrol/)
+- [2026 POTA Field Radio Survey](https://qrper.com/2026/02/philips-2026-field-radio-survey-from-the-facebook-pota-group/)
+- [POTACAT](https://potacat.com)
 
 ### Hamlib & Network CAT
 - [Hamlib vs FLRig for CAT Control — VK Ham Radio](https://www.vkhamradio.com/hamlib-or-flrig-or-omnirig-for-transceiver-cat-control/)
