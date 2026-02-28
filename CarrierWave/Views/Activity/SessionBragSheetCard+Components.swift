@@ -26,19 +26,7 @@ extension SessionBragSheetCard {
     var mapSection: some View {
         let cameraPosition = mapCameraPosition
         return Map(initialPosition: cameraPosition) {
-            ForEach(Array(contactCoordinates.enumerated()), id: \.offset) { _, contact in
-                Annotation(contact.grid, coordinate: contact.coord, anchor: .bottom) {
-                    Circle()
-                        .fill(bandColor(contact.band))
-                        .frame(width: 10, height: 10)
-                        .background(
-                            Circle()
-                                .fill(.white)
-                                .frame(width: 16, height: 16)
-                        )
-                }
-            }
-
+            // Trace lines first (drawn behind pins)
             if let myCoord = myCoordinate {
                 ForEach(Array(contactCoordinates.enumerated()), id: \.offset) { _, contact in
                     MapPolyline(
@@ -46,7 +34,14 @@ extension SessionBragSheetCard {
                             from: myCoord, to: contact.coord
                         )
                     )
-                    .stroke(.blue.opacity(0.5), lineWidth: 1)
+                    .stroke(.white.opacity(0.5), lineWidth: 2.5)
+                }
+            }
+
+            // Traditional pin markers
+            ForEach(Array(contactCoordinates.enumerated()), id: \.offset) { _, contact in
+                Annotation(contact.grid, coordinate: contact.coord, anchor: .bottom) {
+                    SessionMapPin(color: bandColor(contact.band))
                 }
             }
         }
@@ -280,6 +275,24 @@ extension SessionBragSheetCard {
         case "pota": ("tree", "POTA Activation")
         case "sota": ("mountain.2", "SOTA Activation")
         default: ("radio", "Casual Session")
+        }
+    }
+}
+
+// MARK: - SessionMapPin
+
+/// Traditional map pin shape for session brag sheet maps.
+private struct SessionMapPin: View {
+    let color: Color
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Circle()
+                .fill(color.opacity(0.8))
+                .frame(width: 9, height: 9)
+            Rectangle()
+                .fill(color.opacity(0.7))
+                .frame(width: 1.5, height: 6)
         }
     }
 }
