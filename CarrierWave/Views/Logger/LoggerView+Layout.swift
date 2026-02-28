@@ -9,7 +9,10 @@ extension LoggerView {
     /// Callsign lookup display (card or error banner)
     @ViewBuilder
     var callsignLookupDisplay: some View {
-        if let info = lookupResult, !callsignFieldFocused || callsignInput.isEmpty {
+        if let info = lookupResult,
+           !callsignFieldFocused || callsignInput.isEmpty,
+           compactFieldFocus == nil
+        {
             LoggerCallsignCard(
                 info: info,
                 previousQSOCount: previousQSOCount,
@@ -105,7 +108,7 @@ extension LoggerView {
                                 // Show callsign info or error when keyboard is not visible
                                 callsignLookupDisplay
 
-                                // Compact fields: State, RSTs, with More expansion
+                                // Compact fields: RSTs, QTH, with More expansion
                                 if !hideFieldEntryForm {
                                     compactFieldsSection
                                 }

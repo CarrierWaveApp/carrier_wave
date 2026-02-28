@@ -5,6 +5,7 @@ All notable changes to Carrier Wave will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Add logger tour pages explaining quick entry and per-field entry settings
 - Add visual ARRL-style band chart to Band Plan sheet with license class and mode zone display modes
 - Add segmented picker to toggle between By Class and By Mode chart views
 - Add color-coded legend for chart display modes
@@ -13,6 +14,9 @@ All notable changes to Carrier Wave will be documented in this file.
 - Add FT8, RTTY, AM, and FM frequency dicts to BandPlan (single source of truth)
 
 ### Changed
+- Rename "State" field to "QTH" for better DX compatibility
+- Re-order compact fields from State | Sent | Rcvd to Sent | Rcvd | QTH (matches QSO exchange order)
+- Suppress QRZ lookup card while compact fields are focused to prevent layout shift
 - Consolidate duplicate frequency tables from LoggingSession into BandPlan
 
 ### Fixed
