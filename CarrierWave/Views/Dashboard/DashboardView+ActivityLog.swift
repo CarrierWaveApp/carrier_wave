@@ -104,7 +104,7 @@ extension DashboardView {
     }
 
     var friendsOnAirCard: some View {
-        FriendsOnAirCard()
+        FriendsOnAirCard(manager: activityLogManager)
     }
 
     var friendActivityCard: some View {
