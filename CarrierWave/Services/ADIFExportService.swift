@@ -1,7 +1,7 @@
 // ADIF Export Service
 //
 // Generates comprehensive ADIF files for activations in the background.
-// Includes all QSO fields in valid ADIF 3.1.5 format.
+// Includes all QSO fields in valid ADIF 3.1.6 format.
 
 import CarrierWaveCore
 import Foundation
@@ -113,7 +113,7 @@ actor ADIFExportService {
         let parkList = activations.map(\.parkReference).joined(separator: ", ")
         lines.append("ADIF export for \(activations.count) activations: \(parkList)")
         lines.append("")
-        lines.append(formatField("ADIF_VER", "3.1.5"))
+        lines.append(formatField("ADIF_VER", "3.1.6"))
         lines.append(formatField("PROGRAMID", "CarrierWave"))
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
         lines.append(formatField("PROGRAMVERSION", version))
@@ -202,7 +202,7 @@ actor ADIFExportService {
         lines.append("")
 
         // ADIF version
-        lines.append(formatField("ADIF_VER", "3.1.5"))
+        lines.append(formatField("ADIF_VER", "3.1.6"))
 
         // Program info
         lines.append(formatField("PROGRAMID", "CarrierWave"))

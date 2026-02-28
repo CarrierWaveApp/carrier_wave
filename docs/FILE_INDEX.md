@@ -219,6 +219,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `ImportService+External.swift` | External file import handling |
 | `ADIFParser.swift` | ADIF format parser |
 | `ADIFExportService.swift` | Background ADIF generation for activation exports |
+| `FullADIFExportActor.swift` | Background actor: batch-fetch all QSOs and stream full ADIF log to temp file |
 | `DeduplicationService.swift` | QSO deduplication logic |
 | `ICloudMonitor.swift` | iCloud sync status monitoring |
 | `DescriptionLookup.swift` | Human-readable descriptions for codes |
@@ -719,6 +720,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `POTAActivationSettingsView.swift` | POTA activation toggles (auto-spot, conditions, statistician) |
 | `SyncSourcesSettingsView.swift` | Standalone sync sources list wrapping SyncSourcesSection |
 | `DataToolsSettingsView.swift` | Data management (callbook, notes, external data, export) + deduplication |
+| `FullADIFExportSheet.swift` | Full QSO log ADIF export sheet with progress bar and share/save/clipboard |
 | `AboutMeView.swift` | User profile display and editing |
 | `ServiceSettingsViews.swift` | QRZ/POTA/LoFi auth configuration |
 | `CloudSettingsViews.swift` | LoFi settings (iCloud ADIF folder monitoring moved to CloudSyncSettingsView) |

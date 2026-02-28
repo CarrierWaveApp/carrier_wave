@@ -30,6 +30,9 @@ struct DataToolsSettingsView: View {
             onDismiss: { isExportingDatabase = false },
             content: { file in ShareSheet(activityItems: [file.url]) }
         )
+        .sheet(isPresented: $showingFullADIFExport) {
+            FullADIFExportSheet()
+        }
     }
 
     // MARK: Private
@@ -39,6 +42,7 @@ struct DataToolsSettingsView: View {
     @State private var qrzCallbookIsConfigured = false
     @State private var isExportingDatabase = false
     @State private var exportedFile: ExportedFile?
+    @State private var showingFullADIFExport = false
     @State private var showingError = false
     @State private var errorMessage = ""
 
@@ -134,12 +138,18 @@ struct DataToolsSettingsView: View {
                 }
             }
             .disabled(isExportingDatabase)
+
+            Button {
+                showingFullADIFExport = true
+            } label: {
+                Text("Export Full ADIF Log")
+            }
         } header: {
             Text("Data")
         } footer: {
             Text(
                 "QRZ Callbook enables callsign lookups (requires QRZ XML subscription). "
-                    + "Export creates a backup of the QSO database."
+                    + "Export creates a backup of the QSO database or a full ADIF log file."
             )
         }
     }

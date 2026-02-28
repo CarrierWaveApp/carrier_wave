@@ -4,6 +4,9 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Export full QSO log as ADIF file from Settings > Data & Tools, with batched background export, determinate progress bar, and share/save/clipboard actions
+
 ### Fixed
 - Fix app freeze on cold start from spots widget tap by deferring synchronous Keychain reads and SwiftData queries off the view construction path: lazy POTAAuthService token load, deferred ActivityLogManager service config and stats queries, replaced @Query with @State + .task in ContentView and ActivityLogView, batched state updates, and deferred navigation push
 
