@@ -30,7 +30,6 @@ struct DashboardView: View {
     // Sync state
     @State var isSyncing = false
     @State var syncingService: ServiceType?
-    @State var lastSyncDate: Date?
     // QRZ state
     @State var qrzCallsign: String?
     @State var qrzIsConfigured: Bool = false
@@ -216,13 +215,7 @@ struct DashboardView: View {
             )
             .syncImportConfirmationAlert(syncService: syncService)
             .syncExportConfirmationAlert(syncService: syncService)
-            .toolbar {
-                ToolbarItem(placement: .primaryAction) {
-                    if hasLoadedDashboard {
-                        toolbarButtons
-                    }
-                }
-            }
+            // Toolbar intentionally empty — sync trigger is in SyncCard
             .sheet(item: $selectedService) { service in
                 serviceDetailSheet(for: service)
             }
@@ -269,9 +262,6 @@ struct DashboardView: View {
     private var dashboardScrollContent: some View {
         ScrollView {
             VStack(spacing: 16) {
-                if syncService.isSyncing {
-                    SyncProgressCard(syncService: syncService)
-                }
                 if verticalSizeClass == .compact {
                     combinedStreaksAndStatsCard
                     HStack(alignment: .top, spacing: 16) {
@@ -286,7 +276,7 @@ struct DashboardView: View {
                             bragSheetEntryCard
                             favoritesCard
                             equipmentCard
-                            servicesList
+                            syncCard
                         }
                     }
                 } else {
@@ -300,39 +290,12 @@ struct DashboardView: View {
                     favoritesCard
                     equipmentCard
                     conditionsCard
-                    servicesList
+                    syncCard
                 }
             }
             .padding()
         }
         .background(Color(.systemGroupedBackground))
-    }
-
-    // MARK: - Toolbar
-
-    private var toolbarButtons: some View {
-        HStack(spacing: 12) {
-            if debugMode, !isSyncing {
-                Button {
-                    Task { await performDownloadOnly() }
-                } label: {
-                    Image(systemName: "arrow.down.circle")
-                }
-                .accessibilityLabel("Download only")
-            }
-
-            Button {
-                Task { await performFullSync() }
-            } label: {
-                if isSyncing {
-                    ProgressView()
-                } else {
-                    Image(systemName: "arrow.triangle.2.circlepath")
-                }
-            }
-            .disabled(isSyncing)
-            .accessibilityLabel("Sync all services")
-        }
     }
 
     // Activity card is in DashboardView+ActivityLog.swift

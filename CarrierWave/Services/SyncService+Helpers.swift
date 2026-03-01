@@ -44,15 +44,9 @@ extension SyncService {
             }
         }
 
-        // PHASE 1.5: Confirm with user if large download detected
-        if allFetched.count >= SyncImportConfirmation.threshold {
-            let shouldProceed = await requestImportConfirmation(
-                downloadedByService: result.downloaded
-            )
-            if !shouldProceed {
-                debugLog.info("User cancelled download-only sync (\(allFetched.count) QSOs)")
-                return result
-            }
+        // PHASE 1.5: Confirm with user if large net-new download detected
+        if await shouldCancelLargeImport(allFetched, downloaded: result.downloaded) {
+            return result
         }
 
         // PHASE 2: Process and deduplicate (on background thread)
@@ -102,14 +96,42 @@ extension SyncService {
         )
     }
 
+    /// Check if a large import should be cancelled. Returns true if user declines.
+    func shouldCancelLargeImport(
+        _ allFetched: [FetchedQSO], downloaded: [ServiceType: Int]
+    ) async -> Bool {
+        let debugLog = SyncDebugLog.shared
+        guard allFetched.count >= SyncImportConfirmation.threshold else {
+            return false
+        }
+        let netNew = await countNetNewQSOs(allFetched)
+        guard netNew >= SyncImportConfirmation.threshold else {
+            debugLog.info(
+                "Skipping import confirmation: \(allFetched.count) downloaded, \(netNew) net-new"
+            )
+            return false
+        }
+        let shouldProceed = await requestImportConfirmation(
+            downloadedByService: downloaded, netNewCount: netNew
+        )
+        if !shouldProceed {
+            debugLog.info(
+                "User cancelled sync (\(netNew) net-new of \(allFetched.count) QSOs)"
+            )
+        }
+        return !shouldProceed
+    }
+
     /// Pause sync and ask user to confirm importing a large batch of QSOs.
     /// Returns true if user confirms, false if cancelled.
     func requestImportConfirmation(
-        downloadedByService: [ServiceType: Int]
+        downloadedByService: [ServiceType: Int],
+        netNewCount: Int
     ) async -> Bool {
         await withCheckedContinuation { continuation in
             importConfirmation = SyncImportConfirmation(
                 downloadedByService: downloadedByService,
+                netNewCount: netNewCount,
                 continuation: continuation
             )
         }

@@ -188,8 +188,10 @@ struct SyncImportConfirmationAlert: ViewModifier {
                 if let confirmation = syncService.importConfirmation {
                     Text(
                         """
-                        Downloaded \(confirmation.totalDownloaded) QSOs \
-                        (\(confirmation.summary)).
+                        \(confirmation.netNewCount) new QSOs detected \
+                        (\(confirmation.totalDownloaded) total from \
+                        \(confirmation.downloadedByService.count) \
+                        service\(confirmation.downloadedByService.count == 1 ? "" : "s")).
 
                         Do you want to import them?
                         """

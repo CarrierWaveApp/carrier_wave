@@ -24,10 +24,7 @@ extension DashboardView {
 
     func performFullSync() async {
         isSyncing = true
-        defer {
-            isSyncing = false
-            lastSyncDate = Date()
-        }
+        defer { isSyncing = false }
 
         do {
             let result = try await syncService.syncAll()
@@ -48,10 +45,7 @@ extension DashboardView {
 
     func performDownloadOnly() async {
         isSyncing = true
-        defer {
-            isSyncing = false
-            lastSyncDate = Date()
-        }
+        defer { isSyncing = false }
 
         do {
             let result = try await syncService.downloadOnly()

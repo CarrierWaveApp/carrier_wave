@@ -1,47 +1,147 @@
 import CarrierWaveCore
 import SwiftUI
 
-// MARK: - SyncProgressCard
+// MARK: - SyncCard
 
-/// Card showing per-service sync progress during a sync operation
-struct SyncProgressCard: View {
+/// Unified card showing services (idle) and sync progress (syncing).
+/// Replaces the separate SyncProgressCard + ServiceListView.
+struct SyncCard: View {
     // MARK: Internal
 
     @ObservedObject var syncService: SyncService
 
+    let services: [ServiceInfo]
+    let onServiceTap: (ServiceIdentifier) -> Void
+    let onSync: () async -> Void
+    let onDownloadOnly: (() async -> Void)?
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Syncing")
-                .font(.headline)
-
-            ForEach(sortedServices, id: \.0) { service, phase in
-                ServiceSyncRow(
-                    service: service,
-                    phase: phase,
-                    syncProgress: syncService.syncProgress
-                )
-            }
-
-            // Processing phase at bottom
-            if syncService.syncPhase == .processing {
-                processingRow
+        VStack(alignment: .leading, spacing: 0) {
+            if syncService.isSyncing {
+                syncingContent
+            } else {
+                idleContent
             }
         }
-        .padding()
+        .padding(.vertical, 12)
         .background(Color(.systemGray6))
         .clipShape(RoundedRectangle(cornerRadius: 12))
+        .animation(reduceMotion ? .none : .spring(response: 0.3, dampingFraction: 0.7), value: syncService.isSyncing)
     }
 
     // MARK: Private
 
-    /// Services sorted in display order
-    private var sortedServices: [(ServiceType, ServiceSyncPhase)] {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// Last sync date — prefer in-memory (current session), fall back to persisted report timestamps
+    private var mostRecentSyncDate: Date? {
+        syncService.lastSyncDate
+            ?? syncService.lastSyncResults.values.map(\.timestamp).max()
+    }
+
+    private var sortedSyncServices: [(ServiceType, ServiceSyncPhase)] {
         let displayOrder: [ServiceType] = [.qrz, .pota, .lofi, .hamrs, .lotw, .clublog]
         return displayOrder.compactMap { service in
             guard let phase = syncService.serviceSyncStates[service] else {
                 return nil
             }
             return (service, phase)
+        }
+    }
+
+    // MARK: - Idle State
+
+    @ViewBuilder
+    private var idleContent: some View {
+        idleHeader
+            .padding(.horizontal, 16)
+            .padding(.bottom, 8)
+
+        ForEach(Array(services.enumerated()), id: \.element.id) { index, service in
+            Button {
+                onServiceTap(service.id)
+            } label: {
+                ServiceRow(
+                    service: service,
+                    serviceSyncStates: syncService.serviceSyncStates
+                )
+            }
+            .buttonStyle(.plain)
+
+            if index < services.count - 1 {
+                Divider()
+                    .padding(.leading, 38)
+            }
+        }
+    }
+
+    private var idleHeader: some View {
+        HStack {
+            Text("Services")
+                .font(.headline)
+
+            Spacer()
+
+            if let lastSync = mostRecentSyncDate {
+                Text("Synced \(lastSync, style: .relative) ago")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            if let onDownloadOnly {
+                Button {
+                    Task { await onDownloadOnly() }
+                } label: {
+                    Image(systemName: "arrow.down.circle")
+                        .font(.body)
+                }
+                .accessibilityLabel("Download only")
+            }
+
+            Button {
+                Task { await onSync() }
+            } label: {
+                Image(systemName: "arrow.triangle.2.circlepath")
+                    .font(.body)
+            }
+            .frame(minWidth: 44, minHeight: 44)
+            .accessibilityLabel("Sync all services")
+        }
+    }
+
+    // MARK: - Syncing State
+
+    @ViewBuilder
+    private var syncingContent: some View {
+        syncingHeader
+            .padding(.horizontal, 16)
+            .padding(.bottom, 8)
+
+        ForEach(sortedSyncServices, id: \.0) { service, phase in
+            ServiceSyncRow(
+                service: service,
+                phase: phase,
+                syncProgress: syncService.syncProgress,
+                existingSynced: existingSyncedCount(for: service)
+            )
+            .padding(.horizontal, 16)
+        }
+
+        if syncService.syncPhase == .processing {
+            processingRow
+                .padding(.horizontal, 16)
+        }
+    }
+
+    private var syncingHeader: some View {
+        HStack(spacing: 8) {
+            Text("Syncing...")
+                .font(.headline)
+
+            ProgressView()
+                .controlSize(.small)
+
+            Spacer()
         }
     }
 
@@ -67,17 +167,31 @@ struct SyncProgressCard: View {
         }
         .padding(.top, 4)
     }
+
+    /// Look up the existing synced count for a service from the idle services list.
+    /// Returns the numeric prefix from primaryStat (e.g., "312 synced" → 312).
+    private func existingSyncedCount(for serviceType: ServiceType) -> Int? {
+        guard let info = services.first(where: { $0.serviceType == serviceType }),
+              let stat = info.primaryStat,
+              let number = Int(stat.components(separatedBy: " ").first ?? "")
+        else {
+            return nil
+        }
+        return number
+    }
 }
 
 // MARK: - ServiceSyncRow
 
 /// Individual service row within the sync progress card
-private struct ServiceSyncRow: View {
+struct ServiceSyncRow: View {
     // MARK: Internal
 
     let service: ServiceType
     let phase: ServiceSyncPhase
     let syncProgress: SyncProgress
+    /// Pre-existing synced count from before this sync started (for delta context)
+    var existingSynced: Int?
 
     var body: some View {
         HStack(spacing: 8) {
@@ -91,6 +205,7 @@ private struct ServiceSyncRow: View {
 
             phaseDetail
         }
+        .padding(.vertical, 2)
     }
 
     // MARK: Private
@@ -139,9 +254,7 @@ private struct ServiceSyncRow: View {
         case .downloading:
             downloadingDetail
         case let .downloaded(count):
-            Text("\(count) fetched")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            downloadedDetail(count: count)
         case .uploading:
             Text("Uploading")
                 .font(.caption)
@@ -181,11 +294,21 @@ private struct ServiceSyncRow: View {
             HStack(spacing: 6) {
                 ProgressView(value: progress.potaProgress ?? 0)
                     .frame(width: 50)
-                let label = progress.potaPhase.isEmpty ? "Fetching" : progress.potaPhase
-                Text("\(label) \(progress.potaProcessedActivations)/\(progress.potaTotalActivations)")
+                VStack(alignment: .trailing, spacing: 1) {
+                    let label = progress.potaPhase.isEmpty ? "Fetching" : progress.potaPhase
+                    Text(
+                        "\(label) \(progress.potaProcessedActivations)/"
+                            + "\(progress.potaTotalActivations) activations"
+                    )
                     .font(.caption)
                     .foregroundStyle(.blue)
                     .lineLimit(1)
+                    if progress.potaDownloadedQSOs > 0 {
+                        Text("\(progress.potaDownloadedQSOs) QSOs")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                }
             }
         } else {
             Text("Downloading")
@@ -213,15 +336,33 @@ private struct ServiceSyncRow: View {
         }
     }
 
-    private func completeDetail(downloaded: Int, uploaded: Int) -> some View {
-        Group {
-            if uploaded > 0 {
-                Text("\(downloaded) fetched, \(uploaded) uploaded")
-            } else {
-                Text("\(downloaded) fetched")
-            }
+    @ViewBuilder
+    private func downloadedDetail(count: Int) -> some View {
+        if let synced = existingSynced, synced > 0 {
+            Text("\(count) new · \(synced) synced")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        } else {
+            Text("\(count) fetched")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
-        .font(.caption)
-        .foregroundStyle(.secondary)
+    }
+
+    @ViewBuilder
+    private func completeDetail(downloaded: Int, uploaded: Int) -> some View {
+        if uploaded > 0 {
+            Text("\(downloaded) new, \(uploaded) uploaded")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        } else if let synced = existingSynced, synced > 0 {
+            Text("\(downloaded) new · \(synced) synced")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        } else {
+            Text("\(downloaded) fetched")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
     }
 }

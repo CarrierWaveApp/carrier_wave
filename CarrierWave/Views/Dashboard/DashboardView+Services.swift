@@ -13,16 +13,37 @@ extension DashboardView {
         presenceCounts.pendingCount(for: service)
     }
 
-    // MARK: - Services List View
+    // MARK: - Sync Card
 
-    var servicesList: some View {
-        ServiceListView(
-            services: buildServiceInfoList(),
-            serviceSyncStates: syncService.serviceSyncStates,
-            onServiceTap: { serviceId in
-                selectedService = serviceId
-            }
-        )
+    @ViewBuilder
+    var syncCard: some View {
+        if debugMode {
+            SyncCard(
+                syncService: syncService,
+                services: buildServiceInfoList(),
+                onServiceTap: { serviceId in
+                    guard !syncService.isSyncing else {
+                        return
+                    }
+                    selectedService = serviceId
+                },
+                onSync: { await performFullSync() },
+                onDownloadOnly: { await performDownloadOnly() }
+            )
+        } else {
+            SyncCard(
+                syncService: syncService,
+                services: buildServiceInfoList(),
+                onServiceTap: { serviceId in
+                    guard !syncService.isSyncing else {
+                        return
+                    }
+                    selectedService = serviceId
+                },
+                onSync: { await performFullSync() },
+                onDownloadOnly: nil
+            )
+        }
     }
 
     // MARK: - Build Service Info List

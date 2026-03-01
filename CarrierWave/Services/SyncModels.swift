@@ -110,6 +110,9 @@ struct SyncProgress {
     /// POTA-specific: what kind of processing (e.g., "Fetching" or "Mapping")
     var potaPhase: String = ""
 
+    /// POTA-specific: QSOs fetched so far (running total during download)
+    var potaDownloadedQSOs: Int = 0
+
     /// Processing phase: total QSOs to process
     var processingTotalQSOs: Int = 0
 
@@ -153,6 +156,7 @@ struct SyncProgress {
         potaProcessedActivations = 0
         potaTotalActivations = 0
         potaPhase = ""
+        potaDownloadedQSOs = 0
         processingTotalQSOs = 0
         processingProcessedQSOs = 0
         processingPhase = ""
@@ -177,11 +181,14 @@ struct SyncProgress {
 /// Shown to the user after download when many new QSOs are detected.
 /// The user can confirm to proceed or cancel.
 struct SyncImportConfirmation {
-    /// Threshold: show confirmation when total downloaded exceeds this
+    /// Threshold: show confirmation when net-new QSOs exceed this
     static let threshold = 50
 
     /// Per-service breakdown of downloaded QSO counts
     let downloadedByService: [ServiceType: Int]
+
+    /// Number of QSOs that are net-new (not already in the DB)
+    let netNewCount: Int
 
     /// Continuation to resume or cancel the sync
     let continuation: CheckedContinuation<Bool, Never>

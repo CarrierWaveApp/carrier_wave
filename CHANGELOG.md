@@ -11,6 +11,14 @@ All notable changes to Carrier Wave will be documented in this file.
 - Refresh Hunter Log worked-before cache when QSOs arrive via sync or iCloud
 - Re-fire Hunter Log cache at UTC midnight so day boundary doesn't show stale dupes
 
+### Changed
+- Merge sync progress card and service list into unified SyncCard at bottom of dashboard
+- Move sync trigger from toolbar button into SyncCard header
+- Show "Synced X ago" in SyncCard header instead of statistics card
+- Remove duplicate "Synced X ago" from statistics and combined streaks cards
+- Show delta context during sync (e.g., "3 new · 312 synced") to clarify incremental fetches
+- Skip re-fetching already-synced POTA activations during incremental sync (only fetch new)
+
 ### Added
 - Add BLE radio control via CI-V over Nordic UART Service (BLE CAT proxy)
 - Add BLE radio settings with device scanning, selection, and CI-V address configuration

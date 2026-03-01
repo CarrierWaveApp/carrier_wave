@@ -87,7 +87,7 @@ extension SyncService {
         syncPhase = .downloading(service: .pota)
         serviceSyncStates[.pota] = .downloading
         let (qsos, remoteMap) = try await withTimeout(seconds: syncTimeoutSeconds, service: .pota) {
-            try await self.potaClient.fetchAllQSOs { [weak self] processed, total, phase in
+            try await self.potaClient.fetchAllQSOs { [weak self] processed, total, phase, qsoCount in
                 Task { @MainActor [weak self] in
                     guard let self else {
                         return
@@ -96,6 +96,7 @@ extension SyncService {
                     updated.potaProcessedActivations = processed
                     updated.potaTotalActivations = total
                     updated.potaPhase = phase
+                    updated.potaDownloadedQSOs = qsoCount
                     syncProgress = updated
                 }
             }

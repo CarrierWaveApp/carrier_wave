@@ -308,6 +308,22 @@ extension QSOProcessingActor {
 
     // POTA Presence Reconciliation is in QSOProcessingActor+POTAReconcile.swift
 
+    /// Count how many fetched QSOs are net-new (don't already exist in the DB).
+    func countNetNewQSOs(
+        _ fetched: [FetchedQSO], container: ModelContainer
+    ) async throws -> Int {
+        let context = ModelContext(container)
+        context.autosaveEnabled = false
+
+        let fetchedKeys = Set(fetched.map {
+            Self.computeDeduplicationKey(
+                callsign: $0.callsign, band: $0.band, mode: $0.mode, timestamp: $0.timestamp
+            )
+        })
+        let existingKeys = try await fetchExistingQSOKeys(context: context)
+        return fetchedKeys.subtracting(existingKeys.keys).count
+    }
+
     /// Compute deduplication key from QSO fields.
     /// Must match the logic in QSO.deduplicationKey exactly.
     static func computeDeduplicationKey(

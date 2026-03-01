@@ -173,25 +173,26 @@ class SyncService: ObservableObject {
         return result
     }
 
+    /// Count net-new QSOs that don't already exist in the database.
+    func countNetNewQSOs(_ fetched: [FetchedQSO]) async -> Int {
+        do {
+            return try await SyncService.processingActor.countNetNewQSOs(
+                fetched, container: modelContext.container
+            )
+        } catch {
+            // On error, fall back to total count (will show the confirmation)
+            return fetched.count
+        }
+    }
+
     // MARK: Private
 
-    /// Check if user wants to cancel after a large download
+    /// Check if user wants to cancel after a large download.
+    /// Only prompts when net-new QSOs (not already in DB) exceed the threshold.
     private func shouldCancelAfterDownload(
         _ allFetched: [FetchedQSO], downloaded: [ServiceType: Int]
     ) async -> Bool {
-        guard allFetched.count >= SyncImportConfirmation.threshold else {
-            return false
-        }
-        let shouldProceed = await requestImportConfirmation(
-            downloadedByService: downloaded
-        )
-        if !shouldProceed {
-            SyncDebugLog.shared.info(
-                "User cancelled sync after download (\(allFetched.count) QSOs)"
-            )
-            return true
-        }
-        return false
+        await shouldCancelLargeImport(allFetched, downloaded: downloaded)
     }
 
     // MARK: - Pre-Sync Backup

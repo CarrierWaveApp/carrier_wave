@@ -96,13 +96,13 @@ extension POTAClient {
     ///   - processed: activations processed so far
     ///   - total: total activations to process
     ///   - phase: current phase description ("Fetching" or "Mapping")
-    typealias POTAProgressCallback = @Sendable (Int, Int, String) -> Void
+    ///   - qsoCount: total QSOs fetched so far
+    typealias POTAProgressCallback = @Sendable (Int, Int, String, Int) -> Void
 
     /// Fetch all QSOs with adaptive batching and incremental sync.
-    /// On first sync: processes all activations with .importAndMap.
-    /// On subsequent syncs: new activations use .importAndMap, already-processed
-    /// activations use .mapOnly (builds remote map without re-importing).
-    /// This ensures the remoteQSOMap is always complete for gap repair.
+    /// On first sync: processes all activations.
+    /// On subsequent syncs: only fetches new activations (not in processedKeys).
+    /// Already-synced activations are skipped entirely — no API calls made.
     func fetchAllQSOs(
         progress: POTAProgressCallback? = nil
     ) async throws -> (qsos: [POTAFetchedQSO], remoteQSOMap: POTARemoteQSOMap) {
@@ -117,37 +117,26 @@ extension POTAClient {
         )
 
         let newActivations = filterRemainingActivations(activations, state: mutableState)
-        let alreadyProcessed = activations.filter { activation in
-            let key = "\(activation.reference)|\(activation.date)"
-            return mutableState.processedKeys.contains(key)
-        }
+        let skippedCount = activations.count - newActivations.count
 
-        let totalActivations = newActivations.count + alreadyProcessed.count
         debugLog.info(
-            "Processing \(newActivations.count) new + \(alreadyProcessed.count) "
-                + "already-processed activations (map only)",
+            "Fetching \(newActivations.count) new activations"
+                + " (skipping \(skippedCount) already synced)",
             service: .pota
         )
 
         // Fire initial progress so the UI shows the POTA progress bar immediately
-        progress?(0, totalActivations, "Fetching")
+        progress?(0, newActivations.count, "Fetching", 0)
 
-        // Process new activations with full import
-        let newCount = newActivations.count
+        // Process only new activations — already-synced activations are skipped.
+        // Gap repair and pre-upload dedup work with partial map (new activations only).
+        // Confirmed presence records (lastConfirmedAt != nil) skip gap repair anyway,
+        // and POTA deduplicates server-side for any edge cases.
         if !newActivations.isEmpty {
             try await processAllBatches(
-                newActivations, state: &mutableState, importMode: .importAndMap
-            ) { batchProcessed in
-                progress?(batchProcessed, totalActivations, "Fetching")
-            }
-        }
-
-        // Process already-processed activations for remote map only
-        if !alreadyProcessed.isEmpty {
-            try await processAllBatches(
-                alreadyProcessed, state: &mutableState, importMode: .mapOnly
-            ) { batchProcessed in
-                progress?(newCount + batchProcessed, totalActivations, "Mapping")
+                newActivations, state: &mutableState
+            ) { batchProcessed, qsoCount in
+                progress?(batchProcessed, newActivations.count, "Fetching", qsoCount)
             }
         }
 
@@ -178,8 +167,7 @@ extension POTAClient {
     private func processAllBatches(
         _ remainingActivations: [POTARemoteActivation],
         state: inout POTADownloadState,
-        importMode: POTAImportMode = .importAndMap,
-        onProgress: (@Sendable (Int) -> Void)? = nil
+        onProgress: (@Sendable (Int, Int) -> Void)? = nil
     ) async throws {
         var activationIndex = 0
         while activationIndex < remainingActivations.count {
@@ -191,14 +179,14 @@ extension POTAClient {
                 state: state
             )
 
-            let result = try await processBatch(batch, state: &state, importMode: importMode)
+            let result = try await processBatch(batch, state: &state)
 
             if result.succeeded {
                 handleBatchSuccess(
                     batchCount: batch.count, batchElapsed: result.elapsed, state: &state
                 )
                 activationIndex = batchEnd
-                onProgress?(activationIndex)
+                onProgress?(activationIndex, state.allFetched.count)
             }
 
             if state.consecutiveFailures >= 5 {
@@ -230,13 +218,12 @@ extension POTAClient {
 
     private func processBatch(
         _ batch: [POTARemoteActivation],
-        state: inout POTADownloadState,
-        importMode: POTAImportMode = .importAndMap
+        state: inout POTADownloadState
     ) async throws -> (succeeded: Bool, elapsed: TimeInterval) {
         let batchStartTime = Date()
 
         for activation in batch {
-            let result = try await processActivation(activation, state: &state, importMode: importMode)
+            let result = try await processActivation(activation, state: &state)
 
             switch result {
             case let .success(fetched):

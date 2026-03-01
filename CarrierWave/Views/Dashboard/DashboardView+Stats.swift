@@ -122,16 +122,8 @@ extension DashboardView {
 
     var summaryCard: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("Statistics")
-                    .font(.headline)
-                Spacer()
-                if let lastSync = lastSyncDate {
-                    Text("Synced \(lastSync, style: .relative) ago")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
+            Text("Statistics")
+                .font(.headline)
 
             statsGrid
         }
@@ -156,16 +148,8 @@ extension DashboardView {
 
             // Stats section (right side)
             VStack(alignment: .leading, spacing: 12) {
-                HStack {
-                    Text("Statistics")
-                        .font(.headline)
-                    Spacer()
-                    if let lastSync = lastSyncDate {
-                        Text("Synced \(lastSync, style: .relative) ago")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
+                Text("Statistics")
+                    .font(.headline)
 
                 statsGrid
             }
