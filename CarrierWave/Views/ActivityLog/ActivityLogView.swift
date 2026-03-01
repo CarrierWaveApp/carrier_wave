@@ -131,10 +131,13 @@ struct ActivityLogView: View {
             )
             acceptedFriends = (try? modelContext.fetch(friendDescriptor)) ?? []
 
-            // Fire heavy cache load concurrently with monitoring setup
+            // Fire heavy cache loads concurrently with monitoring setup
             async let cacheLoad: Void = workedBeforeCache.loadToday(
                 container: container
             )
+            async let contactCountsLoad: [String: Int] = Task.detached {
+                CallsignSuggestionProvider.loadContactCounts(container: container)
+            }.value
 
             spotMonitor.friendNotifier.updateFriends(
                 Set(acceptedFriends.map { $0.friendCallsign.uppercased() })
@@ -145,6 +148,7 @@ struct ActivityLogView: View {
             requestGPSGridIfNeeded()
 
             await cacheLoad
+            suggestionContactCounts = await contactCountsLoad
         }
         .onChange(of: locationService.currentGrid) { _, newGrid in
             if let newGrid,
@@ -182,6 +186,7 @@ struct ActivityLogView: View {
     @AppStorage("hunterSpotFilters") private var spotFilters = SpotFilters()
     @State private var acceptedFriends: [Friendship] = []
 
+    @State private var suggestionContactCounts: [String: Int] = [:]
     @State private var spotMonitor = SpotMonitoringService()
     @State private var workedBeforeCache = WorkedBeforeCache()
     @State private var workedCacheVersion = 0
@@ -227,7 +232,9 @@ struct ActivityLogView: View {
     private var quickLogSection: some View {
         QuickLogSection(
             currentMode: $currentMode,
-            currentFrequency: $currentFrequency
+            currentFrequency: $currentFrequency,
+            spotCallsigns: spotMonitor.hunterSpots.map(\.spot.callsign),
+            contactCounts: suggestionContactCounts
         ) { data in
             handleQuickLog(data)
         }

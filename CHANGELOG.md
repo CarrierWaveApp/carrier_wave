@@ -6,6 +6,15 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ### Added
 - Add Super Check Partial (SCP) callsign database integration with real-time suggestions, confidence indicator, and did-you-mean typo detection in the logger
+- Add callsign autocomplete suggestions to Hunter Log quick log section
+- Weight callsign suggestions by contact history (most-contacted stations first)
+- Show contact count badges and spot indicators on suggestion pills
+- Add SCP database status section to External Data settings
+
+### Changed
+- Redesign callsign suggestion pills with larger touch targets, tinted backgrounds, and magnifying glass icon
+- Move SCP detail rows (last checked, callsign count, update now) from Logging settings to External Data
+- Extract shared callsign suggestion logic into CallsignSuggestionProvider
 
 ## [1.51.0] - 2026-03-01
 

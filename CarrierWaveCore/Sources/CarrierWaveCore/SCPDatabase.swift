@@ -13,35 +13,45 @@ public struct SCPDatabase: Sendable {
         var unique: [String] = []
         for call in callsigns {
             let upper = call.uppercased()
-            guard !upper.isEmpty, seen.insert(upper).inserted else { continue }
+            guard !upper.isEmpty, seen.insert(upper).inserted else {
+                continue
+            }
             unique.append(upper)
         }
         unique.sort()
-        self.sorted = unique
-        self.callsignSet = seen
+        sorted = unique
+        callsignSet = seen
     }
 
     // MARK: Public
 
     /// Number of callsigns in the database.
-    public var count: Int { sorted.count }
+    public var count: Int {
+        sorted.count
+    }
 
     /// Whether the database has no callsigns loaded.
-    public var isEmpty: Bool { sorted.isEmpty }
+    public var isEmpty: Bool {
+        sorted.isEmpty
+    }
 
     /// Classic SCP: all callsigns containing the fragment (case-insensitive).
     /// Returns up to `limit` matches, sorted alphabetically.
     /// Fragments shorter than 3 characters return empty results.
     public func partialMatch(_ fragment: String, limit: Int = 20) -> [String] {
         let upper = fragment.uppercased()
-        guard upper.count >= 3 else { return [] }
+        guard upper.count >= 3 else {
+            return []
+        }
 
         var results: [String] = []
         results.reserveCapacity(limit)
 
         // Prefix matches first (most relevant), then substring
         for call in sorted {
-            guard results.count < limit else { break }
+            guard results.count < limit else {
+                break
+            }
             if call.hasPrefix(upper) {
                 results.append(call)
             }
@@ -49,7 +59,9 @@ public struct SCPDatabase: Sendable {
 
         if results.count < limit {
             for call in sorted {
-                guard results.count < limit else { break }
+                guard results.count < limit else {
+                    break
+                }
                 if !call.hasPrefix(upper), call.contains(upper) {
                     results.append(call)
                 }
@@ -70,7 +82,9 @@ public struct SCPDatabase: Sendable {
         var combined = Array(callsignSet)
         for call in additionalCallsigns {
             let upper = call.uppercased()
-            guard !upper.isEmpty, !callsignSet.contains(upper) else { continue }
+            guard !upper.isEmpty, !callsignSet.contains(upper) else {
+                continue
+            }
             combined.append(upper)
         }
         return SCPDatabase(callsigns: combined)
@@ -82,7 +96,9 @@ public struct SCPDatabase: Sendable {
         for callsign: String,
         maxDistance: Int = 1
     ) -> [(callsign: String, distance: Int)] {
-        guard callsign.count >= 4 else { return [] }
+        guard callsign.count >= 4 else {
+            return []
+        }
         return CallsignEditDistance.findNearMatches(
             for: callsign,
             maxDistance: maxDistance,

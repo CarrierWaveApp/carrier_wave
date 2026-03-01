@@ -195,6 +195,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `ClubLogClient.swift` | Club Log API client (email/password + API key auth, bidirectional ADIF sync) |
 | `ClubLogClient+Helpers.swift` | Club Log ADIF parsing/generation, network helpers, multipart body builder |
 | `SCPService.swift` | Super Check Partial database download, cache, and refresh service |
+| `CallsignSuggestionProvider.swift` | Merged callsign suggestions from SCP database + active spots |
 | `SyncService.swift` | Main sync orchestrator |
 | `SyncService+SingleSync.swift` | Per-service sync methods (syncQRZ, syncPOTA, syncLoFi, etc.) |
 | `SyncService+Upload.swift` | Upload logic for QRZ and POTA services |

@@ -1,5 +1,5 @@
-@testable import CarrierWaveCore
 import XCTest
+@testable import CarrierWaveCore
 
 final class SCPDatabaseTests: XCTestCase {
     // MARK: - Initialization

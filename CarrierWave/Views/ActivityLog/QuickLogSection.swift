@@ -12,6 +12,8 @@ struct QuickLogSection: View {
     @Binding var currentMode: String
     @Binding var currentFrequency: Double?
 
+    let spotCallsigns: [String]
+    let contactCounts: [String: Int]
     let onLog: (QuickLogData) -> Void
 
     var body: some View {
@@ -22,12 +24,31 @@ struct QuickLogSection: View {
 
             callsignRow
 
+            // Callsign suggestions (SCP + spots)
+            if !suggestions.isEmpty, detectedCommand == nil {
+                SCPSuggestionsView(
+                    suggestions: suggestions,
+                    contactCounts: contactCounts,
+                    spotCallsigns: Set(spotCallsigns.map { $0.uppercased() })
+                ) { selected in
+                    callsignInput = selected
+                }
+                .padding(.top, 4)
+            }
+
             fieldsRow
 
             // Show quick entry preview if multi-token input
             if !parsedTokens.isEmpty {
                 quickEntryPreview
             }
+        }
+        .onChange(of: callsignInput) { _, newValue in
+            suggestions = CallsignSuggestionProvider.suggestions(
+                for: newValue,
+                spotCallsigns: spotCallsigns,
+                contactCounts: contactCounts
+            )
         }
     }
 
@@ -36,6 +57,7 @@ struct QuickLogSection: View {
     @State private var callsignInput = ""
     @State private var rstSent = ""
     @State private var rstReceived = ""
+    @State private var suggestions: [String] = []
     @FocusState private var callsignFocused: Bool
 
     @ScaledMetric(relativeTo: .subheadline) private var fieldHeight: CGFloat = 36

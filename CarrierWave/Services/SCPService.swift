@@ -20,14 +20,14 @@ final class SCPService {
     /// The loaded SCP database. Empty until `loadAndRefresh()` completes.
     private(set) var database = SCPDatabase(callsigns: [])
 
+    /// Whether a download is in progress.
+    private(set) var isLoading = false
+
     /// When the remote file was last checked (not necessarily updated).
     private(set) var lastChecked: Date? {
         get { UserDefaults.standard.object(forKey: lastCheckedKey) as? Date }
         set { UserDefaults.standard.set(newValue, forKey: lastCheckedKey) }
     }
-
-    /// Whether a download is in progress.
-    private(set) var isLoading = false
 
     /// Load from disk cache, then check remote if stale (>7 days).
     func loadAndRefresh() async {
@@ -57,13 +57,16 @@ final class SCPService {
             Self.fetchRepeatCallsigns(container: container)
         }.value
 
-        guard !repeatCallsigns.isEmpty else { return }
+        guard !repeatCallsigns.isEmpty else {
+            return
+        }
         database = database.merging(additionalCallsigns: repeatCallsigns)
     }
 
     // MARK: Private
 
     private static let remoteURL = URL(string: "http://www.supercheckpartial.com/MASTER.SCP")!
+
     private let cacheFileName = "MASTER.SCP"
     private let etagKey = "scpETag"
     private let lastCheckedKey = "scpLastChecked"
@@ -78,12 +81,48 @@ final class SCPService {
         set { UserDefaults.standard.set(newValue, forKey: etagKey) }
     }
 
+    /// Fetch callsigns worked 2+ times from QSO history (runs off main thread).
+    nonisolated private static func fetchRepeatCallsigns(
+        container: ModelContainer
+    ) -> [String] {
+        let context = ModelContext(container)
+        context.autosaveEnabled = false
+
+        let predicate = #Predicate<QSO> { qso in
+            !qso.isHidden
+                && qso.mode != "WEATHER"
+                && qso.mode != "SOLAR"
+                && qso.mode != "NOTE"
+        }
+        var descriptor = FetchDescriptor<QSO>(predicate: predicate)
+        descriptor.propertiesToFetch = [\.callsign]
+
+        guard let qsos = try? context.fetch(descriptor) else {
+            return []
+        }
+
+        // Count occurrences per callsign
+        var counts: [String: Int] = [:]
+        counts.reserveCapacity(qsos.count / 2)
+        for qso in qsos {
+            counts[qso.callsign, default: 0] += 1
+        }
+
+        return counts.compactMap { callsign, count in
+            count >= 2 ? callsign : nil
+        }
+    }
+
     private func loadFromDisk() -> SCPDatabase? {
         guard let data = try? Data(contentsOf: cacheFileURL),
               let text = String(data: data, encoding: .utf8)
-        else { return nil }
+        else {
+            return nil
+        }
         let callsigns = parseCallsigns(text)
-        guard !callsigns.isEmpty else { return nil }
+        guard !callsigns.isEmpty else {
+            return nil
+        }
         return SCPDatabase(callsigns: callsigns)
     }
 
@@ -98,7 +137,9 @@ final class SCPService {
 
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
-            guard let http = response as? HTTPURLResponse else { return }
+            guard let http = response as? HTTPURLResponse else {
+                return
+            }
 
             lastChecked = Date()
 
@@ -109,10 +150,14 @@ final class SCPService {
 
             guard http.statusCode == 200,
                   let text = String(data: data, encoding: .utf8)
-            else { return }
+            else {
+                return
+            }
 
             let callsigns = parseCallsigns(text)
-            guard !callsigns.isEmpty else { return }
+            guard !callsigns.isEmpty else {
+                return
+            }
 
             // Write to disk cache
             try? data.write(to: cacheFileURL, options: .atomic)
@@ -131,35 +176,5 @@ final class SCPService {
         text.components(separatedBy: .newlines)
             .map { $0.trimmingCharacters(in: .whitespaces) }
             .filter { !$0.isEmpty }
-    }
-
-    /// Fetch callsigns worked 2+ times from QSO history (runs off main thread).
-    private nonisolated static func fetchRepeatCallsigns(
-        container: ModelContainer
-    ) -> [String] {
-        let context = ModelContext(container)
-        context.autosaveEnabled = false
-
-        let predicate = #Predicate<QSO> { qso in
-            !qso.isHidden
-                && qso.mode != "WEATHER"
-                && qso.mode != "SOLAR"
-                && qso.mode != "NOTE"
-        }
-        var descriptor = FetchDescriptor<QSO>(predicate: predicate)
-        descriptor.propertiesToFetch = [\.callsign]
-
-        guard let qsos = try? context.fetch(descriptor) else { return [] }
-
-        // Count occurrences per callsign
-        var counts: [String: Int] = [:]
-        counts.reserveCapacity(qsos.count / 2)
-        for qso in qsos {
-            counts[qso.callsign, default: 0] += 1
-        }
-
-        return counts.compactMap { callsign, count in
-            count >= 2 ? callsign : nil
-        }
     }
 }

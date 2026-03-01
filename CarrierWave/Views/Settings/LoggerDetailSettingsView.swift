@@ -172,37 +172,15 @@ struct LoggerDetailSettingsView: View {
 
     private var scpSection: some View {
         Section {
-            Toggle("Super Check Partial", isOn: $scpEnabled)
-
-            if scpEnabled {
-                let db = SCPService.shared.database
-                HStack {
-                    Text("Callsigns")
-                    Spacer()
-                    Text(db.isEmpty ? "Not loaded" : "\(db.count)")
-                        .foregroundStyle(.secondary)
-                }
-
-                if let lastChecked = SCPService.shared.lastChecked {
-                    HStack {
-                        Text("Last checked")
-                        Spacer()
-                        Text(lastChecked, style: .relative)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-
-                Button("Update Now") {
-                    Task { await SCPService.shared.forceRefresh() }
-                }
-                .disabled(SCPService.shared.isLoading)
-            }
+            Toggle("Callsign Suggestions", isOn: $scpEnabled)
         } header: {
             Text("Callsign Assistance")
         } footer: {
             Text(
-                "Shows callsign suggestions while typing and warns "
-                    + "when a callsign isn't found in the SCP database."
+                "Shows callsign suggestions while typing in the Logger "
+                    + "and Hunter Log, combining the SCP database with "
+                    + "active spots. Also warns when a callsign isn't "
+                    + "found in the database."
             )
         }
     }

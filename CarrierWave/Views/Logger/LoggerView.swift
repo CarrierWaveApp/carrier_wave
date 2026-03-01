@@ -86,6 +86,8 @@ struct LoggerView: View {
     /// Whether the user permanently dismissed the mismatch banner for this session
     @State var spotMismatchesDismissed = false
 
+    /// Callsign → contact count for weighting suggestions
+    @State var suggestionContactCounts: [String: Int] = [:]
     /// SCP (Super Check Partial) suggestions for the current callsign input
     @State var scpSuggestions: [String] = []
     /// Whether the current callsign is a known callsign in the SCP database

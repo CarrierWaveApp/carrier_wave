@@ -37,6 +37,7 @@ enum QRZCallbookError: LocalizedError {
 struct ExternalDataView: View {
     var body: some View {
         List {
+            SCPCacheSection()
             POTACacheSection()
             SOTACacheSection()
         }

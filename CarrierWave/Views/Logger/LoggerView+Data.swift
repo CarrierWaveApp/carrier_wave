@@ -351,31 +351,30 @@ extension LoggerView {
 
     // MARK: - SCP (Super Check Partial)
 
-    /// Update SCP suggestions and known-callsign status based on current input.
-    /// Runs synchronously — SCPDatabase.partialMatch is <10ms for ~80K callsigns.
+    /// Update callsign suggestions and known-callsign status based on current input.
+    /// Merges SCP database with active POTA spot callsigns via CallsignSuggestionProvider.
     func updateSCPSuggestions(for callsign: String) {
-        let scpDisabled = UserDefaults.standard.object(forKey: "scpEnabled") as? Bool == false
-        guard !scpDisabled else {
-            scpSuggestions = []
-            scpCallsignKnown = nil
-            return
-        }
+        let spotCallsigns = cachedPOTASpots.map(\.activator)
 
+        scpSuggestions = CallsignSuggestionProvider.suggestions(
+            for: callsign,
+            spotCallsigns: spotCallsigns,
+            contactCounts: suggestionContactCounts
+        )
+
+        // Known-callsign indicator (border tint)
         let fragment = callsign.trimmingCharacters(in: .whitespaces).uppercased()
-        let db = SCPService.shared.database
-
-        guard fragment.count >= 3,
-              LoggerCommand.parse(callsign) == nil,
-              !db.isEmpty
-        else {
-            scpSuggestions = []
-            scpCallsignKnown = fragment.isEmpty ? nil : scpCallsignKnown
-            return
+        let scpDisabled = UserDefaults.standard.object(forKey: "scpEnabled") as? Bool == false
+        if scpDisabled {
+            scpCallsignKnown = nil
+        } else if fragment.count >= 4 {
+            scpCallsignKnown = CallsignSuggestionProvider.contains(
+                fragment,
+                spotCallsigns: spotCallsigns
+            )
+        } else if fragment.isEmpty {
+            scpCallsignKnown = nil
         }
-
-        scpSuggestions = db.partialMatch(fragment)
-        // Mark known/unknown once input looks like a complete callsign (4+ chars)
-        scpCallsignKnown = fragment.count >= 4 ? db.contains(fragment) : nil
     }
 
     // MARK: - Utility

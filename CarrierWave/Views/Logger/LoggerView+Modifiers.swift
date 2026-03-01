@@ -133,44 +133,54 @@ extension LoggerView {
         }
     }
 
-    /// Equipment, hidden QSOs, and help sheets
+    /// Equipment, hidden QSOs, help, and SCP alert sheets
     private func applyEquipmentSheets(_ content: some View) -> some View {
+        applySCPAlert(
+            content
+                .sheet(isPresented: $showRigEditSheet) {
+                    equipmentEditSheet
+                }
+                .sheet(isPresented: $showHiddenQSOsSheet) {
+                    HiddenQSOsSheet(sessionId: sessionManager?.activeSession?.id)
+                }
+                .sheet(isPresented: $showHelpSheet) {
+                    LoggerHelpSheet()
+                }
+                .sheet(isPresented: $showBLERadioPanel) {
+                    BLERadioPanel(service: BLERadioService.shared)
+                }
+        )
+    }
+
+    private var equipmentEditSheet: some View {
+        SessionEquipmentEditSheet(
+            radio: Binding(
+                get: { sessionManager?.activeSession?.myRig },
+                set: { sessionManager?.activeSession?.myRig = $0 }
+            ),
+            antenna: Binding(
+                get: { sessionManager?.activeSession?.myAntenna },
+                set: { sessionManager?.activeSession?.myAntenna = $0 }
+            ),
+            key: Binding(
+                get: { sessionManager?.activeSession?.myKey },
+                set: { sessionManager?.activeSession?.myKey = $0 }
+            ),
+            mic: Binding(
+                get: { sessionManager?.activeSession?.myMic },
+                set: { sessionManager?.activeSession?.myMic = $0 }
+            ),
+            extraEquipment: Binding(
+                get: { sessionManager?.activeSession?.extraEquipment },
+                set: { sessionManager?.activeSession?.extraEquipment = $0 }
+            ),
+            mode: sessionManager?.activeSession?.mode ?? "CW"
+        )
+        .landscapeAdaptiveDetents(portrait: [.medium, .large])
+    }
+
+    private func applySCPAlert(_ content: some View) -> some View {
         content
-            .sheet(isPresented: $showRigEditSheet) {
-                SessionEquipmentEditSheet(
-                    radio: Binding(
-                        get: { sessionManager?.activeSession?.myRig },
-                        set: { sessionManager?.activeSession?.myRig = $0 }
-                    ),
-                    antenna: Binding(
-                        get: { sessionManager?.activeSession?.myAntenna },
-                        set: { sessionManager?.activeSession?.myAntenna = $0 }
-                    ),
-                    key: Binding(
-                        get: { sessionManager?.activeSession?.myKey },
-                        set: { sessionManager?.activeSession?.myKey = $0 }
-                    ),
-                    mic: Binding(
-                        get: { sessionManager?.activeSession?.myMic },
-                        set: { sessionManager?.activeSession?.myMic = $0 }
-                    ),
-                    extraEquipment: Binding(
-                        get: { sessionManager?.activeSession?.extraEquipment },
-                        set: { sessionManager?.activeSession?.extraEquipment = $0 }
-                    ),
-                    mode: sessionManager?.activeSession?.mode ?? "CW"
-                )
-                .landscapeAdaptiveDetents(portrait: [.medium, .large])
-            }
-            .sheet(isPresented: $showHiddenQSOsSheet) {
-                HiddenQSOsSheet(sessionId: sessionManager?.activeSession?.id)
-            }
-            .sheet(isPresented: $showHelpSheet) {
-                LoggerHelpSheet()
-            }
-            .sheet(isPresented: $showBLERadioPanel) {
-                BLERadioPanel(service: BLERadioService.shared)
-            }
             .alert("Callsign not in SCP", isPresented: $showSCPDidYouMean) {
                 if let first = scpDidYouMeanSuggestions.first {
                     Button(first.callsign) {
@@ -262,6 +272,14 @@ extension LoggerView {
                 )
                 refreshSessionQSOs()
                 Task { await refreshPOTASpots() }
+                // Load contact counts for suggestion weighting (background)
+                let container = modelContext.container
+                Task.detached {
+                    let counts = CallsignSuggestionProvider.loadContactCounts(
+                        container: container
+                    )
+                    await MainActor.run { suggestionContactCounts = counts }
+                }
             }
             .task {
                 while !Task.isCancelled {
