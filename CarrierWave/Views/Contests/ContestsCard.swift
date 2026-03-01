@@ -43,7 +43,7 @@ struct ContestsCard: View {
                     .foregroundStyle(.white)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 2)
-                    .background(.green, in: Capsule())
+                    .background(Color(red: 0.18, green: 0.5, blue: 0.22), in: Capsule())
             }
 
             Spacer()
@@ -163,6 +163,8 @@ struct ContestsCard: View {
                 rowContent(contest, isActive: isActive)
             }
         }
+        .frame(minHeight: 44)
+        .contentShape(Rectangle())
     }
 
     private func rowContent(
