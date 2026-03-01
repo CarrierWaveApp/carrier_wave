@@ -168,6 +168,9 @@ extension LoggerView {
             .sheet(isPresented: $showHelpSheet) {
                 LoggerHelpSheet()
             }
+            .sheet(isPresented: $showBLERadioPanel) {
+                BLERadioPanel(service: BLERadioService.shared)
+            }
     }
 
     /// QRQ Crew spot and POTA upload prompt and delete session sheets

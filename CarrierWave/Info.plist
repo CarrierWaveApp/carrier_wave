@@ -22,6 +22,8 @@
 	<string>Carrier Wave uses your location to determine your grid square for QSO logging.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Carrier Wave saves activation share cards to your photo library.</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>Carrier Wave uses Bluetooth to control your ham radio via a BLE CAT proxy device.</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>LSApplicationQueriesSchemes</key>

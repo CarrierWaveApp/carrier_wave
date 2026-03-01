@@ -163,6 +163,9 @@ final class LoggingSessionManager {
         // Start spot monitoring
         startSpotMonitoring()
 
+        // Connect BLE radio if configured
+        connectBLERadio()
+
         // Auto-record solar/weather conditions
         recordConditions()
 
@@ -284,6 +287,8 @@ final class LoggingSessionManager {
                 startSpotCommentsPolling()
                 // Restart spot monitoring for restored session
                 startSpotMonitoring()
+                // Reconnect BLE radio for restored session
+                connectBLERadio()
             } else {
                 // Session was ended or not found, clear the stored ID
                 clearActiveSessionId()

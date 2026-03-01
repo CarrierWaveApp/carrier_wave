@@ -62,6 +62,9 @@ extension LoggingSessionManager {
             Task { await webSDRSession.finalize() }
         }
 
+        // Disconnect BLE radio
+        disconnectBLERadio()
+
         // Re-enable screen timeout
         UIApplication.shared.isIdleTimerDisabled = false
 
@@ -113,6 +116,9 @@ extension LoggingSessionManager {
             Task { await webSDRSession.pause() }
         }
 
+        // Disconnect BLE radio
+        disconnectBLERadio()
+
         // Re-enable screen timeout
         UIApplication.shared.isIdleTimerDisabled = false
 
@@ -146,6 +152,9 @@ extension LoggingSessionManager {
             Task { await webSDRSession.resume() }
         }
 
+        // Reconnect BLE radio
+        connectBLERadio()
+
         try? modelContext.save()
     }
 
@@ -174,6 +183,9 @@ extension LoggingSessionManager {
 
         // Restart spot monitoring
         startSpotMonitoring()
+
+        // Reconnect BLE radio
+        connectBLERadio()
 
         try? modelContext.save()
     }
@@ -241,6 +253,9 @@ extension LoggingSessionManager {
         if webSDRSession.state.isActive {
             Task { await webSDRSession.finalize() }
         }
+
+        // Disconnect BLE radio
+        disconnectBLERadio()
 
         // Re-enable screen timeout
         UIApplication.shared.isIdleTimerDisabled = false

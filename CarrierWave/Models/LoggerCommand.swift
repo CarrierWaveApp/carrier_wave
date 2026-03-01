@@ -56,6 +56,9 @@ enum LoggerCommand: Equatable {
     /// Open outing checklists in CW Field Guide
     case checklist
 
+    /// Show BLE radio control panel
+    case radio
+
     // MARK: Internal
 
     /// Help text listing all available commands
@@ -87,6 +90,8 @@ enum LoggerCommand: Equatable {
         CHECKLIST       - Open outing checklists (or CL)
         WEBSDR          - Record from a nearby WebSDR
                           (or SDR, REC, RECORD, SWL)
+        RADIO           - Show BLE radio control panel
+                          (or CAT, RIG-BLE)
         HELP            - Show this help (or ?)
 
         Type a frequency directly: 14.060, 14060, 14060kHz
@@ -138,6 +143,8 @@ enum LoggerCommand: Equatable {
             "Pick band with recommended frequencies"
         case .rig:
             "Change equipment"
+        case .radio:
+            "Show radio control panel"
         }
     }
 
@@ -178,6 +185,8 @@ enum LoggerCommand: Equatable {
             "list.bullet.rectangle.portrait"
         case .rig:
             "radio"
+        case .radio:
+            "antenna.radiowaves.left.and.right"
         }
     }
 
@@ -345,6 +354,10 @@ enum LoggerCommand: Equatable {
              "RECORD",
              "SWL":
             .websdr
+        case "RADIO",
+             "CAT",
+             "RIG-BLE":
+            .radio
         case "QRT":
             .spot(comment: "QRT")
         case "HELP",

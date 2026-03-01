@@ -5,6 +5,12 @@ All notable changes to Carrier Wave will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Add BLE radio control via CI-V over Nordic UART Service (BLE CAT proxy)
+- Add BLE radio settings with device scanning, selection, and CI-V address configuration
+- Add radio control panel in logger showing frequency, mode, and connection status
+- Add RADIO/CAT command to open radio control panel from logger command bar
+- Add inline radio connection badge in session header (green=connected, orange=configured)
+- Add bidirectional frequency/mode sync between app and radio with 2s polling
 - Add "Set My Grid" batch action in session detail menu to retroactively set grid square on all QSOs
 - Support per-park grid editing in rove sessions — each park stop gets its own grid field
 - Show per-QSO grid badges in session detail when session-level grid is missing

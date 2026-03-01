@@ -184,6 +184,11 @@ extension LoggerView {
                 {
                     webSDRInlineBadge(session: manager.webSDRSession)
                 }
+
+                // BLE radio badge
+                if !showBLERadioPanel {
+                    bleRadioInlineBadge
+                }
             }
         }
     }
@@ -310,6 +315,47 @@ extension LoggerView {
             .clipShape(Capsule())
         }
         .buttonStyle(.plain)
+    }
+
+    /// Inline BLE radio status badge for the session controls bar
+    @ViewBuilder
+    var bleRadioInlineBadge: some View {
+        let service = BLERadioService.shared
+        if service.isConnected {
+            Button {
+                showBLERadioPanel = true
+            } label: {
+                HStack(spacing: 3) {
+                    Circle()
+                        .fill(.green)
+                        .frame(width: 6, height: 6)
+                    Text("Radio")
+                        .font(.caption2)
+                }
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(.green.opacity(0.15))
+                .clipShape(Capsule())
+            }
+            .buttonStyle(.plain)
+        } else if service.isConfigured {
+            Button {
+                showBLERadioPanel = true
+            } label: {
+                HStack(spacing: 3) {
+                    Circle()
+                        .fill(.orange)
+                        .frame(width: 6, height: 6)
+                    Text("Radio")
+                        .font(.caption2)
+                }
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(.orange.opacity(0.15))
+                .clipShape(Capsule())
+            }
+            .buttonStyle(.plain)
+        }
     }
 
     func equipmentCapsuleLabel(_ session: LoggingSession) -> String {

@@ -29,6 +29,9 @@ extension LoggingSessionManager {
             Task { await webSDRSession.retune(frequencyMHz: frequency) }
         }
 
+        // Send to BLE radio if connected
+        sendFrequencyToRadio(frequency)
+
         // If this is the first frequency set on a POTA session, trigger an initial spot
         // Skip if tuning to a spot -- don't self-spot on the hunted station's frequency
         // Only auto-spot if the user has auto-spotting enabled
@@ -87,6 +90,9 @@ extension LoggingSessionManager {
         if webSDRSession.state == .recording {
             Task { await webSDRSession.changeMode(mode, frequencyMHz: session.frequency) }
         }
+
+        // Send to BLE radio if connected
+        sendModeToRadio(mode)
 
         // Return whether this is a QSY that could be spotted
         // Only prompt if QSY spots are enabled in settings

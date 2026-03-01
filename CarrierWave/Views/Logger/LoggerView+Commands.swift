@@ -38,6 +38,7 @@ extension LoggerView {
         case .websdr: showWebSDRPanel = true
         case .band: showBandEditSheet = true
         case .rig: showRigEditSheet = true
+        case .radio: showBLERadioPanel = true
         default: break
         }
     }

@@ -59,6 +59,7 @@ struct LoggerView: View {
     @FocusState var callsignFieldFocused: Bool
     @FocusState var compactFieldFocus: CompactField?
     @State var showWebSDRPanel = false
+    @State var showBLERadioPanel = false
     /// Session end/delete confirmation
     @State var showEndSessionConfirmation = false
     /// QSO being edited (for tap-to-edit callsign feature)

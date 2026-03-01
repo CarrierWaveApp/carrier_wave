@@ -13,6 +13,7 @@ Pure logic library that can be tested without iOS Simulator. Run tests with `mak
 | `Sources/CarrierWaveCore/ADIFParser.swift` | ADIF file format parsing |
 | `Sources/CarrierWaveCore/BandUtilities.swift` | Band derivation from frequency |
 | `Sources/CarrierWaveCore/CallsignDetector.swift` | Callsign regex detection, RST/grid/power parsing |
+| `Sources/CarrierWaveCore/CIVProtocol.swift` | CI-V protocol: frame building/parsing, BCD frequency encoding, mode mapping |
 | `Sources/CarrierWaveCore/CallsignEditDistance.swift` | Levenshtein edit distance for callsign comparison |
 | `Sources/CarrierWaveCore/CWTextElement.swift` | CW text element types for transcript highlighting |
 | `Sources/CarrierWaveCore/DeduplicationMatcher.swift` | Duplicate detection logic |
@@ -325,6 +326,10 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `SolarPollingService.swift` | Background hourly solar conditions polling service |
 | `SettingsSyncService.swift` | iCloud KVS settings sync (pull/push/echo suppression) |
 | `SettingsSyncService+Registry.swift` | Allowlist of settings that sync via iCloud KVS |
+| `BLERadio/BLERadioClient.swift` | Actor for BLE radio control via CI-V over Nordic UART Service |
+| `BLERadio/BLERadioClient+Delegate.swift` | CoreBluetooth delegate forwarding scan/connect/data events to actor |
+| `BLERadio/BLERadioService.swift` | @MainActor @Observable wrapper for BLE radio (polling, feedback loop prevention) |
+| `LoggingSessionManager+BLERadio.swift` | BLE radio session lifecycle integration (connect/disconnect/sync) |
 
 ## Widget Extension (`CarrierWaveWidgets/`)
 
@@ -753,6 +758,13 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `WebSDRFavoritesView+Rows.swift` | Compact row rendering for WebSDR favorites (extension) |
 | `ReceiverDetailSheet.swift` | Detail sheet for a KiwiSDR receiver with favorite toggle |
 | `AddReceiverSheet.swift` | Manual receiver add sheet (host:port entry with validation) |
+| `BLERadioSettingsView.swift` | BLE radio device scan, selection, CI-V address configuration |
+
+## Views - Logger BLE Radio (`CarrierWave/Views/Logger/`)
+
+| File | Purpose |
+|------|---------|
+| `BLERadioPanel.swift` | Bottom sheet for BLE radio control (frequency, mode, connection status) |
 
 ## Documentation (`docs/`)
 | File | Purpose |

@@ -70,6 +70,24 @@ extension SettingsMainView {
             } label: {
                 Text("POTA Activations")
             }
+
+            NavigationLink {
+                BLERadioSettingsView(bleRadioService: BLERadioService.shared)
+            } label: {
+                HStack {
+                    Text("BLE Radio")
+                    Spacer()
+                    if BLERadioService.shared.isConnected {
+                        Circle()
+                            .fill(.green)
+                            .frame(width: 8, height: 8)
+                    } else if BLERadioService.shared.isConfigured {
+                        Circle()
+                            .fill(.orange)
+                            .frame(width: 8, height: 8)
+                    }
+                }
+            }
         } header: {
             Text("Logging")
         }
