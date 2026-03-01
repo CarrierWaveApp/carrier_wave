@@ -50,6 +50,7 @@ struct SessionDetailView: View {
     @State var spotMismatchesDismissed = false
     @State var showEditSheet = false
     @State var selectedPhoto: PhotoItem?
+    @State var showGridEditSheet = false
 
     /// QSOs for display — uses activation QSOs when available, filtered by hidden
     var displayQSOs: [QSO] {
@@ -142,6 +143,15 @@ struct SessionDetailView: View {
                 )
             }
         }
+        .sheet(isPresented: $showGridEditSheet) {
+            BatchGridEditSheet(
+                currentGrid: session?.myGrid,
+                parkGroups: session?.isRove == true ? roveGroupedQSOs : nil,
+                roveStopGrids: roveStopGridMap
+            ) { result in
+                applyBatchGridEdit(result)
+            }
+        }
         .fullScreenCover(item: $selectedPhoto) { photo in
             if let session {
                 PhotoViewer(
@@ -219,6 +229,11 @@ struct SessionDetailView: View {
                             showEditSheet = true
                         } label: {
                             Label("Edit Info", systemImage: "pencil")
+                        }
+                        Button {
+                            showGridEditSheet = true
+                        } label: {
+                            Label("Set My Grid", systemImage: "square.grid.3x3")
                         }
                     }
                     if let onExport {

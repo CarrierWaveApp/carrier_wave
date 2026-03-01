@@ -74,9 +74,9 @@ extension LoggingSessionManager {
         )
     }
 
-    // MARK: - Private Helpers
+    // MARK: - Session Details Building
 
-    private func buildSessionDetails(
+    func buildSessionDetails(
         session: LoggingSession,
         qsos: [QSO]
     ) -> ActivityDetails {
@@ -117,6 +117,40 @@ extension LoggingSessionManager {
 
         return details
     }
+
+    /// Rebuild the ActivityItem for a session after batch edits (e.g., grid change).
+    /// Finds the matching own sessionCompleted item and updates its details blob.
+    static func rebuildSessionActivityItem(
+        session: LoggingSession,
+        qsos: [QSO],
+        modelContext: ModelContext
+    ) {
+        let callsign = session.myCallsign
+        let sessionStart = session.startedAt
+        let typeRaw = ActivityType.sessionCompleted.rawValue
+
+        var descriptor = FetchDescriptor<ActivityItem>(
+            predicate: #Predicate {
+                $0.isOwn
+                    && $0.activityTypeRawValue == typeRaw
+                    && $0.callsign == callsign
+                    && $0.timestamp >= sessionStart
+            },
+            sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+        )
+        descriptor.fetchLimit = 1
+
+        guard let item = try? modelContext.fetch(descriptor).first else {
+            return
+        }
+
+        // Rebuild using an ephemeral manager just for the helper methods
+        let manager = LoggingSessionManager(modelContext: modelContext)
+        item.details = manager.buildSessionDetails(session: session, qsos: qsos)
+        try? modelContext.save()
+    }
+
+    // MARK: - Private Helpers
 
     private func computeFarthestDistance(myGrid: String?, qsos: [QSO]) -> Double? {
         guard let myGrid, let myCoord = MaidenheadConverter.coordinate(from: myGrid) else {

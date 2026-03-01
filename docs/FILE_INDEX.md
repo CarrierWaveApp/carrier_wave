@@ -432,6 +432,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `SessionsView+Actions.swift` | Data loading, POTA actions, session deletion, and helpers for SessionsView |
 | `SessionsView+Share.swift` | Brag sheet generation and equipment list building for share cards |
 | `SessionRow.swift` | Unified rich session row: timeline, conditions, badges, upload status |
+| `BatchGridEditSheet.swift` | Sheet for batch-setting grid square on all QSOs in a session |
 | `SessionQSORow.swift` | Compact QSO row for session detail (tap to edit, swipe-to-delete) |
 | `SessionDetailView.swift` | Unified session/activation detail with equipment, photos, notes, spots, QSO list, POTA upload |
 | `SessionDetailView+Components.swift` | Extracted helper views: RoveStopDetailRow, RoveParkGroup, PhotoItem |
@@ -603,6 +604,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `BragSheetCustomizeView+StatRow.swift` | Individual stat row with enable toggle and hero star button |
 | `BragSheetShareCardView.swift` | Share card view for brag sheet with dark purple gradient, map, stats grid |
 | `BragSheetShareRenderer.swift` | Renders brag sheet share card to UIImage with MKMapSnapshotter map |
+| `BragSheetShareRenderer+Drawing.swift` | Drawing helpers for brag sheet map: grid lines, trace lines, pin markers |
 | `BragSheetStatisticianSection.swift` | Professional Statistician Mode section with box plots and distributions |
 
 ## Views - Logs (`CarrierWave/Views/Logs/`)

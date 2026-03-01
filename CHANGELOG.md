@@ -4,6 +4,11 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Add "Set My Grid" batch action in session detail menu to retroactively set grid square on all QSOs
+- Support per-park grid editing in rove sessions — each park stop gets its own grid field
+- Show per-QSO grid badges in session detail when session-level grid is missing
+
 ## [1.50.2] - 2026-02-28
 
 ### Fixed

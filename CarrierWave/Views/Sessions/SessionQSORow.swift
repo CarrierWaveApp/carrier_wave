@@ -10,6 +10,7 @@ struct SessionQSORow: View {
 
     let qso: QSO
     var isSpotted: Bool = false
+    var myGrid: String?
 
     var body: some View {
         HStack(spacing: 8) {
@@ -21,6 +22,10 @@ struct SessionQSORow: View {
 
             Text(qso.callsign)
                 .font(.subheadline.monospaced().weight(.semibold))
+
+            if let grid = myGrid {
+                pill(grid, color: .purple)
+            }
 
             Spacer()
 

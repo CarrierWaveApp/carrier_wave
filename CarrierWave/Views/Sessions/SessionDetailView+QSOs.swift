@@ -33,7 +33,8 @@ extension SessionDetailView {
                     } else {
                         SessionQSORow(
                             qso: qso,
-                            isSpotted: spotQSOMatch?.qsoWasSpotted(qso) ?? false
+                            isSpotted: spotQSOMatch?.qsoWasSpotted(qso) ?? false,
+                            myGrid: session?.myGrid == nil ? qso.myGrid : nil
                         )
                     }
                 }
@@ -66,7 +67,8 @@ extension SessionDetailView {
                         } else {
                             SessionQSORow(
                                 qso: qso,
-                                isSpotted: spotQSOMatch?.qsoWasSpotted(qso) ?? false
+                                isSpotted: spotQSOMatch?.qsoWasSpotted(qso) ?? false,
+                                myGrid: session?.myGrid == nil ? qso.myGrid : nil
                             )
                         }
                     }
@@ -93,6 +95,20 @@ extension SessionDetailView {
                 }
             }
         }
+    }
+
+    /// Current grid values from rove stops, keyed by park reference.
+    var roveStopGridMap: [String: String] {
+        guard let session, session.isRove else {
+            return [:]
+        }
+        var map: [String: String] = [:]
+        for stop in session.roveStops {
+            if let grid = stop.myGrid, !grid.isEmpty {
+                map[stop.parkReference] = grid
+            }
+        }
+        return map
     }
 
     /// Group QSOs by park reference, sorted by latest QSO timestamp (most recent park first).
@@ -170,6 +186,84 @@ extension SessionDetailView {
             )
         } else {
             spotMismatches = []
+        }
+    }
+
+    func applyBatchGridEdit(_ result: BatchGridResult) {
+        guard let session else {
+            return
+        }
+
+        // Fetch all session QSOs
+        let sessionId = session.id
+        var descriptor = FetchDescriptor<QSO>(
+            predicate: #Predicate { $0.loggingSessionId == sessionId && !$0.isHidden }
+        )
+        descriptor.fetchLimit = 500
+
+        guard let fetchedQSOs = try? modelContext.fetch(descriptor) else {
+            return
+        }
+
+        let now = Date()
+        let realQSOs = fetchedQSOs.filter {
+            !LoggingSessionManager.metadataModes.contains($0.mode.uppercased())
+        }
+
+        switch result {
+        case let .uniform(grid):
+            session.myGrid = grid
+            for qso in realQSOs {
+                qso.myGrid = grid
+                qso.cloudDirtyFlag = true
+                qso.modifiedAt = now
+            }
+        case let .perPark(parkGrids):
+            applyPerParkGrids(parkGrids, to: realQSOs, session: session, at: now)
+        }
+
+        try? modelContext.save()
+
+        Task {
+            await loadQSOs()
+            LoggingSessionManager.rebuildSessionActivityItem(
+                session: session, qsos: realQSOs, modelContext: modelContext
+            )
+        }
+    }
+
+    private func applyPerParkGrids(
+        _ parkGrids: [String: String],
+        to qsos: [QSO],
+        session: LoggingSession,
+        at now: Date
+    ) {
+        // Normalize keys to uppercase for matching
+        let normalized = Dictionary(
+            uniqueKeysWithValues: parkGrids.map { ($0.key.uppercased(), $0.value) }
+        )
+
+        for qso in qsos {
+            let park = (qso.parkReference ?? "").uppercased()
+            if let grid = normalized[park] {
+                qso.myGrid = grid
+                qso.cloudDirtyFlag = true
+                qso.modifiedAt = now
+            }
+        }
+
+        // Update rove stops
+        var stops = session.roveStops
+        for i in stops.indices {
+            if let grid = normalized[stops[i].parkReference.uppercased()] {
+                stops[i].myGrid = grid
+            }
+        }
+        session.roveStops = stops
+
+        // Set session grid to first stop's grid as fallback
+        if let firstGrid = stops.first(where: { $0.myGrid != nil })?.myGrid {
+            session.myGrid = firstGrid
         }
     }
 
