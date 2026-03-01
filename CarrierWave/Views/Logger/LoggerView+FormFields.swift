@@ -49,7 +49,7 @@ extension LoggerView {
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
-                        .strokeBorder(detectedCommand != nil ? Color.purple : Color.clear, lineWidth: 2)
+                        .strokeBorder(callsignFieldBorderColor, lineWidth: 2)
                 )
 
                 // Action button to the right of text field (always present)
@@ -103,6 +103,15 @@ extension LoggerView {
                     .padding(.horizontal, 12)
                     .padding(.top, 6)
                     .transition(.move(edge: .top).combined(with: .opacity))
+            }
+
+            // SCP callsign suggestions
+            if !scpSuggestions.isEmpty, callsignFieldFocused, detectedCommand == nil {
+                SCPSuggestionsView(suggestions: scpSuggestions) { selected in
+                    callsignInput = selected
+                }
+                .padding(.top, 4)
+                .transition(.move(edge: .top).combined(with: .opacity))
             }
 
             // Cancel spot button - shown when tuned away from session frequency
@@ -495,5 +504,13 @@ extension LoggerView {
     /// Current frequency warning (if any) - convenience property
     var currentWarning: FrequencyWarning? {
         computeCurrentWarning(spotCount: cachedPOTASpots.count, inputText: callsignInput)
+    }
+
+    /// Border color for the callsign input field.
+    /// Priority: command purple > SCP known green > SCP unknown amber > clear.
+    var callsignFieldBorderColor: Color {
+        if detectedCommand != nil { return .purple }
+        guard let known = scpCallsignKnown, callsignFieldFocused else { return .clear }
+        return known ? .green.opacity(0.6) : .orange.opacity(0.5)
     }
 }

@@ -15,6 +15,7 @@ Pure logic library that can be tested without iOS Simulator. Run tests with `mak
 | `Sources/CarrierWaveCore/CallsignDetector.swift` | Callsign regex detection, RST/grid/power parsing |
 | `Sources/CarrierWaveCore/CIVProtocol.swift` | CI-V protocol: frame building/parsing, BCD frequency encoding, mode mapping |
 | `Sources/CarrierWaveCore/CallsignEditDistance.swift` | Levenshtein edit distance for callsign comparison |
+| `Sources/CarrierWaveCore/SCPDatabase.swift` | Super Check Partial in-memory database (partial match, exact lookup, near-miss) |
 | `Sources/CarrierWaveCore/CWTextElement.swift` | CW text element types for transcript highlighting |
 | `Sources/CarrierWaveCore/DeduplicationMatcher.swift` | Duplicate detection logic |
 | `Sources/CarrierWaveCore/DetectedCallsign.swift` | Detected callsign with context |
@@ -193,6 +194,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `HAMRSError.swift` | HAMRS-specific errors |
 | `ClubLogClient.swift` | Club Log API client (email/password + API key auth, bidirectional ADIF sync) |
 | `ClubLogClient+Helpers.swift` | Club Log ADIF parsing/generation, network helpers, multipart body builder |
+| `SCPService.swift` | Super Check Partial database download, cache, and refresh service |
 | `SyncService.swift` | Main sync orchestrator |
 | `SyncService+SingleSync.swift` | Per-service sync methods (syncQRZ, syncPOTA, syncLoFi, etc.) |
 | `SyncService+Upload.swift` | Upload logic for QRZ and POTA services |
@@ -496,6 +498,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `LoggerView+Modifiers.swift` | Sheet presentations and lifecycle/event handler modifiers |
 | `LoggerView+Landscape.swift` | Logger landscape two-pane layout (form left, QSO list right) and compact session header |
 | `CallsignTextField.swift` | UITextField wrapper for callsign entry with proper cursor handling |
+| `SCPSuggestionsView.swift` | Horizontal chip bar showing SCP callsign suggestions |
 | `LoggerCallsignCard.swift` | Callsign info display card for logger |
 | `SessionStartSheet.swift` | Session wizard for mode, frequency, activation type, equipment |
 | `SessionStartSheet+Sections.swift` | Callsign and activation section views |

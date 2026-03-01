@@ -171,6 +171,23 @@ extension LoggerView {
             .sheet(isPresented: $showBLERadioPanel) {
                 BLERadioPanel(service: BLERadioService.shared)
             }
+            .alert("Callsign not in SCP", isPresented: $showSCPDidYouMean) {
+                if let first = scpDidYouMeanSuggestions.first {
+                    Button(first.callsign) {
+                        callsignInput = first.callsign
+                    }
+                }
+                Button("Log Anyway") {
+                    logQSOConfirmed()
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                if let first = scpDidYouMeanSuggestions.first {
+                    Text("Did you mean \(first.callsign)?")
+                } else {
+                    Text("This callsign was not found in the SCP database.")
+                }
+            }
     }
 
     /// QRQ Crew spot and POTA upload prompt and delete session sheets
