@@ -11,6 +11,7 @@
 		0E9AB3BE12D3475D6E49F14D /* WatchSessionDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40E17F05E31D95F0EB73D688 /* WatchSessionDelegate.swift */; };
 		15ADFCA1198A049CA4F8FD24 /* StatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C51884768001862EF7D7488B /* StatsView.swift */; };
 		1F24DBB851D4A3AA12AB7EEC /* QuickStartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A92675B1B784ABC0EA3FA356 /* QuickStartView.swift */; };
+		21A2D7EA17772250499A80E1 /* WatchNetworkService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D1541FDC77A51B52706D513 /* WatchNetworkService.swift */; };
 		389F679B1C509511BC5CBBAD /* IdleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA9D2967992927A1A6B0984F /* IdleView.swift */; };
 		3DEF47BAF3D0D285C278DA9F /* CarrierWaveWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07398A1125705ADB8FA99900 /* CarrierWaveWatchApp.swift */; };
 		62AFCBC4FC5E9EB11420DF91 /* SpotsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76B2E7ACAE2F9415FC39E60A /* SpotsListView.swift */; };
@@ -84,6 +85,7 @@
 /* Begin PBXFileReference section */
 		07398A1125705ADB8FA99900 /* CarrierWaveWatchApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CarrierWaveWatchApp.swift; sourceTree = "<group>"; };
 		0FCFE1EFC1D72D2A48680420 /* CarrierWaveWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CarrierWaveWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		1D1541FDC77A51B52706D513 /* WatchNetworkService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CarrierWaveWatch/Services/WatchNetworkService.swift; sourceTree = SOURCE_ROOT; };
 		1F48ACF9024A3C953084B362 /* SolarView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SolarView.swift; sourceTree = "<group>"; };
 		40E17F05E31D95F0EB73D688 /* WatchSessionDelegate.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WatchSessionDelegate.swift; sourceTree = "<group>"; };
 		518D696504E373AF7A909F81 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/WatchOS.platform/Developer/SDKs/WatchOS11.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
@@ -131,11 +133,15 @@
 		};
 		CF8DD1BF2F2098950021A936 /* CarrierWaveTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
 			path = CarrierWaveTests;
 			sourceTree = "<group>";
 		};
 		CF8DD1C92F2098950021A936 /* CarrierWaveUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
 			path = CarrierWaveUITests;
 			sourceTree = "<group>";
 		};
@@ -209,6 +215,7 @@
 			children = (
 				E710C1E17ED46AEC55D07BBA /* SharedDataReader.swift */,
 				40E17F05E31D95F0EB73D688 /* WatchSessionDelegate.swift */,
+				1D1541FDC77A51B52706D513 /* WatchNetworkService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -486,6 +493,7 @@
 				1F24DBB851D4A3AA12AB7EEC /* QuickStartView.swift in Sources */,
 				92BEE122BE706E3A87CA97AB /* SharedDataReader.swift in Sources */,
 				0E9AB3BE12D3475D6E49F14D /* WatchSessionDelegate.swift in Sources */,
+				21A2D7EA17772250499A80E1 /* WatchNetworkService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -564,7 +572,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
-				SUPPORTED_PLATFORMS = watchos;
+				SUPPORTED_PLATFORMS = "watchsimulator watchos";
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
@@ -937,7 +945,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
-				SUPPORTED_PLATFORMS = watchos;
+				SUPPORTED_PLATFORMS = "watchsimulator watchos";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;

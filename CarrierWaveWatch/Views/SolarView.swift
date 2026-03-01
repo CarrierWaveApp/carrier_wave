@@ -6,7 +6,10 @@ struct SolarView: View {
 
     var body: some View {
         ScrollView {
-            if let solar {
+            if isLoading {
+                ProgressView()
+                    .padding()
+            } else if let solar {
                 VStack(spacing: 8) {
                     headerRow(solar)
                     gaugeRow(solar)
@@ -17,12 +20,13 @@ struct SolarView: View {
                 noDataView
             }
         }
-        .onAppear { solar = SharedDataReader.readSolar() }
+        .task { await loadSolar() }
     }
 
     // MARK: Private
 
     @State private var solar: WatchSolarSnapshot?
+    @State private var isLoading = false
 
     // MARK: - No data
 
@@ -34,7 +38,7 @@ struct SolarView: View {
             Text("No Solar Data")
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            Text("Open Carrier Wave on iPhone")
+            Text("Check network connection")
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
         }
@@ -125,6 +129,19 @@ struct SolarView: View {
         Text("Updated \(solar.updatedAt, style: .relative) ago")
             .font(.system(size: 10))
             .foregroundStyle(.tertiary)
+    }
+
+    private func loadSolar() async {
+        // Try App Group first (fast)
+        if let cached = SharedDataReader.readSolar() {
+            solar = cached
+            return
+        }
+
+        // Fetch directly from network
+        isLoading = true
+        solar = await WatchNetworkService.fetchSolar()
+        isLoading = false
     }
 
     // MARK: - Propagation level helpers

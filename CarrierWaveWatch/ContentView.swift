@@ -20,7 +20,7 @@ struct ContentView: View {
             startRefreshTimer()
         }
         .onDisappear {
-            refreshTimer?.invalidate()
+            refreshTask?.cancel()
         }
     }
 
@@ -28,16 +28,20 @@ struct ContentView: View {
 
     @State private var session: WatchSessionSnapshot?
     @State private var liveSession: WatchLiveSession?
-    @State private var refreshTimer: Timer?
+    @State private var refreshTask: Task<Void, Never>?
 
     private func refreshData() {
         session = SharedDataReader.readSession()
     }
 
     private func startRefreshTimer() {
-        refreshTimer?.invalidate()
-        refreshTimer = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { _ in
-            MainActor.assumeIsolated {
+        refreshTask?.cancel()
+        refreshTask = Task {
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(5))
+                guard !Task.isCancelled else {
+                    break
+                }
                 refreshData()
             }
         }

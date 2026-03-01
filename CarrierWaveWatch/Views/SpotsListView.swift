@@ -1,23 +1,30 @@
 import SwiftUI
 
-/// Recent spots page showing POTA activators and RBN spots.
+/// Recent spots page showing POTA activators.
 struct SpotsListView: View {
     // MARK: Internal
 
     var body: some View {
         Group {
-            if let snapshot = spotSnapshot, !snapshot.spots.isEmpty {
+            if isLoading {
+                ProgressView()
+                    .padding()
+            } else if let snapshot = spotSnapshot, !snapshot.spots.isEmpty {
                 spotsList(snapshot.spots)
+            } else if !networkSpots.isEmpty {
+                spotsList(networkSpots)
             } else {
                 emptyView
             }
         }
-        .onAppear { spotSnapshot = SharedDataReader.readSpots() }
+        .task { await loadSpots() }
     }
 
     // MARK: Private
 
     @State private var spotSnapshot: WatchSpotSnapshot?
+    @State private var networkSpots: [WatchSpot] = []
+    @State private var isLoading = false
 
     private var emptyView: some View {
         VStack(spacing: 8) {
@@ -27,7 +34,7 @@ struct SpotsListView: View {
             Text("No Spots")
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            Text("Start a session on iPhone")
+            Text("Check network connection")
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
         }
@@ -83,6 +90,19 @@ struct SpotsListView: View {
             .padding(.vertical, 1)
             .background(.quaternary)
             .clipShape(RoundedRectangle(cornerRadius: 3))
+    }
+
+    private func loadSpots() async {
+        // Try App Group first (fast)
+        if let cached = SharedDataReader.readSpots(), !cached.spots.isEmpty {
+            spotSnapshot = cached
+            return
+        }
+
+        // Fetch directly from POTA API
+        isLoading = true
+        networkSpots = await WatchNetworkService.fetchPOTASpots()
+        isLoading = false
     }
 
     // MARK: - Helpers
