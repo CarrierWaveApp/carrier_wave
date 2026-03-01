@@ -373,6 +373,14 @@ extension CloudSyncEngine {
             // Conflict — the server has a newer version. Resolve conflict.
             handleConflict(failure: failure)
 
+        case .batchRequestFailed:
+            // Collateral damage from atomic batch failure — another record in the
+            // batch had the real error. This record is still dirty and will be
+            // retried on the next sync pass. No action needed.
+            logger.info(
+                "Record \(failure.record.recordID.recordName) caught in atomic batch failure, will retry"
+            )
+
         case .zoneNotFound:
             // Zone was deleted; re-create it
             Task {
