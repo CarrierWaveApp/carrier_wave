@@ -137,6 +137,9 @@ struct CarrierWaveApp: App {
                 // Start hourly solar conditions polling
                 SolarPollingService.shared.configure(container: sharedModelContainer)
 
+                // Start contest calendar polling (6-hour interval)
+                ContestPollingService.shared.configure()
+
                 // Start iCloud QSO sync (CKSyncEngine — heavyweight init)
                 CloudSyncService.shared.configure(container: sharedModelContainer)
 

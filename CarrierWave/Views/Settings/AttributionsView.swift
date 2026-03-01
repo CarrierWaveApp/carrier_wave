@@ -65,6 +65,21 @@ struct AttributionsView: View {
                     .foregroundStyle(.secondary)
                 }
                 .padding(.vertical, 4)
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("WA7BNM Contest Calendar")
+                        .font(.headline)
+
+                    Text(
+                        """
+                        Contest schedule data from Bruce Horn, WA7BNM's Contest Calendar \
+                        (contestcalendar.com). Refreshed every 6 hours.
+                        """
+                    )
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                }
+                .padding(.vertical, 4)
             } header: {
                 Text("External Data")
             }

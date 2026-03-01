@@ -135,6 +135,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `SOTASummit.swift` | SOTA summit data struct (code, name, altitude, points, coordinates) |
 | `SOTASpot.swift` | SOTAwatch API spot model (activator, summit, frequency, mode, timestamp) |
 | `SolarSnapshot.swift` | Hourly solar conditions snapshot from background polling |
+| `Contest.swift` | Contest model struct (in-memory only, from WA7BNM RSS feed) |
 | `StationProfile.swift` | Station profile struct and UserDefaults-backed storage |
 
 ## Brag Sheet Models (`CarrierWave/Models/BragSheet/`)
@@ -324,6 +325,9 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `PhoneSessionDelegate.swift` | WCSessionDelegate for Apple Watch communication (session updates, start requests) |
 | `WidgetDataWriter.swift` | Writes pre-computed stats/session/solar/spots data to App Group for widget/Watch consumption |
 | `SolarPollingService.swift` | Background hourly solar conditions polling service |
+| `ContestCalendarClient.swift` | WA7BNM Contest Calendar RSS client with conditional GET and rate limiting |
+| `ContestDateParser.swift` | Parser for contest date strings (e.g. "2200Z, Feb 27 to 2200Z, Mar 1") |
+| `ContestPollingService.swift` | Background 6-hour contest calendar polling service |
 | `SettingsSyncService.swift` | iCloud KVS settings sync (pull/push/echo suppression) |
 | `SettingsSyncService+Registry.swift` | Allowlist of settings that sync via iCloud KVS |
 | `BLERadio/BLERadioClient.swift` | Actor for BLE radio control via CI-V over Nordic UART Service |
@@ -455,6 +459,11 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `ConditionsHistoryView.swift` | Full-screen conditions history with timeline/location tabs and date range |
 | `ConditionsHistoryChartView.swift` | Time-series line chart for solar/weather metrics with Swift Charts |
 | `ConditionsByLocationView.swift` | Bar chart comparing conditions across grid squares |
+
+## Views - Contests (`CarrierWave/Views/Contests/`)
+| File | Purpose |
+|------|---------|
+| `ContestsCard.swift` | Dashboard card showing active and upcoming contests from WA7BNM Calendar |
 
 ## Views - Components (`CarrierWave/Views/Components/`)
 

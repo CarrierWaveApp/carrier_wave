@@ -103,6 +103,10 @@ extension DashboardView {
         ConditionsCard(tourState: tourState)
     }
 
+    var contestsCard: some View {
+        ContestsCard()
+    }
+
     var friendsOnAirCard: some View {
         FriendsOnAirCard(manager: activityLogManager)
     }
