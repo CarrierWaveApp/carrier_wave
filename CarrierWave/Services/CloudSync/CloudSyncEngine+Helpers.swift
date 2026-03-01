@@ -218,7 +218,9 @@ extension CloudSyncEngine {
 
     // MARK: - Notifications
 
-    func postSyncNotification() {
-        NotificationCenter.default.post(name: .didSyncQSOs, object: nil)
+    func postSyncNotification() async {
+        await MainActor.run {
+            NotificationCenter.default.post(name: .didSyncQSOs, object: nil)
+        }
     }
 }
