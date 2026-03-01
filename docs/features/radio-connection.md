@@ -20,15 +20,15 @@
 
 **What works instead?** Three practical connectivity paths exist:
 
-| Method | Radios | No Extra Hardware | Field-Ready |
-|--------|--------|:-----------------:|:-----------:|
-| **WiFi (Icom UDP)** | IC-705, IC-7610, IC-7760, IC-9700, IC-7300 mk2 | Yes | Yes |
-| **WiFi (Yaesu SCU-LAN)** | FT-710, FTdx-10, FTdx-101 | No (SCU-LAN box) | Maybe |
-| **WiFi bridge (SOTAcat)** | KX2, KX3, KH1 | No ($60 dongle) | Yes |
-| **Network relay (hamlib/flrig)** | Any radio | No (computer) | No |
-| **Bluetooth** | IC-705 (built-in), KX2/KX3 (DIY) | Varies | Yes |
+| Method | Radios | Extra Hardware | Field-Ready | Cost |
+|--------|--------|:--------------:|:-----------:|:----:|
+| **WiFi (Icom UDP)** | IC-705, IC-7610, IC-7760, IC-9700, IC-7300 mk2 | None | Yes | $0 |
+| **ESP32 WiFi bridge** | Any radio with serial CAT | ~$10 DIY / $65 SOTAcat | Yes | $10-65 |
+| **WiFi (Yaesu SCU-LAN)** | FT-710, FTdx-10, FTdx-101 | SCU-LAN box | Maybe | ~$200 |
+| **Bluetooth** | IC-705 (built-in), KX2/KX3 (DIY) | Varies | Yes | $0-30 |
+| **Network relay (hamlib/flrig)** | Any radio | Computer | No | $0 |
 
-**Recommendation:** Start with **Icom CI-V over WiFi** (the IC-705 is the #1 POTA portable radio and has built-in WiFi). Add **Bluetooth** for the IC-705 and potentially Elecraft radios second. Add **network relay (hamlib rigctld TCP)** third for maximum radio coverage. Skip direct USB serial entirely.
+**Recommendation:** Start with **Icom CI-V over WiFi** (the IC-705 is the #3 POTA portable radio and has built-in WiFi). Add **ESP32 WiFi bridge** second — this unlocks every serial-only radio (FT-891, G90, KX2/KX3, IC-7300) for ~$10 in parts. Add **Bluetooth** and **network relay (hamlib rigctld TCP)** for broader coverage. Skip direct USB serial entirely.
 
 **Primary value for a logger:** Auto-populate frequency and mode into QSO entries. Eliminates the most tedious part of portable logging — manually typing frequency changes.
 
@@ -179,6 +179,75 @@ UDP ports:
 ```
 
 IC-705 supports CI-V over Bluetooth. Same protocol, different transport.
+
+### Phase 2b: ESP32 WiFi Bridge (Universal Serial-to-WiFi)
+
+```
+┌─────────────┐    WiFi     ┌──────────┐    Serial/TTL    ┌──────────┐
+│   iPad      │◄───────────►│  ESP32   │◄────────────────►│  Any     │
+│  Carrier    │  TCP :8880  │  bridge  │   3.3V/RS-232    │  Radio   │
+│  Wave       │  (mDNS)    │  (AP)    │                   │          │
+└─────────────┘             └──────────┘                   └──────────┘
+```
+
+An ESP32 dev board (~$5-10) running transparent serial-to-TCP firmware creates a WiFi access point. The iPad connects to it and sends/receives raw CAT bytes over a TCP socket. This turns **any** radio with a serial CAT port into a wirelessly-controllable radio.
+
+**Why this matters:** The top 5 POTA portable radios (FT-891, G90, IC-705, KX2, KX3) — 4 out of 5 are serial-only. The ESP32 bridge unlocks all of them.
+
+#### Architecture: Transparent Bridge vs. Protocol Bridge
+
+Two approaches exist in the wild:
+
+| Approach | Example | How It Works | Pros | Cons |
+|----------|---------|-------------|------|------|
+| **Transparent bridge** | ESP32-Serial-Bridge | Raw TCP ↔ Serial passthrough. App sends native CAT commands. | Radio-agnostic, simple firmware, app controls protocol | App must implement each radio's CAT protocol |
+| **Protocol bridge** | SOTAcat | ESP32 understands the radio's CAT protocol, exposes a clean REST API | App code simpler, radio-agnostic API | Firmware is radio-specific, harder to maintain |
+
+**Recommendation: Transparent bridge.** Keep the ESP32 firmware dumb (just bytes in, bytes out). Implement radio protocol parsing in Carrier Wave's Swift code where it's easier to test, debug, and update. This also means one firmware image works with every radio — the user just sets the baud rate.
+
+#### Existing Firmware Options
+
+| Firmware | Protocol | Status | License |
+|----------|----------|--------|---------|
+| [AlphaLima/ESP32-Serial-Bridge](https://github.com/AlphaLima/ESP32-Serial-Bridge) | Raw TCP (3 UARTs) | Mature, stable | Open source |
+| [yuri-rage/ESP-Serial-Bridge](https://github.com/yuri-rage/ESP-Serial-Bridge) | TCP + UDP | Enhanced fork, PlatformIO | Open source |
+| [SOTAcat](https://github.com/SOTAmat/SOTAcat) | HTTP REST | Production, Elecraft-only | Open source |
+| [K6BP RigControl](https://github.com/BrucePerens/rigcontrol) | HTTP (planned) | Early stage | AGPL3 (incompatible) |
+
+#### Recommended Hardware
+
+| Part | Cost | Notes |
+|------|:----:|-------|
+| ESP32-DevKitC or Seeed XIAO ESP32-C3 | $5-10 | WiFi + USB-C power |
+| MAX3232 module (if RS-232 radio) | $2-5 | Not needed for Elecraft (TTL) or Icom CI-V |
+| Dupont wires + serial cable | $2-5 | Radio-specific cable |
+| **Total** | **$10-20** | |
+
+Pre-built option: SOTAcat from Inverted Labs (~$65, Elecraft only).
+
+#### Carrier Wave's ESP32 Strategy
+
+1. **In-app support:** Add a "WiFi Bridge (ESP32)" connection method alongside Icom WiFi. Discover bridges via Bonjour/mDNS (`_catbridge._tcp`). Open a raw TCP socket. Send/receive the radio's native CAT commands.
+
+2. **SOTAcat compatibility:** Also support SOTAcat's HTTP REST API as a connection method for Elecraft users who already own one. Endpoints: `GET/PUT /api/v1/frequency`, `GET/PUT /api/v1/mode`, etc.
+
+3. **Firmware recommendation:** Provide a recommended fork of ESP32-Serial-Bridge with mDNS advertisement and a web config page for baud rate selection. Users can flash via browser (ESP Web Flasher — no Arduino IDE needed).
+
+4. **Protocol support in-app:** Since the bridge is transparent, Carrier Wave needs protocol parsers for each radio family:
+   - Icom CI-V (binary, already needed for WiFi)
+   - Elecraft/Kenwood (text-based, simple)
+   - Yaesu CAT (binary, varies by model)
+
+#### Protocol Comparison for Bridge Transport
+
+| Protocol | Latency | iOS Support | Discovery | Best For |
+|----------|---------|-------------|-----------|----------|
+| **Raw TCP** | Lowest | `NWConnection` | Bonjour/mDNS | Transparent serial passthrough |
+| **WebSocket** | Low | `URLSessionWebSocketTask` | Bonjour/mDNS | If metadata channel needed |
+| **HTTP REST** | Higher (polling) | `URLSession` | Bonjour/mDNS | Command/control (SOTAcat) |
+| **BLE** | Variable | `CoreBluetooth` | BLE scan | Zero-config, no WiFi needed |
+
+**Primary choice: Raw TCP** — simplest, lowest latency, Hamlib-compatible. Also enables using the bridge with rigctld directly if the user wants to.
 
 ### Phase 3: Network Relay
 
@@ -428,17 +497,30 @@ Auto-reconnect on connection loss (exponential backoff, max 3 retries, then give
 
 **Estimated scope:** ~8-10 new files, ~400-600 lines of protocol code, ~300 lines of UI.
 
-### Phase 2 — Bluetooth
+### Phase 2 — ESP32 WiFi Bridge (Universal Serial Radio Support)
 
-Add `CoreBluetooth` transport for IC-705 Bluetooth CI-V. Same protocol layer, different transport.
+**Goal:** Connect to any serial-CAT radio via an ESP32 running transparent TCP-to-serial firmware.
 
-### Phase 3 — Kenwood/Elecraft (SOTAcat)
+| Component | File | Description |
+|-----------|------|-------------|
+| **TCPTransport** | `Services/Radio/Transports/TCPTransport.swift` | `NWConnection`-based raw TCP client. Also reused for Phase 4 (rigctld). |
+| **BridgeDiscoveryService** | `Services/Radio/BridgeDiscoveryService.swift` | Bonjour/mDNS browser for `_catbridge._tcp` services |
+| **KenwoodProtocol** | `Services/Radio/Protocols/KenwoodProtocol.swift` | Kenwood/Elecraft text protocol (`;`-delimited commands) |
+| **YaesuProtocol** | `Services/Radio/Protocols/YaesuProtocol.swift` | Yaesu CAT protocol (binary, varies by model family) |
+| **SOTACatTransport** | `Services/Radio/Transports/SOTACatTransport.swift` | HTTP REST client for SOTAcat's `/api/v1/*` endpoints |
+| **RadioConnectionSheet** | Modified | Add "WiFi Bridge" connection method, bridge discovery UI, radio family/model picker |
 
-Add Kenwood text protocol parser. SOTAcat presents a WiFi HTTP interface — add HTTP transport variant.
+This phase also adds **multi-radio protocol support** — the app can now speak Icom CI-V, Kenwood/Elecraft text, and Yaesu CAT natively. The ESP32 bridge is just a transparent pipe; protocol translation happens in Swift.
+
+**Companion deliverable:** Fork of [ESP32-Serial-Bridge](https://github.com/AlphaLima/ESP32-Serial-Bridge) with mDNS advertisement, web-based baud rate config, and browser-flashable binary image via [ESP Web Flasher](https://github.com/nichenqin/esp-web-flasher). Hosted as a separate repo (not part of Carrier Wave).
+
+### Phase 3 — Bluetooth
+
+Add `CoreBluetooth` transport for IC-705 Bluetooth CI-V. Same protocol layer, different transport. Potentially also BLE-to-serial for ESP32 bridges (no WiFi config needed).
 
 ### Phase 4 — Network Relay (hamlib rigctld)
 
-Add TCP transport for hamlib rigctld protocol. Simple text-based protocol, broadens radio support to 400+ models for users who run a computer alongside their radio.
+Add hamlib rigctld text protocol parser over the existing `TCPTransport`. Simple text-based protocol, broadens radio support to 400+ models for users who run a computer alongside their radio.
 
 ### Phase 5 — Tune from Spots
 
@@ -463,16 +545,19 @@ CarrierWave/
 │   └── Radio/
 │       ├── RadioConnectionService.swift      // @MainActor, observable
 │       ├── RadioConnectionActor.swift        // Background network I/O
+│       ├── BridgeDiscoveryService.swift     // mDNS browser for ESP32 bridges
 │       ├── Protocols/
 │       │   ├── RadioProtocol.swift           // Protocol abstraction
 │       │   ├── IcomCIVProtocol.swift          // CI-V encode/decode
-│       │   ├── KenwoodProtocol.swift          // Kenwood text protocol
+│       │   ├── KenwoodProtocol.swift          // Kenwood/Elecraft text protocol
+│       │   ├── YaesuProtocol.swift            // Yaesu CAT binary protocol
 │       │   └── HamlibProtocol.swift           // rigctld text protocol
 │       └── Transports/
 │           ├── RadioTransport.swift           // Transport abstraction
 │           ├── UDPTransport.swift             // Icom WiFi UDP
-│           ├── BluetoothTransport.swift       // CoreBluetooth
-│           └── TCPTransport.swift             // hamlib rigctld
+│           ├── TCPTransport.swift             // ESP32 bridge + rigctld
+│           ├── SOTACatTransport.swift         // SOTAcat HTTP REST
+│           └── BluetoothTransport.swift       // CoreBluetooth
 ├── Views/
 │   ├── Logger/
 │   │   └── RadioStatusBar.swift
@@ -488,13 +573,17 @@ CarrierWave/
 
 2. **Bluetooth transport for IC-705** — Does the IC-705 expose CI-V over BLE (CoreBluetooth compatible) or only classic Bluetooth SPP (requires ExternalAccessory/MFi)? This needs hardware testing.
 
-3. **SOTAcat API** — SOTAcat presents a WiFi hotspot with a web interface. Is there a documented HTTP API, or do we need to scrape/reverse-engineer? The GitHub repo may have protocol docs.
+3. **SOTAcat API** — ~~Is there a documented HTTP API?~~ **Resolved:** SOTAcat has a well-documented REST API (`GET/PUT /api/v1/frequency`, `/api/v1/mode`, `/api/v1/power`, etc.). Source code is open on GitHub.
 
 4. **Frequency update UX** — When the user is in the middle of typing a QSO, should radio frequency updates silently update the form, or should they be queued and applied on next QSO? (Recommendation: update silently unless the user has manually edited the frequency field.)
 
 5. **Band change behavior** — When the radio switches bands, should the app start a new logging "segment" or just update the session frequency? (Recommendation: update session frequency, log each QSO with its own frequency.)
 
 6. **Apple Watch** — The Watch app could display radio connection status and frequency. Low priority but worth noting.
+
+7. **ESP32 firmware strategy** — Should Carrier Wave maintain its own ESP32 bridge firmware fork, or just document how to use existing firmwares (ESP32-Serial-Bridge, etc.)? Maintaining a fork adds mDNS discovery and a branded setup experience, but also adds a second codebase to support. (Recommendation: start by documenting existing firmware, fork only if the UX gap becomes a pain point.)
+
+8. **ESP32 BLE mode** — The ESP32 supports BLE natively. Should the bridge firmware also expose a BLE GATT serial service as an alternative to WiFi? This would eliminate WiFi configuration entirely — just BLE-pair and go. CAT command throughput (~50 bytes/command) is well within BLE bandwidth limits.
 
 ---
 
@@ -537,6 +626,16 @@ CarrierWave/
 - [Ham Radio Deluxe Rig Control](https://www.hamradiodeluxe.com/features/rigcontrol/)
 - [2026 POTA Field Radio Survey](https://qrper.com/2026/02/philips-2026-field-radio-survey-from-the-facebook-pota-group/)
 - [POTACAT](https://potacat.com)
+
+### ESP32 WiFi Bridge Projects
+- [AlphaLima/ESP32-Serial-Bridge](https://github.com/AlphaLima/ESP32-Serial-Bridge) — Raw TCP-to-serial, 3 UARTs
+- [yuri-rage/ESP-Serial-Bridge](https://github.com/yuri-rage/ESP-Serial-Bridge) — Enhanced fork with UDP + PlatformIO
+- [JeeLabs esp-link](https://github.com/jeelabs/esp-link) — Mature telnet-to-serial (ESP8266)
+- [hallard/WebSocketToSerial](https://github.com/hallard/WebSocketToSerial) — WebSocket-to-serial (ESP8266)
+- [K6BP RigControl](https://github.com/BrucePerens/rigcontrol) — ESP32 Audio Kit, early stage (AGPL3)
+- [F6CZV FT-857D Web CAT](https://github.com/Phil-f6czv/FT857-Web-browser-CAT-ESP32) — ESP32 TTGO + Yaesu
+- [Lynovation CTR2-Micro](https://ctr2.lynovation.com/) — Commercial ESP32 radio controller
+- [trx-control (HB9SSB)](https://github.com/hb9ssb/trx-control) — TCP + WebSocket, Lua drivers (FOSDEM 2024)
 
 ### Hamlib & Network CAT
 - [Hamlib vs FLRig for CAT Control — VK Ham Radio](https://www.vkhamradio.com/hamlib-or-flrig-or-omnirig-for-transceiver-cat-control/)
