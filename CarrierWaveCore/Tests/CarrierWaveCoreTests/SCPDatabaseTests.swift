@@ -95,4 +95,37 @@ final class SCPDatabaseTests: XCTestCase {
         XCTAssertFalse(callsigns.contains("W6JSV"))
         XCTAssertTrue(callsigns.contains("W6JSW"))
     }
+
+    // MARK: - Merging
+
+    func testMergingAddsNewCallsigns() {
+        let db = SCPDatabase(callsigns: ["W6JSV", "K6ABC"])
+        let merged = db.merging(additionalCallsigns: ["VE3XYZ", "JA1ABC"])
+        XCTAssertEqual(merged.count, 4)
+        XCTAssertTrue(merged.contains("VE3XYZ"))
+        XCTAssertTrue(merged.contains("JA1ABC"))
+        XCTAssertTrue(merged.contains("W6JSV"))
+    }
+
+    func testMergingDeduplicatesExisting() {
+        let db = SCPDatabase(callsigns: ["W6JSV", "K6ABC"])
+        let merged = db.merging(additionalCallsigns: ["w6jsv", "VE3XYZ"])
+        XCTAssertEqual(merged.count, 3) // W6JSV not duplicated
+        XCTAssertTrue(merged.contains("VE3XYZ"))
+    }
+
+    func testMergingWithEmptyIsIdentity() {
+        let db = SCPDatabase(callsigns: ["W6JSV", "K6ABC"])
+        let merged = db.merging(additionalCallsigns: [String]())
+        XCTAssertEqual(merged.count, 2)
+    }
+
+    func testMergedDatabaseSupportsPartialMatch() {
+        let db = SCPDatabase(callsigns: ["W6JSV"])
+        let merged = db.merging(additionalCallsigns: ["W6JTI", "K6ABC"])
+        let results = merged.partialMatch("W6J")
+        XCTAssertEqual(results.count, 2)
+        XCTAssertTrue(results.contains("W6JSV"))
+        XCTAssertTrue(results.contains("W6JTI"))
+    }
 }

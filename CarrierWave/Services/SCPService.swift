@@ -1,5 +1,6 @@
 import CarrierWaveCore
 import Foundation
+import SwiftData
 
 // MARK: - SCPService
 
@@ -47,6 +48,17 @@ final class SCPService {
     /// Force re-download from remote, ignoring cache freshness.
     func forceRefresh() async {
         await fetchRemote()
+    }
+
+    /// Augment the database with callsigns the user has worked 2+ times.
+    /// Runs the QSO query on a background context to avoid blocking UI.
+    func loadUserCallsigns(container: ModelContainer) async {
+        let repeatCallsigns = await Task.detached {
+            Self.fetchRepeatCallsigns(container: container)
+        }.value
+
+        guard !repeatCallsigns.isEmpty else { return }
+        database = database.merging(additionalCallsigns: repeatCallsigns)
     }
 
     // MARK: Private
@@ -119,5 +131,35 @@ final class SCPService {
         text.components(separatedBy: .newlines)
             .map { $0.trimmingCharacters(in: .whitespaces) }
             .filter { !$0.isEmpty }
+    }
+
+    /// Fetch callsigns worked 2+ times from QSO history (runs off main thread).
+    private nonisolated static func fetchRepeatCallsigns(
+        container: ModelContainer
+    ) -> [String] {
+        let context = ModelContext(container)
+        context.autosaveEnabled = false
+
+        let predicate = #Predicate<QSO> { qso in
+            !qso.isHidden
+                && qso.mode != "WEATHER"
+                && qso.mode != "SOLAR"
+                && qso.mode != "NOTE"
+        }
+        var descriptor = FetchDescriptor<QSO>(predicate: predicate)
+        descriptor.propertiesToFetch = [\.callsign]
+
+        guard let qsos = try? context.fetch(descriptor) else { return [] }
+
+        // Count occurrences per callsign
+        var counts: [String: Int] = [:]
+        counts.reserveCapacity(qsos.count / 2)
+        for qso in qsos {
+            counts[qso.callsign, default: 0] += 1
+        }
+
+        return counts.compactMap { callsign, count in
+            count >= 2 ? callsign : nil
+        }
     }
 }

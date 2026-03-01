@@ -152,6 +152,7 @@ struct CarrierWaveApp: App {
 
                 // Load SCP callsign database (from disk, then check remote if stale)
                 await SCPService.shared.loadAndRefresh()
+                await SCPService.shared.loadUserCallsigns(container: sharedModelContainer)
 
                 // Preload caches concurrently (loads from disk, refreshes in background)
                 async let parksLoad: Void = POTAParksCache.shared.ensureLoaded()

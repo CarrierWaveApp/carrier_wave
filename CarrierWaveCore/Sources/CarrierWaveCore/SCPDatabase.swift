@@ -64,6 +64,18 @@ public struct SCPDatabase: Sendable {
         callsignSet.contains(callsign.uppercased())
     }
 
+    /// Create a new database by merging additional callsigns into this one.
+    /// Used to augment MASTER.SCP with the user's repeat contacts.
+    public func merging(additionalCallsigns: some Collection<String>) -> SCPDatabase {
+        var combined = Array(callsignSet)
+        for call in additionalCallsigns {
+            let upper = call.uppercased()
+            guard !upper.isEmpty, !callsignSet.contains(upper) else { continue }
+            combined.append(upper)
+        }
+        return SCPDatabase(callsigns: combined)
+    }
+
     /// Near-misses within edit distance. Only useful for complete callsigns (4+ chars).
     /// Skips exact matches (distance == 0).
     public func nearMatches(
