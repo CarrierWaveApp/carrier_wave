@@ -86,6 +86,14 @@ struct LoggerView: View {
     /// Whether the user permanently dismissed the mismatch banner for this session
     @State var spotMismatchesDismissed = false
 
+    /// SCP (Super Check Partial) suggestions for the current callsign input
+    @State var scpSuggestions: [String] = []
+    /// Whether the current callsign is a known callsign in the SCP database
+    @State var scpCallsignKnown: Bool?
+    /// SCP did-you-mean confirmation
+    @State var showSCPDidYouMean = false
+    @State var scpDidYouMeanSuggestions: [(callsign: String, distance: Int)] = []
+
     // MARK: - Stored Properties (internal for cross-file extensions)
 
     @Query(filter: #Predicate<Friendship> { $0.statusRawValue == "accepted" })

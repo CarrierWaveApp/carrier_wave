@@ -176,6 +176,9 @@ extension LoggerView {
         // Update cached POTA duplicate status (avoids expensive computation on every render)
         cachedPotaDuplicateStatus = computePotaDuplicateStatus()
 
+        // SCP partial check — synchronous, <10ms for ~80K callsigns
+        updateSCPSuggestions(for: callsign)
+
         let callsignForLookup = resolveCallsignForLookup(callsign)
 
         // Don't lookup if too short or looks like a command
@@ -344,6 +347,35 @@ extension LoggerView {
         } else {
             rstReceived = ""
         }
+    }
+
+    // MARK: - SCP (Super Check Partial)
+
+    /// Update SCP suggestions and known-callsign status based on current input.
+    /// Runs synchronously — SCPDatabase.partialMatch is <10ms for ~80K callsigns.
+    func updateSCPSuggestions(for callsign: String) {
+        let scpDisabled = UserDefaults.standard.object(forKey: "scpEnabled") as? Bool == false
+        guard !scpDisabled else {
+            scpSuggestions = []
+            scpCallsignKnown = nil
+            return
+        }
+
+        let fragment = callsign.trimmingCharacters(in: .whitespaces).uppercased()
+        let db = SCPService.shared.database
+
+        guard fragment.count >= 3,
+              LoggerCommand.parse(callsign) == nil,
+              !db.isEmpty
+        else {
+            scpSuggestions = []
+            scpCallsignKnown = fragment.isEmpty ? nil : scpCallsignKnown
+            return
+        }
+
+        scpSuggestions = db.partialMatch(fragment)
+        // Mark known/unknown once input looks like a complete callsign (4+ chars)
+        scpCallsignKnown = fragment.count >= 4 ? db.contains(fragment) : nil
     }
 
     // MARK: - Utility

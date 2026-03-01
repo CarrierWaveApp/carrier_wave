@@ -4,6 +4,9 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Add Super Check Partial (SCP) callsign database integration with real-time suggestions, confidence indicator, and did-you-mean typo detection in the logger
+
 ## [1.51.0] - 2026-03-01
 
 ### Fixed

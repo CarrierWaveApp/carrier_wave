@@ -42,6 +42,27 @@ extension LoggerView {
             return
         }
 
+        // SCP did-you-mean check: if callsign is not in database, suggest near matches
+        if editingQSO == nil, scpCallsignKnown == false {
+            let db = SCPService.shared.database
+            let callsign = callsignInput.trimmingCharacters(in: .whitespaces).uppercased()
+            let near = db.nearMatches(for: callsign, maxDistance: 1)
+            if !near.isEmpty {
+                scpDidYouMeanSuggestions = near
+                showSCPDidYouMean = true
+                return
+            }
+        }
+
+        logQSOConfirmed()
+    }
+
+    /// Actually log the QSO (called directly or after SCP did-you-mean dismissal).
+    func logQSOConfirmed() {
+        guard canLog else {
+            return
+        }
+
         // Check if we're editing an existing QSO
         if let qsoToUpdate = editingQSO {
             updateExistingQSOCallsign(qsoToUpdate)
