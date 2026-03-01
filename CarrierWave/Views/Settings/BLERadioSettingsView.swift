@@ -10,6 +10,7 @@ struct BLERadioSettingsView: View {
 
     var body: some View {
         List {
+            experimentalNotice
             savedDeviceSection
             scanSection
             advancedSection
@@ -46,6 +47,30 @@ struct BLERadioSettingsView: View {
         case .connected: .green
         case .error: .red
         default: .secondary
+        }
+    }
+
+    // MARK: - Experimental Notice
+
+    private var experimentalNotice: some View {
+        Section {
+            Label {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Experimental Feature")
+                        .font(.subheadline.weight(.semibold))
+                    Text(
+                        "BLE radio control requires an external BLE CAT proxy device "
+                            + "(e.g. ESP32 running Nordic UART Service). "
+                            + "This feature is under active development and may not work "
+                            + "with all radios."
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                }
+            } icon: {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundStyle(.orange)
+            }
         }
     }
 

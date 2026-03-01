@@ -4,12 +4,15 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.51.0] - 2026-03-01
+
 ### Fixed
 - Fix false DUPE labels in Hunter Log by filtering to only activity-log QSOs (excludes activator sessions, synced QSOs, imports)
 - Fix Hunter Log dupe detection to respect mode families (20m CW no longer marks 20m SSB as dupe)
 - Sort dupe spots to bottom of Hunter Log spot list with strikethrough on callsign
 - Refresh Hunter Log worked-before cache when QSOs arrive via sync or iCloud
 - Re-fire Hunter Log cache at UTC midnight so day boundary doesn't show stale dupes
+- Handle CloudKit atomic batch failure without error spam (collateral-damage records retry silently)
 
 ### Changed
 - Merge sync progress card and service list into unified SyncCard at bottom of dashboard
@@ -22,7 +25,7 @@ All notable changes to Carrier Wave will be documented in this file.
 ### Added
 - Add POTA hunter respots: auto-post respot when logging from a POTA spot, with optional custom message
 - Add contest calendar dashboard card showing active and upcoming contests from WA7BNM Contest Calendar
-- Add BLE radio control via CI-V over Nordic UART Service (BLE CAT proxy)
+- Add BLE radio control via CI-V over Nordic UART Service (experimental — requires external BLE CAT proxy hardware)
 - Add BLE radio settings with device scanning, selection, and CI-V address configuration
 - Add radio control panel in logger showing frequency, mode, and connection status
 - Add RADIO/CAT command to open radio control panel from logger command bar

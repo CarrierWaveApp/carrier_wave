@@ -76,6 +76,12 @@ extension SettingsMainView {
             } label: {
                 HStack {
                     Text("BLE Radio")
+                    Text("Experimental")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.orange)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(.orange.opacity(0.15), in: Capsule())
                     Spacer()
                     if BLERadioService.shared.isConnected {
                         Circle()
@@ -191,7 +197,7 @@ extension SettingsMainView {
             HStack {
                 Text("Version")
                 Spacer()
-                Text("1.50.2")
+                Text("1.51.0")
                     .foregroundStyle(.secondary)
             }
 
