@@ -3,9 +3,9 @@ import SwiftUI
 // MARK: - SpotFilters
 
 /// Filter state for the activity log spot list.
-/// Persisted via @AppStorage.
-struct SpotFilters: Equatable {
-    enum SourceFilter: String, CaseIterable {
+/// Persisted via @AppStorage using RawRepresentable JSON encoding.
+struct SpotFilters: Equatable, Codable {
+    enum SourceFilter: String, CaseIterable, Codable {
         case pota = "POTA"
         case sota = "SOTA"
         case rbn = "RBN"
@@ -84,6 +84,28 @@ struct SpotFilters: Equatable {
 
             return true
         }
+    }
+}
+
+// MARK: - SpotFilters + RawRepresentable
+
+extension SpotFilters: RawRepresentable {
+    init?(rawValue: String) {
+        guard let data = rawValue.data(using: .utf8),
+              let decoded = try? JSONDecoder().decode(SpotFilters.self, from: data)
+        else {
+            return nil
+        }
+        self = decoded
+    }
+
+    var rawValue: String {
+        guard let data = try? JSONEncoder().encode(self),
+              let string = String(data: data, encoding: .utf8)
+        else {
+            return "{}"
+        }
+        return string
     }
 }
 

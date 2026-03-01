@@ -174,7 +174,7 @@ struct ActivityLogView: View {
     @State private var recentQSOs: [QSO] = []
     @State private var currentMode = "CW"
     @State private var currentFrequency: Double?
-    @State private var spotFilters = SpotFilters()
+    @AppStorage("hunterSpotFilters") private var spotFilters = SpotFilters()
     @State private var acceptedFriends: [Friendship] = []
 
     @State private var spotMonitor = SpotMonitoringService()
