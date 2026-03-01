@@ -4,6 +4,13 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.50.2] - 2026-02-28
+
+### Fixed
+- Fix Watch app crash from MainActor.assumeIsolated in Timer callback
+- Add direct network fetching to Watch app for solar conditions and POTA spots (no longer requires iPhone app data)
+- Enable watchOS Simulator platform for Watch app testing
+
 ## [1.50.1] - 2026-02-28
 
 ### Fixed
