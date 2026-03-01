@@ -156,6 +156,11 @@ struct ActivityLogView: View {
         .onDisappear {
             spotMonitor.stopMonitoring()
         }
+        .onReceive(
+            NotificationCenter.default.publisher(for: .didSyncQSOs)
+        ) { _ in
+            workedCacheVersion += 1
+        }
     }
 
     // MARK: Private
@@ -262,7 +267,8 @@ struct ActivityLogView: View {
             Task {
                 await workedBeforeCache.recordQSO(
                     callsign: data.callsign,
-                    band: data.band
+                    band: data.band,
+                    mode: data.mode
                 )
             }
         }

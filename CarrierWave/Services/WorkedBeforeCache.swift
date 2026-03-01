@@ -1,3 +1,4 @@
+import CarrierWaveCore
 import Foundation
 import SwiftData
 
@@ -6,28 +7,38 @@ import SwiftData
 /// Result of a worked-before check for a single callsign
 struct WorkedBeforeResult: Sendable {
     static let notWorked = WorkedBeforeResult(
-        todayBands: [],
-        previousBands: [],
+        todayBandModes: [],
+        previousBandModes: [],
         isNewDXCC: false
     )
 
-    /// Bands worked today
-    let todayBands: Set<String>
+    /// Band+mode-family keys worked today (e.g. "20m|CW", "40m|PHONE")
+    let todayBandModes: Set<String>
 
-    /// Bands worked on the previous UTC day
-    let previousBands: Set<String>
+    /// Band+mode-family keys worked on the previous UTC day
+    let previousBandModes: Set<String>
 
     /// Whether this is a new DXCC entity
     let isNewDXCC: Bool
 
-    /// Whether this callsign has been worked at all
-    var hasBeenWorked: Bool {
-        !todayBands.isEmpty || !previousBands.isEmpty
+    /// Bands worked today (extracted from bandMode keys, for display)
+    var todayBands: Set<String> {
+        Set(todayBandModes.compactMap { $0.components(separatedBy: "|").first })
     }
 
-    /// Whether this would be a dupe on the given band
-    func isDupe(on band: String) -> Bool {
-        todayBands.contains(band)
+    /// Bands worked on the previous UTC day (extracted from bandMode keys, for display)
+    var previousBands: Set<String> {
+        Set(previousBandModes.compactMap { $0.components(separatedBy: "|").first })
+    }
+
+    /// Whether this callsign has been worked at all
+    var hasBeenWorked: Bool {
+        !todayBandModes.isEmpty || !previousBandModes.isEmpty
+    }
+
+    /// Whether this would be a dupe on the given band and mode family
+    func isDupe(on band: String, mode: String) -> Bool {
+        todayBandModes.contains(bandModeKey(band: band, mode: mode))
     }
 }
 
@@ -48,7 +59,7 @@ actor WorkedBeforeCache {
         let startOfDay = calendar.startOfDay(for: Date())
 
         let predicate = #Predicate<QSO> { qso in
-            !qso.isHidden && qso.timestamp >= startOfDay
+            !qso.isHidden && qso.timestamp >= startOfDay && qso.isActivityLogQSO
         }
         var descriptor = FetchDescriptor<QSO>(predicate: predicate)
         descriptor.fetchLimit = 500
@@ -58,7 +69,8 @@ actor WorkedBeforeCache {
             todayWorked.removeAll()
             for qso in qsos {
                 let key = qso.callsign.uppercased()
-                todayWorked[key, default: []].insert(qso.band)
+                let bmKey = bandModeKey(band: qso.band, mode: qso.mode)
+                todayWorked[key, default: []].insert(bmKey)
             }
         } catch {
             // Silently fail — cache will be empty
@@ -89,18 +101,19 @@ actor WorkedBeforeCache {
             let upper = callsign.uppercased()
             let predicate = #Predicate<QSO> { qso in
                 qso.callsign == upper && !qso.isHidden
+                    && qso.isActivityLogQSO
                     && qso.timestamp >= startOfYesterday
                     && qso.timestamp < startOfToday
             }
             var descriptor = FetchDescriptor<QSO>(predicate: predicate)
             descriptor.fetchLimit = 50
 
-            let bands: Set<String> = if let qsos = try? context.fetch(descriptor) {
-                Set(qsos.map(\.band))
+            let bandModes: Set<String> = if let qsos = try? context.fetch(descriptor) {
+                Set(qsos.map { bandModeKey(band: $0.band, mode: $0.mode) })
             } else {
                 []
             }
-            previousDayWorked[upper] = bands
+            previousDayWorked[upper] = bandModes
         }
     }
 
@@ -112,16 +125,17 @@ actor WorkedBeforeCache {
 
         // DXCC checking is deferred to Phase 3
         return WorkedBeforeResult(
-            todayBands: today,
-            previousBands: previousDay,
+            todayBandModes: today,
+            previousBandModes: previousDay,
             isNewDXCC: false
         )
     }
 
     /// Record a newly logged QSO in the cache (avoids re-query)
-    func recordQSO(callsign: String, band: String) {
+    func recordQSO(callsign: String, band: String, mode: String) {
         let upper = callsign.uppercased()
-        todayWorked[upper, default: []].insert(band)
+        let bmKey = bandModeKey(band: band, mode: mode)
+        todayWorked[upper, default: []].insert(bmKey)
     }
 
     /// Clear previous-day cache so next checkCallsigns re-queries from DB
@@ -131,9 +145,31 @@ actor WorkedBeforeCache {
 
     // MARK: Private
 
-    /// callsign -> bands worked today
+    /// callsign -> band+mode keys worked today
     private var todayWorked: [String: Set<String>] = [:]
 
-    /// callsign -> bands worked on the previous UTC day (lazy-loaded per callsign)
+    /// callsign -> band+mode keys worked on the previous UTC day (lazy-loaded per callsign)
     private var previousDayWorked: [String: Set<String>] = [:]
+
+    /// Build a composite key from band and mode family
+    private func bandModeKey(band: String, mode: String) -> String {
+        let familyKey = switch ModeEquivalence.family(for: mode) {
+        case .phone: "PHONE"
+        case .cw: "CW"
+        case .digital: "DIGITAL"
+        case .other: "OTHER"
+        }
+        return "\(band)|\(familyKey)"
+    }
+}
+
+/// Build a composite key from band and mode family (free function for use outside actor)
+func bandModeKey(band: String, mode: String) -> String {
+    let familyKey = switch ModeEquivalence.family(for: mode) {
+    case .phone: "PHONE"
+    case .cw: "CW"
+    case .digital: "DIGITAL"
+    case .other: "OTHER"
+    }
+    return "\(band)|\(familyKey)"
 }

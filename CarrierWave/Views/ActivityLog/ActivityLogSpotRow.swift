@@ -37,7 +37,8 @@ struct ActivityLogSpotRow: View {
     @ScaledMetric(relativeTo: .subheadline) private var frequencyColumnWidth: CGFloat = 80
 
     private var isHunted: Bool {
-        huntedBehavior == .crossOut && workedResult.isDupe(on: spot.spot.band)
+        huntedBehavior == .crossOut
+            && workedResult.isDupe(on: spot.spot.band, mode: spot.spot.mode)
     }
 
     private var frequencyColumn: some View {
@@ -70,6 +71,7 @@ struct ActivityLogSpotRow: View {
         HStack(spacing: 4) {
             Text(spot.spot.callsign)
                 .font(.subheadline.weight(.semibold).monospaced())
+                .strikethrough(isHunted)
 
             if spot.spot.source == .rbn {
                 Text("RBN")
@@ -178,7 +180,7 @@ struct ActivityLogSpotRow: View {
     private var workedBeforeBadges: some View {
         let band = spot.spot.band
 
-        if workedResult.isDupe(on: band) {
+        if workedResult.isDupe(on: band, mode: spot.spot.mode), !isHunted {
             dupeBadge(band: band, mode: spot.spot.mode)
         } else if !workedResult.todayBands.isEmpty {
             todayWorkedBadge(bands: workedResult.todayBands)

@@ -37,7 +37,11 @@ struct ActivityLogSpotsList: View {
             sortPicker
 
             if sortedSpots.isEmpty {
-                emptyState
+                if spots.isEmpty {
+                    loadingState
+                } else {
+                    emptyState
+                }
             } else {
                 spotContent
             }
@@ -51,10 +55,12 @@ struct ActivityLogSpotsList: View {
             ) {
                 let callsign = spot.spot.callsign
                 let band = spot.spot.band
+                let mode = spot.spot.mode
                 Task {
                     await workedBeforeCache.recordQSO(
                         callsign: callsign,
-                        band: band
+                        band: band,
+                        mode: mode
                     )
                     let key = callsign.uppercased()
                     let updated = await workedBeforeCache.result(
@@ -77,7 +83,11 @@ struct ActivityLogSpotsList: View {
                 "You already worked \(spot.spot.callsign) on \(spot.spot.band) today."
             )
         }
-        .task(id: WorkedRefreshKey(spotIDs: spots.map(\.id), version: workedCacheVersion)) {
+        .task(id: WorkedRefreshKey(
+            spotIDs: spots.map(\.id),
+            version: workedCacheVersion,
+            utcDate: Self.currentUTCDateString
+        )) {
             await loadWorkedBefore()
         }
     }
@@ -85,6 +95,13 @@ struct ActivityLogSpotsList: View {
     // MARK: Private
 
     private static let visibleLimit = 50
+
+    private static var currentUTCDateString: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.timeZone = TimeZone(identifier: "UTC")
+        return formatter.string(from: Date())
+    }
 
     @Query(filter: #Predicate<Friendship> { $0.statusRawValue == "accepted" })
     private var acceptedFriends: [Friendship]
@@ -133,19 +150,32 @@ struct ActivityLogSpotsList: View {
             results = results.filter { spot in
                 let callKey = spot.spot.callsign.uppercased()
                 let result = workedResults[callKey] ?? .notWorked
-                return !result.isDupe(on: spot.spot.band)
+                return !result.isDupe(on: spot.spot.band, mode: spot.spot.mode)
             }
         }
         return results
     }
 
     private var sortedSpots: [EnrichedSpot] {
-        switch sortOrder {
+        let primarySorted: [EnrichedSpot] = switch sortOrder {
         case .recent:
             dedupedSpots.sorted { $0.spot.timestamp > $1.spot.timestamp }
         case .frequency:
             dedupedSpots.sorted { $0.spot.frequencyKHz < $1.spot.frequencyKHz }
         }
+
+        // Partition: non-dupes first, dupes last (stable within each group)
+        let nonDupes = primarySorted.filter { spot in
+            let key = spot.spot.callsign.uppercased()
+            let result = workedResults[key] ?? .notWorked
+            return !result.isDupe(on: spot.spot.band, mode: spot.spot.mode)
+        }
+        let dupes = primarySorted.filter { spot in
+            let key = spot.spot.callsign.uppercased()
+            let result = workedResults[key] ?? .notWorked
+            return result.isDupe(on: spot.spot.band, mode: spot.spot.mode)
+        }
+        return nonDupes + dupes
     }
 
     // MARK: - Header & controls
@@ -196,6 +226,17 @@ struct ActivityLogSpotsList: View {
     }
 
     // MARK: - Content
+
+    private var loadingState: some View {
+        VStack(spacing: 8) {
+            ProgressView()
+            Text("Loading spots...")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 32)
+    }
 
     private var emptyState: some View {
         VStack(spacing: 8) {
@@ -259,7 +300,7 @@ struct ActivityLogSpotsList: View {
 
     private func handleSpotTap(_ spot: EnrichedSpot) {
         let result = workedResults[spot.spot.callsign.uppercased()] ?? .notWorked
-        if result.isDupe(on: spot.spot.band) {
+        if result.isDupe(on: spot.spot.band, mode: spot.spot.mode) {
             dupeConfirmSpot = spot
             showDupeAlert = true
         } else {
@@ -287,10 +328,12 @@ struct ActivityLogSpotsList: View {
 
 // MARK: - WorkedRefreshKey
 
-/// Composite key for .task(id:) — re-runs when spots change or QSOs are modified
+/// Composite key for .task(id:) — re-runs when spots change, QSOs are modified,
+/// or UTC date rolls over
 private struct WorkedRefreshKey: Equatable {
     let spotIDs: [String]
     let version: Int
+    let utcDate: String
 }
 
 // MARK: - EnrichedSpot + Equatable

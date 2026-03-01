@@ -17,7 +17,7 @@ struct SpotFilters: Equatable, Codable {
         }
     }
 
-    /// Selected source filters (empty = show all, default: POTA)
+    /// Selected source filters (at least one must be selected)
     var sources: Set<SourceFilter> = [.pota]
 
     /// Selected band filters (empty = show all, default: 20m)
@@ -50,15 +50,13 @@ struct SpotFilters: Equatable, Codable {
                 return false
             }
 
-            if !sources.isEmpty {
-                let spotSource: SourceFilter = switch spot.spot.source {
-                case .pota: .pota
-                case .sota: .sota
-                case .rbn: .rbn
-                }
-                if !sources.contains(spotSource) {
-                    return false
-                }
+            let spotSource: SourceFilter = switch spot.spot.source {
+            case .pota: .pota
+            case .sota: .sota
+            case .rbn: .rbn
+            }
+            if !sources.contains(spotSource) {
+                return false
             }
 
             if !bands.isEmpty, !bands.contains(spot.spot.band) {
@@ -87,20 +85,35 @@ struct SpotFilters: Equatable, Codable {
     }
 }
 
-// MARK: - SpotFilters + RawRepresentable
+// MARK: RawRepresentable
 
 extension SpotFilters: RawRepresentable {
+    /// Codable-only wrapper to avoid JSONEncoder using the RawRepresentable path
+    /// (which causes infinite recursion: rawValue → encode → rawValue → ...)
+    private struct CodableStorage: Codable {
+        let sources: Set<SourceFilter>
+        let bands: Set<String>
+        let modes: Set<String>
+        let hideWorked: Bool
+    }
+
     init?(rawValue: String) {
         guard let data = rawValue.data(using: .utf8),
-              let decoded = try? JSONDecoder().decode(SpotFilters.self, from: data)
+              let storage = try? JSONDecoder().decode(CodableStorage.self, from: data)
         else {
             return nil
         }
-        self = decoded
+        sources = storage.sources.isEmpty ? [.pota] : storage.sources
+        bands = storage.bands
+        modes = storage.modes
+        hideWorked = storage.hideWorked
     }
 
     var rawValue: String {
-        guard let data = try? JSONEncoder().encode(self),
+        let storage = CodableStorage(
+            sources: sources, bands: bands, modes: modes, hideWorked: hideWorked
+        )
+        guard let data = try? JSONEncoder().encode(storage),
               let string = String(data: data, encoding: .utf8)
         else {
             return "{}"
@@ -203,16 +216,19 @@ struct SpotFilterSheet: View {
     private var sourceSection: some View {
         Section("Source") {
             ForEach(SpotFilters.SourceFilter.allCases, id: \.self) { source in
+                let isLastSelected = filters.sources.count == 1
+                    && filters.sources.contains(source)
                 Toggle(source.label, isOn: Binding(
                     get: { filters.sources.contains(source) },
                     set: { isOn in
                         if isOn {
                             filters.sources.insert(source)
-                        } else {
+                        } else if !isLastSelected {
                             filters.sources.remove(source)
                         }
                     }
                 ))
+                .disabled(isLastSelected)
             }
         }
     }

@@ -36,7 +36,7 @@ struct SOTASpotRow: View {
     }
 
     private var isDupe: Bool {
-        workedResult.isDupe(on: spotBand)
+        workedResult.isDupe(on: spotBand, mode: spot.mode)
     }
 
     private var isFriend: Bool {

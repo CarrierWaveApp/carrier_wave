@@ -4,6 +4,13 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- Fix false DUPE labels in Hunter Log by filtering to only activity-log QSOs (excludes activator sessions, synced QSOs, imports)
+- Fix Hunter Log dupe detection to respect mode families (20m CW no longer marks 20m SSB as dupe)
+- Sort dupe spots to bottom of Hunter Log spot list with strikethrough on callsign
+- Refresh Hunter Log worked-before cache when QSOs arrive via sync or iCloud
+- Re-fire Hunter Log cache at UTC midnight so day boundary doesn't show stale dupes
+
 ### Added
 - Add BLE radio control via CI-V over Nordic UART Service (BLE CAT proxy)
 - Add BLE radio settings with device scanning, selection, and CI-V address configuration

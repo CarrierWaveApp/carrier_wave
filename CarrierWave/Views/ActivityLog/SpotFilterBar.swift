@@ -26,10 +26,25 @@ struct SpotFilterBar: View {
                 .padding(.horizontal, 12)
                 .padding(.vertical, 4)
             }
+            .overlay(alignment: .bottom) {
+                if showSourceWarning {
+                    Text("At least one spot source is required")
+                        .font(.caption)
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Color(.darkGray))
+                        .clipShape(Capsule())
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                        .padding(.top, 4)
+                }
+            }
         }
     }
 
     // MARK: Private
+
+    @State private var showSourceWarning = false
 
     private var hasChipsToShow: Bool {
         filters.hasActiveFilters
@@ -38,8 +53,21 @@ struct SpotFilterBar: View {
     private var sourceChips: some View {
         ForEach(SpotFilters.SourceFilter.allCases, id: \.self) { source in
             if filters.sources.contains(source) {
+                let isLast = filters.sources.count == 1
                 activeChip(label: source.label) {
-                    filters.sources.remove(source)
+                    if isLast {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            showSourceWarning = true
+                        }
+                        Task {
+                            try? await Task.sleep(for: .seconds(2))
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                showSourceWarning = false
+                            }
+                        }
+                    } else {
+                        filters.sources.remove(source)
+                    }
                 }
             }
         }
