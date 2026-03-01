@@ -16,17 +16,22 @@ struct SpotLogSheet: View {
     var body: some View {
         NavigationStack {
             Form {
-                spotInfoSection
-                rstSection
-                moreFieldsSection
-                logButton
-                profileInfoFooter
+                if showingRespotPhase {
+                    respotCommentSection
+                    respotActionSection
+                } else {
+                    spotInfoSection
+                    rstSection
+                    moreFieldsSection
+                    logButton
+                    profileInfoFooter
+                }
             }
-            .navigationTitle("Log QSO from Spot")
+            .navigationTitle(showingRespotPhase ? "Respot" : "Log QSO from Spot")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                    Button(showingRespotPhase ? "Skip" : "Cancel") { dismiss() }
                 }
             }
         }
@@ -38,12 +43,18 @@ struct SpotLogSheet: View {
 
     @Environment(\.dismiss) private var dismiss
 
+    @AppStorage("potaHunterRespotEnabled") private var respotEnabled = true
+    @AppStorage("potaHunterRespotCustomMessage") private var respotCustomMessage = false
+    @AppStorage("potaHunterRespotDefaultMessage") private var respotDefaultMessage = "tnx"
+
     @State private var rstSent = ""
     @State private var rstReceived = ""
     @State private var theirGrid = ""
     @State private var state = ""
     @State private var notes = ""
     @State private var showMoreFields = false
+    @State private var showingRespotPhase = false
+    @State private var respotComment = ""
 
     private var defaultRST: String {
         let mode = spot.spot.mode.uppercased()
@@ -61,6 +72,27 @@ struct SpotLogSheet: View {
 
     private var effectiveRSTReceived: String {
         rstReceived.isEmpty ? defaultRST : rstReceived
+    }
+
+    // MARK: - Respot Logic
+
+    private var canRespot: Bool {
+        guard respotEnabled else {
+            return false
+        }
+        guard spot.spot.source == .pota else {
+            return false
+        }
+        guard spot.spot.parkRef != nil else {
+            return false
+        }
+        guard let callsign = manager.activeLog?.myCallsign, !callsign.isEmpty else {
+            return false
+        }
+        guard POTAAuthService().hasStoredCredentials() else {
+            return false
+        }
+        return true
     }
 
     // MARK: - Sections
@@ -168,6 +200,76 @@ struct SpotLogSheet: View {
         }
     }
 
+    // MARK: - Respot Sections
+
+    private var respotCommentSection: some View {
+        Section {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(spot.spot.callsign)
+                    .font(.title3.monospaced().weight(.bold))
+                if let parkRef = spot.spot.parkRef {
+                    Text(parkRef)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            TextField("Comment", text: $respotComment)
+        } header: {
+            Text("Respot Comment")
+        } footer: {
+            Text("QSO logged. Post a respot to help other hunters find this station.")
+        }
+    }
+
+    private var respotActionSection: some View {
+        Section {
+            Button {
+                fireRespot(comment: respotComment)
+                dismiss()
+            } label: {
+                Text("Send Respot")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(.green)
+            .listRowInsets(EdgeInsets())
+            .listRowBackground(Color.clear)
+        }
+    }
+
+    private func fireRespot(comment: String) {
+        guard let parkRef = spot.spot.parkRef,
+              let myCallsign = manager.activeLog?.myCallsign
+        else {
+            return
+        }
+
+        let activator = spot.spot.callsign
+        let frequency = spot.spot.frequencyKHz
+        let mode = spot.spot.mode
+        let trimmedComment = comment.trimmingCharacters(in: .whitespaces)
+        let finalComment = trimmedComment.isEmpty ? nil : trimmedComment
+
+        Task {
+            do {
+                let client = POTAClient(authService: POTAAuthService())
+                _ = try await client.postRespot(
+                    activator: activator,
+                    spotter: myCallsign,
+                    reference: parkRef,
+                    frequency: frequency,
+                    mode: mode,
+                    comments: finalComment
+                )
+            } catch {
+                SyncDebugLog.shared.error(
+                    "Respot failed: \(error.localizedDescription)", service: .pota
+                )
+            }
+        }
+    }
+
     private func logQSO() {
         let qso = manager.logQSO(
             callsign: spot.spot.callsign,
@@ -182,9 +284,21 @@ struct SpotLogSheet: View {
             state: state.isEmpty ? nil : state
         )
 
-        if qso != nil {
-            UINotificationFeedbackGenerator().notificationOccurred(.success)
-            onLogged()
+        guard qso != nil else {
+            return
+        }
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        onLogged()
+
+        if canRespot {
+            if respotCustomMessage {
+                respotComment = respotDefaultMessage
+                showingRespotPhase = true
+            } else {
+                fireRespot(comment: respotDefaultMessage)
+                dismiss()
+            }
+        } else {
             dismiss()
         }
     }

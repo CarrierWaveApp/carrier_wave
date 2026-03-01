@@ -12,6 +12,7 @@ struct ActivityLogSettingsView: View {
             stationProfilesSection
             spotFilteringSection
             huntedSpotSection
+            respotSection
             uploadSection
             dailyGoalSection
         }
@@ -29,6 +30,9 @@ struct ActivityLogSettingsView: View {
     @AppStorage("activityLogDailyGoal") private var dailyGoal = 10
     @AppStorage("spotMaxAgeMinutes") private var spotMaxAgeMinutes = 12
     @AppStorage("spotRegionFilter") private var spotRegionFilterRaw = ""
+    @AppStorage("potaHunterRespotEnabled") private var respotEnabled = true
+    @AppStorage("potaHunterRespotCustomMessage") private var respotCustomMessage = false
+    @AppStorage("potaHunterRespotDefaultMessage") private var respotDefaultMessage = "tnx"
     @State private var profileCount = 0
 
     @State private var qrzConnected = false
@@ -90,6 +94,26 @@ struct ActivityLogSettingsView: View {
             Text(
                 "When you work a spotted station on the same band, " +
                     "it can be crossed out or hidden from the list."
+            )
+        }
+    }
+
+    private var respotSection: some View {
+        Section {
+            Toggle("Auto-respot on POTA hunt", isOn: $respotEnabled)
+
+            if respotEnabled {
+                TextField("Default message", text: $respotDefaultMessage)
+                    .autocorrectionDisabled()
+
+                Toggle("Prompt for custom message", isOn: $respotCustomMessage)
+            }
+        } header: {
+            Text("Hunter Respots")
+        } footer: {
+            Text(
+                "Automatically respot an activator on POTA after logging from a spot. "
+                    + "Requires POTA account credentials in Sync Sources."
             )
         }
     }

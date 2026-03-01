@@ -20,6 +20,7 @@ All notable changes to Carrier Wave will be documented in this file.
 - Skip re-fetching already-synced POTA activations during incremental sync (only fetch new)
 
 ### Added
+- Add POTA hunter respots: auto-post respot when logging from a POTA spot, with optional custom message
 - Add contest calendar dashboard card showing active and upcoming contests from WA7BNM Contest Calendar
 - Add BLE radio control via CI-V over Nordic UART Service (BLE CAT proxy)
 - Add BLE radio settings with device scanning, selection, and CI-V address configuration

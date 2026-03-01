@@ -114,6 +114,9 @@ enum SettingsSyncRegistry {
         .init("activityLogDailyGoal", type: .int),
         .init("spotMaxAgeMinutes", type: .int),
         .init("spotRegionFilter", type: .string),
+        .init("potaHunterRespotEnabled", type: .bool),
+        .init("potaHunterRespotCustomMessage", type: .bool),
+        .init("potaHunterRespotDefaultMessage", type: .string),
     ]
 
     // MARK: - Keyboard & Command Row

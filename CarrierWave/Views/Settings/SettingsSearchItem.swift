@@ -205,6 +205,12 @@ extension SettingsSearchIndex {
             destination: .activityLogSettings
         ),
         SettingsSearchItem(
+            title: "POTA Hunter Respot",
+            keywords: ["pota", "hunter", "respot", "spot", "auto", "message"],
+            breadcrumb: "Logger > Hunter Log",
+            destination: .activityLogSettings
+        ),
+        SettingsSearchItem(
             title: "Share to activity feed on session end",
             keywords: ["share", "activity", "feed", "session", "end", "auto"],
             breadcrumb: "Logger",

@@ -181,6 +181,49 @@ extension POTAClient {
         }
     }
 
+    /// Post a respot for a hunted activator on POTA
+    /// - Parameters:
+    ///   - activator: The activator's callsign (station being spotted)
+    ///   - spotter: The spotter's callsign (your callsign)
+    ///   - reference: The park reference (e.g., "K-1234")
+    ///   - frequency: The frequency in kHz (e.g., 14060.0)
+    ///   - mode: The operating mode (e.g., "CW", "SSB", "FT8")
+    ///   - comments: Optional comments for the respot
+    /// - Returns: True if the respot was successful
+    func postRespot(
+        activator: String,
+        spotter: String,
+        reference: String,
+        frequency: Double,
+        mode: String,
+        comments: String? = nil
+    ) async throws -> Bool {
+        let debugLog = SyncDebugLog.shared
+
+        try validateSpotInputs(reference: reference, frequency: frequency, debugLog: debugLog)
+
+        let token = try await authService.ensureValidToken()
+        let normalizedRef = reference.uppercased()
+        let frequencyString = formatFrequency(frequency)
+
+        debugLog.info(
+            "Posting respot: \(activator) at \(normalizedRef) by \(spotter) on \(frequencyString) \(mode)",
+            service: .pota
+        )
+
+        let spotRequest = POTASpotRequest(
+            activator: activator.uppercased(),
+            spotter: spotter.uppercased(),
+            frequency: frequencyString,
+            reference: normalizedRef,
+            mode: mode.uppercased(),
+            comments: comments
+        )
+
+        let request = try buildSpotURLRequest(token: token, body: spotRequest)
+        return try await executeSpotRequest(request, debugLog: debugLog)
+    }
+
     /// Format frequency for POTA spot (kHz with decimal)
     private func formatFrequency(_ frequencyKHz: Double) -> String {
         // POTA expects frequency in kHz format (e.g., "14060.0")
