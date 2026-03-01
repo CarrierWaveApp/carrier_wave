@@ -31,6 +31,7 @@ All notable changes to Carrier Wave will be documented in this file.
 ## [1.50.0] - 2026-02-28
 
 ### Added
+- Add logger tour pages explaining quick entry and per-field entry settings
 - Add visual ARRL-style band chart to Band Plan sheet with license class and mode zone display modes
 - Add segmented picker to toggle between By Class and By Mode chart views
 - Add color-coded legend for chart display modes
