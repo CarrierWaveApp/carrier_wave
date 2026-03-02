@@ -25,6 +25,7 @@ All notable changes to Carrier Wave will be documented in this file.
 - Show spots immediately before HamDB state enrichment for faster perceived loading
 
 ### Fixed
+- Fix crash during back-swipe navigation on iOS 26 caused by UICollectionView feedback loop in session timeline (replace GeometryReader with Canvas)
 - Fix Hunter Log spots stuck on loading spinner (remove blocking await in view task, make cache loads fire-and-forget)
 - Fix BLE radio first connection attempt always failing (defer connect until Bluetooth is powered on)
 - Add 15-second timeout to POTA spot fetch (was using URLSession.shared default of 60s)

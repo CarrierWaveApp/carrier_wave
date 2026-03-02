@@ -58,39 +58,94 @@ struct QSOTimelineView: View {
     }
 
     private var timelineBar: some View {
-        GeometryReader { geo in
-            let width = geo.size.width
+        Canvas { context, size in
+            let width = size.width
+            let height = size.height
             let tickHeight: CGFloat = compact ? 10 : 14
             let positions = layout.xPositions(in: width)
             let gapInfos = layout.gapInfos(in: width)
-            let segRanges = layout.segmentRanges(in: width)
-            let barCenterY: CGFloat = compact ? geo.size.height / 2 : 9
+            let barCenterY: CGFloat = compact ? height / 2 : 9
 
-            ZStack(alignment: .topLeading) {
-                // Track
-                RoundedRectangle(cornerRadius: 2)
-                    .fill(Color(.systemGray5))
-                    .frame(height: 3)
-                    .position(x: width / 2, y: barCenterY)
+            // Track
+            let trackRect = CGRect(
+                x: 0, y: barCenterY - 1.5, width: width, height: 3
+            )
+            context.fill(
+                Path(roundedRect: trackRect, cornerRadius: 2),
+                with: .color(Color(.systemGray5))
+            )
 
-                // Gap break indicators
-                ForEach(gapInfos) { gap in
-                    gapBreak(gap, centerY: barCenterY, compact: compact)
-                }
-
-                // QSO ticks
-                ForEach(sortedQSOs) { qso in
-                    if let xPos = positions[qso.id] {
-                        RoundedRectangle(cornerRadius: 1)
-                            .fill(bandColor(qso.band))
-                            .frame(width: 2, height: tickHeight)
-                            .position(x: xPos, y: barCenterY)
-                    }
-                }
-
-                // Segment time labels (non-compact only)
+            // Gap break indicators
+            for gap in gapInfos {
+                let gapCenterX = gap.x + gap.width / 2
+                let zigzagWidth = max(gap.width - 16, 8)
+                let zigzagRect = CGRect(
+                    x: gapCenterX - zigzagWidth / 2,
+                    y: barCenterY - 5, width: zigzagWidth, height: 10
+                )
+                let zigzag = GapBreakShape().path(in: zigzagRect)
+                context.stroke(
+                    zigzag, with: .color(Color(.systemGray3)),
+                    style: StrokeStyle(lineWidth: 1.5)
+                )
                 if !compact {
-                    segmentTimeLabels(segRanges)
+                    let label = Text(gap.formattedDuration)
+                        .font(.system(size: 7).monospaced())
+                        .foregroundStyle(.tertiary)
+                    context.draw(
+                        context.resolve(label),
+                        at: CGPoint(
+                            x: gapCenterX, y: barCenterY + 14
+                        ),
+                        anchor: .center
+                    )
+                }
+            }
+
+            // QSO ticks
+            for qso in sortedQSOs {
+                if let xPos = positions[qso.id] {
+                    let tickRect = CGRect(
+                        x: xPos - 1, y: barCenterY - tickHeight / 2,
+                        width: 2, height: tickHeight
+                    )
+                    context.fill(
+                        Path(roundedRect: tickRect, cornerRadius: 1),
+                        with: .color(bandColor(qso.band))
+                    )
+                }
+            }
+
+            // Segment time labels (non-compact only)
+            if !compact {
+                let segRanges = layout.segmentRanges(in: width)
+                for seg in segRanges {
+                    let startLabel = Text(
+                        Self.utcTimeFormatter.string(from: seg.startTime) + "z"
+                    )
+                    .font(.system(size: 8).monospaced())
+                    .foregroundStyle(.secondary)
+                    context.draw(
+                        context.resolve(startLabel),
+                        at: CGPoint(x: seg.startX + 14, y: 24),
+                        anchor: .center
+                    )
+                    if seg.endTime.timeIntervalSince(seg.startTime) > 60,
+                       seg.width > 50
+                    {
+                        let endLabel = Text(
+                            Self.utcTimeFormatter.string(
+                                from: seg.endTime
+                            ) + "z"
+                        )
+                        .font(.system(size: 8).monospaced())
+                        .foregroundStyle(.secondary)
+                        context.draw(
+                            context.resolve(endLabel),
+                            at: CGPoint(x: seg.endX - 14, y: 24),
+                            anchor: .center
+                        )
+                    }
                 }
             }
         }
@@ -108,45 +163,6 @@ struct QSOTimelineView: View {
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func gapBreak(
-        _ gap: GapInfo, centerY: CGFloat, compact: Bool
-    ) -> some View {
-        let gapCenterX = gap.x + gap.width / 2
-        let zigzagWidth = max(gap.width - 16, 8) // 8pt padding each side
-        // Zigzag
-        GapBreakShape()
-            .stroke(Color(.systemGray3), style: StrokeStyle(lineWidth: 1.5))
-            .frame(width: zigzagWidth, height: 10)
-            .position(x: gapCenterX, y: centerY)
-        // Duration label below zigzag (non-compact only)
-        if !compact {
-            Text(gap.formattedDuration)
-                .font(.system(size: 7).monospaced())
-                .foregroundStyle(.tertiary)
-                .position(x: gapCenterX, y: centerY + 14)
-        }
-    }
-
-    private func segmentTimeLabels(_ ranges: [SegmentRange]) -> some View {
-        ForEach(ranges) { seg in
-            // Start time at left edge of segment
-            Text(Self.utcTimeFormatter.string(from: seg.startTime) + "z")
-                .font(.system(size: 8).monospaced())
-                .foregroundStyle(.secondary)
-                .position(x: seg.startX + 14, y: 24)
-            // End time at right edge (only if segment spans > 1 min)
-            if seg.endTime.timeIntervalSince(seg.startTime) > 60,
-               seg.width > 50
-            {
-                Text(Self.utcTimeFormatter.string(from: seg.endTime) + "z")
-                    .font(.system(size: 8).monospaced())
-                    .foregroundStyle(.secondary)
-                    .position(x: seg.endX - 14, y: 24)
             }
         }
     }
@@ -199,61 +215,86 @@ struct ShareCardTimelineView: View {
     }
 
     private var timelineBar: some View {
-        GeometryReader { geo in
-            let width = geo.size.width
+        Canvas { context, size in
+            let width = size.width
             let positions = layout.xPositions(in: width)
             let gapInfos = layout.gapInfos(in: width)
             let segRanges = layout.segmentRanges(in: width)
             let barCenterY: CGFloat = 9
 
-            ZStack(alignment: .topLeading) {
-                // Track
-                RoundedRectangle(cornerRadius: 2)
-                    .fill(Color.white.opacity(0.15))
-                    .frame(height: 3)
-                    .position(x: width / 2, y: barCenterY)
+            // Track
+            let trackRect = CGRect(
+                x: 0, y: barCenterY - 1.5, width: width, height: 3
+            )
+            context.fill(
+                Path(roundedRect: trackRect, cornerRadius: 2),
+                with: .color(.white.opacity(0.15))
+            )
 
-                // Gap break indicators with duration
-                ForEach(gapInfos) { gap in
-                    let gapCenterX = gap.x + gap.width / 2
-                    let zigzagWidth = max(gap.width - 16, 8)
-                    GapBreakShape()
-                        .stroke(
-                            Color.white.opacity(0.4),
-                            style: StrokeStyle(lineWidth: 1.5)
-                        )
-                        .frame(width: zigzagWidth, height: 10)
-                        .position(x: gapCenterX, y: barCenterY)
-                    Text(gap.formattedDuration)
-                        .font(.system(size: 7).monospaced())
-                        .foregroundStyle(.white.opacity(0.4))
-                        .position(x: gapCenterX, y: barCenterY + 14)
+            // Gap break indicators with duration
+            for gap in gapInfos {
+                let gapCenterX = gap.x + gap.width / 2
+                let zigzagWidth = max(gap.width - 16, 8)
+                let zigzagRect = CGRect(
+                    x: gapCenterX - zigzagWidth / 2,
+                    y: barCenterY - 5, width: zigzagWidth, height: 10
+                )
+                let zigzag = GapBreakShape().path(in: zigzagRect)
+                context.stroke(
+                    zigzag, with: .color(.white.opacity(0.4)),
+                    style: StrokeStyle(lineWidth: 1.5)
+                )
+                let label = Text(gap.formattedDuration)
+                    .font(.system(size: 7).monospaced())
+                    .foregroundStyle(.white.opacity(0.4))
+                context.draw(
+                    context.resolve(label),
+                    at: CGPoint(x: gapCenterX, y: barCenterY + 14),
+                    anchor: .center
+                )
+            }
+
+            // QSO ticks
+            for qso in sortedQSOs {
+                if let xPos = positions[qso.id] {
+                    let tickRect = CGRect(
+                        x: xPos - 1, y: barCenterY - 7,
+                        width: 2, height: 14
+                    )
+                    context.fill(
+                        Path(roundedRect: tickRect, cornerRadius: 1),
+                        with: .color(bandColor(qso.band))
+                    )
                 }
+            }
 
-                // QSO ticks
-                ForEach(sortedQSOs) { qso in
-                    if let xPos = positions[qso.id] {
-                        RoundedRectangle(cornerRadius: 1)
-                            .fill(bandColor(qso.band))
-                            .frame(width: 2, height: 14)
-                            .position(x: xPos, y: barCenterY)
-                    }
-                }
-
-                // Segment time labels
-                ForEach(segRanges) { seg in
-                    Text(Self.utcTimeFormatter.string(from: seg.startTime) + "z")
-                        .font(.system(size: 8).monospaced())
-                        .foregroundStyle(.white.opacity(0.5))
-                        .position(x: seg.startX + 14, y: 24)
-                    if seg.endTime.timeIntervalSince(seg.startTime) > 60,
-                       seg.width > 50
-                    {
-                        Text(Self.utcTimeFormatter.string(from: seg.endTime) + "z")
-                            .font(.system(size: 8).monospaced())
-                            .foregroundStyle(.white.opacity(0.5))
-                            .position(x: seg.endX - 14, y: 24)
-                    }
+            // Segment time labels
+            for seg in segRanges {
+                let startLabel = Text(
+                    Self.utcTimeFormatter.string(from: seg.startTime) + "z"
+                )
+                .font(.system(size: 8).monospaced())
+                .foregroundStyle(.white.opacity(0.5))
+                context.draw(
+                    context.resolve(startLabel),
+                    at: CGPoint(x: seg.startX + 14, y: 24),
+                    anchor: .center
+                )
+                if seg.endTime.timeIntervalSince(seg.startTime) > 60,
+                   seg.width > 50
+                {
+                    let endLabel = Text(
+                        Self.utcTimeFormatter.string(
+                            from: seg.endTime
+                        ) + "z"
+                    )
+                    .font(.system(size: 8).monospaced())
+                    .foregroundStyle(.white.opacity(0.5))
+                    context.draw(
+                        context.resolve(endLabel),
+                        at: CGPoint(x: seg.endX - 14, y: 24),
+                        anchor: .center
+                    )
                 }
             }
         }
