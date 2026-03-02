@@ -386,16 +386,14 @@ extension ContentView {
     }
 
     var moreTabContent: some View {
-        LazyTabContent {
-            MoreTabView(
-                potaAuthService: potaAuthService,
-                settingsDestination: $settingsDestination,
-                pendingDeepLink: $pendingMoreTabDestination,
-                mapFilterState: mapFilterState,
-                tourState: tourState,
-                syncService: syncService
-            )
-        }
+        MoreTabView(
+            potaAuthService: potaAuthService,
+            settingsDestination: $settingsDestination,
+            pendingDeepLink: $pendingMoreTabDestination,
+            mapFilterState: mapFilterState,
+            tourState: tourState,
+            syncService: syncService
+        )
     }
 
     @ViewBuilder

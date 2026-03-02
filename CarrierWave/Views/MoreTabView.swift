@@ -61,6 +61,7 @@ struct MoreTabView: View {
                     }
                 }
             }
+            .listStyle(.insetGrouped)
             .navigationTitle("More")
             .navigationDestination(item: $pendingDeepLink) { tab in
                 LazyView { tabContent(for: tab) }
@@ -76,7 +77,7 @@ struct MoreTabView: View {
 
     // MARK: Private
 
-    @State private var hiddenTabs: [AppTab] = []
+    @State private var hiddenTabs: [AppTab] = TabConfiguration.tabsForMoreList()
 
     private var settingsContent: some View {
         SettingsMainView(
