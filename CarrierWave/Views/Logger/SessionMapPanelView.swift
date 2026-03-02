@@ -131,25 +131,7 @@ struct SessionMapPanelView: View {
                         coordinate: coordinate,
                         anchor: .bottom
                     ) {
-                        VStack(spacing: 2) {
-                            Image(
-                                systemName: "antenna.radiowaves.left.and.right.circle.fill"
-                            )
-                            .font(.title2)
-                            .foregroundStyle(.green)
-                            .background(
-                                Circle()
-                                    .fill(.white)
-                                    .frame(width: 24, height: 24)
-                            )
-
-                            Text(qso.callsign)
-                                .font(.caption2.weight(.bold))
-                                .foregroundStyle(.primary)
-                                .padding(.horizontal, 4)
-                                .padding(.vertical, 2)
-                                .background(.ultraThinMaterial, in: Capsule())
-                        }
+                        MapPinMarker(color: bandColor(qso.band))
                     }
                 }
             }
@@ -190,12 +172,12 @@ struct SessionMapPanelView: View {
                                 from: myCoord, to: theirCoord
                             )
                         )
-                        .stroke(.blue.opacity(0.5), lineWidth: 2)
+                        .stroke(.white.opacity(0.5), lineWidth: 2.5)
                     }
                 }
             }
         }
-        .mapStyle(.standard(elevation: .flat))
+        .mapStyle(.standard(elevation: .realistic))
         .frame(height: 250)
     }
 

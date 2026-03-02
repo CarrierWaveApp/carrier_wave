@@ -1,6 +1,26 @@
 import MapKit
 import SwiftUI
 
+// MARK: - MapPinMarker
+
+/// Shared pin marker (circle + stem) used across all map views.
+/// Matches the visual style from the Activity feed session cards.
+struct MapPinMarker: View {
+    let color: Color
+    var size: CGFloat = 9
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Circle()
+                .fill(color.opacity(0.8))
+                .frame(width: size, height: size)
+            Rectangle()
+                .fill(color.opacity(0.7))
+                .frame(width: max(1.5, size * 0.17), height: max(6, size * 0.67))
+        }
+    }
+}
+
 // MARK: - QSOMarkerView
 
 struct QSOMarkerView: View {
@@ -10,20 +30,28 @@ struct QSOMarkerView: View {
     var isSelected: Bool = false
 
     var body: some View {
-        ZStack {
-            Circle()
-                .fill(markerColor)
-                .frame(width: markerSize, height: markerSize)
-                .overlay(
-                    Circle()
-                        .stroke(isSelected ? Color.white : Color.clear, lineWidth: 3)
-                )
+        VStack(spacing: 0) {
+            ZStack {
+                Circle()
+                    .fill(markerColor.opacity(0.8))
+                    .frame(width: markerSize, height: markerSize)
+                    .overlay(
+                        Circle()
+                            .stroke(
+                                isSelected ? Color.white : Color.clear,
+                                lineWidth: 3
+                            )
+                    )
 
-            if annotation.qsoCount > 1 {
-                Text("\(annotation.qsoCount)")
-                    .font(.system(size: fontSize, weight: .bold))
-                    .foregroundStyle(.white)
+                if annotation.qsoCount > 1 {
+                    Text("\(annotation.qsoCount)")
+                        .font(.system(size: fontSize, weight: .bold))
+                        .foregroundStyle(.white)
+                }
             }
+            Rectangle()
+                .fill(markerColor.opacity(0.7))
+                .frame(width: stemWidth, height: stemHeight)
         }
         .shadow(radius: isSelected ? 4 : 2)
         .scaleEffect(isSelected ? 1.2 : 1.0)
@@ -38,6 +66,14 @@ struct QSOMarkerView: View {
         case 6 ... 20: 36
         default: 44
         }
+    }
+
+    private var stemWidth: CGFloat {
+        max(1.5, markerSize * 0.12)
+    }
+
+    private var stemHeight: CGFloat {
+        max(6, markerSize * 0.5)
     }
 
     private var fontSize: CGFloat {

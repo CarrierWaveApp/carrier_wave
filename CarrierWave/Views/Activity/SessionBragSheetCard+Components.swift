@@ -41,7 +41,7 @@ extension SessionBragSheetCard {
             // Traditional pin markers
             ForEach(Array(contactCoordinates.enumerated()), id: \.offset) { _, contact in
                 Annotation(contact.grid, coordinate: contact.coord, anchor: .bottom) {
-                    SessionMapPin(color: bandColor(contact.band))
+                    MapPinMarker(color: bandColor(contact.band))
                 }
             }
         }
@@ -275,24 +275,6 @@ extension SessionBragSheetCard {
         case "pota": ("tree", "POTA Activation")
         case "sota": ("mountain.2", "SOTA Activation")
         default: ("radio", "Casual Session")
-        }
-    }
-}
-
-// MARK: - SessionMapPin
-
-/// Traditional map pin shape for session brag sheet maps.
-private struct SessionMapPin: View {
-    let color: Color
-
-    var body: some View {
-        VStack(spacing: 0) {
-            Circle()
-                .fill(color.opacity(0.8))
-                .frame(width: 9, height: 9)
-            Rectangle()
-                .fill(color.opacity(0.7))
-                .frame(width: 1.5, height: 6)
         }
     }
 }

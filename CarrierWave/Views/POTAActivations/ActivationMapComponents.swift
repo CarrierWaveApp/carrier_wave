@@ -30,14 +30,26 @@ struct RSTMarkerView: View {
     var isSelected: Bool = false
 
     var body: some View {
-        Circle()
-            .fill(annotation.color)
-            .frame(width: isSelected ? 16 : 12, height: isSelected ? 16 : 12)
-            .overlay(
-                Circle()
-                    .stroke(isSelected ? Color.white : Color.clear, lineWidth: 2)
-            )
-            .shadow(radius: isSelected ? 4 : 2)
+        let size: CGFloat = isSelected ? 12 : 9
+        VStack(spacing: 0) {
+            Circle()
+                .fill(annotation.color.opacity(0.8))
+                .frame(width: size, height: size)
+                .overlay(
+                    Circle()
+                        .stroke(
+                            isSelected ? Color.white : Color.clear,
+                            lineWidth: 2
+                        )
+                )
+            Rectangle()
+                .fill(annotation.color.opacity(0.7))
+                .frame(
+                    width: max(1.5, size * 0.17),
+                    height: max(6, size * 0.67)
+                )
+        }
+        .shadow(radius: isSelected ? 4 : 2)
     }
 }
 

@@ -153,7 +153,7 @@ struct ActivationMapView: View {
             // Geodesic arcs from my location to each QSO
             ForEach(arcs) { arc in
                 MapPolyline(coordinates: arc.path)
-                    .stroke(.blue.opacity(0.4), lineWidth: 2)
+                    .stroke(.white.opacity(0.5), lineWidth: 2.5)
             }
 
             // Rove stop markers
@@ -181,18 +181,12 @@ struct ActivationMapView: View {
 
             // My location marker (non-rove only — rove stops show location)
             if !isRove, let myCoord = myCoordinate {
-                Annotation("My Location", coordinate: myCoord, anchor: .center) {
-                    Circle()
-                        .fill(.blue)
-                        .frame(width: 12, height: 12)
-                        .overlay(
-                            Circle()
-                                .stroke(.white, lineWidth: 2)
-                        )
+                Annotation("My Location", coordinate: myCoord, anchor: .bottom) {
+                    MapPinMarker(color: .blue, size: 12)
                 }
             }
         }
-        .mapStyle(.standard(elevation: .flat))
+        .mapStyle(.standard(elevation: .realistic))
     }
 }
 

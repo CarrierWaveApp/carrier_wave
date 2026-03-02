@@ -208,11 +208,11 @@ struct QSOMapView: View {
             if filterState.showPaths {
                 ForEach(cachedArcs) { arc in
                     MapPolyline(coordinates: arc.path)
-                        .stroke(.blue.opacity(0.5), lineWidth: 2.5)
+                        .stroke(.white.opacity(0.5), lineWidth: 2.5)
                 }
             }
         }
-        .mapStyle(.standard(elevation: .flat))
+        .mapStyle(.standard(elevation: .realistic))
     }
 
     private var overlayView: some View {

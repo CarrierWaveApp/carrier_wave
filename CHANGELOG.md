@@ -21,6 +21,7 @@ All notable changes to Carrier Wave will be documented in this file.
 - Tune connected BLE radio to spot frequency and mode when tapping a spot in Hunter Log
 
 ### Changed
+- Unify all map views to match Activity feed style: pin markers (circle+stem), realistic elevation, and white trace lines
 - Redesign callsign suggestion pills with larger touch targets, tinted backgrounds, and magnifying glass icon
 - Move SCP detail rows (last checked, callsign count, update now) from Logging settings to External Data
 - Extract shared callsign suggestion logic into CallsignSuggestionProvider

@@ -21,14 +21,7 @@ struct SpotsMiniMapView: View {
             // Target callsign marker (the person being spotted)
             if let targetCoord = targetCoordinate {
                 Annotation(targetCallsign, coordinate: targetCoord) {
-                    ZStack {
-                        Circle()
-                            .fill(.red)
-                            .frame(width: 16, height: 16)
-                        Circle()
-                            .stroke(.white, lineWidth: 2)
-                            .frame(width: 16, height: 16)
-                    }
+                    MapPinMarker(color: .red, size: 12)
                 }
 
                 // Geodesic arcs from target to each spotter
@@ -36,24 +29,18 @@ struct SpotsMiniMapView: View {
                     MapPolyline(coordinates: ActivationMapHelpers.geodesicPath(
                         from: targetCoord, to: annotation.coordinate, segments: 20
                     ))
-                    .stroke(annotation.color.opacity(0.6), lineWidth: 1.5)
+                    .stroke(.white.opacity(0.5), lineWidth: 2.5)
                 }
             }
 
-            // Spotter markers with SNR-based sizing
+            // Spotter markers
             ForEach(spotAnnotations) { annotation in
                 Annotation(annotation.title, coordinate: annotation.coordinate) {
-                    Circle()
-                        .fill(annotation.color)
-                        .frame(width: annotation.size, height: annotation.size)
-                        .overlay(
-                            Circle()
-                                .stroke(.white, lineWidth: 1)
-                        )
+                    MapPinMarker(color: annotation.color)
                 }
             }
         }
-        .mapStyle(.standard)
+        .mapStyle(.standard(elevation: .realistic))
     }
 
     // MARK: Private
