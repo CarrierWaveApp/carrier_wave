@@ -299,6 +299,9 @@ struct ActivityLogSpotsList: View {
     }
 
     private func handleSpotTap(_ spot: EnrichedSpot) {
+        // Tune connected radio to spot frequency and mode
+        tuneRadioToSpot(spot)
+
         let result = workedResults[spot.spot.callsign.uppercased()] ?? .notWorked
         if result.isDupe(on: spot.spot.band, mode: spot.spot.mode) {
             dupeConfirmSpot = spot
@@ -306,6 +309,15 @@ struct ActivityLogSpotsList: View {
         } else {
             selectedSpot = spot
         }
+    }
+
+    private func tuneRadioToSpot(_ spot: EnrichedSpot) {
+        let radio = BLERadioService.shared
+        guard radio.isConnected else {
+            return
+        }
+        radio.setFrequency(spot.spot.frequencyMHz)
+        radio.setMode(spot.spot.mode)
     }
 
     private func loadWorkedBefore() async {

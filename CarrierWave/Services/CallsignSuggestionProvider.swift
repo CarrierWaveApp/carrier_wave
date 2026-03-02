@@ -74,8 +74,7 @@ enum CallsignSuggestionProvider {
                 && qso.mode != "SOLAR"
                 && qso.mode != "NOTE"
         }
-        var descriptor = FetchDescriptor<QSO>(predicate: predicate)
-        descriptor.propertiesToFetch = [\.callsign]
+        let descriptor = FetchDescriptor<QSO>(predicate: predicate)
 
         guard let qsos = try? context.fetch(descriptor) else {
             return [:]

@@ -204,12 +204,17 @@ final class SpotMonitoringService {
         var allSpots = await rbnUnified + potaUnified + sotaUnified
         allSpots.sort { $0.timestamp > $1.timestamp }
 
-        // Enrich RBN spots with state from HamDB
+        // Show spots immediately (before slow HamDB enrichment)
+        let quickEnriched = enrichSpots(allSpots)
+        hunterSpots = quickEnriched
+        summary = buildSummary(from: quickEnriched)
+        lastError = nil
+
+        // Enrich RBN spots with state from HamDB (may be slow)
         let stateEnriched = await enrichWithStates(allSpots)
         let enriched = enrichSpots(stateEnriched)
         hunterSpots = enriched
         summary = buildSummary(from: enriched)
-        lastError = nil
 
         // Check for friend spots
         friendNotifier.checkSpots(enriched)

@@ -131,14 +131,6 @@ struct ActivityLogView: View {
             )
             acceptedFriends = (try? modelContext.fetch(friendDescriptor)) ?? []
 
-            // Fire heavy cache loads concurrently with monitoring setup
-            async let cacheLoad: Void = workedBeforeCache.loadToday(
-                container: container
-            )
-            async let contactCountsLoad: [String: Int] = Task.detached {
-                CallsignSuggestionProvider.loadContactCounts(container: container)
-            }.value
-
             spotMonitor.friendNotifier.updateFriends(
                 Set(acceptedFriends.map { $0.friendCallsign.uppercased() })
             )
@@ -147,8 +139,18 @@ struct ActivityLogView: View {
             )
             requestGPSGridIfNeeded()
 
-            await cacheLoad
-            suggestionContactCounts = await contactCountsLoad
+            // Fire heavy loads as fire-and-forget to avoid blocking this task.
+            // Blocking with `await` risks the task being cancelled (view lifecycle)
+            // after monitoring starts but before awaited work completes.
+            Task {
+                await workedBeforeCache.loadToday(container: container)
+            }
+            Task.detached {
+                let counts = CallsignSuggestionProvider.loadContactCounts(
+                    container: container
+                )
+                await MainActor.run { suggestionContactCounts = counts }
+            }
         }
         .onChange(of: locationService.currentGrid) { _, newGrid in
             if let newGrid,

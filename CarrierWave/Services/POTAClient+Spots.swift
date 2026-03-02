@@ -225,7 +225,10 @@ extension POTAClient {
             throw POTAError.fetchFailed("Invalid URL")
         }
 
-        let (data, response) = try await URLSession.shared.data(from: url)
+        var request = URLRequest(url: url)
+        request.timeoutInterval = 15
+
+        let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw POTAError.fetchFailed("Invalid response")

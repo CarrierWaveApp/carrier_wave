@@ -34,34 +34,18 @@ nonisolated final class BLEDelegate: NSObject, @unchecked Sendable {
     }
 
     func connect(deviceUUID: UUID) {
-        print("[BLE] connect called for \(deviceUUID)")
-        print("[BLE] discoveredPeripherals: \(discoveredPeripherals.keys)")
+        print("[BLE] connect called for \(deviceUUID), state=\(centralManager.state.rawValue)")
 
-        // Try to find from already-discovered peripherals
-        if let peripheral = discoveredPeripherals[deviceUUID] {
-            Task { await client?.handleStateChange(.connecting("Found, linking")) }
-            connectedPeripheral = peripheral
-            centralManager.connect(peripheral, options: nil)
+        // Defer connection until Bluetooth is powered on (mirrors pendingScan pattern)
+        guard centralManager.state == .poweredOn else {
+            print("[BLE] BT not ready, deferring connect for \(deviceUUID)")
+            pendingConnectUUID = deviceUUID
+            Task { await client?.handleStateChange(.connecting("Waiting for Bluetooth")) }
             return
         }
 
-        // Try to retrieve known peripheral
-        Task { await client?.handleStateChange(.connecting("Retrieving")) }
-        let peripherals = centralManager.retrievePeripherals(
-            withIdentifiers: [deviceUUID]
-        )
-        if let peripheral = peripherals.first {
-            Task { await client?.handleStateChange(.connecting("Retrieved, linking")) }
-            discoveredPeripherals[deviceUUID] = peripheral
-            connectedPeripheral = peripheral
-            centralManager.connect(peripheral, options: nil)
-        } else {
-            Task {
-                await client?.handleStateChange(
-                    .error("Not found (\(discoveredPeripherals.count) known)")
-                )
-            }
-        }
+        pendingConnectUUID = nil
+        performConnect(deviceUUID: deviceUUID)
     }
 
     func disconnect() {
@@ -99,6 +83,40 @@ nonisolated final class BLEDelegate: NSObject, @unchecked Sendable {
     /// Deferred scan: set when startScanning() is called before Bluetooth is powered on
     private var pendingScan = false
 
+    /// Deferred connect: set when connect() is called before Bluetooth is powered on
+    private var pendingConnectUUID: UUID?
+
+    private func performConnect(deviceUUID: UUID) {
+        print("[BLE] performConnect for \(deviceUUID)")
+        print("[BLE] discoveredPeripherals: \(discoveredPeripherals.keys)")
+
+        // Try to find from already-discovered peripherals
+        if let peripheral = discoveredPeripherals[deviceUUID] {
+            Task { await client?.handleStateChange(.connecting("Found, linking")) }
+            connectedPeripheral = peripheral
+            centralManager.connect(peripheral, options: nil)
+            return
+        }
+
+        // Try to retrieve known peripheral
+        Task { await client?.handleStateChange(.connecting("Retrieving")) }
+        let peripherals = centralManager.retrievePeripherals(
+            withIdentifiers: [deviceUUID]
+        )
+        if let peripheral = peripherals.first {
+            Task { await client?.handleStateChange(.connecting("Retrieved, linking")) }
+            discoveredPeripherals[deviceUUID] = peripheral
+            connectedPeripheral = peripheral
+            centralManager.connect(peripheral, options: nil)
+        } else {
+            Task {
+                await client?.handleStateChange(
+                    .error("Not found (\(discoveredPeripherals.count) known)")
+                )
+            }
+        }
+    }
+
     private func beginScan() {
         discoveredPeripherals.removeAll()
         // Scan without service filter — some BLE stacks don't include
@@ -117,6 +135,11 @@ extension BLEDelegate: @preconcurrency CBCentralManagerDelegate {
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
         switch central.state {
         case .poweredOn:
+            // Retry deferred connect if one was requested before BT was ready
+            if let uuid = pendingConnectUUID {
+                pendingConnectUUID = nil
+                performConnect(deviceUUID: uuid)
+            }
             // Start deferred scan if one was requested before BT was ready
             if pendingScan {
                 pendingScan = false

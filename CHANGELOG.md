@@ -10,13 +10,21 @@ All notable changes to Carrier Wave will be documented in this file.
 - Weight callsign suggestions by contact history (most-contacted stations first)
 - Show contact count badges and spot indicators on suggestion pills
 - Add SCP database status section to External Data settings
-- Add expandable QTH, Grid, Park, and Notes fields to Hunter Log quick log (hidden by default, chevron to expand)
+- Add expandable QTH, Grid, Park, and Notes fields to Hunter Log quick log (hidden by default, toggle in settings)
 - Add callsign suggestions and expanded fields description to Hunter Log tour
+- Tune connected BLE radio to spot frequency and mode when tapping a spot in Hunter Log
 
 ### Changed
 - Redesign callsign suggestion pills with larger touch targets, tinted backgrounds, and magnifying glass icon
 - Move SCP detail rows (last checked, callsign count, update now) from Logging settings to External Data
 - Extract shared callsign suggestion logic into CallsignSuggestionProvider
+- Show spots immediately before HamDB state enrichment for faster perceived loading
+
+### Fixed
+- Fix Hunter Log spots stuck on loading spinner (remove blocking await in view task, make cache loads fire-and-forget)
+- Fix BLE radio first connection attempt always failing (defer connect until Bluetooth is powered on)
+- Add 15-second timeout to POTA spot fetch (was using URLSession.shared default of 60s)
+- Remove propertiesToFetch from contact count query to avoid SwiftData hang
 
 ## [1.51.0] - 2026-03-01
 
