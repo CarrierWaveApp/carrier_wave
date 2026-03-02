@@ -300,6 +300,7 @@ extension SyncService {
                 power: merged.power ?? other.power,
                 myRig: merged.myRig.nonEmpty ?? other.myRig,
                 sotaRef: merged.sotaRef.nonEmpty ?? other.sotaRef,
+                wwffRef: merged.wwffRef.nonEmpty ?? other.wwffRef,
                 qrzLogId: merged.qrzLogId ?? other.qrzLogId,
                 qrzConfirmed: merged.qrzConfirmed || other.qrzConfirmed,
                 lotwConfirmedDate: merged.lotwConfirmedDate ?? other.lotwConfirmedDate,

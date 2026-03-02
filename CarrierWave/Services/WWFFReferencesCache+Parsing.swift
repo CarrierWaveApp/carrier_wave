@@ -152,8 +152,8 @@ extension WWFFReferencesCache {
 
 // MARK: - Array safe subscript
 
-private extension Array {
-    subscript(safe index: Int) -> Element? {
+extension Array {
+    nonisolated subscript(safe index: Int) -> Element? {
         indices.contains(index) ? self[index] : nil
     }
 }

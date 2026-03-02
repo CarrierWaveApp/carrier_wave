@@ -1,9 +1,0 @@
-LoggerContainerView.swift, ContentView.swift: Add UIDevice idiom guard to iPad layout checks to prevent iOS 26 .regular size class on iPhones from triggering two-pane layout
-BragSheetShareRenderer.swift: Add geodesic trace lines from operator to clusters, replace circle markers with traditional pin-shaped pins (smaller, less contrast)
-SessionBragSheetCard+Components.swift: Thicker white trace lines, replace circle markers with traditional pin-shaped SessionMapPin
-SpotFilterSheet.swift, ActivityLogView.swift: Persist hunter log spot filters via @AppStorage (SpotFilters now Codable+RawRepresentable)
-SCPDatabase.swift, SCPService.swift, SCPSuggestionsView.swift, LoggerView+Data/FormFields/QSOLogging/Modifiers, LoggerDetailSettingsView, CarrierWaveApp: Add Super Check Partial callsign database with suggestions, confidence indicator, did-you-mean
-SCPDatabase.swift, SCPService.swift, CarrierWaveApp.swift: Augment SCP database with user's repeat contacts (2+ QSOs)
-Add WWFF as activation program and spottable spot source: LoggingSession, QSO, ActivityProgramStore, SessionStartSheet, LoggingSessionManager, ADIFParser, FullADIFExportActor, ImportService, SpotsService, ActiveStation, SpotFilterSheet, spot UI views, FetchedQSO, QSOProcessingActor+Merge, CloudSync
-Add WWFFClient + WWFFSpot for Spotline spot fetching, wire into SpotMonitoringService hunter mode, add WWFF spot display in ActivityLogSpotRow
-Add WWFFReferencesCache + WWFFReference + WWFFReferenceEntryField + WWFFReferencePickerSheet + ExternalDataView+WWFFSection for WWFF directory autocomplete, replace plain TextField with rich entry field in SessionStartSheet

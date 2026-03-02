@@ -52,6 +52,11 @@ extension LoggingSession {
             return "\(myCallsign) SOTA"
         case .casual:
             return "\(myCallsign) Casual"
+        case .wwff:
+            if let ref = wwffReference {
+                return "\(myCallsign) at \(ref)"
+            }
+            return "\(myCallsign) WWFF"
         case .aoa:
             if let mission = missionReference {
                 return "\(myCallsign) AoA \(mission)"
@@ -65,6 +70,7 @@ extension LoggingSession {
         switch activationType {
         case .pota: parkReference
         case .sota: sotaReference
+        case .wwff: wwffReference
         case .aoa: missionReference
         case .casual: nil
         }

@@ -55,6 +55,7 @@ enum CloudSyncConflictResolver {
             myRig: extraFields.myRig,
             stationProfileName: extraFields.stationProfileName,
             sotaRef: extraFields.sotaRef,
+            wwffRef: extraFields.wwffRef,
             qrzLogId: extraFields.qrzLogId,
             qrzConfirmed: local.qrzConfirmed || remote.qrzConfirmed,
             lotwConfirmedDate: extraFields.lotwConfirmedDate,
@@ -111,6 +112,7 @@ enum CloudSyncConflictResolver {
             statusRawValue: winner.statusRawValue,
             parkReference: winner.parkReference,
             sotaReference: winner.sotaReference,
+            wwffReference: winner.wwffReference,
             myGrid: winner.myGrid,
             power: winner.power,
             myRig: winner.myRig,
@@ -210,6 +212,7 @@ extension CloudSyncConflictResolver {
         let myRig: String?
         let stationProfileName: String?
         let sotaRef: String?
+        let wwffRef: String?
         let qrzLogId: String?
         let lotwConfirmedDate: Date?
         let dxcc: Int?
@@ -261,6 +264,7 @@ extension CloudSyncConflictResolver {
                 local.stationProfileName, remote.stationProfileName, preferRemote: preferRemote
             ),
             sotaRef: pickOptional(local.sotaRef, remote.sotaRef, preferRemote: preferRemote),
+            wwffRef: pickOptional(local.wwffRef, remote.wwffRef, preferRemote: preferRemote),
             qrzLogId: pickOptional(local.qrzLogId, remote.qrzLogId, preferRemote: preferRemote),
             lotwConfirmedDate: pickOptional(
                 local.lotwConfirmedDate, remote.lotwConfirmedDate, preferRemote: preferRemote

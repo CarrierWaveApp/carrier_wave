@@ -83,10 +83,8 @@ extension CKRecordMapper {
             endedAt: record["endedAt"] as? Date,
             frequency: record["frequency"] as? Double,
             mode: record["mode"] as? String ?? "CW",
-            activationTypeRawValue: record["activationTypeRawValue"] as? String
-                ?? ActivationType.casual.rawValue,
-            statusRawValue: record["statusRawValue"] as? String
-                ?? LoggingSessionStatus.completed.rawValue,
+            activationTypeRawValue: (record["activationTypeRawValue"] as? String) ?? ActivationType.casual.rawValue,
+            statusRawValue: (record["statusRawValue"] as? String) ?? LoggingSessionStatus.completed.rawValue,
             parkReference: record["parkReference"] as? String,
             sotaReference: record["sotaReference"] as? String,
             wwffReference: record["wwffReference"] as? String,
