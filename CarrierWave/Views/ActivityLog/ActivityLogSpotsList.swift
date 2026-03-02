@@ -134,6 +134,7 @@ struct ActivityLogSpotsList: View {
             let key = "\(spot.spot.callsign.uppercased())|\(spot.spot.band)"
             if let existing = best[key] {
                 let preferNew = spot.spot.source == .pota && existing.spot.source != .pota
+                    || spot.spot.source == .wwff && existing.spot.source == .rbn
                     || spot.spot.source == .sota && existing.spot.source == .rbn
                     || spot.spot.source == existing.spot.source
                     && spot.spot.timestamp > existing.spot.timestamp

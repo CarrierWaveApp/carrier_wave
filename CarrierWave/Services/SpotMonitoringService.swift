@@ -151,6 +151,10 @@ final class SpotMonitoringService {
     @ObservationIgnored
     private var sotaClient: SOTAClient?
 
+    /// WWFF client for hunter mode
+    @ObservationIgnored
+    private var wwffClient: WWFFClient?
+
     /// Window for hunter spots (30 minutes — broader than activator mode)
     private let hunterSpotWindowMinutes = 30
 
@@ -193,15 +197,16 @@ final class SpotMonitoringService {
         }
     }
 
-    /// Fetch ALL spots for hunter mode (RBN + POTA + SOTA, not filtered by callsign)
+    /// Fetch ALL spots for hunter mode (RBN + POTA + SOTA + WWFF, not filtered by callsign)
     private func fetchAllSpots() async {
         let cutoff = Date().addingTimeInterval(-Double(hunterSpotWindowMinutes) * 60)
 
         async let rbnUnified = fetchHunterRBNSpots(since: cutoff)
         async let potaUnified = fetchHunterPOTASpots(since: cutoff)
         async let sotaUnified = fetchHunterSOTASpots(since: cutoff)
+        async let wwffUnified = fetchHunterWWFFSpots(since: cutoff)
 
-        var allSpots = await rbnUnified + potaUnified + sotaUnified
+        var allSpots = await rbnUnified + potaUnified + sotaUnified + wwffUnified
         allSpots.sort { $0.timestamp > $1.timestamp }
 
         // Show spots immediately (before slow HamDB enrichment)
@@ -324,6 +329,47 @@ final class SpotMonitoringService {
                 locationDesc: nil,
                 stateAbbr: nil
             )
+        }
+    }
+
+    /// Fetch all WWFF spots for hunter mode
+    private func fetchHunterWWFFSpots(since cutoff: Date) async -> [UnifiedSpot] {
+        if wwffClient == nil {
+            wwffClient = WWFFClient()
+        }
+        guard let wwffSpots = try? await wwffClient!.fetchSpots() else {
+            return []
+        }
+        return wwffSpots.compactMap { spot in
+            guard let freqKHz = spot.frequencyKHz,
+                  let timestamp = spot.parsedTimestamp,
+                  timestamp >= cutoff
+            else {
+                return nil
+            }
+            var unified = UnifiedSpot(
+                id: "wwff-\(spot.id)",
+                callsign: spot.activator,
+                frequencyKHz: freqKHz,
+                mode: spot.mode.uppercased(),
+                timestamp: timestamp,
+                source: .wwff,
+                snr: nil,
+                wpm: nil,
+                spotter: spot.spotter,
+                spotterGrid: nil,
+                parkRef: nil,
+                parkName: nil,
+                comments: spot.comments,
+                summitCode: nil,
+                summitName: nil,
+                summitPoints: nil,
+                locationDesc: nil,
+                stateAbbr: nil
+            )
+            unified.wwffRef = spot.reference
+            unified.wwffName = spot.locationName
+            return unified
         }
     }
 

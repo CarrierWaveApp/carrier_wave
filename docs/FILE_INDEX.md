@@ -136,6 +136,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `SDRParameterEvent.swift` | SDR parameter change event and recording segment types for tracking freq/mode changes |
 | `SOTASummit.swift` | SOTA summit data struct (code, name, altitude, points, coordinates) |
 | `SOTASpot.swift` | SOTAwatch API spot model (activator, summit, frequency, mode, timestamp) |
+| `WWFFSpot.swift` | WWFF Spotline API spot model (activator, reference, frequency, mode, timestamp) |
 | `SolarSnapshot.swift` | Hourly solar conditions snapshot from background polling |
 | `Contest.swift` | Contest model struct (in-memory only, from WA7BNM RSS feed) |
 | `StationProfile.swift` | Station profile struct and UserDefaults-backed storage |
@@ -179,6 +180,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `SOTASummitsCache.swift` | SOTA summit code to name lookup cache (30-day TTL) |
 | `SOTASummitsCache+Parsing.swift` | SOTA CSV parsing, name index building, and distance utilities |
 | `SOTAClient.swift` | SOTAwatch API actor for fetching active spots from api2.sota.org.uk |
+| `WWFFClient.swift` | WWFF Spotline API actor for fetching active spots from spots.wwff.co |
 | `POTAAuthService.swift` | POTA OAuth flow handling (main service) |
 | `POTAAuthService+JavaScript.swift` | JavaScript helpers for POTA WebView auth |
 | `POTAAuthService+HeadlessAuth.swift` | Headless authentication with stored credentials |

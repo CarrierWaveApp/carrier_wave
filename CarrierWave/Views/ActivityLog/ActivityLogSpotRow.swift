@@ -93,6 +93,16 @@ struct ActivityLogSpotRow: View {
                     .clipShape(RoundedRectangle(cornerRadius: 3))
             }
 
+            if spot.spot.source == .wwff {
+                Text("WWFF")
+                    .font(.caption2)
+                    .foregroundStyle(.mint)
+                    .padding(.horizontal, 4)
+                    .padding(.vertical, 1)
+                    .background(Color.mint.opacity(0.15))
+                    .clipShape(RoundedRectangle(cornerRadius: 3))
+            }
+
             if isFriend {
                 Text("FRIEND")
                     .font(.caption2.weight(.semibold))
@@ -147,6 +157,21 @@ struct ActivityLogSpotRow: View {
                         .padding(.vertical, 1)
                         .background(Color.brown.opacity(0.15))
                         .clipShape(RoundedRectangle(cornerRadius: 3))
+                }
+            }
+        } else if let wwffRef = spot.spot.wwffRef {
+            HStack(spacing: 4) {
+                Image(systemName: "leaf.fill")
+                    .font(.caption2)
+                    .foregroundStyle(.mint)
+                Text(wwffRef)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                if let wwffName = spot.spot.wwffName {
+                    Text("- \(wwffName)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
                 }
             }
         } else if let snr = spot.spot.snr {
