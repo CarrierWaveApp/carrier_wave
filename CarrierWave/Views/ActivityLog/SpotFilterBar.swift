@@ -99,6 +99,7 @@ struct SpotFilterBar: View {
                 Image(systemName: "xmark")
                     .font(.caption2)
             }
+            .fixedSize()
             .foregroundStyle(.blue)
             .padding(.horizontal, 10)
             .padding(.vertical, 8)

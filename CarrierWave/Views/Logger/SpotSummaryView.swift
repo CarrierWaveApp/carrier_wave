@@ -60,6 +60,7 @@ struct SpotSummaryView: View {
                 Text("\(summary.totalCount)")
                     .fontWeight(.semibold)
             }
+            .fixedSize()
 
             if summary.totalCount > 0 {
                 // Region pills
@@ -72,6 +73,7 @@ struct SpotSummaryView: View {
                     Text(range)
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                        .fixedSize()
                 }
             } else {
                 Text("No spots yet")
