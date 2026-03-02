@@ -94,6 +94,7 @@ struct ActivationSectionView: View {
     @Binding var parkReference: String
     @Binding var sotaReference: String
     @Binding var missionReference: String
+    @Binding var wwffReference: String
     @Binding var isRove: Bool
 
     /// User's grid square for nearby parks
@@ -106,6 +107,9 @@ struct ActivationSectionView: View {
             programChips
             if selectedPrograms.contains("pota") {
                 potaFields
+            }
+            if selectedPrograms.contains("wwff") {
+                wwffFields
             }
             if selectedPrograms.contains("sota") {
                 sotaFields
@@ -131,6 +135,12 @@ struct ActivationSectionView: View {
                 icon: "tree",
                 isSelected: selectedPrograms.contains("pota"),
                 onToggle: { toggleProgram("pota") }
+            )
+            ProgramChip(
+                label: "WWFF",
+                icon: "leaf.fill",
+                isSelected: selectedPrograms.contains("wwff"),
+                onToggle: { toggleProgram("wwff") }
             )
             ProgramChip(
                 label: "SOTA",
@@ -167,6 +177,13 @@ struct ActivationSectionView: View {
                     .foregroundStyle(.secondary)
             }
         }
+    }
+
+    private var wwffFields: some View {
+        WWFFReferenceEntryField(
+            wwffReference: $wwffReference,
+            userGrid: userGrid
+        )
     }
 
     private var sotaFields: some View {
@@ -212,6 +229,7 @@ struct SessionStartInput {
     let parkReference: String
     let sotaReference: String
     let missionReference: String
+    let wwffReference: String
     let frequency: Double?
 }
 
@@ -225,6 +243,11 @@ enum SessionStartValidation {
         }
         if input.programs.contains("pota"),
            input.parkReference.trimmingCharacters(in: .whitespaces).isEmpty
+        {
+            return false
+        }
+        if input.programs.contains("wwff"),
+           input.wwffReference.trimmingCharacters(in: .whitespaces).isEmpty
         {
             return false
         }
@@ -249,6 +272,11 @@ enum SessionStartValidation {
            input.parkReference.trimmingCharacters(in: .whitespaces).isEmpty
         {
             return "POTA requires park reference"
+        }
+        if input.programs.contains("wwff"),
+           input.wwffReference.trimmingCharacters(in: .whitespaces).isEmpty
+        {
+            return "WWFF requires a reference"
         }
         if input.programs.contains("sota"),
            input.sotaReference.trimmingCharacters(in: .whitespaces).isEmpty

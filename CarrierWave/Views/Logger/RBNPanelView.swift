@@ -321,6 +321,8 @@ extension RBNPanelView {
             return .green
         case .sota:
             return .orange
+        case .wwff:
+            return .mint
         }
     }
 
@@ -335,6 +337,8 @@ extension RBNPanelView {
             return "leaf.fill"
         case .sota:
             return "mountain.2.fill"
+        case .wwff:
+            return "leaf.fill"
         }
     }
 

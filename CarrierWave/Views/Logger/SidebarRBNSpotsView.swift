@@ -293,6 +293,8 @@ extension SidebarRBNSpotsView {
             return .green
         case .sota:
             return .orange
+        case .wwff:
+            return .mint
         }
     }
 
@@ -307,6 +309,8 @@ extension SidebarRBNSpotsView {
             return "leaf.fill"
         case .sota:
             return "mountain.2.fill"
+        case .wwff:
+            return "leaf.fill"
         }
     }
 

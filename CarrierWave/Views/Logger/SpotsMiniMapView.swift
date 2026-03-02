@@ -94,6 +94,9 @@ struct SpotsMiniMapView: View {
             case .sota:
                 color = .orange
                 size = 12
+            case .wwff:
+                color = .mint
+                size = 12
             }
 
             return SpotMapAnnotation(

@@ -40,6 +40,7 @@ struct ExternalDataView: View {
             SCPCacheSection()
             POTACacheSection()
             SOTACacheSection()
+            WWFFCacheSection()
         }
         .navigationTitle("External Data")
     }

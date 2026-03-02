@@ -30,6 +30,7 @@ extension CloudSyncEngine {
         qso.myRig = fields.myRig
         qso.stationProfileName = fields.stationProfileName
         qso.sotaRef = fields.sotaRef
+        qso.wwffRef = fields.wwffRef
         qso.qrzLogId = fields.qrzLogId
         qso.qrzConfirmed = fields.qrzConfirmed
         qso.lotwConfirmedDate = fields.lotwConfirmedDate
@@ -54,6 +55,7 @@ extension CloudSyncEngine {
         session.statusRawValue = fields.statusRawValue
         session.parkReference = fields.parkReference
         session.sotaReference = fields.sotaReference
+        session.wwffReference = fields.wwffReference
         session.myGrid = fields.myGrid
         session.power = fields.power
         session.myRig = fields.myRig

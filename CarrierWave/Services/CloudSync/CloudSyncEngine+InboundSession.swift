@@ -58,6 +58,7 @@ extension CloudSyncEngine {
                 ?? .casual,
             parkReference: fields.parkReference,
             sotaReference: fields.sotaReference,
+            wwffReference: fields.wwffReference,
             myGrid: fields.myGrid,
             notes: fields.notes,
             power: fields.power,

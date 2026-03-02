@@ -31,6 +31,7 @@ nonisolated final class QSO {
         myRig: String? = nil,
         stationProfileName: String? = nil,
         sotaRef: String? = nil,
+        wwffRef: String? = nil,
         aoaCode: String? = nil,
         qrzLogId: String? = nil,
         qrzConfirmed: Bool = false,
@@ -64,6 +65,7 @@ nonisolated final class QSO {
         self.myRig = myRig
         self.stationProfileName = stationProfileName
         self.sotaRef = sotaRef
+        self.wwffRef = wwffRef
         self.aoaCode = aoaCode
         self.qrzLogId = qrzLogId
         self.qrzConfirmed = qrzConfirmed
@@ -103,6 +105,9 @@ nonisolated final class QSO {
     var myRig: String?
     var stationProfileName: String?
     var sotaRef: String?
+
+    /// WWFF flora & fauna reference (e.g., "KFF-1234")
+    var wwffRef: String?
 
     /// Code exchanged during AoA mission QSO
     var aoaCode: String?
@@ -249,6 +254,9 @@ nonisolated final class QSO {
             score += 1
         }
         if sotaRef != nil {
+            score += 1
+        }
+        if wwffRef != nil {
             score += 1
         }
         if theirLicenseClass != nil {

@@ -25,6 +25,7 @@ extension CKRecordMapper {
         record["statusRawValue"] = fields.statusRawValue
         record["parkReference"] = fields.parkReference
         record["sotaReference"] = fields.sotaReference
+        record["wwffReference"] = fields.wwffReference
         record["myGrid"] = fields.myGrid
         record["power"] = fields.power as CKRecordValue?
         record["myRig"] = fields.myRig
@@ -88,6 +89,7 @@ extension CKRecordMapper {
                 ?? LoggingSessionStatus.completed.rawValue,
             parkReference: record["parkReference"] as? String,
             sotaReference: record["sotaReference"] as? String,
+            wwffReference: record["wwffReference"] as? String,
             myGrid: record["myGrid"] as? String,
             power: record["power"] as? Int,
             myRig: record["myRig"] as? String,

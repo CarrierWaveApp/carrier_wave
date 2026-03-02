@@ -15,6 +15,7 @@ enum SpotSource: Sendable {
     case rbn
     case pota
     case sota
+    case wwff
 }
 
 // MARK: - UnifiedSpot
@@ -45,6 +46,10 @@ struct UnifiedSpot: Identifiable, Sendable {
     var summitCode: String?
     var summitName: String?
     var summitPoints: Int?
+
+    // WWFF-specific fields
+    var wwffRef: String?
+    var wwffName: String?
 
     // Location fields
     let locationDesc: String? // POTA raw (e.g., "US-WY")

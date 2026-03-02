@@ -36,6 +36,7 @@ struct FullExportQSOSnapshot: Sendable {
         power = qso.power
         myRig = qso.myRig.map { Self.asciiSafe($0) }
         sotaRef = qso.sotaRef
+        wwffRef = qso.wwffRef
         dxcc = qso.dxcc
         qrzConfirmed = qso.qrzConfirmed
         lotwConfirmed = qso.lotwConfirmed
@@ -69,6 +70,7 @@ struct FullExportQSOSnapshot: Sendable {
     let power: Int?
     let myRig: String?
     let sotaRef: String?
+    let wwffRef: String?
     let dxcc: Int?
     let qrzConfirmed: Bool
     let lotwConfirmed: Bool
@@ -364,6 +366,17 @@ actor FullADIFExportActor {
             if snapshot.parkReference == nil || snapshot.parkReference?.isEmpty == true {
                 fields.append(formatField("MY_SIG", "SOTA"))
                 fields.append(formatField("MY_SIG_INFO", sotaRef))
+            }
+        }
+
+        if let wwffRef = snapshot.wwffRef, !wwffRef.isEmpty {
+            fields.append(formatField("MY_WWFF_REF", wwffRef))
+            // If no POTA or SOTA ref, use WWFF as primary SIG
+            let hasPota = snapshot.parkReference != nil && snapshot.parkReference?.isEmpty == false
+            let hasSota = snapshot.sotaRef != nil && snapshot.sotaRef?.isEmpty == false
+            if !hasPota, !hasSota {
+                fields.append(formatField("MY_SIG", "WWFF"))
+                fields.append(formatField("MY_SIG_INFO", wwffRef))
             }
         }
     }

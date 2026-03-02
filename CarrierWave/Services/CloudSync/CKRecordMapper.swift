@@ -101,6 +101,7 @@ enum CKRecordMapper {
         record["myRig"] = fields.myRig
         record["stationProfileName"] = fields.stationProfileName
         record["sotaRef"] = fields.sotaRef
+        record["wwffRef"] = fields.wwffRef
         record["qrzLogId"] = fields.qrzLogId
         record["qrzConfirmed"] = fields.qrzConfirmed ? 1 : 0
         record["lotwConfirmedDate"] = fields.lotwConfirmedDate
@@ -154,6 +155,7 @@ enum CKRecordMapper {
             myRig: record["myRig"] as? String,
             stationProfileName: record["stationProfileName"] as? String,
             sotaRef: record["sotaRef"] as? String,
+            wwffRef: record["wwffRef"] as? String,
             qrzLogId: record["qrzLogId"] as? String,
             qrzConfirmed: (record["qrzConfirmed"] as? Int64 ?? 0) != 0,
             lotwConfirmedDate: record["lotwConfirmedDate"] as? Date,

@@ -226,6 +226,9 @@ class ImportService: ObservableObject {
             }
         }
 
+        // WWFF references: prefer dedicated MY_WWFF_REF field, fall back to MY_SIG_INFO when SIG=WWFF
+        let wwffRef = record.myWwffRef
+
         return QSO(
             callsign: record.callsign, band: record.band, mode: record.mode,
             frequency: record.frequency, timestamp: timestamp,
@@ -234,7 +237,8 @@ class ImportService: ObservableObject {
             theirGrid: record.gridsquare,
             parkReference: parkReference,
             theirParkReference: theirParkReference,
-            notes: record.comment, importSource: source, rawADIF: record.rawADIF
+            notes: record.comment, importSource: source, rawADIF: record.rawADIF,
+            wwffRef: wwffRef
         )
     }
 

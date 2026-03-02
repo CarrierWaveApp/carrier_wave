@@ -157,13 +157,14 @@ struct CarrierWaveApp: App {
                 // Preload caches concurrently (loads from disk, refreshes in background)
                 async let parksLoad: Void = POTAParksCache.shared.ensureLoaded()
                 async let summitsLoad: Void = SOTASummitsCache.shared.ensureLoaded()
+                async let wwffLoad: Void = WWFFReferencesCache.shared.ensureLoaded()
                 // Fetch sources on main actor, then pass to cache actor
                 let sources = NotesSourceInfo.fetchAll(
                     modelContext: sharedModelContainer.mainContext
                 )
                 async let notesLoad: Void = CallsignNotesCache.shared
                     .ensureLoaded(sources: sources)
-                _ = await (parksLoad, summitsLoad, notesLoad)
+                _ = await (parksLoad, summitsLoad, wwffLoad, notesLoad)
             }
             .task {
                 // Launch backup runs off the main thread to avoid blocking UI

@@ -145,6 +145,24 @@ final class ActivityProgramStore: ObservableObject {
             )
         ),
         ActivityProgram(
+            slug: "wwff",
+            name: "World Wide Flora & Fauna",
+            shortName: "WWFF",
+            icon: "leaf.fill",
+            website: "https://wwff.co",
+            referenceLabel: "WWFF Reference",
+            referenceFormat: "^[A-Z0-9]{1,4}FF-\\d{4}$",
+            referenceExample: "KFF-1234",
+            multiRefAllowed: false,
+            activationThreshold: 44,
+            supportsRove: false,
+            capabilities: [.referenceField, .browseSpots],
+            adifFields: ADIFFieldMapping(
+                mySig: "WWFF", mySigInfo: "ref",
+                sigField: nil, sigInfoField: nil
+            )
+        ),
+        ActivityProgram(
             slug: "aoa",
             name: "Agents on Air",
             shortName: "AoA",
