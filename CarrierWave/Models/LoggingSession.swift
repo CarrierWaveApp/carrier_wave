@@ -10,6 +10,7 @@ enum ActivationType: String, Codable, CaseIterable {
     case pota
     case sota
     case aoa
+    case wwff
 
     // MARK: Internal
 
@@ -19,6 +20,7 @@ enum ActivationType: String, Codable, CaseIterable {
         case .pota: "POTA"
         case .sota: "SOTA"
         case .aoa: "AoA"
+        case .wwff: "WWFF"
         }
     }
 
@@ -28,14 +30,18 @@ enum ActivationType: String, Codable, CaseIterable {
         case .pota: "tree"
         case .sota: "mountain.2"
         case .aoa: "eye"
+        case .wwff: "leaf.fill"
         }
     }
 
     /// Derive activation type from selected programs set.
-    /// Priority: pota > sota > aoa > casual
+    /// Priority: pota > wwff > sota > aoa > casual
     static func from(programs: Set<String>) -> ActivationType {
         if programs.contains("pota") {
             return .pota
+        }
+        if programs.contains("wwff") {
+            return .wwff
         }
         if programs.contains("sota") {
             return .sota
@@ -74,6 +80,7 @@ nonisolated final class LoggingSession {
         parkReference: String? = nil,
         sotaReference: String? = nil,
         missionReference: String? = nil,
+        wwffReference: String? = nil,
         myGrid: String? = nil,
         notes: String? = nil,
         power: Int? = nil,
@@ -93,6 +100,7 @@ nonisolated final class LoggingSession {
         self.parkReference = parkReference
         self.sotaReference = sotaReference
         self.missionReference = missionReference
+        self.wwffReference = wwffReference
         self.myGrid = myGrid
         self.notes = notes
         self.power = power
@@ -142,6 +150,9 @@ nonisolated final class LoggingSession {
 
     /// AoA mission reference (e.g., "M-a01f")
     var missionReference: String?
+
+    /// WWFF flora & fauna reference (e.g., "KFF-1234")
+    var wwffReference: String?
 
     /// Operator's grid square
     var myGrid: String?
@@ -276,6 +287,11 @@ nonisolated final class LoggingSession {
         programs.contains("sota")
     }
 
+    /// Whether this is a WWFF activation
+    var isWWFF: Bool {
+        programs.contains("wwff")
+    }
+
     /// Whether this is a casual (no-program) session
     var isCasual: Bool {
         programs.isEmpty
@@ -290,6 +306,7 @@ nonisolated final class LoggingSession {
             switch slug {
             case "pota": "POTA"
             case "sota": "SOTA"
+            case "wwff": "WWFF"
             default: slug.uppercased()
             }
         }
@@ -298,11 +315,11 @@ nonisolated final class LoggingSession {
 
     /// Icon for the session's primary program
     var programsIcon: String {
-        if isPOTA, isSOTA {
-            return "tree"
-        } // POTA takes precedence for icon
         if isPOTA {
             return "tree"
+        }
+        if isWWFF {
+            return "leaf.fill"
         }
         if isSOTA {
             return "mountain.2"

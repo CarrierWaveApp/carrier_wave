@@ -31,6 +31,7 @@ struct QSOFields: Sendable {
     let myRig: String?
     let stationProfileName: String?
     let sotaRef: String?
+    let wwffRef: String?
     let qrzLogId: String?
     let qrzConfirmed: Bool
     let lotwConfirmedDate: Date?
@@ -79,6 +80,7 @@ struct LoggingSessionFields: Sendable {
     let statusRawValue: String
     let parkReference: String?
     let sotaReference: String?
+    let wwffReference: String?
     let myGrid: String?
     let power: Int?
     let myRig: String?

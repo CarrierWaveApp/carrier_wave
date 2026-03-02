@@ -161,6 +161,7 @@ extension CloudSyncEngine {
             myRig: fields.myRig,
             stationProfileName: fields.stationProfileName,
             sotaRef: fields.sotaRef,
+            wwffRef: fields.wwffRef,
             qrzLogId: fields.qrzLogId,
             qrzConfirmed: fields.qrzConfirmed,
             lotwConfirmedDate: fields.lotwConfirmedDate,

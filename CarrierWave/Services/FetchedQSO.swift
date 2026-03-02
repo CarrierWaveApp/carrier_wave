@@ -28,6 +28,7 @@ struct FetchedQSO: Sendable {
     let power: Int?
     let myRig: String?
     let sotaRef: String?
+    let wwffRef: String?
 
     // QRZ-specific
     let qrzLogId: String?
@@ -99,6 +100,9 @@ struct FetchedQSO: Sendable {
         if let sota = sotaRef {
             fields["sotaRef"] = sota
         }
+        if let wwff = wwffRef {
+            fields["wwffRef"] = wwff
+        }
         return fields
     }
 }
@@ -145,6 +149,7 @@ extension FetchedQSO {
             power: nil,
             myRig: nil,
             sotaRef: nil,
+            wwffRef: nil,
             qrzLogId: qrz.qrzLogId,
             qrzConfirmed: qrz.qrzConfirmed,
             lotwConfirmedDate: qrz.lotwConfirmedDate,
@@ -178,6 +183,7 @@ extension FetchedQSO {
             power: nil,
             myRig: nil,
             sotaRef: nil,
+            wwffRef: nil,
             qrzLogId: nil,
             qrzConfirmed: false,
             lotwConfirmedDate: nil,
@@ -221,6 +227,7 @@ extension FetchedQSO {
             power: nil,
             myRig: nil,
             sotaRef: nil,
+            wwffRef: nil,
             qrzLogId: nil,
             qrzConfirmed: false,
             lotwConfirmedDate: nil,
@@ -262,6 +269,7 @@ extension FetchedQSO {
             power: qso.txPwr?.intValue,
             myRig: nil,
             sotaRef: qso.sotaRef,
+            wwffRef: nil,
             qrzLogId: nil,
             qrzConfirmed: false,
             lotwConfirmedDate: nil,
@@ -295,6 +303,7 @@ extension FetchedQSO {
             power: nil,
             myRig: nil,
             sotaRef: nil,
+            wwffRef: nil,
             qrzLogId: nil,
             qrzConfirmed: false,
             lotwConfirmedDate: lotw.qslReceivedDate,
@@ -328,6 +337,7 @@ extension FetchedQSO {
             power: nil,
             myRig: nil,
             sotaRef: nil,
+            wwffRef: nil,
             qrzLogId: nil,
             qrzConfirmed: false,
             lotwConfirmedDate: nil,

@@ -8,6 +8,7 @@ struct ActiveStation: Identifiable, Sendable {
     enum Source: Sendable {
         case pota(park: String)
         case sota(summit: String, points: Int)
+        case wwff(reference: String)
         case rbn(snr: Int)
     }
 
@@ -51,6 +52,7 @@ struct ActiveStation: Identifiable, Sendable {
         switch source {
         case let .pota(park): park
         case let .sota(summit, _): summit
+        case let .wwff(reference): reference
         case let .rbn(snr): "\(snr) dB"
         }
     }

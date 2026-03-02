@@ -55,6 +55,7 @@ extension LoggingSessionManager {
             power: session.power,
             myRig: session.myRig,
             sotaRef: session.isSOTA ? session.sotaReference : nil,
+            wwffRef: session.isWWFF ? session.wwffReference : nil,
             theirLicenseClass: theirLicenseClass
         )
 

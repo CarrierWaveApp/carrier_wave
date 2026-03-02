@@ -7,6 +7,7 @@ import SwiftUI
 struct SpotFilters: Equatable, Codable {
     enum SourceFilter: String, CaseIterable, Codable {
         case pota = "POTA"
+        case wwff = "WWFF"
         case sota = "SOTA"
         case rbn = "RBN"
 
@@ -52,6 +53,7 @@ struct SpotFilters: Equatable, Codable {
 
             let spotSource: SourceFilter = switch spot.spot.source {
             case .pota: .pota
+            case .wwff: .wwff
             case .sota: .sota
             case .rbn: .rbn
             }

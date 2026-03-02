@@ -24,6 +24,8 @@ public struct ADIFRecord: Sendable {
         gridsquare: String? = nil,
         sigInfo: String? = nil,
         mySigInfo: String? = nil,
+        myWwffRef: String? = nil,
+        wwffRef: String? = nil,
         comment: String? = nil,
         dxcc: Int? = nil,
         country: String? = nil,
@@ -42,6 +44,8 @@ public struct ADIFRecord: Sendable {
         self.gridsquare = gridsquare
         self.sigInfo = sigInfo
         self.mySigInfo = mySigInfo
+        self.myWwffRef = myWwffRef
+        self.wwffRef = wwffRef
         self.comment = comment
         self.dxcc = dxcc
         self.country = country
@@ -63,6 +67,8 @@ public struct ADIFRecord: Sendable {
     public var gridsquare: String? // Their grid
     public var sigInfo: String? // Their park reference (hunter contacts)
     public var mySigInfo: String? // My park reference (activations)
+    public var myWwffRef: String? // My WWFF reference (ADIF 3.1.3+)
+    public var wwffRef: String? // Their WWFF reference (ADIF 3.1.3+)
     public var comment: String?
     public var dxcc: Int? // DXCC entity number
     public var country: String? // Country name
@@ -191,6 +197,8 @@ public struct ADIFParser: Sendable {
                 gridsquare: fields["gridsquare"],
                 sigInfo: fields["sig_info"] ?? fields["pota_ref"],
                 mySigInfo: fields["my_sig_info"] ?? fields["my_pota_ref"],
+                myWwffRef: fields["my_wwff_ref"],
+                wwffRef: fields["wwff_ref"],
                 comment: fields["comment"] ?? fields["notes"],
                 dxcc: fields["dxcc"].flatMap { Int($0) },
                 country: fields["country"],

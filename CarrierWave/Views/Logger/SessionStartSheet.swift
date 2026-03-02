@@ -19,6 +19,7 @@ struct SessionStartSheet: View {
     @State var parkReference = ""
     @State var sotaReference = ""
     @State var missionReference = ""
+    @State var wwffReference = ""
     @State var isRove = false
     @State var myGrid = ""
     @State var powerText = ""
@@ -218,6 +219,7 @@ struct SessionStartSheet: View {
             parkReference: parkReference,
             sotaReference: sotaReference,
             missionReference: missionReference,
+            wwffReference: wwffReference,
             frequency: parsedFrequency
         )
     }
@@ -255,6 +257,8 @@ extension SessionStartSheet {
 
         let trimmedMission = missionReference.trimmingCharacters(in: .whitespaces)
 
+        let trimmedWwff = wwffReference.trimmingCharacters(in: .whitespaces)
+
         sessionManager?.startSession(
             myCallsign: fullCallsign,
             mode: selectedMode,
@@ -264,6 +268,7 @@ extension SessionStartSheet {
             parkReference: selectedPrograms.contains("pota") ? parkReference.uppercased() : nil,
             sotaReference: selectedPrograms.contains("sota") ? sotaReference.uppercased() : nil,
             missionReference: selectedPrograms.contains("aoa") && !trimmedMission.isEmpty ? trimmedMission : nil,
+            wwffReference: selectedPrograms.contains("wwff") && !trimmedWwff.isEmpty ? trimmedWwff.uppercased() : nil,
             myGrid: myGrid.isEmpty ? nil : myGrid.uppercased(),
             power: parsedPower,
             myRig: selectedRadio,

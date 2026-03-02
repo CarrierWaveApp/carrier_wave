@@ -90,6 +90,7 @@ extension QSOProcessingActor {
         existing.country = existing.country.nonEmpty ?? fetched.country
         existing.power = existing.power ?? fetched.power
         existing.sotaRef = existing.sotaRef.nonEmpty ?? fetched.sotaRef
+        existing.wwffRef = existing.wwffRef.nonEmpty ?? fetched.wwffRef
 
         mergeSourceSpecificFields(from: fetched, into: existing)
     }
@@ -185,6 +186,7 @@ extension QSOProcessingActor {
                 power: merged.power ?? other.power,
                 myRig: merged.myRig.nonEmpty ?? other.myRig,
                 sotaRef: merged.sotaRef.nonEmpty ?? other.sotaRef,
+                wwffRef: merged.wwffRef.nonEmpty ?? other.wwffRef,
                 qrzLogId: merged.qrzLogId ?? other.qrzLogId,
                 qrzConfirmed: merged.qrzConfirmed || other.qrzConfirmed,
                 lotwConfirmedDate: merged.lotwConfirmedDate ?? other.lotwConfirmedDate,
@@ -238,6 +240,7 @@ extension QSOProcessingActor {
             power: fetched.power,
             myRig: fetched.myRig,
             sotaRef: fetched.sotaRef,
+            wwffRef: fetched.wwffRef,
             qrzLogId: fetched.qrzLogId,
             qrzConfirmed: fetched.qrzConfirmed,
             lotwConfirmedDate: fetched.lotwConfirmedDate,
