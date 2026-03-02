@@ -62,7 +62,8 @@ struct ProgramChip: View {
                 Text(label)
                     .font(.subheadline.weight(.medium))
             }
-            .padding(.horizontal, 12)
+            .fixedSize()
+            .padding(.horizontal, 10)
             .padding(.vertical, 8)
             .background(
                 isSelected
@@ -129,7 +130,7 @@ struct ActivationSectionView: View {
     // MARK: Private
 
     private var programChips: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 8) {
             ProgramChip(
                 label: "POTA",
                 icon: "tree",
@@ -154,7 +155,6 @@ struct ActivationSectionView: View {
                 isSelected: selectedPrograms.contains("aoa"),
                 onToggle: { toggleProgram("aoa") }
             )
-            Spacer()
         }
         .padding(.vertical, 4)
     }
