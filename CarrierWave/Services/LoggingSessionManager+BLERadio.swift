@@ -10,6 +10,9 @@ extension LoggingSessionManager {
             return
         }
 
+        // Detect protocol from the session's rig name before connecting
+        service.setProtocolFromRig(activeSession?.myRig)
+
         // Wire up radio → app callbacks
         service.onRadioFrequencyChanged = { [weak self] freq in
             self?.handleRadioFrequencyChange(freq)

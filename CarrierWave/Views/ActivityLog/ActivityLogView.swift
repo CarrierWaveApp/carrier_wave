@@ -54,6 +54,7 @@ struct ActivityLogView: View {
                            let profile = StationProfileStorage.profile(for: newId)
                         {
                             manager.switchProfile(profile)
+                            BLERadioService.shared.setProtocolFromRig(profile.rig)
                             requestGPSGridIfNeeded()
                         }
                     }
@@ -109,6 +110,11 @@ struct ActivityLogView: View {
             guard !hasLoaded else {
                 return
             }
+
+            // Set BLE protocol from the station profile's rig
+            BLERadioService.shared.setProtocolFromRig(
+                manager.currentProfile?.rig
+            )
 
             manager.refreshTodayStats()
             recentQSOs = manager.fetchRecentQSOs()

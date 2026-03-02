@@ -50,6 +50,13 @@ struct BLERadioSettingsView: View {
         }
     }
 
+    private var selectedProtocol: Binding<RigProtocol> {
+        Binding(
+            get: { bleRadioService.rigProtocol },
+            set: { bleRadioService.updateProtocol($0) }
+        )
+    }
+
     // MARK: - Experimental Notice
 
     private var experimentalNotice: some View {
@@ -160,28 +167,35 @@ struct BLERadioSettingsView: View {
 
     private var advancedSection: some View {
         Section {
-            HStack {
-                Text("CI-V Address")
-                Spacer()
-                Text("0x")
-                    .foregroundStyle(.secondary)
-                TextField("A4", text: $rigAddressText)
-                    .textFieldStyle(.roundedBorder)
-                    .font(.body.monospaced())
-                    .frame(width: 50)
-                    .textInputAutocapitalization(.characters)
-                    .autocorrectionDisabled()
-                    .onChange(of: rigAddressText) {
-                        applyRigAddress()
-                    }
+            Picker("Protocol", selection: selectedProtocol) {
+                ForEach(RigProtocol.allCases, id: \.self) { proto in
+                    Text(proto.displayName).tag(proto)
+                }
+            }
+
+            if bleRadioService.rigProtocol == .civ {
+                HStack {
+                    Text("CI-V Address")
+                    Spacer()
+                    Text("0x")
+                        .foregroundStyle(.secondary)
+                    TextField("A4", text: $rigAddressText)
+                        .textFieldStyle(.roundedBorder)
+                        .font(.body.monospaced())
+                        .frame(width: 50)
+                        .textInputAutocapitalization(.characters)
+                        .autocorrectionDisabled()
+                        .onChange(of: rigAddressText) {
+                            applyRigAddress()
+                        }
+                }
             }
         } header: {
             Text("Advanced")
         } footer: {
             Text(
-                "CI-V address of your radio. "
-                    + "Xiegu G90/X5105: A4. "
-                    + "Icom IC-7300: 94."
+                "Protocol is auto-detected from your radio. "
+                    + "Override here if needed."
             )
         }
     }

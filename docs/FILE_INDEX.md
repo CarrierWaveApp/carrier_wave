@@ -14,6 +14,7 @@ Pure logic library that can be tested without iOS Simulator. Run tests with `mak
 | `Sources/CarrierWaveCore/BandUtilities.swift` | Band derivation from frequency |
 | `Sources/CarrierWaveCore/CallsignDetector.swift` | Callsign regex detection, RST/grid/power parsing |
 | `Sources/CarrierWaveCore/CIVProtocol.swift` | CI-V protocol: frame building/parsing, BCD frequency encoding, mode mapping |
+| `Sources/CarrierWaveCore/KenwoodProtocol.swift` | Kenwood/Elecraft K3 text command building/parsing, mode mapping |
 | `Sources/CarrierWaveCore/CallsignEditDistance.swift` | Levenshtein edit distance for callsign comparison |
 | `Sources/CarrierWaveCore/SCPDatabase.swift` | Super Check Partial in-memory database (partial match, exact lookup, near-miss) |
 | `Sources/CarrierWaveCore/CWTextElement.swift` | CW text element types for transcript highlighting |
@@ -333,9 +334,10 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `ContestPollingService.swift` | Background 6-hour contest calendar polling service |
 | `SettingsSyncService.swift` | iCloud KVS settings sync (pull/push/echo suppression) |
 | `SettingsSyncService+Registry.swift` | Allowlist of settings that sync via iCloud KVS |
-| `BLERadio/BLERadioClient.swift` | Actor for BLE radio control via CI-V over Nordic UART Service |
+| `BLERadio/BLERadioClient.swift` | Actor for BLE radio control over Nordic UART Service (CI-V and Kenwood protocols) |
 | `BLERadio/BLERadioClient+Delegate.swift` | CoreBluetooth delegate forwarding scan/connect/data events to actor |
-| `BLERadio/BLERadioService.swift` | @MainActor @Observable wrapper for BLE radio (polling, feedback loop prevention) |
+| `BLERadio/BLERadioService.swift` | @MainActor @Observable wrapper for BLE radio (polling, feedback loop prevention, protocol selection) |
+| `BLERadio/RigProtocol.swift` | RigProtocol enum, RigProtocolHandler, RigProtocolDetector for multi-protocol BLE radio |
 | `LoggingSessionManager+BLERadio.swift` | BLE radio session lifecycle integration (connect/disconnect/sync) |
 
 ## Widget Extension (`CarrierWaveWidgets/`)

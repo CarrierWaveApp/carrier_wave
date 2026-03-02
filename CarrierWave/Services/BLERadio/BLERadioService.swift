@@ -56,6 +56,21 @@ final class BLERadioService {
         connectionStatus == .connected
     }
 
+    /// Current protocol (persisted in UserDefaults)
+    var rigProtocol: RigProtocol {
+        get {
+            guard let raw = UserDefaults.standard.string(forKey: Keys.rigProtocol),
+                  let proto = RigProtocol(rawValue: raw)
+            else {
+                return .civ
+            }
+            return proto
+        }
+        set {
+            UserDefaults.standard.set(newValue.rawValue, forKey: Keys.rigProtocol)
+        }
+    }
+
     // MARK: - Scanning
 
     func startScan() {
@@ -142,11 +157,7 @@ final class BLERadioService {
         lastAppSetFrequency = mhz
         lastAppSetTime = Date()
         Task {
-            do {
-                try await client.setFrequency(mhz)
-            } catch {
-                // Silently fail — radio may be busy
-            }
+            try? await client.setFrequency(mhz)
         }
     }
 
@@ -155,11 +166,7 @@ final class BLERadioService {
         lastAppSetMode = mode
         lastAppSetTime = Date()
         Task {
-            do {
-                try await client.setMode(mode)
-            } catch {
-                // Silently fail — mode may not be supported
-            }
+            try? await client.setMode(mode)
         }
     }
 
@@ -171,14 +178,24 @@ final class BLERadioService {
     /// Update the rig address (from settings)
     func updateRigAddress(_ address: UInt8) {
         UserDefaults.standard.set(Int(address), forKey: Keys.rigAddress)
-        let wasConnected = isConnected
-        if wasConnected {
-            disconnect()
+        reconnectWithNewClient()
+    }
+
+    /// Update the protocol and reconnect if needed.
+    func updateProtocol(_ newProtocol: RigProtocol) {
+        guard newProtocol != rigProtocol else {
+            return
         }
-        recreateClient()
-        if wasConnected {
-            connectToSavedDevice()
+        rigProtocol = newProtocol
+        reconnectWithNewClient()
+    }
+
+    /// Detect protocol from a rig name and update if different.
+    func setProtocolFromRig(_ rigName: String?) {
+        guard let detected = RigProtocolDetector.detect(rigName: rigName) else {
+            return
         }
+        updateProtocol(detected)
     }
 
     // MARK: Private
@@ -187,6 +204,7 @@ final class BLERadioService {
         static let savedDeviceName = "bleRadio.savedDeviceName"
         static let savedDeviceUUID = "bleRadio.savedDeviceUUID"
         static let rigAddress = "bleRadio.rigAddress"
+        static let rigProtocol = "bleRadio.rigProtocol"
     }
 
     private var client = BLERadioClient()
@@ -206,9 +224,24 @@ final class BLERadioService {
         return stored > 0 ? UInt8(stored) : 0xA4
     }
 
-    /// Recreate the client with the current rig address setting
+    /// Recreate the client with current protocol and rig address settings
     private func recreateClient() {
-        client = BLERadioClient(rigAddress: configuredRigAddress)
+        client = BLERadioClient(
+            protocol: rigProtocol,
+            civAddress: configuredRigAddress
+        )
+    }
+
+    /// Disconnect, recreate client, and reconnect if was connected
+    private func reconnectWithNewClient() {
+        let wasConnected = isConnected
+        if wasConnected {
+            disconnect()
+        }
+        recreateClient()
+        if wasConnected {
+            connectToSavedDevice()
+        }
     }
 
     // MARK: - Polling

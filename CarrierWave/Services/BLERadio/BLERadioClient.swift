@@ -1,15 +1,20 @@
-import CarrierWaveCore
 import CoreBluetooth
 import Foundation
 
 // MARK: - BLERadioClient
 
-/// Low-level CoreBluetooth client for BLE radio control via CI-V over Nordic UART Service.
+/// Low-level CoreBluetooth client for BLE radio control over Nordic UART Service.
+/// Supports CI-V (Icom/Xiegu) and Kenwood/Elecraft text protocols.
 actor BLERadioClient {
     // MARK: Lifecycle
 
-    init(rigAddress: UInt8 = 0xA4) {
-        self.rigAddress = rigAddress
+    init(
+        protocol rigProtocol: RigProtocol = .civ,
+        civAddress: UInt8 = 0xA4
+    ) {
+        protocolHandler = RigProtocolHandler(
+            protocol: rigProtocol, civAddress: civAddress
+        )
     }
 
     // MARK: Internal
@@ -44,8 +49,8 @@ actor BLERadioClient {
         let lastSeen: Date
     }
 
-    /// CI-V rig address (default 0xA4 for Xiegu G90)
-    let rigAddress: UInt8
+    /// Protocol handler for encoding/decoding radio commands
+    let protocolHandler: RigProtocolHandler
 
     /// Current connection state
     var currentState: ConnectionState {
@@ -108,66 +113,48 @@ actor BLERadioClient {
         }
     }
 
-    // MARK: - CI-V Commands
+    // MARK: - Radio Commands
 
     /// Read the current frequency from the radio (returns MHz)
     func readFrequency() async throws -> Double {
-        let frame = CIVProtocol.buildFrame(
-            to: rigAddress, command: CIVProtocol.cmdReadFreq
-        )
-        let response = try await sendAndWaitForResponse(
-            frame, expectedCommand: CIVProtocol.cmdReadFreq
-        )
-        guard let hz = CIVProtocol.parseBCDFrequency(response.data) else {
+        let data = protocolHandler.encodeReadFrequency()
+        let tag = protocolHandler.expectedTagForReadFrequency()
+        let response = try await sendAndWaitForResponse(data, expectedTag: tag)
+        guard let mhz = protocolHandler.decodeFrequency(response) else {
             throw BLERadioError.invalidResponse
         }
-        return CIVProtocol.hzToMHz(hz)
+        return mhz
     }
 
     /// Read the current mode from the radio
     func readMode() async throws -> String {
-        let frame = CIVProtocol.buildFrame(
-            to: rigAddress, command: CIVProtocol.cmdReadMode
-        )
-        let response = try await sendAndWaitForResponse(
-            frame, expectedCommand: CIVProtocol.cmdReadMode
-        )
-        guard let modeByte = response.data.first,
-              let civMode = CIVMode(rawValue: modeByte)
-        else {
+        let data = protocolHandler.encodeReadMode()
+        let tag = protocolHandler.expectedTagForReadMode()
+        let response = try await sendAndWaitForResponse(data, expectedTag: tag)
+        guard let mode = protocolHandler.decodeMode(response) else {
             throw BLERadioError.invalidResponse
         }
-        return civMode.carrierWaveMode
+        return mode
     }
 
     /// Set the radio frequency (in MHz)
     func setFrequency(_ mhz: Double) async throws {
-        let hz = CIVProtocol.mhzToHz(mhz)
-        let bcd = CIVProtocol.encodeBCDFrequency(hz)
-        let frame = CIVProtocol.buildFrame(
-            to: rigAddress, command: CIVProtocol.cmdSetFreq, data: bcd
-        )
-        let response = try await sendAndWaitForResponse(
-            frame, expectedCommand: 0xFB
-        )
-        if response.isNak {
+        let data = protocolHandler.encodeSetFrequency(mhz: mhz)
+        let tag = protocolHandler.expectedTagForSetFrequency()
+        let response = try await sendAndWaitForResponse(data, expectedTag: tag)
+        if protocolHandler.isNak(response) {
             throw BLERadioError.commandRejected
         }
     }
 
     /// Set the radio mode
     func setMode(_ mode: String) async throws {
-        guard let civMode = CIVMode.from(carrierWaveMode: mode) else {
+        guard let data = protocolHandler.encodeSetMode(mode) else {
             throw BLERadioError.unsupportedMode(mode)
         }
-        let frame = CIVProtocol.buildFrame(
-            to: rigAddress, command: CIVProtocol.cmdSetMode,
-            data: [civMode.rawValue]
-        )
-        let response = try await sendAndWaitForResponse(
-            frame, expectedCommand: 0xFB
-        )
-        if response.isNak {
+        let tag = protocolHandler.expectedTagForSetMode()
+        let response = try await sendAndWaitForResponse(data, expectedTag: tag)
+        if protocolHandler.isNak(response) {
             throw BLERadioError.commandRejected
         }
     }
@@ -209,13 +196,15 @@ actor BLERadioClient {
 
     func handleReceivedData(_ data: Data) {
         receiveBuffer.append(contentsOf: data)
-        let (frames, consumed) = CIVProtocol.extractFrames(from: receiveBuffer)
+        let (responses, consumed) = protocolHandler.extractResponses(
+            from: receiveBuffer
+        )
         if consumed > 0 {
             receiveBuffer.removeFirst(consumed)
         }
 
-        for frame in frames where frame.to == CIVProtocol.controllerAddress {
-            resumePendingRequest(with: frame)
+        for response in responses {
+            resumePendingRequest(with: response)
         }
     }
 
@@ -226,8 +215,8 @@ actor BLERadioClient {
     // MARK: Private
 
     private struct PendingRequest {
-        let expectedCommand: UInt8
-        let continuation: CheckedContinuation<CIVFrame, Error>
+        let expectedTag: String
+        let continuation: CheckedContinuation<RigResponse, Error>
         let timeoutTask: Task<Void, Never>
     }
 
@@ -268,9 +257,9 @@ actor BLERadioClient {
     }
 
     private func sendAndWaitForResponse(
-        _ frame: [UInt8],
-        expectedCommand: UInt8
-    ) async throws -> CIVFrame {
+        _ data: [UInt8],
+        expectedTag: String
+    ) async throws -> RigResponse {
         guard state == .connected else {
             throw BLERadioError.notConnected
         }
@@ -285,29 +274,29 @@ actor BLERadioClient {
             }
 
             pendingRequest = PendingRequest(
-                expectedCommand: expectedCommand,
+                expectedTag: expectedTag,
                 continuation: continuation,
                 timeoutTask: timeoutTask
             )
 
-            delegate.writeData(Data(frame))
+            delegate.writeData(Data(data))
         }
     }
 
-    private func resumePendingRequest(with frame: CIVFrame) {
+    private func resumePendingRequest(with response: RigResponse) {
         guard let pending = pendingRequest else {
             return
         }
 
-        // Match ACK/NAK or the expected command
-        let matches = frame.isAck || frame.isNak
-            || frame.command == pending.expectedCommand
+        let matches = protocolHandler.responseMatchesTag(
+            response, expectedTag: pending.expectedTag
+        )
 
         if matches {
             pending.timeoutTask.cancel()
             let continuation = pending.continuation
             pendingRequest = nil
-            continuation.resume(returning: frame)
+            continuation.resume(returning: response)
         }
     }
 
@@ -375,7 +364,7 @@ enum BLERadioError: LocalizedError {
         case .timeout: "Radio did not respond"
         case .invalidResponse: "Invalid response from radio"
         case .commandRejected: "Command rejected by radio"
-        case let .unsupportedMode(mode): "Mode '\(mode)' not supported by CI-V"
+        case let .unsupportedMode(mode): "Mode '\(mode)' not supported"
         case .bluetoothOff: "Bluetooth is turned off"
         }
     }

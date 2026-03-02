@@ -5,6 +5,9 @@ All notable changes to Carrier Wave will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Add Kenwood/Elecraft K3 text command protocol for BLE radio control (`;`-terminated ASCII commands)
+- Auto-detect radio protocol from rig name in Logger and Hunter Log (Icom/Xiegu → CI-V, Kenwood/Elecraft → Kenwood)
+- Add manual protocol override picker in BLE Radio settings
 - Add Super Check Partial (SCP) callsign database integration with real-time suggestions, confidence indicator, and did-you-mean typo detection in the logger
 - Add callsign autocomplete suggestions to Hunter Log quick log section
 - Weight callsign suggestions by contact history (most-contacted stations first)
