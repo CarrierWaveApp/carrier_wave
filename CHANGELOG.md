@@ -5,7 +5,7 @@ All notable changes to Carrier Wave will be documented in this file.
 ## [Unreleased]
 
 ### Added
-- Add WWFF (World Wide Flora & Fauna) as a selectable activation program with spot browsing from WWFF Spotline
+- Add WWFF (World Wide Flora & Fauna) as a selectable activation program with spot browsing from WWFF Spotline, reference directory autocomplete with search/nearby picker, and External Data cache management
 - Add Kenwood/Elecraft K3 text command protocol for BLE radio control (`;`-terminated ASCII commands)
 - Auto-detect radio protocol from rig name in Logger and Hunter Log (Icom/Xiegu → CI-V, Kenwood/Elecraft → Kenwood)
 - Add manual protocol override picker in BLE Radio settings

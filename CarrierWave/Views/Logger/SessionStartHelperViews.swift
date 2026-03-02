@@ -180,15 +180,10 @@ struct ActivationSectionView: View {
     }
 
     private var wwffFields: some View {
-        HStack {
-            Text("WWFF Ref")
-            Spacer()
-            TextField("KFF-1234", text: $wwffReference)
-                .multilineTextAlignment(.trailing)
-                .textInputAutocapitalization(.characters)
-                .autocorrectionDisabled()
-                .frame(width: 140)
-        }
+        WWFFReferenceEntryField(
+            wwffReference: $wwffReference,
+            userGrid: userGrid
+        )
     }
 
     private var sotaFields: some View {

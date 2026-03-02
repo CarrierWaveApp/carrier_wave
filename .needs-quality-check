@@ -6,3 +6,4 @@ SCPDatabase.swift, SCPService.swift, SCPSuggestionsView.swift, LoggerView+Data/F
 SCPDatabase.swift, SCPService.swift, CarrierWaveApp.swift: Augment SCP database with user's repeat contacts (2+ QSOs)
 Add WWFF as activation program and spottable spot source: LoggingSession, QSO, ActivityProgramStore, SessionStartSheet, LoggingSessionManager, ADIFParser, FullADIFExportActor, ImportService, SpotsService, ActiveStation, SpotFilterSheet, spot UI views, FetchedQSO, QSOProcessingActor+Merge, CloudSync
 Add WWFFClient + WWFFSpot for Spotline spot fetching, wire into SpotMonitoringService hunter mode, add WWFF spot display in ActivityLogSpotRow
+Add WWFFReferencesCache + WWFFReference + WWFFReferenceEntryField + WWFFReferencePickerSheet + ExternalDataView+WWFFSection for WWFF directory autocomplete, replace plain TextField with rich entry field in SessionStartSheet
