@@ -36,7 +36,9 @@ struct QuickLogSection: View {
                 .padding(.top, 4)
             }
 
-            fieldsRow
+            if showFields {
+                fieldsRow
+            }
 
             // Show quick entry preview if multi-token input
             if !parsedTokens.isEmpty {
@@ -54,9 +56,15 @@ struct QuickLogSection: View {
 
     // MARK: Private
 
+    @AppStorage("hunterLogShowFields") private var showFields = false
     @State private var callsignInput = ""
     @State private var rstSent = ""
     @State private var rstReceived = ""
+    @State private var theirState = ""
+    @State private var theirGrid = ""
+    @State private var theirPark = ""
+    @State private var notes = ""
+    @State private var showMoreFields = false
     @State private var suggestions: [String] = []
     @FocusState private var callsignFocused: Bool
 
@@ -138,17 +146,51 @@ struct QuickLogSection: View {
     // MARK: - Fields Row (matches Logger compactFieldsSection)
 
     private var fieldsRow: some View {
-        HStack(spacing: 8) {
-            compactField(label: "Sent", placeholder: defaultRST, text: $rstSent, width: rstFieldWidth)
-                .keyboardType(.numberPad)
-            compactField(label: "Rcvd", placeholder: defaultRST, text: $rstReceived, width: rstFieldWidth)
-                .keyboardType(.numberPad)
-            Spacer()
-            bandModeLabel
+        VStack(spacing: 8) {
+            HStack(spacing: 8) {
+                compactField(label: "Sent", placeholder: defaultRST, text: $rstSent, width: rstFieldWidth)
+                    .keyboardType(.numberPad)
+                compactField(label: "Rcvd", placeholder: defaultRST, text: $rstReceived, width: rstFieldWidth)
+                    .keyboardType(.numberPad)
+                compactField(label: "QTH", placeholder: "QTH", text: $theirState, width: 50)
+
+                Spacer()
+
+                bandModeLabel
+
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        showMoreFields.toggle()
+                    }
+                } label: {
+                    Image(systemName: showMoreFields ? "chevron.up" : "chevron.down")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 32, height: fieldHeight)
+                        .background(Color(.tertiarySystemGroupedBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
+                .buttonStyle(.plain)
+            }
+
+            if showMoreFields {
+                expandedFields
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
         }
         .padding(12)
         .background(Color(.secondarySystemGroupedBackground))
         .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+
+    private var expandedFields: some View {
+        VStack(spacing: 8) {
+            HStack(spacing: 8) {
+                compactField(label: "Grid", placeholder: "", text: $theirGrid)
+                compactField(label: "Park", placeholder: "", text: $theirPark)
+            }
+            compactField(label: "Notes", placeholder: "", text: $notes)
+        }
     }
 
     private var bandModeLabel: some View {
@@ -249,10 +291,10 @@ struct QuickLogSection: View {
                 data.rstReceived = result.rstReceived ?? effectiveRST(rstReceived)
             }
 
-            data.theirParkReference = result.theirPark
-            data.theirGrid = result.theirGrid
-            data.state = result.state
-            data.notes = result.notes
+            data.theirParkReference = result.theirPark ?? nonEmpty(theirPark)
+            data.theirGrid = result.theirGrid ?? nonEmpty(theirGrid)
+            data.state = result.state ?? nonEmpty(theirState)
+            data.notes = result.notes ?? nonEmpty(notes)
             data.frequency = result.frequency ?? currentFrequency
             data.band = result.band ?? currentFrequency.map {
                 LoggingSession.bandForFrequency($0)
@@ -262,6 +304,10 @@ struct QuickLogSection: View {
             data.callsign = trimmed.uppercased()
             data.rstSent = effectiveRST(rstSent)
             data.rstReceived = effectiveRST(rstReceived)
+            data.theirParkReference = nonEmpty(theirPark)
+            data.theirGrid = nonEmpty(theirGrid)
+            data.state = nonEmpty(theirState)
+            data.notes = nonEmpty(notes)
             data.frequency = currentFrequency
             data.band = currentFrequency.map {
                 LoggingSession.bandForFrequency($0)
@@ -277,6 +323,10 @@ struct QuickLogSection: View {
         callsignInput = ""
         rstSent = ""
         rstReceived = ""
+        theirState = ""
+        theirGrid = ""
+        theirPark = ""
+        notes = ""
     }
 
     private func executeCommand(_ command: LoggerCommand) {
@@ -293,6 +343,11 @@ struct QuickLogSection: View {
 
     private func effectiveRST(_ value: String) -> String {
         value.isEmpty ? defaultRST : value
+    }
+
+    private func nonEmpty(_ value: String) -> String? {
+        let trimmed = value.trimmingCharacters(in: .whitespaces)
+        return trimmed.isEmpty ? nil : trimmed.uppercased()
     }
 }
 

@@ -238,8 +238,10 @@ enum MiniTourContent {
             icon: "text.line.first.and.arrowtriangle.forward",
             title: "Quick Entry",
             body: """
-            Type a callsign and tap Log. Or enter everything in one line: \
-            "AJ7CM 579 WA US-0189" to auto-fill RST, state, and park.
+            Type a callsign and tap Log, or enter everything in one line: \
+            "AJ7CM 579 WA US-0189" to auto-fill RST, state, and park. \
+            Suggestions appear as you type — tap one to fill the callsign. \
+            Expand the fields row for QTH, grid, park, and notes.
             """
         ),
         TourPage(

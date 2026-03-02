@@ -10,6 +10,7 @@ struct ActivityLogSettingsView: View {
     var body: some View {
         Form {
             stationProfilesSection
+            quickLogSection
             spotFilteringSection
             huntedSpotSection
             respotSection
@@ -25,6 +26,7 @@ struct ActivityLogSettingsView: View {
 
     private static let ageOptions = [5, 10, 12, 15, 20, 30]
 
+    @AppStorage("hunterLogShowFields") private var showFields = false
     @AppStorage("huntedSpotBehavior") private var huntedSpotBehaviorRaw = HuntedSpotBehavior.crossOut.rawValue
     @AppStorage("activityLogDailyGoalEnabled") private var dailyGoalEnabled = false
     @AppStorage("activityLogDailyGoal") private var dailyGoal = 10
@@ -51,6 +53,16 @@ struct ActivityLogSettingsView: View {
             return "All"
         }
         return "\(regions.count) of \(SpotRegionGroup.allCases.count)"
+    }
+
+    private var quickLogSection: some View {
+        Section {
+            Toggle("Show Extra Fields", isOn: $showFields)
+        } header: {
+            Text("Quick Log")
+        } footer: {
+            Text("Show RST, QTH, grid, park, and notes fields below the callsign entry.")
+        }
     }
 
     private var spotFilteringSection: some View {

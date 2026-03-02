@@ -10,6 +10,8 @@ All notable changes to Carrier Wave will be documented in this file.
 - Weight callsign suggestions by contact history (most-contacted stations first)
 - Show contact count badges and spot indicators on suggestion pills
 - Add SCP database status section to External Data settings
+- Add expandable QTH, Grid, Park, and Notes fields to Hunter Log quick log (hidden by default, chevron to expand)
+- Add callsign suggestions and expanded fields description to Hunter Log tour
 
 ### Changed
 - Redesign callsign suggestion pills with larger touch targets, tinted backgrounds, and magnifying glass icon
