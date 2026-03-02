@@ -329,7 +329,13 @@ actor WWFFReferencesCache {
     }
 
     private func downloadAndCache() async throws {
-        let (data, response) = try await URLSession.shared.data(
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 120
+        config.timeoutIntervalForResource = 300
+        let session = URLSession(configuration: config)
+        defer { session.invalidateAndCancel() }
+
+        let (tempURL, response) = try await session.download(
             from: Self.csvURL
         )
 
@@ -339,6 +345,7 @@ actor WWFFReferencesCache {
             throw URLError(.badServerResponse)
         }
 
+        let data = try Data(contentsOf: tempURL)
         guard let csvString = String(data: data, encoding: .utf8) else {
             throw URLError(.cannotDecodeContentData)
         }
