@@ -150,19 +150,12 @@ struct ActivationShareCardView: View {
                     coordinate: item.coordinate,
                     anchor: .bottom
                 ) {
-                    Circle()
-                        .fill(
-                            RSTColorHelper.color(
-                                rstSent: item.qso.rstSent,
-                                rstReceived: item.qso.rstReceived
-                            )
+                    MapPinMarker(
+                        color: RSTColorHelper.color(
+                            rstSent: item.qso.rstSent,
+                            rstReceived: item.qso.rstReceived
                         )
-                        .frame(width: 12, height: 12)
-                        .background(
-                            Circle()
-                                .fill(.white)
-                                .frame(width: 20, height: 20)
-                        )
+                    )
                 }
             }
 
@@ -174,7 +167,7 @@ struct ActivationShareCardView: View {
                             from: myCoord, to: item.coordinate
                         )
                     )
-                    .stroke(.blue.opacity(0.6), lineWidth: 1.5)
+                    .stroke(.white.opacity(0.5), lineWidth: 2.5)
                 }
             }
         }

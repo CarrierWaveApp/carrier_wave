@@ -325,20 +325,14 @@ extension SessionDetailView {
                 if let grid = qso.theirGrid,
                    let coord = MaidenheadConverter.coordinate(from: grid)
                 {
-                    Annotation(qso.callsign, coordinate: coord, anchor: .center) {
-                        Circle()
-                            .fill(.green)
-                            .frame(width: 8, height: 8)
-                            .overlay(Circle().stroke(.white, lineWidth: 1))
+                    Annotation(qso.callsign, coordinate: coord, anchor: .bottom) {
+                        MapPinMarker(color: bandColor(qso.band))
                     }
                 }
             }
             if let myCoord {
-                Annotation("Me", coordinate: myCoord, anchor: .center) {
-                    Circle()
-                        .fill(.blue)
-                        .frame(width: 10, height: 10)
-                        .overlay(Circle().stroke(.white, lineWidth: 2))
+                Annotation("Me", coordinate: myCoord, anchor: .bottom) {
+                    MapPinMarker(color: .blue, size: 12)
                 }
                 ForEach(mappable) { qso in
                     if let grid = qso.theirGrid,
@@ -349,12 +343,12 @@ extension SessionDetailView {
                                 from: myCoord, to: theirCoord, segments: 20
                             )
                         )
-                        .stroke(.blue.opacity(0.4), lineWidth: 1.5)
+                        .stroke(.white.opacity(0.5), lineWidth: 2.5)
                     }
                 }
             }
         }
-        .mapStyle(.standard(elevation: .flat))
+        .mapStyle(.standard(elevation: .realistic))
         .allowsHitTesting(false)
     }
 }
