@@ -105,7 +105,8 @@ final class LoggingSessionManager {
         myMic: String? = nil,
         extraEquipment: String? = nil,
         attendees: String? = nil,
-        isRove: Bool = false
+        isRove: Bool = false,
+        autoStartSDR: Bool = false
     ) {
         // Pause any existing session first (keeps it available to resume later)
         if activeSession != nil {
@@ -175,6 +176,11 @@ final class LoggingSessionManager {
 
         writeSessionToWidget(session)
         startLiveActivity()
+
+        // Auto-start WebSDR if requested
+        if autoStartSDR {
+            autoStartWebSDR(session: session)
+        }
     }
 
     /// Advance to the next park stop in a rove session
@@ -299,6 +305,54 @@ final class LoggingSessionManager {
         } catch {
             clearActiveSessionId()
             liveActivityService.cleanupStale()
+        }
+    }
+
+    /// Auto-connect to the last-used KiwiSDR receiver when starting a session.
+    private func autoStartWebSDR(session: LoggingSession) {
+        let hostPort = UserDefaults.standard.string(forKey: "sdrLastReceiverHostPort") ?? ""
+        guard !hostPort.isEmpty else {
+            return
+        }
+
+        let parts = hostPort.split(separator: ":", maxSplits: 1)
+        guard parts.count == 2,
+              let port = Int(parts[1])
+        else {
+            return
+        }
+
+        let host = String(parts[0])
+        let name = UserDefaults.standard.string(forKey: "sdrLastReceiverName") ?? hostPort
+
+        let receiver = KiwiSDRReceiver(
+            id: hostPort,
+            name: name,
+            host: host,
+            port: port,
+            latitude: 0,
+            longitude: 0,
+            bands: "",
+            users: 0,
+            maxUsers: 1,
+            location: "",
+            antenna: ""
+        )
+
+        guard let freq = session.frequency else {
+            return
+        }
+        let mode = session.mode
+        let sessionId = session.id
+
+        Task {
+            await webSDRSession.start(
+                receiver: receiver,
+                frequencyMHz: freq,
+                mode: mode,
+                loggingSessionId: sessionId,
+                modelContext: modelContext
+            )
         }
     }
 

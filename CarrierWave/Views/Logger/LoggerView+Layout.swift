@@ -171,6 +171,17 @@ extension LoggerView {
                 }
             }
         }
+        .onChange(of: sessionManager?.webSDRSession.state) { oldState, newState in
+            // Auto-show WebSDR panel when SDR starts connecting
+            guard let newState else {
+                return
+            }
+            let wasInactive = oldState == nil || oldState == .idle
+            let nowActive = newState == .connecting || newState == .recording
+            if wasInactive, nowActive {
+                showWebSDRPanel = true
+            }
+        }
     }
 
     // MARK: - Panel Overlays

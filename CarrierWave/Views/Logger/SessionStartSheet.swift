@@ -53,6 +53,12 @@ struct SessionStartSheet: View {
     @AppStorage("loggerDefaultKey") var defaultKey = ""
     @AppStorage("loggerDefaultMic") var defaultMic = ""
 
+    // SDR auto-start
+    @AppStorage("sdrAutoStart") var sdrAutoStart = false
+    @AppStorage("sdrLastReceiverHostPort") var sdrLastReceiverHostPort = ""
+    @AppStorage("sdrLastReceiverName") var sdrLastReceiverName = ""
+    @State var showSDRPicker = false
+
     /// UI state
     @State var showSavedConfirmation = false
     @State var showBandPlanSheet = false
@@ -110,6 +116,7 @@ struct SessionStartSheet: View {
                 powerSection
                 equipmentSection
                 activationSection
+                sdrSection
                 attendeesSection
                 notesSection
                 optionsSection
@@ -188,6 +195,18 @@ struct SessionStartSheet: View {
                 EquipmentPickerSheet(
                     equipmentType: .mic, selection: $selectedMic
                 )
+                .landscapeAdaptiveDetents(portrait: [.medium, .large])
+            }
+            .sheet(isPresented: $showSDRPicker) {
+                WebSDRPickerSheet(
+                    myGrid: myGrid.isEmpty ? defaultGrid : myGrid,
+                    operatingBand: parsedFrequency.flatMap { BandUtilities.deriveBand(from: $0 * 1_000) }
+                ) { receiver in
+                    sdrLastReceiverHostPort = "\(receiver.host):\(receiver.port)"
+                    sdrLastReceiverName = receiver.name
+                    sdrAutoStart = true
+                    showSDRPicker = false
+                }
                 .landscapeAdaptiveDetents(portrait: [.medium, .large])
             }
             .navigationTitle("Start Session")
@@ -277,7 +296,8 @@ extension SessionStartSheet {
             myMic: ["SSB", "USB", "LSB", "AM", "FM"].contains(selectedMode) ? selectedMic : nil,
             extraEquipment: trimmedEquipment.isEmpty ? nil : trimmedEquipment,
             attendees: trimmedAttendees.isEmpty ? nil : trimmedAttendees,
-            isRove: isRove
+            isRove: isRove,
+            autoStartSDR: sdrAutoStart && !sdrLastReceiverHostPort.isEmpty
         )
 
         // Store initial notes if provided

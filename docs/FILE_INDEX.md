@@ -184,6 +184,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `WWFFClient.swift` | WWFF Spotline API actor for fetching active spots from spots.wwff.co |
 | `WWFFReferencesCache.swift` | WWFF reference directory cache (30-day TTL, full-text search, nearby lookup) |
 | `WWFFReferencesCache+Parsing.swift` | WWFF CSV parsing, name index building, and distance utilities |
+| `ProgramCrossReferenceService.swift` | Cross-reference matching between POTA/WWFF/SOTA (number + name matching) |
 | `POTAAuthService.swift` | POTA OAuth flow handling (main service) |
 | `POTAAuthService+JavaScript.swift` | JavaScript helpers for POTA WebView auth |
 | `POTAAuthService+HeadlessAuth.swift` | Headless authentication with stored credentials |
@@ -513,6 +514,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `SessionStartSheet+Equipment.swift` | Equipment, attendees, and notes sections for session start |
 | `EquipmentPickerSheet.swift` | Generic equipment picker (antenna, key, mic) with user-managed list |
 | `SessionStartHelperViews.swift` | Helper views and validation for session start (CallsignBreakdown, ActivationSection, FrequencySuggestions) |
+| `CrossReferenceSuggestionView.swift` | Suggestion chip for cross-program reference matching (POTA/WWFF/SOTA) |
 | `LiveActivitySuggestionsView.swift` | Unified FrequencyBandView: static band frequencies + live POTA spots + nestled clear-frequency recommendations |
 | `BandPlanSheet.swift` | Interactive band plan reference with visual chart, segments, license requirements, and activities |
 | `BandChartView.swift` | Visual ARRL-style band allocation chart with license class and mode zone display |

@@ -417,6 +417,13 @@ extension WebSDRSession {
             reconnectAttempts = 0
             state = .recording
 
+            // Save last-used receiver for SDR auto-start
+            UserDefaults.standard.set(
+                "\(receiver.host):\(receiver.port)",
+                forKey: "sdrLastReceiverHostPort"
+            )
+            UserDefaults.standard.set(receiver.name, forKey: "sdrLastReceiverName")
+
             streamTask = Task { [weak self] in
                 await self?.processAudioStream(audioStream)
             }

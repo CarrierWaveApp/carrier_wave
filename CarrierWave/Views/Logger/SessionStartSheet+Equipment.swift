@@ -112,6 +112,113 @@ extension SessionStartSheet {
         }
     }
 
+    var sdrSection: some View {
+        Section {
+            sdrReceiverButton
+            if sdrAutoStart, !sdrLastReceiverHostPort.isEmpty {
+                sdrAutoStartCard
+            }
+        } header: {
+            Text("WebSDR")
+        } footer: {
+            if frequency.isEmpty {
+                Text("Enter a frequency above to select a WebSDR receiver")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var sdrReceiverButton: some View {
+        if frequency.isEmpty {
+            // Disabled state — no frequency entered
+            HStack {
+                Label {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Choose Receiver")
+                            .font(.subheadline.weight(.medium))
+                        Text("Requires a frequency")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                    }
+                } icon: {
+                    Image(systemName: "antenna.radiowaves.left.and.right.slash")
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+            }
+            .foregroundStyle(.secondary)
+        } else {
+            Button {
+                showSDRPicker = true
+            } label: {
+                HStack {
+                    Label {
+                        VStack(alignment: .leading, spacing: 2) {
+                            if sdrAutoStart, !sdrLastReceiverHostPort.isEmpty {
+                                Text(sdrReceiverDisplayName)
+                                    .font(.subheadline.weight(.medium))
+                                    .lineLimit(1)
+                                Text("Auto-start enabled")
+                                    .font(.caption)
+                                    .foregroundStyle(.green)
+                            } else {
+                                Text("Choose Receiver")
+                                    .font(.subheadline.weight(.medium))
+                                Text("None selected")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    } icon: {
+                        Image(systemName: "antenna.radiowaves.left.and.right")
+                            .foregroundStyle(
+                                sdrAutoStart ? .blue : .secondary
+                            )
+                    }
+                    Spacer()
+                    if sdrAutoStart {
+                        Button {
+                            sdrAutoStart = false
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundStyle(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Remove SDR receiver")
+                    }
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                }
+            }
+        }
+    }
+
+    private var sdrReceiverDisplayName: String {
+        sdrLastReceiverName.isEmpty ? sdrLastReceiverHostPort : sdrLastReceiverName
+    }
+
+    private var sdrAutoStartCard: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "antenna.radiowaves.left.and.right")
+                .foregroundStyle(.blue)
+                .font(.title3)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text("SDR will auto-connect")
+                    .font(.subheadline.weight(.semibold))
+                Text("Recording starts from \(sdrReceiverDisplayName) when the session begins.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding()
+        .background(Color.blue.opacity(0.15))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+    }
+
     var attendeesSection: some View {
         Section {
             TextField("e.g. KI7QCF, N0CALL", text: $attendeesText)

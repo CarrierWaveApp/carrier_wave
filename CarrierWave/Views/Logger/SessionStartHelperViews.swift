@@ -108,12 +108,15 @@ struct ActivationSectionView: View {
             programChips
             if selectedPrograms.contains("pota") {
                 potaFields
+                crossReferenceSuggestions(for: "pota")
             }
             if selectedPrograms.contains("wwff") {
                 wwffFields
+                crossReferenceSuggestions(for: "wwff")
             }
             if selectedPrograms.contains("sota") {
                 sotaFields
+                crossReferenceSuggestions(for: "sota")
             }
             if selectedPrograms.contains("aoa") {
                 aoaFields
@@ -125,9 +128,24 @@ struct ActivationSectionView: View {
                 Text("No program selected — casual session")
             }
         }
+        .task(id: crossReferenceKey) {
+            await computeCrossReferences()
+        }
     }
 
     // MARK: Private
+
+    // MARK: - Cross-Reference Suggestions
+
+    @State private var suggestions: [ProgramCrossReferenceService.Suggestion] = []
+    @State private var dismissedPrograms: Set<String> = []
+
+    private let crossRefService = ProgramCrossReferenceService()
+
+    /// Key that triggers cross-reference recomputation when references change
+    private var crossReferenceKey: String {
+        "\(parkReference)|\(wwffReference)|\(sotaReference)|\(selectedPrograms.sorted())"
+    }
 
     private var programChips: some View {
         HStack(spacing: 8) {
@@ -205,6 +223,29 @@ struct ActivationSectionView: View {
         }
     }
 
+    @ViewBuilder
+    private func crossReferenceSuggestions(for program: String) -> some View {
+        let relevant = suggestions.filter { suggestion in
+            // Show suggestions generated from this program's reference
+            !dismissedPrograms.contains(suggestion.program)
+                && !selectedPrograms.contains(suggestion.program)
+        }
+        ForEach(relevant) { suggestion in
+            CrossReferenceSuggestionView(
+                suggestion: suggestion,
+                onAdd: {
+                    applySuggestion(suggestion)
+                },
+                onDismiss: {
+                    _ = withAnimation(Animation.easeOut(duration: 0.2)) {
+                        dismissedPrograms.insert(suggestion.program)
+                    }
+                }
+            )
+            .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+        }
+    }
+
     private func toggleProgram(_ slug: String) {
         withAnimation(.easeInOut(duration: 0.2)) {
             if selectedPrograms.contains(slug) {
@@ -217,6 +258,51 @@ struct ActivationSectionView: View {
         if slug == "pota", !selectedPrograms.contains("pota") {
             isRove = false
         }
+    }
+
+    private func computeCrossReferences() async {
+        var all: [ProgramCrossReferenceService.Suggestion] = []
+        if selectedPrograms.contains("pota"), !parkReference.isEmpty {
+            let matches = await crossRefService.findMatches(
+                for: parkReference, program: "pota",
+                activePrograms: selectedPrograms
+            )
+            all += matches
+        }
+        if selectedPrograms.contains("wwff"), !wwffReference.isEmpty {
+            let matches = await crossRefService.findMatches(
+                for: wwffReference, program: "wwff",
+                activePrograms: selectedPrograms
+            )
+            all += matches
+        }
+        if selectedPrograms.contains("sota"), !sotaReference.isEmpty {
+            let matches = await crossRefService.findMatches(
+                for: sotaReference, program: "sota",
+                activePrograms: selectedPrograms
+            )
+            all += matches
+        }
+        suggestions = all
+    }
+
+    private func applySuggestion(
+        _ suggestion: ProgramCrossReferenceService.Suggestion
+    ) {
+        _ = withAnimation(Animation.easeInOut(duration: 0.2)) {
+            selectedPrograms.insert(suggestion.program)
+        }
+        switch suggestion.program {
+        case "pota":
+            parkReference = suggestion.reference
+        case "wwff":
+            wwffReference = suggestion.reference
+        case "sota":
+            sotaReference = suggestion.reference
+        default:
+            break
+        }
+        dismissedPrograms.insert(suggestion.program)
     }
 }
 

@@ -5,6 +5,8 @@ All notable changes to Carrier Wave will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Add cross-reference suggestions in session start wizard — selecting a POTA park suggests matching WWFF/SOTA references (and vice versa) via number and name matching
+- Add SDR auto-start option — saves last-used KiwiSDR receiver and offers a toggle to auto-connect when starting a new session
 - Add WWFF (World Wide Flora & Fauna) as a selectable activation program with spot browsing from WWFF Spotline, reference directory autocomplete with search/nearby picker, and External Data cache management
 - Add Kenwood/Elecraft K3 text command protocol for BLE radio control (`;`-terminated ASCII commands)
 - Auto-detect radio protocol from rig name in Logger and Hunter Log (Icom/Xiegu → CI-V, Kenwood/Elecraft → Kenwood)

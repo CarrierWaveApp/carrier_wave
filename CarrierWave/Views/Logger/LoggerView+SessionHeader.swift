@@ -177,6 +177,9 @@ extension LoggerView {
 
                 equipmentCapsule(session)
 
+                // SDR status pill (always visible when active)
+                sdrTitleBarPill
+
                 // Inline WebSDR recording badge (visible when panel is closed)
                 if let manager = sessionManager,
                    !showWebSDRPanel,
@@ -295,6 +298,35 @@ extension LoggerView {
     func hasAnyEquipment(_ session: LoggingSession) -> Bool {
         [session.myRig, session.myAntenna, session.myKey, session.myMic]
             .contains { $0 != nil && !$0!.isEmpty }
+    }
+
+    /// SDR status pill for the title bar (always visible when SDR is active)
+    @ViewBuilder
+    var sdrTitleBarPill: some View {
+        if let manager = sessionManager,
+           manager.webSDRSession.state.isActive
+        {
+            Button {
+                showWebSDRPanel = true
+            } label: {
+                HStack(spacing: 3) {
+                    Image(systemName: manager.webSDRSession.state.statusIcon)
+                        .font(.system(size: 8))
+                        .foregroundStyle(.red)
+                        .symbolEffect(
+                            .pulse,
+                            isActive: manager.webSDRSession.state == .recording
+                        )
+                    Text("SDR")
+                        .font(.caption2.weight(.medium))
+                }
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(.red.opacity(0.15))
+                .clipShape(Capsule())
+            }
+            .buttonStyle(.plain)
+        }
     }
 
     /// Compact inline WebSDR recording badge for the session controls bar
