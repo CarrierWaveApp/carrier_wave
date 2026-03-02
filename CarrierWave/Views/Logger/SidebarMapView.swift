@@ -189,7 +189,12 @@ struct SidebarMapView: View {
             coordinate: coordinate,
             anchor: .bottom
         ) {
-            MapPinMarker(color: bandColor(qso.band))
+            MapPinMarker(
+                color: RSTColorHelper.color(
+                    rstSent: qso.rstSent,
+                    rstReceived: qso.rstReceived
+                )
+            )
         }
     }
 

@@ -184,8 +184,8 @@ enum ActivationShareRenderer {
 
         // Draw geodesic paths from my location to each QSO
         if let myCoord = myCoordinate {
-            context.setStrokeColor(UIColor.systemBlue.withAlphaComponent(0.6).cgColor)
-            context.setLineWidth(2.0)
+            context.setStrokeColor(UIColor.white.withAlphaComponent(0.5).cgColor)
+            context.setLineWidth(2.5)
 
             for marker in markers {
                 let path = ActivationMapHelpers.geodesicPath(
@@ -216,28 +216,32 @@ enum ActivationShareRenderer {
     }
 
     private static func drawMarker(at point: CGPoint, in context: CGContext, color: UIColor) {
-        let markerSize: CGFloat = 12
+        let headRadius: CGFloat = 4.5
+        let pinHeight: CGFloat = 14
 
-        // White background circle
-        context.setFillColor(UIColor.white.cgColor)
+        // Pin tip is at `point`; head is above
+        let tipY = point.y
+        let headCenterY = tipY - pinHeight + headRadius
+
+        // Draw the stem
+        context.saveGState()
+        context.setStrokeColor(color.withAlphaComponent(0.7).cgColor)
+        context.setLineWidth(1.5)
+        context.setLineCap(.round)
+        context.move(to: CGPoint(x: point.x, y: tipY))
+        context.addLine(to: CGPoint(x: point.x, y: headCenterY + headRadius))
+        context.strokePath()
+
+        // Draw the head circle
+        context.setFillColor(color.withAlphaComponent(0.8).cgColor)
         context.fillEllipse(
             in: CGRect(
-                x: point.x - markerSize / 2 - 2,
-                y: point.y - markerSize / 2 - 2,
-                width: markerSize + 4,
-                height: markerSize + 4
+                x: point.x - headRadius,
+                y: headCenterY - headRadius,
+                width: headRadius * 2,
+                height: headRadius * 2
             )
         )
-
-        // Colored marker
-        context.setFillColor(color.cgColor)
-        context.fillEllipse(
-            in: CGRect(
-                x: point.x - markerSize / 2,
-                y: point.y - markerSize / 2,
-                width: markerSize,
-                height: markerSize
-            )
-        )
+        context.restoreGState()
     }
 }

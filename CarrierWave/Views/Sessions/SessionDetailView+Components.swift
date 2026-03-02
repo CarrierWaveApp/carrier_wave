@@ -326,7 +326,12 @@ extension SessionDetailView {
                    let coord = MaidenheadConverter.coordinate(from: grid)
                 {
                     Annotation(qso.callsign, coordinate: coord, anchor: .bottom) {
-                        MapPinMarker(color: bandColor(qso.band))
+                        MapPinMarker(
+                            color: RSTColorHelper.color(
+                                rstSent: qso.rstSent,
+                                rstReceived: qso.rstReceived
+                            )
+                        )
                     }
                 }
             }
