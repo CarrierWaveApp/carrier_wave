@@ -33,6 +33,7 @@ All notable changes to Carrier Wave will be documented in this file.
 - Receiver quality monitoring — suggests switching to a better KiwiSDR when SNR degrades
 - Follow activator — bell toggle to track callsigns across sessions (persisted to UserDefaults)
 - Design document for full Tune In feature roadmap (docs/features/tune-in.md)
+- Add recommended club notes section to Callsign Notes settings — shows clubs with notes files the user hasn't added yet, with one-tap add
 
 ## [1.52.0] - 2026-03-03
 

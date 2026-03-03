@@ -6,6 +6,18 @@
 import SwiftData
 import SwiftUI
 
+// MARK: - RecommendedClubNotes
+
+private struct RecommendedClubNotes: Identifiable {
+    let club: Club
+    let notesURL: String
+    let notesTitle: String
+
+    var id: UUID {
+        club.serverId
+    }
+}
+
 // MARK: - CallsignNotesSettingsView
 
 struct CallsignNotesSettingsView: View {
@@ -13,6 +25,10 @@ struct CallsignNotesSettingsView: View {
 
     var body: some View {
         List {
+            if !recommendedClubs.isEmpty {
+                recommendedSection
+            }
+
             if sources.isEmpty {
                 emptySection
             } else {
@@ -20,6 +36,9 @@ struct CallsignNotesSettingsView: View {
             }
 
             addSection
+        }
+        .task {
+            loadRecommendations()
         }
         .navigationTitle("Callsign Notes")
         .sheet(isPresented: $showAddSheet) {
@@ -44,6 +63,7 @@ struct CallsignNotesSettingsView: View {
     @State private var showError = false
     @State private var errorMessage = ""
     @State private var isRefreshing = false
+    @State private var recommendedClubs: [RecommendedClubNotes] = []
 
     // MARK: - Sections
 
@@ -103,6 +123,39 @@ struct CallsignNotesSettingsView: View {
                 }
                 .disabled(isRefreshing)
             }
+        }
+    }
+
+    // MARK: - Recommended Section
+
+    private var recommendedSection: some View {
+        Section {
+            ForEach(recommendedClubs) { rec in
+                recommendedRow(rec)
+            }
+        } header: {
+            Text("Recommended")
+        }
+    }
+
+    private func recommendedRow(_ rec: RecommendedClubNotes) -> some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(rec.notesTitle)
+                    .font(.body)
+                if rec.notesTitle != rec.club.name {
+                    Text(rec.club.name)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            Spacer()
+            Button("Add") {
+                addSource(title: rec.notesTitle, url: rec.notesURL)
+                recommendedClubs.removeAll { $0.id == rec.id }
+            }
+            .buttonStyle(.bordered)
+            .tint(.accentColor)
         }
     }
 
@@ -177,6 +230,24 @@ struct CallsignNotesSettingsView: View {
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
+        }
+    }
+
+    private func loadRecommendations() {
+        let descriptor = FetchDescriptor<Club>(
+            predicate: #Predicate<Club> { $0.notesURL != nil }
+        )
+        guard let clubs = try? modelContext.fetch(descriptor) else {
+            return
+        }
+
+        let existingURLs = Set(sources.map(\.url))
+        recommendedClubs = clubs.compactMap { club in
+            guard let url = club.notesURL, !existingURLs.contains(url) else {
+                return nil
+            }
+            let title = club.notesTitle ?? club.name
+            return RecommendedClubNotes(club: club, notesURL: url, notesTitle: title)
         }
     }
 
