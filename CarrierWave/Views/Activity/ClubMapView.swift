@@ -1,4 +1,5 @@
 import MapKit
+import SwiftData
 import SwiftUI
 
 // MARK: - ClubMapView
