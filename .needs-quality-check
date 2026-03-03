@@ -1,0 +1,4 @@
+Fix hunter log setup: moved .miniTour to active card only to prevent sheet conflict with setup button
+Pre-fill default profile from existing session data (radio, power) in ActivityLogSetupSheet.loadDefaults()
+Replace antenna TextField with EquipmentPickerSheet in AddEditProfileSheet and ActivityLogSetupSheet
+Add key and mic fields to StationProfile model and both profile editor sheets
