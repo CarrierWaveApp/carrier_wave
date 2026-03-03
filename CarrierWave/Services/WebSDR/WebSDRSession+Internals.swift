@@ -52,6 +52,9 @@ extension WebSDRSession {
             // Feed audio engine immediately for low-latency playback
             audioEngine?.write(frame.samples)
 
+            // Forward to CW decoder if attached (Tune In transcription)
+            onAudioFrame?(frame.samples)
+
             // Update UI directly (already on @MainActor)
             sMeter = frame.sMeter
             peakLevel = computePeakLevel(frame.samples)

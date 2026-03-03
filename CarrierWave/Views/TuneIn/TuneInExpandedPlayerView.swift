@@ -20,6 +20,9 @@ struct TuneInExpandedPlayerView: View {
                         spotHeader(spot)
                         receiverCard
                         audioSection
+                        if manager.isCWMode {
+                            cwTranscriptSection
+                        }
                         actionButtons
                     }
                 }
@@ -216,6 +219,87 @@ struct TuneInExpandedPlayerView: View {
         if level > 0.8 { return .red }
         if level > 0.5 { return .yellow }
         return .green
+    }
+
+    // MARK: - CW Transcript
+
+    private var cwTranscriptSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Label("CW Transcript", systemImage: "waveform")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.secondary)
+                Spacer()
+                cwTranscriptStatus
+            }
+
+            let cw = manager.cwTranscription
+            if cw.conversation.isEmpty, cw.currentLine.isEmpty {
+                cwEmptyState
+            } else {
+                CWChatView(
+                    conversation: cw.conversation,
+                    callsignLookup: nil
+                )
+                .frame(minHeight: 150, maxHeight: 300)
+            }
+
+            // Detected callsigns
+            if !manager.cwTranscription.detectedCallsigns.isEmpty {
+                detectedCallsignsPills
+            }
+        }
+        .padding()
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+
+    @ViewBuilder
+    private var cwTranscriptStatus: some View {
+        let cw = manager.cwTranscription
+        if cw.isListening {
+            HStack(spacing: 4) {
+                Circle()
+                    .fill(.green)
+                    .frame(width: 6, height: 6)
+                Text("\(cw.estimatedWPM) WPM")
+                    .font(.caption.monospaced())
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private var cwEmptyState: some View {
+        VStack(spacing: 8) {
+            Image(systemName: "waveform")
+                .font(.title2)
+                .foregroundStyle(.secondary)
+            Text("Listening for CW...")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            Text("Decoded Morse will appear here")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+        }
+        .frame(maxWidth: .infinity, minHeight: 100)
+    }
+
+    private var detectedCallsignsPills: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 6) {
+                ForEach(
+                    manager.cwTranscription.detectedCallsigns,
+                    id: \.self
+                ) { callsign in
+                    Text(callsign)
+                        .font(.caption.weight(.medium).monospaced())
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.blue.opacity(0.15))
+                        .clipShape(Capsule())
+                }
+            }
+        }
     }
 
     // MARK: - Action Buttons

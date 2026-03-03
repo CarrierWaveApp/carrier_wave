@@ -76,6 +76,14 @@ final class TuneInManager {
     /// The underlying WebSDR session (exposes state, peakLevel, sMeter, etc.)
     let session = WebSDRSession()
 
+    /// CW transcription service (active when tuned to a CW spot)
+    let cwTranscription = CWTranscriptionService()
+
+    /// Whether CW transcription is available (mode is CW)
+    var isCWMode: Bool {
+        spot?.mode.uppercased() == "CW"
+    }
+
     // MARK: - Tune In
 
     /// Start listening to a spot. Auto-selects the best receiver.
@@ -111,6 +119,7 @@ final class TuneInManager {
 
     /// Stop listening and tear down the session
     func stop() async {
+        await stopCWTranscription()
         await session.finalize()
         spot = nil
         showExpandedPlayer = false
@@ -145,12 +154,15 @@ final class TuneInManager {
 
     private static let cellularWarningDismissedKey = "tuneInCellularWarningDismissed"
 
+    private var cwFrameContinuation: AsyncStream<[Int16]>.Continuation?
+
     private func performTuneIn(
         spot: TuneInSpot,
         modelContext: ModelContext
     ) async {
         // Stop any existing session
         if isActive {
+            await stopCWTranscription()
             await session.finalize()
         }
 
@@ -159,6 +171,11 @@ final class TuneInManager {
         guard let receiver = await selectReceiver(for: spot) else {
             session.state = .error("No receivers available")
             return
+        }
+
+        // Wire up CW transcription for CW mode
+        if spot.mode.uppercased() == "CW" {
+            setupCWTranscription()
         }
 
         // Use a standalone session ID (not tied to a logging session)
@@ -171,6 +188,33 @@ final class TuneInManager {
             loggingSessionId: standaloneId,
             modelContext: modelContext
         )
+    }
+
+    private func setupCWTranscription() {
+        // Create an async stream that bridges audio frames to the CW decoder
+        let (stream, continuation) = AsyncStream<[Int16]>.makeStream()
+        cwFrameContinuation = continuation
+
+        // Hook into the WebSDR session's audio frame callback
+        session.onAudioFrame = { [weak self] samples in
+            self?.cwFrameContinuation?.yield(samples)
+        }
+
+        // Start the CW decoder on the SDR audio stream
+        Task {
+            await cwTranscription.startListeningToSDR(
+                frames: stream,
+                sampleRate: session.lastSampleRate
+            )
+        }
+    }
+
+    private func stopCWTranscription() async {
+        session.onAudioFrame = nil
+        cwFrameContinuation?.finish()
+        cwFrameContinuation = nil
+        cwTranscription.stopListening()
+        cwTranscription.clearTranscript()
     }
 
     private func shouldShowCellularWarning() -> Bool {

@@ -114,6 +114,9 @@ final class WebSDRSession {
     var effectivePort: Int?
     var dormantTimeoutTask: Task<Void, Never>?
 
+    /// Optional callback for audio frames — used by TuneInManager to feed CW decoder
+    var onAudioFrame: (([Int16]) -> Void)?
+
     /// Accumulated parameter change events for the current recording
     var parameterChanges: [SDRParameterEvent] = []
 

@@ -289,6 +289,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `MorseDecoder.swift` | Timing state machine for dit/dah classification, adaptive WPM |
 | `CWTranscriptionService.swift` | CW transcription service: state, properties, public API (start/stop/clear/copy) |
 | `CWTranscriptionService+Decoder.swift` | Audio processing, signal decoding, transcript assembly, callsign detection |
+| `CWTranscriptionService+SDR.swift` | WebSDR audio input adapter: converts Int16 KiwiSDR frames to CW decoder pipeline |
 | `CWConversationTracker.swift` | Track CW conversation turns via frequency and prosign analysis |
 | `PoloNotesParser.swift` | Parse Ham2K Polo notes list files for callsign info |
 | `CallsignLookupService.swift` | Two-tier callsign lookup: error/result types, core lookup logic, cache management |

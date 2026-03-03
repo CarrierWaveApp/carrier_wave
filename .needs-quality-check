@@ -6,3 +6,8 @@ ActivityLogSpotsList.swift - Added context menu "Tune In" action on hunter log s
 POTASpotsView+Clubs.swift - Added context menu "Tune In" action on logger POTA spot rows
 SidebarPOTASpotsView+Clubs.swift - Added context menu "Tune In" action on sidebar POTA spot rows
 ContentView.swift - Integrated mini player via safeAreaInset and cellular alert on both iPhone and iPad navigation
+CWTranscriptionService+SDR.swift - New extension: WebSDR audio input adapter (Int16 to Float conversion, SDR stream processing)
+TuneInManager.swift - Added CW transcription wiring: onAudioFrame callback, async stream bridge, auto-start for CW mode
+TuneInExpandedPlayerView.swift - Added CW transcript section with chat bubble view, WPM status, detected callsign pills
+WebSDRSession.swift - Added onAudioFrame callback property
+WebSDRSession+Internals.swift - Forward audio frames via onAudioFrame callback in processAudioStream
