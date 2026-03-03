@@ -37,7 +37,7 @@ struct CallsignNotesSettingsView: View {
 
             addSection
         }
-        .task {
+        .task(id: sources.map(\.url).sorted().joined()) {
             loadRecommendations()
         }
         .navigationTitle("Callsign Notes")
@@ -155,7 +155,6 @@ struct CallsignNotesSettingsView: View {
                 recommendedClubs.removeAll { $0.id == rec.id }
             }
             .buttonStyle(.bordered)
-            .tint(.accentColor)
         }
     }
 
