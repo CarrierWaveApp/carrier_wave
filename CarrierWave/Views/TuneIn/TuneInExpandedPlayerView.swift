@@ -24,9 +24,6 @@ struct TuneInExpandedPlayerView: View {
                         receiverSuggestionBanner
                         receiverCard
                         audioSection
-                        if manager.isCWMode {
-                            cwTranscriptSection
-                        }
                         actionButtons
                     }
                 }
@@ -48,65 +45,24 @@ struct TuneInExpandedPlayerView: View {
         }
     }
 
-    // MARK: - Spot Header
+    // MARK: Private
 
-    private func spotHeader(_ spot: TuneInSpot) -> some View {
-        VStack(spacing: 6) {
-            HStack {
-                Text(spot.callsign)
-                    .font(.title2.weight(.bold).monospaced())
-                followButton(spot.callsign)
-                Spacer()
-                sessionStatus
-            }
-
-            if let parkRef = spot.parkRef {
-                HStack(spacing: 4) {
-                    Image(systemName: "tree.fill")
-                        .foregroundStyle(.green)
-                    Text(parkRef)
-                        .fontWeight(.medium)
-                    if let parkName = spot.parkName {
-                        Text(parkName)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                    }
-                    Spacer()
-                }
-                .font(.subheadline)
-            } else if let summitCode = spot.summitCode {
-                HStack(spacing: 4) {
-                    Image(systemName: "mountain.2.fill")
-                        .foregroundStyle(.brown)
-                    Text(summitCode)
-                        .fontWeight(.medium)
-                    if let summitName = spot.summitName {
-                        Text(summitName)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                    }
-                    Spacer()
-                }
-                .font(.subheadline)
-            }
-
-            HStack(spacing: 8) {
-                Text(FrequencyFormatter.format(spot.frequencyMHz) + " MHz")
-                    .font(.subheadline.monospaced())
-                Text(spot.mode)
-                    .font(.subheadline)
-                Text(spot.band)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                Spacer()
-            }
+    private var levelColor: Color {
+        let level = manager.session.peakLevel
+        if level > 0.8 {
+            return .red
         }
-        .padding()
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        if level > 0.5 {
+            return .yellow
+        }
+        return .green
     }
 
-    @ViewBuilder
+    /// Clip bookmarks collected so far in this session
+    private var clipCount: Int {
+        manager.session.clipBookmarks.count
+    }
+
     private var sessionStatus: some View {
         HStack(spacing: 4) {
             Circle()
@@ -214,98 +170,12 @@ struct TuneInExpandedPlayerView: View {
         }
         .frame(height: 6)
     }
+}
 
-    private var levelColor: Color {
-        let level = manager.session.peakLevel
-        if level > 0.8 { return .red }
-        if level > 0.5 { return .yellow }
-        return .green
-    }
+// MARK: - Action Buttons & Spot Header
 
-    // MARK: - CW Transcript
-
-    private var cwTranscriptSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Label("CW Transcript", systemImage: "waveform")
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(.secondary)
-                Spacer()
-                cwTranscriptStatus
-            }
-
-            let cw = manager.cwTranscription
-            if cw.conversation.isEmpty, cw.currentLine.isEmpty {
-                cwEmptyState
-            } else {
-                CWChatView(
-                    conversation: cw.conversation,
-                    callsignLookup: nil
-                )
-                .frame(minHeight: 150, maxHeight: 300)
-            }
-
-            // Detected callsigns
-            if !manager.cwTranscription.detectedCallsigns.isEmpty {
-                detectedCallsignsPills
-            }
-        }
-        .padding()
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-    }
-
-    @ViewBuilder
-    private var cwTranscriptStatus: some View {
-        let cw = manager.cwTranscription
-        if cw.isListening {
-            HStack(spacing: 4) {
-                Circle()
-                    .fill(.green)
-                    .frame(width: 6, height: 6)
-                Text("\(cw.estimatedWPM) WPM")
-                    .font(.caption.monospaced())
-                    .foregroundStyle(.secondary)
-            }
-        }
-    }
-
-    private var cwEmptyState: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "waveform")
-                .font(.title2)
-                .foregroundStyle(.secondary)
-            Text("Listening for CW...")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-            Text("Decoded Morse will appear here")
-                .font(.caption)
-                .foregroundStyle(.tertiary)
-        }
-        .frame(maxWidth: .infinity, minHeight: 100)
-    }
-
-    private var detectedCallsignsPills: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 6) {
-                ForEach(
-                    manager.cwTranscription.detectedCallsigns,
-                    id: \.self
-                ) { callsign in
-                    Text(callsign)
-                        .font(.caption.weight(.medium).monospaced())
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color.blue.opacity(0.15))
-                        .clipShape(Capsule())
-                }
-            }
-        }
-    }
-
-    // MARK: - Action Buttons
-
-    private var actionButtons: some View {
+extension TuneInExpandedPlayerView {
+    var actionButtons: some View {
         HStack(spacing: 16) {
             muteButton
             clipButton
@@ -313,12 +183,7 @@ struct TuneInExpandedPlayerView: View {
         }
     }
 
-    /// Clip bookmarks collected so far in this session
-    private var clipCount: Int {
-        manager.session.clipBookmarks.count
-    }
-
-    private var muteButton: some View {
+    var muteButton: some View {
         Button {
             manager.toggleMute()
         } label: {
@@ -339,7 +204,7 @@ struct TuneInExpandedPlayerView: View {
         .buttonStyle(.plain)
     }
 
-    private var clipButton: some View {
+    var clipButton: some View {
         Button {
             manager.addClipBookmark()
         } label: {
@@ -368,7 +233,7 @@ struct TuneInExpandedPlayerView: View {
         .buttonStyle(.plain)
     }
 
-    private var openInBrowserButton: some View {
+    var openInBrowserButton: some View {
         Button {
             if let url = manager.session.webURL {
                 UIApplication.shared.open(url)
@@ -389,10 +254,8 @@ struct TuneInExpandedPlayerView: View {
         .disabled(manager.session.webURL == nil)
     }
 
-    // MARK: - Receiver Picker
-
-    private var receiverPickerSheet: some View {
-        WebSDRPickerSheet { receiver in
+    var receiverPickerSheet: some View {
+        WebSDRPickerSheet(myGrid: manager.spot?.grid, operatingBand: manager.spot?.band) { receiver in
             showReceiverPicker = false
             Task {
                 await manager.session.finalize()
@@ -409,9 +272,60 @@ struct TuneInExpandedPlayerView: View {
         }
     }
 
-    // MARK: - Helpers
+    func spotHeader(_ spot: TuneInSpot) -> some View {
+        VStack(spacing: 6) {
+            HStack {
+                Text(spot.callsign)
+                    .font(.title2.weight(.bold).monospaced())
+                followButton(spot.callsign)
+                Spacer()
+                sessionStatus
+            }
+            spotReferenceRow(spot)
+            HStack(spacing: 8) {
+                Text(FrequencyFormatter.format(spot.frequencyMHz) + " MHz")
+                    .font(.subheadline.monospaced())
+                Text(spot.mode)
+                    .font(.subheadline)
+                Text(spot.band)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                Spacer()
+            }
+        }
+        .padding()
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
 
-    private func formatDuration(_ seconds: TimeInterval) -> String {
+    @ViewBuilder
+    func spotReferenceRow(_ spot: TuneInSpot) -> some View {
+        if let parkRef = spot.parkRef {
+            HStack(spacing: 4) {
+                Image(systemName: "tree.fill")
+                    .foregroundStyle(.green)
+                Text(parkRef).fontWeight(.medium)
+                if let parkName = spot.parkName {
+                    Text(parkName).foregroundStyle(.secondary).lineLimit(1)
+                }
+                Spacer()
+            }
+            .font(.subheadline)
+        } else if let summitCode = spot.summitCode {
+            HStack(spacing: 4) {
+                Image(systemName: "mountain.2.fill")
+                    .foregroundStyle(.brown)
+                Text(summitCode).fontWeight(.medium)
+                if let summitName = spot.summitName {
+                    Text(summitName).foregroundStyle(.secondary).lineLimit(1)
+                }
+                Spacer()
+            }
+            .font(.subheadline)
+        }
+    }
+
+    func formatDuration(_ seconds: TimeInterval) -> String {
         let mins = Int(seconds) / 60
         let secs = Int(seconds) % 60
         return String(format: "%d:%02d", mins, secs)
