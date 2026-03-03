@@ -356,14 +356,24 @@ Show which activations other Carrier Wave users are tuned into. Social proof:
 
 ---
 
+## Design Decisions (Resolved)
+
+1. **No dedicated tab.** Spot-row swipe action is sufficient as the entry point. No separate tab or section needed.
+
+2. **No background audio.** Kill the WebSDR connection when the app is backgrounded. Don't continue streaming like a podcast app — this isn't a passive listening use case.
+
+3. **Cellular data warning: yes.** Show a first-time warning on cellular (~5 MB/hour). Don't nag on every session, just the first time on cellular.
+
+4. **Single tune-in only.** No concurrent streams in MVP or beyond unless demand emerges.
+
+5. **Entry point: hunter log.** Tune In lives in the hunter log / activity tab as a standalone feature. Not tied to an active logging session.
+
+6. **CW transcription from hunter log.** The hunter is the one listening and decoding — surface CW transcription in the hunter log context.
+
+7. **All Phase 4 social features confirmed:** Auto-retune on QSY, receiver quality monitoring + switch suggestions, follow/pin activator, listening activity feed with listener counts on spots.
+
 ## Open Questions
 
-1. **Tab or no tab?** The mini player lives above the tab bar and works from any screen. Should "Tune In" also get a dedicated tab/section, or is the spot-row swipe action sufficient as the entry point?
+1. **Watch integration**: Show "now listening" complication? Hand off tune-in from Watch spot tap to iPhone?
 
-2. **Dormancy behavior**: If the user backgrounds the app while tuned in, should audio continue (like a podcast app)? This requires a background audio session — the `KiwiSDRAudioEngine` already sets `.playback` category, so it likely works. But should it?
-
-3. **Data usage warning**: KiwiSDR streams at ~12 kHz mono. That's roughly 86 KB/min (compressed) or ~5 MB/hour. Worth a first-time warning on cellular?
-
-4. **Multiple concurrent tune-ins**: Should a user be able to listen to two activations at once (e.g., split screen on iPad)? Probably not in MVP.
-
-5. **Watch integration**: Show "now listening" complication? Hand off tune-in from Watch spot tap to iPhone?
+2. **Listening UI pattern**: The mini player (persistent bottom bar) was rejected. What's the right pattern — modal sheet? Inline expansion within the hunter log? Full-screen takeover?
