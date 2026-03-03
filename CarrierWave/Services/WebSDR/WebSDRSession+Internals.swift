@@ -87,13 +87,28 @@ extension WebSDRSession {
     /// Reconnect after connection loss, preserving recorder, audio engine,
     /// recording model, and duration timer. Writes silence to the recording
     /// during the gap so the timer keeps advancing.
+    /// Attempt receiver failover when reconnects are exhausted.
+    /// Returns true if the caller handled the failure (either by
+    /// switching receivers or finalizing).
+    private func attemptFailover() async -> Bool {
+        if let onReconnectsExhausted {
+            reconnectAttempts = 0
+            await onReconnectsExhausted()
+            if state == .recording || state == .connecting {
+                return true
+            }
+        }
+        stopSilenceWriter()
+        state = .error("Connection lost")
+        await finalizeOnError()
+        return true
+    }
+
     func reconnect() async {
         guard reconnectAttempts < maxReconnectAttempts,
               let receiver
         else {
-            stopSilenceWriter()
-            state = .error("Connection lost")
-            await finalizeOnError()
+            _ = await attemptFailover()
             return
         }
 

@@ -117,6 +117,10 @@ final class WebSDRSession {
     /// Optional callback for audio frames — used by TuneInManager to feed CW decoder
     var onAudioFrame: (([Int16]) -> Void)?
 
+    /// Callback when all reconnect attempts to the current receiver are exhausted.
+    /// The caller (e.g., TuneInManager) can use this to try a different receiver.
+    var onReconnectsExhausted: (() async -> Void)?
+
     /// Optional spot metadata for Tune In recordings (set by TuneInManager before start)
     var tuneInSpotMetadata: TuneInSpotMetadata?
 
@@ -128,6 +132,9 @@ final class WebSDRSession {
 
     /// Maximum time to keep a dormant recording alive (30 minutes)
     let maxDormantDuration: TimeInterval = 30 * 60
+
+    /// Clip bookmarks collected during this session
+    var clipBookmarks: [ClipBookmark] = []
 
     /// Buffer fill ratio for UI indicator (0.0 to 1.0)
     var bufferFillRatio: Double {
@@ -273,6 +280,7 @@ final class WebSDRSession {
         clipBookmarks = []
         recordingStartDate = nil
         tuneInSpotMetadata = nil
+        onReconnectsExhausted = nil
     }
 
     /// Legacy stop — disconnects but keeps recording for stitching.
@@ -320,9 +328,6 @@ final class WebSDRSession {
     func addClipBookmark(_ bookmark: ClipBookmark) {
         clipBookmarks.append(bookmark)
     }
-
-    /// Clip bookmarks collected during this session
-    var clipBookmarks: [ClipBookmark] = []
 
     // MARK: - Tuning
 

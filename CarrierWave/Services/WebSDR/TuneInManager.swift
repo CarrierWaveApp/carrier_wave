@@ -226,6 +226,7 @@ final class TuneInManager {
         stopQSYMonitor()
         stopReceiverMonitor()
         await stopCWTranscription()
+        session.onReconnectsExhausted = nil
         await session.finalize()
         spot = nil
         showExpandedPlayer = false
@@ -279,6 +280,11 @@ final class TuneInManager {
         // Wire up CW transcription for CW mode
         if spot.mode.uppercased() == "CW" {
             setupCWTranscription()
+        }
+
+        // Wire up receiver failover when reconnects are exhausted
+        session.onReconnectsExhausted = { [weak self] in
+            await self?.switchToAlternateReceiver()
         }
 
         // Attach spot metadata for recording enrichment

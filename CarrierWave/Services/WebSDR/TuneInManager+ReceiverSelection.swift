@@ -132,6 +132,37 @@ extension TuneInManager {
         return await selectReceiverNearRBN(for: spot)
     }
 
+    // MARK: - Receiver Failover
+
+    /// Called when all reconnect attempts to the current receiver are
+    /// exhausted. Finds an alternate available receiver and switches to it.
+    func switchToAlternateReceiver() async {
+        guard let spot, let failedReceiver = session.receiver else {
+            return
+        }
+
+        let candidates = await WebSDRDirectory.shared.findNearby(
+            grid: spot.grid,
+            latitude: spot.latitude,
+            longitude: spot.longitude,
+            limit: 20
+        )
+        let alternate = candidates.first {
+            $0.isAvailable && $0.id != failedReceiver.id
+        }
+
+        guard let alternate else {
+            return
+        }
+
+        // Resume the existing recording on the new receiver
+        await session.resumeFromDormant(
+            receiver: alternate,
+            frequencyMHz: spot.frequencyMHz,
+            mode: spot.mode
+        )
+    }
+
     // MARK: - Helpers
 
     /// Find the first available receiver near a coordinate.

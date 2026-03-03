@@ -11,27 +11,40 @@ struct TuneInMiniPlayerView: View {
     let manager: TuneInManager
 
     var body: some View {
-        Button {
-            manager.showExpandedPlayer = true
-        } label: {
-            content
-        }
-        .buttonStyle(.plain)
-        .background(.ultraThinMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-        .shadow(color: .black.opacity(0.15), radius: 8, y: 2)
-        .padding(.horizontal, 12)
-        .padding(.bottom, 4)
+        content
+            .background(.ultraThinMaterial)
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .shadow(color: .black.opacity(0.15), radius: 8, y: 2)
+            .padding(.horizontal, 12)
+            .padding(.bottom, 4)
     }
 
     // MARK: Private
 
+    private var levelColor: Color {
+        let level = manager.session.peakLevel
+        if level > 0.8 {
+            return .red
+        }
+        if level > 0.5 {
+            return .yellow
+        }
+        return .green
+    }
+
     private var content: some View {
         HStack(spacing: 10) {
-            liveIndicator
-            spotInfo
-            Spacer()
-            audioLevelBar
+            HStack(spacing: 10) {
+                liveIndicator
+                spotInfo
+                Spacer()
+                audioLevelBar
+            }
+            .contentShape(Rectangle())
+            .onTapGesture {
+                manager.showExpandedPlayer = true
+            }
+
             muteButton
             closeButton
         }
@@ -84,13 +97,6 @@ struct TuneInMiniPlayerView: View {
             }
         }
         .frame(width: 40, height: 4)
-    }
-
-    private var levelColor: Color {
-        let level = manager.session.peakLevel
-        if level > 0.8 { return .red }
-        if level > 0.5 { return .yellow }
-        return .green
     }
 
     private var muteButton: some View {
