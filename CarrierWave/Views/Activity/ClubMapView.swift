@@ -110,25 +110,80 @@ private struct ClusteredMapView: UIViewRepresentable {
     // MARK: - Coordinator
 
     final class Coordinator: NSObject, MKMapViewDelegate {
+        // MARK: Internal
+
         func mapView(
             _ mapView: MKMapView,
             viewFor annotation: MKAnnotation
         ) -> MKAnnotationView? {
-            if annotation is MKClusterAnnotation {
-                return mapView.dequeueReusableAnnotationView(
-                    withIdentifier:
-                    MKMapViewDefaultClusterAnnotationViewReuseIdentifier,
-                    for: annotation
+            if let cluster = annotation as? MKClusterAnnotation {
+                return configureCluster(
+                    cluster, on: mapView
                 )
             }
-            if annotation is MemberAnnotation {
-                return mapView.dequeueReusableAnnotationView(
-                    withIdentifier:
-                    MKMapViewDefaultAnnotationViewReuseIdentifier,
-                    for: annotation
-                )
+            guard let member = annotation as? MemberAnnotation
+            else {
+                return nil
             }
-            return nil
+            return configureMember(member, on: mapView)
+        }
+
+        // MARK: Private
+
+        private func configureMember(
+            _ member: MemberAnnotation,
+            on mapView: MKMapView
+        ) -> MKAnnotationView {
+            let view = mapView
+                .dequeueReusableAnnotationView(
+                    withIdentifier: "member",
+                    for: member
+                ) as! MKMarkerAnnotationView // swiftlint:disable:this force_cast
+            view.annotation = member
+            view.markerTintColor = memberColor(
+                for: member.status
+            )
+            view.glyphImage = UIImage(
+                systemName: "antenna.radiowaves.left.and.right"
+            )
+            view.titleVisibility = .adaptive
+            view.subtitleVisibility = .hidden
+            view.displayPriority = member.status == .onAir
+                ? .required : .defaultHigh
+            view.clusteringIdentifier = "clubMember"
+            return view
+        }
+
+        private func configureCluster(
+            _ cluster: MKClusterAnnotation,
+            on mapView: MKMapView
+        ) -> MKAnnotationView {
+            let view = mapView
+                .dequeueReusableAnnotationView(
+                    withIdentifier: "cluster",
+                    for: cluster
+                ) as! MKMarkerAnnotationView // swiftlint:disable:this force_cast
+            view.annotation = cluster
+            let members = cluster.memberAnnotations
+                .compactMap { $0 as? MemberAnnotation }
+            let hasOnAir = members.contains {
+                $0.status == .onAir
+            }
+            view.markerTintColor = hasOnAir
+                ? .systemGreen : .systemBlue
+            view.glyphText = "\(cluster.memberAnnotations.count)"
+            return view
+        }
+
+        private func memberColor(
+            for status: MemberOnlineStatus?
+        ) -> UIColor {
+            switch status {
+            case .onAir: .systemGreen
+            case .recentlyActive: .systemYellow
+            case .inactive,
+                 .none: .systemBlue
+            }
         }
     }
 
@@ -140,14 +195,12 @@ private struct ClusteredMapView: UIViewRepresentable {
         let mapView = MKMapView()
         mapView.delegate = context.coordinator
         mapView.register(
-            MemberAnnotationView.self,
-            forAnnotationViewWithReuseIdentifier:
-            MKMapViewDefaultAnnotationViewReuseIdentifier
+            MKMarkerAnnotationView.self,
+            forAnnotationViewWithReuseIdentifier: "member"
         )
         mapView.register(
-            ClusterAnnotationView.self,
-            forAnnotationViewWithReuseIdentifier:
-            MKMapViewDefaultClusterAnnotationViewReuseIdentifier
+            MKMarkerAnnotationView.self,
+            forAnnotationViewWithReuseIdentifier: "cluster"
         )
         return mapView
     }
