@@ -5,6 +5,46 @@ import Network
 import SwiftData
 import UIKit
 
+// MARK: - TuneInStrategy
+
+/// How the user wants to select a KiwiSDR receiver for Tune In.
+enum TuneInStrategy: String, CaseIterable, Sendable {
+    /// Find an SDR near the strongest RBN spotter (best signal quality).
+    case nearStrongRBN
+
+    /// Find an SDR near the activator's location (hear what they hear).
+    case nearActivator
+
+    /// Find an SDR near the user's own QTH.
+    case nearMyQTH
+
+    // MARK: Internal
+
+    var title: String {
+        switch self {
+        case .nearStrongRBN: "Best signal"
+        case .nearActivator: "Near the activator"
+        case .nearMyQTH: "Near my location"
+        }
+    }
+
+    var description: String {
+        switch self {
+        case .nearStrongRBN: "Listen near the strongest RBN spot"
+        case .nearActivator: "Listen near the activator's location"
+        case .nearMyQTH: "Listen near your QTH"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .nearStrongRBN: "antenna.radiowaves.left.and.right"
+        case .nearActivator: "mappin.and.ellipse"
+        case .nearMyQTH: "location.fill"
+        }
+    }
+}
+
 // MARK: - TuneInSpotMetadata
 
 /// Spot metadata to attach to WebSDR recordings created from Tune In.
@@ -42,9 +82,7 @@ struct TuneInSpot: Sendable {
 @MainActor
 @Observable
 final class TuneInManager {
-    // MARK: - Singleton
-
-    static let shared = TuneInManager()
+    // MARK: Lifecycle
 
     init() {
         // Stop tune-in when app backgrounds (design decision: no background audio)
@@ -53,12 +91,61 @@ final class TuneInManager {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            guard let self, self.isActive else { return }
+            guard let self, isActive else {
+                return
+            }
             Task { @MainActor in
                 await self.stop()
             }
         }
     }
+
+    // MARK: Internal
+
+    // MARK: - Singleton
+
+    static let shared = TuneInManager()
+
+    /// Current spot being listened to
+    var spot: TuneInSpot?
+
+    /// Whether the expanded player sheet is shown
+    var showExpandedPlayer = false
+
+    /// Whether a cellular data warning needs confirmation
+    var showCellularWarning = false
+
+    /// Whether the strategy picker needs to be shown
+    var showStrategyPicker = false
+
+    /// Pending tune-in waiting for strategy selection
+    private(set) var pendingStrategySpot: TuneInSpot?
+
+    /// Pending tune-in waiting for cellular confirmation
+    private(set) var pendingSpot: TuneInSpot?
+
+    /// Strategy selected for the pending cellular tune-in
+    private(set) var pendingStrategy: TuneInStrategy = .nearStrongRBN
+
+    /// The underlying WebSDR session (exposes state, peakLevel, sMeter, etc.)
+    let session = WebSDRSession()
+
+    /// CW transcription service (active when tuned to a CW spot)
+    let cwTranscription = CWTranscriptionService()
+
+    // MARK: - Smart Features State
+
+    /// QSY alert when activator re-spotted at different frequency
+    var qsyAlert: TuneInQSYAlert?
+
+    /// Receiver switch suggestion when a better receiver is found
+    var receiverSuggestion: ReceiverSuggestion?
+
+    /// QSY monitoring task
+    var qsyMonitorTask: Task<Void, Never>?
+
+    /// Receiver quality monitoring task
+    var receiverMonitorTask: Task<Void, Never>?
 
     // MARK: - Observable State
 
@@ -72,56 +159,43 @@ final class TuneInManager {
         session.state.isStreaming
     }
 
-    /// Current spot being listened to
-    private(set) var spot: TuneInSpot?
-
-    /// Whether the expanded player sheet is shown
-    var showExpandedPlayer = false
-
-    /// Whether a cellular data warning needs confirmation
-    var showCellularWarning = false
-
-    /// Pending tune-in waiting for cellular confirmation
-    private(set) var pendingSpot: TuneInSpot?
-
-    /// The underlying WebSDR session (exposes state, peakLevel, sMeter, etc.)
-    let session = WebSDRSession()
-
-    /// CW transcription service (active when tuned to a CW spot)
-    let cwTranscription = CWTranscriptionService()
-
     /// Whether CW transcription is available (mode is CW)
     var isCWMode: Bool {
         spot?.mode.uppercased() == "CW"
     }
 
-    // MARK: - Smart Features State
-
-    /// Backing storage for QSY alert (accessed via extension computed property)
-    var _qsyAlert: TuneInQSYAlert?
-
-    /// Backing storage for receiver suggestion
-    var _receiverSuggestion: ReceiverSuggestion?
-
-    /// QSY monitoring task
-    var qsyMonitorTask: Task<Void, Never>?
-
-    /// Receiver quality monitoring task
-    var receiverMonitorTask: Task<Void, Never>?
-
     // MARK: - Tune In
 
-    /// Start listening to a spot. Auto-selects the best receiver.
+    /// Present the strategy picker before tuning in.
+    func requestTuneIn(to spot: TuneInSpot) {
+        pendingStrategySpot = spot
+        showStrategyPicker = true
+    }
+
+    /// Dismiss the strategy picker without tuning in.
+    func dismissStrategyPicker() {
+        showStrategyPicker = false
+        pendingStrategySpot = nil
+    }
+
+    /// Start listening to a spot with a chosen strategy.
     /// Shows a cellular warning on first cellular use.
-    func tuneIn(to spot: TuneInSpot, modelContext: ModelContext) async {
+    func tuneIn(
+        to spot: TuneInSpot,
+        modelContext: ModelContext,
+        strategy: TuneInStrategy = .nearStrongRBN
+    ) async {
         // Check cellular warning
         if shouldShowCellularWarning() {
             pendingSpot = spot
+            pendingStrategy = strategy
             showCellularWarning = true
             return
         }
 
-        await performTuneIn(spot: spot, modelContext: modelContext)
+        await performTuneIn(
+            spot: spot, modelContext: modelContext, strategy: strategy
+        )
     }
 
     /// Confirm cellular use and proceed with pending tune-in
@@ -132,14 +206,19 @@ final class TuneInManager {
         guard let spot = pendingSpot else {
             return
         }
+        let strategy = pendingStrategy
         pendingSpot = nil
-        await performTuneIn(spot: spot, modelContext: modelContext)
+        pendingStrategy = .nearStrongRBN
+        await performTuneIn(
+            spot: spot, modelContext: modelContext, strategy: strategy
+        )
     }
 
     /// Dismiss cellular warning without tuning in
     func dismissCellularWarning() {
         showCellularWarning = false
         pendingSpot = nil
+        pendingStrategy = .nearStrongRBN
     }
 
     /// Stop listening and tear down the session
@@ -160,7 +239,9 @@ final class TuneInManager {
     /// Add a clip bookmark at the current recording position
     func addClipBookmark(label: String? = nil) {
         let offset = session.recordingDuration
-        guard offset > 0 else { return }
+        guard offset > 0 else {
+            return
+        }
 
         let bookmark = ClipBookmark(
             offsetSeconds: offset,
@@ -169,27 +250,7 @@ final class TuneInManager {
         session.addClipBookmark(bookmark)
     }
 
-    // MARK: - Smart Receiver Selection
-
-    /// Find the best receiver for a spot based on activator proximity.
-    /// Returns nil if no suitable receiver is found.
-    func selectReceiver(for spot: TuneInSpot) async -> KiwiSDRReceiver? {
-        let receivers = await WebSDRDirectory.shared.findNearby(
-            grid: spot.grid,
-            latitude: spot.latitude,
-            longitude: spot.longitude,
-            limit: 20
-        )
-
-        // Filter to available receivers, then score
-        let candidates = receivers.filter { $0.isAvailable }
-
-        // For now, closest available receiver wins.
-        // Skip-zone scoring (penalize < 50mi, prefer 500-1500mi) is Phase 4.
-        return candidates.first
-    }
-
-    // MARK: - Private
+    // MARK: Private
 
     private static let cellularWarningDismissedKey = "tuneInCellularWarningDismissed"
 
@@ -197,7 +258,8 @@ final class TuneInManager {
 
     private func performTuneIn(
         spot: TuneInSpot,
-        modelContext: ModelContext
+        modelContext: ModelContext,
+        strategy: TuneInStrategy = .nearStrongRBN
     ) async {
         // Stop any existing session
         if isActive {
@@ -207,7 +269,9 @@ final class TuneInManager {
 
         self.spot = spot
 
-        guard let receiver = await selectReceiver(for: spot) else {
+        guard let receiver = await selectReceiver(
+            for: spot, strategy: strategy
+        ) else {
             session.state = .error("No receivers available")
             return
         }

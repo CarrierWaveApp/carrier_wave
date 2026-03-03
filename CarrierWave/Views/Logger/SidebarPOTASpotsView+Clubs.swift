@@ -137,15 +137,10 @@ extension SidebarPOTASpotsView {
         }
     }
 
-    @ViewBuilder
     func sidebarTuneInMenu(for spot: POTASpot) -> some View {
         Button {
             let tuneInSpot = TuneInSpot(from: spot)
-            Task {
-                await TuneInManager.shared.tuneIn(
-                    to: tuneInSpot, modelContext: modelContext
-                )
-            }
+            TuneInManager.shared.requestTuneIn(to: tuneInSpot)
         } label: {
             Label(
                 "Tune In to \(spot.activator)",

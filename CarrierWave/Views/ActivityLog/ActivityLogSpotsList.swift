@@ -318,9 +318,12 @@ struct ActivityLogSpotsList: View {
             }
         }
     }
+}
 
-    private func handleSpotTap(_ spot: EnrichedSpot) {
-        // Tune connected radio to spot frequency and mode
+// MARK: - Actions & Data Loading
+
+extension ActivityLogSpotsList {
+    func handleSpotTap(_ spot: EnrichedSpot) {
         tuneRadioToSpot(spot)
 
         let result = workedResults[spot.spot.callsign.uppercased()] ?? .notWorked
@@ -332,7 +335,7 @@ struct ActivityLogSpotsList: View {
         }
     }
 
-    private func tuneRadioToSpot(_ spot: EnrichedSpot) {
+    func tuneRadioToSpot(_ spot: EnrichedSpot) {
         let radio = BLERadioService.shared
         guard radio.isConnected else {
             return
@@ -342,18 +345,12 @@ struct ActivityLogSpotsList: View {
     }
 
     @MainActor
-    private func handleTuneIn(_ spot: EnrichedSpot) {
+    func handleTuneIn(_ spot: EnrichedSpot) {
         let tuneInSpot = TuneInSpot(from: spot.spot)
-        let context = ModelContext(container)
-        Task {
-            await TuneInManager.shared.tuneIn(
-                to: tuneInSpot,
-                modelContext: context
-            )
-        }
+        TuneInManager.shared.requestTuneIn(to: tuneInSpot)
     }
 
-    private func loadWorkedBefore() async {
+    func loadWorkedBefore() async {
         await workedBeforeCache.invalidateHistory()
         await workedBeforeCache.loadToday(container: container)
         let callsigns = spots.map(\.spot.callsign)

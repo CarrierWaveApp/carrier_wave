@@ -198,8 +198,6 @@ struct ContentView: View {
     @State private var showingRestoreAlert = false
     @State private var incomingFriendRequestCount = 0
 
-    private var tuneInManager: TuneInManager { TuneInManager.shared }
-
     private let lofiClient = LoFiClient.appDefault()
     private let qrzClient = QRZClient()
     private let hamrsClient = HAMRSClient()
@@ -272,6 +270,7 @@ struct ContentView: View {
             TuneInExpandedPlayerView(manager: tuneInManager)
         }
         .tuneInCellularAlert(manager: tuneInManager)
+        .tuneInStrategySheet(manager: tuneInManager)
         .onReceive(NotificationCenter.default.publisher(for: .tabConfigurationChanged)) { _ in
             iPadTabs = TabConfiguration.iPadVisibleTabs()
             // Ensure selected tab is still visible
@@ -316,6 +315,7 @@ struct ContentView: View {
             TuneInExpandedPlayerView(manager: tuneInManager)
         }
         .tuneInCellularAlert(manager: tuneInManager)
+        .tuneInStrategySheet(manager: tuneInManager)
         .toolbar(shouldHideTabBar ? .hidden : .visible, for: .tabBar)
         .onReceive(NotificationCenter.default.publisher(for: .tabConfigurationChanged)) { _ in
             visibleTabs = TabConfiguration.visibleTabs()
