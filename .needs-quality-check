@@ -11,3 +11,10 @@ Added callsign cache (clubMemberCallsigns, clubsByCallsign) to ClubsSyncService 
 Converted ClubsSyncService to shared singleton with configure(container:) pattern
 Wired ClubsSyncService into app lifecycle: configure + initial sync on launch, sync on foreground resume
 Updated ClubsListView and ClubDetailView to use ClubsSyncService.shared instead of view-scoped instances
+Fixed ClubsListView empty state text, added callsign display to ClubRow
+Rewrote ClubDetailView with segmented Members/Activity/Map tabs, MemberRow status dots, spot info, sorted members
+Created ClubActivityView with paginated club activity feed
+Created ClubMapView with member pins using MaidenheadConverter grid-to-coordinate
+Created ClubStatsView with on-air/recently active/grid counts
+Added Clubs navigation link to ActivityView toolbar overflow menu
+Updated FILE_INDEX.md with new club view files

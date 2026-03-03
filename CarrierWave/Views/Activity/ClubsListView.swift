@@ -13,8 +13,8 @@ struct ClubsListView: View {
                     "No Clubs",
                     systemImage: "person.3",
                     description: Text(
-                        "Club membership is based on Ham2K Polo callsign notes lists. "
-                            + "Ask a club admin to add your callsign."
+                        "You're not a member of any clubs yet. "
+                            + "Club membership is managed by club administrators."
                     )
                 )
             } else {
@@ -88,10 +88,16 @@ struct ClubRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(club.name)
-                .font(.body)
-                .fontWeight(.medium)
-
+            HStack {
+                Text(club.name)
+                    .font(.body)
+                    .fontWeight(.medium)
+                if let callsign = club.callsign {
+                    Text(callsign)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
             Text("\(club.memberCount) members")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)

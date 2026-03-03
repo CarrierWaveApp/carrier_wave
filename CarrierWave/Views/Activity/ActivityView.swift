@@ -170,6 +170,13 @@ struct ActivityView: View {
                 .accessibilityLabel("Refresh")
             }
             ToolbarItem(placement: .secondaryAction) {
+                NavigationLink {
+                    ClubsListView()
+                } label: {
+                    Label("Clubs", systemImage: "person.3")
+                }
+            }
+            ToolbarItem(placement: .secondaryAction) {
                 Button {
                     showingOwnProfile = true
                 } label: {

@@ -720,7 +720,10 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `FriendSearchView.swift` | Standalone friend search (SearchResultRow shared component) |
 | `FriendProfileView.swift` | Friend profile with activity and stats |
 | `ClubsListView.swift` | List of clubs user belongs to |
-| `ClubDetailView.swift` | Club details and member list |
+| `ClubDetailView.swift` | Club detail with segmented tabs (Members/Activity/Map), status dots, MemberRow |
+| `ClubActivityView.swift` | Paginated club activity feed using FeedItemDTO |
+| `ClubMapView.swift` | Map of club members at their last grid square locations |
+| `ClubStatsView.swift` | Club stats section (member count, on-air, recently active, grids) |
 | `CommunityFeaturesPromptSheet.swift` | One-time prompt for existing users to opt into community features |
 | `ShareCardView.swift` | Branded share card templates |
 | `ShareCardRenderer.swift` | Render share cards to UIImage |
