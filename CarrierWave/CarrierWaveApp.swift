@@ -52,6 +52,7 @@ struct CarrierWaveApp: App {
             LeaderboardCache.self,
             Friendship.self,
             Club.self,
+            ClubMember.self,
             ActivityItem.self,
             LoggingSession.self,
             WebSDRRecording.self,

@@ -30,21 +30,8 @@ struct NotesSourceInfo: Sendable {
     static func fetchAll(modelContext: ModelContext) -> [NotesSourceInfo] {
         var sources: [NotesSourceInfo] = []
 
-        // Fetch from clubs
-        do {
-            let clubDescriptor = FetchDescriptor<Club>()
-            let clubs = try modelContext.fetch(clubDescriptor)
-
-            for club in clubs {
-                if !club.poloNotesListURL.isEmpty,
-                   let url = URL(string: club.poloNotesListURL)
-                {
-                    sources.append(NotesSourceInfo(url: url, title: club.name))
-                }
-            }
-        } catch {
-            print("CallsignNotesCache: Failed to load clubs: \(error)")
-        }
+        // Note: Clubs no longer use PoLo notes list URLs.
+        // Club member data is managed via the ClubMember relationship.
 
         // Fetch from user-configured sources
         do {

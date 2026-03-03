@@ -1,0 +1,9 @@
+Rewrote Club SwiftData model: replaced poloNotesListURL + memberCallsignsData blob with serverId, callsign, clubDescription fields and ClubMember relationship
+Added ClubMember SwiftData model with callsign, role, lastSeenAt, lastGrid fields and Club relationship
+Added ClubMember.self to ModelContainer schema in CarrierWaveApp.swift
+Updated ActivitiesClient+Clubs.swift: new DTOs (MemberStatusDTO, MemberOnlineStatus, SpotInfoDTO), updated ClubDTO/ClubDetailDTO/ClubMemberDTO, added fetchClubActivity and fetchClubStatus endpoints, switched from private helpers to base buildRequest/performRequest/validateResponse
+Updated ClubsSyncService.swift: member sync via ClubMember relationship instead of JSON blob, uses serverId instead of id
+Updated ClubDetailView.swift: uses ClubMember objects instead of callsign strings, shows role
+Updated ClubsListView.swift: preview includes ClubMember.self in schema
+Updated FilterBar.swift: uses club.serverId instead of club.id for feed filtering
+Updated CallsignNotesCache.swift: removed poloNotesListURL reference from Club fetch

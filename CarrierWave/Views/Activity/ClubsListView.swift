@@ -110,5 +110,5 @@ struct ClubRow: View {
     NavigationStack {
         ClubsListView()
     }
-    .modelContainer(for: [Club.self], inMemory: true)
+    .modelContainer(for: [Club.self, ClubMember.self], inMemory: true)
 }

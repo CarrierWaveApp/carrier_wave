@@ -7,18 +7,11 @@ extension ActivitiesClient {
 
     /// Get list of clubs the user belongs to
     func getMyClubs(sourceURL: String, authToken: String) async throws -> [ClubDTO] {
-        guard let url = URL(string: sourceURL + "/v1/clubs") else {
-            throw ActivitiesError.invalidServerURL
-        }
+        let url = try buildURL(sourceURL, path: "/v1/clubs")
+        let request = try buildRequest(url: url, method: "GET", authToken: authToken)
 
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
-
-        let (data, response) = try await performClubRequest(request)
-        try validateClubResponse(response, data: data)
+        let (data, response) = try await performRequest(request)
+        try validateResponse(response, data: data)
 
         let apiResponse = try JSONDecoder.activitiesDecoder.decode(
             APIResponse<[ClubDTO]>.self,
@@ -34,24 +27,24 @@ extension ActivitiesClient {
         authToken: String,
         includeMembers: Bool = true
     ) async throws -> ClubDetailDTO {
-        guard var components = URLComponents(string: sourceURL + "/v1/clubs/\(clubId.uuidString)") else {
+        guard var components = URLComponents(
+            string: sourceURL + "/v1/clubs/\(clubId.uuidString)"
+        ) else {
             throw ActivitiesError.invalidServerURL
         }
 
-        components.queryItems = [URLQueryItem(name: "includeMembers", value: String(includeMembers))]
+        components.queryItems = [
+            URLQueryItem(name: "includeMembers", value: String(includeMembers)),
+        ]
 
         guard let url = components.url else {
             throw ActivitiesError.invalidServerURL
         }
 
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        request.setValue("Bearer \(authToken)", forHTTPHeaderField: "Authorization")
+        let request = try buildRequest(url: url, method: "GET", authToken: authToken)
 
-        let (data, response) = try await performClubRequest(request)
-        try validateClubResponse(response, data: data)
+        let (data, response) = try await performRequest(request)
+        try validateResponse(response, data: data)
 
         let apiResponse = try JSONDecoder.activitiesDecoder.decode(
             APIResponse<ClubDetailDTO>.self,
@@ -60,35 +53,62 @@ extension ActivitiesClient {
         return apiResponse.data
     }
 
-    // MARK: - Private Helpers
-
-    private func performClubRequest(_ request: URLRequest) async throws -> (Data, URLResponse) {
-        do {
-            return try await URLSession.shared.data(for: request)
-        } catch {
-            throw ActivitiesError.networkError(error)
+    /// Get club activity feed
+    func fetchClubActivity(
+        clubId: UUID,
+        sourceURL: String,
+        authToken: String,
+        cursor: UUID? = nil,
+        limit: Int = 20
+    ) async throws -> [FeedItemDTO] {
+        guard var components = URLComponents(
+            string: sourceURL + "/v1/clubs/\(clubId.uuidString)/activity"
+        ) else {
+            throw ActivitiesError.invalidServerURL
         }
+
+        var queryItems = [URLQueryItem(name: "limit", value: String(limit))]
+        if let cursor {
+            queryItems.append(URLQueryItem(name: "cursor", value: cursor.uuidString))
+        }
+        components.queryItems = queryItems
+
+        guard let url = components.url else {
+            throw ActivitiesError.invalidServerURL
+        }
+
+        let request = try buildRequest(url: url, method: "GET", authToken: authToken)
+
+        let (data, response) = try await performRequest(request)
+        try validateResponse(response, data: data)
+
+        let apiResponse = try JSONDecoder.activitiesDecoder.decode(
+            APIResponse<[FeedItemDTO]>.self,
+            from: data
+        )
+        return apiResponse.data
     }
 
-    private func validateClubResponse(_ response: URLResponse, data: Data) throws {
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw ActivitiesError.invalidResponse("Not an HTTP response")
-        }
+    /// Get club member status (on-air, recently active, etc.)
+    func fetchClubStatus(
+        clubId: UUID,
+        sourceURL: String,
+        authToken: String
+    ) async throws -> [MemberStatusDTO] {
+        let url = try buildURL(
+            sourceURL,
+            path: "/v1/clubs/\(clubId.uuidString)/status"
+        )
+        let request = try buildRequest(url: url, method: "GET", authToken: authToken)
 
-        guard (200 ... 299).contains(httpResponse.statusCode) else {
-            if let errorResponse = try? JSONDecoder.activitiesDecoder.decode(
-                APIErrorResponse.self,
-                from: data
-            ) {
-                throw ActivitiesError.from(
-                    apiCode: errorResponse.error.code,
-                    message: errorResponse.error.message
-                )
-            }
+        let (data, response) = try await performRequest(request)
+        try validateResponse(response, data: data)
 
-            let message = String(data: data, encoding: .utf8)
-            throw ActivitiesError.serverError(httpResponse.statusCode, message)
-        }
+        let apiResponse = try JSONDecoder.activitiesDecoder.decode(
+            APIResponse<[MemberStatusDTO]>.self,
+            from: data
+        )
+        return apiResponse.data
     }
 }
 
@@ -97,9 +117,9 @@ extension ActivitiesClient {
 struct ClubDTO: Codable {
     var id: UUID
     var name: String
+    var callsign: String?
     var description: String?
     var memberCount: Int
-    var poloNotesListId: String?
 }
 
 // MARK: - ClubDetailDTO
@@ -107,10 +127,8 @@ struct ClubDTO: Codable {
 struct ClubDetailDTO: Codable {
     var id: UUID
     var name: String
+    var callsign: String?
     var description: String?
-    var poloNotesListURL: String?
-    var memberCount: Int
-    var lastSyncedAt: Date?
     var members: [ClubMemberDTO]?
 }
 
@@ -118,6 +136,35 @@ struct ClubDetailDTO: Codable {
 
 struct ClubMemberDTO: Codable {
     var callsign: String
-    var userId: String?
+    var role: String
+    var joinedAt: Date?
+    var lastSeenAt: Date?
+    var lastGrid: String?
     var isCarrierWaveUser: Bool
+}
+
+// MARK: - MemberStatusDTO
+
+struct MemberStatusDTO: Codable {
+    var callsign: String
+    var status: MemberOnlineStatus
+    var spotInfo: SpotInfoDTO?
+    var lastSeenAt: Date?
+}
+
+// MARK: - MemberOnlineStatus
+
+enum MemberOnlineStatus: String, Codable {
+    case onAir
+    case recentlyActive
+    case inactive
+}
+
+// MARK: - SpotInfoDTO
+
+struct SpotInfoDTO: Codable {
+    var frequency: Double
+    var mode: String?
+    var source: String
+    var spottedAt: Date
 }

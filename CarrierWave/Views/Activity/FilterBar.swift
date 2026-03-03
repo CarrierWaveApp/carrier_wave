@@ -52,7 +52,7 @@ struct FilterBar: View {
                         title: club.name,
                         isSelected: isClubSelected(club)
                     ) {
-                        selectedFilter = .club(club.id)
+                        selectedFilter = .club(club.serverId)
                     }
                 }
             }
@@ -64,7 +64,7 @@ struct FilterBar: View {
 
     private func isClubSelected(_ club: Club) -> Bool {
         if case let .club(id) = selectedFilter {
-            return id == club.id
+            return id == club.serverId
         }
         return false
     }

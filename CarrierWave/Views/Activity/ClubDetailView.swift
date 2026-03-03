@@ -10,7 +10,7 @@ struct ClubDetailView: View {
 
     var body: some View {
         List {
-            if let description = club.descriptionText, !description.isEmpty {
+            if let description = club.clubDescription, !description.isEmpty {
                 Section("About") {
                     Text(description)
                         .font(.body)
@@ -18,12 +18,12 @@ struct ClubDetailView: View {
             }
 
             Section("Members (\(club.memberCount))") {
-                if club.memberCallsigns.isEmpty {
+                if club.members.isEmpty {
                     Text("No members loaded")
                         .foregroundStyle(.secondary)
                 } else {
-                    ForEach(club.memberCallsigns, id: \.self) { callsign in
-                        MemberRow(callsign: callsign)
+                    ForEach(club.members, id: \.callsign) { member in
+                        MemberRow(member: member)
                     }
                 }
             }
@@ -74,7 +74,10 @@ struct ClubDetailView: View {
         defer { isRefreshing = false }
 
         do {
-            try await service.syncClubDetails(clubId: club.id, sourceURL: sourceURL)
+            try await service.syncClubDetails(
+                clubId: club.serverId,
+                sourceURL: sourceURL
+            )
         } catch {
             errorMessage = error.localizedDescription
             showingError = true
@@ -85,14 +88,19 @@ struct ClubDetailView: View {
 // MARK: - MemberRow
 
 struct MemberRow: View {
-    let callsign: String
+    let member: ClubMember
 
     var body: some View {
         HStack {
-            Text(callsign)
+            Text(member.callsign)
                 .font(.body)
                 .fontWeight(.medium)
             Spacer()
+            if member.role != "member" {
+                Text(member.role.capitalized)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
     }
 }
@@ -103,11 +111,11 @@ struct MemberRow: View {
     NavigationStack {
         ClubDetailView(
             club: Club(
+                serverId: UUID(),
                 name: "Pacific Northwest DX Club",
-                poloNotesListURL: "https://example.com",
-                descriptionText: "A club for DXers in the Pacific Northwest"
+                clubDescription: "A club for DXers in the Pacific Northwest"
             )
         )
     }
-    .modelContainer(for: [Club.self], inMemory: true)
+    .modelContainer(for: [Club.self, ClubMember.self], inMemory: true)
 }

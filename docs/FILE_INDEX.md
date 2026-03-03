@@ -112,7 +112,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `ActivityType.swift` | Activity type enum with icons and display names |
 | `Friendship.swift` | Friend connection model with status tracking |
 | `FriendSuggestion.swift` | Friend suggestion models (DismissedSuggestion, FriendSuggestion, DTO) |
-| `Club.swift` | Club model with Polo notes list membership |
+| `Club.swift` | Club and ClubMember SwiftData models with server sync |
 | `ActivityItem.swift` | Activity feed item model |
 | `CWConversation.swift` | CW conversation and message models for chat display |
 | `CallsignInfo.swift` | Callsign lookup result with name, note, emoji, source |
@@ -257,7 +257,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `FriendsSyncService.swift` | Friend data synchronization and actions |
 | `FriendSuggestionActor.swift` | Background actor for counting QSOs per callsign |
 | `FriendSpotNotifier.swift` | Deduped toast + local notification when friends appear in spots |
-| `ActivitiesClient+Clubs.swift` | Club API endpoints extension |
+| `ActivitiesClient+Clubs.swift` | Club API endpoints, DTOs, and member status types |
 | `ClubsSyncService.swift` | Club data synchronization |
 | `ActivityDetector.swift` | Detect notable activities from QSOs |
 | `ActivityDetector+Detection.swift` | Activity detection methods (DXCC, bands, modes, DX, streaks) |

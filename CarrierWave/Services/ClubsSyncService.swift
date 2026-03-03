@@ -34,10 +34,13 @@ final class ClubsSyncService: ObservableObject {
         defer { isSyncing = false }
 
         // Fetch clubs from server
-        let clubDTOs = try await client.getMyClubs(sourceURL: sourceURL, authToken: authToken)
+        let clubDTOs = try await client.getMyClubs(
+            sourceURL: sourceURL,
+            authToken: authToken
+        )
 
         // Update local models
-        try updateLocalClubs(from: clubDTOs, sourceURL: sourceURL, authToken: authToken)
+        try updateLocalClubs(from: clubDTOs)
     }
 
     /// Sync a specific club's details and members
@@ -58,11 +61,13 @@ final class ClubsSyncService: ObservableObject {
 
     // MARK: Private
 
-    private func updateLocalClubs(from dtos: [ClubDTO], sourceURL: String, authToken: String) throws {
+    private func updateLocalClubs(from dtos: [ClubDTO]) throws {
         // Fetch existing local clubs
         let descriptor = FetchDescriptor<Club>()
         let existing = try modelContext.fetch(descriptor)
-        let existingById = Dictionary(uniqueKeysWithValues: existing.map { ($0.id, $0) })
+        let existingById = Dictionary(
+            uniqueKeysWithValues: existing.map { ($0.serverId, $0) }
+        )
 
         var seenIds = Set<UUID>()
 
@@ -73,21 +78,22 @@ final class ClubsSyncService: ObservableObject {
             if let local = existingById[dto.id] {
                 // Update existing
                 local.name = dto.name
-                local.descriptionText = dto.description
+                local.callsign = dto.callsign
+                local.clubDescription = dto.description
             } else {
                 // Create new
                 let club = Club(
-                    id: dto.id,
+                    serverId: dto.id,
                     name: dto.name,
-                    poloNotesListURL: "", // Will be populated by details sync
-                    descriptionText: dto.description
+                    callsign: dto.callsign,
+                    clubDescription: dto.description
                 )
                 modelContext.insert(club)
             }
         }
 
         // Remove clubs no longer on server
-        for local in existing where !seenIds.contains(local.id) {
+        for local in existing where !seenIds.contains(local.serverId) {
             modelContext.delete(local)
         }
 
@@ -97,7 +103,7 @@ final class ClubsSyncService: ObservableObject {
     private func updateClubFromDetails(_ details: ClubDetailDTO) throws {
         let detailsId = details.id
         let descriptor = FetchDescriptor<Club>(
-            predicate: #Predicate { $0.id == detailsId }
+            predicate: #Predicate { $0.serverId == detailsId }
         )
 
         let club: Club
@@ -105,25 +111,69 @@ final class ClubsSyncService: ObservableObject {
             club = existing
         } else {
             club = Club(
-                id: details.id,
+                serverId: details.id,
                 name: details.name,
-                poloNotesListURL: details.poloNotesListURL ?? ""
+                callsign: details.callsign,
+                clubDescription: details.description
             )
             modelContext.insert(club)
         }
 
         // Update fields
         club.name = details.name
-        club.descriptionText = details.description
-        club.poloNotesListURL = details.poloNotesListURL ?? ""
-        club.lastSyncedAt = details.lastSyncedAt ?? Date()
+        club.callsign = details.callsign
+        club.clubDescription = details.description
+        club.lastSyncedAt = Date()
 
-        // Update member callsigns
-        if let members = details.members {
-            club.memberCallsigns = members.map(\.callsign)
+        // Update members from DTOs
+        if let memberDTOs = details.members {
+            try updateMembers(for: club, from: memberDTOs)
         }
 
         try modelContext.save()
+    }
+
+    private func updateMembers(
+        for club: Club,
+        from dtos: [ClubMemberDTO]
+    ) throws {
+        let existingMembers = club.members
+        let existingByCallsign = Dictionary(
+            uniqueKeysWithValues: existingMembers.map {
+                ($0.callsign.uppercased(), $0)
+            }
+        )
+
+        var seenCallsigns = Set<String>()
+
+        for dto in dtos {
+            let key = dto.callsign.uppercased()
+            seenCallsigns.insert(key)
+
+            if let existing = existingByCallsign[key] {
+                // Update existing member
+                existing.role = dto.role
+                existing.lastSeenAt = dto.lastSeenAt
+                existing.lastGrid = dto.lastGrid
+            } else {
+                // Create new member
+                let member = ClubMember(
+                    callsign: dto.callsign,
+                    role: dto.role,
+                    club: club
+                )
+                member.lastSeenAt = dto.lastSeenAt
+                member.lastGrid = dto.lastGrid
+                modelContext.insert(member)
+            }
+        }
+
+        // Remove members no longer in the club
+        for member in existingMembers
+            where !seenCallsigns.contains(member.callsign.uppercased())
+        {
+            modelContext.delete(member)
+        }
     }
 }
 

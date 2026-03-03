@@ -8,44 +8,67 @@ nonisolated final class Club {
     // MARK: Lifecycle
 
     init(
-        id: UUID = UUID(),
+        serverId: UUID,
         name: String,
-        poloNotesListURL: String,
-        descriptionText: String? = nil,
-        memberCallsignsData: Data = Data(),
-        lastSyncedAt: Date = Date()
+        callsign: String? = nil,
+        clubDescription: String? = nil
     ) {
-        self.id = id
+        self.serverId = serverId
         self.name = name
-        self.poloNotesListURL = poloNotesListURL
-        self.descriptionText = descriptionText
-        self.memberCallsignsData = memberCallsignsData
-        self.lastSyncedAt = lastSyncedAt
+        self.callsign = callsign
+        self.clubDescription = clubDescription
+        lastSyncedAt = Date()
     }
 
     // MARK: Internal
 
-    var id = UUID()
+    var serverId = UUID()
     var name = ""
-    var poloNotesListURL = ""
-    var descriptionText: String?
-    var memberCallsignsData = Data()
+    var callsign: String?
+    var clubDescription: String?
     var lastSyncedAt = Date()
 
-    var memberCallsigns: [String] {
-        get {
-            (try? JSONDecoder().decode([String].self, from: memberCallsignsData)) ?? []
-        }
-        set {
-            memberCallsignsData = (try? JSONEncoder().encode(newValue)) ?? Data()
-        }
+    /// Non-optional wrapper for CloudKit-required optional relationship
+    var members: [ClubMember] {
+        get { membersRelation ?? [] }
+        set { membersRelation = newValue }
     }
 
     var memberCount: Int {
-        memberCallsigns.count
+        members.count
     }
 
     func isMember(callsign: String) -> Bool {
-        memberCallsigns.contains { $0.uppercased() == callsign.uppercased() }
+        members.contains { $0.callsign.uppercased() == callsign.uppercased() }
     }
+
+    // MARK: Private
+
+    @Relationship(deleteRule: .cascade, inverse: \ClubMember.club)
+    private var membersRelation: [ClubMember]?
+}
+
+// MARK: - ClubMember
+
+@Model
+nonisolated final class ClubMember {
+    // MARK: Lifecycle
+
+    init(
+        callsign: String,
+        role: String = "member",
+        club: Club? = nil
+    ) {
+        self.callsign = callsign
+        self.role = role
+        self.club = club
+    }
+
+    // MARK: Internal
+
+    var callsign = ""
+    var role = "member"
+    var lastSeenAt: Date?
+    var lastGrid: String?
+    var club: Club?
 }
