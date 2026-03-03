@@ -26,7 +26,7 @@ struct SyncCard: View {
         .padding(.vertical, 12)
         .background(Color(.systemGray6))
         .clipShape(RoundedRectangle(cornerRadius: 12))
-        .animation(reduceMotion ? .none : .spring(response: 0.3, dampingFraction: 0.7), value: syncService.isSyncing)
+        .animation(reduceMotion ? .none : .easeInOut(duration: 0.25), value: syncService.isSyncing)
     }
 
     // MARK: Private
