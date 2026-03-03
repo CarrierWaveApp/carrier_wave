@@ -7,7 +7,8 @@ All notable changes to Carrier Wave will be documented in this file.
 ### Added
 - Add club hub with member list, activity feed, map, and stats dashboard (CAR-108)
 - Show club member badges in logger callsign input, QSO detail, spot rows, and activity feed
-- Add club member map showing member locations by grid square with on-air/active status
+- Add club member map with clustered pins, QRZ coordinate lookup (HamDB fallback), and 30-day location cache
+- Show progress bar during member location lookups with resolved/total count
 - Add club member online status indicators (on-air via RBN spots, recently active, inactive)
 - Add ClubSyncService with offline caching and in-memory callsign set for fast lookups
 - Add cross-reference suggestions in session start wizard — selecting a POTA park suggests matching WWFF/SOTA references (and vice versa) via number and name matching
@@ -25,7 +26,15 @@ All notable changes to Carrier Wave will be documented in this file.
 - Add callsign suggestions and expanded fields description to Hunter Log tour
 - Tune connected BLE radio to spot frequency and mode when tapping a spot in Hunter Log
 
+### Fixed
+- Fix club activity tab not loading — response format mismatch between server and client
+- Fix club map not zooming to show member locations — now auto-fits to all member pins
+
 ### Changed
+- Consolidate My Profile, Friends, and Clubs into a community section on the Activity tab
+- Sort club member list by on-air status first, then recently active, then inactive (alphabetical within each group)
+- Show relative age on club member spots and last-seen time for inactive members
+- Show richer activity descriptions in club activity feed (QSO details, park names, session summaries)
 - Unify all map views to match Activity feed style: pin markers (circle+stem), realistic elevation, and white trace lines
 - Redesign callsign suggestion pills with larger touch targets, tinted backgrounds, and magnifying glass icon
 - Move SCP detail rows (last checked, callsign count, update now) from Logging settings to External Data

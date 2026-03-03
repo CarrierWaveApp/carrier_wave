@@ -20,7 +20,7 @@ struct ClubActivityView: View {
                 )
             } else {
                 List {
-                    ForEach(activities, id: \.id) { item in
+                    ForEach(activities) { item in
                         ClubActivityRow(item: item)
                     }
                     if hasMore {
@@ -36,9 +36,9 @@ struct ClubActivityView: View {
 
     // MARK: Private
 
-    @State private var activities: [FeedItemDTO] = []
+    @State private var activities: [ClubActivityItemDTO] = []
     @State private var isLoading = false
-    @State private var cursor: UUID?
+    @State private var nextCursor: String?
     @State private var hasMore = true
 
     private let pageSize = 20
@@ -59,22 +59,22 @@ struct ClubActivityView: View {
         }
 
         do {
-            let items = try await client.fetchClubActivity(
+            let response = try await client.fetchClubActivity(
                 clubId: club.serverId,
                 sourceURL: sourceURL,
                 authToken: authToken,
                 limit: pageSize
             )
-            activities = items
-            hasMore = items.count >= pageSize
-            cursor = items.last?.id
+            activities = response.items
+            hasMore = response.pagination.hasMore
+            nextCursor = response.pagination.nextCursor
         } catch {
             hasMore = false
         }
     }
 
     private func loadMore() async {
-        guard !isLoading, hasMore, let cursor else {
+        guard !isLoading, hasMore, let nextCursor else {
             return
         }
         isLoading = true
@@ -88,16 +88,16 @@ struct ClubActivityView: View {
         }
 
         do {
-            let items = try await client.fetchClubActivity(
+            let response = try await client.fetchClubActivity(
                 clubId: club.serverId,
                 sourceURL: sourceURL,
                 authToken: authToken,
-                cursor: cursor,
+                cursor: nextCursor,
                 limit: pageSize
             )
-            activities.append(contentsOf: items)
-            hasMore = items.count >= pageSize
-            self.cursor = items.last?.id
+            activities.append(contentsOf: response.items)
+            hasMore = response.pagination.hasMore
+            self.nextCursor = response.pagination.nextCursor
         } catch {
             hasMore = false
         }
@@ -109,7 +109,7 @@ struct ClubActivityView: View {
 struct ClubActivityRow: View {
     // MARK: Internal
 
-    let item: FeedItemDTO
+    let item: ClubActivityItemDTO
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -122,7 +122,7 @@ struct ClubActivityRow: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
-            Text(formatActivityType(item.activityType))
+            activityDescription
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
@@ -130,6 +130,54 @@ struct ClubActivityRow: View {
     }
 
     // MARK: Private
+
+    @ViewBuilder
+    private var activityDescription: some View {
+        let details = item.details
+        switch item.activityType {
+        case "qsoLogged":
+            if let worked = details.workedCallsign {
+                Text(
+                    "QSO with \(worked)"
+                        + bandModeLabel(details)
+                )
+            } else {
+                Text(
+                    "Logged a QSO" + bandModeLabel(details)
+                )
+            }
+        case "parkActivation":
+            if let park = details.parkName {
+                Text("Activated \(park)")
+            } else if let ref = details.parkReference {
+                Text("Activated \(ref)")
+            } else {
+                Text("Park activation")
+            }
+        case "sessionCompleted":
+            if let count = details.qsoCount {
+                Text(
+                    "Session: \(count) QSO\(count == 1 ? "" : "s")"
+                        + bandModeLabel(details)
+                )
+            } else {
+                Text("Completed a session")
+            }
+        default:
+            Text(formatActivityType(item.activityType))
+        }
+    }
+
+    private func bandModeLabel(
+        _ details: ReportActivityDetails
+    ) -> String {
+        let parts = [details.band, details.mode]
+            .compactMap { $0 }
+        if parts.isEmpty {
+            return ""
+        }
+        return " on \(parts.joined(separator: " "))"
+    }
 
     private func formatActivityType(_ type: String) -> String {
         type

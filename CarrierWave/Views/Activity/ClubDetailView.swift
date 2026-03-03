@@ -66,11 +66,18 @@ struct ClubDetailView: View {
 
     private let sourceURL = "https://activities.carrierwave.app"
 
-    /// Sort: admins first, then alphabetical
+    /// Sort: on-air first, then recently active, then inactive,
+    /// then alphabetical by callsign within each group
     private var sortedMembers: [ClubMember] {
         club.members.sorted { first, second in
-            if first.role != second.role {
-                return first.role == "admin"
+            let firstPriority = statusPriority(
+                for: first.callsign
+            )
+            let secondPriority = statusPriority(
+                for: second.callsign
+            )
+            if firstPriority != secondPriority {
+                return firstPriority < secondPriority
             }
             return first.callsign < second.callsign
         }
@@ -107,6 +114,16 @@ struct ClubDetailView: View {
                     }
                 }
             }
+        }
+    }
+
+    /// Lower = higher priority (on-air=0, recent=1, inactive=2)
+    private func statusPriority(for callsign: String) -> Int {
+        switch memberStatuses[callsign.uppercased()]?.status {
+        case .onAir: 0
+        case .recentlyActive: 1
+        case .inactive,
+             .none: 2
         }
     }
 
@@ -205,15 +222,24 @@ struct MemberRow: View {
 
             if let spotInfo = status?.spotInfo {
                 VStack(alignment: .trailing, spacing: 2) {
-                    Text(formatFrequency(spotInfo.frequency))
-                        .font(.caption)
-                        .foregroundStyle(.green)
-                    if let mode = spotInfo.mode {
-                        Text(mode)
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
+                    HStack(spacing: 4) {
+                        Text(formatFrequency(spotInfo.frequency))
+                            .font(.caption)
+                            .foregroundStyle(.green)
+                        if let mode = spotInfo.mode {
+                            Text(mode)
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
                     }
+                    Text(spotInfo.spottedAt, style: .relative)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
                 }
+            } else if let lastSeen = status?.lastSeenAt {
+                Text(lastSeen, style: .relative)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         }
     }

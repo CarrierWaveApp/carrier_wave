@@ -31,6 +31,9 @@ struct ActivityView: View {
     )
     var incomingRequests: [Friendship]
 
+    @Query(sort: \Club.name)
+    var clubs: [Club]
+
     @State var selectedFilter: FeedFilter = .all
 
     @State var syncService: ActivitiesSyncService?
@@ -111,7 +114,7 @@ struct ActivityView: View {
             if horizontalSizeClass == .regular {
                 // iPad: Side-by-side layout
                 VStack(spacing: 16) {
-                    friendRequestsBanner
+                    communitySection
                     HStack(alignment: .top, spacing: 24) {
                         challengesSection
                             .frame(minWidth: 300, idealWidth: 350, maxWidth: 400)
@@ -123,7 +126,7 @@ struct ActivityView: View {
             } else {
                 // iPhone: Vertical stack
                 VStack(spacing: 24) {
-                    friendRequestsBanner
+                    communitySection
                     challengesSection
                     activityFeedSection
                 }
@@ -132,30 +135,6 @@ struct ActivityView: View {
         }
         .navigationTitle("Activity")
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                NavigationLink {
-                    FriendsListView()
-                } label: {
-                    Image(systemName: "person.2")
-                        .overlay(alignment: .topTrailing) {
-                            if !incomingRequests.isEmpty {
-                                Text("\(incomingRequests.count)")
-                                    .font(.caption2.weight(.bold))
-                                    .foregroundStyle(.white)
-                                    .padding(.horizontal, 4)
-                                    .padding(.vertical, 1)
-                                    .background(Color.red)
-                                    .clipShape(Capsule())
-                                    .offset(x: 8, y: -8)
-                            }
-                        }
-                }
-                .accessibilityLabel(
-                    incomingRequests.isEmpty
-                        ? "Friends"
-                        : "Friends, \(incomingRequests.count) pending requests"
-                )
-            }
             ToolbarItem(placement: .primaryAction) {
                 Button {
                     Task { await refresh() }
@@ -168,20 +147,6 @@ struct ActivityView: View {
                 }
                 .disabled(isRefreshing)
                 .accessibilityLabel("Refresh")
-            }
-            ToolbarItem(placement: .secondaryAction) {
-                NavigationLink {
-                    ClubsListView()
-                } label: {
-                    Label("Clubs", systemImage: "person.3")
-                }
-            }
-            ToolbarItem(placement: .secondaryAction) {
-                Button {
-                    showingOwnProfile = true
-                } label: {
-                    Label("My Profile", systemImage: "person.circle")
-                }
             }
             ToolbarItem(placement: .secondaryAction) {
                 Button {

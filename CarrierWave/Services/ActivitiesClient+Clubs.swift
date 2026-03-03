@@ -58,9 +58,9 @@ extension ActivitiesClient {
         clubId: UUID,
         sourceURL: String,
         authToken: String,
-        cursor: UUID? = nil,
+        cursor: String? = nil,
         limit: Int = 20
-    ) async throws -> [FeedItemDTO] {
+    ) async throws -> ClubActivityResponseDTO {
         guard var components = URLComponents(
             string: sourceURL + "/v1/clubs/\(clubId.uuidString)/activity"
         ) else {
@@ -69,7 +69,7 @@ extension ActivitiesClient {
 
         var queryItems = [URLQueryItem(name: "limit", value: String(limit))]
         if let cursor {
-            queryItems.append(URLQueryItem(name: "cursor", value: cursor.uuidString))
+            queryItems.append(URLQueryItem(name: "cursor", value: cursor))
         }
         components.queryItems = queryItems
 
@@ -83,7 +83,7 @@ extension ActivitiesClient {
         try validateResponse(response, data: data)
 
         let apiResponse = try JSONDecoder.activitiesDecoder.decode(
-            APIResponse<[FeedItemDTO]>.self,
+            APIResponse<ClubActivityResponseDTO>.self,
             from: data
         )
         return apiResponse.data
@@ -141,6 +141,31 @@ struct ClubMemberDTO: Codable {
     var lastSeenAt: Date?
     var lastGrid: String?
     var isCarrierWaveUser: Bool
+}
+
+// MARK: - ClubActivityResponseDTO
+
+struct ClubActivityResponseDTO: Codable {
+    var items: [ClubActivityItemDTO]
+    var pagination: ClubActivityPaginationDTO
+}
+
+// MARK: - ClubActivityItemDTO
+
+struct ClubActivityItemDTO: Codable, Identifiable {
+    var id: UUID
+    var callsign: String
+    var activityType: String
+    var timestamp: Date
+    var details: ReportActivityDetails
+    var createdAt: Date
+}
+
+// MARK: - ClubActivityPaginationDTO
+
+struct ClubActivityPaginationDTO: Codable {
+    var hasMore: Bool
+    var nextCursor: String?
 }
 
 // MARK: - MemberStatusDTO

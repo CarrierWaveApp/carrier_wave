@@ -4,58 +4,110 @@ import SwiftUI
 // MARK: - ActivityView+Sections
 
 extension ActivityView {
-    // MARK: - Friend Requests Banner
+    // MARK: - Community Section
 
-    @ViewBuilder
-    var friendRequestsBanner: some View {
-        if !incomingRequests.isEmpty {
-            NavigationLink {
-                FriendsListView()
-            } label: {
-                HStack(spacing: 12) {
-                    Image(systemName: "person.badge.plus")
-                        .font(.title3)
-                        .foregroundStyle(.blue)
-                        .frame(width: 32)
+    var communitySection: some View {
+        VStack(spacing: 0) {
+            communityRow(
+                icon: "person.circle",
+                iconColor: .blue,
+                title: currentCallsign,
+                subtitle: "My Profile",
+                destination: AnyView(
+                    FriendProfileView(
+                        callsign: currentCallsign,
+                        friendship: nil,
+                        isOwnProfile: true
+                    )
+                )
+            )
 
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(
-                            incomingRequests.count == 1
-                                ? "1 Friend Request"
-                                : "\(incomingRequests.count) Friend Requests"
-                        )
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.primary)
+            Divider().padding(.leading, 48)
 
-                        Text(friendRequestSubtitle)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                    }
+            communityRow(
+                icon: "person.2",
+                iconColor: .green,
+                title: "Friends",
+                subtitle: friendsSummary,
+                badge: incomingRequests.count,
+                destination: AnyView(FriendsListView())
+            )
 
-                    Spacer()
+            Divider().padding(.leading, 48)
 
-                    Image(systemName: "chevron.right")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
-                }
-                .padding()
-                .background(Color.blue.opacity(0.15))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-            }
-            .buttonStyle(.plain)
+            communityRow(
+                icon: "person.3",
+                iconColor: .purple,
+                title: "Clubs",
+                subtitle: clubs.isEmpty
+                    ? "No clubs yet"
+                    : clubs.map(\.name).joined(separator: ", "),
+                destination: AnyView(ClubsListView())
+            )
         }
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 
-    private var friendRequestSubtitle: String {
-        let callsigns = incomingRequests.map(\.friendCallsign)
-        if callsigns.count == 1 {
-            return "\(callsigns[0]) wants to connect"
-        } else if callsigns.count == 2 {
-            return "\(callsigns[0]) and \(callsigns[1]) want to connect"
-        } else {
-            return "\(callsigns[0]) and \(callsigns.count - 1) others want to connect"
+    private var friendsSummary: String {
+        if !incomingRequests.isEmpty {
+            let count = incomingRequests.count
+            return "\(count) pending request\(count == 1 ? "" : "s")"
         }
+        let count = acceptedFriends.count
+        if count == 0 {
+            return "No friends yet"
+        }
+        return "\(count) friend\(count == 1 ? "" : "s")"
+    }
+
+    private func communityRow(
+        icon: String,
+        iconColor: Color,
+        title: String,
+        subtitle: String,
+        badge: Int = 0,
+        destination: AnyView
+    ) -> some View {
+        NavigationLink {
+            destination
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: icon)
+                    .font(.title3)
+                    .foregroundStyle(iconColor)
+                    .frame(width: 28)
+
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(title)
+                        .font(.body)
+                        .foregroundStyle(.primary)
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+
+                Spacer()
+
+                if badge > 0 {
+                    Text("\(badge)")
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.red)
+                        .clipShape(Capsule())
+                }
+
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Challenges Section

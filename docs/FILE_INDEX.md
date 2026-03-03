@@ -722,7 +722,9 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `ClubsListView.swift` | List of clubs user belongs to |
 | `ClubDetailView.swift` | Club detail with segmented tabs (Members/Activity/Map), status dots, MemberRow |
 | `ClubActivityView.swift` | Paginated club activity feed using FeedItemDTO |
-| `ClubMapView.swift` | Map of club members at their last grid square locations |
+| `ClubMapView.swift` | Club member map with clustered pins, progress bar, and loading states |
+| `ClubMapView+Lookup.swift` | Member coordinate lookup — QRZ first, HamDB fallback, with caching |
+| `ClubMapAnnotationViews.swift` | MKAnnotation/MKAnnotationView subclasses for member pins and clusters |
 | `ClubStatsView.swift` | Club stats section (member count, on-air, recently active, grids) |
 | `CommunityFeaturesPromptSheet.swift` | One-time prompt for existing users to opt into community features |
 | `ShareCardView.swift` | Branded share card templates |
@@ -825,6 +827,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `FieldGuideLinker.swift` | Match radio names to CW Field Guide IDs and open deep links |
 | `FrequencyFormatter.swift` | Frequency formatting with sub-kHz precision support |
 | `KeychainHelper.swift` | Secure credential storage |
+| `MemberLocationCache.swift` | Actor-based 30-day cache for callsign→coordinate lookups (QRZ/HamDB) |
 | `GridLocationService.swift` | One-shot GPS → 6-char Maidenhead grid square service |
 | `MaidenheadConverter.swift` | Grid square to coordinate conversion (and reverse) |
 | `SunlightMode.swift` | Sunlight mode environment key and view modifier for outdoor visibility |

@@ -1,6 +1,29 @@
-import MapKit
+@preconcurrency import MapKit
 import SwiftData
 import SwiftUI
+
+// MARK: - MemberLocation
+
+/// Resolved location for a club member from HamDB lookup
+struct MemberLocation: Identifiable {
+    let callsign: String
+    let coordinate: CLLocationCoordinate2D
+    let role: String
+    let status: MemberOnlineStatus?
+
+    var id: String {
+        callsign
+    }
+}
+
+// MARK: - MemberLookupInput
+
+/// Input for a member location lookup, avoiding large tuples.
+struct MemberLookupInput {
+    let callsign: String
+    let role: String
+    let status: MemberOnlineStatus?
+}
 
 // MARK: - ClubMapView
 
@@ -10,71 +33,191 @@ struct ClubMapView: View {
     let club: Club
     var memberStatuses: [String: MemberStatusDTO]
 
+    // MARK: - State
+
+    @State var memberLocations: [MemberLocation] = []
+    @State var isLoading = false
+    @State var resolvedCount = 0
+    @State var totalCount = 0
+
     var body: some View {
-        if mappableMembers.isEmpty {
-            ContentUnavailableView(
-                "No Locations",
-                systemImage: "map",
-                description: Text(
-                    "Member grid square locations will appear here"
+        Group {
+            if isLoading, memberLocations.isEmpty {
+                loadingView
+            } else if !isLoading, memberLocations.isEmpty {
+                ContentUnavailableView(
+                    "No Locations",
+                    systemImage: "map",
+                    description: Text(
+                        "Could not resolve member locations"
+                    )
                 )
-            )
-        } else {
-            Map {
-                ForEach(
-                    mappableMembers,
-                    id: \.callsign
-                ) { member in
-                    if let coordinate = MaidenheadConverter.coordinate(
-                        from: member.lastGrid ?? ""
-                    ) {
-                        Annotation(
-                            member.callsign,
-                            coordinate: coordinate
-                        ) {
-                            memberPin(for: member)
-                        }
+            } else {
+                ZStack(alignment: .top) {
+                    ClusteredMapView(
+                        locations: memberLocations
+                    )
+                    if isLoading {
+                        loadingOverlay
                     }
                 }
             }
         }
+        .task { await lookupLocations() }
     }
 
     // MARK: Private
 
-    private var mappableMembers: [ClubMember] {
-        club.members.filter { member in
-            guard let grid = member.lastGrid else {
-                return false
+    private var loadingView: some View {
+        VStack(spacing: 12) {
+            ProgressView(
+                value: totalCount > 0
+                    ? Double(resolvedCount) / Double(totalCount)
+                    : 0
+            )
+            .frame(width: 200)
+            Text(
+                totalCount > 0
+                    ? "Looking up locations (\(resolvedCount)/\(totalCount))…"
+                    : "Looking up member locations…"
+            )
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var loadingOverlay: some View {
+        HStack(spacing: 8) {
+            ProgressView()
+                .controlSize(.small)
+            Text("\(resolvedCount)/\(totalCount) locations")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(.ultraThinMaterial, in: Capsule())
+        .padding(.top, 8)
+    }
+}
+
+// MARK: - ClusteredMapView
+
+private struct ClusteredMapView: UIViewRepresentable {
+    // MARK: Internal
+
+    // MARK: - Coordinator
+
+    final class Coordinator: NSObject, MKMapViewDelegate {
+        func mapView(
+            _ mapView: MKMapView,
+            viewFor annotation: MKAnnotation
+        ) -> MKAnnotationView? {
+            if annotation is MKClusterAnnotation {
+                return mapView.dequeueReusableAnnotationView(
+                    withIdentifier:
+                    MKMapViewDefaultClusterAnnotationViewReuseIdentifier,
+                    for: annotation
+                )
             }
-            return MaidenheadConverter.coordinate(from: grid) != nil
+            if annotation is MemberAnnotation {
+                return mapView.dequeueReusableAnnotationView(
+                    withIdentifier:
+                    MKMapViewDefaultAnnotationViewReuseIdentifier,
+                    for: annotation
+                )
+            }
+            return nil
         }
     }
 
-    private func memberPin(
-        for member: ClubMember
-    ) -> some View {
-        let status = memberStatuses[
-            member.callsign.uppercased()
-        ]
-        return VStack(spacing: 2) {
-            Image(systemName: "person.circle.fill")
-                .font(.title2)
-                .foregroundStyle(pinColor(for: status))
-            Text(member.callsign)
-                .font(.caption2)
-                .fontWeight(.medium)
-        }
+    let locations: [MemberLocation]
+
+    func makeUIView(
+        context: Context
+    ) -> MKMapView {
+        let mapView = MKMapView()
+        mapView.delegate = context.coordinator
+        mapView.register(
+            MemberAnnotationView.self,
+            forAnnotationViewWithReuseIdentifier:
+            MKMapViewDefaultAnnotationViewReuseIdentifier
+        )
+        mapView.register(
+            ClusterAnnotationView.self,
+            forAnnotationViewWithReuseIdentifier:
+            MKMapViewDefaultClusterAnnotationViewReuseIdentifier
+        )
+        return mapView
     }
 
-    private func pinColor(
-        for status: MemberStatusDTO?
-    ) -> Color {
-        switch status?.status {
-        case .onAir: .green
-        case .recentlyActive: .yellow
-        case .inactive,
-             .none: .blue
+    func updateUIView(
+        _ mapView: MKMapView,
+        context: Context
+    ) {
+        mapView.removeAnnotations(mapView.annotations)
+
+        let annotations = locations.map {
+            MemberAnnotation(location: $0)
+        }
+        mapView.addAnnotations(annotations)
+
+        guard !annotations.isEmpty else {
+            return
+        }
+        let region = regionForAnnotations(annotations)
+        mapView.setRegion(region, animated: false)
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+
+    // MARK: Private
+
+    private func regionForAnnotations(
+        _ annotations: [MemberAnnotation]
+    ) -> MKCoordinateRegion {
+        if annotations.count == 1 {
+            return MKCoordinateRegion(
+                center: annotations[0].coordinate,
+                latitudinalMeters: 200_000,
+                longitudinalMeters: 200_000
+            )
+        }
+
+        var minLat = annotations[0].coordinate.latitude
+        var maxLat = minLat
+        var minLon = annotations[0].coordinate.longitude
+        var maxLon = minLon
+
+        for ann in annotations {
+            let coord = ann.coordinate
+            minLat = min(minLat, coord.latitude)
+            maxLat = max(maxLat, coord.latitude)
+            minLon = min(minLon, coord.longitude)
+            maxLon = max(maxLon, coord.longitude)
+        }
+
+        let center = CLLocationCoordinate2D(
+            latitude: (minLat + maxLat) / 2,
+            longitude: (minLon + maxLon) / 2
+        )
+        let span = MKCoordinateSpan(
+            latitudeDelta: max((maxLat - minLat) * 1.3, 0.5),
+            longitudeDelta: max((maxLon - minLon) * 1.3, 0.5)
+        )
+        return MKCoordinateRegion(center: center, span: span)
+    }
+}
+
+// MARK: - Array+Chunked
+
+extension Array {
+    func chunked(into size: Int) -> [[Element]] {
+        stride(from: 0, to: count, by: size).map {
+            Array(self[$0 ..< Swift.min($0 + size, count)])
         }
     }
 }
