@@ -125,12 +125,20 @@ struct POTASpotRow: View {
                 .foregroundStyle(spot.isHumanSpot ? .primary : .secondary)
                 .strikethrough(isDupe)
 
-            if !ClubsSyncService.shared.clubs(
-                for: spot.activator
-            ).isEmpty {
-                Image(systemName: "person.3.fill")
-                    .font(.caption2)
-                    .foregroundStyle(.blue)
+            let clubNames = ClubsSyncService.shared.clubs(for: spot.activator)
+            if !clubNames.isEmpty {
+                HStack(spacing: 2) {
+                    Image(systemName: "person.3.fill")
+                        .font(.caption2)
+                    Text(clubNames.joined(separator: ", "))
+                        .font(.caption2)
+                        .lineLimit(1)
+                }
+                .foregroundStyle(.blue)
+                .padding(.horizontal, 4)
+                .padding(.vertical, 1)
+                .background(Color.blue.opacity(0.15))
+                .clipShape(RoundedRectangle(cornerRadius: 3))
             }
 
             if isSelf {

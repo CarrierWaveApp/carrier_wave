@@ -30,6 +30,28 @@ struct ActivityLogSpotsList: View {
     let onShowFilterSheet: () -> Void
     let onSpotLogged: (_ frequencyMHz: Double, _ mode: String) -> Void
 
+    var sortedSpots: [EnrichedSpot] {
+        let primarySorted: [EnrichedSpot] = switch sortOrder {
+        case .recent:
+            dedupedSpots.sorted { $0.spot.timestamp > $1.spot.timestamp }
+        case .frequency:
+            dedupedSpots.sorted { $0.spot.frequencyKHz < $1.spot.frequencyKHz }
+        }
+
+        // Partition: non-dupes first, dupes last (stable within each group)
+        let nonDupes = primarySorted.filter { spot in
+            let key = spot.spot.callsign.uppercased()
+            let result = workedResults[key] ?? .notWorked
+            return !result.isDupe(on: spot.spot.band, mode: spot.spot.mode)
+        }
+        let dupes = primarySorted.filter { spot in
+            let key = spot.spot.callsign.uppercased()
+            let result = workedResults[key] ?? .notWorked
+            return result.isDupe(on: spot.spot.band, mode: spot.spot.mode)
+        }
+        return nonDupes + dupes
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             spotsHeader
@@ -157,28 +179,6 @@ struct ActivityLogSpotsList: View {
         return results
     }
 
-    private var sortedSpots: [EnrichedSpot] {
-        let primarySorted: [EnrichedSpot] = switch sortOrder {
-        case .recent:
-            dedupedSpots.sorted { $0.spot.timestamp > $1.spot.timestamp }
-        case .frequency:
-            dedupedSpots.sorted { $0.spot.frequencyKHz < $1.spot.frequencyKHz }
-        }
-
-        // Partition: non-dupes first, dupes last (stable within each group)
-        let nonDupes = primarySorted.filter { spot in
-            let key = spot.spot.callsign.uppercased()
-            let result = workedResults[key] ?? .notWorked
-            return !result.isDupe(on: spot.spot.band, mode: spot.spot.mode)
-        }
-        let dupes = primarySorted.filter { spot in
-            let key = spot.spot.callsign.uppercased()
-            let result = workedResults[key] ?? .notWorked
-            return result.isDupe(on: spot.spot.band, mode: spot.spot.mode)
-        }
-        return nonDupes + dupes
-    }
-
     // MARK: - Header & controls
 
     private var spotsHeader: some View {
@@ -186,7 +186,7 @@ struct ActivityLogSpotsList: View {
             Text("Spots")
                 .font(.subheadline.weight(.semibold))
             Spacer()
-            Text("\(sortedSpots.count)")
+            Text("\(clubFilteredSpots.count)")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
             filterButton
@@ -258,18 +258,37 @@ struct ActivityLogSpotsList: View {
     }
 
     private var spotContent: some View {
-        let visible = showAll
-            ? sortedSpots
-            : Array(sortedSpots.prefix(Self.visibleLimit))
-        let hasMore = !showAll && sortedSpots.count > Self.visibleLimit
+        let total = clubFilteredSpots.count
+        let hasMore = !showAll && total > Self.visibleLimit
 
         return LazyVStack(spacing: 0) {
-            spotRows(visible)
+            if !clubMemberSpots.isEmpty {
+                clubSectionHeader("Club Members")
+                spotRows(clubMemberSpots)
+
+                if !otherSpots.isEmpty {
+                    clubSectionHeader("Other Spots")
+                }
+            }
+
+            let visibleOther: [EnrichedSpot] = if clubMemberSpots.isEmpty {
+                showAll
+                    ? clubFilteredSpots
+                    : Array(clubFilteredSpots.prefix(Self.visibleLimit))
+            } else {
+                showAll
+                    ? otherSpots
+                    : Array(otherSpots.prefix(
+                        max(Self.visibleLimit - clubMemberSpots.count, 0)
+                    ))
+            }
+            spotRows(visibleOther)
+
             if hasMore {
                 Button {
                     showAll = true
                 } label: {
-                    Text("Show \(sortedSpots.count - Self.visibleLimit) More")
+                    Text("Show \(total - Self.visibleLimit) More")
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(.blue)
                         .frame(maxWidth: .infinity)

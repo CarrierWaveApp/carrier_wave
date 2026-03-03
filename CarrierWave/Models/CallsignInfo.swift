@@ -230,10 +230,12 @@ extension CallsignInfo {
             guard let matchRange = Range(match.range, in: text),
                   let linkTextRange = Range(match.range(at: 1), in: text),
                   let urlRange = Range(match.range(at: 2), in: text)
-            else { continue }
+            else {
+                continue
+            }
 
             if cursor < matchRange.lowerBound {
-                result.append(AttributedString(String(text[cursor..<matchRange.lowerBound])))
+                result.append(AttributedString(String(text[cursor ..< matchRange.lowerBound])))
             }
 
             var linkAttr = AttributedString(String(text[linkTextRange]))

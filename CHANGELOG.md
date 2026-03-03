@@ -5,6 +5,10 @@ All notable changes to Carrier Wave will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Group club members first in hunter log, POTA/SOTA spots, and session spots with section headers
+- Show club name badges on spot rows for club members (replaces plain icon)
+- Add "Club Members Only" filter toggle in hunter log spot filters with removable chip
+- Add club members summary card to session detail view showing which contacts were club members
 - Add club hub with member list, activity feed, map, and stats dashboard (CAR-108)
 - Show club member badges in logger callsign input, QSO detail, spot rows, and activity feed
 - Add club member map with clustered pins, QRZ coordinate lookup (HamDB fallback), and 30-day location cache

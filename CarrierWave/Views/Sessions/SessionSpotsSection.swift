@@ -34,7 +34,34 @@ struct SessionSpotsSection: View {
         if !spots.isEmpty {
             Section {
                 DisclosureGroup(isExpanded: $isSectionExpanded) {
-                    ForEach(spotGroups) { group in
+                    if !clubSpots.isEmpty {
+                        HStack(spacing: 4) {
+                            Image(systemName: "person.3.fill")
+                                .font(.caption)
+                                .foregroundStyle(.blue)
+                            Text("Club Members")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.vertical, 4)
+
+                        ForEach(clubSpots) { spot in
+                            SessionSpotRow(
+                                spot: spot,
+                                isPOTAHighlight: spot.isPOTA,
+                                isLogged: spotQSOMatch?.spotWasLogged(spot)
+                            )
+                        }
+
+                        if !nonClubSpots.isEmpty {
+                            Text("Other Spots")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                                .padding(.vertical, 4)
+                        }
+                    }
+
+                    ForEach(buildSpotGroups(from: nonClubSpots)) { group in
                         switch group {
                         case let .human(spot):
                             SessionSpotRow(
@@ -70,10 +97,22 @@ struct SessionSpotsSection: View {
         return "\(count) Spot\(count == 1 ? "" : "s")"
     }
 
+    private var clubSpots: [SessionSpot] {
+        spots.filter {
+            !ClubsSyncService.shared.clubs(for: $0.callsign).isEmpty
+        }
+    }
+
+    private var nonClubSpots: [SessionSpot] {
+        spots.filter {
+            ClubsSyncService.shared.clubs(for: $0.callsign).isEmpty
+        }
+    }
+
     /// Group spots into runs: each human spot is standalone,
     /// consecutive RBN spots are collapsed into a single accordion.
-    private var spotGroups: [SpotGroup] {
-        let sorted = spots.sorted { $0.timestamp > $1.timestamp }
+    private func buildSpotGroups(from spotList: [SessionSpot]) -> [SpotGroup] {
+        let sorted = spotList.sorted { $0.timestamp > $1.timestamp }
         var groups: [SpotGroup] = []
         var currentRBNRun: [SessionSpot] = []
 
@@ -242,6 +281,18 @@ struct SessionSpotRow: View {
                 .font(.system(.subheadline, design: .monospaced))
                 .lineLimit(1)
                 .layoutPriority(1)
+
+            let clubNames = ClubsSyncService.shared.clubs(for: spot.callsign)
+            if !clubNames.isEmpty {
+                HStack(spacing: 2) {
+                    Image(systemName: "person.3.fill")
+                        .font(.caption2)
+                    Text(clubNames.joined(separator: ", "))
+                        .font(.caption2)
+                        .lineLimit(1)
+                }
+                .foregroundStyle(.blue)
+            }
 
             Spacer()
 

@@ -74,6 +74,8 @@ struct SessionDetailView: View {
                 roveStopsSection(session)
             }
 
+            clubMembersSummarySection
+
             mapSection
 
             if !spotMismatchesDismissed, !spotMismatches.isEmpty {

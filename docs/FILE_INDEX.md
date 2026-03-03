@@ -457,6 +457,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `SessionDetailView.swift` | Unified session/activation detail with equipment, photos, notes, spots, QSO list, POTA upload |
 | `SessionDetailView+Components.swift` | Extracted helper views: RoveStopDetailRow, RoveParkGroup, PhotoItem |
 | `SessionDetailView+QSOs.swift` | QSO list sections (flat and rove-grouped) and data loading |
+| `SessionDetailView+Clubs.swift` | Club members summary card for session detail (callsigns + club names) |
 | `SessionDetailView+POTA.swift` | POTA-specific sections: activation info, metadata grid, upload, jobs, recording |
 | `SessionSpotsSection.swift` | Persisted spots display section for session detail (POTA highlighted, RBN collapsed) |
 | `SessionSpotsSummaryRow.swift` | Expandable spots summary row for sessions list (region pills, distance range, logger-style aggregation) |
@@ -490,6 +491,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `LoggerSpotsSidebarView.swift` | Tabbed sidebar with segmented picker for POTA/RBN/P2P spots |
 | `SpotSelection.swift` | SpotSelection enum, SidebarTab enum, SpotCommandAction enum for sidebar integration |
 | `SidebarPOTASpotsView.swift` | POTA spots adapted for persistent sidebar display (auto-refresh, no dismiss) |
+| `SidebarPOTASpotsView+Clubs.swift` | Club member spot sections for sidebar POTA spots |
 | `SidebarRBNSpotsView.swift` | RBN/My Spots adapted for persistent sidebar display |
 | `SidebarP2PView.swift` | P2P opportunities adapted for persistent sidebar display |
 | `SidebarMapView.swift` | Lightweight session map for sidebar tab (QSO markers, geodesic arcs, rove stops) |
@@ -544,6 +546,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `POTASpotRow.swift` | Individual POTA spot row component |
 | `SOTASpotRow.swift` | Individual SOTA spot row component with summit info |
 | `POTASpotsView.swift` | POTA activator spots panel with filtering |
+| `POTASpotsView+Clubs.swift` | Club member spot sections for POTA spots panel |
 | `POTASpotsHelperViews.swift` | Helper views for POTA spots (filter sheet, loading, empty, error states) |
 | `P2PPanelView.swift` | Park-to-park opportunities panel with SNR display |
 | `SessionMapPanelView.swift` | Map panel showing session QSOs for MAP command |
@@ -693,6 +696,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `ActivityLogSetupSheet.swift` | Initial activity log setup sheet (name, callsign, profile) |
 | `ActivityLogSettingsView.swift` | Activity log settings (profiles, upload, daily goal) |
 | `ActivityLogSpotsList.swift` | Hunter spot list container with worked-before checking |
+| `ActivityLogSpotsList+Clubs.swift` | Club member spot grouping and section headers for hunter log |
 | `ActivityLogSpotRow.swift` | Individual spot row with frequency, callsign, badges |
 | `SpotLogSheet.swift` | Half-sheet for logging a QSO from a tapped spot |
 | `SpotFilterBar.swift` | Horizontal scrolling filter chips for spot list |
@@ -726,6 +730,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `ClubMapView+Lookup.swift` | Member coordinate lookup — QRZ first, HamDB fallback, with caching |
 | `ClubMapAnnotationViews.swift` | MKAnnotation/MKAnnotationView subclasses for member pins and clusters |
 | `ClubStatsView.swift` | Club stats section (member count, on-air, recently active, grids) |
+| `ClubSpotsSectionHeader.swift` | Shared sticky section header for club member spots in POTA/hunter log lists |
 | `CommunityFeaturesPromptSheet.swift` | One-time prompt for existing users to opt into community features |
 | `ShareCardView.swift` | Branded share card templates |
 | `ShareCardRenderer.swift` | Render share cards to UIImage |

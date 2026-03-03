@@ -23,8 +23,46 @@ struct SidebarPOTASpotsView: View {
 
     // MARK: Internal
 
+    @State var workedResults: [String: WorkedBeforeResult] = [:]
+
     let userCallsign: String?
     let onSelectSpot: (POTASpot) -> Void
+
+    var friendCallsigns: Set<String> {
+        Set(acceptedFriends.map { $0.friendCallsign.uppercased() })
+    }
+
+    var filteredSpots: [POTASpot] {
+        allSpots.filter { spot in
+            if let targetBand = bandFilter.bandName {
+                guard let spotBand = BandUtilities.deriveBand(from: spot.frequencyKHz),
+                      spotBand == targetBand
+                else {
+                    return false
+                }
+            }
+            guard modeFilter.matches(spot.mode) else {
+                return false
+            }
+            return true
+        }
+    }
+
+    var filteredSOTASpots: [SOTASpot] {
+        allSOTASpots.filter { spot in
+            if let targetBand = bandFilter.bandName {
+                guard let spotBand = BandUtilities.deriveBand(from: spot.frequencyKHz),
+                      spotBand == targetBand
+                else {
+                    return false
+                }
+            }
+            guard modeFilter.matches(spot.mode) else {
+                return false
+            }
+            return true
+        }
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -57,6 +95,44 @@ struct SidebarPOTASpotsView: View {
         }
     }
 
+    func groupSpotsByBand(
+        _ spots: [POTASpot]
+    ) -> [(band: String, spots: [POTASpot])] {
+        let grouped = Dictionary(grouping: spots) { spot -> String in
+            BandUtilities.deriveBand(from: spot.frequencyKHz) ?? "Other"
+        }
+        return grouped.sorted { lhs, rhs in
+            let lhsIdx = BandUtilities.bandOrder.firstIndex(of: lhs.key) ?? 999
+            let rhsIdx = BandUtilities.bandOrder.firstIndex(of: rhs.key) ?? 999
+            return lhsIdx < rhsIdx
+        }.map {
+            (
+                band: $0.key,
+                spots: $0.value.sorted { lhs, rhs in
+                    if lhs.isHumanSpot != rhs.isHumanSpot {
+                        return lhs.isHumanSpot
+                    }
+                    return (lhs.frequencyKHz ?? 0) < (rhs.frequencyKHz ?? 0)
+                }
+            )
+        }
+    }
+
+    func groupSOTASpotsByBand(
+        _ spots: [SOTASpot]
+    ) -> [(band: String, spots: [SOTASpot])] {
+        let grouped = Dictionary(grouping: spots) { spot -> String in
+            BandUtilities.deriveBand(from: spot.frequencyKHz) ?? "Other"
+        }
+        return grouped.sorted { lhs, rhs in
+            let lhsIdx = BandUtilities.bandOrder.firstIndex(of: lhs.key) ?? 999
+            let rhsIdx = BandUtilities.bandOrder.firstIndex(of: rhs.key) ?? 999
+            return lhsIdx < rhsIdx
+        }.map {
+            (band: $0.key, spots: $0.value.sorted { ($0.frequencyKHz ?? 0) < ($1.frequencyKHz ?? 0) })
+        }
+    }
+
     // MARK: Private
 
     @Environment(\.modelContext) private var modelContext
@@ -72,43 +148,6 @@ struct SidebarPOTASpotsView: View {
     @State private var modeFilter: ModeFilter
     @State private var showFilterSheet = false
     @State private var workedBeforeCache = WorkedBeforeCache()
-    @State private var workedResults: [String: WorkedBeforeResult] = [:]
-
-    private var friendCallsigns: Set<String> {
-        Set(acceptedFriends.map { $0.friendCallsign.uppercased() })
-    }
-
-    private var filteredSpots: [POTASpot] {
-        allSpots.filter { spot in
-            if let targetBand = bandFilter.bandName {
-                guard let spotBand = BandUtilities.deriveBand(from: spot.frequencyKHz),
-                      spotBand == targetBand
-                else {
-                    return false
-                }
-            }
-            guard modeFilter.matches(spot.mode) else {
-                return false
-            }
-            return true
-        }
-    }
-
-    private var filteredSOTASpots: [SOTASpot] {
-        allSOTASpots.filter { spot in
-            if let targetBand = bandFilter.bandName {
-                guard let spotBand = BandUtilities.deriveBand(from: spot.frequencyKHz),
-                      spotBand == targetBand
-                else {
-                    return false
-                }
-            }
-            guard modeFilter.matches(spot.mode) else {
-                return false
-            }
-            return true
-        }
-    }
 
     private var sotaSpotsByBand: [(band: String, spots: [SOTASpot])] {
         groupSOTASpotsByBand(filteredSOTASpots)
@@ -181,96 +220,12 @@ struct SidebarPOTASpotsView: View {
     private var spotsList: some View {
         ScrollView {
             LazyVStack(spacing: 0, pinnedViews: .sectionHeaders) {
-                potaSpotsSection
-                sotaSpotsSection
-            }
-        }
-    }
-
-    private var potaSpotsSection: some View {
-        ForEach(spotsByBand, id: \.band) { section in
-            Section {
-                ForEach(section.spots) { spot in
-                    let result = workedResults[spot.activator.uppercased()]
-                        ?? .notWorked
-                    POTASpotRow(
-                        spot: spot,
-                        userCallsign: userCallsign,
-                        friendCallsigns: friendCallsigns,
-                        workedResult: result
-                    ) {
-                        onSelectSpot(spot)
-                    }
-                    .opacity(spot.isAutomatedSpot ? 0.7 : 1.0)
-                    Divider()
-                        .padding(.leading, 92)
+                if hasClubSpots {
+                    clubSpotsSection
                 }
-            } header: {
-                POTASpotsBandHeader(band: section.band)
+                nonClubPotaSpotsSection
+                nonClubSotaSpotsSection
             }
-        }
-    }
-
-    @ViewBuilder
-    private var sotaSpotsSection: some View {
-        if !filteredSOTASpots.isEmpty {
-            ForEach(sotaSpotsByBand, id: \.band) { section in
-                Section {
-                    ForEach(section.spots) { spot in
-                        let callKey = spot.activatorCallsign.uppercased()
-                        let result = workedResults[callKey] ?? .notWorked
-                        SOTASpotRow(
-                            spot: spot,
-                            friendCallsigns: friendCallsigns,
-                            workedResult: result
-                        ) {
-                            // SOTA spot tapped — not yet wired to QSO prefill
-                        }
-                        Divider()
-                            .padding(.leading, 92)
-                    }
-                } header: {
-                    SOTASpotsBandHeader(band: section.band)
-                }
-            }
-        }
-    }
-
-    private func groupSpotsByBand(
-        _ spots: [POTASpot]
-    ) -> [(band: String, spots: [POTASpot])] {
-        let grouped = Dictionary(grouping: spots) { spot -> String in
-            BandUtilities.deriveBand(from: spot.frequencyKHz) ?? "Other"
-        }
-        return grouped.sorted { lhs, rhs in
-            let lhsIdx = BandUtilities.bandOrder.firstIndex(of: lhs.key) ?? 999
-            let rhsIdx = BandUtilities.bandOrder.firstIndex(of: rhs.key) ?? 999
-            return lhsIdx < rhsIdx
-        }.map {
-            (
-                band: $0.key,
-                spots: $0.value.sorted { lhs, rhs in
-                    if lhs.isHumanSpot != rhs.isHumanSpot {
-                        return lhs.isHumanSpot
-                    }
-                    return (lhs.frequencyKHz ?? 0) < (rhs.frequencyKHz ?? 0)
-                }
-            )
-        }
-    }
-
-    private func groupSOTASpotsByBand(
-        _ spots: [SOTASpot]
-    ) -> [(band: String, spots: [SOTASpot])] {
-        let grouped = Dictionary(grouping: spots) { spot -> String in
-            BandUtilities.deriveBand(from: spot.frequencyKHz) ?? "Other"
-        }
-        return grouped.sorted { lhs, rhs in
-            let lhsIdx = BandUtilities.bandOrder.firstIndex(of: lhs.key) ?? 999
-            let rhsIdx = BandUtilities.bandOrder.firstIndex(of: rhs.key) ?? 999
-            return lhsIdx < rhsIdx
-        }.map {
-            (band: $0.key, spots: $0.value.sorted { ($0.frequencyKHz ?? 0) < ($1.frequencyKHz ?? 0) })
         }
     }
 

@@ -22,6 +22,12 @@ struct SpotFilterBar: View {
                             filters.hideWorked = false
                         }
                     }
+
+                    if filters.clubOnly {
+                        activeChip(label: "Club Only") {
+                            filters.clubOnly = false
+                        }
+                    }
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 4)

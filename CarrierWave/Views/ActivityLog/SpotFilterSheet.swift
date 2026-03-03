@@ -30,9 +30,11 @@ struct SpotFilters: Equatable, Codable {
     /// Whether to hide already-worked callsigns
     var hideWorked = false
 
+    var clubOnly = false
+
     /// Whether any filters are active
     var hasActiveFilters: Bool {
-        !sources.isEmpty || !bands.isEmpty || !modes.isEmpty || hideWorked
+        !sources.isEmpty || !bands.isEmpty || !modes.isEmpty || hideWorked || clubOnly
     }
 
     /// Apply all filters to a spot list
@@ -93,10 +95,38 @@ extension SpotFilters: RawRepresentable {
     /// Codable-only wrapper to avoid JSONEncoder using the RawRepresentable path
     /// (which causes infinite recursion: rawValue → encode → rawValue → ...)
     private struct CodableStorage: Codable {
+        // MARK: Lifecycle
+
+        init(
+            sources: Set<SourceFilter>,
+            bands: Set<String>,
+            modes: Set<String>,
+            hideWorked: Bool,
+            clubOnly: Bool
+        ) {
+            self.sources = sources
+            self.bands = bands
+            self.modes = modes
+            self.hideWorked = hideWorked
+            self.clubOnly = clubOnly
+        }
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            sources = try container.decode(Set<SourceFilter>.self, forKey: .sources)
+            bands = try container.decode(Set<String>.self, forKey: .bands)
+            modes = try container.decode(Set<String>.self, forKey: .modes)
+            hideWorked = try container.decode(Bool.self, forKey: .hideWorked)
+            clubOnly = try container.decodeIfPresent(Bool.self, forKey: .clubOnly) ?? false
+        }
+
+        // MARK: Internal
+
         let sources: Set<SourceFilter>
         let bands: Set<String>
         let modes: Set<String>
         let hideWorked: Bool
+        let clubOnly: Bool
     }
 
     init?(rawValue: String) {
@@ -109,11 +139,13 @@ extension SpotFilters: RawRepresentable {
         bands = storage.bands
         modes = storage.modes
         hideWorked = storage.hideWorked
+        clubOnly = storage.clubOnly
     }
 
     var rawValue: String {
         let storage = CodableStorage(
-            sources: sources, bands: bands, modes: modes, hideWorked: hideWorked
+            sources: sources, bands: bands, modes: modes,
+            hideWorked: hideWorked, clubOnly: clubOnly
         )
         guard let data = try? JSONEncoder().encode(storage),
               let string = String(data: data, encoding: .utf8)
@@ -276,6 +308,9 @@ struct SpotFilterSheet: View {
     private var togglesSection: some View {
         Section {
             Toggle("Hide Already Worked", isOn: $filters.hideWorked)
+            if !ClubsSyncService.shared.clubMemberCallsigns.isEmpty {
+                Toggle("Club Members Only", isOn: $filters.clubOnly)
+            }
         }
     }
 
