@@ -324,7 +324,7 @@ private struct ActivityGridContent: View {
                             .foregroundStyle(ActivityGridColors.activation)
                     }
                     if activityLog > 0 {
-                        Label("\(activityLog)", systemImage: "list.bullet")
+                        Label("\(activityLog)", systemImage: "scope")
                             .font(.caption)
                             .foregroundStyle(ActivityGridColors.activityLog)
                     }

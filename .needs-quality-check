@@ -2,3 +2,4 @@ Fix hunter log setup: moved .miniTour to active card only to prevent sheet confl
 Pre-fill default profile from existing session data (radio, power) in ActivityLogSetupSheet.loadDefaults()
 Replace antenna TextField with EquipmentPickerSheet in AddEditProfileSheet and ActivityLogSetupSheet
 Add key and mic fields to StationProfile model and both profile editor sheets
+Change activity grid hunter log popover icon from list.bullet to scope
