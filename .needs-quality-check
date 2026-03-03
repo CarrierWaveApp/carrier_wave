@@ -3,3 +3,4 @@ Pre-fill default profile from existing session data (radio, power) in ActivityLo
 Replace antenna TextField with EquipmentPickerSheet in AddEditProfileSheet and ActivityLogSetupSheet
 Add key and mic fields to StationProfile model and both profile editor sheets
 Change activity grid hunter log popover icon from list.bullet to scope
+Fix callsign notes clipping: Replace AttributedString(markdown:) with manual link parser in CallsignInfo, LoggerCallsignCard, CWCallsignInfoCard

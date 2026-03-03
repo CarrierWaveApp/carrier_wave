@@ -27,6 +27,7 @@ All notable changes to Carrier Wave will be documented in this file.
 - Tune connected BLE radio to spot frequency and mode when tapping a spot in Hunter Log
 
 ### Fixed
+- Fix callsign notes clipping markdown links — URLs with special characters (like @) caused `AttributedString(markdown:)` to strip brackets, breaking link rendering
 - Fix hunter log setup button on dashboard not presenting setup sheet due to miniTour sheet modifier conflict
 - Fix missing default profile during hunter log setup — pre-fill radio and power from existing session defaults
 - Fix equipment not shared between hunter log profiles and sessions — replace antenna text field with shared equipment picker, add key and mic fields to station profiles

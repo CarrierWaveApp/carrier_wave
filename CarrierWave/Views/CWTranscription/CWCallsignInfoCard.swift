@@ -47,15 +47,9 @@ struct CWCallsignInfoCard: View {
 
             // Note from Polo notes
             if let note = info.note {
-                Group {
-                    if let attributed = try? AttributedString(markdown: note) {
-                        Text(attributed)
-                    } else {
-                        Text(note)
-                    }
-                }
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                Text(CallsignInfo.parseNoteMarkdown(note))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
             // Location info (grid, QTH)
