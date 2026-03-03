@@ -155,20 +155,26 @@ extension CallsignInfo {
         // Extract emoji from the beginning of the note
         let (emoji, remainingText) = extractLeadingEmoji(from: noteText)
 
-        // The remaining text is the name/note
         let trimmedNote = remainingText.trimmingCharacters(in: .whitespaces)
 
-        // Try to extract just the name (first word or words before " - ")
+        // Collect leading plain-text words as name; everything from the first
+        // non-text emoji or "[" (markdown link) onward becomes the note.
+        let splitIndex = findNameEnd(in: trimmedNote)
+
         let name: String?
         let note: String?
 
-        if let dashRange = trimmedNote.range(of: " - ") {
-            name = String(trimmedNote[..<dashRange.lowerBound]).trimmingCharacters(in: .whitespaces)
-            note = String(trimmedNote[dashRange.upperBound...]).trimmingCharacters(in: .whitespaces)
-        } else {
-            // Just use the whole thing as name
-            name = trimmedNote.isEmpty ? nil : trimmedNote
+        if splitIndex == trimmedNote.startIndex {
+            name = nil
+            note = trimmedNote.isEmpty ? nil : trimmedNote
+        } else if splitIndex == trimmedNote.endIndex {
+            name = trimmedNote
             note = nil
+        } else {
+            let nameStr = String(trimmedNote[..<splitIndex]).trimmingCharacters(in: .whitespaces)
+            let noteStr = String(trimmedNote[splitIndex...]).trimmingCharacters(in: .whitespaces)
+            name = nameStr.isEmpty ? nil : nameStr
+            note = noteStr.isEmpty ? nil : noteStr
         }
 
         return CallsignInfo(
@@ -178,6 +184,34 @@ extension CallsignInfo {
             emoji: emoji,
             source: .poloNotes
         )
+    }
+
+    /// Index where the name portion ends — stops at any non-ASCII emoji or `[`
+    private static func findNameEnd(in text: String) -> String.Index {
+        var index = text.startIndex
+        while index < text.endIndex {
+            let char = text[index]
+            if char == "[" {
+                return index
+            }
+            if isNonTextEmoji(char) {
+                return index
+            }
+            index = text.index(after: index)
+        }
+        return text.endIndex
+    }
+
+    /// True for visual emoji (📺🌊🏠), false for ASCII chars that happen
+    /// to have `isEmoji` (digits, #, *)
+    private static func isNonTextEmoji(_ char: Character) -> Bool {
+        guard let scalar = char.unicodeScalars.first else {
+            return false
+        }
+        guard scalar.value > 0x7F else {
+            return false
+        }
+        return scalar.properties.isEmoji
     }
 
     /// Extract leading emoji from text

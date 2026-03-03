@@ -107,6 +107,10 @@ extension DashboardView {
         ContestsCard()
     }
 
+    var callsignLookupCard: some View {
+        CallsignLookupCard()
+    }
+
     var friendsOnAirCard: some View {
         FriendsOnAirCard(manager: activityLogManager)
     }

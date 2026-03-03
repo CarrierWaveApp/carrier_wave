@@ -272,6 +272,7 @@ struct DashboardView: View {
                             friendActivityCard
                             conditionsCard
                             contestsCard
+                            callsignLookupCard
                         }
                         VStack(spacing: 16) {
                             bragSheetEntryCard
@@ -292,6 +293,7 @@ struct DashboardView: View {
                     equipmentCard
                     conditionsCard
                     contestsCard
+                    callsignLookupCard
                     syncCard
                 }
             }

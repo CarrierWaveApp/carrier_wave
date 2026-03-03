@@ -242,6 +242,10 @@ struct CallsignNotesSettingsView: View {
         for source in sources where source.isEnabled {
             await refreshSource(source)
         }
+
+        // Force the in-memory/disk cache to re-download and re-parse
+        let notesSources = NotesSourceInfo.fetchAll(modelContext: modelContext)
+        try? await CallsignNotesCache.shared.forceRefresh(sources: notesSources)
     }
 }
 
