@@ -206,3 +206,48 @@ extension CallsignInfo {
         return (emoji, remaining)
     }
 }
+
+// MARK: - CallsignInfo + Note Markdown
+
+extension CallsignInfo {
+    /// Parse note text containing markdown links into an AttributedString.
+    /// Uses manual link detection instead of AttributedString(markdown:) which
+    /// clips brackets from links whose URLs contain special characters like @.
+    static func parseNoteMarkdown(_ text: String) -> AttributedString {
+        // swiftlint:disable:next force_try
+        let pattern = try! NSRegularExpression(pattern: #"\[([^\]]+)\]\(([^)]+)\)"#)
+        let nsRange = NSRange(text.startIndex..., in: text)
+        let matches = pattern.matches(in: text, range: nsRange)
+
+        guard !matches.isEmpty else {
+            return AttributedString(text)
+        }
+
+        var result = AttributedString()
+        var cursor = text.startIndex
+
+        for match in matches {
+            guard let matchRange = Range(match.range, in: text),
+                  let linkTextRange = Range(match.range(at: 1), in: text),
+                  let urlRange = Range(match.range(at: 2), in: text)
+            else { continue }
+
+            if cursor < matchRange.lowerBound {
+                result.append(AttributedString(String(text[cursor..<matchRange.lowerBound])))
+            }
+
+            var linkAttr = AttributedString(String(text[linkTextRange]))
+            if let url = URL(string: String(text[urlRange])) {
+                linkAttr.link = url
+            }
+            result.append(linkAttr)
+            cursor = matchRange.upperBound
+        }
+
+        if cursor < text.endIndex {
+            result.append(AttributedString(String(text[cursor...])))
+        }
+
+        return result
+    }
+}

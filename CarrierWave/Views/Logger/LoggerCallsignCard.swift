@@ -184,15 +184,9 @@ struct LoggerCallsignCard: View {
                 .foregroundStyle(.secondary)
                 .font(.caption)
 
-            Group {
-                if let attributed = try? AttributedString(markdown: note) {
-                    Text(attributed)
-                } else {
-                    Text(note)
-                }
-            }
-            .font(.caption)
-            .foregroundStyle(.secondary)
+            Text(CallsignInfo.parseNoteMarkdown(note))
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
         .padding(.top, 4)
     }
