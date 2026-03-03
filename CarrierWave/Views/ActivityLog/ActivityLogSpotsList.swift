@@ -308,24 +308,9 @@ struct ActivityLogSpotsList: View {
                     ?? .notWorked,
                 huntedBehavior: huntedBehavior,
                 isFriend: friendCallsigns.contains(spot.spot.callsign.uppercased()),
-                onTap: { handleSpotTap(spot) }
+                onTap: { handleSpotTap(spot) },
+                onTuneIn: { handleTuneIn(spot) }
             )
-            .contextMenu {
-                Button {
-                    let tuneInSpot = TuneInSpot(from: spot.spot)
-                    let ctx = ModelContext(container)
-                    Task {
-                        await TuneInManager.shared.tuneIn(
-                            to: tuneInSpot, modelContext: ctx
-                        )
-                    }
-                } label: {
-                    Label(
-                        "Tune In to \(spot.spot.callsign)",
-                        systemImage: "radio"
-                    )
-                }
-            }
 
             if spot.id != rowSpots.last?.id {
                 Divider()
@@ -354,6 +339,18 @@ struct ActivityLogSpotsList: View {
         }
         radio.setFrequency(spot.spot.frequencyMHz)
         radio.setMode(spot.spot.mode)
+    }
+
+    @MainActor
+    private func handleTuneIn(_ spot: EnrichedSpot) {
+        let tuneInSpot = TuneInSpot(from: spot.spot)
+        let context = ModelContext(container)
+        Task {
+            await TuneInManager.shared.tuneIn(
+                to: tuneInSpot,
+                modelContext: context
+            )
+        }
     }
 
     private func loadWorkedBefore() async {

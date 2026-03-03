@@ -1,6 +1,21 @@
 import Foundation
 import SwiftData
 
+// MARK: - ClipBookmark
+
+/// A bookmarked moment in a recording timeline
+struct ClipBookmark: Codable, Identifiable, Sendable {
+    var id: UUID = .init()
+    /// Offset in seconds from the recording start
+    var offsetSeconds: Double
+    /// Optional label (e.g., "CQ", "Exchange", user note)
+    var label: String?
+    /// When the bookmark was created
+    var createdAt: Date = .init()
+}
+
+// MARK: - WebSDRRecording
+
 /// Stores metadata for a WebSDR audio recording associated with a logging session
 @Model
 nonisolated final class WebSDRRecording {
@@ -44,6 +59,44 @@ nonisolated final class WebSDRRecording {
 
     /// Whether the recording completed successfully
     var isComplete: Bool = false
+
+    // MARK: - Spot Metadata (Tune In recordings)
+
+    /// Callsign of the station being listened to
+    var spotCallsign: String?
+
+    /// Park reference (e.g., "US-4557") if POTA activation
+    var spotParkRef: String?
+
+    /// Park name if POTA activation
+    var spotParkName: String?
+
+    /// Summit code (e.g., "W4C/CM-001") if SOTA activation
+    var spotSummitCode: String?
+
+    /// Band (e.g., "20m")
+    var spotBand: String?
+
+    /// Whether this is a standalone Tune In recording (not tied to a logging session)
+    var isTuneInRecording: Bool = false
+
+    // MARK: - Clip Bookmarks
+
+    /// Serialized clip bookmark offsets (seconds into recording)
+    var clipBookmarksData: Data?
+
+    /// Clip bookmarks — points of interest during the recording
+    var clipBookmarks: [ClipBookmark] {
+        get {
+            guard let data = clipBookmarksData else { return [] }
+            return (try? JSONDecoder().decode(
+                [ClipBookmark].self, from: data
+            )) ?? []
+        }
+        set {
+            clipBookmarksData = try? JSONEncoder().encode(newValue)
+        }
+    }
 
     /// Serialized SDR parameter change events (frequency/mode changes during recording)
     var parameterChangesData: Data?

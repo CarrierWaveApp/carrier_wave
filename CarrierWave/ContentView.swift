@@ -198,6 +198,8 @@ struct ContentView: View {
     @State private var showingRestoreAlert = false
     @State private var incomingFriendRequestCount = 0
 
+    private var tuneInManager: TuneInManager { TuneInManager.shared }
+
     private let lofiClient = LoFiClient.appDefault()
     private let qrzClient = QRZClient()
     private let hamrsClient = HAMRSClient()
@@ -259,7 +261,15 @@ struct ContentView: View {
             }
         }
         .safeAreaInset(edge: .bottom) {
-            TuneInMiniPlayerView(manager: tuneInManager)
+            if tuneInManager.isActive {
+                TuneInMiniPlayerView(manager: tuneInManager)
+            }
+        }
+        .sheet(isPresented: Binding(
+            get: { tuneInManager.showExpandedPlayer },
+            set: { tuneInManager.showExpandedPlayer = $0 }
+        )) {
+            TuneInExpandedPlayerView(manager: tuneInManager)
         }
         .tuneInCellularAlert(manager: tuneInManager)
         .onReceive(NotificationCenter.default.publisher(for: .tabConfigurationChanged)) { _ in
@@ -295,7 +305,15 @@ struct ContentView: View {
             }
         }
         .safeAreaInset(edge: .bottom) {
-            TuneInMiniPlayerView(manager: tuneInManager)
+            if tuneInManager.isActive {
+                TuneInMiniPlayerView(manager: tuneInManager)
+            }
+        }
+        .sheet(isPresented: Binding(
+            get: { tuneInManager.showExpandedPlayer },
+            set: { tuneInManager.showExpandedPlayer = $0 }
+        )) {
+            TuneInExpandedPlayerView(manager: tuneInManager)
         }
         .tuneInCellularAlert(manager: tuneInManager)
         .toolbar(shouldHideTabBar ? .hidden : .visible, for: .tabBar)

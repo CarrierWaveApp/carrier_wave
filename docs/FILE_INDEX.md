@@ -415,7 +415,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `WebSDRRecorder.swift` | Records KiwiSDR audio frames to compressed audio file |
 | `WebSDRSession.swift` | Coordinates WebSDR connection, recording, playback, and resilient reconnects |
 | `WebSDRSession+Internals.swift` | Internal helpers: audio stream processing, reconnect logic, recording lifecycle |
-| `TuneInManager.swift` | Standalone "Tune In" session manager: smart receiver selection, cellular warning, spot metadata |
+| `TuneInManager.swift` | Standalone "Tune In" session manager: smart receiver selection, cellular warning, spot metadata, CW transcription wiring |
 | `RecordingPlaybackEngine.swift` | @Observable AVAudioPlayer wrapper with seeking, speed control, amplitude envelope, QSO sync, transcript tracking |
 | `RecordingClipExporter.swift` | M4A clip export from recordings with AVAssetExportSession and metadata embedding |
 | `CWSWLClient.swift` | Actor for cw-swl server communication (upload, transcribe, poll, download transcript) |
@@ -592,6 +592,13 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `CWChatView.swift` | Chat-style conversation display with message bubbles |
 | `CWMessageBubble.swift` | Individual message bubble for chat view |
 | `CWCallsignInfoCard.swift` | Callsign info display card and chip components |
+
+## Views - Tune In (`CarrierWave/Views/TuneIn/`)
+| File | Purpose |
+|------|---------|
+| `TuneInMiniPlayerView.swift` | Persistent mini player bar above tab bar (collapsed state with live indicator, mute, close) |
+| `TuneInExpandedPlayerView.swift` | Full expanded player sheet with receiver details, audio level, CW transcript, clip bookmark, action buttons |
+| `TuneInCellularAlert.swift` | Cellular data warning alert modifier for first-time use on cellular |
 
 ## Views - Dashboard (`CarrierWave/Views/Dashboard/`)
 | File | Purpose |

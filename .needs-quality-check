@@ -1,13 +1,12 @@
-TuneInManager.swift - New standalone tune-in session manager with smart receiver selection, cellular warning, background disconnect
+TuneInManager.swift - New standalone tune-in session manager with smart receiver selection, cellular warning, CW transcription wiring, clip bookmarks
 TuneInMiniPlayerView.swift - Persistent mini player bar above tab bar (collapsed state with live indicator, mute, close)
-TuneInExpandedPlayerView.swift - Full expanded player sheet with receiver details, audio level, volume, change receiver
+TuneInExpandedPlayerView.swift - Full expanded player sheet with receiver details, audio level, CW transcript, clip bookmark, action buttons
 TuneInCellularAlert.swift - Cellular data warning alert modifier for first-time use on cellular
-ActivityLogSpotsList.swift - Added context menu "Tune In" action on hunter log spot rows
-POTASpotsView+Clubs.swift - Added context menu "Tune In" action on logger POTA spot rows
-SidebarPOTASpotsView+Clubs.swift - Added context menu "Tune In" action on sidebar POTA spot rows
+CWTranscriptionService+SDR.swift - WebSDR audio input adapter (Int16 to Float conversion, SDR stream processing)
+WebSDRSession.swift - Added onAudioFrame callback, tuneInSpotMetadata, clipBookmarks array
+WebSDRSession+Internals.swift - Forward audio frames via onAudioFrame, apply spot metadata to recordings, persist clip bookmarks
+WebSDRRecording.swift - Added spot metadata fields (callsign, park, summit, band), clip bookmarks, isTuneInRecording flag, ClipBookmark struct
+WebSDRRecordingsView.swift - Enhanced recording rows with callsign header, park/summit badges, clip count
+ActivityLogSpotRow.swift - Added context menu "Tune In" action with onTuneIn callback
+ActivityLogSpotsList.swift - Wired handleTuneIn to create TuneInSpot and start TuneInManager
 ContentView.swift - Integrated mini player via safeAreaInset and cellular alert on both iPhone and iPad navigation
-CWTranscriptionService+SDR.swift - New extension: WebSDR audio input adapter (Int16 to Float conversion, SDR stream processing)
-TuneInManager.swift - Added CW transcription wiring: onAudioFrame callback, async stream bridge, auto-start for CW mode
-TuneInExpandedPlayerView.swift - Added CW transcript section with chat bubble view, WPM status, detected callsign pills
-WebSDRSession.swift - Added onAudioFrame callback property
-WebSDRSession+Internals.swift - Forward audio frames via onAudioFrame callback in processAudioStream

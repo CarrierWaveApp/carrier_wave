@@ -51,24 +51,77 @@ struct WebSDRRecordingsView: View {
     private func recordingRow(_ recording: WebSDRRecording) -> some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text(recording.kiwisdrName)
-                    .font(.subheadline)
-                    .fontWeight(.medium)
+                // Header: callsign (if Tune In) or receiver name
+                if let callsign = recording.spotCallsign {
+                    HStack(spacing: 6) {
+                        Text(callsign)
+                            .font(.subheadline.weight(.semibold).monospaced())
+                        if recording.isTuneInRecording {
+                            Text("TUNE IN")
+                                .font(.caption2.weight(.bold))
+                                .foregroundStyle(.cyan)
+                                .padding(.horizontal, 4)
+                                .padding(.vertical, 1)
+                                .background(Color.cyan.opacity(0.15))
+                                .clipShape(RoundedRectangle(cornerRadius: 3))
+                        }
+                    }
+                } else {
+                    Text(recording.kiwisdrName)
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                }
 
+                // Park/summit badge
+                if let parkRef = recording.spotParkRef {
+                    HStack(spacing: 4) {
+                        Image(systemName: "tree.fill")
+                            .font(.caption2)
+                            .foregroundStyle(.green)
+                        Text(parkRef)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        if let parkName = recording.spotParkName {
+                            Text(parkName)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                        }
+                    }
+                } else if let summit = recording.spotSummitCode {
+                    HStack(spacing: 4) {
+                        Image(systemName: "mountain.2.fill")
+                            .font(.caption2)
+                            .foregroundStyle(.brown)
+                        Text(summit)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                // Frequency / mode / band
                 HStack(spacing: 8) {
                     Text(formatFrequency(recording.frequencyKHz))
                         .font(.caption)
                         .foregroundStyle(.secondary)
-
                     Text(recording.mode)
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                    if let band = recording.spotBand {
+                        Text(band)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
 
+                // Date / duration / size / clips
                 HStack(spacing: 8) {
-                    Text(recording.startedAt.formatted(date: .abbreviated, time: .shortened))
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
+                    Text(recording.startedAt.formatted(
+                        date: .abbreviated,
+                        time: .shortened
+                    ))
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
 
                     Text(recording.formattedDuration)
                         .font(.caption2)
@@ -78,6 +131,17 @@ struct WebSDRRecordingsView: View {
                         Text(recording.formattedFileSize)
                             .font(.caption2)
                             .foregroundStyle(.tertiary)
+                    }
+
+                    let clips = recording.clipBookmarks.count
+                    if clips > 0 {
+                        HStack(spacing: 2) {
+                            Image(systemName: "bookmark.fill")
+                                .font(.caption2)
+                            Text("\(clips)")
+                                .font(.caption2)
+                        }
+                        .foregroundStyle(.blue)
                     }
                 }
             }

@@ -5,6 +5,17 @@ import Network
 import SwiftData
 import UIKit
 
+// MARK: - TuneInSpotMetadata
+
+/// Spot metadata to attach to WebSDR recordings created from Tune In.
+struct TuneInSpotMetadata: Sendable {
+    let callsign: String
+    let parkRef: String?
+    let parkName: String?
+    let summitCode: String?
+    let band: String
+}
+
 // MARK: - TuneInSpot
 
 /// Lightweight snapshot of a spot being tuned into.
@@ -130,6 +141,18 @@ final class TuneInManager {
         session.toggleMute()
     }
 
+    /// Add a clip bookmark at the current recording position
+    func addClipBookmark(label: String? = nil) {
+        let offset = session.recordingDuration
+        guard offset > 0 else { return }
+
+        let bookmark = ClipBookmark(
+            offsetSeconds: offset,
+            label: label
+        )
+        session.addClipBookmark(bookmark)
+    }
+
     // MARK: - Smart Receiver Selection
 
     /// Find the best receiver for a spot based on activator proximity.
@@ -177,6 +200,15 @@ final class TuneInManager {
         if spot.mode.uppercased() == "CW" {
             setupCWTranscription()
         }
+
+        // Attach spot metadata for recording enrichment
+        session.tuneInSpotMetadata = TuneInSpotMetadata(
+            callsign: spot.callsign,
+            parkRef: spot.parkRef,
+            parkName: spot.parkName,
+            summitCode: spot.summitCode,
+            band: spot.band
+        )
 
         // Use a standalone session ID (not tied to a logging session)
         let standaloneId = UUID()

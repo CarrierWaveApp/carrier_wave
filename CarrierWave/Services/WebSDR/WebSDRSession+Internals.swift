@@ -253,6 +253,10 @@ extension WebSDRSession {
             if !parameterChanges.isEmpty {
                 recording.parameterChanges = parameterChanges
             }
+            // Persist clip bookmarks
+            if !clipBookmarks.isEmpty {
+                recording.clipBookmarks = clipBookmarks
+            }
             recording.finish()
             try? modelContext.save()
         }
@@ -422,6 +426,17 @@ extension WebSDRSession {
         recording.relativeFilePath = WebSDRRecording.relativePath(
             sessionId: loggingSessionId
         )
+
+        // Apply Tune In spot metadata if present
+        if let meta = tuneInSpotMetadata {
+            recording.spotCallsign = meta.callsign
+            recording.spotParkRef = meta.parkRef
+            recording.spotParkName = meta.parkName
+            recording.spotSummitCode = meta.summitCode
+            recording.spotBand = meta.band
+            recording.isTuneInRecording = true
+        }
+
         modelContext.insert(recording)
         try? modelContext.save()
         recordingId = recording.id

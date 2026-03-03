@@ -8,12 +8,15 @@ All notable changes to Carrier Wave will be documented in this file.
 - Add "Tune In" feature — listen to any spotted activation via KiwiSDR directly from spot rows
 - Smart receiver auto-selection based on activator proximity
 - Persistent mini player bar (Apple Music-style) above tab bar with live status, mute, and close
-- Expanded player sheet with receiver details, audio level meter, volume control, and change receiver
+- Expanded player sheet with receiver details, audio level meter, and change receiver
+- Live CW transcription from WebSDR audio in expanded player (chat bubble view with detected callsigns)
+- Clip bookmarking during live Tune In listening with badge count on expanded player
+- Spot metadata (callsign, park/summit, band) attached to Tune In recordings
+- Enhanced recordings list with callsign header, park/summit badges, clip count
 - Standalone tune-in sessions from hunter log (not tied to active logging session)
 - Context menu "Tune In to [callsign]" on all spot rows (hunter log, logger POTA spots, sidebar)
 - Cellular data warning on first use (~5 MB/hour)
 - Auto-disconnect when app backgrounds
-- Live CW transcription from WebSDR audio in expanded player (chat bubble view with detected callsigns)
 - Design document for full Tune In feature roadmap (docs/features/tune-in.md)
 
 ## [1.52.0] - 2026-03-03

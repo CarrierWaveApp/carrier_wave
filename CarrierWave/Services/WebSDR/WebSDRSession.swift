@@ -117,6 +117,9 @@ final class WebSDRSession {
     /// Optional callback for audio frames — used by TuneInManager to feed CW decoder
     var onAudioFrame: (([Int16]) -> Void)?
 
+    /// Optional spot metadata for Tune In recordings (set by TuneInManager before start)
+    var tuneInSpotMetadata: TuneInSpotMetadata?
+
     /// Accumulated parameter change events for the current recording
     var parameterChanges: [SDRParameterEvent] = []
 
@@ -267,7 +270,9 @@ final class WebSDRSession {
         effectiveHost = nil
         effectivePort = nil
         parameterChanges = []
+        clipBookmarks = []
         recordingStartDate = nil
+        tuneInSpotMetadata = nil
     }
 
     /// Legacy stop — disconnects but keeps recording for stitching.
@@ -310,6 +315,14 @@ final class WebSDRSession {
         isMuted.toggle()
         audioEngine?.setMuted(isMuted)
     }
+
+    /// Add a clip bookmark to the current recording
+    func addClipBookmark(_ bookmark: ClipBookmark) {
+        clipBookmarks.append(bookmark)
+    }
+
+    /// Clip bookmarks collected during this session
+    var clipBookmarks: [ClipBookmark] = []
 
     // MARK: - Tuning
 
