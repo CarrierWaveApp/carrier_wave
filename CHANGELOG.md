@@ -4,6 +4,8 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.52.0] - 2026-03-03
+
 ### Added
 - Group club members first in hunter log, POTA/SOTA spots, and session spots with section headers
 - Show club name badges on spot rows for club members (replaces plain icon)
