@@ -14,6 +14,8 @@ struct StationProfile: Codable, Identifiable, Equatable {
         power: Int? = nil,
         rig: String? = nil,
         antenna: String? = nil,
+        key: String? = nil,
+        mic: String? = nil,
         grid: String? = nil,
         useCurrentLocation: Bool = false,
         isDefault: Bool = false
@@ -23,6 +25,8 @@ struct StationProfile: Codable, Identifiable, Equatable {
         self.power = power
         self.rig = rig
         self.antenna = antenna
+        self.key = key
+        self.mic = mic
         self.grid = grid
         self.useCurrentLocation = useCurrentLocation
         self.isDefault = isDefault
@@ -35,6 +39,8 @@ struct StationProfile: Codable, Identifiable, Equatable {
     var power: Int?
     var rig: String?
     var antenna: String?
+    var key: String?
+    var mic: String?
     var grid: String?
     var useCurrentLocation: Bool
     var isDefault: Bool

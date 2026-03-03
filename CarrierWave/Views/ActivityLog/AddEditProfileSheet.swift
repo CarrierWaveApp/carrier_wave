@@ -16,7 +16,9 @@ struct AddEditProfileSheet: View {
         _name = State(initialValue: existing?.name ?? "")
         _rig = State(initialValue: existing?.rig)
         _powerText = State(initialValue: existing?.power.map { "\($0)" } ?? "")
-        _antenna = State(initialValue: existing?.antenna ?? "")
+        _antenna = State(initialValue: existing?.antenna)
+        _key = State(initialValue: existing?.key)
+        _mic = State(initialValue: existing?.mic)
         _grid = State(initialValue: existing?.grid ?? "")
         _useCurrentLocation = State(initialValue: existing?.useCurrentLocation ?? false)
         _isDefault = State(initialValue: existing?.isDefault ?? false)
@@ -55,8 +57,32 @@ struct AddEditProfileSheet: View {
                             .frame(width: 80)
                     }
 
-                    TextField("Antenna", text: $antenna)
-                        .textInputAutocapitalization(.words)
+                    HStack {
+                        Text("Antenna")
+                        Spacer()
+                        Button(antenna ?? "None") {
+                            showingAntennaPicker = true
+                        }
+                        .foregroundStyle(.secondary)
+                    }
+
+                    HStack {
+                        Text("Key")
+                        Spacer()
+                        Button(key ?? "None") {
+                            showingKeyPicker = true
+                        }
+                        .foregroundStyle(.secondary)
+                    }
+
+                    HStack {
+                        Text("Microphone")
+                        Spacer()
+                        Button(mic ?? "None") {
+                            showingMicPicker = true
+                        }
+                        .foregroundStyle(.secondary)
+                    }
                 }
 
                 Section("Location") {
@@ -118,6 +144,24 @@ struct AddEditProfileSheet: View {
             .sheet(isPresented: $showingRadioPicker) {
                 RadioPickerSheet(selection: $rig)
             }
+            .sheet(isPresented: $showingAntennaPicker) {
+                EquipmentPickerSheet(
+                    equipmentType: .antenna,
+                    selection: $antenna
+                )
+            }
+            .sheet(isPresented: $showingKeyPicker) {
+                EquipmentPickerSheet(
+                    equipmentType: .key,
+                    selection: $key
+                )
+            }
+            .sheet(isPresented: $showingMicPicker) {
+                EquipmentPickerSheet(
+                    equipmentType: .mic,
+                    selection: $mic
+                )
+            }
         }
     }
 
@@ -128,11 +172,16 @@ struct AddEditProfileSheet: View {
     @State private var name: String
     @State private var rig: String?
     @State private var powerText: String
-    @State private var antenna: String
+    @State private var antenna: String?
+    @State private var key: String?
+    @State private var mic: String?
     @State private var grid: String
     @State private var useCurrentLocation: Bool
     @State private var isDefault: Bool
     @State private var showingRadioPicker = false
+    @State private var showingAntennaPicker = false
+    @State private var showingKeyPicker = false
+    @State private var showingMicPicker = false
     @State private var locationService = GridLocationService()
 
     private let profileId: UUID
@@ -147,8 +196,12 @@ struct AddEditProfileSheet: View {
             name: name.trimmingCharacters(in: .whitespaces),
             power: Int(powerText),
             rig: rig,
-            antenna: antenna.isEmpty ? nil : antenna,
-            grid: useCurrentLocation ? nil : (grid.isEmpty ? nil : grid.uppercased()),
+            antenna: antenna,
+            key: key,
+            mic: mic,
+            grid: useCurrentLocation
+                ? nil
+                : (grid.isEmpty ? nil : grid.uppercased()),
             useCurrentLocation: useCurrentLocation,
             isDefault: isDefault
         )

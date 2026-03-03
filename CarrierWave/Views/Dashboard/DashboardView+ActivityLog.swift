@@ -56,6 +56,7 @@ extension DashboardView {
                         )
                     }
                     .buttonStyle(.plain)
+                    .miniTour(.activityLog, tourState: tourState)
                 } else {
                     ActivityLogCard(
                         activeLog: nil,
@@ -68,7 +69,6 @@ extension DashboardView {
                 }
             }
         }
-        .miniTour(.activityLog, tourState: tourState)
         .onAppear {
             activityLogManager?.refreshCurrentProfile()
         }

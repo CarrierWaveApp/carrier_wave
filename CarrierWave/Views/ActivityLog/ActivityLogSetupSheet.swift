@@ -48,8 +48,32 @@ struct ActivityLogSetupSheet: View {
                             .frame(width: 60)
                     }
 
-                    TextField("Antenna", text: $antenna)
-                        .textInputAutocapitalization(.words)
+                    HStack {
+                        Text("Antenna")
+                        Spacer()
+                        Button(selectedAntenna ?? "None") {
+                            showingAntennaPicker = true
+                        }
+                        .foregroundStyle(.secondary)
+                    }
+
+                    HStack {
+                        Text("Key")
+                        Spacer()
+                        Button(selectedKey ?? "None") {
+                            showingKeyPicker = true
+                        }
+                        .foregroundStyle(.secondary)
+                    }
+
+                    HStack {
+                        Text("Microphone")
+                        Spacer()
+                        Button(selectedMic ?? "None") {
+                            showingMicPicker = true
+                        }
+                        .foregroundStyle(.secondary)
+                    }
 
                     Toggle("Use Current Location", isOn: $useCurrentLocation)
 
@@ -98,6 +122,24 @@ struct ActivityLogSetupSheet: View {
             .sheet(isPresented: $showingRadioPicker) {
                 RadioPickerSheet(selection: $selectedRig)
             }
+            .sheet(isPresented: $showingAntennaPicker) {
+                EquipmentPickerSheet(
+                    equipmentType: .antenna,
+                    selection: $selectedAntenna
+                )
+            }
+            .sheet(isPresented: $showingKeyPicker) {
+                EquipmentPickerSheet(
+                    equipmentType: .key,
+                    selection: $selectedKey
+                )
+            }
+            .sheet(isPresented: $showingMicPicker) {
+                EquipmentPickerSheet(
+                    equipmentType: .mic,
+                    selection: $selectedMic
+                )
+            }
             .onAppear { loadDefaults() }
         }
     }
@@ -111,11 +153,16 @@ struct ActivityLogSetupSheet: View {
     @State private var profileName = "QTH"
     @State private var selectedRig: String?
     @State private var powerText = ""
-    @State private var antenna = ""
+    @State private var selectedAntenna: String?
+    @State private var selectedKey: String?
+    @State private var selectedMic: String?
     @State private var grid = ""
     @State private var useCurrentLocation = false
     @State private var locationService = GridLocationService()
     @State private var showingRadioPicker = false
+    @State private var showingAntennaPicker = false
+    @State private var showingKeyPicker = false
+    @State private var showingMicPicker = false
 
     private var isValid: Bool {
         !callsign.trimmingCharacters(in: .whitespaces).isEmpty
@@ -136,6 +183,20 @@ struct ActivityLogSetupSheet: View {
         {
             grid = saved
         }
+
+        // Pre-fill radio from saved list or last session default
+        let radios = RadioStorage.load()
+        if !radios.isEmpty {
+            selectedRig = radios.first
+        }
+
+        // Pre-fill power from session defaults
+        let savedPower = UserDefaults.standard.string(
+            forKey: "loggerDefaultPower"
+        ) ?? ""
+        if !savedPower.isEmpty {
+            powerText = savedPower
+        }
     }
 
     private func createLog() {
@@ -146,8 +207,12 @@ struct ActivityLogSetupSheet: View {
                 name: profileName.trimmingCharacters(in: .whitespaces),
                 power: Int(powerText),
                 rig: selectedRig,
-                antenna: antenna.isEmpty ? nil : antenna,
-                grid: useCurrentLocation ? nil : (grid.isEmpty ? nil : grid.uppercased()),
+                antenna: selectedAntenna,
+                key: selectedKey,
+                mic: selectedMic,
+                grid: useCurrentLocation
+                    ? nil
+                    : (grid.isEmpty ? nil : grid.uppercased()),
                 useCurrentLocation: useCurrentLocation,
                 isDefault: true
             )
