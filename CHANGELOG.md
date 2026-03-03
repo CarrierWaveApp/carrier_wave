@@ -5,9 +5,11 @@ All notable changes to Carrier Wave will be documented in this file.
 ## [Unreleased]
 
 ### Added
-- Show club member badges in logger callsign input, QSO detail, spot rows, and activity feed when a callsign belongs to a club
-- Add ClubMember SwiftData model with proper relationship to Club (replaces JSON blob member storage)
-- Add club activity feed and member status DTOs and API endpoints to ActivitiesClient
+- Add club hub with member list, activity feed, map, and stats dashboard (CAR-108)
+- Show club member badges in logger callsign input, QSO detail, spot rows, and activity feed
+- Add club member map showing member locations by grid square with on-air/active status
+- Add club member online status indicators (on-air via RBN spots, recently active, inactive)
+- Add ClubSyncService with offline caching and in-memory callsign set for fast lookups
 - Add cross-reference suggestions in session start wizard — selecting a POTA park suggests matching WWFF/SOTA references (and vice versa) via number and name matching
 - Add SDR auto-start option — saves last-used KiwiSDR receiver and offers a toggle to auto-connect when starting a new session
 - Add WWFF (World Wide Flora & Fauna) as a selectable activation program with spot browsing from WWFF Spotline, reference directory autocomplete with search/nearby picker, and External Data cache management
