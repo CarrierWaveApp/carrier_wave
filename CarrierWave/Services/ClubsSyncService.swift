@@ -153,13 +153,17 @@ final class ClubsSyncService: ObservableObject {
                 local.name = dto.name
                 local.callsign = dto.callsign
                 local.clubDescription = dto.description
+                local.notesURL = dto.notesUrl
+                local.notesTitle = dto.notesTitle
             } else {
                 // Create new
                 let club = Club(
                     serverId: dto.id,
                     name: dto.name,
                     callsign: dto.callsign,
-                    clubDescription: dto.description
+                    clubDescription: dto.description,
+                    notesURL: dto.notesUrl,
+                    notesTitle: dto.notesTitle
                 )
                 context.insert(club)
             }
@@ -191,7 +195,9 @@ final class ClubsSyncService: ObservableObject {
                 serverId: details.id,
                 name: details.name,
                 callsign: details.callsign,
-                clubDescription: details.description
+                clubDescription: details.description,
+                notesURL: details.notesUrl,
+                notesTitle: details.notesTitle
             )
             context.insert(club)
         }
@@ -200,6 +206,8 @@ final class ClubsSyncService: ObservableObject {
         club.name = details.name
         club.callsign = details.callsign
         club.clubDescription = details.description
+        club.notesURL = details.notesUrl
+        club.notesTitle = details.notesTitle
         club.lastSyncedAt = Date()
 
         // Update members from DTOs

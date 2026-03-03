@@ -11,12 +11,16 @@ nonisolated final class Club {
         serverId: UUID,
         name: String,
         callsign: String? = nil,
-        clubDescription: String? = nil
+        clubDescription: String? = nil,
+        notesURL: String? = nil,
+        notesTitle: String? = nil
     ) {
         self.serverId = serverId
         self.name = name
         self.callsign = callsign
         self.clubDescription = clubDescription
+        self.notesURL = notesURL
+        self.notesTitle = notesTitle
         lastSyncedAt = Date()
     }
 
@@ -26,6 +30,8 @@ nonisolated final class Club {
     var name = ""
     var callsign: String?
     var clubDescription: String?
+    var notesURL: String?
+    var notesTitle: String?
     var lastSyncedAt = Date()
 
     /// Non-optional wrapper for CloudKit-required optional relationship

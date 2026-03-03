@@ -119,6 +119,8 @@ struct ClubDTO: Codable {
     var name: String
     var callsign: String?
     var description: String?
+    var notesUrl: String?
+    var notesTitle: String?
     var memberCount: Int
 }
 
@@ -129,6 +131,8 @@ struct ClubDetailDTO: Codable {
     var name: String
     var callsign: String?
     var description: String?
+    var notesUrl: String?
+    var notesTitle: String?
     var members: [ClubMemberDTO]?
 }
 

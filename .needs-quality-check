@@ -1,3 +1,0 @@
-Add previousCallsign (QRZ p_call) parsing to CallsignInfo, CallsignLookupService+QRZ, CallsignLookupService merge, and LoggerCallsignCard display
-Fall back to QRZ aliases field when p_call is empty for previous callsign detection
-LoggerView.swift: Added 600ms delay before presenting interactive tour fullScreenCover to avoid race with SessionStartSheet dismissal
