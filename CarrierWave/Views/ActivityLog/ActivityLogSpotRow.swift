@@ -13,6 +13,7 @@ struct ActivityLogSpotRow: View {
     let huntedBehavior: HuntedSpotBehavior
     var isFriend: Bool = false
     let onTap: () -> Void
+    var onTuneIn: (() -> Void)?
 
     var body: some View {
         Button(action: onTap) {
@@ -28,6 +29,16 @@ struct ActivityLogSpotRow: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .contextMenu {
+            Button {
+                onTuneIn?()
+            } label: {
+                Label(
+                    "Tune In to \(spot.spot.callsign)",
+                    systemImage: "radio"
+                )
+            }
+        }
     }
 
     // MARK: Private

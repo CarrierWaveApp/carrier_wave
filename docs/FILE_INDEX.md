@@ -289,6 +289,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `MorseDecoder.swift` | Timing state machine for dit/dah classification, adaptive WPM |
 | `CWTranscriptionService.swift` | CW transcription service: state, properties, public API (start/stop/clear/copy) |
 | `CWTranscriptionService+Decoder.swift` | Audio processing, signal decoding, transcript assembly, callsign detection |
+| `CWTranscriptionService+SDR.swift` | WebSDR audio input adapter: converts Int16 KiwiSDR frames to CW decoder pipeline |
 | `CWConversationTracker.swift` | Track CW conversation turns via frequency and prosign analysis |
 | `PoloNotesParser.swift` | Parse Ham2K Polo notes list files for callsign info |
 | `CallsignLookupService.swift` | Two-tier callsign lookup: error/result types, core lookup logic, cache management |
@@ -414,6 +415,8 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `WebSDRRecorder.swift` | Records KiwiSDR audio frames to compressed audio file |
 | `WebSDRSession.swift` | Coordinates WebSDR connection, recording, playback, and resilient reconnects |
 | `WebSDRSession+Internals.swift` | Internal helpers: audio stream processing, reconnect logic, recording lifecycle |
+| `TuneInManager.swift` | Standalone "Tune In" session manager: smart receiver selection, cellular warning, spot metadata, CW transcription wiring |
+| `TuneInManager+SmartFeatures.swift` | Smart features: QSY detection/retune, receiver quality monitoring, follow activator persistence |
 | `RecordingPlaybackEngine.swift` | @Observable AVAudioPlayer wrapper with seeking, speed control, amplitude envelope, QSO sync, transcript tracking |
 | `RecordingClipExporter.swift` | M4A clip export from recordings with AVAssetExportSession and metadata embedding |
 | `CWSWLClient.swift` | Actor for cw-swl server communication (upload, transcribe, poll, download transcript) |
@@ -590,6 +593,14 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `CWChatView.swift` | Chat-style conversation display with message bubbles |
 | `CWMessageBubble.swift` | Individual message bubble for chat view |
 | `CWCallsignInfoCard.swift` | Callsign info display card and chip components |
+
+## Views - Tune In (`CarrierWave/Views/TuneIn/`)
+| File | Purpose |
+|------|---------|
+| `TuneInMiniPlayerView.swift` | Persistent mini player bar above tab bar (collapsed state with live indicator, mute, close) |
+| `TuneInExpandedPlayerView.swift` | Full expanded player sheet with receiver details, audio level, CW transcript, clip bookmark, action buttons |
+| `TuneInExpandedPlayerView+SmartFeatures.swift` | Smart feature UI: QSY alert banner, receiver suggestion banner, follow activator button |
+| `TuneInCellularAlert.swift` | Cellular data warning alert modifier for first-time use on cellular |
 
 ## Views - Dashboard (`CarrierWave/Views/Dashboard/`)
 | File | Purpose |
@@ -794,6 +805,15 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `ReceiverDetailSheet.swift` | Detail sheet for a KiwiSDR receiver with favorite toggle |
 | `AddReceiverSheet.swift` | Manual receiver add sheet (host:port entry with validation) |
 | `BLERadioSettingsView.swift` | BLE radio device scan, selection, CI-V address configuration |
+
+## Views - Tune In (`CarrierWave/Views/TuneIn/`)
+
+| File | Purpose |
+|------|---------|
+| `TuneInMiniPlayerView.swift` | Persistent mini player bar above tab bar (collapsed state) |
+| `TuneInExpandedPlayerView.swift` | Full expanded player sheet with receiver details, audio level, controls |
+| `TuneInExpandedPlayerView+SmartFeatures.swift` | Smart feature UI: QSY alert banner, receiver suggestion banner, follow activator button |
+| `TuneInCellularAlert.swift` | Cellular data warning alert modifier for first-time use on cellular |
 
 ## Views - Logger BLE Radio (`CarrierWave/Views/Logger/`)
 

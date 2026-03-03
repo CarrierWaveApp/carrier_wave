@@ -198,10 +198,13 @@ struct ContentView: View {
     @State private var showingRestoreAlert = false
     @State private var incomingFriendRequestCount = 0
 
+    private var tuneInManager: TuneInManager { TuneInManager.shared }
+
     private let lofiClient = LoFiClient.appDefault()
     private let qrzClient = QRZClient()
     private let hamrsClient = HAMRSClient()
     private let lotwClient = LoTWClient()
+    private let tuneInManager = TuneInManager.shared
 
     /// True only on iPad — prevents iOS 26's `.regular` horizontal size class
     /// on large iPhones from triggering the iPad sidebar navigation.
@@ -257,6 +260,18 @@ struct ContentView: View {
                 selectedTabContent
             }
         }
+        .safeAreaInset(edge: .bottom) {
+            if tuneInManager.isActive {
+                TuneInMiniPlayerView(manager: tuneInManager)
+            }
+        }
+        .sheet(isPresented: Binding(
+            get: { tuneInManager.showExpandedPlayer },
+            set: { tuneInManager.showExpandedPlayer = $0 }
+        )) {
+            TuneInExpandedPlayerView(manager: tuneInManager)
+        }
+        .tuneInCellularAlert(manager: tuneInManager)
         .onReceive(NotificationCenter.default.publisher(for: .tabConfigurationChanged)) { _ in
             iPadTabs = TabConfiguration.iPadVisibleTabs()
             // Ensure selected tab is still visible
@@ -289,6 +304,18 @@ struct ContentView: View {
                     .badge(tab == .activity ? incomingFriendRequestCount : 0)
             }
         }
+        .safeAreaInset(edge: .bottom) {
+            if tuneInManager.isActive {
+                TuneInMiniPlayerView(manager: tuneInManager)
+            }
+        }
+        .sheet(isPresented: Binding(
+            get: { tuneInManager.showExpandedPlayer },
+            set: { tuneInManager.showExpandedPlayer = $0 }
+        )) {
+            TuneInExpandedPlayerView(manager: tuneInManager)
+        }
+        .tuneInCellularAlert(manager: tuneInManager)
         .toolbar(shouldHideTabBar ? .hidden : .visible, for: .tabBar)
         .onReceive(NotificationCenter.default.publisher(for: .tabConfigurationChanged)) { _ in
             visibleTabs = TabConfiguration.visibleTabs()
