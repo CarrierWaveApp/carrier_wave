@@ -69,6 +69,7 @@ extension SidebarPOTASpotsView {
                         onSelectSpot(spot)
                     }
                     .opacity(spot.isAutomatedSpot ? 0.7 : 1.0)
+                    .contextMenu { sidebarTuneInMenu(for: spot) }
                     Divider()
                         .padding(.leading, 92)
                 }
@@ -116,6 +117,7 @@ extension SidebarPOTASpotsView {
                 ) {
                     onSelectSpot(spot)
                 }
+                .contextMenu { sidebarTuneInMenu(for: spot) }
                 Divider()
                     .padding(.leading, 92)
             }
@@ -132,6 +134,23 @@ extension SidebarPOTASpotsView {
             }
         } header: {
             ClubSpotsSectionHeader()
+        }
+    }
+
+    @ViewBuilder
+    func sidebarTuneInMenu(for spot: POTASpot) -> some View {
+        Button {
+            let tuneInSpot = TuneInSpot(from: spot)
+            Task {
+                await TuneInManager.shared.tuneIn(
+                    to: tuneInSpot, modelContext: modelContext
+                )
+            }
+        } label: {
+            Label(
+                "Tune In to \(spot.activator)",
+                systemImage: "radio"
+            )
         }
     }
 }

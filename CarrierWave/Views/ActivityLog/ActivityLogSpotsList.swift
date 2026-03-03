@@ -310,6 +310,22 @@ struct ActivityLogSpotsList: View {
                 isFriend: friendCallsigns.contains(spot.spot.callsign.uppercased()),
                 onTap: { handleSpotTap(spot) }
             )
+            .contextMenu {
+                Button {
+                    let tuneInSpot = TuneInSpot(from: spot.spot)
+                    let ctx = ModelContext(container)
+                    Task {
+                        await TuneInManager.shared.tuneIn(
+                            to: tuneInSpot, modelContext: ctx
+                        )
+                    }
+                } label: {
+                    Label(
+                        "Tune In to \(spot.spot.callsign)",
+                        systemImage: "radio"
+                    )
+                }
+            }
 
             if spot.id != rowSpots.last?.id {
                 Divider()

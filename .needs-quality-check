@@ -1,0 +1,8 @@
+TuneInManager.swift - New standalone tune-in session manager with smart receiver selection, cellular warning, background disconnect
+TuneInMiniPlayerView.swift - Persistent mini player bar above tab bar (collapsed state with live indicator, mute, close)
+TuneInExpandedPlayerView.swift - Full expanded player sheet with receiver details, audio level, volume, change receiver
+TuneInCellularAlert.swift - Cellular data warning alert modifier for first-time use on cellular
+ActivityLogSpotsList.swift - Added context menu "Tune In" action on hunter log spot rows
+POTASpotsView+Clubs.swift - Added context menu "Tune In" action on logger POTA spot rows
+SidebarPOTASpotsView+Clubs.swift - Added context menu "Tune In" action on sidebar POTA spot rows
+ContentView.swift - Integrated mini player via safeAreaInset and cellular alert on both iPhone and iPad navigation
