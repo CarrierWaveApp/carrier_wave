@@ -258,7 +258,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `FriendSuggestionActor.swift` | Background actor for counting QSOs per callsign |
 | `FriendSpotNotifier.swift` | Deduped toast + local notification when friends appear in spots |
 | `ActivitiesClient+Clubs.swift` | Club API endpoints, DTOs, and member status types |
-| `ClubsSyncService.swift` | Club data synchronization |
+| `ClubsSyncService.swift` | Club sync (shared singleton), in-memory callsign cache for O(1) lookup |
 | `ActivityDetector.swift` | Detect notable activities from QSOs |
 | `ActivityDetector+Detection.swift` | Activity detection methods (DXCC, bands, modes, DX, streaks) |
 | `ActivitiesClient+Activities.swift` | Activity API endpoints (report, feed) |

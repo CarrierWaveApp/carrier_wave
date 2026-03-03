@@ -144,6 +144,12 @@ struct CarrierWaveApp: App {
                 // Start iCloud QSO sync (CKSyncEngine — heavyweight init)
                 CloudSyncService.shared.configure(container: sharedModelContainer)
 
+                // Configure clubs sync service (callsign cache loads from SwiftData)
+                ClubsSyncService.shared.configure(container: sharedModelContainer)
+                try? await ClubsSyncService.shared.syncClubs(
+                    sourceURL: "https://activities.carrierwave.app"
+                )
+
                 await Task.yield()
 
                 // Seed QRQ Crew callsign notes source on first launch
@@ -192,6 +198,11 @@ struct CarrierWaveApp: App {
                 if newPhase == .active {
                     Task {
                         await CloudSyncService.shared.fetchChangesFromCloud()
+                    }
+                    Task {
+                        try? await ClubsSyncService.shared.syncClubs(
+                            sourceURL: "https://activities.carrierwave.app"
+                        )
                     }
                 }
             }

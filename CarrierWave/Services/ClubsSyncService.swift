@@ -8,24 +8,78 @@ import SwiftData
 final class ClubsSyncService: ObservableObject {
     // MARK: Lifecycle
 
+    /// Create a view-scoped instance (for testing or standalone use).
     init(modelContext: ModelContext, client: ActivitiesClient? = nil) {
         self.modelContext = modelContext
         self.client = client ?? ActivitiesClient()
+        rebuildCallsignCache()
     }
 
+    /// Private init for the shared singleton (no ModelContext yet).
+    private init() {}
+
     // MARK: Internal
+
+    /// Shared singleton — call `configure(container:)` from app entry point.
+    static let shared = ClubsSyncService()
 
     @Published var isSyncing = false
     @Published var syncError: String?
 
-    let modelContext: ModelContext
-    let client: ActivitiesClient
+    /// In-memory set of all club member callsigns for O(1) lookup
+    @Published private(set) var clubMemberCallsigns: Set<String> = []
+
+    /// Map of callsign -> [club name] for display in logger/QSO detail
+    @Published private(set) var clubsByCallsign: [String: [String]] = [:]
+
+    /// Configure the shared instance with a model container.
+    /// Call from the app entry point after ModelContainer is ready.
+    func configure(container: ModelContainer) {
+        modelContext = container.mainContext
+        client = ActivitiesClient()
+        rebuildCallsignCache()
+    }
+
+    // MARK: - Cache
+
+    /// Rebuild in-memory lookups from SwiftData
+    func rebuildCallsignCache() {
+        guard let ctx = modelContext else {
+            return
+        }
+        let descriptor = FetchDescriptor<ClubMember>()
+        guard let members = try? ctx.fetch(descriptor) else {
+            return
+        }
+
+        var callsigns = Set<String>()
+        var byCallsign: [String: [String]] = [:]
+
+        for member in members {
+            let key = member.callsign.uppercased()
+            callsigns.insert(key)
+            if let clubName = member.club?.name {
+                byCallsign[key, default: []].append(clubName)
+            }
+        }
+
+        clubMemberCallsigns = callsigns
+        clubsByCallsign = byCallsign
+    }
+
+    /// Check if a callsign is a club member, returns matching club names
+    func clubs(for callsign: String) -> [String] {
+        clubsByCallsign[callsign.uppercased()] ?? []
+    }
 
     // MARK: - Sync
 
-    /// Sync clubs from server
+    /// Sync clubs from server, fetching all clubs and their members
     func syncClubs(sourceURL: String) async throws {
-        guard let authToken = await client.ensureAuthToken() else {
+        guard let ctx = modelContext else {
+            return
+        }
+        guard let authToken = await resolvedClient.ensureAuthToken() else {
             throw ClubsSyncError.notAuthenticated
         }
 
@@ -34,37 +88,56 @@ final class ClubsSyncService: ObservableObject {
         defer { isSyncing = false }
 
         // Fetch clubs from server
-        let clubDTOs = try await client.getMyClubs(
+        let clubDTOs = try await resolvedClient.getMyClubs(
             sourceURL: sourceURL,
             authToken: authToken
         )
 
         // Update local models
-        try updateLocalClubs(from: clubDTOs)
+        try updateLocalClubs(from: clubDTOs, context: ctx)
     }
 
     /// Sync a specific club's details and members
     func syncClubDetails(clubId: UUID, sourceURL: String) async throws {
-        guard let authToken = await client.ensureAuthToken() else {
+        guard let ctx = modelContext else {
+            return
+        }
+        guard let authToken = await resolvedClient.ensureAuthToken() else {
             throw ClubsSyncError.notAuthenticated
         }
 
-        let details = try await client.getClubDetails(
+        let details = try await resolvedClient.getClubDetails(
             clubId: clubId,
             sourceURL: sourceURL,
             authToken: authToken,
             includeMembers: true
         )
 
-        try updateClubFromDetails(details)
+        try updateClubFromDetails(details, context: ctx)
     }
 
     // MARK: Private
 
-    private func updateLocalClubs(from dtos: [ClubDTO]) throws {
+    private var modelContext: ModelContext?
+    private var client: ActivitiesClient?
+
+    /// Resolved client, creating a default if none was provided.
+    private var resolvedClient: ActivitiesClient {
+        if let client {
+            return client
+        }
+        let newClient = ActivitiesClient()
+        client = newClient
+        return newClient
+    }
+
+    private func updateLocalClubs(
+        from dtos: [ClubDTO],
+        context: ModelContext
+    ) throws {
         // Fetch existing local clubs
         let descriptor = FetchDescriptor<Club>()
-        let existing = try modelContext.fetch(descriptor)
+        let existing = try context.fetch(descriptor)
         let existingById = Dictionary(
             uniqueKeysWithValues: existing.map { ($0.serverId, $0) }
         )
@@ -88,26 +161,30 @@ final class ClubsSyncService: ObservableObject {
                     callsign: dto.callsign,
                     clubDescription: dto.description
                 )
-                modelContext.insert(club)
+                context.insert(club)
             }
         }
 
         // Remove clubs no longer on server
         for local in existing where !seenIds.contains(local.serverId) {
-            modelContext.delete(local)
+            context.delete(local)
         }
 
-        try modelContext.save()
+        try context.save()
+        rebuildCallsignCache()
     }
 
-    private func updateClubFromDetails(_ details: ClubDetailDTO) throws {
+    private func updateClubFromDetails(
+        _ details: ClubDetailDTO,
+        context: ModelContext
+    ) throws {
         let detailsId = details.id
         let descriptor = FetchDescriptor<Club>(
             predicate: #Predicate { $0.serverId == detailsId }
         )
 
         let club: Club
-        if let existing = try modelContext.fetch(descriptor).first {
+        if let existing = try context.fetch(descriptor).first {
             club = existing
         } else {
             club = Club(
@@ -116,7 +193,7 @@ final class ClubsSyncService: ObservableObject {
                 callsign: details.callsign,
                 clubDescription: details.description
             )
-            modelContext.insert(club)
+            context.insert(club)
         }
 
         // Update fields
@@ -127,15 +204,17 @@ final class ClubsSyncService: ObservableObject {
 
         // Update members from DTOs
         if let memberDTOs = details.members {
-            try updateMembers(for: club, from: memberDTOs)
+            try updateMembers(for: club, from: memberDTOs, context: context)
         }
 
-        try modelContext.save()
+        try context.save()
+        rebuildCallsignCache()
     }
 
     private func updateMembers(
         for club: Club,
-        from dtos: [ClubMemberDTO]
+        from dtos: [ClubMemberDTO],
+        context: ModelContext
     ) throws {
         let existingMembers = club.members
         let existingByCallsign = Dictionary(
@@ -164,7 +243,7 @@ final class ClubsSyncService: ObservableObject {
                 )
                 member.lastSeenAt = dto.lastSeenAt
                 member.lastGrid = dto.lastGrid
-                modelContext.insert(member)
+                context.insert(member)
             }
         }
 
@@ -172,7 +251,7 @@ final class ClubsSyncService: ObservableObject {
         for member in existingMembers
             where !seenCallsigns.contains(member.callsign.uppercased())
         {
-            modelContext.delete(member)
+            context.delete(member)
         }
     }
 }

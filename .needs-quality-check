@@ -7,3 +7,7 @@ Updated ClubDetailView.swift: uses ClubMember objects instead of callsign string
 Updated ClubsListView.swift: preview includes ClubMember.self in schema
 Updated FilterBar.swift: uses club.serverId instead of club.id for feed filtering
 Updated CallsignNotesCache.swift: removed poloNotesListURL reference from Club fetch
+Added callsign cache (clubMemberCallsigns, clubsByCallsign) to ClubsSyncService with rebuildCallsignCache() and clubs(for:) lookup
+Converted ClubsSyncService to shared singleton with configure(container:) pattern
+Wired ClubsSyncService into app lifecycle: configure + initial sync on launch, sync on foreground resume
+Updated ClubsListView and ClubDetailView to use ClubsSyncService.shared instead of view-scoped instances

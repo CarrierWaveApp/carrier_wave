@@ -43,10 +43,8 @@ struct ClubDetailView: View {
                 .disabled(isRefreshing)
             }
         }
-        .onAppear {
-            if clubsSyncService == nil {
-                clubsSyncService = ClubsSyncService(modelContext: modelContext)
-            }
+        .task {
+            await refreshQuietly()
         }
         .alert("Error", isPresented: $showingError) {
             Button("OK") { showingError = false }
@@ -57,8 +55,6 @@ struct ClubDetailView: View {
 
     // MARK: Private
 
-    @Environment(\.modelContext) private var modelContext
-    @State private var clubsSyncService: ClubsSyncService?
     @State private var isRefreshing = false
     @State private var errorMessage: String?
     @State private var showingError = false
@@ -66,15 +62,11 @@ struct ClubDetailView: View {
     private let sourceURL = "https://activities.carrierwave.app"
 
     private func refresh() async {
-        guard let service = clubsSyncService else {
-            return
-        }
-
         isRefreshing = true
         defer { isRefreshing = false }
 
         do {
-            try await service.syncClubDetails(
+            try await ClubsSyncService.shared.syncClubDetails(
                 clubId: club.serverId,
                 sourceURL: sourceURL
             )
@@ -82,6 +74,14 @@ struct ClubDetailView: View {
             errorMessage = error.localizedDescription
             showingError = true
         }
+    }
+
+    /// Sync club details on appear without showing errors (background refresh)
+    private func refreshQuietly() async {
+        try? await ClubsSyncService.shared.syncClubDetails(
+            clubId: club.serverId,
+            sourceURL: sourceURL
+        )
     }
 }
 
