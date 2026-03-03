@@ -95,6 +95,20 @@ final class TuneInManager {
         spot?.mode.uppercased() == "CW"
     }
 
+    // MARK: - Smart Features State
+
+    /// Backing storage for QSY alert (accessed via extension computed property)
+    var _qsyAlert: TuneInQSYAlert?
+
+    /// Backing storage for receiver suggestion
+    var _receiverSuggestion: ReceiverSuggestion?
+
+    /// QSY monitoring task
+    var qsyMonitorTask: Task<Void, Never>?
+
+    /// Receiver quality monitoring task
+    var receiverMonitorTask: Task<Void, Never>?
+
     // MARK: - Tune In
 
     /// Start listening to a spot. Auto-selects the best receiver.
@@ -130,6 +144,8 @@ final class TuneInManager {
 
     /// Stop listening and tear down the session
     func stop() async {
+        stopQSYMonitor()
+        stopReceiverMonitor()
         await stopCWTranscription()
         await session.finalize()
         spot = nil
@@ -220,6 +236,10 @@ final class TuneInManager {
             loggingSessionId: standaloneId,
             modelContext: modelContext
         )
+
+        // Start smart feature monitors
+        startQSYMonitor()
+        startReceiverMonitor()
     }
 
     private func setupCWTranscription() {

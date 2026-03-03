@@ -17,6 +17,9 @@ All notable changes to Carrier Wave will be documented in this file.
 - Context menu "Tune In to [callsign]" on all spot rows (hunter log, logger POTA spots, sidebar)
 - Cellular data warning on first use (~5 MB/hour)
 - Auto-disconnect when app backgrounds
+- Auto-retune on QSY detection — monitors RBN for activator frequency changes with retune/dismiss banner
+- Receiver quality monitoring — suggests switching to a better KiwiSDR when SNR degrades
+- Follow activator — bell toggle to track callsigns across sessions (persisted to UserDefaults)
 - Design document for full Tune In feature roadmap (docs/features/tune-in.md)
 
 ## [1.52.0] - 2026-03-03

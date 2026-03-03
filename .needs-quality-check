@@ -10,3 +10,6 @@ WebSDRRecordingsView.swift - Enhanced recording rows with callsign header, park/
 ActivityLogSpotRow.swift - Added context menu "Tune In" action with onTuneIn callback
 ActivityLogSpotsList.swift - Wired handleTuneIn to create TuneInSpot and start TuneInManager
 ContentView.swift - Integrated mini player via safeAreaInset and cellular alert on both iPhone and iPad navigation
+TuneInManager+SmartFeatures.swift - Phase 4 smart features: QSY detection, receiver quality monitoring, follow activator
+TuneInExpandedPlayerView+SmartFeatures.swift - Smart feature UI: QSY alert banner, receiver suggestion banner, follow button
+TuneInExpandedPlayerView.swift - Added QSY/receiver banners to body, follow button in spot header, relaxed access for extension

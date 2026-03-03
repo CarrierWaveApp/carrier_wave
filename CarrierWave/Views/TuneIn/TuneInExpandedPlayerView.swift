@@ -10,9 +10,9 @@ struct TuneInExpandedPlayerView: View {
 
     let manager: TuneInManager
 
-    @Environment(\.modelContext) private var modelContext
+    @Environment(\.modelContext) var modelContext
 
-    @State private var showReceiverPicker = false
+    @State var showReceiverPicker = false
 
     var body: some View {
         NavigationStack {
@@ -20,6 +20,8 @@ struct TuneInExpandedPlayerView: View {
                 VStack(spacing: 20) {
                     if let spot = manager.spot {
                         spotHeader(spot)
+                        qsyAlertBanner
+                        receiverSuggestionBanner
                         receiverCard
                         audioSection
                         if manager.isCWMode {
@@ -53,6 +55,7 @@ struct TuneInExpandedPlayerView: View {
             HStack {
                 Text(spot.callsign)
                     .font(.title2.weight(.bold).monospaced())
+                followButton(spot.callsign)
                 Spacer()
                 sessionStatus
             }
@@ -336,7 +339,6 @@ struct TuneInExpandedPlayerView: View {
         .buttonStyle(.plain)
     }
 
-    private var openInBrowserButton: some View {
     private var clipButton: some View {
         Button {
             manager.addClipBookmark()
