@@ -372,8 +372,6 @@ Show which activations other Carrier Wave users are tuned into. Social proof:
 
 7. **All Phase 4 social features confirmed:** Auto-retune on QSY, receiver quality monitoring + switch suggestions, follow/pin activator, listening activity feed with listener counts on spots.
 
-## Open Questions
+8. **Watch integration: deferred.** Not pursuing Watch hand-off or "now listening" complication right now.
 
-1. **Watch integration**: Show "now listening" complication? Hand off tune-in from Watch spot tap to iPhone?
-
-2. **Listening UI pattern**: The mini player (persistent bottom bar) was rejected. What's the right pattern — modal sheet? Inline expansion within the hunter log? Full-screen takeover?
+9. **Mini player bar confirmed.** Persistent bottom bar (Apple Music-style) — collapsed bar above the tab bar, tap to expand. Browse the app while listening.
