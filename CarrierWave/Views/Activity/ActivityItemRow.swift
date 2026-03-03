@@ -197,6 +197,19 @@ struct ActivityItemRow: View {
                                 .fontWeight(.semibold)
                         }
 
+                        if let clubName = ClubsSyncService.shared
+                            .clubs(for: item.callsign).first
+                        {
+                            Text(clubName)
+                                .font(.caption2)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(
+                                    .blue.opacity(0.15)
+                                )
+                                .clipShape(Capsule())
+                        }
+
                         Spacer()
 
                         Text(item.timestamp, style: .relative)

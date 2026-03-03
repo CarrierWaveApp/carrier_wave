@@ -79,6 +79,26 @@ extension LoggerView {
                 .accessibilityLabel(actionButtonAccessibilityLabel)
             }
 
+            // Club member badge
+            let matchingClubs = ClubsSyncService.shared.clubs(
+                for: callsignInput
+            )
+            if !matchingClubs.isEmpty {
+                HStack(spacing: 4) {
+                    Image(systemName: "person.3.fill")
+                        .font(.caption2)
+                    Text(matchingClubs.joined(separator: ", "))
+                        .font(.caption)
+                        .lineLimit(1)
+                }
+                .foregroundStyle(.blue)
+                .padding(.horizontal, 12)
+                .padding(.top, 4)
+                .transition(
+                    .move(edge: .top).combined(with: .opacity)
+                )
+            }
+
             // Command description badge
             if let command = detectedCommand {
                 HStack {

@@ -103,6 +103,14 @@ struct ActivityLogSpotRow: View {
                     .clipShape(RoundedRectangle(cornerRadius: 3))
             }
 
+            if !ClubsSyncService.shared.clubs(
+                for: spot.spot.callsign
+            ).isEmpty {
+                Image(systemName: "person.3.fill")
+                    .font(.caption2)
+                    .foregroundStyle(.blue)
+            }
+
             if isFriend {
                 Text("FRIEND")
                     .font(.caption2.weight(.semibold))

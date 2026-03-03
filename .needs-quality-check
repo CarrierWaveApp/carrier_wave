@@ -18,3 +18,9 @@ Created ClubMapView with member pins using MaidenheadConverter grid-to-coordinat
 Created ClubStatsView with on-air/recently active/grid counts
 Added Clubs navigation link to ActivityView toolbar overflow menu
 Updated FILE_INDEX.md with new club view files
+Added club member badge to logger callsign input (LoggerView+FormFields.swift)
+Added club section to QSO detail view (QSODetailView.swift)
+Added club member icon to POTA spot rows (POTASpotRow.swift)
+Added club member icon to SOTA spot rows (SOTASpotRow.swift)
+Added club member icon to activity log spot rows (ActivityLogSpotRow.swift)
+Added club badge to activity feed item rows (ActivityItemRow.swift)

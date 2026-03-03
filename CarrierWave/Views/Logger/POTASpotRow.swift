@@ -125,6 +125,14 @@ struct POTASpotRow: View {
                 .foregroundStyle(spot.isHumanSpot ? .primary : .secondary)
                 .strikethrough(isDupe)
 
+            if !ClubsSyncService.shared.clubs(
+                for: spot.activator
+            ).isEmpty {
+                Image(systemName: "person.3.fill")
+                    .font(.caption2)
+                    .foregroundStyle(.blue)
+            }
+
             if isSelf {
                 Text("SELF")
                     .font(.caption2.weight(.semibold))

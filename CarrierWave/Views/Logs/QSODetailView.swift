@@ -19,6 +19,8 @@ struct QSODetailView: View {
                 notesSection
             }
 
+            clubSection
+
             if !qso.servicePresence.isEmpty {
                 syncSection
             }
@@ -254,6 +256,22 @@ struct QSODetailView: View {
                         .foregroundStyle(.yellow)
                     Text("QRZ QSL Confirmed")
                         .font(.caption)
+                }
+            }
+        }
+    }
+
+    // MARK: - Club
+
+    @ViewBuilder
+    private var clubSection: some View {
+        let matchingClubs = ClubsSyncService.shared.clubs(
+            for: qso.callsign
+        )
+        if !matchingClubs.isEmpty {
+            Section("Club") {
+                ForEach(matchingClubs, id: \.self) { clubName in
+                    Label(clubName, systemImage: "person.3.fill")
                 }
             }
         }
