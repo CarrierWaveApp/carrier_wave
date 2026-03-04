@@ -465,6 +465,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `SessionDetailView+Components.swift` | Extracted helper views: RoveStopDetailRow, RoveParkGroup, PhotoItem |
 | `SessionDetailView+QSOs.swift` | QSO list sections (flat and rove-grouped) and data loading |
 | `SessionDetailView+Clubs.swift` | Club members summary card for session detail (callsigns + club names) |
+| `SessionDetailView+StatesWorked.swift` | Signal mosaic: 10×5 grid of US states worked with intensity and popover details |
 | `SessionDetailView+POTA.swift` | POTA-specific sections: activation info, metadata grid, upload, jobs, recording |
 | `SessionSpotsSection.swift` | Persisted spots display section for session detail (POTA highlighted, RBN collapsed) |
 | `SessionSpotsSummaryRow.swift` | Expandable spots summary row for sessions list (region pills, distance range, logger-style aggregation) |

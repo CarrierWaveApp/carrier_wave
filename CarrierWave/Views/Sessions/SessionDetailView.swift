@@ -78,6 +78,8 @@ struct SessionDetailView: View {
 
             mapSection
 
+            statesWorkedSection
+
             if !spotMismatchesDismissed, !spotMismatches.isEmpty {
                 Section {
                     SpotContactMismatchBanner(
