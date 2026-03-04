@@ -260,6 +260,89 @@ extension DashboardView {
         }
     }
 
+    // MARK: - Session Club Members Backfill
+
+    private static let sessionClubMembersBackfillKey = "sessionClubMembersBackfillV2Completed"
+
+    /// One-time backfill: populate sessionClubMembers in existing session activity items.
+    func backfillSessionClubMembersIfNeeded() async {
+        guard !UserDefaults.standard.bool(forKey: Self.sessionClubMembersBackfillKey) else {
+            return
+        }
+        guard !ClubsSyncService.shared.clubMemberCallsigns.isEmpty else {
+            return // Don't set flag — retry next launch when clubs are loaded
+        }
+
+        let typeRaw = ActivityType.sessionCompleted.rawValue
+        var descriptor = FetchDescriptor<ActivityItem>(
+            predicate: #Predicate { $0.isOwn && $0.activityTypeRawValue == typeRaw }
+        )
+        descriptor.fetchLimit = 200
+
+        guard let items = try? modelContext.fetch(descriptor) else {
+            UserDefaults.standard.set(true, forKey: Self.sessionClubMembersBackfillKey)
+            return
+        }
+
+        var updated = 0
+        for item in items where backfillClubMembers(for: item) {
+            updated += 1
+        }
+
+        if updated > 0 {
+            try? modelContext.save()
+            print("Session club members backfill: updated \(updated) activity items")
+        }
+        UserDefaults.standard.set(true, forKey: Self.sessionClubMembersBackfillKey)
+    }
+
+    /// Populate sessionClubMembers for a single activity item. Returns true if updated.
+    private func backfillClubMembers(for item: ActivityItem) -> Bool {
+        guard var details = item.details,
+              details.sessionClubMembers == nil
+        else {
+            return false
+        }
+
+        let start = item.timestamp.addingTimeInterval(
+            -Double((details.sessionDurationMinutes ?? 60) + 5) * 60
+        )
+        let end = item.timestamp
+        let callsign = item.callsign
+        var qsoDesc = FetchDescriptor<QSO>(
+            predicate: #Predicate {
+                !$0.isHidden
+                    && $0.myCallsign == callsign
+                    && $0.timestamp >= start
+                    && $0.timestamp <= end
+            }
+        )
+        qsoDesc.fetchLimit = 500
+        guard let qsos = try? modelContext.fetch(qsoDesc) else {
+            return false
+        }
+
+        var seen = Set<String>()
+        var members: [ClubMemberEntry] = []
+        for qso in qsos {
+            let key = qso.callsign.uppercased()
+            guard seen.insert(key).inserted else {
+                continue
+            }
+            let clubs = ClubsSyncService.shared.clubs(for: qso.callsign)
+            guard !clubs.isEmpty else {
+                continue
+            }
+            members.append(ClubMemberEntry(callsign: qso.callsign, clubs: clubs))
+        }
+        guard !members.isEmpty else {
+            return false
+        }
+        details.sessionClubMembers = members
+        item.details = details
+        return true
+    }
+
     // MARK: - K-Index Repair
 
     private static let kIndexRepairKey = "kIndexRepairCompleted"

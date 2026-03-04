@@ -39,7 +39,7 @@ enum ActivationShareRenderer {
             equipment: equipment,
             statisticianStats: statisticianStats
         )
-        let height: CGFloat = statisticianStats != nil ? 880 : 640
+        let height = cardHeight(activation: activation, statisticianStats: statisticianStats)
         return renderToImage(view, height: height)
     }
 
@@ -77,12 +77,28 @@ enum ActivationShareRenderer {
                 equipment: equipment,
                 statisticianStats: statisticianStats
             )
-            let height: CGFloat = statisticianStats != nil ? 880 : 640
+            let height = cardHeight(
+                activation: activation, statisticianStats: statisticianStats
+            )
             return renderToImage(view, height: height)
         }
     }
 
     // MARK: Private
+
+    private static func cardHeight(
+        activation: POTAActivation,
+        statisticianStats: ActivationStatistics?
+    ) -> CGFloat {
+        var height: CGFloat = statisticianStats != nil ? 880 : 640
+        let hasClubMembers = !ActivationShareCardView.buildClubMembers(
+            from: activation.qsos
+        ).isEmpty
+        if hasClubMembers {
+            height += 30
+        }
+        return height
+    }
 
     /// Extract QSO marker data and compute coordinates off the main thread
     private static func computeMapMarkers(

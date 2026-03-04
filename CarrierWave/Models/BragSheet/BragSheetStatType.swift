@@ -94,6 +94,8 @@ nonisolated enum BragSheetStatType: String, Codable, CaseIterable, Identifiable,
     case busiestBand
     case busiestMode
     case repeatCustomers
+    case clubMembersWorked
+    case clubsRepresented
 
     // MARK: Internal
 
@@ -163,6 +165,8 @@ nonisolated extension BragSheetStatType {
         case .busiestBand: "Busiest Band"
         case .busiestMode: "Busiest Mode"
         case .repeatCustomers: "Repeat Customers"
+        case .clubMembersWorked: "Club Members Worked"
+        case .clubsRepresented: "Clubs Represented"
         }
     }
 
@@ -233,7 +237,9 @@ nonisolated extension BragSheetStatType {
              .mostActiveDayOfWeek,
              .busiestBand,
              .busiestMode,
-             .repeatCustomers:
+             .repeatCustomers,
+             .clubMembersWorked,
+             .clubsRepresented:
             .funAndUnique
         }
     }
@@ -296,6 +302,8 @@ nonisolated extension BragSheetStatType {
         case .busiestBand: "Top Band"
         case .busiestMode: "Top Mode"
         case .repeatCustomers: "Repeats"
+        case .clubMembersWorked: "Club Mbrs"
+        case .clubsRepresented: "Clubs"
         }
     }
 

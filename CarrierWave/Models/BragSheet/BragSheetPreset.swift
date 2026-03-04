@@ -51,7 +51,7 @@ nonisolated enum BragSheetPreset: String, Codable, CaseIterable, Identifiable, S
             [
                 .totalQSOs, .furthestContact, .dxccEntities,
                 .statesAndProvinces, .activeBands, .activeModes,
-                .operatingDays, .bestSessionRate,
+                .operatingDays, .bestSessionRate, .clubMembersWorked,
             ]
         case .dxer:
             [

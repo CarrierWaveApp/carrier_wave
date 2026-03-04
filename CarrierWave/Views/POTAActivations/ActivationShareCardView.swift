@@ -29,12 +29,15 @@ struct ActivationShareCardView: View {
                 ShareCardStatisticianSection(stats: advancedStats)
                     .padding(.top, 6)
             }
+            if !clubMembers.isEmpty {
+                ActivationShareCardClubMembers(members: clubMembers)
+            }
             ShareCardTimelineView(qsos: activation.qsos)
                 .padding(.top, 8)
                 .padding(.horizontal, 16)
             footer
         }
-        .frame(width: 400, height: statisticianStats != nil ? 880 : 640)
+        .frame(width: 400, height: cardHeight)
         .background(
             LinearGradient(
                 colors: [
@@ -49,7 +52,38 @@ struct ActivationShareCardView: View {
         .clipShape(Rectangle())
     }
 
+    static func buildClubMembers(
+        from qsos: [QSO]
+    ) -> [(callsign: String, clubs: [String])] {
+        var seen = Set<String>()
+        var results: [(callsign: String, clubs: [String])] = []
+        for qso in qsos {
+            let key = qso.callsign.uppercased()
+            guard seen.insert(key).inserted else {
+                continue
+            }
+            let clubs = ClubsSyncService.shared.clubs(for: qso.callsign)
+            guard !clubs.isEmpty else {
+                continue
+            }
+            results.append((callsign: qso.callsign, clubs: clubs))
+        }
+        return results
+    }
+
     // MARK: Private
+
+    private var cardHeight: CGFloat {
+        var height: CGFloat = statisticianStats != nil ? 880 : 640
+        if !clubMembers.isEmpty {
+            height += 30
+        }
+        return height
+    }
+
+    private var clubMembers: [(callsign: String, clubs: [String])] {
+        Self.buildClubMembers(from: activation.qsos)
+    }
 
     /// My coordinate from grid
     private var myCoordinate: CLLocationCoordinate2D? {
@@ -240,12 +274,15 @@ struct ActivationShareCardForExport: View {
                 ShareCardStatisticianSection(stats: advancedStats)
                     .padding(.top, 6)
             }
+            if !exportClubMembers.isEmpty {
+                ActivationShareCardClubMembers(members: exportClubMembers)
+            }
             ShareCardTimelineView(qsos: activation.qsos)
                 .padding(.top, 8)
                 .padding(.horizontal, 16)
             ActivationShareCardFooter(callsign: activation.callsign)
         }
-        .frame(width: 400, height: statisticianStats != nil ? 880 : 640)
+        .frame(width: 400, height: exportCardHeight)
         .background(
             LinearGradient(
                 colors: [
@@ -265,6 +302,18 @@ struct ActivationShareCardForExport: View {
     }
 
     // MARK: Private
+
+    private var exportClubMembers: [(callsign: String, clubs: [String])] {
+        ActivationShareCardView.buildClubMembers(from: activation.qsos)
+    }
+
+    private var exportCardHeight: CGFloat {
+        var height: CGFloat = statisticianStats != nil ? 880 : 640
+        if !exportClubMembers.isEmpty {
+            height += 30
+        }
+        return height
+    }
 
     private var exportStatsSection: some View {
         let stats = ActivationStatsHelper.statistics(for: activation)

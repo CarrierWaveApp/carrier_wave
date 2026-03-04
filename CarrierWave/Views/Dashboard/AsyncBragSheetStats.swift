@@ -85,8 +85,16 @@ final class AsyncBragSheetStats {
     private func startComputation(from container: ModelContainer) {
         isComputing = true
 
+        // Snapshot club data on MainActor before entering background
+        let clubCallsigns = ClubsSyncService.shared.clubMemberCallsigns
+        let clubsByCallsign = ClubsSyncService.shared.clubsByCallsign
+
         computeTask = Task {
             do {
+                await actor.setClubData(
+                    callsigns: clubCallsigns, byCallsign: clubsByCallsign
+                )
+
                 // Fetch all-time snapshots once
                 let snapshots = try await actor.fetchAllSnapshots(container: container)
                 cachedSnapshots = snapshots
@@ -132,8 +140,16 @@ final class AsyncBragSheetStats {
         computeTask?.cancel()
         isComputing = true
 
+        // Snapshot club data on MainActor before entering background
+        let clubCallsigns = ClubsSyncService.shared.clubMemberCallsigns
+        let clubsByCallsign = ClubsSyncService.shared.clubsByCallsign
+
         computeTask = Task {
             do {
+                await actor.setClubData(
+                    callsigns: clubCallsigns, byCallsign: clubsByCallsign
+                )
+
                 let config = configuration
                 async let weekly = actor.computeStats(
                     container: container, period: .weekly,

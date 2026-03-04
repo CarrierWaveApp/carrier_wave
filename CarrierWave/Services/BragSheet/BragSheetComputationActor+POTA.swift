@@ -230,6 +230,44 @@ extension BragSheetComputationActor {
         return .callsignCount(callsign: best.key, count: best.value)
     }
 
+    func computeClubMembersWorked(
+        _ snapshots: [BragSheetQSOSnapshot]
+    ) -> BragSheetStatValue {
+        var worked = Set<String>()
+        for qso in snapshots {
+            let key = qso.callsign.uppercased()
+            if clubMemberCallsigns.contains(key) {
+                worked.insert(key)
+            }
+        }
+        guard !worked.isEmpty else {
+            return .noData
+        }
+        return .count(worked.count)
+    }
+
+    func computeClubsRepresented(
+        _ snapshots: [BragSheetQSOSnapshot]
+    ) -> BragSheetStatValue {
+        var workedCallsigns = Set<String>()
+        for qso in snapshots {
+            let key = qso.callsign.uppercased()
+            if clubMemberCallsigns.contains(key) {
+                workedCallsigns.insert(key)
+            }
+        }
+        var clubs = Set<String>()
+        for call in workedCallsigns {
+            if let memberClubs = clubsByCallsign[call] {
+                clubs.formUnion(memberClubs)
+            }
+        }
+        guard !clubs.isEmpty else {
+            return .noData
+        }
+        return .count(clubs.count)
+    }
+
     // MARK: - Helpers
 
     private func timeOfDaySeconds(_ date: Date, calendar: Calendar) -> Int {

@@ -171,6 +171,7 @@ struct DashboardView: View {
                 await repairDuplicatePresenceIfNeeded()
                 await repairDuplicateSpotNotesIfNeeded()
                 await repairPhoneSSBDuplicatesIfNeeded()
+                await backfillSessionClubMembersIfNeeded()
             }
             .onChange(of: syncService.lastSyncDate) { _, _ in
                 Task {

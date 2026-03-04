@@ -223,6 +223,44 @@ struct ActivationShareCardStats: View {
     }
 }
 
+// MARK: - ActivationShareCardClubMembers
+
+struct ActivationShareCardClubMembers: View {
+    // MARK: Internal
+
+    let members: [(callsign: String, clubs: [String])]
+
+    var body: some View {
+        HStack(spacing: 6) {
+            ForEach(clubCounts, id: \.club) { entry in
+                Text("\(entry.count) \(entry.club)")
+                    .font(.caption2)
+                    .fontWeight(.medium)
+                    .foregroundStyle(.white.opacity(0.9))
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(Color.white.opacity(0.15))
+                    .clipShape(Capsule())
+            }
+        }
+        .padding(.top, 4)
+        .padding(.horizontal, 16)
+    }
+
+    // MARK: Private
+
+    private var clubCounts: [(club: String, count: Int)] {
+        var counts: [String: Int] = [:]
+        for member in members {
+            for club in member.clubs {
+                counts[club, default: 0] += 1
+            }
+        }
+        return counts.sorted { $0.key < $1.key }
+            .map { (club: $0.key, count: $0.value) }
+    }
+}
+
 // MARK: - ActivationShareCardFooter
 
 struct ActivationShareCardFooter: View {

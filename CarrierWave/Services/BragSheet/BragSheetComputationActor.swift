@@ -40,6 +40,18 @@ nonisolated struct BragSheetComputedResult: Sendable {
 actor BragSheetComputationActor {
     // MARK: Internal
 
+    /// Club data snapshotted from MainActor before computation.
+    var clubMemberCallsigns: Set<String> = []
+    var clubsByCallsign: [String: [String]] = [:]
+
+    func setClubData(
+        callsigns: Set<String>,
+        byCallsign: [String: [String]]
+    ) {
+        clubMemberCallsigns = callsigns
+        clubsByCallsign = byCallsign
+    }
+
     /// Compute stats for a given period and configuration.
     func computeStats(
         container: ModelContainer,
@@ -274,6 +286,8 @@ actor BragSheetComputationActor {
         case .busiestBand: computeBusiestBand(snapshots)
         case .busiestMode: computeBusiestMode(snapshots)
         case .repeatCustomers: computeRepeatCustomers(snapshots)
+        case .clubMembersWorked: computeClubMembersWorked(snapshots)
+        case .clubsRepresented: computeClubsRepresented(snapshots)
         default: .noData
         }
     }

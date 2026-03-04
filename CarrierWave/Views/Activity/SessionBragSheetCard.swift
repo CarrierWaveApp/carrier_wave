@@ -33,6 +33,9 @@ struct SessionBragSheetCard: View {
             }
             sessionInfoSection
             statsSection
+            if let clubMembers = item.details?.sessionClubMembers, !clubMembers.isEmpty {
+                clubMembersSection(clubMembers)
+            }
             if let timeline = item.details?.sessionTimeline, !timeline.isEmpty {
                 SessionTimelineView(entries: timeline)
                     .padding(.top, 8)

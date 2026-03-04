@@ -86,6 +86,7 @@ struct ActivityDetails: Sendable {
     var sessionAntenna: String?
     var sessionContactGrids: [ContactGridEntry]?
     var sessionTimeline: [TimelineEntry]?
+    var sessionClubMembers: [ClubMemberEntry]?
 
     // MARK: - Nonisolated Codable Helpers
 
@@ -129,6 +130,7 @@ extension ActivityDetails: Codable {
         case sessionAntenna
         case sessionContactGrids
         case sessionTimeline
+        case sessionClubMembers
     }
 
     nonisolated init(from decoder: Decoder) throws {
@@ -158,6 +160,7 @@ extension ActivityDetails: Codable {
         sessionAntenna = try container.decodeIfPresent(String.self, forKey: .sessionAntenna)
         sessionContactGrids = try container.decodeIfPresent([ContactGridEntry].self, forKey: .sessionContactGrids)
         sessionTimeline = try container.decodeIfPresent([TimelineEntry].self, forKey: .sessionTimeline)
+        sessionClubMembers = try container.decodeIfPresent([ClubMemberEntry].self, forKey: .sessionClubMembers)
     }
 
     nonisolated func encode(to encoder: Encoder) throws {
@@ -187,6 +190,7 @@ extension ActivityDetails: Codable {
         try container.encodeIfPresent(sessionAntenna, forKey: .sessionAntenna)
         try container.encodeIfPresent(sessionContactGrids, forKey: .sessionContactGrids)
         try container.encodeIfPresent(sessionTimeline, forKey: .sessionTimeline)
+        try container.encodeIfPresent(sessionClubMembers, forKey: .sessionClubMembers)
     }
 }
 
@@ -202,4 +206,11 @@ struct ContactGridEntry: Codable, Sendable {
 struct TimelineEntry: Codable, Sendable {
     var timestamp: Date
     var band: String
+}
+
+// MARK: - ClubMemberEntry
+
+struct ClubMemberEntry: Codable, Sendable {
+    var callsign: String
+    var clubs: [String]
 }

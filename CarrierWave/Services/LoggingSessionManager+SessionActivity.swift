@@ -115,6 +115,9 @@ extension LoggingSessionManager {
         details.sessionContactGrids = buildContactGrids(from: qsos)
         details.sessionTimeline = buildTimeline(from: qsos)
 
+        // Club members
+        details.sessionClubMembers = buildClubMembers(from: qsos)
+
         return details
     }
 
@@ -193,6 +196,23 @@ extension LoggingSessionManager {
             TimelineEntry(timestamp: qso.timestamp, band: qso.band)
         }
         return entries.isEmpty ? nil : entries
+    }
+
+    private func buildClubMembers(from qsos: [QSO]) -> [ClubMemberEntry]? {
+        var seen = Set<String>()
+        var results: [ClubMemberEntry] = []
+        for qso in qsos {
+            let key = qso.callsign.uppercased()
+            guard seen.insert(key).inserted else {
+                continue
+            }
+            let clubs = ClubsSyncService.shared.clubs(for: qso.callsign)
+            guard !clubs.isEmpty else {
+                continue
+            }
+            results.append(ClubMemberEntry(callsign: qso.callsign, clubs: clubs))
+        }
+        return results.isEmpty ? nil : results
     }
 
     private func buildReportRequest(details: ActivityDetails) -> ReportActivityRequest {

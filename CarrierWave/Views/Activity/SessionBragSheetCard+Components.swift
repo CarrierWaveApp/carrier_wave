@@ -111,6 +111,30 @@ extension SessionBragSheetCard {
         .padding(.horizontal, 16)
     }
 
+    func clubMembersSection(_ members: [ClubMemberEntry]) -> some View {
+        let counts = clubCounts(from: members)
+        return HStack(spacing: 6) {
+            ForEach(counts, id: \.club) { entry in
+                statBadge("\(entry.count) \(entry.club)")
+            }
+        }
+        .padding(.top, 4)
+        .padding(.horizontal, 16)
+    }
+
+    private func clubCounts(
+        from members: [ClubMemberEntry]
+    ) -> [(club: String, count: Int)] {
+        var counts: [String: Int] = [:]
+        for member in members {
+            for club in member.clubs {
+                counts[club, default: 0] += 1
+            }
+        }
+        return counts.sorted { $0.key < $1.key }
+            .map { (club: $0.key, count: $0.value) }
+    }
+
     var equipmentSection: some View {
         HStack(spacing: 8) {
             if let rig = item.details?.sessionRig {
