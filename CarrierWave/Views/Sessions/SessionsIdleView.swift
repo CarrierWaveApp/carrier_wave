@@ -31,7 +31,18 @@ struct SessionsIdleView: View {
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
-                        showSessionSheet = true
+                        if tourState.shouldShowMiniTour(.loggerInteractive) {
+                            let manager = LoggerTourManager()
+                            manager.setOnComplete {
+                                tourState.markMiniTourSeen(.loggerInteractive)
+                                tourState.markMiniTourSeen(.logger)
+                                loggerTourManager = nil
+                            }
+                            manager.start()
+                            loggerTourManager = manager
+                        } else {
+                            showSessionSheet = true
+                        }
                     } label: {
                         Image(systemName: "plus")
                     }
@@ -43,6 +54,9 @@ struct SessionsIdleView: View {
                     sessionManager: sessionManager,
                     onDismiss: { showSessionSheet = false }
                 )
+            }
+            .fullScreenCover(item: $loggerTourManager) { manager in
+                LoggerTourOverlay(tourManager: manager)
             }
             .finishSessionDialog(
                 session: $sessionToFinish,
@@ -68,6 +82,7 @@ struct SessionsIdleView: View {
     @State private var sessionToFinish: LoggingSession?
     @State private var sessionToDelete: LoggingSession?
     @State private var showSessionSheet = false
+    @State private var loggerTourManager: LoggerTourManager?
 
     // MARK: - Active Sessions Header
 

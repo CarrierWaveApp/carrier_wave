@@ -203,9 +203,6 @@ struct LoggerView: View {
     /// Tour state for mini-tour
     let tourState: TourState
 
-    /// Interactive logger tour manager (nil when tour is not active)
-    @State var loggerTourManager: LoggerTourManager?
-
     /// Callback when session ends with QSOs logged
     let onSessionEnd: (() -> Void)?
 
@@ -274,27 +271,6 @@ struct LoggerView: View {
                     panelOverlays
                 }
                 .toastContainer()
-                .fullScreenCover(item: $loggerTourManager) { manager in
-                    LoggerTourOverlay(tourManager: manager)
-                }
-                .task {
-                    if tourState.shouldShowMiniTour(.loggerInteractive) {
-                        // Delay so SwiftUI finishes dismissing the SessionStartSheet
-                        // (from SessionsIdleView) before presenting the tour fullScreenCover.
-                        // Without this, the presentation is silently dropped.
-                        try? await Task.sleep(for: .milliseconds(600))
-                        guard !Task.isCancelled else { return }
-                        let manager = LoggerTourManager()
-                        manager.setOnComplete {
-                            tourState.markMiniTourSeen(.loggerInteractive)
-                            // Also mark the old static tour as seen
-                            tourState.markMiniTourSeen(.logger)
-                            loggerTourManager = nil
-                        }
-                        manager.start()
-                        loggerTourManager = manager
-                    }
-                }
                 .sheet(isPresented: $showFT8SetupWizard) {
                     FT8SetupWizardView(isPresented: $showFT8SetupWizard)
                         .interactiveDismissDisabled()
