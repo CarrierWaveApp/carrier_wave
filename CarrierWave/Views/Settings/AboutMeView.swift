@@ -56,6 +56,7 @@ struct AboutMeView: View {
     @State private var showError = false
     @State private var errorMessage = ""
     @State private var showRefreshConfirmation = false
+    @State private var callsignChangeNote: String?
 
     private let profileService = UserProfileService.shared
 
@@ -196,6 +197,16 @@ struct AboutMeView: View {
                     Text("License expires: \(expires)")
                 }
             }
+
+            if let changeNote = callsignChangeNote {
+                HStack {
+                    Image(systemName: "arrow.triangle.2.circlepath")
+                        .foregroundStyle(.orange)
+                    Text(changeNote)
+                        .foregroundStyle(.orange)
+                }
+                .font(.subheadline)
+            }
         } header: {
             Text("Profile")
         }
@@ -252,13 +263,16 @@ struct AboutMeView: View {
         defer { isRefreshing = false }
 
         do {
-            if let newProfile = try await profileService.lookupAndCreateProfile(
+            let result = try await profileService.lookupAndCreateProfileWithChangeDetection(
                 callsign: existingProfile.callsign
-            ) {
+            )
+
+            if let newProfile = result.profile {
                 try profileService.saveProfile(newProfile)
 
                 await MainActor.run {
                     profile = newProfile
+                    callsignChangeNote = result.callsignChangeNote
                     loadProfile()
                     showSaveSuccess = true
                 }

@@ -52,6 +52,17 @@ struct CWCallsignInfoCard: View {
                     .foregroundStyle(.secondary)
             }
 
+            // Callsign change detection note
+            if let changeNote = info.callsignChangeNote {
+                HStack(spacing: 4) {
+                    Image(systemName: "arrow.triangle.2.circlepath")
+                        .foregroundStyle(.orange)
+                    Text(changeNote)
+                        .foregroundStyle(.orange)
+                }
+                .font(.caption)
+            }
+
             // Location info (grid, QTH)
             if info.grid != nil || info.fullLocation != nil {
                 HStack(spacing: 12) {
