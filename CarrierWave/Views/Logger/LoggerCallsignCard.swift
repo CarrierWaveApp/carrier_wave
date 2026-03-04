@@ -46,6 +46,10 @@ struct LoggerCallsignCard: View {
                 noteSection(note)
             }
 
+            if let previousCall = info.previousCallsign {
+                previousCallsignSection(previousCall)
+            }
+
             if let changeNote = info.callsignChangeNote {
                 callsignChangeSection(changeNote)
             }
@@ -180,6 +184,19 @@ struct LoggerCallsignCard: View {
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
         }
+    }
+
+    private func previousCallsignSection(_ previousCall: String) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: "arrow.right.arrow.left")
+                .foregroundStyle(.secondary)
+                .font(.caption)
+
+            Text("Previously \(previousCall)")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.top, 4)
     }
 
     private func callsignChangeSection(_ note: String) -> some View {
