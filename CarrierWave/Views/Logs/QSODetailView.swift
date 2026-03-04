@@ -125,6 +125,18 @@ struct QSODetailView: View {
                         .background(Color.accentColor.opacity(0.2))
                         .clipShape(Capsule())
                 }
+
+                if let changeNote = qso.callsignChangeNote {
+                    HStack(spacing: 8) {
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                            .foregroundStyle(.orange)
+                            .font(.caption)
+                        Text(changeNote)
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                    }
+                    .padding(.top, 4)
+                }
             }
             .padding(.vertical, 4)
         }

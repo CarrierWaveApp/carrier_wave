@@ -274,7 +274,7 @@ struct ActivityLogView: View {
             state: data.state
         )
 
-        if qso != nil {
+        if let qso {
             currentMode = data.mode
             currentFrequency = data.frequency
             recentQSOs = manager.fetchRecentQSOs()
@@ -286,6 +286,10 @@ struct ActivityLogView: View {
                     mode: data.mode
                 )
             }
+            // Background lookup to fill in metadata and detect callsign changes
+            Task {
+                await enrichQSOWithLookup(qso)
+            }
         }
     }
 
@@ -295,6 +299,22 @@ struct ActivityLogView: View {
         manager.refreshTodayStats()
         recentQSOs = manager.fetchRecentQSOs()
         workedCacheVersion += 1
+    }
+
+    /// Look up a callsign after logging to fill in metadata and detect ownership changes
+    private func enrichQSOWithLookup(_ qso: QSO) async {
+        let service = CallsignLookupService(modelContext: modelContext)
+        guard let info = await service.lookup(qso.callsign) else {
+            return
+        }
+        if qso.name == nil { qso.name = info.name }
+        if qso.theirGrid == nil { qso.theirGrid = info.grid }
+        if qso.state == nil { qso.state = info.state }
+        if qso.country == nil { qso.country = info.country }
+        if qso.qth == nil { qso.qth = info.qth }
+        if qso.theirLicenseClass == nil { qso.theirLicenseClass = info.licenseClass }
+        qso.callsignChangeNote = info.callsignChangeNote
+        try? modelContext.save()
     }
 
     private func requestGPSGridIfNeeded() {

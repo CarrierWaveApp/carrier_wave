@@ -200,6 +200,13 @@ struct LoggerQSORow: View {
                         .font(.caption)
                 }
 
+                // Callsign change indicator
+                if callsignInfo?.callsignChangeNote != nil || qso.callsignChangeNote != nil {
+                    Image(systemName: "arrow.triangle.2.circlepath")
+                        .font(.caption2)
+                        .foregroundStyle(.orange)
+                }
+
                 // Show POTA status badges
                 if isPOTASession {
                     potaStatusBadge
@@ -319,6 +326,10 @@ struct LoggerQSORow: View {
         }
         if qso.theirLicenseClass == nil, let licenseClass = info.licenseClass {
             qso.theirLicenseClass = licenseClass
+            updated = true
+        }
+        if qso.callsignChangeNote == nil, let changeNote = info.callsignChangeNote {
+            qso.callsignChangeNote = changeNote
             updated = true
         }
 

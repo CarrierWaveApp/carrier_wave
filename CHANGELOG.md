@@ -8,6 +8,7 @@ All notable changes to Carrier Wave will be documented in this file.
 - Auto-detect callsign owner changes by cross-referencing QRZ and HamDB names during lookup
 - Show "HamDB is still updating" note in logger callsign card and CW info card when names differ
 - Callsign change detection in About Me profile refresh with QRZ cross-check
+- Persist callsign change notes on QSOs — detected changes now survive across sessions and appear in QSO detail, edit sheets, logger rows, and hunter recent QSOs
 - Add WWFF agenda fetching from Spotline service (spots.wwff.co/agenda.json) for scheduled activations
 - Add WWFF award tier model based on Global Rules V5.10 (activator references, points, DXCC, continents; hunter references, DXCC, continents; park-to-park)
 - Add WWFF activation progress tracking with per-reference QSO counts (44-QSO threshold), multi-visit aggregation, and activator point calculation

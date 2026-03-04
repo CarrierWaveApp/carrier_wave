@@ -15,6 +15,19 @@ struct LoggerQSOEditSheet: View {
     var body: some View {
         NavigationStack {
             Form {
+                if let changeNote = qso.callsignChangeNote {
+                    Section {
+                        HStack(spacing: 8) {
+                            Image(systemName: "arrow.triangle.2.circlepath")
+                                .foregroundStyle(.orange)
+                                .font(.caption)
+                            Text(changeNote)
+                                .font(.caption)
+                                .foregroundStyle(.orange)
+                        }
+                    }
+                }
+
                 Section("Contact") {
                     HStack {
                         Text("Callsign")
@@ -249,6 +262,7 @@ struct LoggerQSOEditSheet: View {
                 qso.country = info.country
                 qso.qth = info.qth
                 qso.theirLicenseClass = info.licenseClass
+                qso.callsignChangeNote = info.callsignChangeNote
                 try? context.save()
             }
         }

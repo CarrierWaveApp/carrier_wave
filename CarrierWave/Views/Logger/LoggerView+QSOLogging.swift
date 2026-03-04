@@ -90,7 +90,8 @@ extension LoggerView {
             country: lookupResult?.country,
             qth: lookupResult?.qth,
             theirLicenseClass: lookupResult?.licenseClass,
-            aoaCode: aoaCode.nonEmpty
+            aoaCode: aoaCode.nonEmpty,
+            callsignChangeNote: lookupResult?.callsignChangeNote
         )
 
         UINotificationFeedbackGenerator().notificationOccurred(.success)
@@ -170,6 +171,7 @@ extension LoggerView {
             qso.country = info.country
             qso.qth = info.qth
             qso.theirLicenseClass = info.licenseClass
+            qso.callsignChangeNote = info.callsignChangeNote
         } else {
             Task { await fetchAndUpdateQSOMetadata(qso, callsign: callsign) }
         }
@@ -189,6 +191,7 @@ extension LoggerView {
             qso.country = info.country
             qso.qth = info.qth
             qso.theirLicenseClass = info.licenseClass
+            qso.callsignChangeNote = info.callsignChangeNote
             try? modelContext.save()
             refreshSessionQSOs()
         }
@@ -225,7 +228,8 @@ extension LoggerView {
             country: lookupResult?.country,
             qth: lookupResult?.qth,
             theirLicenseClass: lookupResult?.licenseClass,
-            aoaCode: aoaCode.nonEmpty
+            aoaCode: aoaCode.nonEmpty,
+            callsignChangeNote: lookupResult?.callsignChangeNote
         )
 
         refreshSessionQSOs()
