@@ -5,6 +5,13 @@ All notable changes to Carrier Wave will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Add WWFF agenda fetching from Spotline service (spots.wwff.co/agenda.json) for scheduled activations
+- Add WWFF award tier model based on Global Rules V5.10 (activator references, points, DXCC, continents; hunter references, DXCC, continents; park-to-park)
+- Add WWFF activation progress tracking with per-reference QSO counts (44-QSO threshold), multi-visit aggregation, and activator point calculation
+- Add WWFF representative directory with lookup by reference, program code, or DXCC entity
+- Add WWFF representative email compose for log submissions with pre-filled subject/body
+- Add WWFF activation progress view showing award tier progression and per-reference status
+- Enable `.locationLookup` and `.progressTracking` capabilities for WWFF program
 - Add "Tune In" feature — listen to any spotted activation via KiwiSDR directly from spot rows
 - Smart receiver auto-selection based on activator proximity
 - Persistent mini player bar (Apple Music-style) above tab bar with live status, mute, and close

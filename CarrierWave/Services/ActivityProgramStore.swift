@@ -156,7 +156,7 @@ final class ActivityProgramStore: ObservableObject {
             multiRefAllowed: false,
             activationThreshold: 44,
             supportsRove: false,
-            capabilities: [.referenceField, .browseSpots],
+            capabilities: [.referenceField, .browseSpots, .locationLookup, .progressTracking],
             adifFields: ADIFFieldMapping(
                 mySig: "WWFF", mySigInfo: "ref",
                 sigField: nil, sigInfoField: nil
