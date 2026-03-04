@@ -19,7 +19,8 @@ extension LoggingSessionManager {
         country: String? = nil,
         qth: String? = nil,
         theirLicenseClass: String? = nil,
-        aoaCode: String? = nil
+        aoaCode: String? = nil,
+        callsignChangeNote: String? = nil
     ) -> QSO? {
         guard let session = activeSession else {
             return nil
@@ -56,7 +57,8 @@ extension LoggingSessionManager {
             myRig: session.myRig,
             sotaRef: session.isSOTA ? session.sotaReference : nil,
             wwffRef: session.isWWFF ? session.wwffReference : nil,
-            theirLicenseClass: theirLicenseClass
+            theirLicenseClass: theirLicenseClass,
+            callsignChangeNote: callsignChangeNote
         )
 
         // Set the logging session ID

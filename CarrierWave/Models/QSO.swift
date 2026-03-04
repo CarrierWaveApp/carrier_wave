@@ -38,7 +38,8 @@ nonisolated final class QSO {
         lotwConfirmedDate: Date? = nil,
         lotwConfirmed: Bool = false,
         dxcc: Int? = nil,
-        theirLicenseClass: String? = nil
+        theirLicenseClass: String? = nil,
+        callsignChangeNote: String? = nil
     ) {
         self.id = id
         self.callsign = callsign
@@ -73,6 +74,7 @@ nonisolated final class QSO {
         self.lotwConfirmed = lotwConfirmed
         self.dxcc = dxcc
         self.theirLicenseClass = theirLicenseClass
+        self.callsignChangeNote = callsignChangeNote
     }
 
     // MARK: Internal
@@ -123,6 +125,10 @@ nonisolated final class QSO {
 
     /// Their license class (e.g., "Extra", "General") - from QRZ lookup at time of logging
     var theirLicenseClass: String?
+
+    /// Detected callsign ownership change note (e.g., "HamDB is still updating (shows ...)")
+    /// Persisted from QRZ vs HamDB comparison during callsign lookup.
+    var callsignChangeNote: String?
 
     /// Soft delete flag - QSOs are never truly deleted, only hidden
     var isHidden: Bool = false

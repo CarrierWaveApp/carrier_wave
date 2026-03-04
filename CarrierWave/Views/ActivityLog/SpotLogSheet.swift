@@ -284,11 +284,28 @@ struct SpotLogSheet: View {
             state: state.isEmpty ? nil : state
         )
 
-        guard qso != nil else {
+        guard let qso else {
             return
         }
         UINotificationFeedbackGenerator().notificationOccurred(.success)
         onLogged()
+
+        // Background lookup to detect callsign changes and fill metadata
+        let context = modelContext
+        Task {
+            let service = CallsignLookupService(modelContext: context)
+            guard let info = await service.lookup(qso.callsign) else {
+                return
+            }
+            if qso.name == nil { qso.name = info.name }
+            if qso.theirGrid == nil { qso.theirGrid = info.grid }
+            if qso.state == nil { qso.state = info.state }
+            if qso.country == nil { qso.country = info.country }
+            if qso.qth == nil { qso.qth = info.qth }
+            if qso.theirLicenseClass == nil { qso.theirLicenseClass = info.licenseClass }
+            qso.callsignChangeNote = info.callsignChangeNote
+            try? context.save()
+        }
 
         if canRespot {
             if respotCustomMessage {

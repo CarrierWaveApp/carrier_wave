@@ -177,6 +177,13 @@ struct RecentQSOsSection: View {
                 )
                 .lineLimit(1)
 
+            // Callsign change indicator
+            if qso.callsignChangeNote != nil {
+                Image(systemName: "arrow.triangle.2.circlepath")
+                    .font(.caption2)
+                    .foregroundStyle(.orange)
+            }
+
             Spacer()
 
             // Band + Mode badge
