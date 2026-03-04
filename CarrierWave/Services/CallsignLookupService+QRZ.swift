@@ -176,6 +176,7 @@ extension CallsignLookupService {
         let country = parseXMLValue(from: xmlString, tag: "country")
         let licenseClass = parseXMLValue(from: xmlString, tag: "class")
         let previousCallsign = parseXMLValue(from: xmlString, tag: "p_call")
+            ?? previousCallFromAliases(xmlString, callsign: callsign)
 
         guard name != nil || grid != nil || qth != nil else {
             return nil
@@ -194,6 +195,21 @@ extension CallsignLookupService {
             previousCallsign: previousCallsign,
             source: .qrz
         )
+    }
+
+    /// Extract a previous callsign from the QRZ `aliases` field.
+    /// Aliases is a comma-separated list of other callsigns that resolve to this record.
+    /// We pick the first alias that isn't the current callsign or a portable variant (e.g., DL/AA7BQ).
+    private func previousCallFromAliases(_ xml: String, callsign: String) -> String? {
+        guard let aliasesStr = parseXMLValue(from: xml, tag: "aliases") else {
+            return nil
+        }
+        let upper = callsign.uppercased()
+        let candidates = aliasesStr
+            .split(separator: ",")
+            .map { $0.trimmingCharacters(in: .whitespaces).uppercased() }
+            .filter { !$0.isEmpty && $0 != upper && !$0.contains("/") }
+        return candidates.first
     }
 
     private enum QRZLookupError: Error {
