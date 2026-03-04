@@ -177,84 +177,17 @@ final class CallsignLookupService {
 
         // Start new lookup
         let task = Task<CallsignLookupResult, Never> {
-            // Debounce
             try? await Task.sleep(nanoseconds: UInt64(debounceDelay * 1_000_000_000))
 
-            // Tier 1: Polo notes (local)
-            // Tier 2: QRZ XML API (remote) - always try if credentials configured
-            // Tier 3: HamDB (remote, parallel with QRZ) - for callsign change detection
+            // QRZ detects callsign changes via the `call` field — if QRZ returns
+            // a different callsign than queried, the queried call was an old/alias.
             async let poloInfoTask = lookupInPoloNotes(normalizedCallsign)
             async let qrzResultTask = lookupInQRZWithResult(normalizedCallsign)
-            async let hamDBNameTask = lookupHamDBName(normalizedCallsign)
 
             let poloInfo = await poloInfoTask
             let qrzResult = await qrzResultTask
-            let hamDBName = await hamDBNameTask
 
-            // Detect callsign owner change: QRZ has new owner, HamDB still has old
-            let changeNote = detectCallsignChange(
-                qrzInfo: qrzResult.info,
-                hamDBName: hamDBName
-            )
-
-            // Merge results: Polo Notes emoji/note + QRZ name/grid/location
-            if let polo = poloInfo, let qrz = qrzResult.info {
-                let merged = CallsignInfo(
-                    callsign: normalizedCallsign,
-                    name: qrz.name,
-                    firstName: qrz.firstName,
-                    nickname: qrz.nickname,
-                    note: polo.note,
-                    emoji: polo.emoji,
-                    qth: qrz.qth,
-                    state: qrz.state,
-                    country: qrz.country,
-                    grid: qrz.grid,
-                    licenseClass: qrz.licenseClass,
-                    previousCallsign: qrz.previousCallsign,
-                    source: .qrz, // Primary source is QRZ for name/grid
-                    allEmojis: polo.allEmojis,
-                    matchingSources: polo.matchingSources,
-                    callsignChangeNote: changeNote
-                )
-                updateCache(merged)
-                return .fromQRZ(merged)
-            }
-
-            // QRZ only (no Polo Notes match)
-            if let qrz = qrzResult.info {
-                let info = CallsignInfo(
-                    callsign: qrz.callsign,
-                    name: qrz.name,
-                    firstName: qrz.firstName,
-                    nickname: qrz.nickname,
-                    note: qrz.note,
-                    emoji: qrz.emoji,
-                    qth: qrz.qth,
-                    state: qrz.state,
-                    country: qrz.country,
-                    grid: qrz.grid,
-                    licenseClass: qrz.licenseClass,
-                    source: qrz.source,
-                    lookupDate: qrz.lookupDate,
-                    callsignChangeNote: changeNote
-                )
-                updateCache(info)
-                return .fromQRZ(info)
-            }
-
-            // Polo Notes only (QRZ not configured or lookup failed)
-            if let info = poloInfo {
-                updateCache(info)
-                return .success(info)
-            }
-
-            // Return error from QRZ attempt, or not found
-            if let error = qrzResult.error {
-                return .error(error, qrzAttempted: true, poloNotesChecked: true)
-            }
-
-            return .notFound(qrzAttempted: true, poloNotesChecked: true)
+            return mergeResults(polo: poloInfo, qrz: qrzResult)
         }
 
         pendingResultLookups[normalizedCallsign] = task
@@ -391,5 +324,52 @@ final class CallsignLookupService {
                 cache.removeValue(forKey: oldest)
             }
         }
+    }
+
+    // MARK: Private
+
+    /// Merge Polo Notes and QRZ results into a single lookup result
+    private func mergeResults(
+        polo: CallsignInfo?, qrz: CallsignLookupResult
+    ) -> CallsignLookupResult {
+        // Polo Notes emoji/note + QRZ name/grid/location
+        if let polo, let qrzInfo = qrz.info {
+            let merged = CallsignInfo(
+                callsign: qrzInfo.callsign,
+                name: qrzInfo.name,
+                firstName: qrzInfo.firstName,
+                nickname: qrzInfo.nickname,
+                note: polo.note,
+                emoji: polo.emoji,
+                qth: qrzInfo.qth,
+                state: qrzInfo.state,
+                country: qrzInfo.country,
+                grid: qrzInfo.grid,
+                licenseClass: qrzInfo.licenseClass,
+                previousCallsign: qrzInfo.previousCallsign,
+                source: .qrz,
+                allEmojis: polo.allEmojis,
+                matchingSources: polo.matchingSources,
+                callsignChangeNote: qrzInfo.callsignChangeNote
+            )
+            updateCache(merged)
+            return .fromQRZ(merged)
+        }
+
+        if let qrzInfo = qrz.info {
+            updateCache(qrzInfo)
+            return .fromQRZ(qrzInfo)
+        }
+
+        if let polo {
+            updateCache(polo)
+            return .success(polo)
+        }
+
+        if let error = qrz.error {
+            return .error(error, qrzAttempted: true, poloNotesChecked: true)
+        }
+
+        return .notFound(qrzAttempted: true, poloNotesChecked: true)
     }
 }

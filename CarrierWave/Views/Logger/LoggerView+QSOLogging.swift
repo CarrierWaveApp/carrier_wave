@@ -74,11 +74,20 @@ extension LoggerView {
         let stateToUse = theirState.nonEmpty ?? lookupResult?.state
 
         // Capture callsign and QRZ info before form reset for QRQ Crew check
-        let loggedCallsign = callsignInput.trimmingCharacters(in: .whitespaces).uppercased()
+        let typedCallsign = callsignInput.trimmingCharacters(in: .whitespaces).uppercased()
         let loggedLookup = lookupResult
 
+        // When QRZ redirected, log the canonical (new) callsign instead
+        let loggedCallsign = lookupResult?.callsignChangeNote != nil
+            ? lookupResult?.callsign ?? typedCallsign : typedCallsign
+
+        // Build callsign change note when QRZ redirected to a different call
+        let changeNote = buildCallsignChangeNote(
+            loggedCallsign: typedCallsign
+        )
+
         _ = sessionManager?.logQSO(
-            callsign: callsignInput,
+            callsign: loggedCallsign,
             rstSent: rstSent.nonEmpty ?? defaultRST,
             rstReceived: rstReceived.nonEmpty ?? defaultRST,
             theirGrid: gridToUse,
@@ -91,7 +100,7 @@ extension LoggerView {
             qth: lookupResult?.qth,
             theirLicenseClass: lookupResult?.licenseClass,
             aoaCode: aoaCode.nonEmpty,
-            callsignChangeNote: lookupResult?.callsignChangeNote
+            callsignChangeNote: changeNote
         )
 
         UINotificationFeedbackGenerator().notificationOccurred(.success)
@@ -171,7 +180,10 @@ extension LoggerView {
             qso.country = info.country
             qso.qth = info.qth
             qso.theirLicenseClass = info.licenseClass
-            qso.callsignChangeNote = info.callsignChangeNote
+            if info.callsignChangeNote != nil {
+                qso.callsignChangeNote =
+                    "Logged as \(callsign) but operator changed to \(info.callsign)"
+            }
         } else {
             Task { await fetchAndUpdateQSOMetadata(qso, callsign: callsign) }
         }
@@ -191,7 +203,10 @@ extension LoggerView {
             qso.country = info.country
             qso.qth = info.qth
             qso.theirLicenseClass = info.licenseClass
-            qso.callsignChangeNote = info.callsignChangeNote
+            if info.callsignChangeNote != nil {
+                qso.callsignChangeNote =
+                    "Logged as \(qso.callsign) but operator changed to \(info.callsign)"
+            }
             try? modelContext.save()
             refreshSessionQSOs()
         }
@@ -206,8 +221,12 @@ extension LoggerView {
         }
 
         // Capture callsign and QRZ info before form reset for QRQ Crew check
-        let loggedCallsign = qeResult.callsign.trimmingCharacters(in: .whitespaces).uppercased()
+        let typedCallsign = qeResult.callsign.trimmingCharacters(in: .whitespaces).uppercased()
         let loggedLookup = lookupResult
+
+        // When QRZ redirected, log the canonical (new) callsign instead
+        let loggedCallsign = lookupResult?.callsignChangeNote != nil
+            ? lookupResult?.callsign ?? typedCallsign : typedCallsign
 
         // Build field values with fallback chain: quick entry > form > lookup
         let gridToUse = qeResult.theirGrid.nonEmpty ?? theirGrid.nonEmpty ?? lookupResult?.grid
@@ -215,8 +234,13 @@ extension LoggerView {
         let parkToUse = qeResult.theirPark.nonEmpty ?? theirPark.nonEmpty
         let notesToUse = qeResult.notes.nonEmpty ?? notes.nonEmpty
 
+        // Build callsign change note when QRZ redirected to a different call
+        let changeNote = buildCallsignChangeNote(
+            loggedCallsign: typedCallsign
+        )
+
         _ = sessionManager?.logQSO(
-            callsign: qeResult.callsign,
+            callsign: loggedCallsign,
             rstSent: qeResult.rstSent ?? rstSent.nonEmpty ?? defaultRST,
             rstReceived: qeResult.rstReceived ?? rstReceived.nonEmpty ?? defaultRST,
             theirGrid: gridToUse,
@@ -229,7 +253,7 @@ extension LoggerView {
             qth: lookupResult?.qth,
             theirLicenseClass: lookupResult?.licenseClass,
             aoaCode: aoaCode.nonEmpty,
-            callsignChangeNote: lookupResult?.callsignChangeNote
+            callsignChangeNote: changeNote
         )
 
         refreshSessionQSOs()
@@ -441,6 +465,14 @@ extension LoggerView {
         }
 
         return allSucceeded
+    }
+
+    /// Build a callsign change note when QRZ redirected to a different canonical call
+    func buildCallsignChangeNote(loggedCallsign: String) -> String? {
+        guard let lookup = lookupResult, lookup.callsignChangeNote != nil else {
+            return nil
+        }
+        return "Logged as \(loggedCallsign) but operator changed to \(lookup.callsign)"
     }
 
     func lookupParkName(_ reference: String?) -> String? {

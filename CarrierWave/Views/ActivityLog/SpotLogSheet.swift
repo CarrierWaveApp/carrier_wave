@@ -1,4 +1,5 @@
 import CarrierWaveData
+import SwiftData
 import SwiftUI
 import UIKit
 
@@ -40,6 +41,8 @@ struct SpotLogSheet: View {
     }
 
     // MARK: Private
+
+    @Environment(\.modelContext) private var modelContext
 
     @Environment(\.dismiss) private var dismiss
 
@@ -292,20 +295,7 @@ struct SpotLogSheet: View {
 
         // Background lookup to detect callsign changes and fill metadata
         let context = modelContext
-        Task {
-            let service = CallsignLookupService(modelContext: context)
-            guard let info = await service.lookup(qso.callsign) else {
-                return
-            }
-            if qso.name == nil { qso.name = info.name }
-            if qso.theirGrid == nil { qso.theirGrid = info.grid }
-            if qso.state == nil { qso.state = info.state }
-            if qso.country == nil { qso.country = info.country }
-            if qso.qth == nil { qso.qth = info.qth }
-            if qso.theirLicenseClass == nil { qso.theirLicenseClass = info.licenseClass }
-            qso.callsignChangeNote = info.callsignChangeNote
-            try? context.save()
-        }
+        Task { await fillQSOMetadata(qso, context: context) }
 
         if canRespot {
             if respotCustomMessage {
@@ -318,5 +308,36 @@ struct SpotLogSheet: View {
         } else {
             dismiss()
         }
+    }
+
+    /// Fill QSO metadata from callsign lookup (runs on background)
+    private func fillQSOMetadata(_ qso: QSO, context: ModelContext) async {
+        let service = CallsignLookupService(modelContext: context)
+        guard let info = await service.lookup(qso.callsign) else {
+            return
+        }
+        if qso.name == nil {
+            qso.name = info.name
+        }
+        if qso.theirGrid == nil {
+            qso.theirGrid = info.grid
+        }
+        if qso.state == nil {
+            qso.state = info.state
+        }
+        if qso.country == nil {
+            qso.country = info.country
+        }
+        if qso.qth == nil {
+            qso.qth = info.qth
+        }
+        if qso.theirLicenseClass == nil {
+            qso.theirLicenseClass = info.licenseClass
+        }
+        if info.callsignChangeNote != nil {
+            qso.callsignChangeNote =
+                "Logged as \(qso.callsign) but operator changed to \(info.callsign)"
+        }
+        try? context.save()
     }
 }

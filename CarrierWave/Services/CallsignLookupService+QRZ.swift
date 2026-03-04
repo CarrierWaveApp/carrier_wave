@@ -167,6 +167,12 @@ extension CallsignLookupService {
     }
 
     private func parseCallsignInfoFromXML(_ xmlString: String, callsign: String) -> CallsignInfo? {
+        // Parse the canonical callsign from QRZ — if it differs from what was
+        // queried, QRZ resolved an old/alias callsign to the current holder
+        let qrzCall = parseXMLValue(from: xmlString, tag: "call")
+        let canonicalCall = (qrzCall ?? callsign).uppercased()
+        let isRedirected = canonicalCall != callsign.uppercased()
+
         let firstName = parseXMLValue(from: xmlString, tag: "fname")
         let lastName = parseXMLValue(from: xmlString, tag: "name")
         let nickname = parseXMLValue(from: xmlString, tag: "nickname")
@@ -177,14 +183,14 @@ extension CallsignLookupService {
         let country = parseXMLValue(from: xmlString, tag: "country")
         let licenseClass = parseXMLValue(from: xmlString, tag: "class")
         let previousCallsign = parseXMLValue(from: xmlString, tag: "p_call")
-            ?? previousCallFromAliases(xmlString, callsign: callsign)
+            ?? previousCallFromAliases(xmlString, callsign: canonicalCall)
 
         guard name != nil || grid != nil || qth != nil else {
             return nil
         }
 
         return CallsignInfo(
-            callsign: callsign,
+            callsign: canonicalCall,
             name: name,
             firstName: firstName,
             nickname: nickname,
@@ -194,7 +200,9 @@ extension CallsignLookupService {
             grid: grid,
             licenseClass: licenseClass,
             previousCallsign: previousCallsign,
-            source: .qrz
+            source: .qrz,
+            callsignChangeNote: isRedirected
+                ? "Looked up as \(callsign.uppercased())" : nil
         )
     }
 

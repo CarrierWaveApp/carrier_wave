@@ -4,6 +4,7 @@
 // Worked states glow green (intensity ∝ QSO count).
 // Tap a lit cell to see callsigns worked in that state.
 
+import CarrierWaveData
 import SwiftUI
 
 // MARK: - States Worked Section
@@ -52,7 +53,7 @@ extension SessionDetailView {
     }
 }
 
-// MARK: - US States Reference
+// MARK: - USStates
 
 enum USStates {
     /// All 50 US state abbreviations, alphabetically sorted
@@ -85,25 +86,20 @@ enum USStates {
         "VT": "Vermont", "WA": "Washington", "WI": "Wisconsin",
         "WV": "West Virginia", "WY": "Wyoming",
     ]
+
+    /// Return the full state name for a 2-letter abbreviation, or nil if not found
+    static func fullName(for abbreviation: String) -> String? {
+        names[abbreviation.uppercased()]
+    }
 }
 
 // MARK: - StatesWorkedMosaic
 
 struct StatesWorkedMosaic: View {
+    // MARK: Internal
+
     let stateCounts: [String: Int]
     let stateCallsigns: [String: [String]]
-
-    @State private var selectedState: String?
-
-    private let columns = 10
-    private let rows = 5
-    private let cellSpacing: CGFloat = 2
-
-    @ScaledMetric(relativeTo: .caption2) private var cellHeight: CGFloat = 22
-
-    private var maxCount: Int {
-        stateCounts.values.max() ?? 1
-    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -116,6 +112,20 @@ struct StatesWorkedMosaic: View {
         .accessibilityLabel(
             "States worked mosaic, \(stateCounts.count) of 50 states"
         )
+    }
+
+    // MARK: Private
+
+    @State private var selectedState: String?
+
+    @ScaledMetric(relativeTo: .caption2) private var cellHeight: CGFloat = 22
+
+    private let columns = 10
+    private let rows = 5
+    private let cellSpacing: CGFloat = 2
+
+    private var maxCount: Int {
+        stateCounts.values.max() ?? 1
     }
 
     // MARK: - Header
@@ -150,6 +160,19 @@ struct StatesWorkedMosaic: View {
                 }
             }
         }
+    }
+
+    // MARK: - Legend
+
+    private var legend: some View {
+        HStack(spacing: 12) {
+            legendItem(color: Color.green, label: "3+")
+            legendItem(
+                color: Color.green.opacity(0.55), label: "1\u{2013}2"
+            )
+            legendItem(color: Color(.systemGray5), label: "None")
+        }
+        .accessibilityHidden(true)
     }
 
     private func mosaicCell(state: String, count: Int) -> some View {
@@ -188,7 +211,11 @@ struct StatesWorkedMosaic: View {
         .popover(
             isPresented: Binding(
                 get: { selectedState == state },
-                set: { if !$0 { selectedState = nil } }
+                set: {
+                    if !$0 {
+                        selectedState = nil
+                    }
+                }
             ),
             arrowEdge: .top
         ) {
@@ -196,16 +223,6 @@ struct StatesWorkedMosaic: View {
         }
         .accessibilityLabel(cellAccessibilityLabel(state: state, count: count))
         .accessibilityHint(count > 0 ? "Tap to see callsigns" : "")
-    }
-
-    private func cellColor(count: Int) -> Color {
-        guard count > 0 else {
-            return Color(.systemGray5)
-        }
-        let intensity = 0.4 + min(
-            Double(count) / Double(max(maxCount, 1)), 1.0
-        ) * 0.6
-        return Color.green.opacity(intensity)
     }
 
     // MARK: - Popover
@@ -238,19 +255,6 @@ struct StatesWorkedMosaic: View {
         .presentationCompactAdaptation(.popover)
     }
 
-    // MARK: - Legend
-
-    private var legend: some View {
-        HStack(spacing: 12) {
-            legendItem(color: Color.green, label: "3+")
-            legendItem(
-                color: Color.green.opacity(0.55), label: "1\u{2013}2"
-            )
-            legendItem(color: Color(.systemGray5), label: "None")
-        }
-        .accessibilityHidden(true)
-    }
-
     private func legendItem(color: Color, label: String) -> some View {
         HStack(spacing: 4) {
             RoundedRectangle(cornerRadius: 2)
@@ -260,6 +264,16 @@ struct StatesWorkedMosaic: View {
                 .font(.system(size: 10))
                 .foregroundStyle(.secondary)
         }
+    }
+
+    private func cellColor(count: Int) -> Color {
+        guard count > 0 else {
+            return Color(.systemGray5)
+        }
+        let intensity = 0.4 + min(
+            Double(count) / Double(max(maxCount, 1)), 1.0
+        ) * 0.6
+        return Color.green.opacity(intensity)
     }
 
     // MARK: - Accessibility
