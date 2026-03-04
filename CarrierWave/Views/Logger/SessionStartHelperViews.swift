@@ -102,6 +102,8 @@ struct ActivationSectionView: View {
     var userGrid: String?
     /// Default country prefix for park shorthand
     var defaultCountry: String = "US"
+    /// Called when a park with a known grid is added
+    var onParkGridChanged: ((String?) -> Void)?
 
     var body: some View {
         Section {
@@ -184,7 +186,8 @@ struct ActivationSectionView: View {
             label: "Parks",
             placeholder: "1234 or US-1234",
             userGrid: userGrid,
-            defaultCountry: defaultCountry
+            defaultCountry: defaultCountry,
+            onParkGridChanged: onParkGridChanged
         )
         Toggle(isOn: $isRove) {
             VStack(alignment: .leading, spacing: 2) {

@@ -134,7 +134,12 @@ extension SessionStartSheet {
             wwffReference: $wwffReference,
             isRove: $isRove,
             userGrid: myGrid.isEmpty ? defaultGrid : myGrid,
-            defaultCountry: "US"
+            defaultCountry: "US",
+            onParkGridChanged: { grid in
+                if let grid, !grid.isEmpty {
+                    myGrid = grid
+                }
+            }
         )
     }
 

@@ -19,13 +19,15 @@ struct ParkEntryField: View {
         label: String = "Park",
         placeholder: String = "K-1234",
         userGrid: String?,
-        defaultCountry: String = "US"
+        defaultCountry: String = "US",
+        onParkGridChanged: ((String?) -> Void)? = nil
     ) {
         _parkReference = parkReference
         self.label = label
         self.placeholder = placeholder
         self.userGrid = userGrid
         self.defaultCountry = defaultCountry
+        self.onParkGridChanged = onParkGridChanged
     }
 
     // MARK: Internal
@@ -36,6 +38,7 @@ struct ParkEntryField: View {
     let placeholder: String
     let userGrid: String?
     let defaultCountry: String
+    let onParkGridChanged: ((String?) -> Void)?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -75,6 +78,7 @@ struct ParkEntryField: View {
                 defaultCountry: defaultCountry,
                 onAdd: { park in
                     addPark(park.reference)
+                    onParkGridChanged?(park.grid)
                 },
                 onDismiss: { showPicker = false }
             )
@@ -171,6 +175,7 @@ struct ParkEntryField: View {
             trimmed, defaultCountry: defaultCountry
         ) {
             addPark(park.reference)
+            onParkGridChanged?(park.grid)
         } else if ParkReference.isValid(trimmed) {
             addPark(trimmed)
         } else {
