@@ -63,13 +63,15 @@ extension POTAClient {
                 return .timeout
             }
 
-            // For other errors, skip and continue
+            // For other errors, skip this activation for now but do NOT mark as processed.
+            // Marking failed activations as processed permanently prevents their QSOs
+            // from being downloaded on future syncs, causing data gaps.
             let errorDesc = error.localizedDescription
             debugLog.warning(
-                "Skipping \(activation.reference) \(activation.date) after error: \(errorDesc)",
+                "Skipping \(activation.reference) \(activation.date) after error "
+                    + "(will retry next sync): \(errorDesc)",
                 service: .pota
             )
-            state.processedKeys.insert(key)
             return .skipped
         }
     }
