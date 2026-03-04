@@ -1,15 +1,1 @@
-TuneInManager.swift - New standalone tune-in session manager with smart receiver selection, cellular warning, CW transcription wiring, clip bookmarks
-TuneInMiniPlayerView.swift - Persistent mini player bar above tab bar (collapsed state with live indicator, mute, close)
-TuneInExpandedPlayerView.swift - Full expanded player sheet with receiver details, audio level, CW transcript, clip bookmark, action buttons
-TuneInCellularAlert.swift - Cellular data warning alert modifier for first-time use on cellular
-CWTranscriptionService+SDR.swift - WebSDR audio input adapter (Int16 to Float conversion, SDR stream processing)
-WebSDRSession.swift - Added onAudioFrame callback, tuneInSpotMetadata, clipBookmarks array
-WebSDRSession+Internals.swift - Forward audio frames via onAudioFrame, apply spot metadata to recordings, persist clip bookmarks
-WebSDRRecording.swift - Added spot metadata fields (callsign, park, summit, band), clip bookmarks, isTuneInRecording flag, ClipBookmark struct
-WebSDRRecordingsView.swift - Enhanced recording rows with callsign header, park/summit badges, clip count
-ActivityLogSpotRow.swift - Added context menu "Tune In" action with onTuneIn callback
-ActivityLogSpotsList.swift - Wired handleTuneIn to create TuneInSpot and start TuneInManager
-ContentView.swift - Integrated mini player via safeAreaInset and cellular alert on both iPhone and iPad navigation
-TuneInManager+SmartFeatures.swift - Phase 4 smart features: QSY detection, receiver quality monitoring, follow activator
-TuneInExpandedPlayerView+SmartFeatures.swift - Smart feature UI: QSY alert banner, receiver suggestion banner, follow button
-TuneInExpandedPlayerView.swift - Added QSY/receiver banners to body, follow button in spot header, relaxed access for extension
+Interactive logger tour: new files LoggerTourManager, LoggerTourMockData, TourGuideBubble, LoggerTourOverlay; modified TourState, MiniTourContent, LoggerView
