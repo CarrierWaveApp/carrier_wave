@@ -279,6 +279,11 @@ struct LoggerView: View {
                 }
                 .task {
                     if tourState.shouldShowMiniTour(.loggerInteractive) {
+                        // Delay so SwiftUI finishes dismissing the SessionStartSheet
+                        // (from SessionsIdleView) before presenting the tour fullScreenCover.
+                        // Without this, the presentation is silently dropped.
+                        try? await Task.sleep(for: .milliseconds(600))
+                        guard !Task.isCancelled else { return }
                         let manager = LoggerTourManager()
                         manager.setOnComplete {
                             tourState.markMiniTourSeen(.loggerInteractive)
