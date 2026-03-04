@@ -21,13 +21,41 @@ enum WWFFError: Error, LocalizedError {
 // MARK: - WWFFClient
 
 /// Client for the WWFF Spotline API (spots.wwff.co).
-/// Fetches active spots for WWFF activators.
+/// Fetches active spots and scheduled agendas for WWFF activators.
+/// Includes DX cluster spots relayed through the Spotline service.
 actor WWFFClient {
     // MARK: Internal
 
-    /// Fetch all recent WWFF spots.
+    /// Fetch all recent WWFF spots (includes DX cluster and RBN autospots).
     func fetchSpots() async throws -> [WWFFSpot] {
-        guard let url = URL(string: "\(baseURL)/spots.json") else {
+        try await fetchJSON("\(baseURL)/spots.json")
+    }
+
+    /// Fetch spots for a specific activator callsign (client-side filter).
+    func fetchSpots(for callsign: String) async throws -> [WWFFSpot] {
+        let allSpots = try await fetchSpots()
+        let upper = callsign.uppercased()
+        return allSpots.filter { $0.activator.uppercased() == upper }
+    }
+
+    /// Fetch the WWFF agenda (scheduled upcoming activations).
+    func fetchAgenda() async throws -> [WWFFAgendaItem] {
+        try await fetchJSON("\(baseURL)/agenda.json")
+    }
+
+    /// Fetch agenda items for a specific activator callsign (client-side filter).
+    func fetchAgenda(for callsign: String) async throws -> [WWFFAgendaItem] {
+        let allItems = try await fetchAgenda()
+        let upper = callsign.uppercased()
+        return allItems.filter { $0.activator.uppercased() == upper }
+    }
+
+    // MARK: Private
+
+    private let baseURL = "https://spots.wwff.co"
+
+    private func fetchJSON<T: Decodable>(_ urlString: String) async throws -> T {
+        guard let url = URL(string: urlString) else {
             throw WWFFError.invalidResponse
         }
 
@@ -44,17 +72,6 @@ actor WWFFClient {
             throw WWFFError.httpError(http.statusCode)
         }
 
-        return try JSONDecoder().decode([WWFFSpot].self, from: data)
+        return try JSONDecoder().decode(T.self, from: data)
     }
-
-    /// Fetch spots for a specific activator callsign (client-side filter).
-    func fetchSpots(for callsign: String) async throws -> [WWFFSpot] {
-        let allSpots = try await fetchSpots()
-        let upper = callsign.uppercased()
-        return allSpots.filter { $0.activator.uppercased() == upper }
-    }
-
-    // MARK: Private
-
-    private let baseURL = "https://spots.wwff.co"
 }

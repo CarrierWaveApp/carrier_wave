@@ -137,7 +137,11 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `SOTASummit.swift` | SOTA summit data struct (code, name, altitude, points, coordinates) |
 | `SOTASpot.swift` | SOTAwatch API spot model (activator, summit, frequency, mode, timestamp) |
 | `WWFFSpot.swift` | WWFF Spotline API spot model (activator, reference, frequency, mode, timestamp) |
+| `WWFFAgendaItem.swift` | WWFF Spotline agenda model for scheduled upcoming activations |
 | `WWFFReference.swift` | WWFF directory reference data struct (reference, name, coordinates, country) |
+| `WWFFActivation.swift` | WWFF activation grouping by reference/date/callsign with 44-QSO progress tracking |
+| `WWFFAwards.swift` | WWFF award tier definitions (activator/hunter references, points, DXCC, continents) |
+| `WWFFRepresentative.swift` | WWFF national program representative directory with email compose support |
 | `SolarSnapshot.swift` | Hourly solar conditions snapshot from background polling |
 | `Contest.swift` | Contest model struct (in-memory only, from WA7BNM RSS feed) |
 | `StationProfile.swift` | Station profile struct and UserDefaults-backed storage |
@@ -181,7 +185,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `SOTASummitsCache.swift` | SOTA summit code to name lookup cache (30-day TTL) |
 | `SOTASummitsCache+Parsing.swift` | SOTA CSV parsing, name index building, and distance utilities |
 | `SOTAClient.swift` | SOTAwatch API actor for fetching active spots from api2.sota.org.uk |
-| `WWFFClient.swift` | WWFF Spotline API actor for fetching active spots from spots.wwff.co |
+| `WWFFClient.swift` | WWFF Spotline API actor for fetching spots and agenda from spots.wwff.co |
 | `WWFFReferencesCache.swift` | WWFF reference directory cache (30-day TTL, full-text search, nearby lookup) |
 | `WWFFReferencesCache+Parsing.swift` | WWFF CSV parsing, name index building, and distance utilities |
 | `ProgramCrossReferenceService.swift` | Cross-reference matching between POTA/WWFF/SOTA (number + name matching) |
@@ -532,6 +536,8 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `SummitEntryField.swift` | SOTA summit entry with live name lookup and search picker |
 | `WWFFReferenceEntryField.swift` | WWFF reference entry with live name lookup and search picker |
 | `WWFFReferencePickerSheet.swift` | Single-select WWFF reference search/nearby sheet |
+| `WWFF/WWFFActivationProgressView.swift` | WWFF activation progress with per-reference 44-QSO tracking and award tier progression |
+| `WWFF/WWFFRepresentativeLookupView.swift` | WWFF national representative lookup with email compose for log submissions |
 | `ParkDetailSheet.swift` | Park detail sheet with stats, leaderboard (top activators/hunters), and recent activations from POTA API |
 | `ActiveSessionRow.swift` | Compact row for active/paused sessions with Continue/Finish actions |
 | `LoggerSettingsView.swift` | (Deprecated) Logger settings moved to main SettingsView |

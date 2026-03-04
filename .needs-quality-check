@@ -1,1 +1,2 @@
 Interactive logger tour: new files LoggerTourManager, LoggerTourMockData, TourGuideBubble, LoggerTourOverlay; modified TourState, MiniTourContent, LoggerView
+WWFF enhancements: new files WWFFAgendaItem, WWFFAwards, WWFFActivation, WWFFRepresentative, WWFFActivationProgressView, WWFFRepresentativeLookupView; modified WWFFClient (agenda fetching), ActivityProgramStore (WWFF capabilities)
