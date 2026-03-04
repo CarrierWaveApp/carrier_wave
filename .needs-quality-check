@@ -2,3 +2,4 @@ Interactive logger tour: new files LoggerTourManager, LoggerTourMockData, TourGu
 WWFF enhancements: new files WWFFAgendaItem, WWFFAwards, WWFFActivation, WWFFRepresentative, WWFFActivationProgressView, WWFFRepresentativeLookupView; modified WWFFClient (agenda fetching), ActivityProgramStore (WWFF capabilities)
 Detect callsign owner changes: added callsignChangeNote to CallsignInfo, HamDB name comparison in CallsignLookupService, UI display in LoggerCallsignCard/CWCallsignInfoCard, About Me refresh with QRZ cross-check
 Persist callsign change detection: added callsignChangeNote field to QSO model, persist change note at all lookup sites (logger edit, QSO edit, logger rows, hunter quick log, spot log), display in QSODetailView header, LoggerQSORow/RecentQSOsSection indicators, and edit sheets
+Add states worked signal mosaic section to session detail view (new file + wiring)
