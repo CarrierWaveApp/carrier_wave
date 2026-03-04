@@ -211,6 +211,7 @@ final class CallsignLookupService {
                     country: qrz.country,
                     grid: qrz.grid,
                     licenseClass: qrz.licenseClass,
+                    previousCallsign: qrz.previousCallsign,
                     source: .qrz, // Primary source is QRZ for name/grid
                     allEmojis: polo.allEmojis,
                     matchingSources: polo.matchingSources,

@@ -30,6 +30,7 @@ struct CallsignInfo: Codable, Identifiable, Equatable, Sendable {
         country: String? = nil,
         grid: String? = nil,
         licenseClass: String? = nil,
+        previousCallsign: String? = nil,
         source: CallsignInfoSource,
         lookupDate: Date = Date(),
         allEmojis: [String]? = nil,
@@ -47,6 +48,7 @@ struct CallsignInfo: Codable, Identifiable, Equatable, Sendable {
         self.country = country
         self.grid = grid
         self.licenseClass = licenseClass
+        self.previousCallsign = previousCallsign
         self.source = source
         self.lookupDate = lookupDate
         self.allEmojis = allEmojis
@@ -88,6 +90,9 @@ struct CallsignInfo: Codable, Identifiable, Equatable, Sendable {
 
     /// License class (e.g., "Extra", "General")
     let licenseClass: String?
+
+    /// Previous callsign (from QRZ `p_call` field)
+    let previousCallsign: String?
 
     /// Where this information came from
     let source: CallsignInfoSource

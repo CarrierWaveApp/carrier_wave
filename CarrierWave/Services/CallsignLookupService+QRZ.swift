@@ -175,6 +175,7 @@ extension CallsignLookupService {
         let state = parseXMLValue(from: xmlString, tag: "state")
         let country = parseXMLValue(from: xmlString, tag: "country")
         let licenseClass = parseXMLValue(from: xmlString, tag: "class")
+        let previousCallsign = parseXMLValue(from: xmlString, tag: "p_call")
 
         guard name != nil || grid != nil || qth != nil else {
             return nil
@@ -190,6 +191,7 @@ extension CallsignLookupService {
             country: country,
             grid: grid,
             licenseClass: licenseClass,
+            previousCallsign: previousCallsign,
             source: .qrz
         )
     }
