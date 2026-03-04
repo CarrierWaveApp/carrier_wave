@@ -1,3 +1,4 @@
+import CarrierWaveData
 import SwiftUI
 
 // MARK: - LoggerSettingsView

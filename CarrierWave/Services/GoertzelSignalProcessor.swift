@@ -1,4 +1,5 @@
 import Accelerate
+import CarrierWaveData
 import Foundation
 
 // MARK: - FrequencyBin

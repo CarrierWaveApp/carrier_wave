@@ -1,5 +1,6 @@
 // POTA Job Views - Row and detail sheet for displaying POTA upload jobs
 
+import CarrierWaveData
 import SwiftUI
 
 // MARK: - POTAJobRow

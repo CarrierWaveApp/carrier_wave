@@ -3,6 +3,7 @@
 // Dedicated share card for brag sheet stats, themed to match the activation share card.
 // Shows header, stat grid with all enabled stats, optional statistician section, and footer.
 
+import CarrierWaveData
 import SwiftUI
 import UIKit
 

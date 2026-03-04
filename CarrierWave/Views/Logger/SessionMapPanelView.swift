@@ -3,6 +3,7 @@
 // Displays a map of QSOs from the current logging session.
 // For rove sessions, also shows route lines between park stops.
 
+import CarrierWaveData
 import MapKit
 import SwiftUI
 

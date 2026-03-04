@@ -1,4 +1,4 @@
-import CarrierWaveCore
+import CarrierWaveData
 import SwiftUI
 
 // MARK: - LoggerView Derived State & Action Button Properties

@@ -3,6 +3,7 @@
 // Deduped toast + local notification when friends appear in spots.
 // Uses a 10-minute cooldown per callsign to avoid spamming.
 
+import CarrierWaveData
 import Foundation
 import UserNotifications
 

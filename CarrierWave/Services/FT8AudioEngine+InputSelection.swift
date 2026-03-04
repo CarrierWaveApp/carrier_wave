@@ -4,6 +4,7 @@
 //
 
 import AVFoundation
+import CarrierWaveData
 
 // MARK: - AudioInputInfo
 

@@ -2,6 +2,7 @@
 //
 // SwiftUI wrapper for WKWebView used in POTA Cognito login flow.
 
+import CarrierWaveData
 import SwiftUI
 import WebKit
 

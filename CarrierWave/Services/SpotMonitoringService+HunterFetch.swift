@@ -2,6 +2,7 @@
 //
 // Extension with hunter-mode spot fetching methods (RBN, POTA, SOTA, WWFF).
 
+import CarrierWaveData
 import Foundation
 
 // MARK: - SpotMonitoringService + Hunter Fetch

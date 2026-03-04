@@ -4,7 +4,7 @@
 //
 
 import Accelerate
-import CarrierWaveCore
+import CarrierWaveData
 import Foundation
 
 /// Computes and stores FFT spectrogram data for the FT8 waterfall display.

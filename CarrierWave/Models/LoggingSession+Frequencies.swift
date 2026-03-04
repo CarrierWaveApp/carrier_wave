@@ -1,3 +1,4 @@
+import CarrierWaveData
 import Foundation
 
 // MARK: - LoggingSession Frequency Maps & Computed Properties
@@ -66,7 +67,7 @@ extension LoggingSession {
     }
 
     /// Reference for the activation (park or summit)
-    var activationReference: String? {
+    nonisolated var activationReference: String? {
         switch activationType {
         case .pota: parkReference
         case .sota: sotaReference

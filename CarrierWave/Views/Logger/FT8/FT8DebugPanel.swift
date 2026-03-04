@@ -3,6 +3,7 @@
 //  CarrierWave
 //
 
+import CarrierWaveData
 import SwiftUI
 
 /// Compact always-visible debug panel showing audio level, decode stats, and input picker.

@@ -5,7 +5,7 @@
 // filtering by reference code or name. Single-select — tapping a
 // row selects and dismisses.
 
-import CarrierWaveCore
+import CarrierWaveData
 import CoreLocation
 import SwiftData
 import SwiftUI

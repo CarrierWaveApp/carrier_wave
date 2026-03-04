@@ -1,6 +1,6 @@
 // POTA Activations view - displays activations grouped by park with upload status
 
-import CarrierWaveCore
+import CarrierWaveData
 import SwiftData
 import SwiftUI
 import UIKit

@@ -3,6 +3,7 @@
 // Data model for a WWFF (World Wide Flora & Fauna) reference
 // representing a protected natural area registered in the WWFF directory.
 
+import CarrierWaveData
 import Foundation
 
 // MARK: - WWFFReference

@@ -5,6 +5,7 @@
 // Membership is checked by downloading the members list by URL,
 // independent of callsign notes cache titles.
 
+import CarrierWaveData
 import Foundation
 import SwiftData
 

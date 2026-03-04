@@ -1,3 +1,4 @@
+import CarrierWaveData
 import Foundation
 import SQLite3
 import XCTest

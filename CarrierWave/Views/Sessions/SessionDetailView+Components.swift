@@ -3,7 +3,7 @@
 // Extracted helper views and types for SessionDetailView:
 // RoveStopDetailRow, RoveParkGroup, PhotoItem, session info sections.
 
-import CarrierWaveCore
+import CarrierWaveData
 import MapKit
 import SwiftUI
 

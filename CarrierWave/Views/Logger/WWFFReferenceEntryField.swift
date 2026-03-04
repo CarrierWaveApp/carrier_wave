@@ -4,6 +4,7 @@
 // live name resolution, and a search picker. Single-value binding.
 // Mirrors SummitEntryField UX.
 
+import CarrierWaveData
 import SwiftUI
 
 // MARK: - WWFFReferenceEntryField

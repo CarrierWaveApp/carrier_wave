@@ -1,3 +1,4 @@
+import CarrierWaveData
 import Foundation
 
 /// Lightweight, Sendable snapshot of environmental conditions for charting.

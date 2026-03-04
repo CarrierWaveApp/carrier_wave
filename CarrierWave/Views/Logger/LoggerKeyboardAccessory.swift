@@ -2,6 +2,7 @@
 //
 // Provides a number row and optional command buttons above the keyboard.
 
+import CarrierWaveData
 import SwiftUI
 
 // MARK: - LoggerKeyboardAccessory

@@ -2,6 +2,7 @@
 //
 // Reusable component views for activation share cards.
 
+import CarrierWaveData
 import SwiftUI
 
 // MARK: - ActivationShareCardHeader

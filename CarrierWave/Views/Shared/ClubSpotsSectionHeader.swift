@@ -1,3 +1,4 @@
+import CarrierWaveData
 import SwiftUI
 
 /// Sticky section header for club member spots.

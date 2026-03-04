@@ -1,5 +1,6 @@
 // Shared label content for activation rows (used in both normal and selection modes)
 
+import CarrierWaveData
 import SwiftUI
 
 // MARK: - ActivationLabel

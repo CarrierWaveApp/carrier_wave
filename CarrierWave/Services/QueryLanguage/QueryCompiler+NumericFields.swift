@@ -1,4 +1,4 @@
-import CarrierWaveCore
+import CarrierWaveData
 import Foundation
 
 // MARK: - QueryCompiler Numeric Field Compilation

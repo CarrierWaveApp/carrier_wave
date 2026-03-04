@@ -1,4 +1,4 @@
-import CarrierWaveCore
+import CarrierWaveData
 import Foundation
 
 // MARK: - CW Transcription from WebSDR Audio
@@ -11,7 +11,9 @@ extension CWTranscriptionService {
         frames: AsyncStream<[Int16]>,
         sampleRate: Double
     ) async {
-        guard state != .listening else { return }
+        guard state != .listening else {
+            return
+        }
 
         // Create decoder without microphone capture
         signalProcessor = nil
@@ -37,7 +39,9 @@ extension CWTranscriptionService {
         let timePerSample = 1.0 / sampleRate
 
         for await samples in stream {
-            guard !Task.isCancelled else { break }
+            guard !Task.isCancelled else {
+                break
+            }
 
             // Convert Int16 to Float [-1.0, 1.0]
             let floatSamples = samples.map { Float($0) / Float(Int16.max) }

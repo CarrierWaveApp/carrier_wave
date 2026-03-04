@@ -1,4 +1,4 @@
-import CarrierWaveCore
+import CarrierWaveData
 import Foundation
 
 // MARK: - Force Re-download Methods

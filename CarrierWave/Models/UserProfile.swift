@@ -3,6 +3,7 @@
 // Stores the user's amateur radio profile information, populated from HamDB lookup
 // and editable by the user. Used throughout the app for pre-filling forms and services.
 
+import CarrierWaveData
 import Foundation
 
 // MARK: - UserProfile

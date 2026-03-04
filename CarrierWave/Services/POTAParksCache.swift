@@ -4,6 +4,7 @@
 // displaying human-readable park names throughout the app.
 // Supports full-text search and nearby parks lookup.
 
+import CarrierWaveData
 import Foundation
 
 // MARK: - POTAPark

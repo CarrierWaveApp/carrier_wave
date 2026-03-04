@@ -2,6 +2,7 @@
 //
 // US amateur radio band plan data with license class privileges.
 
+import CarrierWaveData
 import Foundation
 
 // MARK: - LicenseClass

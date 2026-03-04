@@ -1,4 +1,5 @@
 import CarrierWaveCore
+import CarrierWaveData
 import SwiftData
 import XCTest
 @testable import CarrierWave
@@ -37,7 +38,7 @@ final class QSOStatisticsPerformanceTests: XCTestCase {
 
     @MainActor
     override func setUp() async throws {
-        let schema = Schema([QSO.self, ServicePresence.self, UploadDestination.self])
+        let schema = Schema(CarrierWaveSchema.models)
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
         modelContainer = try ModelContainer(for: schema, configurations: [config])
         modelContext = modelContainer.mainContext

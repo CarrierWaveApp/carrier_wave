@@ -1,3 +1,4 @@
+import CarrierWaveData
 import Foundation
 
 // MARK: - Entity Descriptions (for simple prefix -> country name lookup)

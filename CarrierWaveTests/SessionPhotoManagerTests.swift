@@ -1,3 +1,4 @@
+import CarrierWaveData
 import UIKit
 import XCTest
 @testable import CarrierWave

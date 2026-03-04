@@ -9,6 +9,7 @@
 // MKMapSnapshotter background doesn't align well with equirectangular cluster
 // overlay at world scale. Needs a better approach for global QSO coverage.
 
+import CarrierWaveData
 import MapKit
 import SwiftUI
 import UIKit

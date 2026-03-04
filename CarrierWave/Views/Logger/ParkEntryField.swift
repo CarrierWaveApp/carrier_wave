@@ -5,7 +5,7 @@
 // via search picker or direct text entry. The binding stores
 // parks as a comma-separated string for model compatibility.
 
-import CarrierWaveCore
+import CarrierWaveData
 import SwiftUI
 
 // MARK: - ParkEntryField

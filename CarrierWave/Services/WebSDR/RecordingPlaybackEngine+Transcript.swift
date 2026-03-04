@@ -1,3 +1,4 @@
+import CarrierWaveData
 import Foundation
 
 // MARK: - Transcript & QSO Range

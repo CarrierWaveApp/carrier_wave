@@ -3,6 +3,7 @@
 // CSV parsing, name index building, and utility functions
 // for the SOTA summits cache.
 
+import CarrierWaveData
 import Foundation
 
 extension SOTASummitsCache {

@@ -1,4 +1,4 @@
-import CarrierWaveCore
+import CarrierWaveData
 import Foundation
 
 /// App-specific convenience factory for LoFiClient

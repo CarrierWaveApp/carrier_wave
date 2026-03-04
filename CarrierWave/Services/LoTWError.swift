@@ -1,3 +1,4 @@
+import CarrierWaveData
 import Foundation
 
 enum LoTWError: Error, LocalizedError {

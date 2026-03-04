@@ -3,6 +3,7 @@
 //  CarrierWave
 //
 
+import CarrierWaveData
 import SwiftUI
 
 struct FT8ControlBar: View {

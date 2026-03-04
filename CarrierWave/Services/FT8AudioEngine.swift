@@ -5,7 +5,7 @@
 
 import Accelerate
 import AVFoundation
-import CarrierWaveCore
+import CarrierWaveData
 import os
 
 // MARK: - FT8AudioEngine

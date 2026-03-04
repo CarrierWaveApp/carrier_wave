@@ -3,6 +3,7 @@
 // Shows status of externally downloaded data caches like
 // POTA parks and SOTA summits databases with refresh controls.
 
+import CarrierWaveData
 import SwiftUI
 
 // MARK: - QRZCallbookError

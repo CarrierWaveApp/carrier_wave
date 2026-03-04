@@ -2,6 +2,7 @@
 //
 // Lightweight CLLocationManager wrapper for the park picker.
 
+import CarrierWaveData
 import CoreLocation
 
 // MARK: - ParkLocationManager

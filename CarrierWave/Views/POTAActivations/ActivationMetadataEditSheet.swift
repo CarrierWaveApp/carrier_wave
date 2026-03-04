@@ -3,7 +3,7 @@
 // Thin wrapper around SessionMetadataEditSheet for POTA activation editing.
 // Finds the matching LoggingSession and delegates to the unified edit sheet.
 
-import CarrierWaveCore
+import CarrierWaveData
 import SwiftData
 import SwiftUI
 

@@ -1,4 +1,4 @@
-import CarrierWaveCore
+import CarrierWaveData
 import SwiftData
 import SwiftUI
 
@@ -24,6 +24,8 @@ struct SidebarPOTASpotsView: View {
     // MARK: Internal
 
     @State var workedResults: [String: WorkedBeforeResult] = [:]
+
+    @Environment(\.modelContext) var modelContext
 
     let userCallsign: String?
     let onSelectSpot: (POTASpot) -> Void
@@ -134,8 +136,6 @@ struct SidebarPOTASpotsView: View {
     }
 
     // MARK: Private
-
-    @Environment(\.modelContext) private var modelContext
 
     @Query(filter: #Predicate<Friendship> { $0.statusRawValue == "accepted" })
     private var acceptedFriends: [Friendship]

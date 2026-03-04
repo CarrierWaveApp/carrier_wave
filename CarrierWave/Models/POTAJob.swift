@@ -3,6 +3,7 @@
 // Models the job status responses from the POTA API /user/jobs endpoint.
 // Status codes: 0=pending, 1=processing, 2=complete, 3+=various error states.
 
+import CarrierWaveData
 import Foundation
 
 // MARK: - POTAJobStatus

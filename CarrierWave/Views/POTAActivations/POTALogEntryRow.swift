@@ -3,7 +3,7 @@
 // Expandable row displaying upload attempt and job status with
 // detailed request/response information when expanded.
 
-import CarrierWaveCore
+import CarrierWaveData
 import SwiftUI
 
 struct POTALogEntryRow: View {

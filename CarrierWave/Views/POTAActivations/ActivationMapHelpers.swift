@@ -2,6 +2,7 @@
 //
 // Utilities for map rendering in activation share cards and activation map stats.
 
+import CarrierWaveData
 import Foundation
 import MapKit
 

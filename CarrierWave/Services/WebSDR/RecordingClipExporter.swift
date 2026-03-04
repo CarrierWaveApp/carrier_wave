@@ -1,4 +1,5 @@
 import AVFoundation
+import CarrierWaveData
 import Foundation
 
 // MARK: - RecordingClipMetadata

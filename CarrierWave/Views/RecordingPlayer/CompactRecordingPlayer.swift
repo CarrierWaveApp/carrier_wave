@@ -1,3 +1,4 @@
+import CarrierWaveData
 import SwiftUI
 
 /// Compact inline recording player shown in activation detail and sessions list.

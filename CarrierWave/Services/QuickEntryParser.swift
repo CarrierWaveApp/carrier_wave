@@ -7,6 +7,7 @@
 //
 
 @_exported import CarrierWaveCore
+import CarrierWaveData
 import Foundation
 
 // Re-export types from CarrierWaveCore for app compatibility

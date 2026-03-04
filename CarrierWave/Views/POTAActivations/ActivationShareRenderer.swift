@@ -2,6 +2,7 @@
 //
 // Renders ActivationShareCardView to UIImage for sharing.
 
+import CarrierWaveData
 import MapKit
 import SwiftUI
 import UIKit

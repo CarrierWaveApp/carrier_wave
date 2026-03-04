@@ -3,6 +3,7 @@
 // Provides functionality to fetch active POTA spots and spot comments
 // for activations.
 
+import CarrierWaveData
 import Foundation
 import SwiftUI
 
@@ -128,91 +129,6 @@ struct POTASpot: Decodable, Identifiable, Sendable {
             return String(upper[..<slashIndex])
         }
         return upper
-    }
-}
-
-// MARK: - POTASpotComment
-
-/// A comment on a POTA spot
-struct POTASpotComment: Codable, Identifiable, Sendable {
-    let spotId: Int64
-    let spotter: String
-    let comments: String?
-    let spotTime: String
-    let source: String?
-
-    nonisolated var id: Int64 {
-        spotId
-    }
-
-    /// Parse spot time to Date
-    /// Note: POTA API returns timestamps without timezone suffix (e.g., "2026-02-03T20:43:36")
-    /// These are UTC times, so we parse them as such.
-    nonisolated var timestamp: Date? {
-        let formatter = ISO8601DateFormatter()
-
-        // First try with full internet datetime (includes Z suffix)
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        if let date = formatter.date(from: spotTime) {
-            return date
-        }
-        formatter.formatOptions = [.withInternetDateTime]
-        if let date = formatter.date(from: spotTime) {
-            return date
-        }
-
-        // POTA API returns timestamps without Z suffix - parse as UTC
-        formatter.formatOptions = [.withFullDate, .withTime, .withColonSeparatorInTime]
-        formatter.timeZone = TimeZone(identifier: "UTC")
-        if let date = formatter.date(from: spotTime) {
-            return date
-        }
-
-        // Try with fractional seconds but no Z
-        formatter.formatOptions = [
-            .withFullDate, .withTime, .withColonSeparatorInTime, .withFractionalSeconds,
-        ]
-        return formatter.date(from: spotTime)
-    }
-
-    /// Time ago string
-    nonisolated var timeAgo: String {
-        guard let timestamp else {
-            return ""
-        }
-        let seconds = Date().timeIntervalSince(timestamp)
-        if seconds < 60 {
-            return "\(Int(seconds))s ago"
-        } else if seconds < 3_600 {
-            return "\(Int(seconds / 60))m ago"
-        } else {
-            return "\(Int(seconds / 3_600))h ago"
-        }
-    }
-
-    /// Check if this is an automated spot (from RBN or similar)
-    nonisolated var isAutomatedSpot: Bool {
-        guard let source = source?.uppercased() else {
-            return false
-        }
-        return source == "RBN"
-    }
-
-    /// Check if this is a human-generated spot
-    nonisolated var isHumanSpot: Bool {
-        !isAutomatedSpot
-    }
-
-    /// Extract WPM from RBN comment text (e.g., "14 dB 22 WPM CQ")
-    nonisolated var wpm: Int? {
-        guard let comments else {
-            return nil
-        }
-        let pattern = /(\d+)\s*WPM/
-        guard let match = comments.firstMatch(of: pattern) else {
-            return nil
-        }
-        return Int(match.1)
     }
 }
 

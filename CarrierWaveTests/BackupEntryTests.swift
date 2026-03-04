@@ -1,7 +1,9 @@
+import CarrierWaveData
 import Foundation
 import XCTest
 @testable import CarrierWave
 
+@MainActor
 final class BackupEntryTests: XCTestCase {
     func testManifestRoundTrip() throws {
         let entries = [

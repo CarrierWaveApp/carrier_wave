@@ -1,3 +1,4 @@
+import CarrierWaveData
 import Foundation
 
 /// IMA ADPCM decoder for KiwiSDR compressed audio streams.

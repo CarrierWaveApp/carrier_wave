@@ -3,6 +3,7 @@
 // SwiftData model that records each upload attempt with full request/response
 // details for debugging and correlation with POTA job status.
 
+import CarrierWaveData
 import Foundation
 import SwiftData
 

@@ -1,4 +1,4 @@
-import CarrierWaveCore
+import CarrierWaveData
 import SwiftUI
 
 struct AttributionsView: View {

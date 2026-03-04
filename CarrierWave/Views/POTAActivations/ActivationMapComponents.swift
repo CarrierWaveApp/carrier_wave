@@ -3,6 +3,7 @@
 // RST coloring, annotations, markers, and callout views
 // shared between ActivationMapView and share card rendering.
 
+import CarrierWaveData
 import MapKit
 import SwiftUI
 import UIKit

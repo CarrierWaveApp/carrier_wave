@@ -3,7 +3,7 @@
 //  CarrierWave
 //
 
-import CarrierWaveCore
+import CarrierWaveData
 import SwiftUI
 
 /// Single-line compact decode row for space-constrained or preference-based display.

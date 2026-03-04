@@ -3,7 +3,7 @@
 //  CarrierWave
 //
 
-import CarrierWaveCore
+import CarrierWaveData
 import Foundation
 import os
 import SwiftData

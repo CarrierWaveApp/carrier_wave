@@ -2,13 +2,13 @@
 //
 // Per-park POTA presence tracking for two-fer activations.
 
-import CarrierWaveCore
+import CarrierWaveData
 import Foundation
 import SwiftData
 
 extension QSO {
     /// Get POTA presence record for a specific park (for two-fer activations)
-    func potaPresence(forPark park: String) -> ServicePresence? {
+    nonisolated func potaPresence(forPark park: String) -> ServicePresence? {
         let normalizedPark = park.uppercased()
         return servicePresence.first {
             !$0.isDeleted && $0.serviceType == .pota

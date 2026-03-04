@@ -1,3 +1,4 @@
+import CarrierWaveData
 import SwiftUI
 
 // MARK: - Smart Feature UI (QSY Alert, Receiver Suggestion, Follow)

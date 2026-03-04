@@ -1,3 +1,4 @@
+import CarrierWaveData
 import Foundation
 @testable import CarrierWave
 

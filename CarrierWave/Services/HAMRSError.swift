@@ -1,3 +1,4 @@
+import CarrierWaveData
 import Foundation
 
 enum HAMRSError: Error, LocalizedError {

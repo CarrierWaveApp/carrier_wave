@@ -3,6 +3,7 @@
 // Extracted drawing methods for map rendering: grid lines,
 // geodesic trace lines, and pin markers.
 
+import CarrierWaveData
 import MapKit
 import UIKit
 

@@ -1,3 +1,4 @@
+import CarrierWaveData
 import Combine
 import Foundation
 

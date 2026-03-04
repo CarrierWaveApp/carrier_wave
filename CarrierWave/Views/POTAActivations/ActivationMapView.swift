@@ -4,7 +4,7 @@
 // with RST-based contact coloring. For rove sessions, also shows
 // numbered park stop markers and a dashed route line.
 
-import CarrierWaveCore
+import CarrierWaveData
 import MapKit
 import SwiftUI
 import UIKit

@@ -3,6 +3,7 @@
 //  CarrierWave
 //
 
+import CarrierWaveData
 import SwiftUI
 
 /// Compact status indicator showing audio health and decode count.

@@ -5,6 +5,7 @@
 // are collapsed into a visual break with duration labels.
 // Layout logic lives in QSOTimelineLayout.swift.
 
+import CarrierWaveData
 import SwiftUI
 
 // MARK: - QSOTimelineView

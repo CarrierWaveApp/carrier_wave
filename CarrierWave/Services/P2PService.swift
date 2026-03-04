@@ -4,7 +4,7 @@
 // with RBN spots. This helps activators find other activators they can work
 // for P2P credit.
 
-import CarrierWaveCore
+import CarrierWaveData
 import CoreLocation
 import Foundation
 

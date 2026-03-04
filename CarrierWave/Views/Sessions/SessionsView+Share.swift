@@ -2,6 +2,7 @@
 //
 // Extracted from SessionsView+Actions to keep under the 500-line file limit.
 
+import CarrierWaveData
 import SwiftUI
 
 // MARK: - Brag Sheet Generation

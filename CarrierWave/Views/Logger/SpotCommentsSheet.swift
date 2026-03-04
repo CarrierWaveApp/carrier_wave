@@ -5,6 +5,7 @@
 // (automated) spots are collapsed into expandable summary rows
 // to keep human comments visible.
 
+import CarrierWaveData
 import SwiftUI
 
 // MARK: - CommentGroup

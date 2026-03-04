@@ -1,4 +1,4 @@
-import CarrierWaveCore
+import CarrierWaveData
 import Foundation
 
 // MARK: - Report Building
@@ -84,10 +84,9 @@ extension SyncService {
 
     /// Load persisted sync reports from UserDefaults.
     func loadPersistedReports() {
+        typealias ReportMap = [ServiceType: ServiceSyncReport]
         guard let data = UserDefaults.standard.data(forKey: Self.syncReportsKey),
-              let decoded = try? JSONDecoder().decode(
-                  [ServiceType: ServiceSyncReport].self, from: data
-              )
+              let decoded = try? JSONDecoder().decode(ReportMap.self, from: data)
         else {
             return
         }

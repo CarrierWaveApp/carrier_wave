@@ -10,6 +10,7 @@
 // changeLog[17], reviewFlag[18], specialFlags[19], website[20],
 // country[21], region[22], dxccEnum[23], qsoCount[24], lastAct[25]
 
+import CarrierWaveData
 import Foundation
 
 extension WWFFReferencesCache {

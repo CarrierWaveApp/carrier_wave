@@ -2,6 +2,7 @@
 //
 // Color key for the visual band chart, parameterized by display mode.
 
+import CarrierWaveData
 import SwiftUI
 
 // MARK: - BandChartLegendView

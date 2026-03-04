@@ -3,6 +3,7 @@
 // Displays current solar conditions including K-index,
 // solar flux, and propagation forecast.
 
+import CarrierWaveData
 import SwiftUI
 
 // MARK: - BandCondition

@@ -3,6 +3,7 @@
 // Provides license class lookup for US amateur radio callsigns via HamDB.org.
 // HamDB is a free, no-authentication-required callsign lookup service.
 
+import CarrierWaveData
 import Foundation
 
 // MARK: - HamDBClient

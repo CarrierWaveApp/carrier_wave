@@ -3,7 +3,7 @@
 // Extracted QSO list sections and data loading for SessionDetailView.
 // Handles both flat and rove-grouped QSO display.
 
-import CarrierWaveCore
+import CarrierWaveData
 import SwiftData
 import SwiftUI
 

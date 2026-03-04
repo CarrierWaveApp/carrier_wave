@@ -1,3 +1,4 @@
+import CarrierWaveData
 import SwiftUI
 
 /// Amplitude waveform visualization with QSO markers, span regions,

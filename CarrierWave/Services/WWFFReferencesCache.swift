@@ -4,6 +4,7 @@
 // for displaying human-readable area names and supporting autocomplete.
 // Supports full-text search and nearby references lookup.
 
+import CarrierWaveData
 import Foundation
 
 // MARK: - WWFFReferencesCacheMetadata

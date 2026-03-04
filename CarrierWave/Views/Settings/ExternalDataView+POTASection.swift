@@ -3,6 +3,7 @@
 // Shows download status and refresh controls for the POTA
 // parks database cache.
 
+import CarrierWaveData
 import SwiftUI
 
 // MARK: - POTACacheSection

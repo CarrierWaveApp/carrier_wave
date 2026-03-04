@@ -1,3 +1,5 @@
+import CarrierWaveData
+
 /// US state abbreviation-to-name lookup for accessibility labels
 enum USStates {
     /// Return the full state name for a 2-letter abbreviation, or nil if not found

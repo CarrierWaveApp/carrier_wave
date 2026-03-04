@@ -3,6 +3,7 @@
 // Pure stats computation for POTA activations. Computes distance,
 // timing, band/mode distribution, RST, and entity statistics.
 
+import CarrierWaveData
 import CoreLocation
 import Foundation
 

@@ -1,3 +1,4 @@
+import CarrierWaveData
 import Foundation
 
 /// Parses WA7BNM Contest Calendar date strings like

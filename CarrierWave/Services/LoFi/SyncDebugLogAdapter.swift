@@ -1,4 +1,4 @@
-import CarrierWaveCore
+import CarrierWaveData
 import Foundation
 
 /// Adapts SyncDebugLog to the LoFiLogger protocol

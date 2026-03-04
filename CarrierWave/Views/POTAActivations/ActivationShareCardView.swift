@@ -2,6 +2,7 @@
 //
 // A branded card view for sharing POTA activation summaries with a map.
 
+import CarrierWaveData
 import MapKit
 import SwiftUI
 

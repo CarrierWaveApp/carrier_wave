@@ -4,6 +4,7 @@
 // These are URLs to Polo-style notes files that get fetched and cached.
 // Synced between devices via iCloud KVS (SettingsSyncService).
 
+import CarrierWaveData
 import Foundation
 import SwiftData
 

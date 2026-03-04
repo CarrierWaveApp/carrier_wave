@@ -4,6 +4,7 @@
 // separated by gaps > 1 hour, then allocates horizontal space proportionally
 // to segment duration with fixed-width gap breaks between them.
 
+import CarrierWaveData
 import SwiftUI
 
 // MARK: - TimelineSegment

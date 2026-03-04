@@ -3,7 +3,7 @@
 // Displays spotter locations on a map with arcs to the target station.
 // Used in RBNPanelView to visualize RBN and POTA spot coverage.
 
-import CarrierWaveCore
+import CarrierWaveData
 import MapKit
 import SwiftUI
 

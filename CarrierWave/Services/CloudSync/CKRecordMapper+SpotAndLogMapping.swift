@@ -1,3 +1,4 @@
+import CarrierWaveData
 import CloudKit
 import Foundation
 

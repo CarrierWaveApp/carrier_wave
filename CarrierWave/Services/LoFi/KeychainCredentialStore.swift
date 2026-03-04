@@ -1,4 +1,4 @@
-import CarrierWaveCore
+import CarrierWaveData
 import Foundation
 
 /// Adapts KeychainHelper to the LoFiCredentialStore protocol

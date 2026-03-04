@@ -3,7 +3,7 @@
 // Lightweight map view for the iPad sidebar showing current session QSOs.
 // Adapted from SessionMapPanelView without the dismiss header.
 
-import CarrierWaveCore
+import CarrierWaveData
 import MapKit
 import SwiftUI
 

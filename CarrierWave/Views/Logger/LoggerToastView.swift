@@ -2,6 +2,7 @@
 //
 // Toast notification system for the logger, including friend/club member alerts.
 
+import CarrierWaveData
 import SwiftUI
 
 // MARK: - ToastType

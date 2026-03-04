@@ -1,4 +1,5 @@
 import CarrierWaveCore
+import CarrierWaveData
 import SwiftData
 import XCTest
 @testable import CarrierWave
@@ -88,7 +89,8 @@ extension LoggingSessionManagerTests {
         // Create a QSO with a different session ID
         let otherQSO = QSO(
             callsign: "K3LR", band: "20m", mode: "CW",
-            timestamp: Date(), myCallsign: "N0TEST"
+            timestamp: Date(), myCallsign: "N0TEST",
+            importSource: .logger
         )
         otherQSO.loggingSessionId = UUID()
         modelContext.insert(otherQSO)

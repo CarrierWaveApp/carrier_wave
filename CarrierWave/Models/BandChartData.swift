@@ -3,6 +3,7 @@
 // Precomputed chart data for visual band plan display,
 // derived from BandPlan.segments and BandPlan.usageZones.
 
+import CarrierWaveData
 import Foundation
 
 // MARK: - ClassAllocationBar

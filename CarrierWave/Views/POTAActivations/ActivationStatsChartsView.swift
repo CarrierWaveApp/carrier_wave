@@ -4,6 +4,7 @@
 // Statistician Mode is enabled. Shows band distribution, QSO rate
 // over time, cumulative distance, and cumulative timing.
 
+import CarrierWaveData
 import Charts
 import CoreLocation
 import SwiftUI

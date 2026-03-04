@@ -4,7 +4,7 @@
 // ADIF records to a temporary file. Designed for large logs (50-100k QSOs)
 // without loading everything into memory at once.
 
-import CarrierWaveCore
+import CarrierWaveData
 import Foundation
 import SwiftData
 

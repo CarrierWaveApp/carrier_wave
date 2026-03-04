@@ -2,6 +2,7 @@
 //
 // Common amateur radio activity frequencies (QRP, SSTV, FT8, CWT, nets).
 
+import CarrierWaveData
 import Foundation
 
 // MARK: - BandPlan+Activities

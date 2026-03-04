@@ -1,4 +1,4 @@
-import CarrierWaveCore
+import CarrierWaveData
 import Foundation
 import SwiftData
 
@@ -10,7 +10,8 @@ extension SyncService {
         let extendedTimeout = extendedSyncTimeoutSeconds
         let serviceConfig = captureServiceConfiguration()
 
-        return await withTaskGroup(of: (ServiceType, Result<[FetchedQSO], Error>).self) { group in
+        typealias DownloadResult = (ServiceType, Result<[FetchedQSO], any Error>)
+        return await withTaskGroup(of: DownloadResult.self) { group in
             addDownloadTasks(
                 to: &group, config: serviceConfig,
                 timeout: timeout, extendedTimeout: extendedTimeout

@@ -4,6 +4,7 @@
 // leaderboards, and recent activations. Uses explicit nonisolated
 // Decodable inits to avoid MainActor isolation in strict concurrency.
 
+import CarrierWaveData
 import Foundation
 
 // MARK: - POTAParkStatsResponse

@@ -1,4 +1,4 @@
-import CarrierWaveCore
+import CarrierWaveData
 import Combine
 import Foundation
 import SwiftData

@@ -3,6 +3,7 @@
 // Downloads and caches Polo notes from configured sources (clubs and user URLs)
 // for fast callsign lookup. Refreshes daily in background.
 
+import CarrierWaveData
 import Foundation
 import SwiftData
 

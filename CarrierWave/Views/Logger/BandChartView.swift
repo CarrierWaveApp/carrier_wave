@@ -4,7 +4,7 @@
 // and mode zone display. Scrollable, pinch-to-zoom, with tick marks.
 // Tap a zone to select its center frequency.
 
-import CarrierWaveCore
+import CarrierWaveData
 import SwiftUI
 
 // MARK: - BandChartDisplayMode

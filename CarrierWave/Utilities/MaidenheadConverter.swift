@@ -1,4 +1,4 @@
-import CarrierWaveCore
+import CarrierWaveData
 import CoreLocation
 
 /// Converts Maidenhead grid locators to coordinates

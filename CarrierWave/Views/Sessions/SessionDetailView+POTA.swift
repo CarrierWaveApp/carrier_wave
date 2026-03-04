@@ -3,6 +3,7 @@
 // POTA-specific sections for SessionDetailView: activation info,
 // metadata grid, conditions, upload controls, jobs, and recording.
 
+import CarrierWaveData
 import SwiftData
 import SwiftUI
 

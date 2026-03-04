@@ -1,4 +1,4 @@
-import CarrierWaveCore
+import CarrierWaveData
 import Foundation
 import SwiftData
 
@@ -195,7 +195,7 @@ final class DeduplicationService {
 
 extension QSO {
     /// Convert QSO to a CarrierWaveCore QSOSnapshot for deduplication
-    func toSnapshot() -> QSOSnapshot {
+    nonisolated func toSnapshot() -> QSOSnapshot {
         QSOSnapshot(
             id: id,
             callsign: callsign,

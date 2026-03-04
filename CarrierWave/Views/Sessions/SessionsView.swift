@@ -5,7 +5,7 @@
 //
 // Data loading, POTA actions, and helpers are in SessionsView+Actions.swift.
 
-import CarrierWaveCore
+import CarrierWaveData
 import SwiftData
 import SwiftUI
 

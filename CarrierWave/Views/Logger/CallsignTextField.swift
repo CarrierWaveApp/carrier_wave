@@ -3,6 +3,7 @@
 // A UITextField wrapper that properly handles cursor position
 // when entering mixed letters and numbers with auto-capitalization.
 
+import CarrierWaveData
 import SwiftUI
 import UIKit
 

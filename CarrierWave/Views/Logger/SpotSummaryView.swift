@@ -3,6 +3,7 @@
 // Compact summary display of RBN/POTA spots showing
 // region breakdown, distance range, and spot counts.
 
+import CarrierWaveData
 import SwiftUI
 
 // MARK: - SpotSummaryView

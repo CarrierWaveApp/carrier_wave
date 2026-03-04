@@ -1,3 +1,4 @@
+import CarrierWaveData
 import SwiftUI
 
 // MARK: - TuneInCellularAlert
@@ -5,9 +6,9 @@ import SwiftUI
 /// ViewModifier that presents a cellular data warning alert for Tune In.
 /// Shows on first use over cellular (~5 MB/hour).
 struct TuneInCellularAlert: ViewModifier {
-    let manager: TuneInManager
+    // MARK: Internal
 
-    @Environment(\.modelContext) private var modelContext
+    let manager: TuneInManager
 
     func body(content: Content) -> some View {
         content
@@ -15,7 +16,11 @@ struct TuneInCellularAlert: ViewModifier {
                 "Cellular Data",
                 isPresented: Binding(
                     get: { manager.showCellularWarning },
-                    set: { if !$0 { manager.dismissCellularWarning() } }
+                    set: {
+                        if !$0 {
+                            manager.dismissCellularWarning()
+                        }
+                    }
                 )
             ) {
                 Button("Cancel", role: .cancel) {
@@ -33,6 +38,10 @@ struct TuneInCellularAlert: ViewModifier {
                 )
             }
     }
+
+    // MARK: Private
+
+    @Environment(\.modelContext) private var modelContext
 }
 
 extension View {

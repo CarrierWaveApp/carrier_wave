@@ -4,6 +4,7 @@
 // Shown only when the keyboard is NOT visible — the keyboard accessory
 // provides its own command row while typing.
 
+import CarrierWaveData
 import SwiftUI
 
 // MARK: - IPadCommandStrip

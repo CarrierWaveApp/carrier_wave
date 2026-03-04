@@ -4,6 +4,7 @@
 // Uses determinate progress bar for large exports and streams to a
 // temp file to avoid holding 50MB+ strings in memory.
 
+import CarrierWaveData
 import SwiftData
 import SwiftUI
 import UniformTypeIdentifiers

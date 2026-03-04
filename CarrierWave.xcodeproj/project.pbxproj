@@ -23,6 +23,7 @@
 		A281DF5350AAB490BC0A0F65 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 518D696504E373AF7A909F81 /* Foundation.framework */; };
 		A4B98C617E82778D27395231 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F164D6AB25C3BDE8E9D06A48 /* Assets.xcassets */; };
 		CF8DE7EC2F344AED007A0358 /* CarrierWaveCore in Frameworks */ = {isa = PBXBuildFile; productRef = CFCORE0022F4B00000021A936 /* CarrierWaveCore */; };
+		CFDATA00E2F344AED007A0358 /* CarrierWaveData in Frameworks */ = {isa = PBXBuildFile; productRef = CFDATA0022F4B00000021A936 /* CarrierWaveData */; };
 		CFA0000D2F50000D007A0358 /* CarrierWaveWidgets.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = CFA000012F500001007A0358 /* CarrierWaveWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
@@ -165,6 +166,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				CF8DE7EC2F344AED007A0358 /* CarrierWaveCore in Frameworks */,
+				CFDATA00E2F344AED007A0358 /* CarrierWaveData in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -312,6 +314,7 @@
 			name = CarrierWave;
 			packageProductDependencies = (
 				CFCORE0022F4B00000021A936 /* CarrierWaveCore */,
+				CFDATA0022F4B00000021A936 /* CarrierWaveData */,
 			);
 			productName = CarrierWave;
 			productReference = CF8DD1AD2F2098940021A936 /* CarrierWave.app */;
@@ -419,6 +422,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				CFCORE0042F4B00000021A936 /* XCLocalSwiftPackageReference "CarrierWaveCore" */,
+				CFDATA0042F4B00000021A936 /* XCLocalSwiftPackageReference "CarrierWaveData" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = CF8DD1AE2F2098940021A936 /* Products */;
@@ -1015,7 +1019,11 @@
 /* Begin XCLocalSwiftPackageReference section */
 		CFCORE0042F4B00000021A936 /* XCLocalSwiftPackageReference "CarrierWaveCore" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = CarrierWaveCore;
+			relativePath = ../carrier_wave_core;
+		};
+		CFDATA0042F4B00000021A936 /* XCLocalSwiftPackageReference "CarrierWaveData" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../carrier_wave_data;
 		};
 /* End XCLocalSwiftPackageReference section */
 
@@ -1024,6 +1032,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = CFCORE0042F4B00000021A936 /* XCLocalSwiftPackageReference "CarrierWaveCore" */;
 			productName = CarrierWaveCore;
+		};
+		CFDATA0022F4B00000021A936 /* CarrierWaveData */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = CFDATA0042F4B00000021A936 /* XCLocalSwiftPackageReference "CarrierWaveData" */;
+			productName = CarrierWaveData;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -6,6 +6,7 @@
 // These views accept any type conforming to ConditionsData,
 // which both ActivationMetadata and LoggingSession conform to.
 
+import CarrierWaveData
 import SwiftUI
 
 // MARK: - ConditionsData

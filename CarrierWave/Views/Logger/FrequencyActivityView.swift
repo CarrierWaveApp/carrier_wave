@@ -2,6 +2,7 @@
 //
 // Displays nearby frequency activity and QRM assessment.
 
+import CarrierWaveData
 import SwiftUI
 
 // MARK: - FrequencyActivityView

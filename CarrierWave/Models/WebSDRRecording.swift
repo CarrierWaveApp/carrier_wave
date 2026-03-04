@@ -1,3 +1,4 @@
+import CarrierWaveData
 import Foundation
 import SwiftData
 
@@ -85,10 +86,15 @@ nonisolated final class WebSDRRecording {
     /// Serialized clip bookmark offsets (seconds into recording)
     var clipBookmarksData: Data?
 
+    /// Serialized SDR parameter change events (frequency/mode changes during recording)
+    var parameterChangesData: Data?
+
     /// Clip bookmarks — points of interest during the recording
     var clipBookmarks: [ClipBookmark] {
         get {
-            guard let data = clipBookmarksData else { return [] }
+            guard let data = clipBookmarksData else {
+                return []
+            }
             return (try? JSONDecoder().decode(
                 [ClipBookmark].self, from: data
             )) ?? []
@@ -97,9 +103,6 @@ nonisolated final class WebSDRRecording {
             clipBookmarksData = try? JSONEncoder().encode(newValue)
         }
     }
-
-    /// Serialized SDR parameter change events (frequency/mode changes during recording)
-    var parameterChangesData: Data?
 
     /// SDR parameter change events that occurred during this recording
     var parameterChanges: [SDRParameterEvent] {

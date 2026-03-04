@@ -3,6 +3,7 @@
 // Manages persistence and retrieval of the user's amateur radio profile.
 // Profile data is stored in the keychain for security and persistence.
 
+import CarrierWaveData
 import Foundation
 
 // MARK: - UserProfileService

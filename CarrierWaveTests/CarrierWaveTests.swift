@@ -5,6 +5,7 @@
 //  Created by Jay Vana on 1/20/26.
 //
 
+import CarrierWaveData
 import Testing
 @testable import CarrierWave
 

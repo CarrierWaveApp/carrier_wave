@@ -3,7 +3,7 @@
 // Components for multi-select bulk actions on POTA activations:
 // selection circles, bottom toolbar, progress banner, and helper functions.
 
-import CarrierWaveCore
+import CarrierWaveData
 import SwiftUI
 import UIKit
 import UniformTypeIdentifiers

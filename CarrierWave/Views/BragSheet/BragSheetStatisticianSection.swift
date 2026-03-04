@@ -3,6 +3,7 @@
 // Professional Statistician Mode section for the brag sheet share card.
 // Displays box plots, badges, and distributions computed from QSO snapshots.
 
+import CarrierWaveData
 import SwiftUI
 
 // MARK: - BragSheetStatisticianData

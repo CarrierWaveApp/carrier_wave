@@ -4,6 +4,7 @@
 // live name resolution, and a search picker. Single-value binding.
 // Mirrors ParkEntryField UX (minus multi-select).
 
+import CarrierWaveData
 import SwiftUI
 
 // MARK: - SummitEntryField

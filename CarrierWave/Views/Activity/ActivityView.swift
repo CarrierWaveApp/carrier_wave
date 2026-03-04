@@ -1,3 +1,4 @@
+import CarrierWaveData
 import SwiftData
 import SwiftUI
 import UIKit

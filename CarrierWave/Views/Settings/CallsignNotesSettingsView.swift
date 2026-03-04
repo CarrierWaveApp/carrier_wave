@@ -3,6 +3,7 @@
 // Allows users to manage callsign notes file sources.
 // Sources are URLs to Polo-style notes files that get fetched and cached.
 
+import CarrierWaveData
 import SwiftData
 import SwiftUI
 

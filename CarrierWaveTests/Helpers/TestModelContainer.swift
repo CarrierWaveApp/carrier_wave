@@ -1,3 +1,4 @@
+import CarrierWaveData
 import SwiftData
 import XCTest
 @testable import CarrierWave
@@ -10,13 +11,24 @@ enum TestModelContainer {
     /// Includes all models needed for log management tests
     @MainActor
     static func create() throws -> ModelContainer {
-        let schema = Schema([
-            QSO.self,
-            ServicePresence.self,
-            UploadDestination.self,
-            LoggingSession.self,
-            WebSDRRecording.self,
-        ])
+        let schema = Schema(
+            CarrierWaveSchema.models + [
+                POTAUploadAttempt.self,
+                ChallengeSource.self,
+                ChallengeDefinition.self,
+                ChallengeParticipation.self,
+                LeaderboardCache.self,
+                Friendship.self,
+                Club.self,
+                ClubMember.self,
+                ActivityItem.self,
+                WebSDRRecording.self,
+                CallsignNotesSource.self,
+                DismissedSuggestion.self,
+                SolarSnapshot.self,
+                WebSDRFavorite.self,
+            ]
+        )
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
         return try ModelContainer(for: schema, configurations: [config])
     }

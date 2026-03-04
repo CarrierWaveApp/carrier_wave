@@ -1,3 +1,4 @@
+import CarrierWaveData
 import Foundation
 
 // MARK: - DXCC Africa & Other Region Data

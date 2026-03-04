@@ -3,6 +3,7 @@
 // Shows download status and refresh controls for the WWFF
 // directory reference database cache.
 
+import CarrierWaveData
 import SwiftUI
 
 // MARK: - WWFFCacheSection

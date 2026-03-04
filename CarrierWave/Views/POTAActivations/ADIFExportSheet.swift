@@ -3,6 +3,7 @@
 // Sheet view for exporting activation QSOs to ADIF format.
 // Provides share, save to files, and copy to clipboard options.
 
+import CarrierWaveData
 import SwiftUI
 import UIKit
 import UniformTypeIdentifiers

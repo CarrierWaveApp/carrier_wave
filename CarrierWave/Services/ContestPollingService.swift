@@ -1,3 +1,4 @@
+import CarrierWaveData
 import Foundation
 
 /// Background service that polls the WA7BNM Contest Calendar every 6 hours.

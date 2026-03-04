@@ -6,6 +6,7 @@
 // Models and loader are in POTAClient+ParkDetail.swift
 // (separate file to avoid MainActor isolation on Decodable).
 
+import CarrierWaveData
 import SwiftUI
 
 // MARK: - ParkDetailSheet

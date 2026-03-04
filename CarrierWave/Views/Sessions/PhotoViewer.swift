@@ -1,3 +1,4 @@
+import CarrierWaveData
 import SwiftUI
 
 /// Full-screen photo viewer with pinch-to-zoom and close button.

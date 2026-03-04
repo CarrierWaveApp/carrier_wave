@@ -1,5 +1,6 @@
 // POTA Activations View - Share Actions
 
+import CarrierWaveData
 import SwiftUI
 
 extension POTAActivationsContentView {

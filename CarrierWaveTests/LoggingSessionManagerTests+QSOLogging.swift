@@ -1,4 +1,5 @@
 import CarrierWaveCore
+import CarrierWaveData
 import SwiftData
 import XCTest
 @testable import CarrierWave

@@ -1,3 +1,4 @@
+import CarrierWaveData
 import Foundation
 
 /// Helper for matching QSOs against challenge criteria

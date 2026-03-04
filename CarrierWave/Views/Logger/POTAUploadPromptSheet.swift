@@ -4,6 +4,7 @@
 // Offers options to upload now, later, or disable the prompt.
 // Supports rove sessions with per-park QSO counts.
 
+import CarrierWaveData
 import SwiftData
 import SwiftUI
 

@@ -1,3 +1,4 @@
+import CarrierWaveData
 import Foundation
 
 // MARK: - QRZ XML API

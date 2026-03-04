@@ -5,6 +5,7 @@
 // filtering by park number or name. Supports multi-select
 // for n-fer activations.
 
+import CarrierWaveData
 import CoreLocation
 import SwiftData
 import SwiftUI

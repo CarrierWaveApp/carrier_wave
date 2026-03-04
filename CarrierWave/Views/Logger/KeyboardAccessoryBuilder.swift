@@ -3,6 +3,7 @@
 // Builds the UIKit input accessory view for the callsign text field.
 // Extracted to keep CallsignTextField under SwiftLint line limits.
 
+import CarrierWaveData
 import UIKit
 
 // MARK: - KeyboardAccessoryBuilder

@@ -1,3 +1,4 @@
+import CarrierWaveData
 import SwiftUI
 
 // MARK: - Activity Card, Activity Log Card & Favorites Card

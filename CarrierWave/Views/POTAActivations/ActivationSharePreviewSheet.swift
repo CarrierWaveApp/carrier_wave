@@ -3,6 +3,7 @@
 // Shows the rendered share card image with Share and Save to Photos actions.
 // Uses ShareableImage Transferable for rich share sheet preview.
 
+import CarrierWaveData
 import Photos
 import SwiftUI
 

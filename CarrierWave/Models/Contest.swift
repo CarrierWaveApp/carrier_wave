@@ -1,3 +1,4 @@
+import CarrierWaveData
 import Foundation
 
 /// A contest from the WA7BNM Contest Calendar RSS feed.

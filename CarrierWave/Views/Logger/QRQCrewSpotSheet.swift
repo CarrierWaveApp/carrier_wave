@@ -3,6 +3,7 @@
 // Prompts the user for CW speed and posts a QRQ Crew spot message
 // when both operators are QRQ Crew members during a POTA activation.
 
+import CarrierWaveData
 import SwiftUI
 
 // MARK: - QRQCrewSpotSheet

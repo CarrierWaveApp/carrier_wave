@@ -3,6 +3,7 @@
 // Configures which numbers and symbols appear in the keyboard
 // accessory row above the keyboard in the logger.
 
+import CarrierWaveData
 import SwiftUI
 
 // MARK: - Notification Name

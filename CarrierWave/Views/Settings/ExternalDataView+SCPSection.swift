@@ -3,6 +3,7 @@
 // Shows download status and refresh controls for the Super
 // Check Partial callsign database cache.
 
+import CarrierWaveData
 import SwiftUI
 
 // MARK: - SCPCacheSection

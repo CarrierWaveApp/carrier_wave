@@ -3,6 +3,7 @@
 // Shows full solar and weather conditions for an activation or session
 // using gauge cards matching Propagation Estimator style.
 
+import CarrierWaveData
 import SwiftUI
 
 // MARK: - ActivationConditionsSheet

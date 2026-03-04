@@ -1,3 +1,4 @@
+import CarrierWaveData
 import SwiftData
 import XCTest
 @testable import CarrierWave
@@ -13,10 +14,7 @@ final class KIndexRepairServiceTests: XCTestCase {
 
     override func setUp() async throws {
         try await super.setUp()
-        let schema = Schema([
-            LoggingSession.self,
-            ActivationMetadata.self,
-        ])
+        let schema = Schema(CarrierWaveSchema.models)
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
         container = try ModelContainer(for: schema, configurations: [config])
         context = container.mainContext

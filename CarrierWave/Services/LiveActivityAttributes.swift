@@ -1,4 +1,5 @@
 import ActivityKit
+import CarrierWaveData
 import Foundation
 
 // MARK: - LoggingSessionAttributes

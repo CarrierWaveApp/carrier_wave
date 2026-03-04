@@ -3,7 +3,7 @@
 // Groups QSOs by UTC date and park reference, generating separate
 // ADIF files suitable for upload to pota.app.
 
-import CarrierWaveCore
+import CarrierWaveData
 import Foundation
 import SwiftData
 

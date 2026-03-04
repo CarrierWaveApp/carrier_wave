@@ -1,13 +1,15 @@
+import CarrierWaveData
 import Foundation
 import SQLite3
 import XCTest
 @testable import CarrierWave
 
+@MainActor
 final class BackupServiceSnapshotTests: XCTestCase {
     // MARK: Internal
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
         testDir = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString)
         try? FileManager.default.createDirectory(
@@ -19,9 +21,9 @@ final class BackupServiceSnapshotTests: XCTestCase {
         createTestDatabase(at: testDBURL)
     }
 
-    override func tearDown() {
+    override func tearDown() async throws {
         try? FileManager.default.removeItem(at: testDir)
-        super.tearDown()
+        try await super.tearDown()
     }
 
     func testSnapshotCreatesFile() async {

@@ -3,6 +3,7 @@
 // Helpers for detecting and displaying POTA's daily maintenance window
 // (2330-0400 UTC) when uploads are unavailable.
 
+import CarrierWaveData
 import Foundation
 
 extension POTAClient {

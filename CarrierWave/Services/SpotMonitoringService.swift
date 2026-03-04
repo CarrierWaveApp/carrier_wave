@@ -3,6 +3,7 @@
 // Manages background polling of RBN and POTA spots during active logging sessions.
 // Enriches spots with distance and region information for summary display.
 
+import CarrierWaveData
 import CoreLocation
 import Foundation
 

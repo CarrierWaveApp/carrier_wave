@@ -1,3 +1,4 @@
+import CarrierWaveData
 import Foundation
 
 /// Filter state for the QSO map view

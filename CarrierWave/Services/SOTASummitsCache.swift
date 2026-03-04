@@ -4,6 +4,7 @@
 // for displaying human-readable summit names throughout the app.
 // Supports full-text search and nearby summits lookup.
 
+import CarrierWaveData
 import Foundation
 
 // MARK: - SOTASummitsCacheMetadata

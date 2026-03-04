@@ -1,3 +1,4 @@
+import CarrierWaveData
 import SwiftUI
 
 /// Dashboard card showing active and upcoming amateur radio contests

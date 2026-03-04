@@ -2,6 +2,7 @@ import Foundation
 import os
 
 #if canImport(UIKit)
+    import CarrierWaveData
     import UIKit
 #endif
 

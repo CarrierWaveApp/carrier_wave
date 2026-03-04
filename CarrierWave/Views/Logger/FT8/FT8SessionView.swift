@@ -3,7 +3,7 @@
 //  CarrierWave
 //
 
-import CarrierWaveCore
+import CarrierWaveData
 import SwiftUI
 
 struct FT8SessionView: View {

@@ -5,6 +5,7 @@
 // manages the responder chain. The bug report feature is accessible via
 // Settings → Report a Bug instead.
 
+import CarrierWaveData
 import SwiftUI
 
 // Placeholder file - shake detection removed due to SwiftUI compatibility issues.

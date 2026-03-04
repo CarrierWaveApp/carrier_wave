@@ -1,5 +1,6 @@
 // POTA Activations Helper Views
 
+import CarrierWaveData
 import SwiftUI
 
 // MARK: - ActivationRow

@@ -2,6 +2,7 @@
 // Shows rich content for all session types: timeline, conditions, badges.
 // POTA sessions additionally show upload status and upload button.
 
+import CarrierWaveData
 import SwiftUI
 
 // MARK: - SessionRow

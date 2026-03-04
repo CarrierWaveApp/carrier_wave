@@ -3,6 +3,7 @@
 // Lightweight struct representing a SOTA summit from the
 // summitslist.csv database. Mirrors POTAPark for consistency.
 
+import CarrierWaveData
 import Foundation
 
 // MARK: - SOTASummit

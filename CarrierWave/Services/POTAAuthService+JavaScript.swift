@@ -2,6 +2,7 @@
 //
 // Contains JavaScript code strings used for POTA WebView authentication
 
+import CarrierWaveData
 import Foundation
 
 // MARK: - POTAAuthJavaScript

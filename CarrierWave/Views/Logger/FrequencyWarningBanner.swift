@@ -3,6 +3,7 @@
 // Unified warning display for frequency/mode issues including license violations
 // and activity warnings (QRP, SSTV, CWT, etc.)
 
+import CarrierWaveData
 import SwiftUI
 
 // MARK: - FrequencyWarningBanner

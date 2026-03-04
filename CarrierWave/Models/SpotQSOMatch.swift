@@ -1,3 +1,5 @@
+import CarrierWaveData
+
 /// Cross-references session QSOs and spots for display linking.
 /// Matches on callsign (case-insensitive) + band within a session.
 ///

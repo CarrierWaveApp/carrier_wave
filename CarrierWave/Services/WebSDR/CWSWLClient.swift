@@ -1,3 +1,4 @@
+import CarrierWaveData
 import Foundation
 import os
 

@@ -3,6 +3,7 @@
 // Compact two-column grid of computed statistics for the activation
 // detail view when Professional Statistician Mode is enabled.
 
+import CarrierWaveData
 import SwiftUI
 
 // MARK: - ActivationStatsSummaryView

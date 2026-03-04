@@ -3,6 +3,7 @@
 // Extra brag sheet section shown when Professional Statistician Mode is on.
 // Displays advanced statistics, distribution data, and tongue-in-cheek badges.
 
+import CarrierWaveData
 import SwiftUI
 
 // MARK: - ShareCardStatisticianSection

@@ -1,3 +1,4 @@
+import CarrierWaveData
 @preconcurrency import MapKit
 import SwiftData
 import SwiftUI

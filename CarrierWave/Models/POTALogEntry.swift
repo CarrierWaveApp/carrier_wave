@@ -3,7 +3,7 @@
 // Merges local upload attempts with remote POTA job status into a single
 // timeline view, correlating by park reference, callsign, and timestamp.
 
-import CarrierWaveCore
+import CarrierWaveData
 import Foundation
 
 enum POTALogEntry: Identifiable {

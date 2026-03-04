@@ -1,3 +1,4 @@
+import CarrierWaveData
 import SwiftData
 import SwiftUI
 import UIKit
@@ -40,30 +41,24 @@ struct CarrierWaveApp: App {
             UserDefaults.standard.set("https://swl.carrierwave.app", forKey: "cwswlServerURL")
         }
 
-        let schema = Schema([
-            QSO.self,
-            ServicePresence.self,
-            UploadDestination.self,
-            POTAUploadAttempt.self,
-            ActivationMetadata.self,
-            ChallengeSource.self,
-            ChallengeDefinition.self,
-            ChallengeParticipation.self,
-            LeaderboardCache.self,
-            Friendship.self,
-            Club.self,
-            ClubMember.self,
-            ActivityItem.self,
-            LoggingSession.self,
-            WebSDRRecording.self,
-            ActivityLog.self,
-            CallsignNotesSource.self,
-            DismissedSuggestion.self,
-            SessionSpot.self,
-            SolarSnapshot.self,
-            WebSDRFavorite.self,
-            CloudSyncMetadata.self,
-        ])
+        let schema = Schema(
+            CarrierWaveSchema.models + [
+                POTAUploadAttempt.self,
+                ChallengeSource.self,
+                ChallengeDefinition.self,
+                ChallengeParticipation.self,
+                LeaderboardCache.self,
+                Friendship.self,
+                Club.self,
+                ClubMember.self,
+                ActivityItem.self,
+                WebSDRRecording.self,
+                CallsignNotesSource.self,
+                DismissedSuggestion.self,
+                SolarSnapshot.self,
+                WebSDRFavorite.self,
+            ]
+        )
         let modelConfiguration = ModelConfiguration(
             schema: schema,
             isStoredInMemoryOnly: false,

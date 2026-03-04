@@ -1,3 +1,4 @@
+import CarrierWaveData
 import XCTest
 @testable import CarrierWave
 
@@ -138,8 +139,8 @@ final class SOTAClientTests: XCTestCase {
         let data = try XCTUnwrap(json.data(using: .utf8))
         let spot = try JSONDecoder().decode(SOTASpot.self, from: data)
 
-        XCTAssertEqual(spot.frequencyMHz, 14.062, accuracy: 0.001)
-        XCTAssertEqual(spot.frequencyKHz, 14_062.0, accuracy: 1.0)
+        XCTAssertEqual(try XCTUnwrap(spot.frequencyMHz), 14.062, accuracy: 0.001)
+        XCTAssertEqual(try XCTUnwrap(spot.frequencyKHz), 14_062.0, accuracy: 1.0)
     }
 
     func testTimestampParsing() throws {
