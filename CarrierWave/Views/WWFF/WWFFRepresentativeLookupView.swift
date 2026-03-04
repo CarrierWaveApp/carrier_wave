@@ -41,7 +41,6 @@ struct WWFFRepresentativeLookupView: View {
     @State private var activationDate = ""
     @State private var qsoCount = ""
 
-    @ViewBuilder
     private var lookupSection: some View {
         Section("Find by Reference") {
             HStack {
@@ -54,6 +53,36 @@ struct WWFFRepresentativeLookupView: View {
                 }
                 .buttonStyle(.bordered)
                 .disabled(referenceInput.isEmpty)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var allRepresentativesSection: some View {
+        let reps = searchResults.isEmpty
+            ? WWFFRepresentativeDirectory.allRepresentatives
+            : searchResults
+
+        Section("All Programs (\(reps.count))") {
+            ForEach(reps) { rep in
+                Button {
+                    selectedRepresentative = rep
+                } label: {
+                    HStack {
+                        VStack(alignment: .leading) {
+                            Text(rep.country)
+                                .font(.subheadline)
+                            Text(rep.coordinatorCallsign)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Text(rep.programCode)
+                            .font(.caption.monospaced())
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .tint(.primary)
             }
         }
     }
@@ -110,7 +139,6 @@ struct WWFFRepresentativeLookupView: View {
         }
     }
 
-    @ViewBuilder
     private func contactRow(
         label: String,
         callsign: String,
@@ -168,39 +196,11 @@ struct WWFFRepresentativeLookupView: View {
         }
     }
 
-    @ViewBuilder
-    private var allRepresentativesSection: some View {
-        let reps = searchResults.isEmpty
-            ? WWFFRepresentativeDirectory.allRepresentatives
-            : searchResults
-
-        Section("All Programs (\(reps.count))") {
-            ForEach(reps) { rep in
-                Button {
-                    selectedRepresentative = rep
-                } label: {
-                    HStack {
-                        VStack(alignment: .leading) {
-                            Text(rep.country)
-                                .font(.subheadline)
-                            Text(rep.coordinatorCallsign)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                        Text(rep.programCode)
-                            .font(.caption.monospaced())
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .tint(.primary)
-            }
-        }
-    }
-
     private func lookupByReference() {
         let trimmed = referenceInput.trimmingCharacters(in: .whitespaces)
-        guard !trimmed.isEmpty else { return }
+        guard !trimmed.isEmpty else {
+            return
+        }
         selectedRepresentative = WWFFRepresentativeDirectory.representative(
             forReference: trimmed
         )

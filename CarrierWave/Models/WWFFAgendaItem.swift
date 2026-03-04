@@ -9,6 +9,8 @@ import Foundation
 
 /// A scheduled WWFF activation from the Spotline agenda service.
 struct WWFFAgendaItem: Codable, Sendable, Identifiable {
+    // MARK: Internal
+
     // MARK: - CodingKeys
 
     enum CodingKeys: String, CodingKey {
@@ -42,7 +44,9 @@ struct WWFFAgendaItem: Codable, Sendable, Identifiable {
 
     /// Parsed end timestamp (UTC).
     nonisolated var parsedEndTime: Date? {
-        guard let end = endTime else { return nil }
+        guard let end = endTime else {
+            return nil
+        }
         return Self.parseDate(end)
     }
 
@@ -53,7 +57,9 @@ struct WWFFAgendaItem: Codable, Sendable, Identifiable {
 
     /// Whether this activation is currently active (between start and end times).
     nonisolated var isActive: Bool {
-        guard let start = parsedStartTime else { return false }
+        guard let start = parsedStartTime else {
+            return false
+        }
         let now = Date()
         if let end = parsedEndTime {
             return now >= start && now <= end
@@ -64,13 +70,15 @@ struct WWFFAgendaItem: Codable, Sendable, Identifiable {
 
     /// Whether this activation is upcoming (start time in the future).
     nonisolated var isUpcoming: Bool {
-        guard let start = parsedStartTime else { return false }
+        guard let start = parsedStartTime else {
+            return false
+        }
         return start > Date()
     }
 
-    // MARK: - Private
+    // MARK: Private
 
-    private static func parseDate(_ string: String) -> Date? {
+    nonisolated private static func parseDate(_ string: String) -> Date? {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         if let date = formatter.date(from: string) {

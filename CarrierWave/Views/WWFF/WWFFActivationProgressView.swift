@@ -9,6 +9,8 @@ import SwiftUI
 // MARK: - WWFFActivationProgressView
 
 struct WWFFActivationProgressView: View {
+    // MARK: Internal
+
     let summaries: [WWFFActivationSummary]
 
     var body: some View {
@@ -19,6 +21,8 @@ struct WWFFActivationProgressView: View {
         }
         .navigationTitle("WWFF Progress")
     }
+
+    // MARK: Private
 
     // MARK: - Overview Section
 

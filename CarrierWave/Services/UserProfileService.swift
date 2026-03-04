@@ -17,6 +17,13 @@ final class UserProfileService {
 
     // MARK: Internal
 
+    /// Result of a profile lookup with optional callsign change detection
+    struct ProfileLookupResult {
+        let profile: UserProfile?
+        /// Note when HamDB shows a different name than QRZ (callsign recently changed owners)
+        let callsignChangeNote: String?
+    }
+
     static let shared = UserProfileService()
 
     /// Get the user's profile
@@ -58,13 +65,6 @@ final class UserProfileService {
     /// Check if a profile exists
     func hasProfile() -> Bool {
         getProfile() != nil
-    }
-
-    /// Result of a profile lookup with optional callsign change detection
-    struct ProfileLookupResult {
-        let profile: UserProfile?
-        /// Note when HamDB shows a different name than QRZ (callsign recently changed owners)
-        let callsignChangeNote: String?
     }
 
     /// Look up a callsign via HamDB and create a profile

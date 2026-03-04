@@ -17,26 +17,19 @@ struct MockTourSession {
     let grid = "DM42"
     let power = 10
 
-    var formattedFrequency: String { "14.060" }
+    var formattedFrequency: String {
+        "14.060"
+    }
 
-    var equipmentSummary: String { "KX3 +2" }
+    var equipmentSummary: String {
+        "KX3 +2"
+    }
 }
 
 // MARK: - MockTourQSO
 
 /// Ephemeral mock QSO for the interactive tour.
 struct MockTourQSO: Identifiable {
-    let id = UUID()
-    let callsign: String
-    let rstSent: String
-    let rstReceived: String
-    let qth: String
-    let grid: String
-    let isParkToPark: Bool
-    let isDuplicate: Bool
-    let theirPark: String?
-    let time: String
-
     static let samples: [MockTourQSO] = [
         MockTourQSO(
             callsign: "AJ7CM",
@@ -83,15 +76,23 @@ struct MockTourQSO: Identifiable {
             time: "18:12"
         ),
     ]
+
+    let id = UUID()
+    let callsign: String
+    let rstSent: String
+    let rstReceived: String
+    let qth: String
+    let grid: String
+    let isParkToPark: Bool
+    let isDuplicate: Bool
+    let theirPark: String?
+    let time: String
 }
 
 // MARK: - TourGuideMessage
 
 /// Content for a single tour step narration.
 struct TourGuideMessage {
-    let text: String
-    let buttonLabel: String
-
     static let steps: [LoggerTourStep: TourGuideMessage] = [
         .welcome: TourGuideMessage(
             text: """
@@ -168,4 +169,7 @@ struct TourGuideMessage {
             buttonLabel: "Get Started"
         ),
     ]
+
+    let text: String
+    let buttonLabel: String
 }

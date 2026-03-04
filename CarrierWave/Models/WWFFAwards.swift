@@ -23,11 +23,7 @@ enum WWFFAwardCategory: String, CaseIterable, Sendable {
 
 /// A specific tier within a WWFF award category.
 struct WWFFAwardTier: Sendable, Identifiable {
-    let id: String
-    let category: WWFFAwardCategory
-    let label: String
-    let threshold: Int
-    let isSpecial: Bool // e.g., "novice" tier for hunters
+    // MARK: Lifecycle
 
     init(
         category: WWFFAwardCategory,
@@ -35,12 +31,20 @@ struct WWFFAwardTier: Sendable, Identifiable {
         threshold: Int,
         isSpecial: Bool = false
     ) {
-        self.id = "\(category.rawValue)-\(threshold)"
+        id = "\(category.rawValue)-\(threshold)"
         self.category = category
         self.label = label
         self.threshold = threshold
         self.isSpecial = isSpecial
     }
+
+    // MARK: Internal
+
+    let id: String
+    let category: WWFFAwardCategory
+    let label: String
+    let threshold: Int
+    let isSpecial: Bool // e.g., "novice" tier for hunters
 }
 
 // MARK: - WWFFRules
@@ -65,6 +69,35 @@ enum WWFFRules {
     /// Activators may only activate one reference at a time.
     static let maxSimultaneousReferences = 1
 
+    // MARK: - Activator Points Award Tiers
+
+    /// Tiers: 11, 22, 44, 88 points, then higher levels.
+    static let activatorPointsTiers: [WWFFAwardTier] = [
+        WWFFAwardTier(category: .activatorPoints, label: "11 Points", threshold: 11),
+        WWFFAwardTier(category: .activatorPoints, label: "22 Points", threshold: 22),
+        WWFFAwardTier(category: .activatorPoints, label: "44 Points", threshold: 44),
+        WWFFAwardTier(category: .activatorPoints, label: "88 Points", threshold: 88),
+        WWFFAwardTier(category: .activatorPoints, label: "176 Points", threshold: 176),
+        WWFFAwardTier(category: .activatorPoints, label: "352 Points", threshold: 352),
+    ]
+
+    // MARK: - Activator Continents Tiers
+
+    /// 3, 6, 7 continents (Antarctica counts separately).
+    static let activatorContinentsTiers: [WWFFAwardTier] = [
+        WWFFAwardTier(category: .activatorContinents, label: "3 Continents", threshold: 3),
+        WWFFAwardTier(category: .activatorContinents, label: "6 Continents", threshold: 6),
+        WWFFAwardTier(category: .activatorContinents, label: "7 Continents", threshold: 7),
+    ]
+
+    // MARK: - Hunter Continents Tiers
+
+    static let hunterContinentsTiers: [WWFFAwardTier] = [
+        WWFFAwardTier(category: .hunterContinents, label: "3 Continents", threshold: 3),
+        WWFFAwardTier(category: .hunterContinents, label: "6 Continents", threshold: 6),
+        WWFFAwardTier(category: .hunterContinents, label: "7 Continents", threshold: 7),
+    ]
+
     // MARK: - Activator Reference Award Tiers
 
     /// Tiers: 11, 22, 33, 44, 55, 66, 77, 88, 99, 110, ...
@@ -82,18 +115,6 @@ enum WWFFRules {
         return tiers
     }
 
-    // MARK: - Activator Points Award Tiers
-
-    /// Tiers: 11, 22, 44, 88 points, then higher levels.
-    static let activatorPointsTiers: [WWFFAwardTier] = [
-        WWFFAwardTier(category: .activatorPoints, label: "11 Points", threshold: 11),
-        WWFFAwardTier(category: .activatorPoints, label: "22 Points", threshold: 22),
-        WWFFAwardTier(category: .activatorPoints, label: "44 Points", threshold: 44),
-        WWFFAwardTier(category: .activatorPoints, label: "88 Points", threshold: 88),
-        WWFFAwardTier(category: .activatorPoints, label: "176 Points", threshold: 176),
-        WWFFAwardTier(category: .activatorPoints, label: "352 Points", threshold: 352),
-    ]
-
     // MARK: - Activator DXCC Tiers
 
     /// Entry: 3 entities, then upgrades every 3 entities.
@@ -110,15 +131,6 @@ enum WWFFRules {
         }
         return tiers
     }
-
-    // MARK: - Activator Continents Tiers
-
-    /// 3, 6, 7 continents (Antarctica counts separately).
-    static let activatorContinentsTiers: [WWFFAwardTier] = [
-        WWFFAwardTier(category: .activatorContinents, label: "3 Continents", threshold: 3),
-        WWFFAwardTier(category: .activatorContinents, label: "6 Continents", threshold: 6),
-        WWFFAwardTier(category: .activatorContinents, label: "7 Continents", threshold: 7),
-    ]
 
     // MARK: - Hunter Reference Award Tiers
 
@@ -169,14 +181,6 @@ enum WWFFRules {
         return tiers
     }
 
-    // MARK: - Hunter Continents Tiers
-
-    static let hunterContinentsTiers: [WWFFAwardTier] = [
-        WWFFAwardTier(category: .hunterContinents, label: "3 Continents", threshold: 3),
-        WWFFAwardTier(category: .hunterContinents, label: "6 Continents", threshold: 6),
-        WWFFAwardTier(category: .hunterContinents, label: "7 Continents", threshold: 7),
-    ]
-
     // MARK: - Park-to-Park Tiers
 
     /// Entry: 10, then 44, 88, ...
@@ -220,21 +224,21 @@ enum WWFFRules {
     ) -> [WWFFAwardTier] {
         switch category {
         case .activatorReferences:
-            return activatorReferenceTiers(upTo: count)
+            activatorReferenceTiers(upTo: count)
         case .activatorPoints:
-            return activatorPointsTiers
+            activatorPointsTiers
         case .activatorDXCC:
-            return activatorDXCCTiers(upTo: count)
+            activatorDXCCTiers(upTo: count)
         case .activatorContinents:
-            return activatorContinentsTiers
+            activatorContinentsTiers
         case .hunterReferences:
-            return hunterReferenceTiers(upTo: count)
+            hunterReferenceTiers(upTo: count)
         case .hunterDXCC:
-            return hunterDXCCTiers(upTo: count)
+            hunterDXCCTiers(upTo: count)
         case .hunterContinents:
-            return hunterContinentsTiers
+            hunterContinentsTiers
         case .parkToPark:
-            return parkToParkTiers(upTo: count)
+            parkToParkTiers(upTo: count)
         }
     }
 }

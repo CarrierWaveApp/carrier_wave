@@ -5,6 +5,7 @@
 // Activation requires 44 QSOs per WWFF Global Rules V5.10.
 
 import CarrierWaveCore
+import CarrierWaveData
 import Foundation
 
 // MARK: - WWFFActivationStatus
@@ -87,7 +88,9 @@ struct WWFFActivation: Identifiable, Equatable, Hashable {
 
     /// Duration of the activation session.
     var duration: TimeInterval {
-        guard !qsos.isEmpty else { return 0 }
+        guard !qsos.isEmpty else {
+            return 0
+        }
         var sessionGroups: [UUID?: [QSO]] = [:]
         for qso in qsos {
             sessionGroups[qso.loggingSessionId, default: []].append(qso)
@@ -96,7 +99,9 @@ struct WWFFActivation: Identifiable, Equatable, Hashable {
         for (_, groupQSOs) in sessionGroups {
             guard let first = groupQSOs.min(by: { $0.timestamp < $1.timestamp }),
                   let last = groupQSOs.max(by: { $0.timestamp < $1.timestamp })
-            else { continue }
+            else {
+                continue
+            }
             total += last.timestamp.timeIntervalSince(first.timestamp)
         }
         return total
@@ -149,7 +154,9 @@ struct WWFFActivation: Identifiable, Equatable, Hashable {
 
         return groups.compactMap { key, qsos in
             let parts = key.split(separator: "|", omittingEmptySubsequences: false)
-            guard parts.count >= 3 else { return nil }
+            guard parts.count >= 3 else {
+                return nil
+            }
             let ref = String(parts[0])
             let callsign = String(parts[1])
             let dateStr = String(parts[2])
@@ -207,7 +214,9 @@ struct WWFFActivationSummary: Identifiable, Sendable {
     let uniqueBands: Set<String>
     let uniqueModes: [String]
 
-    var id: String { reference }
+    var id: String {
+        reference
+    }
 
     /// Whether the cumulative QSO count meets the 44-QSO threshold.
     var isActivated: Bool {

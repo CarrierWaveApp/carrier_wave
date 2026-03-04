@@ -231,7 +231,7 @@ struct ActivationShareCardClubMembers: View {
     let members: [(callsign: String, clubs: [String])]
 
     var body: some View {
-        HStack(spacing: 6) {
+        FlowLayout(spacing: 6) {
             ForEach(clubCounts, id: \.club) { entry in
                 Text("\(entry.count) \(entry.club)")
                     .font(.caption2)

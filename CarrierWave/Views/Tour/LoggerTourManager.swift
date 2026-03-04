@@ -34,41 +34,56 @@ final class LoggerTourManager: Identifiable {
     var visibleQSOs: [MockTourQSO] {
         switch currentStep {
         case .logQSO:
-            return Array(MockTourQSO.samples.prefix(1))
-        case .moreQSOs, .commands, .sdrRecording, .wrapUp:
-            return MockTourQSO.samples
+            Array(MockTourQSO.samples.prefix(1))
+        case .moreQSOs,
+             .commands,
+             .sdrRecording,
+             .wrapUp:
+            MockTourQSO.samples
         default:
-            return []
+            []
         }
     }
 
     /// Whether the mock session header should be visible
     var showSessionHeader: Bool {
         switch currentStep {
-        case .activeSession, .logQSO, .moreQSOs, .commands, .sdrRecording, .wrapUp:
-            return true
+        case .activeSession,
+             .logQSO,
+             .moreQSOs,
+             .commands,
+             .sdrRecording,
+             .wrapUp:
+            true
         default:
-            return false
+            false
         }
     }
 
     /// Whether the SessionStartSheet should be presented
     var showSessionSheet: Bool {
         switch currentStep {
-        case .startSession, .pickEquipment, .setPark:
-            return true
+        case .startSession,
+             .pickEquipment,
+             .setPark:
+            true
         default:
-            return false
+            false
         }
     }
 
     /// Whether the mock callsign input should be visible
     var showCallsignInput: Bool {
         switch currentStep {
-        case .activeSession, .logQSO, .moreQSOs, .commands, .sdrRecording, .wrapUp:
-            return true
+        case .activeSession,
+             .logQSO,
+             .moreQSOs,
+             .commands,
+             .sdrRecording,
+             .wrapUp:
+            true
         default:
-            return false
+            false
         }
     }
 
@@ -76,11 +91,11 @@ final class LoggerTourManager: Identifiable {
     var mockCallsignText: String {
         switch currentStep {
         case .logQSO:
-            return "AJ7CM"
+            "AJ7CM"
         case .commands:
-            return "HELP"
+            "HELP"
         default:
-            return ""
+            ""
         }
     }
 
@@ -121,13 +136,13 @@ final class LoggerTourManager: Identifiable {
         finish()
     }
 
-    // MARK: Private
-
-    private var onComplete: (() -> Void)?
-
     func setOnComplete(_ handler: @escaping () -> Void) {
         onComplete = handler
     }
+
+    // MARK: Private
+
+    private var onComplete: (() -> Void)?
 
     private func finish() {
         isActive = false

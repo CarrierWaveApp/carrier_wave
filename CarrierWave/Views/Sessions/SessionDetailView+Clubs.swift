@@ -50,6 +50,7 @@ extension SessionDetailView {
                         )
                         .font(.subheadline.weight(.medium))
                     }
+                    .accessibilityElement(children: .combine)
 
                     ForEach(grouped, id: \.club) { entry in
                         clubCard(name: entry.club, callsigns: entry.callsigns)
@@ -62,6 +63,19 @@ extension SessionDetailView {
     // MARK: - Private Helpers
 
     private func clubCard(name: String, callsigns: [String]) -> some View {
+        ClubCardView(name: name, callsigns: callsigns)
+    }
+}
+
+// MARK: - ClubCardView
+
+private struct ClubCardView: View {
+    // MARK: Internal
+
+    let name: String
+    let callsigns: [String]
+
+    var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(name)
                 .font(.caption.weight(.semibold))
@@ -72,7 +86,7 @@ extension SessionDetailView {
                     Text(call)
                         .font(.caption.monospaced())
                         .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
+                        .padding(.vertical, capsuleVerticalPadding)
                         .background(Color.blue.opacity(0.2))
                         .clipShape(Capsule())
                 }
@@ -83,4 +97,8 @@ extension SessionDetailView {
         .background(Color(.systemGray6))
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
+
+    // MARK: Private
+
+    @ScaledMetric(relativeTo: .caption) private var capsuleVerticalPadding: CGFloat = 4
 }

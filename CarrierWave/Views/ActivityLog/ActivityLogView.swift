@@ -308,12 +308,24 @@ struct ActivityLogView: View {
         guard let info = await service.lookup(qso.callsign) else {
             return
         }
-        if qso.name == nil { qso.name = info.name }
-        if qso.theirGrid == nil { qso.theirGrid = info.grid }
-        if qso.state == nil { qso.state = info.state }
-        if qso.country == nil { qso.country = info.country }
-        if qso.qth == nil { qso.qth = info.qth }
-        if qso.theirLicenseClass == nil { qso.theirLicenseClass = info.licenseClass }
+        if qso.name == nil {
+            qso.name = info.name
+        }
+        if qso.theirGrid == nil {
+            qso.theirGrid = info.grid
+        }
+        if qso.state == nil {
+            qso.state = info.state
+        }
+        if qso.country == nil {
+            qso.country = info.country
+        }
+        if qso.qth == nil {
+            qso.qth = info.qth
+        }
+        if qso.theirLicenseClass == nil {
+            qso.theirLicenseClass = info.licenseClass
+        }
         qso.callsignChangeNote = info.callsignChangeNote
         try? modelContext.save()
     }
