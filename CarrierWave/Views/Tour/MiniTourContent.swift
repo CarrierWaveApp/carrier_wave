@@ -273,6 +273,7 @@ enum MiniTourContent {
     static func pages(for id: TourState.MiniTourID) -> [TourPage] {
         switch id {
         case .logger: logger
+        case .loggerInteractive: logger // Interactive tour uses LoggerTourOverlay, not pages
         case .logs: logs
         case .potaActivations: potaActivations
         case .potaAccountSetup: potaAccountSetup

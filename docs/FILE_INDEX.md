@@ -755,6 +755,10 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `IntroTourStepViews.swift` | Individual step content views for intro tour |
 | `MiniTourContent.swift` | Content definitions for all mini-tours |
 | `MiniTourModifier.swift` | View modifier for easy mini-tour integration |
+| `LoggerTourManager.swift` | Interactive logger tour state machine |
+| `LoggerTourMockData.swift` | Mock data structs for interactive logger tour |
+| `LoggerTourOverlay.swift` | Full-screen overlay for interactive logger tour |
+| `TourGuideBubble.swift` | KI5GTR tour guide speech bubble component |
 | `OnboardingView.swift` | Onboarding view (main layout, navigation, primary button) |
 | `OnboardingView+Steps.swift` | Step content views (callsign, lookup result, services, activities, complete) |
 | `OnboardingView+Actions.swift` | Helper views (profile grid, service card) and actions (lookup, connect, register) |

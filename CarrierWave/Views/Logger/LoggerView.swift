@@ -203,6 +203,9 @@ struct LoggerView: View {
     /// Tour state for mini-tour
     let tourState: TourState
 
+    /// Interactive logger tour manager (nil when tour is not active)
+    @State var loggerTourManager: LoggerTourManager?
+
     /// Callback when session ends with QSOs logged
     let onSessionEnd: (() -> Void)?
 
@@ -271,7 +274,22 @@ struct LoggerView: View {
                     panelOverlays
                 }
                 .toastContainer()
-                .miniTour(.logger, tourState: tourState)
+                .fullScreenCover(item: $loggerTourManager) { manager in
+                    LoggerTourOverlay(tourManager: manager)
+                }
+                .task {
+                    if tourState.shouldShowMiniTour(.loggerInteractive) {
+                        let manager = LoggerTourManager()
+                        manager.setOnComplete {
+                            tourState.markMiniTourSeen(.loggerInteractive)
+                            // Also mark the old static tour as seen
+                            tourState.markMiniTourSeen(.logger)
+                            loggerTourManager = nil
+                        }
+                        manager.start()
+                        loggerTourManager = manager
+                    }
+                }
                 .sheet(isPresented: $showFT8SetupWizard) {
                     FT8SetupWizardView(isPresented: $showFT8SetupWizard)
                         .interactiveDismissDisabled()
