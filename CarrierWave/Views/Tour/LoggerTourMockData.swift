@@ -5,7 +5,7 @@ import Foundation
 /// Ephemeral mock session data for the interactive tour.
 /// Plain struct — never touches SwiftData or persistence.
 struct MockTourSession {
-    let callsign = "KI5GTR"
+    let callsign = "Jay W6JSV"
     let frequency: Double = 14.060
     let mode = "CW"
     let band = "20m"
@@ -96,7 +96,7 @@ struct TourGuideMessage {
     static let steps: [LoggerTourStep: TourGuideMessage] = [
         .welcome: TourGuideMessage(
             text: """
-            Hey, I'm KI5GTR — I built Carrier Wave and I'll walk you through \
+            Hey, I'm Jay W6JSV — I built Carrier Wave and I'll walk you through \
             running a POTA activation session. Nothing here is real, so don't \
             worry about messing anything up.
             """,

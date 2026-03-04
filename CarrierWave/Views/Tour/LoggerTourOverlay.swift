@@ -4,7 +4,7 @@ import SwiftUI
 
 /// Full-screen overlay that displays the interactive logger tour.
 /// Shows mock logger UI driven by the tour manager's state machine,
-/// with a TourGuideBubble for KI5GTR's narration.
+/// with a TourGuideBubble for Jay W6JSV's narration.
 struct LoggerTourOverlay: View {
     // MARK: Internal
 

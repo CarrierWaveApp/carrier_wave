@@ -2,7 +2,7 @@ import SwiftUI
 
 // MARK: - TourGuideBubble
 
-/// Floating speech bubble for the KI5GTR tour guide.
+/// Floating speech bubble for the Jay W6JSV tour guide.
 /// Anchored at the bottom of the screen, above the tab bar.
 struct TourGuideBubble: View {
     let message: TourGuideMessage
@@ -22,8 +22,8 @@ struct TourGuideBubble: View {
                     .background(Color.accentColor)
                     .clipShape(Circle())
 
-                Text("KI5GTR")
-                    .font(.subheadline.weight(.bold).monospaced())
+                Text("Jay W6JSV")
+                    .font(.subheadline.weight(.bold))
 
                 Spacer()
 
@@ -74,7 +74,7 @@ struct TourGuideBubble: View {
         Spacer()
         TourGuideBubble(
             message: TourGuideMessage(
-                text: "Hey, I'm KI5GTR — I built Carrier Wave and I'll walk you through running a POTA activation.",
+                text: "Hey, I'm Jay W6JSV — I built Carrier Wave and I'll walk you through running a POTA activation.",
                 buttonLabel: "Let's Go"
             ),
             stepIndex: 0,
