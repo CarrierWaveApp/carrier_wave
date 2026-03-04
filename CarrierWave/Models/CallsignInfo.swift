@@ -33,7 +33,8 @@ struct CallsignInfo: Codable, Identifiable, Equatable, Sendable {
         source: CallsignInfoSource,
         lookupDate: Date = Date(),
         allEmojis: [String]? = nil,
-        matchingSources: [String]? = nil
+        matchingSources: [String]? = nil,
+        callsignChangeNote: String? = nil
     ) {
         self.callsign = callsign.uppercased()
         self.name = name
@@ -50,6 +51,7 @@ struct CallsignInfo: Codable, Identifiable, Equatable, Sendable {
         self.lookupDate = lookupDate
         self.allEmojis = allEmojis
         self.matchingSources = matchingSources
+        self.callsignChangeNote = callsignChangeNote
     }
 
     // MARK: Internal
@@ -98,6 +100,9 @@ struct CallsignInfo: Codable, Identifiable, Equatable, Sendable {
 
     /// Source titles that matched this callsign
     let matchingSources: [String]?
+
+    /// Note when HamDB shows a different name than QRZ (callsign recently changed owners)
+    let callsignChangeNote: String?
 
     /// Unique identifier (the callsign)
     nonisolated var id: String {

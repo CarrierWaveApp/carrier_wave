@@ -59,15 +59,47 @@ final class UserProfileService {
         getProfile() != nil
     }
 
+    /// Result of a profile lookup with optional callsign change detection
+    struct ProfileLookupResult {
+        let profile: UserProfile?
+        /// Note when HamDB shows a different name than QRZ (callsign recently changed owners)
+        let callsignChangeNote: String?
+    }
+
     /// Look up a callsign via HamDB and create a profile
     func lookupAndCreateProfile(callsign: String) async throws -> UserProfile? {
+        let result = try await lookupAndCreateProfileWithChangeDetection(callsign: callsign)
+        return result.profile
+    }
+
+    /// Look up a callsign via HamDB with QRZ cross-check for callsign change detection
+    func lookupAndCreateProfileWithChangeDetection(
+        callsign: String
+    ) async throws -> ProfileLookupResult {
         let client = HamDBClient()
-        guard let license = try await client.lookup(callsign: callsign) else {
-            // Callsign not found in HamDB - create minimal profile
-            return UserProfile(callsign: callsign)
+        let lookupService = CallsignLookupService()
+
+        // Fetch HamDB and QRZ in parallel
+        async let hamDBResult = client.lookup(callsign: callsign)
+        async let qrzName = lookupService.lookupHamDBComparisonName(callsign: callsign)
+
+        let license = try await hamDBResult
+        let qrzFullName = await qrzName
+
+        guard let license else {
+            return ProfileLookupResult(
+                profile: UserProfile(callsign: callsign),
+                callsignChangeNote: nil
+            )
         }
 
-        return UserProfile.fromHamDB(license)
+        let profile = UserProfile.fromHamDB(license)
+        let changeNote = lookupService.detectCallsignChange(
+            qrzName: qrzFullName,
+            hamDBName: license.fullName
+        )
+
+        return ProfileLookupResult(profile: profile, callsignChangeNote: changeNote)
     }
 
     // MARK: Private

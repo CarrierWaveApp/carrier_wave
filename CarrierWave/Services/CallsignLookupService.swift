@@ -181,10 +181,21 @@ final class CallsignLookupService {
             try? await Task.sleep(nanoseconds: UInt64(debounceDelay * 1_000_000_000))
 
             // Tier 1: Polo notes (local)
-            let poloInfo = await lookupInPoloNotes(normalizedCallsign)
-
             // Tier 2: QRZ XML API (remote) - always try if credentials configured
-            let qrzResult = await lookupInQRZWithResult(normalizedCallsign)
+            // Tier 3: HamDB (remote, parallel with QRZ) - for callsign change detection
+            async let poloInfoTask = lookupInPoloNotes(normalizedCallsign)
+            async let qrzResultTask = lookupInQRZWithResult(normalizedCallsign)
+            async let hamDBNameTask = lookupHamDBName(normalizedCallsign)
+
+            let poloInfo = await poloInfoTask
+            let qrzResult = await qrzResultTask
+            let hamDBName = await hamDBNameTask
+
+            // Detect callsign owner change: QRZ has new owner, HamDB still has old
+            let changeNote = detectCallsignChange(
+                qrzInfo: qrzResult.info,
+                hamDBName: hamDBName
+            )
 
             // Merge results: Polo Notes emoji/note + QRZ name/grid/location
             if let polo = poloInfo, let qrz = qrzResult.info {
@@ -202,14 +213,31 @@ final class CallsignLookupService {
                     licenseClass: qrz.licenseClass,
                     source: .qrz, // Primary source is QRZ for name/grid
                     allEmojis: polo.allEmojis,
-                    matchingSources: polo.matchingSources
+                    matchingSources: polo.matchingSources,
+                    callsignChangeNote: changeNote
                 )
                 updateCache(merged)
                 return .fromQRZ(merged)
             }
 
             // QRZ only (no Polo Notes match)
-            if let info = qrzResult.info {
+            if let qrz = qrzResult.info {
+                let info = CallsignInfo(
+                    callsign: qrz.callsign,
+                    name: qrz.name,
+                    firstName: qrz.firstName,
+                    nickname: qrz.nickname,
+                    note: qrz.note,
+                    emoji: qrz.emoji,
+                    qth: qrz.qth,
+                    state: qrz.state,
+                    country: qrz.country,
+                    grid: qrz.grid,
+                    licenseClass: qrz.licenseClass,
+                    source: qrz.source,
+                    lookupDate: qrz.lookupDate,
+                    callsignChangeNote: changeNote
+                )
                 updateCache(info)
                 return .fromQRZ(info)
             }
@@ -287,6 +315,58 @@ final class CallsignLookupService {
 
     func lookupInPoloNotes(_ callsign: String) async -> CallsignInfo? {
         await CallsignNotesCache.shared.info(for: callsign)
+    }
+
+    // MARK: - HamDB Name Lookup (for callsign change detection)
+
+    /// Fetch just the name from HamDB for comparison with QRZ
+    func lookupHamDBName(_ callsign: String) async -> String? {
+        let client = HamDBClient()
+        guard let license = try? await client.lookup(callsign: callsign) else {
+            return nil
+        }
+        return license.fullName
+    }
+
+    /// Detect when QRZ and HamDB show different names (callsign recently changed owners)
+    func detectCallsignChange(qrzInfo: CallsignInfo?, hamDBName: String?) -> String? {
+        detectCallsignChange(qrzName: qrzInfo?.name, hamDBName: hamDBName)
+    }
+
+    /// Detect when QRZ and HamDB show different names (callsign recently changed owners)
+    func detectCallsignChange(qrzName: String?, hamDBName: String?) -> String? {
+        guard let qrzName, !qrzName.isEmpty,
+              let hamDBName, !hamDBName.isEmpty
+        else {
+            return nil
+        }
+
+        // Normalize for comparison: lowercase, trimmed
+        let normalizedQRZ = qrzName.lowercased().trimmingCharacters(in: .whitespaces)
+        let normalizedHamDB = hamDBName.lowercased().trimmingCharacters(in: .whitespaces)
+
+        // If names match, no change detected
+        if normalizedQRZ == normalizedHamDB {
+            return nil
+        }
+
+        // Check if last names match (partial name updates are common)
+        let qrzParts = normalizedQRZ.split(separator: " ")
+        let hamDBParts = normalizedHamDB.split(separator: " ")
+        if let qrzLast = qrzParts.last, let hamDBLast = hamDBParts.last,
+           qrzLast == hamDBLast, qrzParts.count > 1, hamDBParts.count > 1
+        {
+            // Same last name — likely just a first name or middle name difference, not a new owner
+            return nil
+        }
+
+        return "HamDB is still updating (shows \(hamDBName.capitalized))"
+    }
+
+    /// Look up just the QRZ name for cross-referencing with HamDB
+    func lookupHamDBComparisonName(callsign: String) async -> String? {
+        let result = await lookupInQRZWithResult(callsign)
+        return result.info?.name
     }
 
     // MARK: - Cache Management

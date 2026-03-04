@@ -46,6 +46,10 @@ struct LoggerCallsignCard: View {
                 noteSection(note)
             }
 
+            if let changeNote = info.callsignChangeNote {
+                callsignChangeSection(changeNote)
+            }
+
             sourceIndicator
         }
         .padding()
@@ -176,6 +180,19 @@ struct LoggerCallsignCard: View {
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
         }
+    }
+
+    private func callsignChangeSection(_ note: String) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: "arrow.triangle.2.circlepath")
+                .foregroundStyle(.orange)
+                .font(.caption)
+
+            Text(note)
+                .font(.caption)
+                .foregroundStyle(.orange)
+        }
+        .padding(.top, 4)
     }
 
     private func noteSection(_ note: String) -> some View {
