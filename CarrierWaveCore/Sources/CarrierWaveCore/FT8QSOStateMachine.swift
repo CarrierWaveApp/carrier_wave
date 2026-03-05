@@ -140,7 +140,7 @@ public struct FT8QSOStateMachine: Sendable {
     // MARK: - Initiate Call (S&P)
 
     public mutating func initiateCall(to callsign: String, theirGrid: String?) {
-        guard !workedCallsigns.contains(callsign.uppercased()) else {
+        guard !workedCallsigns.contains(Self.baseCallsign(callsign)) else {
             return
         }
 
@@ -162,7 +162,8 @@ public struct FT8QSOStateMachine: Sendable {
 
         guard message.isDirectedTo(myCallsign),
               let sender = message.callerCallsign,
-              sender.uppercased() == theirCallsign?.uppercased()
+              let their = theirCallsign,
+              Self.baseCallsign(sender) == Self.baseCallsign(their)
         else {
             return
         }
@@ -216,11 +217,11 @@ public struct FT8QSOStateMachine: Sendable {
     // MARK: - Worked Stations
 
     public mutating func markWorked(_ callsign: String) {
-        workedCallsigns.insert(callsign.uppercased())
+        workedCallsigns.insert(Self.baseCallsign(callsign))
     }
 
     public func hasWorked(_ callsign: String) -> Bool {
-        workedCallsigns.contains(callsign.uppercased())
+        workedCallsigns.contains(Self.baseCallsign(callsign))
     }
 
     // MARK: - Reset
@@ -249,6 +250,22 @@ public struct FT8QSOStateMachine: Sendable {
         return "CQ \(myCallsign) \(myGrid)"
     }
 
+    private static func baseCallsign(_ call: String) -> String {
+        let upper = call.uppercased()
+        guard let slashIndex = upper.lastIndex(of: "/") else {
+            return upper
+        }
+        let suffix = String(upper[upper.index(after: slashIndex)...])
+        // Strip portable/mobile/QRP suffixes
+        if ["P", "M", "QRP", "MM", "AM"].contains(suffix) {
+            return String(upper[..<slashIndex])
+        }
+        // Prefix modifier (e.g., "VP2E/KD9ABC" → "KD9ABC")
+        let prefix = upper[..<slashIndex]
+        let base = upper[upper.index(after: slashIndex)...]
+        return String(base.count >= prefix.count ? base : prefix)
+    }
+
     /// Handle a CQ response in CQ mode. Returns true if handled.
     private mutating func handleCQResponse(_ message: FT8Message) -> Bool {
         guard isCQMode, state == .idle else {
@@ -256,7 +273,7 @@ public struct FT8QSOStateMachine: Sendable {
         }
         guard case let .directed(from, to, grid) = message,
               to.uppercased() == myCallsign.uppercased(),
-              !workedCallsigns.contains(from.uppercased())
+              !workedCallsigns.contains(Self.baseCallsign(from))
         else {
             return false
         }
@@ -273,7 +290,7 @@ public struct FT8QSOStateMachine: Sendable {
     private mutating func markComplete(entering targetState: State = .complete) {
         state = targetState
         if let call = theirCallsign {
-            workedCallsigns.insert(call.uppercased())
+            workedCallsigns.insert(Self.baseCallsign(call))
         }
     }
 

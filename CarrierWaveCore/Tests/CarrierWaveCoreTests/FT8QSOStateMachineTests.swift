@@ -292,6 +292,25 @@ struct FT8QSOStateMachineTests {
         #expect(sm.theirReport == nil)
     }
 
+    // MARK: - Compound Callsign Matching
+
+    @Test("Compound callsign matches base callsign in QSO")
+    func compoundCallsignMatches() {
+        var sm = FT8QSOStateMachine(myCallsign: myCall, myGrid: myGrid)
+        sm.initiateCall(to: "W9XYZ/P", theirGrid: "EN37")
+        // They reply with base callsign (FT8 protocol may strip suffix)
+        sm.processMessage(.signalReport(from: "W9XYZ", to: myCall, dB: -12))
+        #expect(sm.state == .reportSent, "Should match W9XYZ to W9XYZ/P")
+    }
+
+    @Test("Prefix modifier callsign matches base")
+    func prefixModifierMatches() {
+        var sm = FT8QSOStateMachine(myCallsign: myCall, myGrid: myGrid)
+        sm.initiateCall(to: "VP2E/KD9ABC", theirGrid: "FK88")
+        sm.processMessage(.signalReport(from: "KD9ABC", to: myCall, dB: -5))
+        #expect(sm.state == .reportSent, "Should match KD9ABC to VP2E/KD9ABC")
+    }
+
     // MARK: - RR73 State Restrictions
 
     @Test("RR73 from calling state does not complete QSO")
