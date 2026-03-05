@@ -4,6 +4,8 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.53.0] - 2026-03-04
+
 ### Added
 - States Worked signal mosaic in session detail — 10×5 grid showing US states with green intensity by QSO count, tap for callsign details
 - Auto-detect callsign owner changes by cross-referencing QRZ and HamDB names during lookup
