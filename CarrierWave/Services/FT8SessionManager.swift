@@ -208,11 +208,12 @@ final class FT8SessionManager {
         for result in results {
             qsoStateMachine.processMessage(result.message)
 
-            if qsoStateMachine.state == .complete,
+            if qsoStateMachine.state == .completing,
                let completed = qsoStateMachine.completedQSO
             {
                 logCompletedQSO(completed)
-                qsoStateMachine.resetForNextQSO()
+                // Don't reset yet — completing state sends grace 73/RR73
+                // and auto-resets to idle after one cycle via advanceCycle()
             }
         }
     }

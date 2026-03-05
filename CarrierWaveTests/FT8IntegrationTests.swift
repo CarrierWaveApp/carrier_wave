@@ -69,7 +69,7 @@ final class FT8IntegrationTests: XCTestCase {
 
         // Step 3: Receive RR73 to complete
         stateMachine.processMessage(.rogerEnd(from: "W1AW", to: "N0TEST"))
-        XCTAssertEqual(stateMachine.state, .complete)
+        XCTAssertEqual(stateMachine.state, .completing)
 
         // Extract completed QSO and log it (mirroring FT8SessionManager.logCompletedQSO)
         let completed = try XCTUnwrap(stateMachine.completedQSO)
@@ -176,7 +176,7 @@ final class FT8IntegrationTests: XCTestCase {
             .rogerEnd(from: "N3LLO", to: "N0TEST")
         )
 
-        XCTAssertEqual(stateMachine.state, .complete)
+        XCTAssertEqual(stateMachine.state, .completing)
 
         let completed = try XCTUnwrap(stateMachine.completedQSO)
         let loggedQSO = try XCTUnwrap(

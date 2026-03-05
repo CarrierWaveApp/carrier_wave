@@ -34,13 +34,13 @@ struct FT8QSOStateMachineTests {
         #expect(sm.theirReport == -12)
     }
 
-    @Test("S&P: reportSent -> complete on RR73 received")
+    @Test("S&P: reportSent -> completing on RR73 received")
     func spCompleteOnRR73() {
         var sm = FT8QSOStateMachine(myCallsign: myCall, myGrid: myGrid)
         sm.initiateCall(to: "W9XYZ", theirGrid: "EN37")
         sm.processMessage(.signalReport(from: "W9XYZ", to: myCall, dB: -12))
         sm.processMessage(.rogerEnd(from: "W9XYZ", to: myCall))
-        #expect(sm.state == .complete)
+        #expect(sm.state == .completing)
     }
 
     // MARK: - CQ (Run) Flow
@@ -95,13 +95,14 @@ struct FT8QSOStateMachineTests {
 
     // MARK: - Completed QSO Data
 
-    @Test("Completed QSO provides all fields")
+    @Test("Completed QSO provides all fields (available in completing state)")
     func completedQSOData() {
         var sm = FT8QSOStateMachine(myCallsign: myCall, myGrid: myGrid)
         sm.initiateCall(to: "W9XYZ", theirGrid: "EN37")
         sm.processMessage(.signalReport(from: "W9XYZ", to: myCall, dB: -12))
         sm.myReport = -7
         sm.processMessage(.rogerEnd(from: "W9XYZ", to: myCall))
+        #expect(sm.state == .completing)
 
         let qso = sm.completedQSO
         #expect(qso != nil)
@@ -182,6 +183,70 @@ struct FT8QSOStateMachineTests {
         #expect(sm.role == .searchAndPounce)
         sm.resetForNextQSO()
         #expect(sm.role == nil)
+    }
+
+    // MARK: - Completing State
+
+    @Test("CQ: QSO completes immediately when receiving R+report (enters completing)")
+    func cqCompletesOnRogerReport() {
+        var sm = FT8QSOStateMachine(myCallsign: myCall, myGrid: myGrid)
+        sm.setCQMode(modifier: nil)
+        sm.processMessage(.directed(from: "W9XYZ", to: myCall, grid: "EN37"))
+        sm.myReport = -3
+        sm.processMessage(.rogerReport(from: "W9XYZ", to: myCall, dB: 2))
+        #expect(sm.state == .completing)
+        #expect(sm.completedQSO != nil)
+    }
+
+    @Test("S&P: QSO completes when receiving RR73 (enters completing)")
+    func spCompletesOnRR73Completing() {
+        var sm = FT8QSOStateMachine(myCallsign: myCall, myGrid: myGrid)
+        sm.initiateCall(to: "W9XYZ", theirGrid: "EN37")
+        sm.processMessage(.signalReport(from: "W9XYZ", to: myCall, dB: -12))
+        sm.myReport = -7
+        sm.processMessage(.rogerEnd(from: "W9XYZ", to: myCall))
+        #expect(sm.state == .completing)
+        #expect(sm.completedQSO != nil)
+    }
+
+    @Test("Completing state returns to idle after one advanceCycle")
+    func completingReturnsToIdle() {
+        var sm = FT8QSOStateMachine(myCallsign: myCall, myGrid: myGrid)
+        sm.initiateCall(to: "W9XYZ", theirGrid: "EN37")
+        sm.processMessage(.signalReport(from: "W9XYZ", to: myCall, dB: -12))
+        sm.processMessage(.rogerEnd(from: "W9XYZ", to: myCall))
+        #expect(sm.state == .completing)
+        sm.advanceCycle()
+        #expect(sm.state == .idle)
+    }
+
+    @Test("CQ: completing TX message is RR73 for CQ originator")
+    func cqCompletingSendsRR73() {
+        var sm = FT8QSOStateMachine(myCallsign: myCall, myGrid: myGrid)
+        sm.setCQMode(modifier: nil)
+        sm.processMessage(.directed(from: "W9XYZ", to: myCall, grid: "EN37"))
+        sm.myReport = -3
+        sm.processMessage(.rogerReport(from: "W9XYZ", to: myCall, dB: 2))
+        #expect(sm.nextTXMessage == "W9XYZ \(myCall) RR73")
+    }
+
+    @Test("S&P: completing TX message is 73")
+    func spCompletingSends73() {
+        var sm = FT8QSOStateMachine(myCallsign: myCall, myGrid: myGrid)
+        sm.initiateCall(to: "W9XYZ", theirGrid: "EN37")
+        sm.processMessage(.signalReport(from: "W9XYZ", to: myCall, dB: -12))
+        sm.processMessage(.rogerEnd(from: "W9XYZ", to: myCall))
+        #expect(sm.nextTXMessage == "W9XYZ \(myCall) 73")
+    }
+
+    @Test("S&P timeout reduced to 4 cycles")
+    func spTimeoutReducedTo4Cycles() {
+        var sm = FT8QSOStateMachine(myCallsign: myCall, myGrid: myGrid)
+        sm.initiateCall(to: "W9XYZ", theirGrid: "EN37")
+        for _ in 0 ..< 4 {
+            sm.advanceCycle()
+        }
+        #expect(sm.state == .idle, "S&P should timeout after 4 cycles")
     }
 
     // MARK: - CQ Duplicate Prevention

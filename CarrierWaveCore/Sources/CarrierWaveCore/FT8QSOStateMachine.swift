@@ -40,6 +40,8 @@ public struct FT8QSOStateMachine: Sendable {
         case reportSent
         /// Received R+report, sending RR73.
         case reportReceived
+        /// QSO logged; sending final 73/RR73 grace message. Resets after one cycle.
+        case completing
         /// QSO done — ready to log.
         case complete
     }
@@ -92,6 +94,15 @@ public struct FT8QSOStateMachine: Sendable {
             }
             return "\(their) \(myCallsign) RR73"
 
+        case .completing:
+            guard let their = theirCallsign else {
+                return nil
+            }
+            if role == .cqOriginator {
+                return "\(their) \(myCallsign) RR73"
+            }
+            return "\(their) \(myCallsign) 73"
+
         case .complete:
             return nil
         }
@@ -100,7 +111,7 @@ public struct FT8QSOStateMachine: Sendable {
     // MARK: - Completed QSO
 
     public var completedQSO: CompletedQSO? {
-        guard state == .complete, let call = theirCallsign else {
+        guard state == .complete || state == .completing, let call = theirCallsign else {
             return nil
         }
         return CompletedQSO(
@@ -137,6 +148,7 @@ public struct FT8QSOStateMachine: Sendable {
         self.theirGrid = theirGrid
         state = .calling
         role = .searchAndPounce
+        maxCyclesBeforeTimeout = 4
         cyclesSinceLastResponse = 0
         qsoStartTime = Date()
     }
@@ -163,15 +175,20 @@ public struct FT8QSOStateMachine: Sendable {
 
         case let (.reportSent, .rogerReport(_, _, dB)):
             theirReport = dB
-            state = .reportReceived
+            // CQ originator: received R+report → completing (log QSO, send RR73)
+            if role == .cqOriginator {
+                markComplete(entering: .completing)
+            } else {
+                state = .reportReceived
+            }
 
         case (.reportReceived, .rogerEnd),
              (.reportReceived, .end):
-            markComplete()
+            markComplete(entering: .completing)
 
         case (.reportSent, .rogerEnd):
-            // RR73 from reportSent also completes (skipping R+report)
-            markComplete()
+            // S&P receiving RR73 from reportSent → completing
+            markComplete(entering: .completing)
 
         default:
             break
@@ -181,6 +198,11 @@ public struct FT8QSOStateMachine: Sendable {
     // MARK: - Cycle Management
 
     public mutating func advanceCycle() {
+        if state == .completing {
+            state = .idle
+            resetQSO()
+            return
+        }
         guard state != .idle, state != .complete else {
             return
         }
@@ -242,13 +264,14 @@ public struct FT8QSOStateMachine: Sendable {
         theirGrid = grid
         state = .reportSent
         role = .cqOriginator
+        maxCyclesBeforeTimeout = 8
         cyclesSinceLastResponse = 0
         qsoStartTime = Date()
         return true
     }
 
-    private mutating func markComplete() {
-        state = .complete
+    private mutating func markComplete(entering targetState: State = .complete) {
+        state = targetState
         if let call = theirCallsign {
             workedCallsigns.insert(call.uppercased())
         }

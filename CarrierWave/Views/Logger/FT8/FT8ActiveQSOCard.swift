@@ -45,6 +45,7 @@ struct FT8ActiveQSOCard: View {
         case .calling: 1
         case .reportSent: 2
         case .reportReceived,
+             .completing,
              .complete: 3
         }
     }
@@ -55,6 +56,7 @@ struct FT8ActiveQSOCard: View {
         case .calling: "Calling..."
         case .reportSent: "Report Sent"
         case .reportReceived: "Confirming..."
+        case .completing: "Completing..."
         case .complete: "Complete!"
         }
     }
