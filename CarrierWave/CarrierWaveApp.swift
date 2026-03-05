@@ -435,7 +435,6 @@ extension Notification.Name {
     static let didReceiveWidgetDeepLink = Notification.Name(
         "didReceiveWidgetDeepLink"
     )
-    nonisolated static let didSyncQSOs = Notification.Name("didSyncQSOs")
     static let didDetectActivities = Notification.Name("didDetectActivities")
     static let didClearQSOs = Notification.Name("didClearQSOs")
     static let didReceiveWatchStartSession = Notification.Name(

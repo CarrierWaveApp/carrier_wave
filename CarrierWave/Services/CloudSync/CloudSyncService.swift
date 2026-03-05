@@ -11,7 +11,7 @@ import SwiftData
 /// @MainActor service that owns the CKSyncEngine and publishes sync status for UI.
 /// Observes local data changes and feeds pending record IDs to the engine.
 @MainActor
-class CloudSyncService: ObservableObject {
+class CloudSyncService: ObservableObject, CloudSyncEngineDelegate {
     // MARK: Lifecycle
 
     private init() {}
@@ -53,7 +53,9 @@ class CloudSyncService: ObservableObject {
     /// Call this from the app entry point after ModelContainer is ready.
     func configure(container: ModelContainer) {
         self.container = container
-        engine = CloudSyncEngine(container: container)
+        let syncEngine = CloudSyncEngine(container: container)
+        engine = syncEngine
+        Task { await syncEngine.setDelegate(self) }
 
         // Load persisted enabled state
         isEnabled = UserDefaults.standard.bool(forKey: enabledKey)
@@ -309,6 +311,35 @@ class CloudSyncService: ObservableObject {
                 await self.engine?.schedulePendingChanges()
             }
         }
+    }
+}
+
+// MARK: - CloudSyncEngineDelegate
+
+extension CloudSyncService {
+    nonisolated func cloudSyncEngine(
+        _ engine: CloudSyncEngine,
+        didUpdateCounts counts: CloudSyncRecordCounts,
+        batchSaved: Int
+    ) {
+        Task { @MainActor in
+            self.counts = counts
+            self.uploadedCount += batchSaved
+            if counts.totalDirty == 0, self.syncStatus.isSyncing {
+                self.syncStatus = .upToDate
+                self.lastSyncDate = Date()
+                self.uploadGoal = nil
+                self.uploadedCount = 0
+            } else if self.syncStatus.isSyncing {
+                self.syncStatus = .syncing(
+                    detail: "Uploading... \(counts.totalDirty) remaining"
+                )
+            }
+        }
+    }
+
+    nonisolated func cloudSyncEngineDidFinishFetch(_ engine: CloudSyncEngine) {
+        // No additional action needed — notification already posted by engine
     }
 }
 
