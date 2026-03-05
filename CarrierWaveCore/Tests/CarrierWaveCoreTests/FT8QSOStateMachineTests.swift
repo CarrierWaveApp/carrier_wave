@@ -341,4 +341,44 @@ struct FT8QSOStateMachineTests {
         sm.initiateCall(to: "W9XYZ", theirGrid: "EN37")
         #expect(sm.completedQSO == nil)
     }
+
+    // MARK: - End-to-End Integration
+
+    @Test("Full S&P QSO: CQ → call → report → R+report → RR73 → 73")
+    func fullSPQSO() {
+        var sm = FT8QSOStateMachine(myCallsign: "W6JSV", myGrid: "DM13")
+        sm.initiateCall(to: "W1ABC", theirGrid: "FN42")
+        #expect(sm.role == .searchAndPounce)
+        #expect(sm.state == .calling)
+        #expect(sm.nextTXMessage == "W1ABC W6JSV DM13")
+
+        sm.processMessage(.signalReport(from: "W1ABC", to: "W6JSV", dB: -7))
+        #expect(sm.state == .reportSent)
+        sm.myReport = -12
+        #expect(sm.nextTXMessage == "W1ABC W6JSV R-12")
+
+        sm.processMessage(.rogerEnd(from: "W1ABC", to: "W6JSV"))
+        #expect(sm.state == .completing)
+        #expect(sm.completedQSO != nil)
+        #expect(sm.nextTXMessage == "W1ABC W6JSV 73")
+    }
+
+    @Test("Full CQ QSO: CQ → response → report → R+report → RR73")
+    func fullCQQSO() {
+        var sm = FT8QSOStateMachine(myCallsign: "W6JSV", myGrid: "DM13")
+        sm.setCQMode(modifier: "POTA")
+        #expect(sm.nextTXMessage == "CQ POTA W6JSV DM13")
+
+        sm.processMessage(.directed(from: "K5KHK", to: "W6JSV", grid: "FN13"))
+        #expect(sm.role == .cqOriginator)
+        #expect(sm.state == .reportSent)
+        sm.myReport = -3
+        #expect(sm.nextTXMessage == "K5KHK W6JSV -03")
+
+        sm.processMessage(.rogerReport(from: "K5KHK", to: "W6JSV", dB: 2))
+        #expect(sm.state == .completing)
+        #expect(sm.completedQSO != nil)
+        #expect(sm.completedQSO?.theirCallsign == "K5KHK")
+        #expect(sm.nextTXMessage == "K5KHK W6JSV RR73")
+    }
 }

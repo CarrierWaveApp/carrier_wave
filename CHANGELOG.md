@@ -4,6 +4,28 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- Redesign FT8 comms interface with conversation-centered layout
+- Replace active QSO step indicator with full TX/RX conversation transcript
+- Add inline message override picker for manual sequence control
+- Add CQ modifier menu (POTA, DX, SOTA) to control bar
+
+### Fixed
+- Fix S&P mode sending wrong TX message (missing R-prefix on roger+report)
+- Fix CQ QSOs never completing (now logs when RR73 sent, not waiting for 73)
+- Fix TX slot parity (transmit on opposite slot from decoded station)
+- Fix TX frequency hardcoded to 1500 Hz (now auto-set from decoded station)
+
+### Added
+- TX status line showing armed/transmitting/halted state
+- Focus mode filtering decode list to directed + CQ only
+- Freshness aging on decode rows (opacity fade, stale removal)
+- Cycle age tracking on enriched decodes
+- RX/TX frequency markers on waterfall
+- Tap-to-call inline confirmation with double-tap shortcut
+- Halt/resume TX without aborting active QSO
+- Compound callsign matching in state machine
+
 ## [1.53.0] - 2026-03-04
 
 ### Added

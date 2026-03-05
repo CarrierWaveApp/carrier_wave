@@ -580,8 +580,11 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `FT8WaterfallView.swift` | Canvas-based spectrogram waterfall display |
 | `FT8DebugPanel.swift` | Collapsible debug panel with audio level, decode stats, input picker |
 | `FT8DecodeListView.swift` | Segmented decode list (directed/CQ/all activity) with compact mode toggle |
-| `FT8ActiveQSOCard.swift` | Active QSO card with step indicator (Call → Rpt → 73) and abort button |
-| `FT8ControlBar.swift` | Operating mode controls (Listen, CQ, S&P) with QSO/POTA counter |
+| `FT8ConversationCard.swift` | Active QSO conversation card with TX/RX transcript and message override |
+| `FT8TranscriptRow.swift` | Single TX/RX message row for conversation transcript |
+| `FT8NextTXRow.swift` | Next TX message display with expandable override picker |
+| `FT8TXStatusLine.swift` | TX state indicator (armed/transmitting/halted) for control bar |
+| `FT8ControlBar.swift` | Operating mode controls with CQ modifier menu, TX status, and QSO/POTA counter |
 | `FT8CycleIndicatorView.swift` | 15-second cycle progress indicator with TX/RX state |
 | `FT8SetupWizardView.swift` | First-time FT8 setup wizard (audio connection, radio setup, verify audio) |
 | `FT8EnrichedDecodeRow.swift` | Multi-line enriched decode row with callsign, SNR badge, entity, distance, and achievement badges |
