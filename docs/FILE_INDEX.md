@@ -577,7 +577,8 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | File | Purpose |
 |------|---------|
 | `FT8SessionView.swift` | Main FT8 session view with portrait/landscape layouts, status pill, and session summary toast |
-| `FT8WaterfallView.swift` | Canvas-based spectrogram waterfall display |
+| `FT8WaterfallView.swift` | Canvas-based spectrogram waterfall display with optional tap-to-select channel |
+| `FT8ChannelPicker.swift` | Sheet for selecting FT8 TX channel with occupancy recommendations |
 | `FT8DebugPanel.swift` | Collapsible debug panel with audio level, decode stats, input picker |
 | `FT8DecodeListView.swift` | Segmented decode list (directed/CQ/all activity) with compact mode toggle |
 | `FT8ConversationCard.swift` | Active QSO conversation card with TX/RX transcript and message override |
