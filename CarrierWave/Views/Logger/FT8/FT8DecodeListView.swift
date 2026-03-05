@@ -12,6 +12,7 @@ struct FT8DecodeListView: View {
 
     let enrichedDecodes: [FT8EnrichedDecode]
     let currentCycleIDs: Set<UUID>
+    var isFocusMode = false
     let onCallStation: (FT8DecodeResult) -> Void
 
     var body: some View {
@@ -46,7 +47,11 @@ struct FT8DecodeListView: View {
 
     private var cqDecodes: [FT8EnrichedDecode] {
         enrichedDecodes
-            .filter { $0.section == .callingCQ }
+            .filter { decode in
+                decode.section == .callingCQ
+                    && decode.cycleAge < 4
+                    && !(isFocusMode && decode.isDupe)
+            }
             .sorted { lhs, rhs in
                 if lhs.sortPriority != rhs.sortPriority {
                     return lhs.sortPriority < rhs.sortPriority
@@ -132,7 +137,7 @@ struct FT8DecodeListView: View {
 
     @ViewBuilder
     private var allActivitySection: some View {
-        if !activityDecodes.isEmpty {
+        if !isFocusMode, !activityDecodes.isEmpty {
             Button {
                 withAnimation(.spring(duration: 0.3, bounce: 0.0)) {
                     isAllActivityExpanded.toggle()

@@ -144,6 +144,7 @@ struct FT8SessionView: View {
         FT8DecodeListView(
             enrichedDecodes: ft8Manager.enrichedDecodes,
             currentCycleIDs: Set(ft8Manager.currentCycleEnriched.map(\.id)),
+            isFocusMode: ft8Manager.isFocusMode,
             onCallStation: { ft8Manager.callStation($0) }
         )
     }
@@ -207,6 +208,17 @@ struct FT8SessionView: View {
             Spacer()
 
             Button {
+                withAnimation(.spring(duration: 0.3, bounce: 0.0)) {
+                    ft8Manager.isFocusMode.toggle()
+                }
+            } label: {
+                Image(systemName: ft8Manager.isFocusMode ? "scope" : "target")
+                    .font(.caption)
+                    .foregroundStyle(ft8Manager.isFocusMode ? .orange : .secondary)
+            }
+            .buttonStyle(.plain)
+
+            Button {
                 isDebugExpanded.toggle()
             } label: {
                 FT8StatusPillView(
@@ -220,6 +232,13 @@ struct FT8SessionView: View {
         .padding(.horizontal)
         .padding(.vertical, 8)
         .background(Color(.systemBackground))
+        .overlay(alignment: .top) {
+            if ft8Manager.isFocusMode {
+                Rectangle()
+                    .fill(Color.orange)
+                    .frame(height: 2)
+            }
+        }
     }
 
     private var conversationCard: some View {
