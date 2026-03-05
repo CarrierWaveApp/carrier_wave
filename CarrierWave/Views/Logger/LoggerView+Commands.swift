@@ -276,6 +276,123 @@ extension LoggerView {
         }
     }
 
+    // MARK: - QSY URI Handlers
+
+    /// Handle qsy://spot notification — pre-fill logger form from URI parameters
+    func handleQSYSpotNotification(_ notification: Notification) {
+        guard let userInfo = notification.userInfo,
+              let callsign = userInfo["callsign"] as? String,
+              sessionManager?.activeSession != nil
+        else {
+            if sessionManager?.activeSession == nil {
+                ToastManager.shared.warning("Start a session first")
+            }
+            return
+        }
+
+        preSpotFrequency = sessionManager?.activeSession?.frequency
+        callsignInput = callsign
+
+        if let freqMHz = userInfo["frequencyMHz"] as? Double {
+            _ = sessionManager?.updateFrequency(freqMHz, isTuningToSpot: true)
+        }
+
+        if let mode = userInfo["mode"] as? String {
+            _ = sessionManager?.updateMode(mode)
+        }
+
+        var noteParts: [String] = []
+        if let ref = userInfo["ref"] as? String {
+            noteParts.append(ref)
+        }
+        if let comment = userInfo["comment"] as? String {
+            noteParts.append(comment)
+        }
+        if !noteParts.isEmpty {
+            notes = noteParts.joined(separator: " - ")
+        }
+
+        let freqStr = (userInfo["frequencyMHz"] as? Double)
+            .map { " on \(FrequencyFormatter.formatWithUnit($0))" } ?? ""
+        ToastManager.shared.info("QSY: \(callsign)\(freqStr)")
+    }
+
+    /// Handle qsy://tune notification — tune radio and update session frequency
+    func handleQSYTuneNotification(_ notification: Notification) {
+        guard let userInfo = notification.userInfo,
+              let freqMHz = userInfo["frequencyMHz"] as? Double
+        else {
+            return
+        }
+
+        if sessionManager?.activeSession != nil {
+            _ = sessionManager?.updateFrequency(freqMHz, isTuningToSpot: true)
+        } else {
+            BLERadioService.shared.setFrequency(freqMHz)
+        }
+
+        if let mode = userInfo["mode"] as? String {
+            _ = sessionManager?.updateMode(mode)
+        }
+
+        let modeStr = (userInfo["mode"] as? String).map { " \($0)" } ?? ""
+        ToastManager.shared.info(
+            "Tuned to \(FrequencyFormatter.formatWithUnit(freqMHz))\(modeStr)"
+        )
+    }
+
+    /// Handle qsy://log notification — show confirmation sheet with pre-filled QSO data
+    func handleQSYLogNotification(_ notification: Notification) {
+        guard let userInfo = notification.userInfo,
+              let callsign = userInfo["callsign"] as? String,
+              let freqMHz = userInfo["frequencyMHz"] as? Double,
+              let mode = userInfo["mode"] as? String,
+              sessionManager?.activeSession != nil
+        else {
+            if sessionManager?.activeSession == nil {
+                ToastManager.shared.warning("Start a session first")
+            }
+            return
+        }
+
+        pendingQSYLog = QSYLogConfirmation(
+            callsign: callsign,
+            frequencyMHz: freqMHz,
+            mode: mode,
+            rstSent: userInfo["rstSent"] as? String,
+            rstReceived: userInfo["rstReceived"] as? String,
+            grid: userInfo["grid"] as? String,
+            ref: userInfo["ref"] as? String,
+            refType: userInfo["refType"] as? String,
+            time: userInfo["time"] as? Date,
+            contest: userInfo["contest"] as? String,
+            srx: userInfo["srx"] as? String,
+            stx: userInfo["stx"] as? String,
+            source: userInfo["source"] as? String,
+            comment: userInfo["comment"] as? String
+        )
+    }
+
+    /// Confirm and log QSO from qsy://log data
+    func confirmQSYLog(_ confirmation: QSYLogConfirmation) {
+        _ = sessionManager?.updateFrequency(
+            confirmation.frequencyMHz, isTuningToSpot: true
+        )
+        _ = sessionManager?.updateMode(confirmation.mode)
+
+        callsignInput = confirmation.callsign
+        rstSent = confirmation.rstSent ?? defaultRST
+        rstReceived = confirmation.rstReceived ?? defaultRST
+        if let grid = confirmation.grid { theirGrid = grid }
+        if let ref = confirmation.ref { theirPark = ref }
+        if let comment = confirmation.comment { notes = comment }
+
+        logQSO()
+
+        pendingQSYLog = nil
+        ToastManager.shared.success("Logged \(confirmation.callsign)")
+    }
+
     /// Cancel the current spot and restore session frequency
     func cancelSpot() {
         if let freq = preSpotFrequency {
