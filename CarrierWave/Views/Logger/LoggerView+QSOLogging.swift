@@ -43,7 +43,8 @@ extension LoggerView {
         }
 
         // SCP did-you-mean check: if callsign is not in database, suggest near matches
-        if editingQSO == nil, scpCallsignKnown == false {
+        let scpWarning = UserDefaults.standard.object(forKey: "scpWarningEnabled") as? Bool ?? false
+        if scpWarning, editingQSO == nil, scpCallsignKnown == false {
             let db = SCPService.shared.database
             let callsign = callsignInput.trimmingCharacters(in: .whitespaces).uppercased()
             let near = db.nearMatches(for: callsign, maxDistance: 1)

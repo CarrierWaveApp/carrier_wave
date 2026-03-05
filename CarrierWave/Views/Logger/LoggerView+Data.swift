@@ -362,10 +362,11 @@ extension LoggerView {
             contactCounts: suggestionContactCounts
         )
 
-        // Known-callsign indicator (border tint)
+        // Known-callsign indicator (border tint) — only when SCP warnings are enabled
         let fragment = callsign.trimmingCharacters(in: .whitespaces).uppercased()
         let scpDisabled = UserDefaults.standard.object(forKey: "scpEnabled") as? Bool == false
-        if scpDisabled {
+        let scpWarningDisabled = !(UserDefaults.standard.object(forKey: "scpWarningEnabled") as? Bool ?? false)
+        if scpDisabled || scpWarningDisabled {
             scpCallsignKnown = nil
         } else if fragment.count >= 4 {
             scpCallsignKnown = CallsignSuggestionProvider.contains(

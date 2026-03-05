@@ -47,6 +47,7 @@ struct LoggerDetailSettingsView: View {
     @AppStorage("loggerShowOperator") private var showOperator = false
 
     @AppStorage("scpEnabled") private var scpEnabled = true
+    @AppStorage("scpWarningEnabled") private var scpWarningEnabled = false
 
     @AppStorage("autoRecordConditions") private var autoRecordConditions = true
     @AppStorage("solarPollingEnabled") private var solarPollingEnabled = true
@@ -174,14 +175,15 @@ struct LoggerDetailSettingsView: View {
     private var scpSection: some View {
         Section {
             Toggle("Callsign Suggestions", isOn: $scpEnabled)
+            Toggle("Warn on Unknown Callsign", isOn: $scpWarningEnabled)
         } header: {
             Text("Callsign Assistance")
         } footer: {
             Text(
-                "Shows callsign suggestions while typing in the Logger "
-                    + "and Hunter Log, combining the SCP database with "
-                    + "active spots. Also warns when a callsign isn't "
-                    + "found in the database."
+                "Suggestions show callsign completions while typing, "
+                    + "combining the SCP database with active spots. "
+                    + "Unknown callsign warnings prompt before logging "
+                    + "a callsign not found in the database."
             )
         }
     }
