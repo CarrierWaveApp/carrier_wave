@@ -91,7 +91,7 @@ struct FT8SessionView: View {
 
             Divider()
 
-            activeQSOCard
+            conversationCard
 
             decodeList
                 .frame(minHeight: 120)
@@ -113,7 +113,7 @@ struct FT8SessionView: View {
                     )
                     .frame(height: 140)
 
-                    activeQSOCard
+                    conversationCard
 
                     Spacer()
 
@@ -219,13 +219,29 @@ struct FT8SessionView: View {
         .background(Color(.systemBackground))
     }
 
-    private var activeQSOCard: some View {
-        FT8ActiveQSOCard(
+    private var conversationCard: some View {
+        FT8ConversationCard(
             stateMachine: ft8Manager.qsoStateMachine,
+            txEvents: ft8Manager.txEvents,
+            rxMessages: ft8Manager.currentCycleDecodes.filter {
+                $0.message.isDirectedTo(ft8Manager.qsoStateMachine.myCallsign)
+            },
             distanceMiles: currentQSODistanceMiles,
             dxccEntity: currentQSOEntity,
+            txAudioFrequency: ft8Manager.txAudioFrequency,
+            isTXHalted: ft8Manager.isTXHalted,
+            onHaltResume: {
+                if ft8Manager.isTXHalted {
+                    ft8Manager.resumeTX()
+                } else {
+                    ft8Manager.haltTX()
+                }
+            },
             onAbort: {
                 ft8Manager.setMode(.listen)
+            },
+            onOverride: { _ in
+                // Override wiring — future enhancement
             }
         )
     }
