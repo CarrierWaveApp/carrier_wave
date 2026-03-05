@@ -119,7 +119,7 @@ struct FT8QSOStateMachineTests {
         sm.initiateCall(to: "W9XYZ", theirGrid: "EN37")
         sm.processMessage(.signalReport(from: "W9XYZ", to: myCall, dB: -12))
         sm.myReport = -7
-        #expect(sm.nextTXMessage == "W9XYZ \(myCall) -07")
+        #expect(sm.nextTXMessage == "W9XYZ \(myCall) R-07")
     }
 
     @Test("reportSent TX message formats positive dB correctly")
@@ -128,7 +128,60 @@ struct FT8QSOStateMachineTests {
         sm.initiateCall(to: "W9XYZ", theirGrid: "EN37")
         sm.processMessage(.signalReport(from: "W9XYZ", to: myCall, dB: -12))
         sm.myReport = 5
-        #expect(sm.nextTXMessage == "W9XYZ \(myCall) +05")
+        #expect(sm.nextTXMessage == "W9XYZ \(myCall) R+05")
+    }
+
+    // MARK: - Role Tracking
+
+    @Test("S&P: role is searchAndPounce after initiateCall")
+    func spRoleTracking() {
+        var sm = FT8QSOStateMachine(myCallsign: myCall, myGrid: myGrid)
+        sm.initiateCall(to: "W9XYZ", theirGrid: "EN37")
+        #expect(sm.role == .searchAndPounce)
+    }
+
+    @Test("CQ: role is cqOriginator when station responds to our CQ")
+    func cqRoleTracking() {
+        var sm = FT8QSOStateMachine(myCallsign: myCall, myGrid: myGrid)
+        sm.setCQMode(modifier: nil)
+        sm.processMessage(.directed(from: "W9XYZ", to: myCall, grid: "EN37"))
+        #expect(sm.role == .cqOriginator)
+    }
+
+    @Test("S&P: reportSent TX message has R-prefix")
+    func spReportSentHasRPrefix() {
+        var sm = FT8QSOStateMachine(myCallsign: myCall, myGrid: myGrid)
+        sm.initiateCall(to: "W9XYZ", theirGrid: "EN37")
+        sm.processMessage(.signalReport(from: "W9XYZ", to: myCall, dB: -12))
+        sm.myReport = -7
+        #expect(sm.nextTXMessage == "W9XYZ \(myCall) R-07")
+    }
+
+    @Test("S&P: reportSent TX message has R-prefix for positive dB")
+    func spReportSentRPrefixPositive() {
+        var sm = FT8QSOStateMachine(myCallsign: myCall, myGrid: myGrid)
+        sm.initiateCall(to: "W9XYZ", theirGrid: "EN37")
+        sm.processMessage(.signalReport(from: "W9XYZ", to: myCall, dB: -12))
+        sm.myReport = 5
+        #expect(sm.nextTXMessage == "W9XYZ \(myCall) R+05")
+    }
+
+    @Test("CQ: reportSent TX message has NO R-prefix")
+    func cqReportSentNoRPrefix() {
+        var sm = FT8QSOStateMachine(myCallsign: myCall, myGrid: myGrid)
+        sm.setCQMode(modifier: nil)
+        sm.processMessage(.directed(from: "W9XYZ", to: myCall, grid: "EN37"))
+        sm.myReport = -3
+        #expect(sm.nextTXMessage == "W9XYZ \(myCall) -03")
+    }
+
+    @Test("Role resets to nil on resetForNextQSO")
+    func roleResetsOnReset() {
+        var sm = FT8QSOStateMachine(myCallsign: myCall, myGrid: myGrid)
+        sm.initiateCall(to: "W9XYZ", theirGrid: "EN37")
+        #expect(sm.role == .searchAndPounce)
+        sm.resetForNextQSO()
+        #expect(sm.role == nil)
     }
 
     // MARK: - CQ Duplicate Prevention

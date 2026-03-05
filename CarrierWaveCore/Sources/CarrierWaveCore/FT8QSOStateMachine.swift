@@ -24,6 +24,13 @@ public struct FT8QSOStateMachine: Sendable {
 
     // MARK: - Types
 
+    public enum QSORole: Sendable, Equatable {
+        /// We called CQ, they responded.
+        case cqOriginator
+        /// They called CQ, we responded.
+        case searchAndPounce
+    }
+
     public enum State: Sendable, Equatable {
         /// Not in a QSO; listening or calling CQ.
         case idle
@@ -46,6 +53,7 @@ public struct FT8QSOStateMachine: Sendable {
     }
 
     public private(set) var state: State = .idle
+    public private(set) var role: QSORole?
     public let myCallsign: String
     public let myGrid: String
 
@@ -72,7 +80,11 @@ public struct FT8QSOStateMachine: Sendable {
                 return nil
             }
             let sign = report >= 0 ? "+" : "-"
-            return "\(their) \(myCallsign) \(sign)\(String(format: "%02d", abs(report)))"
+            let formatted = "\(sign)\(String(format: "%02d", abs(report)))"
+            if role == .searchAndPounce {
+                return "\(their) \(myCallsign) R\(formatted)"
+            }
+            return "\(their) \(myCallsign) \(formatted)"
 
         case .reportReceived:
             guard let their = theirCallsign else {
@@ -124,6 +136,7 @@ public struct FT8QSOStateMachine: Sendable {
         theirCallsign = callsign
         self.theirGrid = theirGrid
         state = .calling
+        role = .searchAndPounce
         cyclesSinceLastResponse = 0
         qsoStartTime = Date()
     }
@@ -228,6 +241,7 @@ public struct FT8QSOStateMachine: Sendable {
         theirCallsign = from
         theirGrid = grid
         state = .reportSent
+        role = .cqOriginator
         cyclesSinceLastResponse = 0
         qsoStartTime = Date()
         return true
@@ -245,6 +259,7 @@ public struct FT8QSOStateMachine: Sendable {
         theirGrid = nil
         theirReport = nil
         myReport = nil
+        role = nil
         cyclesSinceLastResponse = 0
         qsoStartTime = nil
     }
