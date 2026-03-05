@@ -35,6 +35,26 @@ struct FT8SessionView: View {
         }
         .animation(.spring(duration: 0.3, bounce: 0.0), value: isDebugExpanded)
         .animation(.spring(duration: 0.3, bounce: 0.0), value: showSessionSummary)
+        .animation(.spring(duration: 0.3, bounce: 0.0), value: isWaterfallPickMode)
+        .sheet(isPresented: $showChannelPicker) {
+            FT8ChannelPicker(
+                recommendations: ft8Manager.recommendedChannels(),
+                selectedFrequency: Binding(
+                    get: { ft8Manager.txAudioFrequency },
+                    set: { ft8Manager.setTXChannel($0) }
+                ),
+                onConfirm: {
+                    startCQWithCurrentChannel()
+                },
+                onSwitchToWaterfall: {
+                    withAnimation(.spring(duration: 0.3, bounce: 0.0)) {
+                        isWaterfallPickMode = true
+                    }
+                }
+            )
+            .presentationDetents([.medium])
+            .presentationDragIndicator(.visible)
+        }
         .task {
             try? await ft8Manager.start()
             sessionStartTime = Date()
@@ -48,6 +68,14 @@ struct FT8SessionView: View {
     @State private var sessionStartTime: Date?
     @State private var showSessionSummary = false
     @State private var sessionSummary: FT8SessionSummaryToast?
+    @State private var showChannelPicker = false
+    @State private var isWaterfallPickMode = false
+    @State private var pendingCQModifier: String?
+
+    private var isCQMode: Bool {
+        if case .callCQ = ft8Manager.operatingMode { return true }
+        return false
+    }
 
     private var currentQSODistanceMiles: Int? {
         guard let theirGrid = ft8Manager.qsoStateMachine.theirGrid else {
@@ -82,9 +110,17 @@ struct FT8SessionView: View {
                 data: ft8Manager.waterfallData,
                 currentDecodes: ft8Manager.currentCycleDecodes,
                 rxFrequency: ft8Manager.rxAudioFrequency,
-                txFrequency: ft8Manager.txAudioFrequency
+                txFrequency: ft8Manager.txAudioFrequency,
+                isInteractive: isWaterfallPickMode,
+                onTapFrequency: { hz in
+                    ft8Manager.setTXChannel(hz)
+                }
             )
-            .frame(height: 48)
+            .frame(height: isWaterfallPickMode ? 80 : 48)
+
+            if isWaterfallPickMode {
+                waterfallPickConfirmBar
+            }
 
             FT8CycleIndicatorView(
                 isTransmitting: ft8Manager.isTransmitting,
@@ -111,9 +147,19 @@ struct FT8SessionView: View {
                 VStack(spacing: 0) {
                     FT8WaterfallView(
                         data: ft8Manager.waterfallData,
-                        currentDecodes: ft8Manager.currentCycleDecodes
+                        currentDecodes: ft8Manager.currentCycleDecodes,
+                        rxFrequency: ft8Manager.rxAudioFrequency,
+                        txFrequency: ft8Manager.txAudioFrequency,
+                        isInteractive: isWaterfallPickMode,
+                        onTapFrequency: { hz in
+                            ft8Manager.setTXChannel(hz)
+                        }
                     )
-                    .frame(height: 140)
+                    .frame(height: isWaterfallPickMode ? 160 : 140)
+
+                    if isWaterfallPickMode {
+                        waterfallPickConfirmBar
+                    }
 
                     conversationCard
 
@@ -167,6 +213,9 @@ struct FT8SessionView: View {
             },
             onStop: {
                 showSummaryAndStop()
+            },
+            onRequestCQ: { modifier in
+                requestCQChannel(modifier: modifier)
             }
         )
     }
@@ -207,6 +256,26 @@ struct FT8SessionView: View {
 
             Spacer()
 
+            if isCQMode {
+                Button {
+                    showChannelPicker = true
+                } label: {
+                    HStack(spacing: 3) {
+                        Image(systemName: "arrow.up.circle.fill")
+                            .font(.caption2)
+                        Text("\(Int(ft8Manager.txAudioFrequency)) Hz")
+                            .font(.caption.bold().monospacedDigit())
+                    }
+                    .foregroundStyle(.red)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 3)
+                    .background(Color.red.opacity(0.12))
+                    .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Change TX channel, currently \(Int(ft8Manager.txAudioFrequency)) hertz")
+            }
+
             Button {
                 withAnimation(.spring(duration: 0.3, bounce: 0.0)) {
                     ft8Manager.isFocusMode.toggle()
@@ -241,6 +310,37 @@ struct FT8SessionView: View {
         }
     }
 
+    private var waterfallPickConfirmBar: some View {
+        HStack(spacing: 12) {
+            Text("TX: \(Int(ft8Manager.txAudioFrequency)) Hz")
+                .font(.subheadline.bold().monospacedDigit())
+
+            Spacer()
+
+            Button("Cancel") {
+                withAnimation(.spring(duration: 0.3, bounce: 0.0)) {
+                    isWaterfallPickMode = false
+                }
+            }
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+
+            Button("Start CQ") {
+                withAnimation(.spring(duration: 0.3, bounce: 0.0)) {
+                    isWaterfallPickMode = false
+                }
+                startCQWithCurrentChannel()
+            }
+            .font(.subheadline.bold())
+            .buttonStyle(.borderedProminent)
+            .tint(.green)
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 6)
+        .background(Color(.secondarySystemGroupedBackground))
+        .transition(.move(edge: .top).combined(with: .opacity))
+    }
+
     private var conversationCard: some View {
         FT8ConversationCard(
             stateMachine: ft8Manager.qsoStateMachine,
@@ -266,6 +366,16 @@ struct FT8SessionView: View {
                 // Override wiring — future enhancement
             }
         )
+    }
+
+    /// Called by FT8ControlBar when the user picks a CQ variant.
+    func requestCQChannel(modifier: String?) {
+        pendingCQModifier = modifier
+        showChannelPicker = true
+    }
+
+    private func startCQWithCurrentChannel() {
+        ft8Manager.setMode(.callCQ(modifier: pendingCQModifier))
     }
 
     private func showSummaryAndStop() {

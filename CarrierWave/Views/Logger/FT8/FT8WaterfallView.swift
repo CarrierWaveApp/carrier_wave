@@ -17,6 +17,12 @@ struct FT8WaterfallView: View {
     var rxFrequency: Double = 1_500
     var txFrequency: Double = 1_500
 
+    /// When true, the waterfall accepts taps to set TX frequency.
+    var isInteractive: Bool = false
+
+    /// Called when the user taps the waterfall to select a frequency (Hz).
+    var onTapFrequency: ((Double) -> Void)?
+
     var body: some View {
         // Snapshot @MainActor data before entering Canvas rendering thread
         let rows = data.magnitudes
@@ -51,6 +57,31 @@ struct FT8WaterfallView: View {
                 )
             }
             .background(Color.black)
+            .overlay {
+                if isInteractive {
+                    RoundedRectangle(cornerRadius: 4)
+                        .stroke(Color.accentColor, lineWidth: 2)
+                }
+            }
+            .contentShape(Rectangle())
+            .overlay {
+                if isInteractive {
+                    GeometryReader { geo in
+                        Color.clear.contentShape(Rectangle())
+                            .gesture(
+                                DragGesture(minimumDistance: 0)
+                                    .onEnded { value in
+                                        tapToFrequency(
+                                            x: value.location.x,
+                                            width: geo.size.width,
+                                            minHz: minHz,
+                                            maxHz: maxHz
+                                        )
+                                    }
+                            )
+                    }
+                }
+            }
 
             frequencyAxis(minHz: minHz, maxHz: maxHz)
         }
@@ -169,6 +200,21 @@ struct FT8WaterfallView: View {
         let x = fraction * size.width
         let line = CGRect(x: x - 1, y: 0, width: 2, height: size.height)
         context.fill(Path(line), with: .color(color.opacity(0.8)))
+    }
+
+    private func tapToFrequency(
+        x: CGFloat,
+        width: CGFloat,
+        minHz: Float,
+        maxHz: Float
+    ) {
+        guard let onTapFrequency, width > 0 else { return }
+        let range = Double(maxHz - minHz)
+        let fraction = max(0, min(1, x / width))
+        let hz = Double(minHz) + range * fraction
+        let snapped = (hz / 50).rounded() * 50
+        let clamped = max(200, min(snapped, 2800))
+        onTapFrequency(clamped)
     }
 
     private func waterfallColor(_ magnitude: Float) -> Color {

@@ -17,6 +17,7 @@ struct FT8ControlBar: View {
     let parkReference: String?
     let onStart: () -> Void
     let onStop: () -> Void
+    var onRequestCQ: ((String?) -> Void)?
 
     var body: some View {
         VStack(spacing: 8) {
@@ -80,10 +81,10 @@ struct FT8ControlBar: View {
 
     private var cqMenu: some View {
         Menu {
-            Button("CQ") { operatingMode = .callCQ(modifier: nil) }
-            Button("CQ POTA") { operatingMode = .callCQ(modifier: "POTA") }
-            Button("CQ DX") { operatingMode = .callCQ(modifier: "DX") }
-            Button("CQ SOTA") { operatingMode = .callCQ(modifier: "SOTA") }
+            Button("CQ") { requestCQ(modifier: nil) }
+            Button("CQ POTA") { requestCQ(modifier: "POTA") }
+            Button("CQ DX") { requestCQ(modifier: "DX") }
+            Button("CQ SOTA") { requestCQ(modifier: "SOTA") }
         } label: {
             Label(cqLabel, systemImage: "antenna.radiowaves.left.and.right")
                 .font(.caption.bold())
@@ -127,6 +128,14 @@ struct FT8ControlBar: View {
         }
         .buttonStyle(.bordered)
         .tint(isSelected(mode) ? .accentColor : .secondary)
+    }
+
+    private func requestCQ(modifier: String?) {
+        if let onRequestCQ {
+            onRequestCQ(modifier)
+        } else {
+            operatingMode = .callCQ(modifier: modifier)
+        }
     }
 
     private func isSelected(_ mode: FT8OperatingMode) -> Bool {

@@ -1,0 +1,6 @@
+FT8 channel selection feature:
+- FT8SessionManager: Added ChannelRecommendation model, setTXChannel(), recommendedChannels()
+- FT8ChannelPicker.swift (new): Sheet view with recommended channels list and confirm button
+- FT8WaterfallView: Added isInteractive mode and onTapFrequency callback for tap-to-select
+- FT8SessionView: Wired channel picker sheet, waterfall pick mode, TX frequency badge in status row
+- FT8ControlBar: Added onRequestCQ callback to trigger channel picker instead of direct CQ mode
