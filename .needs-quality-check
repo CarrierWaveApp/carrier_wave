@@ -4,3 +4,4 @@ FT8 channel selection feature:
 - FT8WaterfallView: Added isInteractive mode and onTapFrequency callback for tap-to-select
 - FT8SessionView: Wired channel picker sheet, waterfall pick mode, TX frequency badge in status row
 - FT8ControlBar: Added onRequestCQ callback to trigger channel picker instead of direct CQ mode
+ClubsSyncService.swift: Fix duplicate ClubMember accumulation causing every spot to show every club
