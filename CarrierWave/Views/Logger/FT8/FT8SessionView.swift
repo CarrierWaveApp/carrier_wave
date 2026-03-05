@@ -154,6 +154,7 @@ struct FT8SessionView: View {
                 set: { ft8Manager.setMode($0) }
             ),
             qsoCount: ft8Manager.qsoCount,
+            txState: ft8Manager.txState,
             parkReference: parkReference,
             onStart: {
                 Task {

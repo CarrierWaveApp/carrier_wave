@@ -13,6 +13,7 @@ struct FT8ControlBar: View {
     @Binding var operatingMode: FT8OperatingMode
 
     let qsoCount: Int
+    let txState: FT8TXState
     let parkReference: String?
     let onStart: () -> Void
     let onStop: () -> Void
@@ -22,12 +23,9 @@ struct FT8ControlBar: View {
             HStack(spacing: 12) {
                 modeButton("Listen", mode: .listen, systemImage: "headphones")
                     .disabled(!isReceiving)
-                modeButton(
-                    "Call CQ",
-                    mode: .callCQ(modifier: nil),
-                    systemImage: "antenna.radiowaves.left.and.right"
-                )
-                .disabled(!isReceiving)
+
+                cqMenu
+                    .disabled(!isReceiving)
 
                 if isReceiving {
                     Button(action: onStop) {
@@ -47,7 +45,9 @@ struct FT8ControlBar: View {
             }
 
             HStack {
-                if parkReference != nil {
+                if txState != .idle {
+                    FT8TXStatusLine(txState: txState)
+                } else if parkReference != nil {
                     potaCounter
                 } else {
                     Label("\(qsoCount) QSOs", systemImage: "list.bullet")
@@ -63,6 +63,34 @@ struct FT8ControlBar: View {
     }
 
     // MARK: Private
+
+    private var isCQSelected: Bool {
+        if case .callCQ = operatingMode {
+            return true
+        }
+        return false
+    }
+
+    private var cqLabel: String {
+        if case let .callCQ(modifier) = operatingMode, let modifier {
+            return "CQ \(modifier)"
+        }
+        return "Call CQ"
+    }
+
+    private var cqMenu: some View {
+        Menu {
+            Button("CQ") { operatingMode = .callCQ(modifier: nil) }
+            Button("CQ POTA") { operatingMode = .callCQ(modifier: "POTA") }
+            Button("CQ DX") { operatingMode = .callCQ(modifier: "DX") }
+            Button("CQ SOTA") { operatingMode = .callCQ(modifier: "SOTA") }
+        } label: {
+            Label(cqLabel, systemImage: "antenna.radiowaves.left.and.right")
+                .font(.caption.bold())
+        }
+        .buttonStyle(.bordered)
+        .tint(isCQSelected ? .accentColor : .secondary)
+    }
 
     @ViewBuilder
     private var potaCounter: some View {
@@ -92,10 +120,6 @@ struct FT8ControlBar: View {
         systemImage: String
     ) -> some View {
         Button {
-            // When re-selecting callCQ, preserve the current modifier
-            if case .callCQ = mode, case .callCQ = operatingMode {
-                return
-            }
             operatingMode = mode
         } label: {
             Label(title, systemImage: systemImage)
