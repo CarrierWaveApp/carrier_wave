@@ -18,6 +18,24 @@ enum FT8OperatingMode: Sendable {
     case searchAndPounce
 }
 
+// MARK: - FT8TXEvent
+
+struct FT8TXEvent: Identifiable, Sendable {
+    let id = UUID()
+    let message: String
+    let timestamp: Date
+    let audioFrequency: Double
+}
+
+// MARK: - FT8TXState
+
+enum FT8TXState: Sendable, Equatable {
+    case idle
+    case armed(callsign: String)
+    case transmitting(message: String)
+    case halted(callsign: String)
+}
+
 // MARK: - FT8SessionManager
 
 /// Manages an active FT8 session — decoding, auto-sequencing, and QSO logging.
@@ -59,6 +77,12 @@ final class FT8SessionManager {
     private(set) var enrichedDecodes: [FT8EnrichedDecode] = []
     private(set) var currentCycleEnriched: [FT8EnrichedDecode] = []
     private(set) var cyclesSinceLastDecode = 0
+    private(set) var rxAudioFrequency: Double = 1_500
+    private(set) var txAudioFrequency: Double = 1_500
+    private(set) var txEvents: [FT8TXEvent] = []
+    private(set) var txState: FT8TXState = .idle
+    private(set) var isTXHalted = false
+    var isFocusMode = false
 
     var selectedBand: String = "20m" {
         didSet {
@@ -121,6 +145,8 @@ final class FT8SessionManager {
         switch mode {
         case .listen:
             qsoStateMachine.setListenMode()
+            txState = .idle
+            isTXHalted = false
         case let .callCQ(modifier):
             qsoStateMachine.setCQMode(modifier: modifier)
         case .searchAndPounce:
@@ -145,9 +171,25 @@ final class FT8SessionManager {
             return
         }
         setMode(.searchAndPounce)
-        // TX on the same parity as the CQ was heard (CQ station's TX slot)
-        transmitOnEven = isEvenSlot
+        txAudioFrequency = result.frequency
+        // TX on OPPOSITE parity from when we heard them
+        transmitOnEven = !isEvenSlot
         qsoStateMachine.initiateCall(to: call, theirGrid: grid.isEmpty ? nil : grid)
+        txState = .armed(callsign: call)
+    }
+
+    func haltTX() {
+        isTXHalted = true
+        if let call = qsoStateMachine.theirCallsign {
+            txState = .halted(callsign: call)
+        }
+    }
+
+    func resumeTX() {
+        isTXHalted = false
+        if let call = qsoStateMachine.theirCallsign {
+            txState = .armed(callsign: call)
+        }
     }
 
     // MARK: Private
@@ -206,7 +248,13 @@ final class FT8SessionManager {
 
         // Process each decode and check for completion after each message
         for result in results {
+            let prevState = qsoStateMachine.state
             qsoStateMachine.processMessage(result.message)
+
+            // Auto-set TX frequency when CQ response starts a QSO
+            if prevState == .idle, qsoStateMachine.state == .reportSent {
+                txAudioFrequency = result.frequency
+            }
 
             if qsoStateMachine.state == .completing,
                let completed = qsoStateMachine.completedQSO
@@ -221,6 +269,9 @@ final class FT8SessionManager {
     // MARK: - Transmitting
 
     private func transmitIfNeeded() {
+        guard !isTXHalted else {
+            return
+        }
         if case .listen = operatingMode {
             return
         }
@@ -231,12 +282,23 @@ final class FT8SessionManager {
         do {
             let samples = try FT8Encoder.encode(
                 message: message,
-                frequency: 1_500 // Default audio offset
+                frequency: txAudioFrequency
             )
             isTransmitting = true
+            txState = .transmitting(message: message)
+            txEvents.append(FT8TXEvent(
+                message: message,
+                timestamp: Date(),
+                audioFrequency: txAudioFrequency
+            ))
             Task { @MainActor [weak self] in
                 await self?.audioEngine.playTones(samples)
                 self?.isTransmitting = false
+                if let call = self?.qsoStateMachine.theirCallsign {
+                    self?.txState = .armed(callsign: call)
+                } else {
+                    self?.txState = .idle
+                }
             }
         } catch {
             Self.log.error("FT8 encode failed: \(error)")
@@ -293,7 +355,16 @@ final class FT8SessionManager {
         isEvenSlot.toggle()
         currentSlotStartTime = Date()
         cycleTimeRemaining = FT8Constants.slotDuration
+
+        let wasCompleting = qsoStateMachine.state == .completing
         qsoStateMachine.advanceCycle()
+
+        // Reset TX state when completing state auto-resets to idle
+        if wasCompleting, qsoStateMachine.state == .idle {
+            txState = .idle
+            isTXHalted = false
+            txEvents.removeAll()
+        }
 
         // Collect and decode audio from the completed slot
         Task { @MainActor [weak self] in
