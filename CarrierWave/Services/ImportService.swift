@@ -274,6 +274,7 @@ class ImportService: ObservableObject {
             metadata = existing
         } else {
             metadata = ActivationMetadata(parkReference: parkRef, date: date)
+            metadata.cloudDirtyFlag = true
             modelContext.insert(metadata)
         }
 
@@ -283,6 +284,7 @@ class ImportService: ObservableObject {
         } else if mode == "SOLAR" {
             metadata.solarConditions = value
         }
+        metadata.cloudDirtyFlag = true
     }
 
     private func createQSO(from lofiQso: LoFiQso, operation: LoFiOperation) throws -> QSO {

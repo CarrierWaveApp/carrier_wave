@@ -136,7 +136,16 @@ extension CloudSyncEngine {
                 if let record = buildRecord(for: recordID) {
                     recordsToSave.append(record)
                 } else {
-                    // Record no longer exists locally; remove from pending
+                    logger.warning(
+                        "Skipping record (build returned nil): \(recordID.recordName, privacy: .public)"
+                    )
+                    // Clear dirty flag so it doesn't stay "pending" forever
+                    let name = recordID.recordName
+                    if let eType = CKRecordMapper.parseEntityType(from: name),
+                       let eID = CKRecordMapper.parseUUID(from: name)
+                    {
+                        clearDirtyFlag(entityType: eType, id: eID)
+                    }
                     engine.state.remove(pendingRecordZoneChanges: [change])
                 }
             case let .deleteRecord(recordID):
@@ -153,7 +162,7 @@ extension CloudSyncEngine {
         return CKSyncEngine.RecordZoneChangeBatch(
             recordsToSave: recordsToSave,
             recordIDsToDelete: recordIDsToDelete,
-            atomicByZone: true
+            atomicByZone: false
         )
     }
 
@@ -260,13 +269,6 @@ extension CloudSyncEngine {
         id: UUID,
         existingRecord: CKRecord?
     ) -> CKRecord? {
-        guard let meta = lookupSyncMetadata(
-            entityType: CKRecordMapper.RecordType.activationMetadata.rawValue,
-            localId: id
-        ) else {
-            return nil
-        }
-
         // Only fetch dirty records — avoids full-table scan at 50k+ scale
         let descriptor = FetchDescriptor<ActivationMetadata>(
             predicate: #Predicate { $0.cloudDirtyFlag == true }
@@ -280,7 +282,7 @@ extension CloudSyncEngine {
                 parkReference: metadata.parkReference,
                 date: metadata.date
             )
-            if syntheticID == meta.localId {
+            if syntheticID == id {
                 let fields = extractActivationMetadataFields(metadata)
                 return CKRecordMapper.activationMetadataFieldsToCKRecord(
                     fields, existingRecord: existingRecord
@@ -330,17 +332,34 @@ extension CloudSyncEngine {
     func handleSentRecordZoneChanges(
         _ event: CKSyncEngine.Event.SentRecordZoneChanges
     ) {
+        logger.info(
+            "Batch complete: \(event.savedRecords.count) saved, \(event.failedRecordSaves.count) failed"
+        )
+
         // Handle successfully saved records
         for savedRecord in event.savedRecords {
             handleSuccessfullySavedRecord(savedRecord)
         }
 
-        // Handle failed records
+        // Handle failed records — track conflicts for retry
+        var hadConflicts = false
         for failedRecord in event.failedRecordSaves {
+            if failedRecord.error.code == .serverRecordChanged {
+                hadConflicts = true
+            }
             handleFailedRecordSave(failedRecord)
         }
 
         try? modelContext.save()
+
+        // Re-schedule resolved conflicts so they get retried
+        if hadConflicts {
+            let retries = collectDirtyRecordIDs()
+            if !retries.isEmpty, let engine = syncEngine {
+                engine.state.add(pendingRecordZoneChanges: retries)
+                logger.info("Re-scheduled \(retries.count) records after conflict resolution")
+            }
+        }
     }
 
     private func handleSuccessfullySavedRecord(_ record: CKRecord) {
@@ -367,29 +386,38 @@ extension CloudSyncEngine {
         _ failure: CKSyncEngine.Event.SentRecordZoneChanges.FailedRecordSave
     ) {
         let error = failure.error
+        let record = failure.record
+
+        // Log details that system log redacts as <private>
+        let recType = record.recordType
+        let recName = record.recordID.recordName
+        let errCode = error.code.rawValue
+        let errDesc = error.localizedDescription
+        logger.error("Record save failed: type=\(recType, privacy: .public) id=\(recName, privacy: .public)")
+        logger.error("  error code=\(errCode, privacy: .public) desc=\(errDesc, privacy: .public)")
+        if let underlying = error.userInfo[NSUnderlyingErrorKey] as? NSError {
+            let uCode = underlying.code
+            let uDesc = underlying.localizedDescription
+            logger.error("  underlying code=\(uCode, privacy: .public) desc=\(uDesc, privacy: .public)")
+            if let serverDesc = underlying.userInfo["ServerErrorDescription"] as? String {
+                logger.error("  server says: \(serverDesc, privacy: .public)")
+            }
+        }
 
         switch error.code {
         case .serverRecordChanged:
-            // Conflict — the server has a newer version. Resolve conflict.
             handleConflict(failure: failure)
 
         case .batchRequestFailed:
-            // Collateral damage from atomic batch failure — another record in the
-            // batch had the real error. This record is still dirty and will be
-            // retried on the next sync pass. No action needed.
-            logger.info(
-                "Record \(failure.record.recordID.recordName) caught in atomic batch failure, will retry"
-            )
+            break // Will be retried
 
         case .zoneNotFound:
-            // Zone was deleted; re-create it
             Task {
                 try? await ensureZoneExists()
             }
 
         case .unknownItem:
-            // Record doesn't exist on server; clear metadata and retry
-            let recordName = failure.record.recordID.recordName
+            let recordName = record.recordID.recordName
             if let entityType = CKRecordMapper.parseEntityType(from: recordName),
                let uuid = CKRecordMapper.parseUUID(from: recordName)
             {
@@ -397,9 +425,7 @@ extension CloudSyncEngine {
             }
 
         default:
-            logger.error(
-                "Failed to save record \(failure.record.recordID.recordName): \(error)"
-            )
+            break
         }
     }
 

@@ -38,7 +38,9 @@ extension CKRecordMapper {
         record["myMic"] = fields.myMic
         record["extraEquipment"] = fields.extraEquipment
         record["attendees"] = fields.attendees
-        record["photoFilenames"] = fields.photoFilenames as CKRecordValue
+        if !fields.photoFilenames.isEmpty {
+            record["photoFilenames"] = fields.photoFilenames as CKRecordValue
+        }
 
         // JSON data fields
         record["spotCommentsData"] = fields.spotCommentsData

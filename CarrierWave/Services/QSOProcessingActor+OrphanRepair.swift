@@ -329,6 +329,7 @@ extension QSOProcessingActor {
                     needsUpload: service.supportsUpload,
                     qso: qso
                 )
+                presence.cloudDirtyFlag = true
                 context.insert(presence)
                 qso.servicePresence.append(presence)
                 repairedCount += 1

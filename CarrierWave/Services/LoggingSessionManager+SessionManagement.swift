@@ -31,6 +31,7 @@ extension LoggingSessionManager {
         }
 
         session.end()
+        session.cloudDirtyFlag = true
 
         // Split POTA sessions at UTC midnight so each covers one activation date
         if session.isPOTA {
@@ -92,6 +93,7 @@ extension LoggingSessionManager {
         }
         pauseLiveActivity()
         session.pause()
+        session.cloudDirtyFlag = true
 
         // Save spot comments to session before clearing
         let comments = spotCommentsService.comments

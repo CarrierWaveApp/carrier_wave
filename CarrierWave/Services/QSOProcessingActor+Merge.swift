@@ -137,6 +137,7 @@ extension QSOProcessingActor {
                 } else {
                     ServicePresence(serviceType: service, isPresent: false, qso: newQSO)
                 }
+            presence.cloudDirtyFlag = true
             context.insert(presence)
             newQSO.servicePresence.append(presence)
         }
@@ -150,8 +151,10 @@ extension QSOProcessingActor {
             existing.isPresent = true
             existing.needsUpload = false
             existing.lastConfirmedAt = Date()
+            existing.cloudDirtyFlag = true
         } else {
             let newPresence = ServicePresence.downloaded(from: service, qso: qso)
+            newPresence.cloudDirtyFlag = true
             context.insert(newPresence)
             qso.servicePresence.append(newPresence)
         }

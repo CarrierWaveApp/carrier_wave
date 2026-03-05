@@ -145,42 +145,12 @@ final class LoggingSessionManager {
             session.roveStops = [firstStop]
         }
 
+        session.cloudDirtyFlag = true
         modelContext.insert(session)
         activeSession = session
         saveActiveSessionId(session.id)
 
-        // Cache service configuration to avoid Keychain reads per-QSO
-        cacheServiceConfiguration()
-
-        // Prevent screen timeout during active session
-        if keepScreenOn {
-            UIApplication.shared.isIdleTimerDisabled = true
-        }
-
-        // Start auto-spot timer for POTA activations
-        startAutoSpotTimer()
-
-        // Start spot comments polling for POTA activations
-        startSpotCommentsPolling()
-
-        // Start spot monitoring
-        startSpotMonitoring()
-
-        // Connect BLE radio if configured
-        connectBLERadio()
-
-        // Auto-record solar/weather conditions
-        recordConditions()
-
-        try? modelContext.save()
-
-        writeSessionToWidget(session)
-        startLiveActivity()
-
-        // Auto-start WebSDR if requested
-        if autoStartSDR {
-            autoStartWebSDR(session: session)
-        }
+        activateSession(session, autoStartSDR: autoStartSDR)
     }
 
     /// Advance to the next park stop in a rove session
@@ -258,6 +228,42 @@ final class LoggingSessionManager {
     }
 
     // MARK: Private
+
+    /// Post-insert session activation: caching, timers, peripherals, and save.
+    private func activateSession(_ session: LoggingSession, autoStartSDR: Bool) {
+        // Cache service configuration to avoid Keychain reads per-QSO
+        cacheServiceConfiguration()
+
+        // Prevent screen timeout during active session
+        if keepScreenOn {
+            UIApplication.shared.isIdleTimerDisabled = true
+        }
+
+        // Start auto-spot timer for POTA activations
+        startAutoSpotTimer()
+
+        // Start spot comments polling for POTA activations
+        startSpotCommentsPolling()
+
+        // Start spot monitoring
+        startSpotMonitoring()
+
+        // Connect BLE radio if configured
+        connectBLERadio()
+
+        // Auto-record solar/weather conditions
+        recordConditions()
+
+        try? modelContext.save()
+
+        writeSessionToWidget(session)
+        startLiveActivity()
+
+        // Auto-start WebSDR if requested
+        if autoStartSDR {
+            autoStartWebSDR(session: session)
+        }
+    }
 
     /// Load active session from persisted ID
     private func loadActiveSession() {

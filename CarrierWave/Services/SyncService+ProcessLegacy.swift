@@ -79,6 +79,7 @@ extension SyncService {
                     // Download-only service without this QSO - not present, no upload needed
                     ServicePresence(serviceType: service, isPresent: false, qso: newQSO)
                 }
+            presence.cloudDirtyFlag = true
             modelContext.insert(presence)
             newQSO.servicePresence.append(presence)
         }
@@ -266,6 +267,7 @@ extension SyncService {
                 } else {
                     ServicePresence(serviceType: service, isPresent: false, qso: qso)
                 }
+            presence.cloudDirtyFlag = true
             modelContext.insert(presence)
             qso.servicePresence.append(presence)
         }

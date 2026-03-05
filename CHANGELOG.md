@@ -15,6 +15,10 @@ All notable changes to Carrier Wave will be documented in this file.
 - Lookup errors invisible during active logging when keyboard was visible
 - Hunter Log spots not reloading after navigating away and back (required app restart)
 - Hunter Log layout unusable in landscape orientation (now uses two-pane layout)
+- Fix iCloud sync not pushing data since Feb 20 — `forceFullSync()` now marks all records dirty before scheduling
+- Fix missing `cloudDirtyFlag` on LoggingSession creation, end, and pause
+- Fix missing `cloudDirtyFlag` on ServicePresence creation and upload status updates
+- Fix missing `cloudDirtyFlag` on ActivationMetadata creation and updates
 
 ## [1.54.1] - 2026-03-05
 

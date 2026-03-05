@@ -14,6 +14,7 @@ struct CloudSyncSettingsView: View {
             statusSection
 
             if syncService.isEnabled {
+                recordCountsSection
                 actionsSection
             }
 
@@ -26,6 +27,7 @@ struct CloudSyncSettingsView: View {
         .navigationTitle("iCloud")
         .onAppear {
             monitor.refreshContainerURL()
+            Task { await syncService.refreshCounts() }
         }
         .alert(
             "Enable Experimental Sync?",
@@ -48,10 +50,13 @@ struct CloudSyncSettingsView: View {
     @Environment(\.modelContext) private var modelContext
     @ObservedObject private var syncService = CloudSyncService.shared
     @StateObject private var monitor = ICloudMonitor()
-    @State private var isForcing = false
     @State private var showEnableConfirmation = false
 
     // MARK: - Helpers
+
+    private var counts: CloudSyncRecordCounts {
+        syncService.counts
+    }
 
     private var statusColor: Color {
         switch syncService.syncStatus {
@@ -71,6 +76,20 @@ struct CloudSyncSettingsView: View {
         case .temporarilyUnavailable: "Temporarily Unavailable"
         @unknown default: "Unknown"
         }
+    }
+
+    private var syncedRows: [(label: String, count: Int)] {
+        counts.syncedRecords
+            .sorted { $0.key < $1.key }
+            .map { (label: displayName(for: $0.key), count: $0.value) }
+    }
+
+    private var isUploading: Bool {
+        syncService.uploadGoal != nil
+    }
+
+    private var pendingDisabled: Bool {
+        isUploading || counts.totalDirty == 0
     }
 
     // MARK: - Sections
@@ -118,6 +137,10 @@ struct CloudSyncSettingsView: View {
                 Spacer()
             }
 
+            if let goal = syncService.uploadGoal, goal > 0 {
+                uploadProgressRow(goal: goal, uploaded: syncService.uploadedCount)
+            }
+
             if let lastSync = syncService.lastSyncDate {
                 HStack {
                     Text("Last synced")
@@ -135,40 +158,69 @@ struct CloudSyncSettingsView: View {
                 Text(accountStatusText)
                     .foregroundStyle(.secondary)
             }
+        } header: {
+            Text("Status")
+        }
+    }
 
-            if syncService.pendingCount > 0 {
-                HStack {
-                    Text("Pending")
-                    Spacer()
-                    Text("\(syncService.pendingCount) records")
-                        .foregroundStyle(.secondary)
+    private var recordCountsSection: some View {
+        Section {
+            countRow("Pending upload", count: counts.totalDirty)
+
+            if counts.totalDirty > 0 {
+                countRow("  QSOs", count: counts.dirtyQSOs)
+                countRow("  Service status", count: counts.dirtyServicePresence)
+                countRow("  Sessions", count: counts.dirtySessions)
+                countRow("  Activations", count: counts.dirtyMetadata)
+                countRow("  Spots", count: counts.dirtySpots)
+                countRow("  Activity logs", count: counts.dirtyLogs)
+            }
+
+            countRow("Synced to iCloud", count: counts.totalSynced)
+
+            if counts.totalSynced > 0 {
+                ForEach(syncedRows, id: \.label) { row in
+                    countRow("  \(row.label)", count: row.count)
                 }
             }
         } header: {
-            Text("Status")
+            Text("Records")
+        } footer: {
+            Text(
+                "Pending upload = local changes not yet in iCloud. "
+                    + "Synced = records iCloud knows about."
+            )
         }
     }
 
     private var actionsSection: some View {
         Section {
             Button {
-                Task {
-                    isForcing = true
-                    await syncService.forceFullSync()
-                    isForcing = false
-                }
+                Task { await syncService.syncPending() }
             } label: {
-                if isForcing {
-                    HStack {
-                        ProgressView()
-                            .padding(.trailing, 4)
-                        Text("Syncing...")
-                    }
-                } else {
-                    Text("Sync Now")
-                }
+                Label(
+                    "Upload \(counts.totalDirty) Pending",
+                    systemImage: "icloud.and.arrow.up"
+                )
+                .foregroundStyle(pendingDisabled ? Color.gray.opacity(0.3) : Color.blue)
             }
-            .disabled(isForcing)
+            .disabled(pendingDisabled)
+
+            Button {
+                Task { await syncService.forceFullSync() }
+            } label: {
+                Label(
+                    "Force Full Re-sync",
+                    systemImage: "arrow.triangle.2.circlepath.icloud"
+                )
+                .foregroundStyle(isUploading ? Color.gray.opacity(0.3) : Color.blue)
+            }
+            .disabled(isUploading)
+        } footer: {
+            Text(
+                "Upload Pending pushes only dirty records. "
+                    + "Force Full Re-sync marks everything dirty and re-uploads all data."
+            )
         }
     }
 
@@ -206,6 +258,40 @@ struct CloudSyncSettingsView: View {
             }
         } header: {
             Text("Errors")
+        }
+    }
+
+    private func uploadProgressRow(goal: Int, uploaded: Int) -> some View {
+        let done = min(uploaded, goal)
+        let fraction = Double(done) / Double(goal)
+        return VStack(alignment: .leading, spacing: 6) {
+            ProgressView(value: fraction)
+                .tint(.blue)
+            Text("\(done) of \(goal) uploaded")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private func countRow(_ label: String, count: Int) -> some View {
+        HStack {
+            Text(label)
+            Spacer()
+            Text("\(count)")
+                .foregroundStyle(.secondary)
+                .monospacedDigit()
+        }
+    }
+
+    private func displayName(for entityType: String) -> String {
+        switch entityType {
+        case "QSO": "QSOs"
+        case "ServicePresence": "Service status"
+        case "LoggingSession": "Sessions"
+        case "ActivationMetadata": "Activations"
+        case "SessionSpot": "Spots"
+        case "ActivityLog": "Activity logs"
+        default: entityType
         }
     }
 

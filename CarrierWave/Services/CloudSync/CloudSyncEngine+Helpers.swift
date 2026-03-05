@@ -217,11 +217,83 @@ extension CloudSyncEngine {
         }
     }
 
+    // MARK: - Record Counts
+
+    /// Count dirty (pending upload) and synced records per entity type.
+    func recordCounts() -> CloudSyncRecordCounts {
+        let dirtyQSOs = fetchCount(FetchDescriptor<QSO>(
+            predicate: #Predicate { $0.cloudDirtyFlag == true }
+        ))
+        let dirtyPresence = fetchCount(FetchDescriptor<ServicePresence>(
+            predicate: #Predicate { $0.cloudDirtyFlag == true }
+        ))
+        let dirtySessions = fetchCount(FetchDescriptor<LoggingSession>(
+            predicate: #Predicate { $0.cloudDirtyFlag == true }
+        ))
+        let dirtyMetadata = fetchCount(FetchDescriptor<ActivationMetadata>(
+            predicate: #Predicate { $0.cloudDirtyFlag == true }
+        ))
+        let dirtySpots = fetchCount(FetchDescriptor<SessionSpot>(
+            predicate: #Predicate { $0.cloudDirtyFlag == true }
+        ))
+        let dirtyLogs = fetchCount(FetchDescriptor<ActivityLog>(
+            predicate: #Predicate { $0.cloudDirtyFlag == true }
+        ))
+
+        return CloudSyncRecordCounts(
+            dirtyQSOs: dirtyQSOs,
+            dirtyServicePresence: dirtyPresence,
+            dirtySessions: dirtySessions,
+            dirtyMetadata: dirtyMetadata,
+            dirtySpots: dirtySpots,
+            dirtyLogs: dirtyLogs,
+            syncedRecords: countSyncMetadata()
+        )
+    }
+
+    private func fetchCount(
+        _ descriptor: FetchDescriptor<some PersistentModel>
+    ) -> Int {
+        (try? modelContext.fetchCount(descriptor)) ?? 0
+    }
+
+    private func countSyncMetadata() -> [String: Int] {
+        let descriptor = FetchDescriptor<CloudSyncMetadata>()
+        guard let all = try? modelContext.fetch(descriptor) else {
+            return [:]
+        }
+        var counts: [String: Int] = [:]
+        for meta in all {
+            counts[meta.entityType, default: 0] += 1
+        }
+        return counts
+    }
+
     // MARK: - Notifications
 
     func postSyncNotification() async {
         await MainActor.run {
             NotificationCenter.default.post(name: .didSyncQSOs, object: nil)
+        }
+    }
+
+    /// Called after each outbound batch completes. Refreshes counts on the service.
+    func postSendProgress(batchSaved: Int = 0) async {
+        let newCounts = recordCounts()
+        await MainActor.run {
+            let service = CloudSyncService.shared
+            service.counts = newCounts
+            service.uploadedCount += batchSaved
+            if newCounts.totalDirty == 0, service.syncStatus.isSyncing {
+                service.syncStatus = .upToDate
+                service.lastSyncDate = Date()
+                service.uploadGoal = nil
+                service.uploadedCount = 0
+            } else if service.syncStatus.isSyncing {
+                service.syncStatus = .syncing(
+                    detail: "Uploading... \(newCounts.totalDirty) remaining"
+                )
+            }
         }
     }
 }

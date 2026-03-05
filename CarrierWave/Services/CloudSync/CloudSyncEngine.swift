@@ -106,6 +106,7 @@ actor CloudSyncEngine: CKSyncEngineDelegate {
 
         case let .sentRecordZoneChanges(sentChanges):
             await handleSentRecordZoneChanges(sentChanges)
+            await postSendProgress(batchSaved: sentChanges.savedRecords.count)
 
         case .willFetchChanges:
             break
@@ -123,7 +124,7 @@ actor CloudSyncEngine: CKSyncEngineDelegate {
             break
 
         case .didSendChanges:
-            break
+            await postSendProgress()
 
         @unknown default:
             logger.warning("Unknown CKSyncEngine event: \(String(describing: event))")

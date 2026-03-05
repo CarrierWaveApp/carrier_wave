@@ -38,6 +38,15 @@ class CloudSyncService: ObservableObject {
     /// iCloud account status
     @Published var accountStatus: CKAccountStatus = .couldNotDetermine
 
+    /// Snapshot of dirty and synced record counts
+    @Published var counts: CloudSyncRecordCounts = .empty
+
+    /// Total records at start of current upload (for progress bar). Nil when idle.
+    @Published var uploadGoal: Int?
+
+    /// Running count of records successfully uploaded in current batch operation.
+    @Published var uploadedCount: Int = 0
+
     // MARK: - Public API
 
     /// Configure and start the sync service.
@@ -84,13 +93,37 @@ class CloudSyncService: ObservableObject {
         await engine.handleRemoteNotification(userInfo)
     }
 
+    /// Upload pending (already-dirty) records to iCloud.
+    func syncPending() async {
+        guard isEnabled, let engine else {
+            return
+        }
+        uploadedCount = 0
+        uploadGoal = counts.totalDirty
+        syncStatus = .syncing(detail: "Uploading... \(counts.totalDirty) remaining")
+        await engine.schedulePendingChanges()
+    }
+
     /// Force a full sync (mark everything dirty and push)
     func forceFullSync() async {
         guard isEnabled, let engine else {
             return
         }
-        syncStatus = .syncing(detail: "Full sync...")
+        syncStatus = .syncing(detail: "Marking all records dirty...")
+        await engine.markAllRecordsDirty()
+        counts = await engine.recordCounts()
+        uploadedCount = 0
+        uploadGoal = counts.totalDirty
+        syncStatus = .syncing(detail: "Uploading... \(counts.totalDirty) remaining")
         await engine.schedulePendingChanges()
+    }
+
+    /// Refresh the dirty/synced record counts for display.
+    func refreshCounts() async {
+        guard let engine else {
+            return
+        }
+        counts = await engine.recordCounts()
     }
 
     /// Fetch latest changes from CloudKit.
@@ -155,6 +188,7 @@ class CloudSyncService: ObservableObject {
             try await engine.start()
             await engine.schedulePendingChanges()
             startNetworkMonitor()
+            counts = await engine.recordCounts()
             syncStatus = .upToDate
             lastSyncDate = Date()
             errorMessage = nil

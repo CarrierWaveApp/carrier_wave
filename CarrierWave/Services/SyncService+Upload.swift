@@ -314,6 +314,7 @@ extension SyncService {
                     presence.needsUpload = false
                     presence.isPresent = true
                     presence.lastConfirmedAt = Date()
+                    presence.cloudDirtyFlag = true
                 }
             }
         }
