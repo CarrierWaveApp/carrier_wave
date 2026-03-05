@@ -180,7 +180,8 @@ extension CloudSyncEngine {
             parkName: fields.parkName,
             comments: fields.comments,
             region: fields.region,
-            distanceMeters: fields.distanceMeters
+            distanceMeters: fields.distanceMeters,
+            bearingDegrees: fields.bearingDegrees
         )
         // Preserve the original UUID from the remote
         spot.id = fields.id

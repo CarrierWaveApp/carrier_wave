@@ -161,6 +161,7 @@ struct SessionSpotFields: Sendable {
     let comments: String?
     let region: String
     let distanceMeters: Double?
+    let bearingDegrees: Double?
 }
 
 // MARK: - ActivityLogFields

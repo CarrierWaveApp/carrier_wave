@@ -129,7 +129,8 @@ extension CloudSyncEngine {
             parkName: spot.parkName,
             comments: spot.comments,
             region: spot.region,
-            distanceMeters: spot.distanceMeters
+            distanceMeters: spot.distanceMeters,
+            bearingDegrees: spot.bearingDegrees
         )
     }
 

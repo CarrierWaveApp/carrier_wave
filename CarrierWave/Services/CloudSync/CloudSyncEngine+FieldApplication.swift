@@ -113,6 +113,7 @@ extension CloudSyncEngine {
         spot.comments = fields.comments
         spot.region = fields.region
         spot.distanceMeters = fields.distanceMeters
+        spot.bearingDegrees = fields.bearingDegrees
     }
 
     func applyActivityLogFields(_ fields: ActivityLogFields, to log: ActivityLog) {

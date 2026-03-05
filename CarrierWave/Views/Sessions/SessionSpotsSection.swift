@@ -225,6 +225,7 @@ struct RBNRunRow: View {
 // MARK: - SessionSpotRow
 
 /// Individual spot row for the session detail view.
+/// Two-line layout: top = identity + freq/mode/time, bottom = distance/bearing + snr/wpm.
 struct SessionSpotRow: View {
     // MARK: Internal
 
@@ -234,12 +235,14 @@ struct SessionSpotRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            mainRow
+            topRow
+            bottomRow
             if let comments = spot.comments, !comments.isEmpty {
                 Text(comments)
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
+                    .padding(.leading, 24)
             }
         }
     }
@@ -264,26 +267,20 @@ struct SessionSpotRow: View {
         return String(format: "%.1f", freq)
     }
 
-    private var mainRow: some View {
+    // MARK: - Top Row: icon + callsign + clubs + freq + mode + time
+
+    private var topRow: some View {
         HStack(spacing: 8) {
-            if spot.isSelfSpot {
-                Image(systemName: "megaphone.fill")
-                    .font(.caption)
-                    .foregroundStyle(.orange)
-            } else if isPOTAHighlight {
-                Image(systemName: "leaf.fill")
-                    .font(.caption)
-                    .foregroundStyle(.green)
-            } else {
-                regionBadge
-            }
+            leadingIcon
 
             Text(displayCallsign)
                 .font(.system(.subheadline, design: .monospaced))
                 .lineLimit(1)
                 .layoutPriority(1)
 
-            let clubNames = ClubsSyncService.shared.clubs(for: spot.callsign)
+            let clubNames = ClubsSyncService.shared.clubs(
+                for: spot.callsign
+            )
             if !clubNames.isEmpty {
                 HStack(spacing: 2) {
                     Image(systemName: "person.3.fill")
@@ -307,6 +304,37 @@ struct SessionSpotRow: View {
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
 
+            Text(
+                spot.timestamp.formatted(
+                    date: .omitted, time: .shortened
+                )
+            )
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
+        }
+    }
+
+    // MARK: - Bottom Row: distance/bearing + snr/wpm + logged
+
+    private var bottomRow: some View {
+        HStack(spacing: 8) {
+            if let meters = spot.distanceMeters {
+                if let bearing = spot.bearingDegrees {
+                    Text(
+                        UnitFormatter.distanceAndBearing(
+                            meters: meters, bearingDeg: bearing
+                        )
+                    )
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                } else {
+                    Text(UnitFormatter.distance(meters / 1_000.0))
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
             if let snr = spot.snr {
                 Text("\(snr) dB")
                     .font(.caption2)
@@ -321,10 +349,7 @@ struct SessionSpotRow: View {
                     .lineLimit(1)
             }
 
-            Text(spot.timestamp.formatted(date: .omitted, time: .shortened))
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
+            Spacer()
 
             if !spot.isSelfSpot, let isLogged {
                 Image(
@@ -334,6 +359,22 @@ struct SessionSpotRow: View {
                 .font(.caption)
                 .foregroundStyle(isLogged ? .green : .secondary)
             }
+        }
+        .padding(.leading, 24)
+    }
+
+    @ViewBuilder
+    private var leadingIcon: some View {
+        if spot.isSelfSpot {
+            Image(systemName: "megaphone.fill")
+                .font(.caption)
+                .foregroundStyle(.orange)
+        } else if isPOTAHighlight {
+            Image(systemName: "leaf.fill")
+                .font(.caption)
+                .foregroundStyle(.green)
+        } else {
+            regionBadge
         }
     }
 

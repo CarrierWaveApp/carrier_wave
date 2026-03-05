@@ -122,6 +122,24 @@ nonisolated enum UnitFormatter {
         useMetric ? "W/km" : "W/mi"
     }
 
+    // MARK: - Bearing
+
+    /// Format bearing degrees to cardinal direction (N, NE, E, SE, S, SW, W, NW).
+    static func cardinal(_ degrees: Double) -> String {
+        let directions = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
+        let index = Int((degrees + 22.5).truncatingRemainder(dividingBy: 360) / 45)
+        return directions[index]
+    }
+
+    /// Format distance (meters) and bearing (degrees) into a compact string.
+    /// e.g. "1,240 mi NE" or "2,000 km S"
+    static func distanceAndBearing(
+        meters: Double, bearingDeg: Double
+    ) -> String {
+        let km = meters / 1_000.0
+        return "\(distance(km)) \(cardinal(bearingDeg))"
+    }
+
     // MARK: Private
 
     // MARK: - Conversion Constants

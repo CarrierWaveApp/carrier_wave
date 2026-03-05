@@ -29,7 +29,8 @@ extension SessionSpot {
             parkName: spot.parkName,
             comments: spot.comments,
             region: enriched.region.rawValue,
-            distanceMeters: enriched.distanceMeters
+            distanceMeters: enriched.distanceMeters,
+            bearingDegrees: enriched.bearingDegrees
         )
     }
 }

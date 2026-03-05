@@ -206,7 +206,10 @@ struct FriendsOnAirCard: View {
             locationDesc: spot.locationDesc,
             stateAbbr: UnifiedSpot.parseState(from: spot.locationDesc)
         )
-        return EnrichedSpot(spot: unified, distanceMeters: nil, region: .other)
+        return EnrichedSpot(
+            spot: unified, distanceMeters: nil,
+            bearingDegrees: nil, region: .other
+        )
     }
 
     // MARK: - Data Loading

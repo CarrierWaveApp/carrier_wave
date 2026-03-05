@@ -333,7 +333,7 @@ private extension SpotMonitoringService {
         return result
     }
 
-    /// Enrich spots with distance and region information
+    /// Enrich spots with distance, bearing, and region information
     func enrichSpots(_ spots: [UnifiedSpot]) -> [EnrichedSpot] {
         spots.map { spot in
             let spotterCoord: CLLocationCoordinate2D? =
@@ -350,11 +350,21 @@ private extension SpotMonitoringService {
                     nil
                 }
 
+            let bearing: Double? =
+                if let myCoord = myCoordinate, let spotterCoord {
+                    Self.calculateBearing(
+                        from: myCoord, to: spotterCoord
+                    )
+                } else {
+                    nil
+                }
+
             let region = SpotRegion.from(grid: spot.spotterGrid)
 
             return EnrichedSpot(
                 spot: spot,
                 distanceMeters: distance,
+                bearingDegrees: bearing,
                 region: region
             )
         }
@@ -385,5 +395,21 @@ private extension SpotMonitoringService {
         let loc1 = CLLocation(latitude: coord1.latitude, longitude: coord1.longitude)
         let loc2 = CLLocation(latitude: coord2.latitude, longitude: coord2.longitude)
         return loc1.distance(from: loc2)
+    }
+
+    /// Calculate initial bearing (forward azimuth) in degrees 0-360
+    static func calculateBearing(
+        from c1: CLLocationCoordinate2D,
+        to c2: CLLocationCoordinate2D
+    ) -> Double {
+        let lat1 = c1.latitude * .pi / 180.0
+        let lat2 = c2.latitude * .pi / 180.0
+        let dLon = (c2.longitude - c1.longitude) * .pi / 180.0
+        let x = sin(dLon) * cos(lat2)
+        let y = cos(lat1) * sin(lat2)
+            - sin(lat1) * cos(lat2) * cos(dLon)
+        let rad = atan2(x, y)
+        return (rad * 180.0 / .pi + 360.0)
+            .truncatingRemainder(dividingBy: 360.0)
     }
 }

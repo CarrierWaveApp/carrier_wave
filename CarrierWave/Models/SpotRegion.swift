@@ -271,6 +271,7 @@ extension SpotRegion {
 struct EnrichedSpot: Identifiable, Sendable {
     let spot: UnifiedSpot
     let distanceMeters: Double?
+    let bearingDegrees: Double?
     let region: SpotRegion
 
     var id: String {

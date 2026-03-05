@@ -33,6 +33,7 @@ extension CKRecordMapper {
         record["comments"] = fields.comments
         record["region"] = fields.region
         record["distanceMeters"] = fields.distanceMeters as CKRecordValue?
+        record["bearingDegrees"] = fields.bearingDegrees as CKRecordValue?
 
         return record
     }
@@ -66,7 +67,8 @@ extension CKRecordMapper {
             parkName: record["parkName"] as? String,
             comments: record["comments"] as? String,
             region: record["region"] as? String ?? "other",
-            distanceMeters: record["distanceMeters"] as? Double
+            distanceMeters: record["distanceMeters"] as? Double,
+            bearingDegrees: record["bearingDegrees"] as? Double
         )
     }
 
