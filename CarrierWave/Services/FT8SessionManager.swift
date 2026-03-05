@@ -181,9 +181,7 @@ final class FT8SessionManager {
 
     // MARK: - Decoding
 
-    private func handleDecodedSlot(_ samples: [Float]) {
-        print("[FT8Decode] Slot received: \(samples.count) samples")
-        let results = FT8Decoder.decode(samples: samples)
+    private func handleDecodedResults(_ results: [FT8DecodeResult]) {
         print("[FT8Decode] Result: \(results.count) messages decoded")
         for result in results {
             print("[FT8Decode]   \(result.rawText) @ \(Int(result.frequency)) Hz, SNR \(result.snr)")
@@ -338,14 +336,15 @@ final class FT8SessionManager {
             txEvents.removeAll()
         }
 
-        // Collect and decode audio from the completed slot
-        Task { @MainActor [weak self] in
-            guard let self else {
+        // Collect and decode audio from the completed slot.
+        // Decode runs off the main actor to avoid blocking the UI.
+        let engine = audioEngine
+        Task.detached { [weak self] in
+            guard let slot = await engine.collectSlot() else {
                 return
             }
-            if let slot = await audioEngine.collectSlot() {
-                handleDecodedSlot(slot)
-            }
+            let results = FT8Decoder.decode(samples: slot)
+            await self?.handleDecodedResults(results)
         }
 
         // Transmit on our designated slot (even or odd)
