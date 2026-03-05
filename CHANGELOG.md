@@ -4,6 +4,8 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.54.0] - 2026-03-04
+
 ### Changed
 - Redesign FT8 comms interface with conversation-centered layout
 - Replace active QSO step indicator with full TX/RX conversation transcript
