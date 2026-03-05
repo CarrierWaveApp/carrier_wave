@@ -43,7 +43,7 @@ final class ClubsSyncService: ObservableObject {
 
     // MARK: - Cache
 
-    /// Rebuild in-memory lookups from SwiftData
+    /// Rebuild in-memory lookups from SwiftData, cleaning up duplicates
     func rebuildCallsignCache() {
         guard let ctx = modelContext else {
             return
@@ -53,19 +53,36 @@ final class ClubsSyncService: ObservableObject {
             return
         }
 
-        var callsigns = Set<String>()
-        var byCallsign: [String: [String]] = [:]
-
+        // Deduplicate: keep one member per (callsign, club) pair
+        var seen: [String: ClubMember] = [:]
+        var duplicateCount = 0
         for member in members {
-            let key = member.callsign.uppercased()
-            callsigns.insert(key)
+            let clubId = member.club?.serverId.uuidString ?? "orphan"
+            let key = "\(member.callsign.uppercased())_\(clubId)"
+            if seen[key] != nil {
+                ctx.delete(member)
+                duplicateCount += 1
+            } else {
+                seen[key] = member
+            }
+        }
+        if duplicateCount > 0 {
+            try? ctx.save()
+        }
+
+        var callsigns = Set<String>()
+        var byCallsign: [String: Set<String>] = [:]
+
+        for (_, member) in seen {
+            let callKey = member.callsign.uppercased()
+            callsigns.insert(callKey)
             if let clubName = member.club?.name {
-                byCallsign[key, default: []].append(clubName)
+                byCallsign[callKey, default: []].insert(clubName)
             }
         }
 
         clubMemberCallsigns = callsigns
-        clubsByCallsign = byCallsign
+        clubsByCallsign = byCallsign.mapValues { Array($0) }
     }
 
     /// Check if a callsign is a club member, returns matching club names
@@ -225,10 +242,19 @@ final class ClubsSyncService: ObservableObject {
         from dtos: [ClubMemberDTO],
         context: ModelContext
     ) throws {
-        let existingMembers = club.members
+        // Fetch members via descriptor instead of the optional relationship,
+        // which can fail to fault in persisted members and cause duplicates.
+        let allMembers = try context.fetch(FetchDescriptor<ClubMember>())
+        let clubId = club.serverId
+        let existingMembers = allMembers.filter {
+            $0.club?.serverId == clubId
+        }
         let existingByCallsign = Dictionary(
-            uniqueKeysWithValues: existingMembers.map {
-                ($0.callsign.uppercased(), $0)
+            existingMembers.map { ($0.callsign.uppercased(), $0) },
+            uniquingKeysWith: { first, duplicate in
+                // Clean up any pre-existing duplicates
+                context.delete(duplicate)
+                return first
             }
         )
 
