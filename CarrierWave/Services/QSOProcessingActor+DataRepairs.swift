@@ -18,69 +18,73 @@ extension QSOProcessingActor {
     /// Trims whitespace, then merges any resulting duplicates (e.g., "F5MQU " → "F5MQU"
     /// now matches existing "F5MQU" from POTA import). Merging absorbs fields and
     /// service presence from the loser into the winner.
+    ///
+    /// Processes in batches to cap memory usage — each batch fetches, processes,
+    /// and saves before moving to the next. Modified/deleted QSOs won't appear
+    /// in subsequent fetches, so no offset tracking is needed.
     func repairCallsignWhitespace(
         container: ModelContainer
     ) async throws -> CallsignWhitespaceRepairResult {
         let context = ModelContext(container)
         context.autosaveEnabled = false
 
-        // Fetch all QSOs
-        let descriptor = FetchDescriptor<QSO>()
-        let allQSOs = try context.fetch(descriptor)
-
-        // Find QSOs with whitespace in callsigns
-        var needsTrimming: [QSO] = []
-        for qso in allQSOs {
-            let trimmed = qso.callsign.trimmingCharacters(in: .whitespaces)
-            if trimmed != qso.callsign {
-                needsTrimming.append(qso)
-            }
-        }
-
-        if needsTrimming.isEmpty {
-            return CallsignWhitespaceRepairResult(
-                trimmedCount: 0, mergedCount: 0, deletedCount: 0
-            )
-        }
-
-        // Build lookup of existing QSOs by dedup key (using trimmed callsigns)
-        // so we can find merge targets
-        var byDedupeKey: [String: [QSO]] = [:]
-        for qso in allQSOs {
-            // Use the trimmed dedup key for ALL QSOs so we can find matches
-            let key = trimmedDedupeKey(for: qso)
-            byDedupeKey[key, default: []].append(qso)
-        }
-
         var trimmedCount = 0
         var mergedCount = 0
         var deletedCount = 0
+        let batchSize = 200
 
-        for qso in needsTrimming {
+        while true {
             try Task.checkCancellation()
 
-            let trimmedCallsign = qso.callsign.trimmingCharacters(in: .whitespaces)
-            let key = trimmedDedupeKey(for: qso)
+            // Fetch next batch of QSOs with spaces in callsigns.
+            // Already-repaired QSOs drop out of the predicate, so we always
+            // fetch from the start without an offset.
+            var spaceDescriptor = FetchDescriptor<QSO>(
+                predicate: #Predicate<QSO> { $0.callsign.contains(" ") }
+            )
+            spaceDescriptor.fetchLimit = batchSize
+            let candidates = try context.fetch(spaceDescriptor)
 
-            // Find other QSOs with the same trimmed dedup key
-            let group = byDedupeKey[key] ?? []
-            let others = group.filter { $0.id != qso.id }
-
-            if let winner = others.first {
-                // Merge: absorb this QSO's data into the existing clean one
-                absorbFields(from: qso, into: winner)
-                absorbServicePresence(from: qso, into: winner, context: context)
-                context.delete(qso)
-                mergedCount += 1
-                deletedCount += 1
-            } else {
-                // No duplicate — just trim the callsign
-                qso.callsign = trimmedCallsign.uppercased()
-                trimmedCount += 1
+            // Filter to those actually needing leading/trailing trim
+            let needsTrimming = candidates.filter {
+                $0.callsign.trimmingCharacters(in: .whitespaces) != $0.callsign
             }
-        }
 
-        try context.save()
+            if needsTrimming.isEmpty {
+                break
+            }
+
+            for qso in needsTrimming {
+                let trimmedCallsign = qso.callsign
+                    .trimmingCharacters(in: .whitespaces).uppercased()
+                let key = trimmedDedupeKey(for: qso)
+
+                // Find merge target: fetch QSOs with the clean callsign
+                var matchDescriptor = FetchDescriptor<QSO>(
+                    predicate: #Predicate<QSO> { $0.callsign == trimmedCallsign }
+                )
+                matchDescriptor.fetchLimit = 100
+                let matches = try context.fetch(matchDescriptor)
+                let qsoId = qso.id
+                let winner = matches.first {
+                    $0.id != qsoId && trimmedDedupeKey(for: $0) == key
+                }
+
+                if let winner {
+                    absorbFields(from: qso, into: winner)
+                    absorbServicePresence(from: qso, into: winner, context: context)
+                    context.delete(qso)
+                    mergedCount += 1
+                    deletedCount += 1
+                } else {
+                    qso.callsign = trimmedCallsign
+                    trimmedCount += 1
+                }
+            }
+
+            // Save after each batch to release memory
+            try context.save()
+        }
 
         return CallsignWhitespaceRepairResult(
             trimmedCount: trimmedCount,

@@ -2,6 +2,21 @@ import CarrierWaveData
 import Foundation
 import SwiftData
 
+// MARK: - QSOProcessingError
+
+enum QSOProcessingError: Error, LocalizedError {
+    case emptyGroup
+
+    // MARK: Internal
+
+    var errorDescription: String? {
+        switch self {
+        case .emptyGroup:
+            "Empty group passed to mergeFetchedGroup"
+        }
+    }
+}
+
 // MARK: - QSOProcessingActor
 
 /// Background actor for processing downloaded QSOs without blocking the main thread.

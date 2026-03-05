@@ -118,7 +118,7 @@ extension QSOProcessingActor {
     func createNewQSOFromGroup(_ fetchedGroup: [FetchedQSO], context: ModelContext) throws
         -> UUID
     {
-        let merged = mergeFetchedGroup(fetchedGroup)
+        let merged = try mergeFetchedGroup(fetchedGroup)
         let newQSO = createQSO(from: merged)
         context.insert(newQSO)
 
@@ -158,9 +158,10 @@ extension QSOProcessingActor {
     }
 
     /// Merge multiple fetched QSOs into one.
-    func mergeFetchedGroup(_ group: [FetchedQSO]) -> FetchedQSO {
+    /// - Precondition: group must not be empty (caller ensures via Dictionary grouping)
+    func mergeFetchedGroup(_ group: [FetchedQSO]) throws -> FetchedQSO {
         guard var merged = group.first else {
-            fatalError("Empty group in mergeFetchedGroup")
+            throw QSOProcessingError.emptyGroup
         }
 
         for other in group.dropFirst() {

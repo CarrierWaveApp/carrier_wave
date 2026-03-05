@@ -65,6 +65,8 @@ All notable changes to Carrier Wave will be documented in this file.
 - Tune connected BLE radio to spot frequency and mode when tapping a spot in Hunter Log
 
 ### Fixed
+- Fix OOM crash during sync on memory-constrained devices (iPhone 11, etc.) — callsign whitespace repair loaded all QSOs into memory; now uses targeted predicate and batched processing
+- Replace `fatalError` in `mergeFetchedGroup` with thrown error to prevent process kill on invariant violation
 - Fix POTA sync permanently skipping failed activations — non-timeout errors incorrectly marked activations as processed, preventing their QSOs from ever being downloaded on future syncs (caused streak gaps when QSOs existed on POTA.app but not in Carrier Wave)
 - Fix callsign notes clipping markdown links — URLs with special characters (like @) caused `AttributedString(markdown:)` to strip brackets, breaking link rendering
 - Fix hunter log setup button on dashboard not presenting setup sheet due to miniTour sheet modifier conflict
