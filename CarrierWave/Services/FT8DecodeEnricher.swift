@@ -26,9 +26,20 @@ final class FT8DecodeEnricher {
 
     // MARK: Internal
 
+    private(set) var currentCycleIndex = 0
+
+    /// Advance the cycle counter. Called at each slot boundary.
+    func advanceCycle() {
+        currentCycleIndex += 1
+    }
+
     /// Enrich an array of raw decodes into enriched decodes with metadata.
     func enrich(_ decodes: [FT8DecodeResult]) -> [FT8EnrichedDecode] {
-        decodes.map { enrichSingle($0) }
+        decodes.map { decode in
+            var enriched = enrichSingle(decode)
+            enriched.cycleAge = 0
+            return enriched
+        }
     }
 
     /// Mark a callsign as worked during this session (for dupe detection).

@@ -76,6 +76,9 @@ public struct FT8EnrichedDecode: Identifiable, Sendable {
     /// Whether this message is directed at the operator's callsign
     public let isDirectedAtMe: Bool
 
+    /// Number of decode cycles since this was last heard. 0 = current cycle.
+    public var cycleAge: Int = 0
+
     /// Identity delegates to the underlying decode result
     public var id: UUID {
         decode.id

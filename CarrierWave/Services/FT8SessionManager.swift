@@ -356,6 +356,12 @@ final class FT8SessionManager {
         currentSlotStartTime = Date()
         cycleTimeRemaining = FT8Constants.slotDuration
 
+        // Age existing enriched decodes
+        for i in enrichedDecodes.indices {
+            enrichedDecodes[i].cycleAge += 1
+        }
+        decodeEnricher.advanceCycle()
+
         let wasCompleting = qsoStateMachine.state == .completing
         qsoStateMachine.advanceCycle()
 
