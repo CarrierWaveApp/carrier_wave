@@ -14,6 +14,9 @@ struct FT8WaterfallView: View {
     /// Current cycle's decoded results (for channel highlighting).
     let currentDecodes: [FT8DecodeResult]
 
+    var rxFrequency: Double = 1_500
+    var txFrequency: Double = 1_500
+
     var body: some View {
         // Snapshot @MainActor data before entering Canvas rendering thread
         let rows = data.magnitudes
@@ -21,6 +24,8 @@ struct FT8WaterfallView: View {
         let minHz = data.minFrequency
         let maxHz = data.maxFrequency
         let decodeFreqs = currentDecodes.map { DecodeMarker(frequency: $0.frequency, isCQ: $0.message.isCallable) }
+        let rxHz = rxFrequency
+        let txHz = txFrequency
 
         VStack(spacing: 0) {
             Canvas { context, size in
@@ -35,6 +40,14 @@ struct FT8WaterfallView: View {
                     decodes: decodeFreqs,
                     minHz: minHz,
                     maxHz: maxHz
+                )
+                drawFrequencyMarker(
+                    context: context, size: size,
+                    hz: rxHz, color: .green, minHz: minHz
+                )
+                drawFrequencyMarker(
+                    context: context, size: size,
+                    hz: txHz, color: .red, minHz: minHz
                 )
             }
             .background(Color.black)
@@ -138,6 +151,24 @@ struct FT8WaterfallView: View {
             context.fill(Path(leftEdge), with: .color(color.opacity(0.5)))
             context.fill(Path(rightEdge), with: .color(color.opacity(0.5)))
         }
+    }
+
+    private func drawFrequencyMarker(
+        context: GraphicsContext,
+        size: CGSize,
+        hz: Double,
+        color: Color,
+        minHz: Float
+    ) {
+        let range = CGFloat(data.maxFrequency - minHz)
+        guard range > 0 else {
+            return
+        }
+
+        let fraction = CGFloat(Float(hz) - minHz) / range
+        let x = fraction * size.width
+        let line = CGRect(x: x - 1, y: 0, width: 2, height: size.height)
+        context.fill(Path(line), with: .color(color.opacity(0.8)))
     }
 
     private func waterfallColor(_ magnitude: Float) -> Color {

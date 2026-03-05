@@ -80,7 +80,9 @@ struct FT8SessionView: View {
 
             FT8WaterfallView(
                 data: ft8Manager.waterfallData,
-                currentDecodes: ft8Manager.currentCycleDecodes
+                currentDecodes: ft8Manager.currentCycleDecodes,
+                rxFrequency: ft8Manager.rxAudioFrequency,
+                txFrequency: ft8Manager.txAudioFrequency
             )
             .frame(height: 48)
 
