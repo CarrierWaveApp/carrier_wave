@@ -150,6 +150,30 @@ struct SessionStartSheet: View {
                     parkReference = defaultParkReference
                 }
             }
+            .onChange(of: selectedMode) { oldMode, newMode in
+                let ftModes: Set<String> = ["FT8", "FT4"]
+                let enteringFT = ftModes.contains(newMode)
+                let leavingFT = ftModes.contains(oldMode) && !ftModes.contains(newMode)
+
+                if enteringFT {
+                    // Auto-select 20m default if frequency is empty or was a known
+                    // band frequency from the previous mode
+                    let oldFreqs = LoggingSession.suggestedFrequencies(for: oldMode)
+                    let parsed = FrequencyFormatter.parse(frequency)
+                    let wasKnown = parsed.flatMap { parsedMHz in
+                        oldFreqs.values.first { abs($0 - parsedMHz) < 0.001 }
+                    } != nil
+                    if frequency.isEmpty || wasKnown {
+                        let newFreqs = LoggingSession.suggestedFrequencies(for: newMode)
+                        if let defaultFreq = newFreqs["20m"] {
+                            frequency = FrequencyFormatter.format(defaultFreq)
+                        }
+                    }
+                } else if leavingFT {
+                    // Clear the frequency when leaving FT modes
+                    frequency = ""
+                }
+            }
             .safeAreaInset(edge: .bottom) {
                 if let reason = startDisabledReason {
                     HStack(spacing: 8) {
@@ -172,6 +196,7 @@ struct SessionStartSheet: View {
             .sheet(item: $bandDetail) { band in
                 BandActivitySheet(
                     suggestion: band,
+                    onFrequencyPicked: { showBandSuggestions = false },
                     frequency: $frequency
                 )
             }

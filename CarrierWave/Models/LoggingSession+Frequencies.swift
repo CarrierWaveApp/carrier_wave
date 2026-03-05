@@ -107,9 +107,10 @@ extension LoggingSession {
              "USB",
              "LSB":
             BandPlan.ssbCallingFrequencies
-        case "FT8",
-             "FT4":
+        case "FT8":
             BandPlan.ft8Frequencies
+        case "FT4":
+            BandPlan.ft4Frequencies
         case "RTTY": BandPlan.rttyFrequencies
         case "AM": BandPlan.amFrequencies
         case "FM": BandPlan.fmFrequencies

@@ -154,26 +154,31 @@ extension SessionStartSheet {
         }
     }
 
+    private var isFixedFrequencyMode: Bool {
+        ["FT8", "FT4"].contains(selectedMode)
+    }
+
+    private var fixedFrequencies: [String: Double] {
+        selectedMode == "FT8" ? BandPlan.ft8Frequencies : BandPlan.ft4Frequencies
+    }
+
+    private var selectedBandForPills: String? {
+        guard let parsed = FrequencyFormatter.parse(frequency) else {
+            return nil
+        }
+        // Match against the fixed frequency map
+        for (band, freq) in fixedFrequencies where abs(freq - parsed) < 0.001 {
+            return band
+        }
+        return nil
+    }
+
     var frequencySection: some View {
         Section {
-            HStack {
-                TextField("14.060", text: $frequency)
-                    .keyboardType(.decimalPad)
-                    .font(.title3.monospaced())
-
-                Text("MHz")
-                    .foregroundStyle(.secondary)
-            }
-
-            DisclosureGroup(
-                "Band Suggestions",
-                isExpanded: $showBandSuggestions
-            ) {
-                FrequencyBandView(
-                    selectedMode: selectedMode,
-                    frequency: $frequency,
-                    detailBand: $bandDetail
-                )
+            if isFixedFrequencyMode {
+                fixedFrequencyPills
+            } else {
+                freeFormFrequencyContent
             }
 
             // Prominent callout for POTA/SOTA when no frequency entered
@@ -194,11 +199,91 @@ extension SessionStartSheet {
                 }
             }
         } footer: {
-            Text(
-                "Enter as MHz (14.060), kHz (14060), or dot-separated (14.030.50)."
-                    + " You can also type \"14060 kHz\" or \"14.060 MHz\"."
-            )
+            if !isFixedFrequencyMode {
+                Text(
+                    "Enter as MHz (14.060), kHz (14060), or dot-separated (14.030.50)."
+                        + " You can also type \"14060 kHz\" or \"14.060 MHz\"."
+                )
+            }
         }
+    }
+
+    private var freeFormFrequencyContent: some View {
+        Group {
+            HStack {
+                TextField("14.060", text: $frequency)
+                    .keyboardType(.decimalPad)
+                    .font(.title3.monospaced())
+
+                Text("MHz")
+                    .foregroundStyle(.secondary)
+            }
+
+            DisclosureGroup(
+                "Band Suggestions",
+                isExpanded: $showBandSuggestions
+            ) {
+                FrequencyBandView(
+                    selectedMode: selectedMode,
+                    onFrequencyPicked: { showBandSuggestions = false },
+                    frequency: $frequency,
+                    detailBand: $bandDetail
+                )
+            }
+        }
+    }
+
+    private static let bandGridOrder = [
+        "160m", "80m", "40m", "30m", "20m", "17m", "15m", "12m", "10m", "6m",
+    ]
+
+    private static let bandGridColumns = Array(
+        repeating: GridItem(.flexible(), spacing: 6), count: 5
+    )
+
+    private var fixedFrequencyPills: some View {
+        Group {
+            LazyVGrid(columns: Self.bandGridColumns, spacing: 6) {
+                ForEach(Self.bandGridOrder, id: \.self) { band in
+                    if let freq = fixedFrequencies[band] {
+                        bandCell(band: band, frequency: freq)
+                    }
+                }
+            }
+            .padding(.vertical, 4)
+
+            if let selected = selectedBandForPills,
+               let freq = fixedFrequencies[selected]
+            {
+                HStack {
+                    Spacer()
+                    Text(FrequencyFormatter.formatWithUnit(freq))
+                        .font(.title3.monospaced().weight(.medium))
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                }
+            }
+        }
+    }
+
+    private func bandCell(band: String, frequency freq: Double) -> some View {
+        let isSelected = selectedBandForPills == band
+        return Button {
+            frequency = FrequencyFormatter.format(freq)
+        } label: {
+            Text(band)
+                .font(.caption.weight(.semibold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8)
+                .background(
+                    isSelected ? Color.accentColor : Color(.secondarySystemFill)
+                )
+                .foregroundStyle(isSelected ? .white : .primary)
+                .clipShape(RoundedRectangle(cornerRadius: 6))
+        }
+        .buttonStyle(.plain)
     }
 
     var optionsSection: some View {

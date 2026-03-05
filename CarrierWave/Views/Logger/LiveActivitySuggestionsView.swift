@@ -30,6 +30,7 @@ struct FrequencyBandView: View {
     // MARK: Internal
 
     let selectedMode: String
+    var onFrequencyPicked: () -> Void = {}
 
     @Binding var frequency: String
     @Binding var detailBand: BandSuggestion?
@@ -111,6 +112,7 @@ struct FrequencyBandView: View {
                 detailBand = suggestion
             } else {
                 frequency = freqStr
+                onFrequencyPicked()
             }
         } label: {
             HStack(spacing: 10) {
@@ -310,6 +312,7 @@ struct BandActivitySheet: View, Identifiable {
     // MARK: Internal
 
     let suggestion: BandSuggestion
+    var onFrequencyPicked: () -> Void = {}
 
     @Binding var frequency: String
 
@@ -345,6 +348,7 @@ struct BandActivitySheet: View, Identifiable {
             Section {
                 Button {
                     frequency = FrequencyFormatter.format(recFreq)
+                    onFrequencyPicked()
                     dismiss()
                 } label: {
                     HStack(spacing: 10) {
@@ -391,6 +395,7 @@ struct BandActivitySheet: View, Identifiable {
             ForEach(suggestion.stations) { station in
                 Button {
                     frequency = FrequencyFormatter.format(station.frequencyMHz)
+                    onFrequencyPicked()
                     dismiss()
                 } label: {
                     HStack(spacing: 8) {

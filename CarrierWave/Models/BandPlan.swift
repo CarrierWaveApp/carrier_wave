@@ -417,6 +417,20 @@ enum BandPlan {
         "6m": 50.313,
     ]
 
+    // MARK: - Common FT4 Frequencies
+
+    static let ft4Frequencies: [String: Double] = [
+        "80m": 3.575,
+        "40m": 7.0475,
+        "30m": 10.140,
+        "20m": 14.080,
+        "17m": 18.104,
+        "15m": 21.140,
+        "12m": 24.919,
+        "10m": 28.180,
+        "6m": 50.318,
+    ]
+
     // MARK: - Common RTTY Frequencies
 
     static let rttyFrequencies: [String: Double] = [
