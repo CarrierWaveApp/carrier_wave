@@ -4,6 +4,8 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.54.1] - 2026-03-05
+
 ### Added
 - FT8 channel picker for CQ calling — recommends least-occupied channels based on recent decodes
 - Waterfall tap-to-select mode for manual TX channel placement
