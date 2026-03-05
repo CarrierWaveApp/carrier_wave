@@ -9,50 +9,6 @@ import os
 import SwiftData
 import UIKit
 
-// MARK: - FT8OperatingMode
-
-/// Operating mode for FT8.
-enum FT8OperatingMode: Sendable {
-    case listen
-    case callCQ(modifier: String?)
-    case searchAndPounce
-}
-
-// MARK: - FT8TXEvent
-
-struct FT8TXEvent: Identifiable, Sendable {
-    let id = UUID()
-    let message: String
-    let timestamp: Date
-    let audioFrequency: Double
-}
-
-// MARK: - FT8TXState
-
-enum FT8TXState: Sendable, Equatable {
-    case idle
-    case armed(callsign: String)
-    case transmitting(message: String)
-    case halted(callsign: String)
-}
-
-// MARK: - ChannelRecommendation
-
-/// A recommended TX channel based on recent decode occupancy.
-struct ChannelRecommendation: Identifiable, Sendable {
-    let id = UUID()
-    let frequency: Double
-    let activityCount: Int
-    let occupancy: OccupancyLevel
-
-    enum OccupancyLevel: String, Sendable {
-        case clear = "CLEAR"
-        case quiet = "QUIET"
-        case fair = "FAIR"
-        case busy = "BUSY"
-    }
-}
-
 // MARK: - FT8SessionManager
 
 /// Manages an active FT8 session — decoding, auto-sequencing, and QSO logging.
@@ -185,54 +141,8 @@ final class FT8SessionManager {
     /// Set the TX audio frequency explicitly (for channel picker / waterfall tap).
     func setTXChannel(_ hz: Double) {
         let snapped = (hz / 50).rounded() * 50
-        let clamped = max(100, min(snapped, 2950))
+        let clamped = max(100, min(snapped, 2_950))
         txAudioFrequency = clamped
-    }
-
-    /// Analyze recent decodes to recommend the least-occupied channels.
-    func recommendedChannels() -> [ChannelRecommendation] {
-        let binWidth = 50.0
-        let minHz = 200.0
-        let maxHz = 2800.0
-        let binCount = Int((maxHz - minHz) / binWidth)
-
-        // Count decodes per bin across all retained results
-        var bins = [Int](repeating: 0, count: binCount)
-        for result in decodeResults {
-            let freq = result.frequency
-            guard freq >= minHz, freq < maxHz else { continue }
-            let idx = Int((freq - minHz) / binWidth)
-            if idx >= 0, idx < binCount {
-                bins[idx] += 1
-                // Penalise adjacent bins (guard band)
-                if idx > 0 { bins[idx - 1] += 1 }
-                if idx < binCount - 1 { bins[idx + 1] += 1 }
-            }
-        }
-
-        let maxCount = bins.max() ?? 0
-        var recommendations: [ChannelRecommendation] = []
-        for i in 0 ..< binCount {
-            let freq = minHz + Double(i) * binWidth + binWidth / 2
-            let count = bins[i]
-            let occupancy: ChannelRecommendation.OccupancyLevel
-            if count == 0 {
-                occupancy = .clear
-            } else if maxCount > 0, Double(count) / Double(maxCount) < 0.25 {
-                occupancy = .quiet
-            } else if maxCount > 0, Double(count) / Double(maxCount) < 0.6 {
-                occupancy = .fair
-            } else {
-                occupancy = .busy
-            }
-            recommendations.append(ChannelRecommendation(
-                frequency: freq,
-                activityCount: count,
-                occupancy: occupancy
-            ))
-        }
-
-        return recommendations.sorted { $0.activityCount < $1.activityCount }
     }
 
     func callStation(_ result: FT8DecodeResult) {
@@ -246,20 +156,6 @@ final class FT8SessionManager {
         transmitOnEven = !isEvenSlot
         qsoStateMachine.initiateCall(to: call, theirGrid: grid.isEmpty ? nil : grid)
         txState = .armed(callsign: call)
-    }
-
-    func haltTX() {
-        isTXHalted = true
-        if let call = qsoStateMachine.theirCallsign {
-            txState = .halted(callsign: call)
-        }
-    }
-
-    func resumeTX() {
-        isTXHalted = false
-        if let call = qsoStateMachine.theirCallsign {
-            txState = .armed(callsign: call)
-        }
     }
 
     // MARK: Private
@@ -494,5 +390,74 @@ final class FT8SessionManager {
         }
         let sign = report >= 0 ? "+" : "-"
         return "\(sign)\(String(format: "%02d", abs(report)))"
+    }
+}
+
+// MARK: - TX Control & Channel Recommendation
+
+extension FT8SessionManager {
+    func haltTX() {
+        isTXHalted = true
+        if let call = qsoStateMachine.theirCallsign {
+            txState = .halted(callsign: call)
+        }
+    }
+
+    func resumeTX() {
+        isTXHalted = false
+        if let call = qsoStateMachine.theirCallsign {
+            txState = .armed(callsign: call)
+        }
+    }
+
+    /// Analyze recent decodes to recommend the least-occupied channels.
+    func recommendedChannels() -> [ChannelRecommendation] {
+        let binWidth = 50.0
+        let minHz = 200.0
+        let maxHz = 2_800.0
+        let binCount = Int((maxHz - minHz) / binWidth)
+
+        // Count decodes per bin across all retained results
+        var bins = [Int](repeating: 0, count: binCount)
+        for result in decodeResults {
+            let freq = result.frequency
+            guard freq >= minHz, freq < maxHz else {
+                continue
+            }
+            let idx = Int((freq - minHz) / binWidth)
+            if idx >= 0, idx < binCount {
+                bins[idx] += 1
+                // Penalise adjacent bins (guard band)
+                if idx > 0 {
+                    bins[idx - 1] += 1
+                }
+                if idx < binCount - 1 {
+                    bins[idx + 1] += 1
+                }
+            }
+        }
+
+        let maxCount = bins.max() ?? 0
+        var recommendations: [ChannelRecommendation] = []
+        for i in 0 ..< binCount {
+            let freq = minHz + Double(i) * binWidth + binWidth / 2
+            let count = bins[i]
+            let occupancy: ChannelRecommendation.OccupancyLevel = if count == 0 {
+                .clear
+            } else if maxCount > 0, Double(count) / Double(maxCount) < 0.25 {
+                .quiet
+            } else if maxCount > 0, Double(count) / Double(maxCount) < 0.6 {
+                .fair
+            } else {
+                .busy
+            }
+            recommendations.append(ChannelRecommendation(
+                frequency: freq,
+                activityCount: count,
+                occupancy: occupancy
+            ))
+        }
+
+        return recommendations.sorted { $0.activityCount < $1.activityCount }
     }
 }

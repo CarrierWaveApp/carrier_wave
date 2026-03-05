@@ -208,12 +208,14 @@ struct FT8WaterfallView: View {
         minHz: Float,
         maxHz: Float
     ) {
-        guard let onTapFrequency, width > 0 else { return }
+        guard let onTapFrequency, width > 0 else {
+            return
+        }
         let range = Double(maxHz - minHz)
         let fraction = max(0, min(1, x / width))
         let hz = Double(minHz) + range * fraction
         let snapped = (hz / 50).rounded() * 50
-        let clamped = max(200, min(snapped, 2800))
+        let clamped = max(200, min(snapped, 2_800))
         onTapFrequency(clamped)
     }
 

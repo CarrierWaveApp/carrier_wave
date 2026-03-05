@@ -9,13 +9,13 @@ import SwiftUI
 
 /// Sheet for selecting an FT8 TX channel, showing recommended clear frequencies.
 struct FT8ChannelPicker: View {
+    // MARK: Internal
+
     let recommendations: [ChannelRecommendation]
     @Binding var selectedFrequency: Double
+
     let onConfirm: () -> Void
     let onSwitchToWaterfall: () -> Void
-
-    @Environment(\.dismiss) private var dismiss
-    @ScaledMetric(relativeTo: .caption) private var barMaxWidth: CGFloat = 80
 
     var body: some View {
         NavigationStack {
@@ -43,6 +43,22 @@ struct FT8ChannelPicker: View {
         }
     }
 
+    // MARK: Private
+
+    @Environment(\.dismiss) private var dismiss
+    @ScaledMetric(relativeTo: .caption) private var barMaxWidth: CGFloat = 80
+
+    private var selectionBinding: Binding<Double?> {
+        Binding(
+            get: { selectedFrequency },
+            set: {
+                if let v = $0 {
+                    selectedFrequency = v
+                }
+            }
+        )
+    }
+
     // MARK: - Channel List
 
     private var channelList: some View {
@@ -60,21 +76,38 @@ struct FT8ChannelPicker: View {
         .listStyle(.plain)
     }
 
-    private var selectionBinding: Binding<Double?> {
-        Binding(
-            get: { selectedFrequency },
-            set: { if let v = $0 { selectedFrequency = v } }
-        )
-    }
+    // MARK: - Confirm Section
 
-    private func isSelected(_ channel: ChannelRecommendation) -> Bool {
-        abs(channel.frequency - selectedFrequency) < 25
+    private var confirmSection: some View {
+        VStack(spacing: 8) {
+            HStack {
+                Text("Selected:")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                Text("\(Int(selectedFrequency)) Hz")
+                    .font(.subheadline.bold().monospacedDigit())
+            }
+
+            Button {
+                dismiss()
+                onConfirm()
+            } label: {
+                Text("Start CQ on \(Int(selectedFrequency)) Hz")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(.green)
+        }
+        .padding()
+        .background(Color(.systemBackground))
     }
 
     private func channelRow(_ channel: ChannelRecommendation) -> some View {
         HStack(spacing: 12) {
             Image(systemName: isSelected(channel) ? "checkmark.circle.fill" : "circle")
-                .foregroundStyle(isSelected(channel) ? .accentColor : .tertiary)
+                .foregroundStyle(isSelected(channel) ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.tertiary))
                 .font(.body)
 
             Text("\(Int(channel.frequency))")
@@ -108,15 +141,6 @@ struct FT8ChannelPicker: View {
             .frame(width: max(4, fraction * barMaxWidth), height: 8)
     }
 
-    private func barColor(_ level: ChannelRecommendation.OccupancyLevel) -> Color {
-        switch level {
-        case .clear: .green
-        case .quiet: .green.opacity(0.7)
-        case .fair: .orange
-        case .busy: .red
-        }
-    }
-
     // MARK: - Occupancy Badge
 
     private func occupancyBadge(
@@ -129,6 +153,19 @@ struct FT8ChannelPicker: View {
             .foregroundStyle(badgeForeground(level))
             .background(badgeBackground(level))
             .clipShape(RoundedRectangle(cornerRadius: 3))
+    }
+
+    private func isSelected(_ channel: ChannelRecommendation) -> Bool {
+        abs(channel.frequency - selectedFrequency) < 25
+    }
+
+    private func barColor(_ level: ChannelRecommendation.OccupancyLevel) -> Color {
+        switch level {
+        case .clear: .green
+        case .quiet: .green.opacity(0.7)
+        case .fair: .orange
+        case .busy: .red
+        }
     }
 
     private func badgeForeground(
@@ -151,33 +188,5 @@ struct FT8ChannelPicker: View {
         case .fair: .orange.opacity(0.15)
         case .busy: .red.opacity(0.15)
         }
-    }
-
-    // MARK: - Confirm Section
-
-    private var confirmSection: some View {
-        VStack(spacing: 8) {
-            HStack {
-                Text("Selected:")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                Text("\(Int(selectedFrequency)) Hz")
-                    .font(.subheadline.bold().monospacedDigit())
-            }
-
-            Button(action: {
-                dismiss()
-                onConfirm()
-            }) {
-                Text("Start CQ on \(Int(selectedFrequency)) Hz")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(.green)
-        }
-        .padding()
-        .background(Color(.systemBackground))
     }
 }

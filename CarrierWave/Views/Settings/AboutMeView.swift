@@ -149,23 +149,27 @@ struct AboutMeView: View {
         }
     }
 
+    private func profileHeader(_ profile: UserProfile) -> some View {
+        HStack {
+            Text(profile.callsign)
+                .font(.largeTitle)
+                .fontWeight(.bold)
+                .monospaced()
+            Spacer()
+            if let licenseClass = profile.licenseClass {
+                Text(licenseClass.displayName)
+                    .font(.caption)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.accentColor.opacity(0.2))
+                    .clipShape(Capsule())
+            }
+        }
+    }
+
     private func profileSection(_ profile: UserProfile) -> some View {
         Section {
-            HStack {
-                Text(profile.callsign)
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
-                    .monospaced()
-                Spacer()
-                if let licenseClass = profile.licenseClass {
-                    Text(licenseClass.displayName)
-                        .font(.caption)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color.accentColor.opacity(0.2))
-                        .clipShape(Capsule())
-                }
-            }
+            profileHeader(profile)
 
             if let name = profile.fullName {
                 HStack {

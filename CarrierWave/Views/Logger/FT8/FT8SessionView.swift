@@ -6,6 +6,8 @@
 import CarrierWaveData
 import SwiftUI
 
+// MARK: - FT8SessionView
+
 struct FT8SessionView: View {
     // MARK: Internal
 
@@ -61,6 +63,12 @@ struct FT8SessionView: View {
         }
     }
 
+    /// Called by FT8ControlBar when the user picks a CQ variant.
+    func requestCQChannel(modifier: String?) {
+        pendingCQModifier = modifier
+        showChannelPicker = true
+    }
+
     // MARK: Private
 
     @Environment(\.verticalSizeClass) private var verticalSizeClass
@@ -73,7 +81,9 @@ struct FT8SessionView: View {
     @State private var pendingCQModifier: String?
 
     private var isCQMode: Bool {
-        if case .callCQ = ft8Manager.operatingMode { return true }
+        if case .callCQ = ft8Manager.operatingMode {
+            return true
+        }
         return false
     }
 
@@ -309,8 +319,12 @@ struct FT8SessionView: View {
             }
         }
     }
+}
 
-    private var waterfallPickConfirmBar: some View {
+// MARK: - FT8SessionView + Helpers
+
+extension FT8SessionView {
+    var waterfallPickConfirmBar: some View {
         HStack(spacing: 12) {
             Text("TX: \(Int(ft8Manager.txAudioFrequency)) Hz")
                 .font(.subheadline.bold().monospacedDigit())
@@ -341,7 +355,7 @@ struct FT8SessionView: View {
         .transition(.move(edge: .top).combined(with: .opacity))
     }
 
-    private var conversationCard: some View {
+    var conversationCard: some View {
         FT8ConversationCard(
             stateMachine: ft8Manager.qsoStateMachine,
             txEvents: ft8Manager.txEvents,
@@ -368,17 +382,11 @@ struct FT8SessionView: View {
         )
     }
 
-    /// Called by FT8ControlBar when the user picks a CQ variant.
-    func requestCQChannel(modifier: String?) {
-        pendingCQModifier = modifier
-        showChannelPicker = true
-    }
-
-    private func startCQWithCurrentChannel() {
+    func startCQWithCurrentChannel() {
         ft8Manager.setMode(.callCQ(modifier: pendingCQModifier))
     }
 
-    private func showSummaryAndStop() {
+    func showSummaryAndStop() {
         let duration = sessionStartTime.map { Date().timeIntervalSince($0) } ?? 0
         sessionSummary = FT8SessionSummaryToast(
             band: ft8Manager.selectedBand,
