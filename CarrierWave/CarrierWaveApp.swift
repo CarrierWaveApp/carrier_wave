@@ -1,3 +1,4 @@
+import CarrierWaveCore
 import CarrierWaveData
 import SwiftData
 import SwiftUI
@@ -228,6 +229,12 @@ struct CarrierWaveApp: App {
     }
 
     private func handleURL(_ url: URL) {
+        // Check if it's a qsy:// URI (inter-app ham radio interop)
+        if url.scheme?.lowercased() == "qsy" {
+            handleQSYURL(url)
+            return
+        }
+
         // Check if it's a challenge invite link
         if url.scheme == "carrierwave", url.host == "challenge" {
             handleChallengeURL(url)
@@ -304,6 +311,76 @@ struct CarrierWaveApp: App {
         )
     }
 
+    private func handleQSYURL(_ url: URL) {
+        guard let action = QSYURIParser.parse(url) else {
+            return
+        }
+
+        switch action {
+        case let .spot(params):
+            NotificationCenter.default.post(
+                name: .didReceiveQSYSpot,
+                object: nil,
+                userInfo: [
+                    "callsign": params.callsign,
+                    "frequencyMHz": params.frequencyMHz,
+                    "mode": params.mode as Any,
+                    "grid": params.grid as Any,
+                    "ref": params.ref?.first as Any,
+                    "refType": params.refType?.first as Any,
+                    "source": params.source as Any,
+                    "comment": params.comment as Any,
+                ]
+            )
+
+        case let .tune(params):
+            NotificationCenter.default.post(
+                name: .didReceiveQSYTune,
+                object: nil,
+                userInfo: [
+                    "frequencyMHz": params.frequencyMHz,
+                    "mode": params.mode as Any,
+                ]
+            )
+
+        case let .lookup(callsign):
+            NotificationCenter.default.post(
+                name: .didReceiveQSYLookup,
+                object: nil,
+                userInfo: ["callsign": callsign]
+            )
+
+        case let .importLog(importURL, _):
+            // Reuse existing ADIF import flow
+            NotificationCenter.default.post(
+                name: .didReceiveADIFFile,
+                object: importURL
+            )
+
+        case let .log(params):
+            NotificationCenter.default.post(
+                name: .didReceiveQSYLog,
+                object: nil,
+                userInfo: [
+                    "callsign": params.callsign,
+                    "frequencyMHz": params.frequencyMHz,
+                    "mode": params.mode,
+                    "rstSent": params.rstSent as Any,
+                    "rstReceived": params.rstReceived as Any,
+                    "grid": params.grid as Any,
+                    "ref": params.ref?.first as Any,
+                    "refType": params.refType?.first as Any,
+                    "time": params.time as Any,
+                    "contest": params.contest as Any,
+                    "srx": params.srx as Any,
+                    "stx": params.stx as Any,
+                    "source": params.source as Any,
+                    "comment": params.comment as Any,
+                ]
+            )
+        }
+    }
+
     private func handleChallengeURL(_ url: URL) {
         // Parse carrierwave://challenge/join?source=...&id=...&token=...
         guard url.path == "/join" else {
@@ -343,6 +420,12 @@ struct CarrierWaveApp: App {
 
 extension Notification.Name {
     static let didReceiveADIFFile = Notification.Name("didReceiveADIFFile")
+    static let didReceiveQSYSpot = Notification.Name("didReceiveQSYSpot")
+    static let didReceiveQSYTune = Notification.Name("didReceiveQSYTune")
+    static let didReceiveQSYLookup = Notification.Name(
+        "didReceiveQSYLookup"
+    )
+    static let didReceiveQSYLog = Notification.Name("didReceiveQSYLog")
     static let didReceiveChallengeInvite = Notification.Name(
         "didReceiveChallengeInvite"
     )

@@ -33,6 +33,7 @@ Pure logic library that can be tested without iOS Simulator. Run tests with `mak
 | `Sources/CarrierWaveCore/SuggestionCategory.swift` | CW suggestion category enum |
 | `Sources/CarrierWaveCore/TwoferMatcher.swift` | Two-fer duplicate detection |
 | `Sources/CarrierWaveCore/AntennaDescriptionParser.swift` | KiwiSDR antenna description parser (type, bands, directionality) |
+| `Sources/CarrierWaveCore/QSYURIParser.swift` | QSY URI scheme parser (qsy://spot, tune, lookup, import, log) |
 | `Sources/CarrierWaveCore/QueryLanguage/QueryToken.swift` | Query token types and field definitions |
 | `Sources/CarrierWaveCore/QueryLanguage/QueryLexer.swift` | Query string tokenization |
 | `Sources/CarrierWaveCore/QueryLanguage/QueryAST.swift` | Query AST types (expression, term, condition) |

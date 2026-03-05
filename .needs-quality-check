@@ -1,0 +1,4 @@
+QSYURIParser.swift - New file: QSY URI scheme parser with QSYAction enum, param structs, and URL parsing
+CarrierWaveApp.swift - Added qsy:// URL handling in handleURL, new handleQSYURL method, 4 new notification names
+ContentView.swift - Added .onReceive handlers for QSY spot/tune/lookup/log notifications with tab navigation
+Info.plist - Registered qsy URL scheme via CFBundleURLTypes
