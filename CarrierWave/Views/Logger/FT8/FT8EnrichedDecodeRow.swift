@@ -17,22 +17,38 @@ struct FT8EnrichedDecodeRow: View {
     let isCurrentCycle: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            essentialsLine
-            if hasContextLine {
-                contextLine
+        HStack(spacing: 0) {
+            if enriched.cycleAge == 0 {
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(Color.blue)
+                    .frame(width: 3)
             }
-            if hasBadges {
-                badgeLine
+
+            VStack(alignment: .leading, spacing: 2) {
+                essentialsLine
+                if hasContextLine {
+                    contextLine
+                }
+                if hasBadges {
+                    badgeLine
+                }
             }
+            .padding(.vertical, 4)
+            .padding(.horizontal, 8)
         }
-        .padding(.vertical, 4)
-        .padding(.horizontal, 8)
-        .opacity(enriched.isDupe ? 0.5 : 1.0)
+        .opacity(enriched.isDupe ? 0.5 : freshnessOpacity)
         .contentShape(Rectangle())
     }
 
     // MARK: Private
+
+    private var freshnessOpacity: Double {
+        switch enriched.cycleAge {
+        case 0 ... 1: 1.0
+        case 2 ... 3: 0.6
+        default: 0.4
+        }
+    }
 
     private var callsign: String {
         enriched.decode.message.callerCallsign ?? enriched.decode.rawText
@@ -56,6 +72,10 @@ struct FT8EnrichedDecodeRow: View {
                 .fontWeight(isCurrentCycle ? .bold : .semibold)
 
             FT8SNRBadge(snr: enriched.decode.snr)
+
+            Text("\(Int(enriched.decode.frequency)) Hz")
+                .font(.caption.monospacedDigit())
+                .foregroundStyle(.tertiary)
 
             if let grid = enriched.decode.message.grid {
                 Text(grid)

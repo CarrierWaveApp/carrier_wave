@@ -37,6 +37,7 @@ struct FT8DecodeListView: View {
     // MARK: Private
 
     @State private var isAllActivityExpanded = false
+    @State private var confirmingCallID: UUID?
     @AppStorage("ft8CompactMode") private var isCompactMode = false
 
     private var directedDecodes: [FT8EnrichedDecode] {
@@ -90,23 +91,39 @@ struct FT8DecodeListView: View {
                 }
 
             ForEach(cqDecodes) { enriched in
-                Group {
-                    if isCompactMode {
-                        FT8CompactDecodeRow(enriched: enriched)
-                    } else {
-                        FT8EnrichedDecodeRow(
-                            enriched: enriched,
-                            isCurrentCycle: currentCycleIDs.contains(enriched.id)
-                        )
+                VStack(spacing: 0) {
+                    Group {
+                        if isCompactMode {
+                            FT8CompactDecodeRow(enriched: enriched)
+                        } else {
+                            FT8EnrichedDecodeRow(
+                                enriched: enriched,
+                                isCurrentCycle: currentCycleIDs.contains(enriched.id)
+                            )
+                        }
+                    }
+                    .onTapGesture {
+                        guard enriched.decode.message.isCallable else {
+                            return
+                        }
+                        if confirmingCallID == enriched.id {
+                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                            onCallStation(enriched.decode)
+                            confirmingCallID = nil
+                        } else {
+                            withAnimation(.spring(duration: 0.2, bounce: 0.0)) {
+                                confirmingCallID = enriched.id
+                            }
+                        }
+                    }
+
+                    if confirmingCallID == enriched.id,
+                       let call = enriched.decode.message.callerCallsign
+                    {
+                        callConfirmBar(call: call, decode: enriched.decode)
                     }
                 }
                 .id(enriched.id)
-                .onTapGesture {
-                    if enriched.decode.message.isCallable {
-                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                        onCallStation(enriched.decode)
-                    }
-                }
             }
         }
     }
@@ -166,6 +183,33 @@ struct FT8DecodeListView: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
+    }
+
+    private func callConfirmBar(call: String, decode: FT8DecodeResult) -> some View {
+        HStack {
+            Button("Call \(call)") {
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                onCallStation(decode)
+                confirmingCallID = nil
+            }
+            .font(.caption.bold())
+            .buttonStyle(.bordered)
+            .tint(.accentColor)
+
+            Spacer()
+
+            Button("Cancel") {
+                withAnimation(.spring(duration: 0.2, bounce: 0.0)) {
+                    confirmingCallID = nil
+                }
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(Color.accentColor.opacity(0.08))
+        .transition(.move(edge: .top).combined(with: .opacity))
     }
 
     private func compactActivityRow(_ enriched: FT8EnrichedDecode) -> some View {
