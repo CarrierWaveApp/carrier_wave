@@ -5,44 +5,77 @@
 import CarrierWaveData
 import Foundation
 import MapKit
+import SwiftUI
 
 // MARK: - ActivationMapHelpers
 
 enum ActivationMapHelpers {
-    /// Calculate map region from coordinates
+    // MARK: Internal
+
+    /// Calculate map region from coordinates (dateline-aware)
     static func mapRegion(
         qsoCoordinates: [CLLocationCoordinate2D],
         myCoordinate: CLLocationCoordinate2D?
     ) -> MKCoordinateRegion? {
-        var allCoordinates = qsoCoordinates
-        if let myCoord = myCoordinate {
-            allCoordinates.append(myCoord)
-        }
-
-        guard !allCoordinates.isEmpty else {
+        guard let bounds = coordinateBounds(
+            qsoCoordinates: qsoCoordinates,
+            myCoordinate: myCoordinate
+        ) else {
             return nil
         }
 
-        let lats = allCoordinates.map(\.latitude)
-        let lons = allCoordinates.map(\.longitude)
-
-        guard let minLat = lats.min(),
-              let maxLat = lats.max(),
-              let minLon = lons.min(),
-              let maxLon = lons.max()
-        else {
-            return nil
-        }
-
-        let centerLat = (minLat + maxLat) / 2
-        let centerLon = (minLon + maxLon) / 2
-        let latSpan = min(max(maxLat - minLat, 5) * 1.3, 180)
-        let lonSpan = min(max(maxLon - minLon, 5) * 1.3, 360)
+        let latSpan = min(max(bounds.latSpan, 5) * 1.3, 180)
+        let lonSpan = min(max(bounds.lonSpan, 5) * 1.3, 360)
 
         return MKCoordinateRegion(
-            center: CLLocationCoordinate2D(latitude: centerLat, longitude: centerLon),
-            span: MKCoordinateSpan(latitudeDelta: latSpan, longitudeDelta: lonSpan)
+            center: bounds.center,
+            span: MKCoordinateSpan(
+                latitudeDelta: latSpan,
+                longitudeDelta: lonSpan
+            )
         )
+    }
+
+    /// Returns a camera position with dateline-aware centering.
+    /// Pads large spans generously so all endpoints are visible.
+    /// Note: Globe rendering is not available on physical iPhones (MapKit limitation).
+    static func mapCameraPosition(
+        qsoCoordinates: [CLLocationCoordinate2D],
+        myCoordinate: CLLocationCoordinate2D?
+    ) -> MapCameraPosition {
+        guard let bounds = coordinateBounds(
+            qsoCoordinates: qsoCoordinates,
+            myCoordinate: myCoordinate
+        ) else {
+            return .automatic
+        }
+
+        // Extra padding for large spans so endpoints aren't clipped
+        let padding: Double = bounds.lonSpan > globeThreshold ? 1.5 : 1.3
+        let latSpan = min(max(bounds.latSpan, 5) * padding, 180)
+        let lonSpan = min(max(bounds.lonSpan, 5) * padding, 360)
+
+        return .region(MKCoordinateRegion(
+            center: bounds.center,
+            span: MKCoordinateSpan(
+                latitudeDelta: latSpan,
+                longitudeDelta: lonSpan
+            )
+        ))
+    }
+
+    /// Whether the given coordinates require a globe-level view
+    static func requiresGlobeView(
+        qsoCoordinates: [CLLocationCoordinate2D],
+        myCoordinate: CLLocationCoordinate2D?
+    ) -> Bool {
+        guard let bounds = coordinateBounds(
+            qsoCoordinates: qsoCoordinates,
+            myCoordinate: myCoordinate
+        ) else {
+            return false
+        }
+        return max(bounds.latSpan, bounds.lonSpan) > globeThreshold
     }
 
     /// Generate a geodesic (great circle) path between two coordinates
@@ -87,6 +120,73 @@ enum ActivationMapHelpers {
         }
 
         return path
+    }
+
+    // MARK: Private
+
+    // MARK: - Coordinate Bounds (dateline-aware)
+
+    private struct CoordinateBounds {
+        let center: CLLocationCoordinate2D
+        let latSpan: Double
+        let lonSpan: Double
+    }
+
+    /// Threshold in degrees: spans larger than this use a globe camera
+    private static let globeThreshold: Double = 90
+
+    private static func coordinateBounds(
+        qsoCoordinates: [CLLocationCoordinate2D],
+        myCoordinate: CLLocationCoordinate2D?
+    ) -> CoordinateBounds? {
+        var allCoordinates = qsoCoordinates
+        if let myCoord = myCoordinate {
+            allCoordinates.append(myCoord)
+        }
+
+        guard !allCoordinates.isEmpty else {
+            return nil
+        }
+
+        let lats = allCoordinates.map(\.latitude)
+        let lons = allCoordinates.map(\.longitude)
+
+        guard let minLat = lats.min(),
+              let maxLat = lats.max(),
+              let minLon = lons.min(),
+              let maxLon = lons.max()
+        else {
+            return nil
+        }
+
+        let latSpan = maxLat - minLat
+        let centerLat = (minLat + maxLat) / 2
+
+        // Check if crossing the dateline produces a shorter longitude span
+        let directLonSpan = maxLon - minLon
+        let datelineLonSpan = 360 - directLonSpan
+
+        let centerLon: Double
+        let lonSpan: Double
+
+        if datelineLonSpan < directLonSpan {
+            // Shorter to go across the dateline
+            lonSpan = datelineLonSpan
+            let rawCenter = maxLon + datelineLonSpan / 2
+            centerLon = rawCenter > 180 ? rawCenter - 360 : rawCenter
+        } else {
+            lonSpan = directLonSpan
+            centerLon = (minLon + maxLon) / 2
+        }
+
+        return CoordinateBounds(
+            center: CLLocationCoordinate2D(
+                latitude: centerLat,
+                longitude: centerLon
+            ),
+            latSpan: latSpan,
+            lonSpan: lonSpan
+        )
     }
 }
 

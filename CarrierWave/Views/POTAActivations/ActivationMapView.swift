@@ -80,6 +80,7 @@ struct ActivationMapView: View {
 
     @Environment(\.modelContext) private var modelContext
     @State private var cameraPosition: MapCameraPosition = .automatic
+    @State private var isWideSpan = false
     @State private var selectedQSO: QSO?
     @State private var annotations: [RSTAnnotation] = []
     @State private var arcs: [QSOArc] = []
@@ -186,7 +187,9 @@ struct ActivationMapView: View {
                 }
             }
         }
-        .mapStyle(.standard(elevation: .realistic))
+        .mapStyle(isWideSpan
+            ? .imagery(elevation: .realistic)
+            : .standard(elevation: .realistic))
     }
 }
 
@@ -378,12 +381,16 @@ private extension ActivationMapView {
         // Set initial camera to show all annotations + rove stops
         var allCoords = newAnnotations.map(\.coordinate)
         allCoords.append(contentsOf: roveStopCoordinates.map(\.coordinate))
-        if let region = ActivationMapHelpers.mapRegion(
-            qsoCoordinates: allCoords,
-            myCoordinate: isRove ? nil : myCoordinate
-        ) {
-            cameraPosition = .region(region)
-        }
+        let coordsForCamera = allCoords
+        let myCoord = isRove ? nil : myCoordinate
+        isWideSpan = ActivationMapHelpers.requiresGlobeView(
+            qsoCoordinates: coordsForCamera,
+            myCoordinate: myCoord
+        )
+        cameraPosition = ActivationMapHelpers.mapCameraPosition(
+            qsoCoordinates: coordsForCamera,
+            myCoordinate: myCoord
+        )
     }
 
     func generateAndShare() async {

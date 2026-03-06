@@ -320,41 +320,67 @@ extension SessionDetailView {
     private func mapPreviewContent(
         mappable: [QSO], myCoord: CLLocationCoordinate2D?
     ) -> some View {
-        Map(interactionModes: []) {
-            ForEach(mappable) { qso in
-                if let grid = qso.theirGrid,
-                   let coord = MaidenheadConverter.coordinate(from: grid)
-                {
-                    Annotation(qso.callsign, coordinate: coord, anchor: .bottom) {
-                        MapPinMarker(
-                            color: RSTColorHelper.color(
-                                rstSent: qso.rstSent,
-                                rstReceived: qso.rstReceived
-                            )
-                        )
-                    }
-                }
+        let qsoCoords = mappable.compactMap { qso -> CLLocationCoordinate2D? in
+            guard let grid = qso.theirGrid else {
+                return nil
             }
-            if let myCoord {
-                Annotation("Me", coordinate: myCoord, anchor: .bottom) {
-                    MapPinMarker(color: .blue, size: 12)
-                }
-                ForEach(mappable) { qso in
-                    if let grid = qso.theirGrid,
-                       let theirCoord = MaidenheadConverter.coordinate(from: grid)
-                    {
-                        MapPolyline(
-                            coordinates: ActivationMapHelpers.geodesicPath(
-                                from: myCoord, to: theirCoord, segments: 20
-                            )
+            return MaidenheadConverter.coordinate(from: grid)
+        }
+        let position = ActivationMapHelpers.mapCameraPosition(
+            qsoCoordinates: qsoCoords, myCoordinate: myCoord
+        )
+        let isWide = ActivationMapHelpers.requiresGlobeView(
+            qsoCoordinates: qsoCoords, myCoordinate: myCoord
+        )
+        return Map(initialPosition: position, interactionModes: []) {
+            mapQSOAnnotations(mappable: mappable)
+            mapMyLocationContent(mappable: mappable, myCoord: myCoord)
+        }
+        .mapStyle(isWide
+            ? .imagery(elevation: .realistic)
+            : .standard(elevation: .realistic))
+        .allowsHitTesting(false)
+    }
+
+    @MapContentBuilder
+    private func mapQSOAnnotations(mappable: [QSO]) -> some MapContent {
+        ForEach(mappable) { qso in
+            if let grid = qso.theirGrid,
+               let coord = MaidenheadConverter.coordinate(from: grid)
+            {
+                Annotation(qso.callsign, coordinate: coord, anchor: .bottom) {
+                    MapPinMarker(
+                        color: RSTColorHelper.color(
+                            rstSent: qso.rstSent,
+                            rstReceived: qso.rstReceived
                         )
-                        .stroke(.white.opacity(0.5), lineWidth: 2.5)
-                    }
+                    )
                 }
             }
         }
-        .mapStyle(.standard(elevation: .realistic))
-        .allowsHitTesting(false)
+    }
+
+    @MapContentBuilder
+    private func mapMyLocationContent(
+        mappable: [QSO], myCoord: CLLocationCoordinate2D?
+    ) -> some MapContent {
+        if let myCoord {
+            Annotation("Me", coordinate: myCoord, anchor: .bottom) {
+                MapPinMarker(color: .blue, size: 12)
+            }
+            ForEach(mappable) { qso in
+                if let grid = qso.theirGrid,
+                   let theirCoord = MaidenheadConverter.coordinate(from: grid)
+                {
+                    MapPolyline(
+                        coordinates: ActivationMapHelpers.geodesicPath(
+                            from: myCoord, to: theirCoord, segments: 20
+                        )
+                    )
+                    .stroke(.white.opacity(0.5), lineWidth: 2.5)
+                }
+            }
+        }
     }
 }
 

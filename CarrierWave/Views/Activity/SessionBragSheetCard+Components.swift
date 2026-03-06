@@ -26,6 +26,10 @@ extension SessionBragSheetCard {
 
     var mapSection: some View {
         let cameraPosition = mapCameraPosition
+        let isWideSpan = ActivationMapHelpers.requiresGlobeView(
+            qsoCoordinates: contactCoordinates.map(\.coord),
+            myCoordinate: myCoordinate
+        )
         return Map(initialPosition: cameraPosition) {
             // Trace lines first (drawn behind pins)
             if let myCoord = myCoordinate {
@@ -46,7 +50,9 @@ extension SessionBragSheetCard {
                 }
             }
         }
-        .mapStyle(.standard(elevation: .realistic))
+        .mapStyle(isWideSpan
+            ? .imagery(elevation: .realistic)
+            : .standard(elevation: .realistic))
         .allowsHitTesting(false)
         .frame(height: 180)
         .clipShape(RoundedRectangle(cornerRadius: 12))
@@ -282,17 +288,10 @@ extension SessionBragSheetCard {
     }
 
     var mapCameraPosition: MapCameraPosition {
-        var allCoords = contactCoordinates.map(\.coord)
-        if let myCoord = myCoordinate {
-            allCoords.append(myCoord)
-        }
-        guard let region = ActivationMapHelpers.mapRegion(
-            qsoCoordinates: allCoords,
+        ActivationMapHelpers.mapCameraPosition(
+            qsoCoordinates: contactCoordinates.map(\.coord),
             myCoordinate: myCoordinate
-        ) else {
-            return .automatic
-        }
-        return .region(region)
+        )
     }
 
     func sessionTypeDisplay(_ type: String) -> (icon: String, label: String) {

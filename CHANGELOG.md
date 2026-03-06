@@ -5,6 +5,10 @@ All notable changes to Carrier Wave will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Azimuthal equidistant projection map with live spot density heatmap and antenna radiation pattern overlay
+- Antenna type selector with compass-based or manual orientation for pattern visualization
+- Band filter and distance range controls for the azimuthal view
+- Accessible from Map tab toolbar and iPad logger sidebar
 - Implement `qsy://` URI scheme for inter-app ham radio interoperability (spot, tune, lookup, import, log actions)
 - Network health monitor: detect and warn when web requests consistently fail (QRZ lookups, syncing, etc.)
 - Show lookup error banner while callsign field is focused (previously only visible after dismissing keyboard)

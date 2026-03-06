@@ -106,37 +106,9 @@ struct ActivationShareCardView: View {
     }
 
     private var mapCameraPosition: MapCameraPosition {
-        var allCoordinates = mappableQSOs.map(\.coordinate)
-        if let myCoord = myCoordinate {
-            allCoordinates.append(myCoord)
-        }
-
-        guard !allCoordinates.isEmpty else {
-            return .automatic
-        }
-
-        // Calculate bounding region
-        let lats = allCoordinates.map(\.latitude)
-        let lons = allCoordinates.map(\.longitude)
-
-        guard let minLat = lats.min(),
-              let maxLat = lats.max(),
-              let minLon = lons.min(),
-              let maxLon = lons.max()
-        else {
-            return .automatic
-        }
-
-        let centerLat = (minLat + maxLat) / 2
-        let centerLon = (minLon + maxLon) / 2
-        let latSpan = max(maxLat - minLat, 5) * 1.3 // Add 30% padding
-        let lonSpan = max(maxLon - minLon, 5) * 1.3
-
-        return .region(
-            MKCoordinateRegion(
-                center: CLLocationCoordinate2D(latitude: centerLat, longitude: centerLon),
-                span: MKCoordinateSpan(latitudeDelta: latSpan, longitudeDelta: lonSpan)
-            )
+        ActivationMapHelpers.mapCameraPosition(
+            qsoCoordinates: mappableQSOs.map(\.coordinate),
+            myCoordinate: myCoordinate
         )
     }
 
@@ -153,6 +125,13 @@ struct ActivationShareCardView: View {
     /// Metadata watts, falling back to most common QSO-level power
     private var activationWatts: Int? {
         metadata?.watts ?? activation.qsos.compactMap(\.power).first
+    }
+
+    private var isWideSpan: Bool {
+        ActivationMapHelpers.requiresGlobeView(
+            qsoCoordinates: mappableQSOs.map(\.coordinate),
+            myCoordinate: myCoordinate
+        )
     }
 
     // MARK: - Header
@@ -206,7 +185,9 @@ struct ActivationShareCardView: View {
                 }
             }
         }
-        .mapStyle(.standard(elevation: .realistic))
+        .mapStyle(isWideSpan
+            ? .imagery(elevation: .realistic)
+            : .standard(elevation: .realistic))
         .allowsHitTesting(false)
     }
 

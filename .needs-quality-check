@@ -19,3 +19,13 @@ LoggerView+Data.swift - Report network success/failure from POTA spot fetches
 SessionStartHelperViews.swift - Added UTC midnight warning to ActivationSectionView for POTA activations
 ActivityLogView.swift - Fix spots not restarting after navigate-away-and-back, add landscape two-pane layout
 SessionSpotsSection.swift - Fix club membership lookup using spotter callsign instead of spotted callsign in session context
+AntennaPattern.swift - New: parametric 2D azimuthal radiation patterns for antenna types
+AzimuthalProjection.swift - New: azimuthal equidistant projection math and sector binning
+AzimuthalMapView.swift - New: Canvas-rendered azimuthal map with spot heatmap and antenna pattern overlay
+AzimuthalContainerView.swift - New: container wiring antenna selection, band filter, compass into azimuthal map
+AzimuthalStandaloneView.swift - New: standalone azimuthal view for Map tab with GPS grid resolution
+AzimuthalDataProvider.swift - New: projects spots/QSOs to azimuthal coordinates, builds sector data
+CompassHeadingService.swift - New: device compass heading provider for antenna pattern orientation
+QSOMapView.swift - Added azimuthal toolbar button (NavigationLink to AzimuthalStandaloneView)
+SpotSelection.swift - Added .azimuthal case to SidebarTab enum
+LoggerSpotsSidebarView.swift - Added azimuthal tab content to sidebar switch

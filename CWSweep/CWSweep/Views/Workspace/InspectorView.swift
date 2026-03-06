@@ -180,6 +180,9 @@ struct QSOContactMapView: View {
                         }
                     }
                 }
+                .mapStyle(isWideSpan
+                    ? .imagery(elevation: .realistic)
+                    : .standard(elevation: .realistic))
                 .frame(height: 150)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
                 .padding(.horizontal)
@@ -232,6 +235,19 @@ struct QSOContactMapView: View {
         return CLLocationCoordinate2D(latitude: coord.latitude, longitude: coord.longitude)
     }
 
+    private var isWideSpan: Bool {
+        guard let their = theirCoord else {
+            return false
+        }
+        let coords = myCoord.map { [$0, their] } ?? [their]
+        let lons = coords.map(\.longitude)
+        guard let minLon = lons.min(), let maxLon = lons.max() else {
+            return false
+        }
+        let direct = maxLon - minLon
+        return min(direct, 360 - direct) > 90
+    }
+
     private var geodesicPath: [CLLocationCoordinate2D]? {
         guard let my = myCoord, let their = theirCoord else {
             return nil
@@ -240,7 +256,8 @@ struct QSOContactMapView: View {
     }
 
     /// Fit the camera to all geodesic path points (not just endpoints) so the
-    /// curved great-circle line is never clipped.
+    /// curved great-circle line is never clipped. Uses a globe camera for
+    /// extreme distances (>90° span).
     private var computedCameraPosition: MapCameraPosition {
         guard let their = theirCoord else {
             return .automatic
@@ -261,16 +278,38 @@ struct QSOContactMapView: View {
             return .automatic
         }
 
-        let latSpan = min(max(maxLat - minLat, 5) * 1.3, 180)
-        let lonSpan = min(max(maxLon - minLon, 5) * 1.3, 360)
-        let region = MKCoordinateRegion(
-            center: CLLocationCoordinate2D(
-                latitude: (minLat + maxLat) / 2,
-                longitude: (minLon + maxLon) / 2
-            ),
-            span: MKCoordinateSpan(latitudeDelta: latSpan, longitudeDelta: lonSpan)
+        let latSpan = maxLat - minLat
+        let centerLat = (minLat + maxLat) / 2
+
+        // Dateline-aware longitude span
+        let directLonSpan = maxLon - minLon
+        let datelineLonSpan = 360 - directLonSpan
+        let crossesDateline = datelineLonSpan < directLonSpan
+        let lonSpan = crossesDateline ? datelineLonSpan : directLonSpan
+        let centerLon: Double
+        if crossesDateline {
+            let raw = maxLon + datelineLonSpan / 2
+            centerLon = raw > 180 ? raw - 360 : raw
+        } else {
+            centerLon = (minLon + maxLon) / 2
+        }
+
+        let maxSpan = max(latSpan, lonSpan)
+        let center = CLLocationCoordinate2D(
+            latitude: centerLat,
+            longitude: centerLon
         )
-        return .region(region)
+
+        let padding: Double = maxSpan > 90 ? 1.5 : 1.3
+        let paddedLatSpan = min(max(latSpan, 5) * padding, 180)
+        let paddedLonSpan = min(max(lonSpan, 5) * padding, 360)
+        return .region(MKCoordinateRegion(
+            center: center,
+            span: MKCoordinateSpan(
+                latitudeDelta: paddedLatSpan,
+                longitudeDelta: paddedLonSpan
+            )
+        ))
     }
 
     private var distanceAndBearing: (miles: Double, degrees: Double)? {
@@ -313,9 +352,9 @@ struct QSOContactMapView: View {
 
     private static func averageRST(_ sent: String?, _ received: String?) -> Int {
         switch (parseRST(sent), parseRST(received)) {
-        case let (s?, r?): (s + r) / 2
-        case let (s?, nil): s
-        case let (nil, r?): r
+        case let (sentVal?, recvVal?): (sentVal + recvVal) / 2
+        case let (sentVal?, nil): sentVal
+        case let (nil, recvVal?): recvVal
         case (nil, nil): 55
         }
     }

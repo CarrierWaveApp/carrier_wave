@@ -37,7 +37,7 @@ struct LoggerSpotsSidebarView: View {
         if isPOTAActivation {
             SidebarTab.allCases
         } else {
-            [.hunt, .mySpots, .map]
+            [.hunt, .mySpots, .map, .azimuthal]
         }
     }
 
@@ -98,6 +98,22 @@ struct LoggerSpotsSidebarView: View {
                 myGrid: userGrid,
                 roveStops: roveStops
             )
+
+        case .azimuthal:
+            if let grid = userGrid {
+                AzimuthalContainerView(
+                    myGrid: grid,
+                    spots: [],
+                    sessionQSOs: sessionQSOs,
+                    sessionAntenna: nil
+                )
+            } else {
+                ContentUnavailableView(
+                    "No Grid Square",
+                    systemImage: "location.slash",
+                    description: Text("Set your grid square to use the azimuthal view.")
+                )
+            }
         }
     }
 }

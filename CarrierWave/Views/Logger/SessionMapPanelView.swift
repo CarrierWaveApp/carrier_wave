@@ -38,6 +38,8 @@ struct SessionMapPanelView: View {
     // MARK: Private
 
     @State private var cameraPosition: MapCameraPosition = .automatic
+    @State private var hasSetInitialCamera = false
+    @State private var isWideSpan = false
 
     /// QSOs with valid grid squares
     private var mappableQSOs: [QSO] {
@@ -183,8 +185,30 @@ struct SessionMapPanelView: View {
                 }
             }
         }
-        .mapStyle(.standard(elevation: .realistic))
+        .mapStyle(isWideSpan
+            ? .imagery(elevation: .realistic)
+            : .standard(elevation: .realistic))
         .frame(height: 250)
+        .task(id: mappableQSOs.count) {
+            guard !hasSetInitialCamera else {
+                return
+            }
+            hasSetInitialCamera = true
+
+            var allCoords = mappableQSOs.compactMap { qso in
+                qso.theirGrid.flatMap { MaidenheadConverter.coordinate(from: $0) }
+            }
+            allCoords.append(contentsOf: roveStopCoordinates.map(\.coordinate))
+
+            isWideSpan = ActivationMapHelpers.requiresGlobeView(
+                qsoCoordinates: allCoords,
+                myCoordinate: myCoordinate
+            )
+            cameraPosition = ActivationMapHelpers.mapCameraPosition(
+                qsoCoordinates: allCoords,
+                myCoordinate: myCoordinate
+            )
+        }
     }
 
     /// Marker for a rove stop showing park reference and stop number
