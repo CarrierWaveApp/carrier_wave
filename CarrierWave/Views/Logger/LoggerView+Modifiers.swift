@@ -292,6 +292,14 @@ extension LoggerView {
                     await refreshPOTASpots()
                 }
             }
+            .onChange(of: NetworkHealthMonitor.shared.health) { oldHealth, newHealth in
+                // Re-show banner when health degrades again after dismissal
+                if newHealth == .healthy {
+                    networkHealthDismissed = false
+                } else if oldHealth == .healthy {
+                    networkHealthDismissed = false
+                }
+            }
             .onChange(of: sessionManager?.activeSession?.frequency) { _, _ in
                 dismissedWarnings.removeAll()
                 if cachedPOTASpots.isEmpty {

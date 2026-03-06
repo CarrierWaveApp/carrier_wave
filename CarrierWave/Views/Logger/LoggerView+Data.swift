@@ -115,8 +115,9 @@ extension LoggerView {
                 cachedPOTASpots = spots
                 spotsLastFetched = Date()
             }
+            NetworkHealthMonitor.shared.reportSuccess()
         } catch {
-            // Silently fail - spots are a nice-to-have
+            NetworkHealthMonitor.shared.reportFailure(error)
         }
     }
 
