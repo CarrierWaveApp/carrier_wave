@@ -12,18 +12,15 @@ struct ActivityLogView: View {
     @Bindable var manager: ActivityLogManager
 
     @Environment(\.modelContext) var modelContext
+    @Environment(\.verticalSizeClass) var verticalSizeClass
 
     var body: some View {
         Group {
             if hasLoaded {
-                ScrollView {
-                    VStack(spacing: 16) {
-                        headerSection
-                        quickLogSection
-                        spotsSection
-                        recentQSOsSection
-                    }
-                    .padding()
+                if verticalSizeClass == .compact {
+                    landscapeLayout
+                } else {
+                    portraitLayout
                 }
             } else {
                 Color(.systemGroupedBackground)
@@ -166,6 +163,16 @@ struct ActivityLogView: View {
                 manager.updateGrid(newGrid)
             }
         }
+        .onAppear {
+            // Restart monitoring if the view reappears after onDisappear stopped it.
+            // The initial start happens in .task; this covers navigate-away-and-back.
+            guard hasLoaded, !spotMonitor.isMonitoring else {
+                return
+            }
+            spotMonitor.startHunterMonitoring(
+                myGrid: manager.activeLog?.currentGrid
+            )
+        }
         .onDisappear {
             spotMonitor.stopMonitoring()
         }
@@ -207,6 +214,42 @@ struct ActivityLogView: View {
 
     private var selectedRegions: Set<SpotRegionGroup> {
         SpotRegionGroup.decode(spotRegionFilterRaw)
+    }
+
+    /// Portrait layout: vertical scroll with all sections stacked
+    private var portraitLayout: some View {
+        ScrollView {
+            VStack(spacing: 16) {
+                headerSection
+                quickLogSection
+                spotsSection
+                recentQSOsSection
+            }
+            .padding()
+        }
+    }
+
+    /// Landscape layout: quick log on the left, spots on the right
+    private var landscapeLayout: some View {
+        HStack(spacing: 0) {
+            ScrollView {
+                VStack(spacing: 12) {
+                    headerSection
+                    quickLogSection
+                    recentQSOsSection
+                }
+                .padding()
+            }
+            .frame(maxWidth: .infinity)
+
+            Divider()
+
+            ScrollView {
+                spotsSection
+                    .padding()
+            }
+            .frame(maxWidth: .infinity)
+        }
     }
 
     private var headerSection: some View {

@@ -13,6 +13,8 @@ All notable changes to Carrier Wave will be documented in this file.
 ### Fixed
 - QRZ callsign lookups using 30-second timeout (now 10s) causing long hangs on degraded networks
 - Lookup errors invisible during active logging when keyboard was visible
+- Hunter Log spots not reloading after navigating away and back (required app restart)
+- Hunter Log layout unusable in landscape orientation (now uses two-pane layout)
 
 ## [1.54.1] - 2026-03-05
 
