@@ -96,6 +96,7 @@
 		9145D3402A7581FFD78871B6 /* HamDBClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1FC2F375060958EB5E80A1B /* HamDBClient.swift */; };
 		9212F24207BB7E09B925C4EA /* SpotModeFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C033FFA0D17EDE1B07DA5AD /* SpotModeFilter.swift */; };
 		9776FB154C9EC77BD8F5A097 /* KenwoodProtocolHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = E22D143808AB93F17B1665C8 /* KenwoodProtocolHandler.swift */; };
+		9A3F839E1D9935FB36FFF09A /* PoloNotesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0C142F6AEFF2B4AB884F93 /* PoloNotesStore.swift */; };
 		9BB1DF0551667CA3F2F3C057 /* WinKeyerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFFC4CCF36FF735CA8492805 /* WinKeyerView.swift */; };
 		9BF04F3C8E377DEC2ECC01E2 /* AudioRingBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF2360F1F3466D7DB6E05628 /* AudioRingBuffer.swift */; };
 		9CB162E1C970C01B852D30E5 /* POTASpotsClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBD184C919BAD8AB4E252813 /* POTASpotsClient.swift */; };
@@ -142,6 +143,7 @@
 		EB6EC9613A2B3822B04B02A7 /* SerialRadioTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = C150CCF02A9BB60FB45C0D13 /* SerialRadioTransport.swift */; };
 		EBE5D4EDAEE23BA10E6DD360 /* ScoreSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3140A2515F11036F79FAA7C7 /* ScoreSummaryView.swift */; };
 		EC49C07628685DF21AB283A2 /* ContestTemplateLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F1C628C3FD96A4F64971534 /* ContestTemplateLoader.swift */; };
+		F209C6EC1C706E8EC0E8DAD6 /* CallsignNotesSettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8466B59F78CE0AB2196B610F /* CallsignNotesSettingsTab.swift */; };
 		F237E0C85533D08F08842026 /* DXClusterSpot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F15E9E862C0AA9C5EF0695A /* DXClusterSpot.swift */; };
 		F29C8849B6A2D79F96DBFD88 /* cq-ww-cw.json in Resources */ = {isa = PBXBuildFile; fileRef = 6A3EE0625E35FAE5A3C8B80B /* cq-ww-cw.json */; };
 		F35F4D43C611FECCF52866AC /* SpotListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D246A708942035BA1339AE72 /* SpotListView.swift */; };
@@ -235,6 +237,7 @@
 		7E91354EA51FA85D931D6A37 /* InteropManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InteropManager.swift; sourceTree = "<group>"; };
 		810DCC46AD8FB4396CFCFBE4 /* RadioProtocolHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadioProtocolHandler.swift; sourceTree = "<group>"; };
 		834179CB0E6F1B93FD85044E /* SelectionState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionState.swift; sourceTree = "<group>"; };
+		8466B59F78CE0AB2196B610F /* CallsignNotesSettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallsignNotesSettingsTab.swift; sourceTree = "<group>"; };
 		8573FB4EAFF9554EFF664ED8 /* MenuBarExtraView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarExtraView.swift; sourceTree = "<group>"; };
 		8671F811BD9E20B72C2AC188 /* WebSDRDirectory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebSDRDirectory.swift; sourceTree = "<group>"; };
 		88B6FFA94E0B49F65A6A7C3A /* N1MMBroadcastService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = N1MMBroadcastService.swift; sourceTree = "<group>"; };
@@ -255,6 +258,7 @@
 		A9FCE182FD822E8029CC2935 /* BandMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BandMapView.swift; sourceTree = "<group>"; };
 		AD94DF0CC21B3579E94B656D /* DXSpotParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DXSpotParserTests.swift; sourceTree = "<group>"; };
 		AE8F6A3E6109D1AB6BC36F1E /* ClusterManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClusterManager.swift; sourceTree = "<group>"; };
+		AF0C142F6AEFF2B4AB884F93 /* PoloNotesStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PoloNotesStore.swift; sourceTree = "<group>"; };
 		B158484444C88873F5A3255C /* ContentAreaView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentAreaView.swift; sourceTree = "<group>"; };
 		B3B7D302B00545D7C18506EE /* TuneInManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneInManager.swift; sourceTree = "<group>"; };
 		B5E2C462F2E2836D531DF7C8 /* AudioRingBufferTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioRingBufferTests.swift; sourceTree = "<group>"; };
@@ -520,6 +524,7 @@
 				208895258634B310D2F07374 /* CallsignInfoCache.swift */,
 				E01DD5FE86949FE7C24C949A /* GridCache.swift */,
 				D1FC2F375060958EB5E80A1B /* HamDBClient.swift */,
+				AF0C142F6AEFF2B4AB884F93 /* PoloNotesStore.swift */,
 				CBD184C919BAD8AB4E252813 /* POTASpotsClient.swift */,
 				E106FB98097FFDF0A175472E /* RBNClient.swift */,
 				C871C290EC0B709DD9DD31DC /* SOTAClient.swift */,
@@ -604,6 +609,7 @@
 		975583E34FE95551A79B7E0E /* Settings */ = {
 			isa = PBXGroup;
 			children = (
+				8466B59F78CE0AB2196B610F /* CallsignNotesSettingsTab.swift */,
 				77DC21FD1352B240BC2CB309 /* InteropSettingsTab.swift */,
 				0541A571F6C1F92C94D68C06 /* KeyerSettingsTab.swift */,
 				4689B4C5D47D8938263D9C18 /* SDRSettingsTab.swift */,
@@ -911,6 +917,7 @@
 				DFE23EB0A2F3B58875FAD538 /* CabrilloExportService.swift in Sources */,
 				CB03CA3ECCB8D9B11446E8E6 /* CabrilloPreviewView.swift in Sources */,
 				85EB67B1C51BD383285D39F7 /* CallsignInfoCache.swift in Sources */,
+				F209C6EC1C706E8EC0E8DAD6 /* CallsignNotesSettingsTab.swift in Sources */,
 				12B04502CA89C075227A5AEB /* CasualLayout.swift in Sources */,
 				3AE39BBAFEE73E1D856277EF /* CloudSyncService.swift in Sources */,
 				4B5B21A1E37010CDDCC8AAFC /* ClusterManager.swift in Sources */,
@@ -956,6 +963,7 @@
 				C32537BCA2A05D285ACD3F59 /* ParsedEntryView.swift in Sources */,
 				9EBB3D8E5E9347553347E840 /* ParsedFieldSummary.swift in Sources */,
 				7D0915486766A1D266151F39 /* PlaceholderView.swift in Sources */,
+				9A3F839E1D9935FB36FFF09A /* PoloNotesStore.swift in Sources */,
 				E30B77CEB546A7933A58257A /* PortNicknameEditor.swift in Sources */,
 				63973CA78774A97F252E2758 /* QSOLogTableView.swift in Sources */,
 				B2253AD62FF47AAD28572EA5 /* QSOMapView.swift in Sources */,

@@ -33,6 +33,9 @@ Pure logic library that can be tested without iOS Simulator. Run tests with `mak
 | `Sources/CarrierWaveCore/SuggestionCategory.swift` | CW suggestion category enum |
 | `Sources/CarrierWaveCore/TwoferMatcher.swift` | Two-fer duplicate detection |
 | `Sources/CarrierWaveCore/AntennaDescriptionParser.swift` | KiwiSDR antenna description parser (type, bands, directionality) |
+| `Sources/CarrierWaveCore/CallsignNotesSourceConfig.swift` | Codable config for callsign notes file sources (synced via iCloud KVS) |
+| `Sources/CarrierWaveCore/PoloNotesEntry.swift` | Parsed Polo notes entry (callsign, emoji, name, note) with text parsing |
+| `Sources/CarrierWaveCore/PoloNotesParser.swift` | Parse Ham2K Polo notes list files into PoloNotesEntry objects |
 | `Sources/CarrierWaveCore/QSYURIParser.swift` | QSY URI scheme parser (qsy://spot, tune, lookup, import, log) |
 | `Sources/CarrierWaveCore/QueryLanguage/QueryToken.swift` | Query token types and field definitions |
 | `Sources/CarrierWaveCore/QueryLanguage/QueryLexer.swift` | Query string tokenization |
@@ -298,7 +301,6 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `CWTranscriptionService+Decoder.swift` | Audio processing, signal decoding, transcript assembly, callsign detection |
 | `CWTranscriptionService+SDR.swift` | WebSDR audio input adapter: converts Int16 KiwiSDR frames to CW decoder pipeline |
 | `CWConversationTracker.swift` | Track CW conversation turns via frequency and prosign analysis |
-| `PoloNotesParser.swift` | Parse Ham2K Polo notes list files for callsign info |
 | `CallsignLookupService.swift` | Two-tier callsign lookup: error/result types, core lookup logic, cache management |
 | `CallsignLookupService+QRZ.swift` | QRZ XML callbook API: session auth, callsign lookup, XML parsing |
 | `CallsignNotesCache.swift` | Persistent cache for Polo notes (loads from disk, refreshes daily) |

@@ -1,3 +1,4 @@
+import CarrierWaveCore
 import Foundation
 
 // MARK: - PreviousQSOSummary
@@ -12,11 +13,15 @@ struct PreviousQSOSummary: Sendable {
 
 // MARK: - CallsignInfo
 
-/// Combined callsign information from HamDB lookup and local QSO history.
+/// Combined callsign information from HamDB lookup, local QSO history, and Polo notes.
 struct CallsignInfo: Sendable {
     let callsign: String
     let license: HamDBLicense?
     let previousQSOs: [PreviousQSOSummary]
+    var poloEmoji: String?
+    var poloName: String?
+    var poloNote: String?
+    var poloSources: [String]?
 
     var previousQSOCount: Int {
         previousQSOs.count

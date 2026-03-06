@@ -73,6 +73,7 @@
 | `HamDBClient.swift` | Actor wrapping HamDB.org API for grid/license lookups |
 | `GridCache.swift` | GridCache + CallsignStateCache actors with 1-hour TTL |
 | `SpotAggregator.swift` | @MainActor @Observable central service: polls, deduplicates, enriches spots |
+| `PoloNotesStore.swift` | Actor managing Polo callsign notes: iCloud KVS config, disk cache, 24h refresh |
 
 ### Services/WebSDR/
 
@@ -135,6 +136,7 @@
 | `SpotListView.swift` | Live spot table from SpotAggregator with source/band/region/text filters |
 | `BandMapView.swift` | Canvas-based band map with spot markers, frequency cursor, sub-band shading |
 | `ClusterView.swift` | DX cluster connection bar, scrollback, parsed spot table |
+| `SpotDetailInspector.swift` | Inspector panel: spot details, HamDB operator info, Polo notes, previous QSOs |
 
 ### Views/SDR/
 
@@ -151,7 +153,8 @@
 |------|-------------|
 | `Radio/RadioControlView.swift` | Serial port list, connect/disconnect, frequency/mode display |
 | `Sessions/SessionsListView.swift` | Session management with start/pause/end controls |
-| `Settings/SettingsView.swift` | Tab-based settings (General, Radio, SDR, Sync, Accounts) |
+| `Settings/SettingsView.swift` | Tab-based settings (General, Radio, SDR, Sync, Accounts, Notes) |
+| `Settings/CallsignNotesSettingsTab.swift` | Manage Polo callsign notes sources (add/delete/toggle, iCloud KVS sync) |
 | `Settings/SDRSettingsTab.swift` | SDR settings: default mode, auto-record, CW-SWL transcription config |
 | `CommandPalette/CommandPaletteView.swift` | Cmd+K command palette with frequency/callsign/park detection |
 | `MenuBarExtra/MenuBarExtraView.swift` | Menu bar extra showing solar conditions + session summary |

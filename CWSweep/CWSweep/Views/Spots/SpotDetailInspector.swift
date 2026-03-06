@@ -1,3 +1,4 @@
+import CarrierWaveCore
 import CarrierWaveData
 import SwiftData
 import SwiftUI
@@ -15,6 +16,7 @@ struct SpotDetailInspector: View {
                 Divider()
                 spotDetailsSection
                 operatorInfoSection
+                callsignNotesSection
                 previousQSOsSection
             }
             .padding(.vertical)
@@ -29,6 +31,7 @@ struct SpotDetailInspector: View {
     private static let infoCache = CallsignInfoCache.shared
 
     @State private var callsignInfo: CallsignInfo?
+    @State private var poloEntry: PoloNotesEntry?
     @State private var isLoading = false
     @Environment(\.modelContext) private var modelContext
 
@@ -142,6 +145,42 @@ struct SpotDetailInspector: View {
         }
     }
 
+    // MARK: - Callsign Notes
+
+    @ViewBuilder
+    private var callsignNotesSection: some View {
+        if let entry = poloEntry {
+            Divider()
+
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Callsign Notes")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    if let emoji = entry.emoji, let name = entry.name {
+                        Text("\(emoji) \(name)")
+                            .font(.body)
+                    } else if let name = entry.name {
+                        Text(name)
+                            .font(.body)
+                    } else if let emoji = entry.emoji {
+                        Text(emoji)
+                            .font(.body)
+                    }
+
+                    if let note = entry.note {
+                        Text(note)
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .padding(.horizontal)
+            }
+        }
+    }
+
     // MARK: - Previous QSOs
 
     @ViewBuilder
@@ -199,6 +238,11 @@ struct SpotDetailInspector: View {
             qsoSummaries: summaries
         )
         callsignInfo = info
+
+        // Load Polo notes
+        let store = PoloNotesStore.shared
+        await store.ensureLoaded()
+        poloEntry = await store.info(for: callsign)
     }
 
     @MainActor

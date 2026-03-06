@@ -4,6 +4,7 @@
 // These are URLs to Polo-style notes files that get fetched and cached.
 // Synced between devices via iCloud KVS (SettingsSyncService).
 
+import CarrierWaveCore
 import CarrierWaveData
 import Foundation
 import SwiftData
@@ -65,18 +66,6 @@ nonisolated final class CallsignNotesSource {
         formatter.unitsStyle = .abbreviated
         return formatter.localizedString(for: lastFetched, relativeTo: Date())
     }
-}
-
-// MARK: - CallsignNotesSourceConfig
-
-/// Codable subset of CallsignNotesSource for iCloud KVS sync.
-/// Only syncs configuration (id, title, url, isEnabled), not transient
-/// device-local state (lastFetched, entryCount, lastError).
-struct CallsignNotesSourceConfig: Codable, Equatable {
-    var id: UUID
-    var title: String
-    var url: String
-    var isEnabled: Bool
 }
 
 // MARK: - CallsignNotesSourceSync

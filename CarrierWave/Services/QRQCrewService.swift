@@ -5,6 +5,7 @@
 // Membership is checked by downloading the members list by URL,
 // independent of callsign notes cache titles.
 
+import CarrierWaveCore
 import CarrierWaveData
 import Foundation
 import SwiftData
@@ -72,14 +73,14 @@ actor QRQCrewMemberCache {
         entries[callsign.uppercased()] != nil
     }
 
-    func info(for callsign: String) -> CallsignInfo? {
+    func info(for callsign: String) -> PoloNotesEntry? {
         entries[callsign.uppercased()]
     }
 
     // MARK: Private
 
     /// Parsed member entries keyed by uppercase callsign
-    private var entries: [String: CallsignInfo] = [:]
+    private var entries: [String: PoloNotesEntry] = [:]
     private var isLoaded = false
 }
 
@@ -210,7 +211,7 @@ enum QRQCrewService {
 
     /// Extract display name from QRQ Crew entry, stripping "QC" and "#NN".
     /// e.g., "James S QC #10" → "James S"
-    private static func extractDisplayName(from info: CallsignInfo?) -> String? {
+    private static func extractDisplayName(from info: PoloNotesEntry?) -> String? {
         guard let name = info?.name, !name.isEmpty else {
             return nil
         }

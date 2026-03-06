@@ -3,6 +3,7 @@
 // Downloads and caches Polo notes from configured sources (clubs and user URLs)
 // for fast callsign lookup. Refreshes daily in background.
 
+import CarrierWaveCore
 import CarrierWaveData
 import Foundation
 import SwiftData
@@ -288,7 +289,7 @@ actor CallsignNotesCache {
     ) async -> [String: [NotesEntry]] {
         var entriesByCallsign: [String: [NotesEntry]] = [:]
 
-        await withTaskGroup(of: (String, [String: CallsignInfo]).self) { group in
+        await withTaskGroup(of: (String, [String: PoloNotesEntry]).self) { group in
             for source in sources {
                 group.addTask {
                     let entries = await (try? PoloNotesParser.load(from: source.url)) ?? [:]

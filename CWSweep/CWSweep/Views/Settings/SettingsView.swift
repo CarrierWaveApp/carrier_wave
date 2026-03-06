@@ -1,3 +1,4 @@
+import CarrierWaveCore
 import CarrierWaveData
 import SwiftUI
 
@@ -27,6 +28,9 @@ struct SettingsView: View {
 
             AccountsSettingsTab()
                 .tabItem { Label("Accounts", systemImage: "person.circle") }
+
+            CallsignNotesSettingsTab()
+                .tabItem { Label("Notes", systemImage: "note.text") }
 
             SDRSettingsTab()
                 .tabItem { Label("SDR", systemImage: "antenna.radiowaves.left.and.right.circle") }
@@ -238,7 +242,8 @@ struct SyncSettingsTab: View {
 
             Section("Info") {
                 Text(
-                    "QSOs, sessions, and settings sync automatically between CW Sweep (macOS) and Carrier Wave (iOS/iPadOS)."
+                    "QSOs, sessions, and settings sync automatically between "
+                        + "CW Sweep (macOS) and Carrier Wave (iOS/iPadOS)."
                 )
                 .font(.callout)
                 .foregroundStyle(.secondary)
@@ -309,10 +314,12 @@ struct AccountsSettingsTab: View {
 
     private func loadCredentials() {
         qrzUsername = (try? KeychainHelper.shared.readString(for: KeychainHelper.Keys.qrzCallbookUsername)) ?? ""
+        qrzPassword = (try? KeychainHelper.shared.readString(for: KeychainHelper.Keys.qrzCallbookPassword)) ?? ""
         lotwUsername = (try? KeychainHelper.shared.readString(for: KeychainHelper.Keys.lotwUsername)) ?? ""
+        lotwPassword = (try? KeychainHelper.shared.readString(for: KeychainHelper.Keys.lotwPassword)) ?? ""
         clubLogEmail = (try? KeychainHelper.shared.readString(for: KeychainHelper.Keys.clublogEmail)) ?? ""
+        clubLogPassword = (try? KeychainHelper.shared.readString(for: KeychainHelper.Keys.clublogPassword)) ?? ""
         clubLogCallsign = (try? KeychainHelper.shared.readString(for: KeychainHelper.Keys.clublogCallsign)) ?? ""
-        // Don't load passwords — show empty, only overwrite if user types
     }
 
     private func saveCredential(_ value: String, key: String) {

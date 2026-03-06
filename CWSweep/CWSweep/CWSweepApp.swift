@@ -1,4 +1,5 @@
 import AppKit
+import CarrierWaveCore
 import CarrierWaveData
 import SwiftData
 import SwiftUI
@@ -31,6 +32,18 @@ struct CWSweepApp: App {
             modelContainer = try ModelContainer(for: schema, configurations: [config])
         } catch {
             fatalError("Failed to create ModelContainer: \(error)")
+        }
+
+        // Trigger iCloud KVS sync on launch
+        NSUbiquitousKeyValueStore.default.synchronize()
+
+        // Observe remote KVS changes to refresh Polo notes
+        NotificationCenter.default.addObserver(
+            forName: NSUbiquitousKeyValueStore.didChangeExternallyNotification,
+            object: NSUbiquitousKeyValueStore.default,
+            queue: .main
+        ) { _ in
+            Task { await PoloNotesStore.shared.forceRefresh() }
         }
     }
 

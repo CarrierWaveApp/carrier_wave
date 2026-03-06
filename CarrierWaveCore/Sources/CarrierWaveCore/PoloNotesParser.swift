@@ -1,19 +1,23 @@
-import CarrierWaveData
+// Polo Notes Parser
+//
+// Parses Ham2K Polo notes list files into PoloNotesEntry objects.
+// Shared between Carrier Wave (iOS) and CW Sweep (macOS).
+
 import Foundation
 
 // MARK: - PoloNotesParser
 
-/// Parses Ham2K Polo notes list files into CallsignInfo entries
-enum PoloNotesParser {
-    // MARK: Internal
+/// Parses Ham2K Polo notes list files into PoloNotesEntry objects
+public enum PoloNotesParser {
+    // MARK: Public
 
     // MARK: - Public API
 
-    /// Parse a Polo notes list file content into CallsignInfo entries
+    /// Parse a Polo notes list file content into entries
     /// - Parameter content: The raw text content of the notes file
-    /// - Returns: Dictionary mapping callsigns (uppercase) to their info
-    static func parse(_ content: String) -> [String: CallsignInfo] {
-        var result: [String: CallsignInfo] = [:]
+    /// - Returns: Dictionary mapping callsigns (uppercase) to their entry
+    public static func parse(_ content: String) -> [String: PoloNotesEntry] {
+        var result: [String: PoloNotesEntry] = [:]
 
         let lines = content.components(separatedBy: .newlines)
 
@@ -36,8 +40,8 @@ enum PoloNotesParser {
 
     /// Parse a single line from a Polo notes file
     /// - Parameter line: A single line (not empty, not a comment)
-    /// - Returns: CallsignInfo if the line could be parsed
-    static func parseLine(_ line: String) -> CallsignInfo? {
+    /// - Returns: PoloNotesEntry if the line could be parsed
+    public static func parseLine(_ line: String) -> PoloNotesEntry? {
         // Split on first whitespace to get callsign and note
         let components = line.components(separatedBy: .whitespaces)
         guard !components.isEmpty else {
@@ -58,11 +62,11 @@ enum PoloNotesParser {
 
         if noteText.isEmpty {
             // Callsign only, no note
-            return CallsignInfo(callsign: callsign, source: .poloNotes)
+            return PoloNotesEntry(callsign: callsign)
         }
 
-        // Use the CallsignInfo helper to parse the note
-        return CallsignInfo.fromPoloNotes(callsign: callsign, noteText: noteText)
+        // Use PoloNotesEntry helper to parse the note
+        return PoloNotesEntry.fromNoteText(callsign: callsign, noteText: noteText)
     }
 
     // MARK: Private
@@ -98,11 +102,11 @@ enum PoloNotesParser {
 
 // MARK: - Async Loading
 
-extension PoloNotesParser {
+public extension PoloNotesParser {
     /// Load and parse a Polo notes file from a URL
     /// - Parameter url: The URL to the notes file
-    /// - Returns: Dictionary mapping callsigns to their info
-    static func load(from url: URL) async throws -> [String: CallsignInfo] {
+    /// - Returns: Dictionary mapping callsigns to their entry
+    static func load(from url: URL) async throws -> [String: PoloNotesEntry] {
         let (data, _) = try await URLSession.shared.data(from: url)
 
         guard let content = String(data: data, encoding: .utf8) else {
@@ -114,11 +118,11 @@ extension PoloNotesParser {
 
     /// Load and parse multiple Polo notes files, merging results
     /// - Parameter urls: Array of URLs to notes files
-    /// - Returns: Merged dictionary mapping callsigns to their info
-    static func load(from urls: [URL]) async -> [String: CallsignInfo] {
-        var merged: [String: CallsignInfo] = [:]
+    /// - Returns: Merged dictionary mapping callsigns to their entry
+    static func load(from urls: [URL]) async -> [String: PoloNotesEntry] {
+        var merged: [String: PoloNotesEntry] = [:]
 
-        await withTaskGroup(of: [String: CallsignInfo].self) { group in
+        await withTaskGroup(of: [String: PoloNotesEntry].self) { group in
             for url in urls {
                 group.addTask {
                     await (try? load(from: url)) ?? [:]
@@ -137,13 +141,13 @@ extension PoloNotesParser {
 
 // MARK: - PoloNotesError
 
-enum PoloNotesError: LocalizedError {
+public enum PoloNotesError: LocalizedError {
     case invalidEncoding
     case networkError(Error)
 
-    // MARK: Internal
+    // MARK: Public
 
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .invalidEncoding:
             "Unable to decode notes file as UTF-8"
