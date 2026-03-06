@@ -33,6 +33,8 @@ Pure logic library that can be tested without iOS Simulator. Run tests with `mak
 | `Sources/CarrierWaveCore/SuggestionCategory.swift` | CW suggestion category enum |
 | `Sources/CarrierWaveCore/TwoferMatcher.swift` | Two-fer duplicate detection |
 | `Sources/CarrierWaveCore/AntennaDescriptionParser.swift` | KiwiSDR antenna description parser (type, bands, directionality) |
+| `Sources/CarrierWaveCore/AntennaPattern.swift` | Parametric 2D azimuthal radiation patterns for common antenna types |
+| `Sources/CarrierWaveCore/AzimuthalProjection.swift` | Azimuthal equidistant projection math, sector binning for polar map |
 | `Sources/CarrierWaveCore/CallsignNotesSourceConfig.swift` | Codable config for callsign notes file sources (synced via iCloud KVS) |
 | `Sources/CarrierWaveCore/PoloNotesEntry.swift` | Parsed Polo notes entry (callsign, emoji, name, note) with text parsing |
 | `Sources/CarrierWaveCore/PoloNotesParser.swift` | Parse Ham2K Polo notes list files into PoloNotesEntry objects |
@@ -869,6 +871,10 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `MapFilterState.swift` | Observable filter state for map |
 | `QSOAnnotation.swift` | Annotation model for map markers and arcs |
 | `MapDataLoadingActor.swift` | Background actor for loading map QSO data off main thread |
+| `AzimuthalMapView.swift` | Canvas-rendered azimuthal equidistant projection with spot heatmap and antenna pattern overlay |
+| `AzimuthalContainerView.swift` | Container wiring spots, QSOs, antenna selection, and compass into the azimuthal map |
+| `AzimuthalStandaloneView.swift` | Standalone azimuthal view for Map tab (resolves grid via GPS, loads spots/QSOs) |
+| `AzimuthalDataProvider.swift` | Projects spots and QSOs into azimuthal coordinates, builds sector data |
 
 ## Utilities (`CarrierWave/Utilities/`)
 | File | Purpose |
@@ -879,6 +885,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `KeychainHelper.swift` | Secure credential storage |
 | `MemberLocationCache.swift` | Actor-based 30-day cache for callsign→coordinate lookups (QRZ/HamDB) |
 | `GridLocationService.swift` | One-shot GPS → 6-char Maidenhead grid square service |
+| `CompassHeadingService.swift` | Device compass heading provider for antenna pattern orientation |
 | `MaidenheadConverter.swift` | Grid square to coordinate conversion (and reverse) |
 | `SunlightMode.swift` | Sunlight mode environment key and view modifier for outdoor visibility |
 | `UnitFormatter.swift` | Centralized imperial/metric unit formatting (distance, temperature, wind, watts/distance) |

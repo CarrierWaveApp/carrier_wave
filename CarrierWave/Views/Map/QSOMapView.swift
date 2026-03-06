@@ -28,6 +28,14 @@ struct QSOMapView: View {
         .navigationTitle("Map")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                NavigationLink {
+                    AzimuthalStandaloneView()
+                } label: {
+                    Image(systemName: "scope")
+                }
+                .accessibilityLabel("Azimuthal View")
+            }
             ToolbarItem(placement: .primaryAction) {
                 Button {
                     showingFilterSheet = true

@@ -9,6 +9,7 @@ enum SidebarTab: String, CaseIterable, Identifiable {
     case mySpots = "My Spots"
     case p2p = "P2P"
     case map = "Map"
+    case azimuthal = "Azimuthal"
 
     // MARK: Internal
 
