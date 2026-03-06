@@ -18,3 +18,4 @@ LoggerView+Modifiers.swift - onChange handler to reset health banner dismiss sta
 LoggerView+Data.swift - Report network success/failure from POTA spot fetches
 SessionStartHelperViews.swift - Added UTC midnight warning to ActivationSectionView for POTA activations
 ActivityLogView.swift - Fix spots not restarting after navigate-away-and-back, add landscape two-pane layout
+SessionSpotsSection.swift - Fix club membership lookup using spotter callsign instead of spotted callsign in session context

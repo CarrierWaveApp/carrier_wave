@@ -98,15 +98,20 @@ struct SessionSpotsSection: View {
         return "\(count) Spot\(count == 1 ? "" : "s")"
     }
 
+    /// Use spotter callsign for club matching in session context.
+    /// In activator mode, `callsign` is the user's own callsign for every spot;
+    /// the spotter is the station that actually spotted them.
     private var clubSpots: [SessionSpot] {
         spots.filter {
-            !ClubsSyncService.shared.clubs(for: $0.callsign).isEmpty
+            let key = $0.spotter ?? $0.callsign
+            return !ClubsSyncService.shared.clubs(for: key).isEmpty
         }
     }
 
     private var nonClubSpots: [SessionSpot] {
         spots.filter {
-            ClubsSyncService.shared.clubs(for: $0.callsign).isEmpty
+            let key = $0.spotter ?? $0.callsign
+            return ClubsSyncService.shared.clubs(for: key).isEmpty
         }
     }
 
@@ -279,7 +284,7 @@ struct SessionSpotRow: View {
                 .layoutPriority(1)
 
             let clubNames = ClubsSyncService.shared.clubs(
-                for: spot.callsign
+                for: displayCallsign
             )
             if !clubNames.isEmpty {
                 HStack(spacing: 2) {
