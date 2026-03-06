@@ -19,13 +19,19 @@ enum NetworkHealth: Equatable, Sendable {
     /// Device reports connectivity but requests are failing
     case degraded(consecutiveFailures: Int)
 
+    // MARK: Internal
+
     var isUsable: Bool {
-        if case .healthy = self { return true }
+        if case .healthy = self {
+            return true
+        }
         return false
     }
 
     var isDegraded: Bool {
-        if case .degraded = self { return true }
+        if case .degraded = self {
+            return true
+        }
         return false
     }
 }
@@ -44,10 +50,6 @@ final class NetworkHealthMonitor {
 
     private init() {
         startPathMonitor()
-    }
-
-    deinit {
-        pathMonitor?.cancel()
     }
 
     // MARK: Internal
@@ -69,6 +71,14 @@ final class NetworkHealthMonitor {
     /// Whether the OS-level path monitor reports connectivity
     private(set) var pathSatisfied: Bool = true
 
+    /// Duration of the current failure streak, if any
+    var failureStreakDuration: TimeInterval? {
+        guard let start = failureStreakStart else {
+            return nil
+        }
+        return Date().timeIntervalSince(start)
+    }
+
     /// Call after a successful network request from any service
     func reportSuccess() {
         consecutiveFailures = 0
@@ -84,7 +94,7 @@ final class NetworkHealthMonitor {
             failureStreakStart = Date()
         }
         if let error {
-            logger.debug("Network failure #\(self.consecutiveFailures): \(error.localizedDescription)")
+            logger.debug("Network failure #\(consecutiveFailures): \(error.localizedDescription)")
         }
         updateHealth()
     }
@@ -96,18 +106,12 @@ final class NetworkHealthMonitor {
         updateHealth()
     }
 
-    /// Duration of the current failure streak, if any
-    var failureStreakDuration: TimeInterval? {
-        guard let start = failureStreakStart else { return nil }
-        return Date().timeIntervalSince(start)
-    }
-
     // MARK: Private
 
     /// Threshold of consecutive failures before reporting degraded
     private let degradedThreshold = 3
 
-    private var pathMonitor: NWPathMonitor?
+    @ObservationIgnored private var pathMonitor: NWPathMonitor?
     private let monitorQueue = DispatchQueue(label: "networkHealthMonitor")
     private let logger = Logger(
         subsystem: Bundle.main.bundleIdentifier ?? "CarrierWave",
@@ -118,17 +122,19 @@ final class NetworkHealthMonitor {
         let monitor = NWPathMonitor()
         monitor.pathUpdateHandler = { [weak self] path in
             Task { @MainActor [weak self] in
-                guard let self else { return }
-                let wasSatisfied = self.pathSatisfied
-                self.pathSatisfied = path.status == .satisfied
-                if self.pathSatisfied, !wasSatisfied {
-                    // Network came back — reset failure tracking
-                    self.logger.info("Network path restored")
-                    self.reset()
-                } else if !self.pathSatisfied {
-                    self.logger.info("Network path lost")
+                guard let self else {
+                    return
                 }
-                self.updateHealth()
+                let wasSatisfied = pathSatisfied
+                pathSatisfied = path.status == .satisfied
+                if pathSatisfied, !wasSatisfied {
+                    // Network came back — reset failure tracking
+                    logger.info("Network path restored")
+                    reset()
+                } else if !pathSatisfied {
+                    logger.info("Network path lost")
+                }
+                updateHealth()
             }
         }
         monitor.start(queue: monitorQueue)
