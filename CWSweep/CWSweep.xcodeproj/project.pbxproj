@@ -75,6 +75,7 @@
 		74F8FDA1DD5CEDDCD69542D9 /* RadioProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = E40D53C5F8C6D0964483E004 /* RadioProfile.swift */; };
 		760F66E8B2561AE95431E582 /* KiwiSDRTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E9FCCE1C5251452C5A8AA18 /* KiwiSDRTypes.swift */; };
 		7695C900B51F0F20C2EC60E9 /* ContestExchangeParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F096BD4326B3487F0591263 /* ContestExchangeParserTests.swift */; };
+		78243FACDC2C417D7A37291B /* SessionDetailView+Map.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21E887FA881BD13CA6D11653 /* SessionDetailView+Map.swift */; };
 		7C779E207F869C27CCC5F167 /* RadioControlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D54D7862949CF1053D8B17F /* RadioControlView.swift */; };
 		7D0915486766A1D266151F39 /* PlaceholderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54CBA2EC4C1C497E6F3A2916 /* PlaceholderView.swift */; };
 		7D8F6086E42B3FA8251FB20C /* CarrierWaveCore in Frameworks */ = {isa = PBXBuildFile; productRef = B9F7CD6646A6472927743AB9 /* CarrierWaveCore */; };
@@ -180,6 +181,7 @@
 		1E9FCCE1C5251452C5A8AA18 /* KiwiSDRTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KiwiSDRTypes.swift; sourceTree = "<group>"; };
 		208895258634B310D2F07374 /* CallsignInfoCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallsignInfoCache.swift; sourceTree = "<group>"; };
 		21884C5724864EF46893F691 /* WinKeyerProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinKeyerProtocol.swift; sourceTree = "<group>"; };
+		21E887FA881BD13CA6D11653 /* SessionDetailView+Map.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SessionDetailView+Map.swift"; sourceTree = "<group>"; };
 		24C05499E84B51F78CD6796B /* state-qso-party.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "state-qso-party.json"; sourceTree = "<group>"; };
 		2C033FFA0D17EDE1B07DA5AD /* SpotModeFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotModeFilter.swift; sourceTree = "<group>"; };
 		2CCB9F6513BE9A1618BD17E2 /* WebSDRSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebSDRSession.swift; sourceTree = "<group>"; };
@@ -579,6 +581,7 @@
 			children = (
 				C3D6758F90537AF324D0F83F /* SessionDetailSupporting.swift */,
 				A4492FAA0DEAEE325ED84F83 /* SessionDetailView.swift */,
+				21E887FA881BD13CA6D11653 /* SessionDetailView+Map.swift */,
 				184BC415A5A8B3D9237ED32B /* SessionsListView.swift */,
 				C6DFBC4329CC04D367091863 /* StatesWorkedMosaic.swift */,
 			);
@@ -992,6 +995,7 @@
 				081BC3FAE6A8973583B10EC1 /* SerialPortMonitor.swift in Sources */,
 				EB6EC9613A2B3822B04B02A7 /* SerialRadioTransport.swift in Sources */,
 				CE21ACB08D2C0ED7037C91EE /* SessionDetailSupporting.swift in Sources */,
+				78243FACDC2C417D7A37291B /* SessionDetailView+Map.swift in Sources */,
 				E32A97EA276C956B9D156A19 /* SessionDetailView.swift in Sources */,
 				C49F8B3B893C0F5941DDAE2B /* SessionsListView.swift in Sources */,
 				6A10F0021A897FDBB49F5F22 /* SettingsView.swift in Sources */,

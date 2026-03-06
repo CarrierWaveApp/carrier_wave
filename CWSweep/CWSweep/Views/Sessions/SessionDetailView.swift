@@ -12,6 +12,11 @@ struct SessionDetailView: View {
 
     let session: LoggingSession
 
+    @State var mappableQSOs: [QSO] = []
+    @State var mapPaths: [UUID: [CLLocationCoordinate2D]] = [:]
+    @State var mapPosition: MapCameraPosition = .automatic
+    @State var isWideSpan = false
+
     var body: some View {
         List {
             sessionSummarySection
@@ -40,8 +45,6 @@ struct SessionDetailView: View {
     @Environment(\.modelContext) private var modelContext
 
     @State private var displayRows: [SessionQSODisplayRow] = []
-    @State private var mappableQSOs: [QSO] = []
-    @State private var mapPaths: [UUID: [CLLocationCoordinate2D]] = [:]
     @State private var stateCountsCache: [String: Int] = [:]
     @State private var stateCallsignsCache: [String: [String]] = [:]
 
@@ -263,116 +266,6 @@ extension SessionDetailView {
                 RoveStopRow(stop: stop)
             }
         }
-    }
-}
-
-// MARK: - Map Section
-
-extension SessionDetailView {
-    @ViewBuilder
-    private var mapSection: some View {
-        if !mappableQSOs.isEmpty {
-            Section("Map") {
-                mapPreview(mappable: mappableQSOs)
-                    .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
-            }
-        }
-    }
-
-    private func mapPreview(mappable: [QSO]) -> some View {
-        let myCoord: CLLocationCoordinate2D? = if let grid = session.myGrid, grid.count >= 4,
-                                                  let coord = MaidenheadConverter.coordinate(from: grid)
-        {
-            CLLocationCoordinate2D(latitude: coord.latitude, longitude: coord.longitude)
-        } else {
-            nil
-        }
-        let cachedPaths = mapPaths
-
-        return ZStack(alignment: .bottomTrailing) {
-            Map(interactionModes: []) {
-                ForEach(mappable) { qso in
-                    if let grid = qso.theirGrid,
-                       let coord = MaidenheadConverter.coordinate(from: grid)
-                    {
-                        let clCoord = CLLocationCoordinate2D(
-                            latitude: coord.latitude, longitude: coord.longitude
-                        )
-                        Annotation(qso.callsign, coordinate: clCoord, anchor: .bottom) {
-                            SessionMapPin(color: .orange)
-                        }
-                    }
-                }
-                if let myCoord {
-                    Annotation("Me", coordinate: myCoord, anchor: .bottom) {
-                        SessionMapPin(color: .blue, size: 12)
-                    }
-                    ForEach(mappable) { qso in
-                        if let path = cachedPaths[qso.id] {
-                            MapPolyline(coordinates: path)
-                                .stroke(.white.opacity(0.5), lineWidth: 2.5)
-                        }
-                    }
-                }
-            }
-            .mapStyle(.standard(elevation: .realistic))
-            .allowsHitTesting(false)
-            .frame(height: 200)
-
-            HStack(spacing: 4) {
-                Image(systemName: "map.fill")
-                Text("\(mappable.count) QSOs")
-            }
-            .font(.caption2)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(.thinMaterial, in: Capsule())
-            .padding(8)
-        }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Session map with \(mappable.count) QSOs")
-    }
-
-    /// Great-circle interpolation for geodesic lines on the map
-    static func geodesicPath(
-        from: CLLocationCoordinate2D,
-        to: CLLocationCoordinate2D,
-        segments: Int
-    ) -> [CLLocationCoordinate2D] {
-        let lat1 = from.latitude * .pi / 180
-        let lon1 = from.longitude * .pi / 180
-        let lat2 = to.latitude * .pi / 180
-        let lon2 = to.longitude * .pi / 180
-
-        let dLat = lat2 - lat1
-        let dLon = lon2 - lon1
-        let a = sin(dLat / 2) * sin(dLat / 2)
-            + cos(lat1) * cos(lat2) * sin(dLon / 2) * sin(dLon / 2)
-        let angularDist = 2 * atan2(sqrt(a), sqrt(1 - a))
-
-        guard angularDist > 0.001 else {
-            return [from, to]
-        }
-
-        var points: [CLLocationCoordinate2D] = []
-        points.reserveCapacity(segments + 1)
-
-        for i in 0 ... segments {
-            let frac = Double(i) / Double(segments)
-            let aFrac = sin((1 - frac) * angularDist) / sin(angularDist)
-            let bFrac = sin(frac * angularDist) / sin(angularDist)
-
-            let x = aFrac * cos(lat1) * cos(lon1) + bFrac * cos(lat2) * cos(lon2)
-            let y = aFrac * cos(lat1) * sin(lon1) + bFrac * cos(lat2) * sin(lon2)
-            let z = aFrac * sin(lat1) + bFrac * sin(lat2)
-
-            let lat = atan2(z, sqrt(x * x + y * y)) * 180 / .pi
-            let lon = atan2(y, x) * 180 / .pi
-
-            points.append(CLLocationCoordinate2D(latitude: lat, longitude: lon))
-        }
-
-        return points
     }
 }
 
