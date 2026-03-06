@@ -38,113 +38,26 @@ final class SerialPort: @unchecked Sendable {
             throw SerialPortError.failedToOpen(path: path, errno: errno)
         }
 
-        // Keep non-blocking mode — required for actor-based concurrency.
-        // Blocking reads would hold up the actor's cooperative thread,
-        // preventing send() from executing on the same actor.
-
-        // Get exclusive access
         if ioctl(fd, TIOCEXCL) == -1 {
             Darwin.close(fd)
             throw SerialPortError.failedToGetExclusive(path: path)
         }
 
-        // Immediately de-assert DTR/RTS if not wanted.
-        // The USB-serial driver asserts DTR on open(), which puts the
-        // Elecraft K3/K4 into TEST mode before we can configure termios.
-        if !assertDTR {
-            var flag: Int32 = TIOCM_DTR
-            ioctl(fd, TIOCMBIC, &flag)
-        }
-        if !assertRTS {
-            var flag: Int32 = TIOCM_RTS
-            ioctl(fd, TIOCMBIC, &flag)
-        }
+        // De-assert DTR/RTS before termios to prevent Elecraft TEST mode
+        applyDTRRTS(fd: fd, assertDTR: assertDTR, assertRTS: assertRTS)
 
-        // Configure termios
         var options = termios()
         tcgetattr(fd, &options)
-
-        // Set baud rate
-        let speed = Self.baudRateConstant(for: baudRate)
-        cfsetispeed(&options, speed)
-        cfsetospeed(&options, speed)
-
-        // Raw mode (no echo, no signals, no canonical processing)
-        cfmakeraw(&options)
-
-        // Data bits
-        options.c_cflag &= ~UInt(CSIZE)
-        switch dataBits {
-        case 5: options.c_cflag |= UInt(CS5)
-        case 6: options.c_cflag |= UInt(CS6)
-        case 7: options.c_cflag |= UInt(CS7)
-        default: options.c_cflag |= UInt(CS8)
-        }
-
-        // Stop bits
-        if stopBits == 2 {
-            options.c_cflag |= UInt(CSTOPB)
-        } else {
-            options.c_cflag &= ~UInt(CSTOPB)
-        }
-
-        // Parity
-        switch parity {
-        case .none:
-            options.c_cflag &= ~UInt(PARENB)
-        case .even:
-            options.c_cflag |= UInt(PARENB)
-            options.c_cflag &= ~UInt(PARODD)
-        case .odd:
-            options.c_cflag |= UInt(PARENB | PARODD)
-        }
-
-        // Flow control
-        switch flowControl {
-        case .none:
-            options.c_cflag &= ~UInt(CRTSCTS)
-            options.c_iflag &= ~UInt(IXON | IXOFF | IXANY)
-        case .hardware:
-            options.c_cflag |= UInt(CRTSCTS)
-        case .software:
-            options.c_iflag |= UInt(IXON | IXOFF)
-        }
-
-        // Enable receiver, local mode; clear HUPCL so tcsetattr
-        // doesn't re-assert DTR via the driver
-        options.c_cflag |= UInt(CLOCAL | CREAD)
-        options.c_cflag &= ~UInt(HUPCL)
-
-        // VMIN=0, VTIME=0: non-blocking reads return immediately
-        options.c_cc.16 = 0 // VMIN
-        options.c_cc.17 = 0 // VTIME
-
+        configureSpeed(&options, baudRate: baudRate)
+        configureLineParams(&options, dataBits: dataBits, stopBits: stopBits, parity: parity)
+        configureFlowControl(&options, flowControl: flowControl)
         tcsetattr(fd, TCSANOW, &options)
         tcflush(fd, TCIOFLUSH)
 
         fileDescriptor = fd
 
-        // Final DTR/RTS state after tcsetattr (which may have re-asserted them).
-        // Most USB-serial adapters need these for RS-232 transceiver power,
-        // but Elecraft K3/K4 enters TEST mode if DTR/RTS are asserted.
-        var assertFlags: Int32 = 0
-        var deassertFlags: Int32 = 0
-        if assertDTR {
-            assertFlags |= TIOCM_DTR
-        } else {
-            deassertFlags |= TIOCM_DTR
-        }
-        if assertRTS {
-            assertFlags |= TIOCM_RTS
-        } else {
-            deassertFlags |= TIOCM_RTS
-        }
-        if assertFlags != 0 {
-            ioctl(fd, TIOCMBIS, &assertFlags)
-        }
-        if deassertFlags != 0 {
-            ioctl(fd, TIOCMBIC, &deassertFlags)
-        }
+        // Re-apply after tcsetattr (which may have re-asserted them)
+        applyDTRRTS(fd: fd, assertDTR: assertDTR, assertRTS: assertRTS)
     }
 
     func close() {
@@ -233,6 +146,76 @@ final class SerialPort: @unchecked Sendable {
         case 115_200: speed_t(B115200)
         case 230_400: speed_t(B230400)
         default: speed_t(B19200)
+        }
+    }
+
+    private func configureSpeed(_ options: inout termios, baudRate: Int) {
+        let speed = Self.baudRateConstant(for: baudRate)
+        cfsetispeed(&options, speed)
+        cfsetospeed(&options, speed)
+        cfmakeraw(&options)
+    }
+
+    private func configureLineParams(
+        _ options: inout termios,
+        dataBits: Int, stopBits: Int, parity: ParityType
+    ) {
+        options.c_cflag &= ~UInt(CSIZE)
+        switch dataBits {
+        case 5: options.c_cflag |= UInt(CS5)
+        case 6: options.c_cflag |= UInt(CS6)
+        case 7: options.c_cflag |= UInt(CS7)
+        default: options.c_cflag |= UInt(CS8)
+        }
+
+        if stopBits == 2 {
+            options.c_cflag |= UInt(CSTOPB)
+        } else {
+            options.c_cflag &= ~UInt(CSTOPB)
+        }
+
+        switch parity {
+        case .none: options.c_cflag &= ~UInt(PARENB)
+        case .even:
+            options.c_cflag |= UInt(PARENB)
+            options.c_cflag &= ~UInt(PARODD)
+        case .odd: options.c_cflag |= UInt(PARENB | PARODD)
+        }
+
+        options.c_cflag |= UInt(CLOCAL | CREAD)
+        options.c_cflag &= ~UInt(HUPCL)
+        options.c_cc.16 = 0 // VMIN
+        options.c_cc.17 = 0 // VTIME
+    }
+
+    private func configureFlowControl(_ options: inout termios, flowControl: FlowControlType) {
+        switch flowControl {
+        case .none:
+            options.c_cflag &= ~UInt(CRTSCTS)
+            options.c_iflag &= ~UInt(IXON | IXOFF | IXANY)
+        case .hardware: options.c_cflag |= UInt(CRTSCTS)
+        case .software: options.c_iflag |= UInt(IXON | IXOFF)
+        }
+    }
+
+    private func applyDTRRTS(fd: Int32, assertDTR: Bool, assertRTS: Bool) {
+        var assertFlags: Int32 = 0
+        var deassertFlags: Int32 = 0
+        if assertDTR {
+            assertFlags |= TIOCM_DTR
+        } else {
+            deassertFlags |= TIOCM_DTR
+        }
+        if assertRTS {
+            assertFlags |= TIOCM_RTS
+        } else {
+            deassertFlags |= TIOCM_RTS
+        }
+        if assertFlags != 0 {
+            _ = ioctl(fd, TIOCMBIS, &assertFlags)
+        }
+        if deassertFlags != 0 {
+            _ = ioctl(fd, TIOCMBIC, &deassertFlags)
         }
     }
 }

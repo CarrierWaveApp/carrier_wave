@@ -63,6 +63,7 @@
 		649186C39C6C12A008E5E673 /* CWSweepCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000401D18660686DB848ACEF /* CWSweepCommands.swift */; };
 		6704B94A7A1493BCFF7F9BB7 /* RBNSpot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61A60C580F635EFE9BCA0856 /* RBNSpot.swift */; };
 		6A10F0021A897FDBB49F5F22 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F19CADD4B3925B383196E50A /* SettingsView.swift */; };
+		6A991B64AFA3F390514B5510 /* TuneInManager+SmartFeatures.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7D83EBF34D8BE76F81AF48A /* TuneInManager+SmartFeatures.swift */; };
 		6ABB4A903C55E8EE1AF6B249 /* WWFFSpot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7200EF7A4CAC915CF885707A /* WWFFSpot.swift */; };
 		6CA04924A61EBA3747274233 /* InteropSettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77DC21FD1352B240BC2CB309 /* InteropSettingsTab.swift */; };
 		6CA9B7401ED33995F48A0CAE /* KiwiSDRAudioEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0637C656A27B30697745FA01 /* KiwiSDRAudioEngine.swift */; };
@@ -266,6 +267,7 @@
 		C14FCF8C9F11B50677599080 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		C150CCF02A9BB60FB45C0D13 /* SerialRadioTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SerialRadioTransport.swift; sourceTree = "<group>"; };
 		C7CCEF8E17B15DAE87F76162 /* RadioCommandLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadioCommandLog.swift; sourceTree = "<group>"; };
+		C7D83EBF34D8BE76F81AF48A /* TuneInManager+SmartFeatures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TuneInManager+SmartFeatures.swift"; sourceTree = "<group>"; };
 		C871C290EC0B709DD9DD31DC /* SOTAClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SOTAClient.swift; sourceTree = "<group>"; };
 		C8E9B086546B9F6B0CEA1915 /* ClusterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClusterView.swift; sourceTree = "<group>"; };
 		CA21C42A81EFB2B6ED391718 /* SOTASpot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SOTASpot.swift; sourceTree = "<group>"; };
@@ -585,6 +587,7 @@
 				96D5E29C2E4148A1E01FE848 /* RecordingClipExporter.swift */,
 				E73C6ACCCD05EE963A758ABA /* RecordingPlaybackEngine.swift */,
 				B3B7D302B00545D7C18506EE /* TuneInManager.swift */,
+				C7D83EBF34D8BE76F81AF48A /* TuneInManager+SmartFeatures.swift */,
 				8671F811BD9E20B72C2AC188 /* WebSDRDirectory.swift */,
 				B6629012544B77452A4C295F /* WebSDRRecorder.swift */,
 				2CCB9F6513BE9A1618BD17E2 /* WebSDRSession.swift */,
@@ -987,6 +990,7 @@
 				8D352A7207B66616266C269E /* StatusBarView.swift in Sources */,
 				B182958A5BD9A7F6A3C2B65B /* SyncStatusIndicator.swift in Sources */,
 				DD1C9CB6C687BEA8F5E3E410 /* TelnetClusterClient.swift in Sources */,
+				6A991B64AFA3F390514B5510 /* TuneInManager+SmartFeatures.swift in Sources */,
 				CA91DFC75E12CF67D01F9C8E /* TuneInManager.swift in Sources */,
 				B66734B0C6255295E395B251 /* UnifiedSpot.swift in Sources */,
 				39C91557EBCAEE25D173E4E3 /* UnitFormatter.swift in Sources */,

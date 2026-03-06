@@ -303,8 +303,12 @@ struct ActivityLogView: View {
             }
         )
     }
+}
 
-    private func handleQuickLog(_ data: QuickLogData) {
+// MARK: - ActivityLogView Actions
+
+extension ActivityLogView {
+    func handleQuickLog(_ data: QuickLogData) {
         let qso = manager.logQSO(
             callsign: data.callsign,
             band: data.band,
@@ -330,14 +334,13 @@ struct ActivityLogView: View {
                     mode: data.mode
                 )
             }
-            // Background lookup to fill in metadata and detect callsign changes
             Task {
                 await enrichQSOWithLookup(qso)
             }
         }
     }
 
-    private func handleSpotLogged(frequencyMHz: Double, mode: String) {
+    func handleSpotLogged(frequencyMHz: Double, mode: String) {
         currentFrequency = frequencyMHz
         currentMode = mode
         manager.refreshTodayStats()
@@ -345,8 +348,7 @@ struct ActivityLogView: View {
         workedCacheVersion += 1
     }
 
-    /// Look up a callsign after logging to fill in metadata and detect ownership changes
-    private func enrichQSOWithLookup(_ qso: QSO) async {
+    func enrichQSOWithLookup(_ qso: QSO) async {
         let service = CallsignLookupService(modelContext: modelContext)
         guard let info = await service.lookup(qso.callsign) else {
             return
@@ -373,7 +375,7 @@ struct ActivityLogView: View {
         try? modelContext.save()
     }
 
-    private func requestGPSGridIfNeeded() {
+    func requestGPSGridIfNeeded() {
         if manager.currentProfile?.useCurrentLocation == true {
             locationService.requestGrid()
         }

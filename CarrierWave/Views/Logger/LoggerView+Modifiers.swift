@@ -263,6 +263,13 @@ extension LoggerView {
 
     /// Applies lifecycle and event handlers to the main navigation content
     func applyEventHandlers(_ content: some View) -> some View {
+        applyChangeHandlers(
+            applyLifecycleHandlers(content)
+        )
+    }
+
+    /// Applies onAppear, task, and notification receivers
+    private func applyLifecycleHandlers(_ content: some View) -> some View {
         content
             .onAppear {
                 if sessionManager == nil {
@@ -274,7 +281,6 @@ extension LoggerView {
                 )
                 refreshSessionQSOs()
                 Task { await refreshPOTASpots() }
-                // Load contact counts for suggestion weighting (background)
                 let container = modelContext.container
                 Task.detached {
                     let counts = CallsignSuggestionProvider.loadContactCounts(
@@ -292,8 +298,27 @@ extension LoggerView {
                     await refreshPOTASpots()
                 }
             }
+            .onReceive(
+                NotificationCenter.default.publisher(for: .didReceiveQSYSpot)
+            ) { notification in
+                handleQSYSpotNotification(notification)
+            }
+            .onReceive(
+                NotificationCenter.default.publisher(for: .didReceiveQSYTune)
+            ) { notification in
+                handleQSYTuneNotification(notification)
+            }
+            .onReceive(
+                NotificationCenter.default.publisher(for: .didReceiveQSYLog)
+            ) { notification in
+                handleQSYLogNotification(notification)
+            }
+    }
+
+    /// Applies onChange handlers for session, network, and spot state
+    private func applyChangeHandlers(_ content: some View) -> some View {
+        content
             .onChange(of: NetworkHealthMonitor.shared.health) { oldHealth, newHealth in
-                // Re-show banner when health degrades again after dismissal
                 if newHealth == .healthy {
                     networkHealthDismissed = false
                 } else if oldHealth == .healthy {
@@ -317,21 +342,6 @@ extension LoggerView {
                     handleSpotSelection(selection)
                     externalSpotSelection = nil
                 }
-            }
-            .onReceive(
-                NotificationCenter.default.publisher(for: .didReceiveQSYSpot)
-            ) { notification in
-                handleQSYSpotNotification(notification)
-            }
-            .onReceive(
-                NotificationCenter.default.publisher(for: .didReceiveQSYTune)
-            ) { notification in
-                handleQSYTuneNotification(notification)
-            }
-            .onReceive(
-                NotificationCenter.default.publisher(for: .didReceiveQSYLog)
-            ) { notification in
-                handleQSYLogNotification(notification)
             }
     }
 

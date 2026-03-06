@@ -35,7 +35,7 @@ final class SerialPortMonitor {
     static func discoverSerialPorts() -> [SerialPortInfo] {
         var ports: [SerialPortInfo] = []
 
-        var matchingDict = IOServiceMatching(kIOSerialBSDServiceValue) as NSMutableDictionary
+        let matchingDict = IOServiceMatching(kIOSerialBSDServiceValue) as NSMutableDictionary
         matchingDict[kIOSerialBSDTypeKey] = kIOSerialBSDAllTypes
 
         var iterator: io_iterator_t = 0
@@ -50,62 +50,9 @@ final class SerialPortMonitor {
                 IOObjectRelease(service)
                 service = IOIteratorNext(iterator)
             }
-
-            guard let pathCF = IORegistryEntryCreateCFProperty(
-                service,
-                kIOCalloutDeviceKey as CFString,
-                kCFAllocatorDefault,
-                0
-            )?.takeRetainedValue() as? String else {
-                continue
+            if let info = portInfo(from: service) {
+                ports.append(info)
             }
-
-            // Only include /dev/cu.* ports (avoid /dev/tty.* DCD blocking)
-            guard pathCF.hasPrefix("/dev/cu.") else {
-                continue
-            }
-
-            // Skip Bluetooth ports
-            if pathCF.contains("Bluetooth") {
-                continue
-            }
-
-            let name = (IORegistryEntryCreateCFProperty(
-                service,
-                "USB Product Name" as CFString,
-                kCFAllocatorDefault,
-                0
-            )?.takeRetainedValue() as? String) ?? pathCF.replacingOccurrences(of: "/dev/cu.", with: "")
-
-            let vendorId = IORegistryEntryCreateCFProperty(
-                service,
-                "idVendor" as CFString,
-                kCFAllocatorDefault,
-                0
-            )?.takeRetainedValue() as? Int
-
-            let productId = IORegistryEntryCreateCFProperty(
-                service,
-                "idProduct" as CFString,
-                kCFAllocatorDefault,
-                0
-            )?.takeRetainedValue() as? Int
-
-            let serialNumber = IORegistryEntryCreateCFProperty(
-                service,
-                "USB Serial Number" as CFString,
-                kCFAllocatorDefault,
-                0
-            )?.takeRetainedValue() as? String
-
-            ports.append(SerialPortInfo(
-                id: pathCF,
-                path: pathCF,
-                name: name,
-                vendorId: vendorId,
-                productId: productId,
-                serialNumber: serialNumber
-            ))
         }
 
         IOObjectRelease(iterator)
@@ -158,4 +105,37 @@ final class SerialPortMonitor {
     private var notificationPort: IONotificationPortRef?
     private var addedIterator: io_iterator_t = 0
     private var removedIterator: io_iterator_t = 0
+
+    private static func portInfo(from service: io_object_t) -> SerialPortInfo? {
+        guard let pathCF = IORegistryEntryCreateCFProperty(
+            service, kIOCalloutDeviceKey as CFString, kCFAllocatorDefault, 0
+        )?.takeRetainedValue() as? String else {
+            return nil
+        }
+
+        guard pathCF.hasPrefix("/dev/cu."), !pathCF.contains("Bluetooth") else {
+            return nil
+        }
+
+        let name = (IORegistryEntryCreateCFProperty(
+            service, "USB Product Name" as CFString, kCFAllocatorDefault, 0
+        )?.takeRetainedValue() as? String) ?? pathCF.replacingOccurrences(of: "/dev/cu.", with: "")
+
+        let vendorId = IORegistryEntryCreateCFProperty(
+            service, "idVendor" as CFString, kCFAllocatorDefault, 0
+        )?.takeRetainedValue() as? Int
+
+        let productId = IORegistryEntryCreateCFProperty(
+            service, "idProduct" as CFString, kCFAllocatorDefault, 0
+        )?.takeRetainedValue() as? Int
+
+        let serialNumber = IORegistryEntryCreateCFProperty(
+            service, "USB Serial Number" as CFString, kCFAllocatorDefault, 0
+        )?.takeRetainedValue() as? String
+
+        return SerialPortInfo(
+            id: pathCF, path: pathCF, name: name,
+            vendorId: vendorId, productId: productId, serialNumber: serialNumber
+        )
+    }
 }

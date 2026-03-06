@@ -91,10 +91,10 @@ final class TuneInManager {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            guard let self, isActive else {
-                return
-            }
             Task { @MainActor in
+                guard let self, self.isActive else {
+                    return
+                }
                 await self.stop()
             }
         }

@@ -1,53 +1,12 @@
+import CarrierWaveCore
 import CarrierWaveData
 import Foundation
-
-// MARK: - TuneInQSYAlert
-
-/// Alert data when the tuned activator is re-spotted on a different frequency.
-struct TuneInQSYAlert: Equatable {
-    let callsign: String
-    let newFrequencyMHz: Double
-    let newMode: String
-    let newBand: String
-    let currentFrequencyMHz: Double
-    let currentBand: String
-}
-
-// MARK: - ReceiverSuggestion
-
-/// Suggestion to switch to a better receiver.
-struct ReceiverSuggestion: Equatable {
-    let currentName: String
-    let suggestedName: String
-    let suggestedReceiver: KiwiSDRReceiver
-    let reason: String
-
-    static func == (lhs: ReceiverSuggestion, rhs: ReceiverSuggestion) -> Bool {
-        lhs.currentName == rhs.currentName && lhs.suggestedName == rhs.suggestedName
-    }
-}
-
-// MARK: - FollowedActivator
-
-/// An activator callsign the user is following.
-struct FollowedActivator: Codable, Identifiable, Equatable {
-    let callsign: String
-    let followedAt: Date
-    /// Last known frequency when followed
-    let frequencyMHz: Double?
-    let mode: String?
-
-    var id: String {
-        callsign
-    }
-}
 
 // MARK: - Smart Features
 
 extension TuneInManager {
     // MARK: - QSY Detection
 
-    /// Start monitoring for QSY (frequency change) of the tuned activator
     func startQSYMonitor() {
         guard let spot else {
             return
@@ -60,7 +19,6 @@ extension TuneInManager {
             let currentFreq = spot.frequencyMHz
 
             while !Task.isCancelled {
-                // Check every 45 seconds
                 try? await Task.sleep(for: .seconds(45))
                 guard !Task.isCancelled else {
                     break
@@ -70,8 +28,7 @@ extension TuneInManager {
                     let spots = try await rbn.spots(
                         for: callsign, hours: 1, limit: 20
                     )
-                    // Find the most recent spot with a different frequency
-                    let recentCutoff = Date().addingTimeInterval(-300) // 5 min
+                    let recentCutoff = Date().addingTimeInterval(-300)
                     let qsySpot = spots
                         .filter { $0.timestamp > recentCutoff }
                         .sorted { $0.timestamp > $1.timestamp }
@@ -79,7 +36,9 @@ extension TuneInManager {
 
                     if let qsy = qsySpot {
                         let newFreqMHz = qsy.frequency / 1_000.0
-                        let newBand = LoggingSession.bandForFrequency(newFreqMHz)
+                        let newBand = BandUtilities.deriveBand(
+                            from: qsy.frequency
+                        ) ?? ""
                         await MainActor.run { [weak self] in
                             guard let self, isActive else {
                                 return
@@ -93,7 +52,7 @@ extension TuneInManager {
                                 currentBand: self.spot?.band ?? ""
                             )
                         }
-                        break // One alert per session, don't spam
+                        break
                     }
                 } catch {
                     // Network error — silently retry next cycle
@@ -102,20 +61,18 @@ extension TuneInManager {
         }
     }
 
-    /// Stop QSY monitoring
     func stopQSYMonitor() {
         qsyMonitorTask?.cancel()
         qsyMonitorTask = nil
         qsyAlert = nil
     }
 
-    /// Accept a QSY retune — switch to the new frequency
     func acceptQSYRetune() async {
         guard let alert = qsyAlert else {
             return
         }
         await session.retune(frequencyMHz: alert.newFrequencyMHz)
-        // Update the spot metadata
+
         if let currentSpot = spot {
             spot = TuneInSpot(
                 callsign: currentSpot.callsign,
@@ -132,18 +89,15 @@ extension TuneInManager {
             )
         }
         qsyAlert = nil
-        // Restart QSY monitor for the new frequency
         startQSYMonitor()
     }
 
-    /// Dismiss a QSY alert without retuning
     func dismissQSYAlert() {
         qsyAlert = nil
     }
 
     // MARK: - Receiver Quality Monitoring
 
-    /// Start monitoring receiver quality and suggest alternatives
     func startReceiverMonitor() {
         stopReceiverMonitor()
 
@@ -186,14 +140,13 @@ extension TuneInManager {
         }
     }
 
-    /// Check nearby receivers for better SNR than current
-    private func findBetterReceiver(
+    func findBetterReceiver(
         fetcher: KiwiSDRStatusFetcher,
         current: KiwiSDRReceiver,
         snr: Int,
         spot: TuneInSpot
     ) async -> ReceiverSuggestion? {
-        let alternatives = await WebSDRDirectory.shared.findNearby(
+        let alternatives = await directory.findNearby(
             grid: spot.grid, latitude: spot.latitude,
             longitude: spot.longitude, limit: 5
         )
@@ -214,21 +167,18 @@ extension TuneInManager {
         return nil
     }
 
-    /// Stop receiver quality monitoring
     func stopReceiverMonitor() {
         receiverMonitorTask?.cancel()
         receiverMonitorTask = nil
         receiverSuggestion = nil
     }
 
-    /// Dismiss a receiver suggestion
     func dismissReceiverSuggestion() {
         receiverSuggestion = nil
     }
 
     // MARK: - Follow Activator
 
-    /// Currently followed activators
     var followedActivators: [FollowedActivator] {
         get {
             guard let data = UserDefaults.standard.data(
@@ -246,14 +196,12 @@ extension TuneInManager {
         }
     }
 
-    /// Whether a callsign is currently followed
     func isFollowing(_ callsign: String) -> Bool {
         followedActivators.contains {
             $0.callsign.uppercased() == callsign.uppercased()
         }
     }
 
-    /// Follow an activator callsign
     func followActivator(
         _ callsign: String,
         frequencyMHz: Double? = nil,
@@ -272,7 +220,6 @@ extension TuneInManager {
         followedActivators = list
     }
 
-    /// Unfollow an activator callsign
     func unfollowActivator(_ callsign: String) {
         var list = followedActivators
         list.removeAll {
@@ -281,7 +228,6 @@ extension TuneInManager {
         followedActivators = list
     }
 
-    /// Toggle follow state for an activator
     func toggleFollow(_ callsign: String, frequencyMHz: Double?, mode: String?) {
         if isFollowing(callsign) {
             unfollowActivator(callsign)
@@ -290,7 +236,5 @@ extension TuneInManager {
         }
     }
 
-    // MARK: - Private Storage
-
-    private static let followedActivatorsKey = "tuneInFollowedActivators"
+    static let followedActivatorsKey = "tuneInFollowedActivators"
 }

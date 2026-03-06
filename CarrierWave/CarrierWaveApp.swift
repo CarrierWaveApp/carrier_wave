@@ -318,21 +318,7 @@ struct CarrierWaveApp: App {
 
         switch action {
         case let .spot(params):
-            NotificationCenter.default.post(
-                name: .didReceiveQSYSpot,
-                object: nil,
-                userInfo: [
-                    "callsign": params.callsign,
-                    "frequencyMHz": params.frequencyMHz,
-                    "mode": params.mode as Any,
-                    "grid": params.grid as Any,
-                    "ref": params.ref?.first as Any,
-                    "refType": params.refType?.first as Any,
-                    "source": params.source as Any,
-                    "comment": params.comment as Any,
-                ]
-            )
-
+            postQSYSpotNotification(params)
         case let .tune(params):
             NotificationCenter.default.post(
                 name: .didReceiveQSYTune,
@@ -342,43 +328,60 @@ struct CarrierWaveApp: App {
                     "mode": params.mode as Any,
                 ]
             )
-
         case let .lookup(callsign):
             NotificationCenter.default.post(
                 name: .didReceiveQSYLookup,
                 object: nil,
                 userInfo: ["callsign": callsign]
             )
-
         case let .importLog(importURL, _):
-            // Reuse existing ADIF import flow
             NotificationCenter.default.post(
                 name: .didReceiveADIFFile,
                 object: importURL
             )
-
         case let .log(params):
-            NotificationCenter.default.post(
-                name: .didReceiveQSYLog,
-                object: nil,
-                userInfo: [
-                    "callsign": params.callsign,
-                    "frequencyMHz": params.frequencyMHz,
-                    "mode": params.mode,
-                    "rstSent": params.rstSent as Any,
-                    "rstReceived": params.rstReceived as Any,
-                    "grid": params.grid as Any,
-                    "ref": params.ref?.first as Any,
-                    "refType": params.refType?.first as Any,
-                    "time": params.time as Any,
-                    "contest": params.contest as Any,
-                    "srx": params.srx as Any,
-                    "stx": params.stx as Any,
-                    "source": params.source as Any,
-                    "comment": params.comment as Any,
-                ]
-            )
+            postQSYLogNotification(params)
         }
+    }
+
+    private func postQSYSpotNotification(_ params: QSYSpotParams) {
+        NotificationCenter.default.post(
+            name: .didReceiveQSYSpot,
+            object: nil,
+            userInfo: [
+                "callsign": params.callsign,
+                "frequencyMHz": params.frequencyMHz,
+                "mode": params.mode as Any,
+                "grid": params.grid as Any,
+                "ref": params.ref?.first as Any,
+                "refType": params.refType?.first as Any,
+                "source": params.source as Any,
+                "comment": params.comment as Any,
+            ]
+        )
+    }
+
+    private func postQSYLogNotification(_ params: QSYLogParams) {
+        NotificationCenter.default.post(
+            name: .didReceiveQSYLog,
+            object: nil,
+            userInfo: [
+                "callsign": params.callsign,
+                "frequencyMHz": params.frequencyMHz,
+                "mode": params.mode,
+                "rstSent": params.rstSent as Any,
+                "rstReceived": params.rstReceived as Any,
+                "grid": params.grid as Any,
+                "ref": params.ref?.first as Any,
+                "refType": params.refType?.first as Any,
+                "time": params.time as Any,
+                "contest": params.contest as Any,
+                "srx": params.srx as Any,
+                "stx": params.stx as Any,
+                "source": params.source as Any,
+                "comment": params.comment as Any,
+            ]
+        )
     }
 
     private func handleChallengeURL(_ url: URL) {

@@ -138,8 +138,8 @@ struct StatesWorkedMosaic: View {
             Spacer()
             Text("\(stateCounts.count)")
                 .font(.subheadline.weight(.bold).monospacedDigit())
-                .foregroundStyle(.green) +
-                Text(" / 50")
+                .foregroundStyle(.green)
+            Text(" / 50")
                 .font(.subheadline.monospacedDigit())
                 .foregroundStyle(.secondary)
         }

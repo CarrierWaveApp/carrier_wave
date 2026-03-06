@@ -305,7 +305,7 @@ final class SpotAggregator {
                 }
 
                 // Apply results on MainActor
-                await self?.applyHamDBResults(results)
+                self?.applyHamDBResults(results)
             }
         }
     }

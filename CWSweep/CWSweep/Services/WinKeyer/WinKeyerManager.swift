@@ -180,11 +180,11 @@ final class WinKeyerManager {
 
     private func startEventConsumer(for session: WinKeyerSession) {
         eventTask = Task { [weak self] in
-            for await event in await session.eventStream {
+            for await event in session.eventStream {
                 guard let self, !Task.isCancelled else {
                     break
                 }
-                await handleEvent(event)
+                handleEvent(event)
             }
         }
     }

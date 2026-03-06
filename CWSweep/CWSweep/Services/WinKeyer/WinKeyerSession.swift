@@ -33,7 +33,9 @@ actor WinKeyerSession {
 
     /// Open the serial port, send Host Open, and start the receive loop.
     func start() async throws {
-        logger.info("Opening WinKeyer on \(portPath) at \(baudRate) baud")
+        let path = portPath
+        let baud = baudRate
+        logger.info("Opening WinKeyer on \(path) at \(baud) baud")
 
         try port.open(
             baudRate: baudRate,
@@ -81,7 +83,7 @@ actor WinKeyerSession {
 
         if port.isOpen {
             let hostClose = WinKeyerProtocolEncoder.encodeHostClose()
-            try? port.write(hostClose)
+            _ = try? port.write(hostClose)
             port.close()
         }
 
