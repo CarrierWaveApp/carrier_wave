@@ -110,6 +110,13 @@ struct LogsListContentView: View {
             }
         }
         .searchable(text: $queryText, prompt: "Search callsign, or use band:20m, after:30d...")
+        .onReceive(
+            NotificationCenter.default.publisher(for: .didReceiveQSYLookup)
+        ) { notification in
+            if let callsign = notification.userInfo?["callsign"] as? String {
+                queryText = callsign
+            }
+        }
         .task {
             await loadInitialQSOs()
         }

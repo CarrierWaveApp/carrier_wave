@@ -152,6 +152,36 @@ struct ContentView: View {
             // Navigate to logger tab — session manager will pick up the request
             selectedTab = .logger
         }
+        .onReceive(
+            NotificationCenter.default.publisher(for: .didReceiveQSYSpot)
+        ) { notification in
+            // qsy://spot — navigate to logger to pre-fill from spot data
+            guard notification.userInfo?["callsign"] is String else {
+                return
+            }
+            selectedTab = .logger
+        }
+        .onReceive(
+            NotificationCenter.default.publisher(for: .didReceiveQSYTune)
+        ) { _ in
+            // qsy://tune — tune connected radio (handled by BLERadioService)
+            selectedTab = .logger
+        }
+        .onReceive(
+            NotificationCenter.default.publisher(for: .didReceiveQSYLookup)
+        ) { _ in
+            // qsy://lookup — navigate to logs for callsign search
+            selectedTab = .logs
+        }
+        .onReceive(
+            NotificationCenter.default.publisher(for: .didReceiveQSYLog)
+        ) { notification in
+            // qsy://log — navigate to logger for QSO confirmation
+            guard notification.userInfo?["callsign"] is String else {
+                return
+            }
+            selectedTab = .logger
+        }
         .fullScreenCover(isPresented: $showIntroTour) {
             IntroTourView(tourState: tourState)
         }

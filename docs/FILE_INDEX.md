@@ -33,6 +33,7 @@ Pure logic library that can be tested without iOS Simulator. Run tests with `mak
 | `Sources/CarrierWaveCore/SuggestionCategory.swift` | CW suggestion category enum |
 | `Sources/CarrierWaveCore/TwoferMatcher.swift` | Two-fer duplicate detection |
 | `Sources/CarrierWaveCore/AntennaDescriptionParser.swift` | KiwiSDR antenna description parser (type, bands, directionality) |
+| `Sources/CarrierWaveCore/QSYURIParser.swift` | QSY URI scheme parser (qsy://spot, tune, lookup, import, log) |
 | `Sources/CarrierWaveCore/QueryLanguage/QueryToken.swift` | Query token types and field definitions |
 | `Sources/CarrierWaveCore/QueryLanguage/QueryLexer.swift` | Query string tokenization |
 | `Sources/CarrierWaveCore/QueryLanguage/QueryAST.swift` | Query AST types (expression, term, condition) |
@@ -119,6 +120,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `LoggingSession.swift` | Logging session model with activation type, frequency, mode, equipment |
 | `LoggingSession+Frequencies.swift` | Static frequency maps, band derivation, computed display properties |
 | `RoveStop.swift` | Codable model for individual park stops within a POTA rove session |
+| `QSYLogConfirmation.swift` | QSY log confirmation data struct for qsy://log URI review sheet |
 | `LoggerCommand.swift` | Command enum for logger input (FREQ, BAND, MODE, SPOT, QRT, RBN, POTA, P2P, SOLAR, WEATHER, MAP, WEBSDR) |
 | `LoggerCommand+Suggestions.swift` | Command autocomplete suggestions and CommandSuggestion type |
 | `WebSDRRecording.swift` | WebSDR recording metadata (host, file path, duration, session link) |
@@ -551,6 +553,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `FrequencyActivityView.swift` | Nearby frequency activity display with QRM assessment |
 | `FrequencyWarningBanner.swift` | Unified frequency warning banner (license violations + activity warnings) |
 | `LoggerToastView.swift` | Toast notification system for logger |
+| `QSYLogConfirmationSheet.swift` | Confirmation sheet for qsy://log URIs (shows pre-filled QSO for review) |
 | `QRQCrewSpotSheet.swift` | QRQ Crew spot prompt sheet (WPM entry + post confirmation) |
 | `LoggerKeyboardAccessory.swift` | Number row and command buttons above keyboard |
 | `KeyboardAccessoryBuilder.swift` | UIKit builder for keyboard accessory view |

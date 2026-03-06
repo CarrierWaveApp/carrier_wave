@@ -7,10 +7,12 @@ import SwiftUI
 extension LoggerView {
     /// Applies all sheet presentations to the main navigation content
     func applySheetModifiers(_ content: some View) -> some View {
-        applyEndSessionSheets(
-            applyEquipmentSheets(
-                applyBandModeSheets(
-                    applySessionSheets(content)
+        applyQSYLogSheet(
+            applyEndSessionSheets(
+                applyEquipmentSheets(
+                    applyBandModeSheets(
+                        applySessionSheets(content)
+                    )
                 )
             )
         )
@@ -308,5 +310,32 @@ extension LoggerView {
                     externalSpotSelection = nil
                 }
             }
+            .onReceive(
+                NotificationCenter.default.publisher(for: .didReceiveQSYSpot)
+            ) { notification in
+                handleQSYSpotNotification(notification)
+            }
+            .onReceive(
+                NotificationCenter.default.publisher(for: .didReceiveQSYTune)
+            ) { notification in
+                handleQSYTuneNotification(notification)
+            }
+            .onReceive(
+                NotificationCenter.default.publisher(for: .didReceiveQSYLog)
+            ) { notification in
+                handleQSYLogNotification(notification)
+            }
+    }
+
+    /// QSY Log confirmation sheet
+    func applyQSYLogSheet(_ content: some View) -> some View {
+        content.sheet(item: $pendingQSYLog) { confirmation in
+            QSYLogConfirmationSheet(
+                confirmation: confirmation,
+                onConfirm: { confirmQSYLog(confirmation) },
+                onCancel: { pendingQSYLog = nil }
+            )
+            .landscapeAdaptiveDetents(portrait: [.medium])
+        }
     }
 }
