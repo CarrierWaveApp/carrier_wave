@@ -3,6 +3,8 @@ import SwiftUI
 
 /// Confirmation sheet for qsy://log URIs — shows pre-filled QSO data for review.
 struct QSYLogConfirmationSheet: View {
+    // MARK: Internal
+
     let confirmation: QSYLogConfirmation
     let onConfirm: () -> Void
     let onCancel: () -> Void
@@ -80,7 +82,7 @@ struct QSYLogConfirmationSheet: View {
         }
     }
 
-    // MARK: - Private
+    // MARK: Private
 
     private var hasSignalInfo: Bool {
         confirmation.rstSent != nil || confirmation.rstReceived != nil

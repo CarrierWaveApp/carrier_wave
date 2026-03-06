@@ -129,7 +129,7 @@ struct LoggerView: View {
     @State var lookupError: CallsignLookupError?
     @State var lookupTask: Task<Void, Never>?
 
-    // Network health
+    /// Network health
     @State var networkHealthDismissed = false
 
     /// All-time QSO count with the current callsign
@@ -192,7 +192,7 @@ struct LoggerView: View {
     @State var showQRQCrewSpotSheet = false
     @State var pendingQRQCrewSpot: QRQCrewSpotInfo?
 
-    // QSY Log confirmation (from qsy://log URI)
+    /// QSY Log confirmation (from qsy://log URI)
     @State var pendingQSYLog: QSYLogConfirmation?
 
     /// POTA spot tracking - stores session frequency before tuning to a spot

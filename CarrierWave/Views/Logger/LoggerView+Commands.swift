@@ -383,9 +383,15 @@ extension LoggerView {
         callsignInput = confirmation.callsign
         rstSent = confirmation.rstSent ?? defaultRST
         rstReceived = confirmation.rstReceived ?? defaultRST
-        if let grid = confirmation.grid { theirGrid = grid }
-        if let ref = confirmation.ref { theirPark = ref }
-        if let comment = confirmation.comment { notes = comment }
+        if let grid = confirmation.grid {
+            theirGrid = grid
+        }
+        if let ref = confirmation.ref {
+            theirPark = ref
+        }
+        if let comment = confirmation.comment {
+            notes = comment
+        }
 
         logQSO()
 

@@ -8,6 +8,8 @@ import SwiftUI
 // MARK: - NetworkHealthBanner
 
 struct NetworkHealthBanner: View {
+    // MARK: Internal
+
     let health: NetworkHealth
     let onDismiss: () -> Void
 
@@ -35,6 +37,8 @@ struct NetworkHealthBanner: View {
             )
         }
     }
+
+    // MARK: Private
 
     private func bannerContent(
         icon: String,

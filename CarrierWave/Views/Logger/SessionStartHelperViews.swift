@@ -149,6 +149,14 @@ struct ActivationSectionView: View {
         "\(parkReference)|\(wwffReference)|\(sotaReference)|\(selectedPrograms.sorted())"
     }
 
+    /// Whether the current time is within one hour of UTC midnight (23:00–00:00 UTC)
+    private var isNearUTCMidnight: Bool {
+        var utcCal = Calendar(identifier: .gregorian)
+        utcCal.timeZone = TimeZone(identifier: "UTC")!
+        let hour = utcCal.component(.hour, from: Date())
+        return hour == 23 || hour == 0
+    }
+
     private var programChips: some View {
         HStack(spacing: 8) {
             ProgramChip(
@@ -201,14 +209,6 @@ struct ActivationSectionView: View {
         if isNearUTCMidnight {
             utcMidnightWarning
         }
-    }
-
-    /// Whether the current time is within one hour of UTC midnight (23:00–00:00 UTC)
-    private var isNearUTCMidnight: Bool {
-        var utcCal = Calendar(identifier: .gregorian)
-        utcCal.timeZone = TimeZone(identifier: "UTC")!
-        let hour = utcCal.component(.hour, from: Date())
-        return hour == 23 || hour == 0
     }
 
     private var utcMidnightWarning: some View {
