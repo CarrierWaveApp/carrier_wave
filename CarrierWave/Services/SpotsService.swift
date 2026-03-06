@@ -36,6 +36,7 @@ struct UnifiedSpot: Identifiable, Sendable {
     let wpm: Int?
     let spotter: String?
     var spotterGrid: String?
+    var callsignGrid: String? // Grid of the spotted station (for map projection)
 
     // POTA-specific fields
     let parkRef: String?

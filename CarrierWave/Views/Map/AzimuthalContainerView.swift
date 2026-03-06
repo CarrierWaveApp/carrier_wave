@@ -19,28 +19,33 @@ struct AzimuthalContainerView: View {
     let spots: [UnifiedSpot]
     let sessionQSOs: [QSO]
     let sessionAntenna: String?
+    var isLoadingSpots = false
 
     var body: some View {
         VStack(spacing: 0) {
-            controlsBar
+            bearingHeader
+            Divider()
+            filtersRow
             Divider()
             azimuthalContent
         }
-        .navigationTitle("Azimuthal")
-        .navigationBarTitleDisplayMode(.inline)
         .onAppear { compassService.startUpdating() }
         .onDisappear { compassService.stopUpdating() }
     }
 
     // MARK: Private
 
+    private static let modeOrder = ["CW", "SSB", "FT8", "FT4", "RTTY", "FM", "AM", "DIGI"]
+
     @State private var compassService = CompassHeadingService()
     @State private var selectedAntennaType: AntennaType = .vertical
     @State private var manualOrientation: Double = 0
     @State private var useCompass = true
-    @State private var maxDistanceKm = AzimuthalProjection.earthHalfCircumferenceKm
+    @State private var maxDistanceKm = 5_000.0 // Continental default
     @State private var showPattern = true
     @State private var selectedBand: String?
+    @State private var selectedMode: String?
+    @State private var showQSOs = true
 
     private var effectiveOrientation: Double {
         if useCompass, let heading = compassService.heading {
@@ -53,18 +58,16 @@ struct AzimuthalContainerView: View {
         guard showPattern else {
             return nil
         }
-        return AntennaPattern.defaultPattern(
-            for: selectedAntennaType,
-            orientationDeg: effectiveOrientation
-        )
+        return AntennaPattern.defaultPattern(for: selectedAntennaType, orientationDeg: 0)
     }
 
     private var filteredSpots: [UnifiedSpot] {
-        guard let band = selectedBand else {
-            return spots
-        }
-        return spots.filter { spot in
-            BandUtilities.deriveBand(from: spot.frequencyKHz) == band
+        spots.filter { spot in
+            let bandMatch = selectedBand == nil
+                || BandUtilities.deriveBand(from: spot.frequencyKHz) == selectedBand
+            let modeMatch = selectedMode == nil
+                || spot.mode.uppercased() == selectedMode
+            return bandMatch && modeMatch
         }
     }
 
@@ -75,7 +78,10 @@ struct AzimuthalContainerView: View {
     }
 
     private var projectedQSOs: [AzimuthalSpotPoint] {
-        AzimuthalDataProvider.projectQSOs(
+        guard showQSOs else {
+            return []
+        }
+        return AzimuthalDataProvider.projectQSOs(
             sessionQSOs, from: myGrid, maxDistanceKm: maxDistanceKm
         )
     }
@@ -89,159 +95,233 @@ struct AzimuthalContainerView: View {
         return BandUtilities.bandOrder.filter { bands.contains($0) }
     }
 
+    private var availableModes: [String] {
+        let modes = Set(spots.map { $0.mode.uppercased() })
+        let ordered = Self.modeOrder.filter { modes.contains($0) }
+        let remaining = modes.subtracting(Set(ordered)).sorted()
+        return ordered + remaining
+    }
+
+    private var currentDistanceLabel: String {
+        DistanceOption.allCases.first { $0.km == maxDistanceKm }?.shortLabel ?? "Range"
+    }
+
     private var spotSummary: String {
         let count = projectedSpots.count
         let total = filteredSpots.count
         if count == total {
             return "\(count) spots"
         }
-        return "\(count)/\(total) spots with grid"
+        return "\(count)/\(total) with grid"
     }
+}
 
-    private var controlsBar: some View {
-        VStack(spacing: 8) {
-            // Antenna type and orientation
-            HStack(spacing: 12) {
-                antennaTypePicker
-                Spacer()
-                orientationControls
-            }
-            .padding(.horizontal)
+// MARK: - Header & Controls
 
-            // Band filter and distance
-            HStack(spacing: 12) {
-                bandFilterPicker
-                Spacer()
-                distancePicker
-            }
-            .padding(.horizontal)
-
-            // Status line
-            HStack {
-                Text(spotSummary)
+extension AzimuthalContainerView {
+    private var bearingHeader: some View {
+        HStack(spacing: 16) {
+            // Large bearing display
+            VStack(alignment: .leading, spacing: 2) {
+                Text("\(Int(effectiveOrientation))°")
+                    .font(.system(size: 36, weight: .bold, design: .rounded))
+                    .monospacedDigit()
+                Text(useCompass ? "Compass" : "Manual")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                Spacer()
-                if let heading = compassService.heading {
-                    Text("Compass: \(Int(heading))°")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
             }
-            .padding(.horizontal)
+            .frame(minWidth: 90, alignment: .leading)
+
+            Spacer()
+
+            // Antenna type
+            Menu {
+                ForEach(AntennaType.allCases, id: \.self) { type in
+                    Button {
+                        selectedAntennaType = type
+                    } label: {
+                        HStack {
+                            Text(type.displayName)
+                            if type == selectedAntennaType {
+                                Image(systemName: "checkmark")
+                            }
+                        }
+                    }
+                }
+                Divider()
+                Toggle("Show Pattern", isOn: $showPattern)
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "antenna.radiowaves.left.and.right")
+                    Text(selectedAntennaType.displayName)
+                        .lineLimit(1)
+                }
+                .font(.subheadline)
+                .frame(minHeight: 44)
+            }
+
+            // Compass / manual toggle
+            Button {
+                useCompass.toggle()
+            } label: {
+                Image(
+                    systemName: useCompass ? "compass.drawing" : "hand.point.up.left"
+                )
+                .font(.body)
+                .frame(minWidth: 44, minHeight: 44)
+            }
+            .buttonStyle(.bordered)
+
+            // Manual slider when in manual mode
+            if !useCompass {
+                Slider(value: $manualOrientation, in: 0 ... 359, step: 5)
+                    .frame(width: 80)
+            }
         }
+        .padding(.horizontal)
         .padding(.vertical, 8)
         .background(Color(.systemGroupedBackground))
     }
 
-    private var antennaTypePicker: some View {
-        Menu {
-            ForEach(AntennaType.allCases, id: \.self) { type in
-                Button {
-                    selectedAntennaType = type
-                } label: {
-                    HStack {
-                        Text(type.displayName)
-                        if type == selectedAntennaType {
-                            Image(systemName: "checkmark")
-                        }
-                    }
-                }
-            }
-            Divider()
-            Toggle("Show Pattern", isOn: $showPattern)
-        } label: {
-            Label(selectedAntennaType.displayName, systemImage: "antenna.radiowaves.left.and.right")
-                .font(.subheadline)
-        }
-    }
-
-    private var orientationControls: some View {
+    private var filtersRow: some View {
         HStack(spacing: 8) {
-            if useCompass {
-                Image(systemName: "location.north.fill")
-                    .foregroundStyle(.blue)
-                    .font(.caption)
-            }
-            Button {
-                useCompass.toggle()
+            // Band filter
+            Menu {
+                Button {
+                    selectedBand = nil
+                } label: {
+                    HStack {
+                        Text("All Bands")
+                        if selectedBand == nil {
+                            Image(systemName: "checkmark")
+                        }
+                    }
+                }
+                Divider()
+                ForEach(availableBands, id: \.self) { band in
+                    Button {
+                        selectedBand = band
+                    } label: {
+                        HStack {
+                            Text(band)
+                            if selectedBand == band {
+                                Image(systemName: "checkmark")
+                            }
+                        }
+                    }
+                }
             } label: {
-                Image(systemName: useCompass ? "compass.drawing" : "hand.point.up.left")
+                Label(selectedBand ?? "All Bands", systemImage: "waveform")
                     .font(.subheadline)
+                    .lineLimit(1)
+                    .frame(minHeight: 44)
             }
-            .buttonStyle(.bordered)
-            .controlSize(.small)
 
-            if !useCompass {
-                // Manual orientation slider
-                Slider(value: $manualOrientation, in: 0 ... 359, step: 5)
-                    .frame(width: 80)
-                Text("\(Int(manualOrientation))°")
-                    .font(.caption)
-                    .monospacedDigit()
-                    .frame(width: 30)
-            }
-        }
-    }
-
-    private var bandFilterPicker: some View {
-        Menu {
-            Button {
-                selectedBand = nil
+            // Mode filter
+            Menu {
+                Button {
+                    selectedMode = nil
+                } label: {
+                    HStack {
+                        Text("All Modes")
+                        if selectedMode == nil {
+                            Image(systemName: "checkmark")
+                        }
+                    }
+                }
+                Divider()
+                ForEach(availableModes, id: \.self) { mode in
+                    Button {
+                        selectedMode = mode
+                    } label: {
+                        HStack {
+                            Text(mode)
+                            if selectedMode == mode {
+                                Image(systemName: "checkmark")
+                            }
+                        }
+                    }
+                }
             } label: {
-                HStack {
-                    Text("All Bands")
-                    if selectedBand == nil {
-                        Image(systemName: "checkmark")
-                    }
-                }
+                Label(selectedMode ?? "All Modes", systemImage: "dot.radiowaves.right")
+                    .font(.subheadline)
+                    .lineLimit(1)
+                    .frame(minHeight: 44)
             }
-            Divider()
-            ForEach(availableBands, id: \.self) { band in
-                Button {
-                    selectedBand = band
-                } label: {
-                    HStack {
-                        Text(band)
-                        if selectedBand == band {
-                            Image(systemName: "checkmark")
+
+            // Distance
+            Menu {
+                ForEach(DistanceOption.allCases, id: \.self) { option in
+                    Button {
+                        maxDistanceKm = option.km
+                    } label: {
+                        HStack {
+                            Text(option.label)
+                            if maxDistanceKm == option.km {
+                                Image(systemName: "checkmark")
+                            }
                         }
                     }
                 }
+            } label: {
+                Label(currentDistanceLabel, systemImage: "arrow.left.and.right")
+                    .font(.subheadline)
+                    .lineLimit(1)
+                    .frame(minHeight: 44)
             }
-        } label: {
-            Label(selectedBand ?? "All Bands", systemImage: "waveform")
-                .font(.subheadline)
-        }
-    }
 
-    private var distancePicker: some View {
-        Menu {
-            ForEach(DistanceOption.allCases, id: \.self) { option in
-                Button {
-                    maxDistanceKm = option.km
-                } label: {
-                    HStack {
-                        Text(option.label)
-                        if maxDistanceKm == option.km {
-                            Image(systemName: "checkmark")
-                        }
-                    }
-                }
+            Spacer()
+
+            // QSOs toggle
+            Button {
+                showQSOs.toggle()
+            } label: {
+                Image(systemName: showQSOs ? "eye" : "eye.slash")
+                    .font(.body)
+                    .foregroundStyle(showQSOs ? .green : .secondary)
+                    .frame(minWidth: 44, minHeight: 44)
             }
-        } label: {
-            Label("Range", systemImage: "arrow.left.and.right")
-                .font(.subheadline)
-        }
-    }
+            .buttonStyle(.plain)
+            .accessibilityLabel(showQSOs ? "Hide QSOs" : "Show QSOs")
 
+            // Spot count / loading
+            if isLoadingSpots {
+                ProgressView()
+                    .controlSize(.small)
+                    .frame(width: 44)
+            } else {
+                Text(spotSummary)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .frame(minWidth: 44, alignment: .trailing)
+            }
+        }
+        .padding(.horizontal)
+        .background(Color(.systemGroupedBackground))
+    }
+}
+
+// MARK: - Map Content
+
+extension AzimuthalContainerView {
     @ViewBuilder
     private var azimuthalContent: some View {
-        if projectedSpots.isEmpty, projectedQSOs.isEmpty {
+        if isLoadingSpots, spots.isEmpty, sessionQSOs.isEmpty {
+            VStack(spacing: 12) {
+                ProgressView()
+                    .controlSize(.large)
+                Text("Loading spots...")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else if projectedSpots.isEmpty, projectedQSOs.isEmpty {
             ContentUnavailableView(
                 "No Data with Grid Squares",
                 systemImage: "mappin.slash",
-                description: Text("Spots and QSOs need grid square data to appear on the azimuthal view.")
+                description: Text(
+                    "Spots and QSOs need grid square data to appear on the azimuthal view."
+                )
             )
         } else {
             AzimuthalMapView(
@@ -250,7 +330,8 @@ struct AzimuthalContainerView: View {
                 qsoPoints: projectedQSOs,
                 antennaPattern: antennaPattern,
                 compassHeading: compassService.heading,
-                maxDistanceKm: maxDistanceKm
+                maxDistanceKm: maxDistanceKm,
+                worldRotation: -effectiveOrientation
             )
             .padding(8)
         }
@@ -281,6 +362,15 @@ private enum DistanceOption: CaseIterable {
         case .regional: "Regional (2,500 km)"
         case .continental: "Continental (5,000 km)"
         case .hemispheric: "Hemispheric (10,000 km)"
+        case .global: "Global"
+        }
+    }
+
+    var shortLabel: String {
+        switch self {
+        case .regional: "2.5k km"
+        case .continental: "5k km"
+        case .hemispheric: "10k km"
         case .global: "Global"
         }
     }

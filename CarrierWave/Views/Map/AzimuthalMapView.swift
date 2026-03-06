@@ -20,12 +20,13 @@ struct AzimuthalMapView: View {
     let antennaPattern: AntennaPattern?
     let compassHeading: Double? // nil = no compass, use manual
     let maxDistanceKm: Double
+    var worldRotation: Double = 0 // Degrees to rotate world (negative = CW on screen)
 
     var body: some View {
         GeometryReader { geo in
             let size = min(geo.size.width, geo.size.height)
             let center = CGPoint(x: geo.size.width / 2, y: geo.size.height / 2)
-            let viewRadius = (size / 2) * 0.88 // Leave margin for labels
+            let viewRadius = (size / 2) * 0.84 // Leave margin for degree labels
 
             Canvas { context, canvasSize in
                 let cx = canvasSize.width / 2
@@ -135,12 +136,80 @@ private extension AzimuthalMapView {
         }
     }
 
-    func drawCompassLabels(context: GraphicsContext, center: CGPoint, radius: CGFloat) {
-        let labels = [("N", 0.0), ("E", 90.0), ("S", 180.0), ("W", 270.0)]
-        let labelRadius = radius + 12
+    /// Rotate a bearing by the world rotation amount
+    func rotatedBearing(_ bearing: Double) -> Double {
+        var b = bearing + worldRotation
+        b = b.truncatingRemainder(dividingBy: 360.0)
+        if b < 0 {
+            b += 360.0
+        }
+        return b
+    }
 
-        for (label, bearing) in labels {
-            let radians = bearing * .pi / 180.0
+    func drawCompassLabels(context: GraphicsContext, center: CGPoint, radius: CGFloat) {
+        let cardinals: [(String, Double)] = [("N", 0), ("E", 90), ("S", 180), ("W", 270)]
+        let labelRadius = radius + 14
+
+        drawDegreeTicks(
+            context: context, center: center, radius: radius,
+            labelRadius: labelRadius, cardinals: cardinals
+        )
+        drawCardinalLabels(
+            context: context, center: center,
+            labelRadius: labelRadius, cardinals: cardinals
+        )
+        drawCrosshairLines(context: context, center: center, radius: radius)
+    }
+
+    func drawDegreeTicks(
+        context: GraphicsContext, center: CGPoint, radius: CGFloat,
+        labelRadius: CGFloat, cardinals: [(String, Double)]
+    ) {
+        let tickColor = colorScheme == .dark
+            ? Color.white.opacity(0.25)
+            : Color.black.opacity(0.2)
+        for deg in stride(from: 0.0, to: 360.0, by: 30.0) {
+            let rotated = rotatedBearing(deg)
+            let radians = rotated * .pi / 180.0
+            let isCardinal = cardinals.contains { $0.1 == deg }
+
+            let innerR = isCardinal ? radius - 6 : radius - 4
+            var tick = Path()
+            tick.move(to: CGPoint(
+                x: center.x + innerR * CGFloat(sin(radians)),
+                y: center.y - innerR * CGFloat(cos(radians))
+            ))
+            tick.addLine(to: CGPoint(
+                x: center.x + radius * CGFloat(sin(radians)),
+                y: center.y - radius * CGFloat(cos(radians))
+            ))
+            context.stroke(tick, with: .color(tickColor), lineWidth: isCardinal ? 1.5 : 0.75)
+
+            if !isCardinal {
+                let degLabel = Text("\(Int(deg))°")
+                    .font(.system(size: 8))
+                    .foregroundColor(
+                        colorScheme == .dark ? .white.opacity(0.3) : .black.opacity(0.25)
+                    )
+                context.draw(
+                    context.resolve(degLabel),
+                    at: CGPoint(
+                        x: center.x + labelRadius * CGFloat(sin(radians)),
+                        y: center.y - labelRadius * CGFloat(cos(radians))
+                    ),
+                    anchor: .center
+                )
+            }
+        }
+    }
+
+    func drawCardinalLabels(
+        context: GraphicsContext, center: CGPoint,
+        labelRadius: CGFloat, cardinals: [(String, Double)]
+    ) {
+        for (label, bearing) in cardinals {
+            let rotated = rotatedBearing(bearing)
+            let radians = rotated * .pi / 180.0
             let x = center.x + labelRadius * CGFloat(sin(radians))
             let y = center.y - labelRadius * CGFloat(cos(radians))
             let color: Color = label == "N" ? .red : .secondary
@@ -149,26 +218,32 @@ private extension AzimuthalMapView {
                 .foregroundColor(color)
             context.draw(context.resolve(text), at: CGPoint(x: x, y: y), anchor: .center)
         }
+    }
 
-        // Crosshair lines (N-S, E-W)
+    func drawCrosshairLines(context: GraphicsContext, center: CGPoint, radius: CGFloat) {
         let lineColor = colorScheme == .dark
             ? Color.white.opacity(0.08)
             : Color.black.opacity(0.06)
-        var nsPath = Path()
-        nsPath.move(to: CGPoint(x: center.x, y: center.y - radius))
-        nsPath.addLine(to: CGPoint(x: center.x, y: center.y + radius))
-        context.stroke(nsPath, with: .color(lineColor), lineWidth: 0.5)
 
-        var ewPath = Path()
-        ewPath.move(to: CGPoint(x: center.x - radius, y: center.y))
-        ewPath.addLine(to: CGPoint(x: center.x + radius, y: center.y))
-        context.stroke(ewPath, with: .color(lineColor), lineWidth: 0.5)
+        for bearing in [0.0, 90.0] {
+            let radians = rotatedBearing(bearing) * .pi / 180.0
+            var path = Path()
+            path.move(to: CGPoint(
+                x: center.x + radius * CGFloat(sin(radians)),
+                y: center.y - radius * CGFloat(cos(radians))
+            ))
+            path.addLine(to: CGPoint(
+                x: center.x - radius * CGFloat(sin(radians)),
+                y: center.y + radius * CGFloat(cos(radians))
+            ))
+            context.stroke(path, with: .color(lineColor), lineWidth: 0.5)
+        }
     }
 
     func drawSectorHeatmap(context: GraphicsContext, center: CGPoint, radius: CGFloat) {
         for sector in sectors where sector.density > 0 {
-            let startAngle = Angle(degrees: sector.startBearing - 90) // Rotate so 0° = top
-            let endAngle = Angle(degrees: sector.endBearing - 90)
+            let startAngle = Angle(degrees: rotatedBearing(sector.startBearing) - 90)
+            let endAngle = Angle(degrees: rotatedBearing(sector.endBearing) - 90)
             let opacity = 0.08 + sector.density * 0.35
 
             var sectorPath = Path()
@@ -220,7 +295,7 @@ private extension AzimuthalMapView {
         for point in spotPoints {
             let pos = AzimuthalProjection.cartesian(
                 from: AzimuthalPoint(
-                    bearing: point.bearing,
+                    bearing: rotatedBearing(point.bearing),
                     distanceKm: point.distanceKm,
                     normalizedRadius: point.normalizedRadius
                 ),
@@ -237,7 +312,7 @@ private extension AzimuthalMapView {
         for point in qsoPoints {
             let pos = AzimuthalProjection.cartesian(
                 from: AzimuthalPoint(
-                    bearing: point.bearing,
+                    bearing: rotatedBearing(point.bearing),
                     distanceKm: point.distanceKm,
                     normalizedRadius: point.normalizedRadius
                 ),

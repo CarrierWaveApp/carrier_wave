@@ -3,7 +3,7 @@
 //  CarrierWave
 //
 //  Standalone azimuthal map view accessible from the Map tab.
-//  Resolves the operator's grid via GPS, loads spots and recent QSOs,
+//  Resolves the operator's grid, loads spots from all sources and recent QSOs,
 //  and passes them to the AzimuthalContainerView.
 //
 
@@ -24,7 +24,8 @@ struct AzimuthalStandaloneView: View {
                     myGrid: grid,
                     spots: spots,
                     sessionQSOs: qsos,
-                    sessionAntenna: nil
+                    sessionAntenna: nil,
+                    isLoadingSpots: isLoadingSpots
                 )
             } else if gridService.isLocating {
                 ProgressView("Locating...")
@@ -36,7 +37,13 @@ struct AzimuthalStandaloneView: View {
         .navigationBarTitleDisplayMode(.inline)
         .task {
             if resolvedGrid == nil {
+                resolveGridFromKnownSources()
+            }
+            if resolvedGrid == nil {
                 gridService.requestGrid()
+            }
+            if let grid = resolvedGrid {
+                await loadData(grid: grid)
             }
         }
         .onChange(of: gridService.currentGrid) { _, newGrid in
@@ -51,14 +58,12 @@ struct AzimuthalStandaloneView: View {
 
     @Environment(\.modelContext) private var modelContext
 
+    @AppStorage("loggerDefaultGrid") private var defaultGrid = ""
     @State private var gridService = GridLocationService()
     @State private var resolvedGrid: String?
     @State private var spots: [UnifiedSpot] = []
     @State private var qsos: [QSO] = []
-    @State private var spotsService = SpotsService(
-        rbnClient: RBNClient(),
-        potaClient: POTAClient(authService: POTAAuthService())
-    )
+    @State private var isLoadingSpots = false
 
     private var gridPromptView: some View {
         ContentUnavailableView {
@@ -73,13 +78,12 @@ struct AzimuthalStandaloneView: View {
         }
     }
 
-    private func loadData(grid: String) async {
-        await loadRecentQSOs(grid: grid)
-        await loadSpots(grid: grid)
+    private func loadData(grid _: String) async {
+        await loadRecentQSOs()
+        await loadAllSpots()
     }
 
-    private func loadRecentQSOs(grid: String) async {
-        // Load QSOs from the last 30 days that have grid data
+    private func loadRecentQSOs() async {
         let cutoff = Calendar.current.date(byAdding: .day, value: -30, to: Date()) ?? Date()
         var descriptor = FetchDescriptor<QSO>(
             predicate: #Predicate<QSO> { qso in
@@ -96,27 +100,40 @@ struct AzimuthalStandaloneView: View {
         }
     }
 
-    private func loadSpots(grid: String) async {
-        // Use the callsign from the most recent active session, or fall back
-        let callsign = await resolveCallsign()
-        guard let callsign else {
-            return
-        }
+    private func loadAllSpots() async {
+        isLoadingSpots = true
+        defer { isLoadingSpots = false }
 
-        do {
-            spots = try await spotsService.fetchSpots(for: callsign, minutes: 30)
-        } catch {
-            // Non-fatal — show whatever we have
-        }
+        let cutoff = Date().addingTimeInterval(-30 * 60)
+
+        // Fetch from all sources concurrently
+        async let rbnResult = fetchRBNSpots(since: cutoff)
+        async let potaResult = fetchPOTASpots(since: cutoff)
+        async let sotaResult = fetchSOTASpots(since: cutoff)
+        async let wwffResult = fetchWWFFSpots(since: cutoff)
+
+        var allSpots = await rbnResult + potaResult + sotaResult + wwffResult
+
+        // Enrich with callsign grids from HamDB for map projection
+        allSpots = await enrichCallsignGrids(allSpots)
+
+        spots = allSpots.sorted { $0.timestamp > $1.timestamp }
     }
 
-    private func resolveCallsign() async -> String? {
-        // Try to get callsign from most recent session
+    /// Check saved default grid and most recent session grid before falling back to GPS
+    private func resolveGridFromKnownSources() {
         var descriptor = FetchDescriptor<LoggingSession>(
             sortBy: [SortDescriptor(\LoggingSession.startedAt, order: .reverse)]
         )
         descriptor.fetchLimit = 1
-        let sessions = try? modelContext.fetch(descriptor)
-        return sessions?.first?.myCallsign
+        if let session = try? modelContext.fetch(descriptor).first,
+           let sessionGrid = session.myGrid, !sessionGrid.isEmpty
+        {
+            resolvedGrid = sessionGrid
+            return
+        }
+        if !defaultGrid.isEmpty {
+            resolvedGrid = defaultGrid
+        }
     }
 }

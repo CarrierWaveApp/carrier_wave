@@ -26,8 +26,6 @@ struct AzimuthalSpotPoint: Identifiable, Sendable {
 // MARK: - AzimuthalDataProvider
 
 enum AzimuthalDataProvider {
-    // MARK: Internal
-
     /// Project spots into azimuthal points relative to the operator's grid
     static func projectSpots(
         _ spots: [UnifiedSpot],
@@ -35,7 +33,7 @@ enum AzimuthalDataProvider {
         maxDistanceKm: Double = AzimuthalProjection.earthHalfCircumferenceKm
     ) -> [AzimuthalSpotPoint] {
         spots.compactMap { spot in
-            guard let grid = spot.spotterGrid ?? gridFromCallsign(spot),
+            guard let grid = spot.callsignGrid ?? spot.spotterGrid,
                   let point = AzimuthalProjection.project(
                       from: myGrid,
                       to: grid,
@@ -96,13 +94,5 @@ enum AzimuthalDataProvider {
         items.append(contentsOf: spots.map { ($0.bearing, true) })
         items.append(contentsOf: qsos.map { ($0.bearing, false) })
         return AzimuthalProjection.binIntoSectors(items: items, sectorCount: sectorCount)
-    }
-
-    // MARK: Private
-
-    /// Try to extract a grid from the spot's location description (fallback)
-    private static func gridFromCallsign(_ spot: UnifiedSpot) -> String? {
-        // spotterGrid is the primary source; if nil, we can't project this spot
-        nil
     }
 }
