@@ -11,9 +11,11 @@ Pure logic library that can be tested without iOS Simulator. Run tests with `mak
 | File | Purpose |
 |------|---------|
 | `Sources/CarrierWaveCore/ADIFParser.swift` | ADIF file format parsing |
+| `Sources/CarrierWaveCore/AzimuthalProjection.swift` | Azimuthal equidistant projection math and great circle paths |
 | `Sources/CarrierWaveCore/BandUtilities.swift` | Band derivation from frequency |
 | `Sources/CarrierWaveCore/CallsignDetector.swift` | Callsign regex detection, RST/grid/power parsing |
 | `Sources/CarrierWaveCore/CIVProtocol.swift` | CI-V protocol: frame building/parsing, BCD frequency encoding, mode mapping |
+| `Sources/CarrierWaveCore/CoastlineData.swift` | Simplified continent outlines for azimuthal map rendering |
 | `Sources/CarrierWaveCore/KenwoodProtocol.swift` | Kenwood/Elecraft K3 text command building/parsing, mode mapping |
 | `Sources/CarrierWaveCore/CallsignEditDistance.swift` | Levenshtein edit distance for callsign comparison |
 | `Sources/CarrierWaveCore/SCPDatabase.swift` | Super Check Partial in-memory database (partial match, exact lookup, near-miss) |
@@ -666,6 +668,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `BragSheetCustomizeView.swift` | Customization sheet with preset chips and category-grouped stat toggles |
 | `BragSheetCustomizeView+StatRow.swift` | Individual stat row with enable toggle and hero star button |
 | `BragSheetShareCardView.swift` | Share card view for brag sheet with dark purple gradient, map, stats grid |
+| `AzimuthalMapRenderer.swift` | CoreGraphics azimuthal equidistant map renderer for wide-span brag sheets |
 | `BragSheetShareRenderer.swift` | Renders brag sheet share card to UIImage with MKMapSnapshotter map |
 | `BragSheetShareRenderer+Drawing.swift` | Drawing helpers for brag sheet map: grid lines, trace lines, pin markers |
 | `BragSheetStatisticianSection.swift` | Professional Statistician Mode section with box plots and distributions |

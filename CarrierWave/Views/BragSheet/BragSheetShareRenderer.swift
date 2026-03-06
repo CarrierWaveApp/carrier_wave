@@ -5,9 +5,8 @@
 // Uses equirectangular projection for cluster positioning (guarantees all
 // clusters are visible) with an MKMapSnapshotter background for context.
 //
-// Known issue: Map rendering is not correct for wide geographic spans (e.g. US+EU+Japan).
-// MKMapSnapshotter background doesn't align well with equirectangular cluster
-// overlay at world scale. Needs a better approach for global QSO coverage.
+// For wide geographic spans (>90° longitude), uses azimuthal equidistant
+// projection centered on the operator's QTH via AzimuthalMapRenderer.
 
 import CarrierWaveData
 import MapKit
@@ -169,10 +168,22 @@ enum BragSheetShareRenderer {
     /// Draw a map with MKMapSnapshotter background and equirectangular
     /// cluster overlay. The background provides earth imagery context;
     /// cluster positions use our own projection for guaranteed visibility.
+    ///
+    /// For wide geographic spans (>90° longitude), switches to an
+    /// azimuthal equidistant projection centered on the operator's QTH.
     private static func drawMap(
         clusters: [BragSheetMapCluster],
         myCoordinate: CLLocationCoordinate2D? = nil
     ) async -> UIImage {
+        // Use azimuthal projection for wide spans when we have a center point
+        if let myCoord = myCoordinate, isWideSpan(clusters: clusters, myCoordinate: myCoord) {
+            let size = CGSize(width: mapWidth, height: mapHeight)
+            return AzimuthalMapRenderer.render(
+                clusters: clusters, myCoordinate: myCoord,
+                size: size, scale: mapScale
+            )
+        }
+
         let viewport = computeViewport(
             clusters: clusters, myCoordinate: myCoordinate
         )
@@ -220,6 +231,22 @@ enum BragSheetShareRenderer {
         let image = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
         return image ?? UIImage()
+    }
+
+    /// Check if the cluster + operator span exceeds 90° longitude,
+    /// which makes the equirectangular projection illegible.
+    private static func isWideSpan(
+        clusters: [BragSheetMapCluster],
+        myCoordinate: CLLocationCoordinate2D
+    ) -> Bool {
+        var lons = clusters.map(\.coordinate.longitude)
+        lons.append(myCoordinate.longitude)
+        guard let minLon = lons.min(), let maxLon = lons.max() else {
+            return false
+        }
+        let directSpan = maxLon - minLon
+        let datelineSpan = 360 - directSpan
+        return min(directSpan, datelineSpan) > 90
     }
 
     private static func computeViewport(

@@ -155,9 +155,24 @@ enum ActivationShareRenderer {
         markers: [ShareMapMarker],
         myCoordinate: CLLocationCoordinate2D?
     ) async -> UIImage? {
+        let coordinates = markers.map(\.coordinate)
+
+        let isWide = ActivationMapHelpers.requiresGlobeView(
+            qsoCoordinates: coordinates,
+            myCoordinate: myCoordinate
+        )
+
+        // Use azimuthal projection for wide spans (>90° longitude)
+        if isWide, let myCoord = myCoordinate {
+            return AzimuthalMapRenderer.render(
+                markers: markers, myCoordinate: myCoord,
+                size: CGSize(width: 368, height: 200), scale: 2.0
+            )
+        }
+
         guard
             let region = ActivationMapHelpers.mapRegion(
-                qsoCoordinates: markers.map(\.coordinate),
+                qsoCoordinates: coordinates,
                 myCoordinate: myCoordinate
             )
         else {
@@ -166,7 +181,7 @@ enum ActivationShareRenderer {
 
         let options = MKMapSnapshotter.Options()
         options.region = region
-        options.size = CGSize(width: 368, height: 200) // Card width minus padding
+        options.size = CGSize(width: 368, height: 200)
         options.mapType = .standard
         options.showsBuildings = true
 
