@@ -39,8 +39,11 @@ struct SessionDetailView: View {
 
     @Environment(\.modelContext) private var modelContext
 
-    @State private var qsos: [QSO] = []
-    @State private var displayQSOs: [QSO] = []
+    @State private var displayRows: [SessionQSODisplayRow] = []
+    @State private var mappableQSOs: [QSO] = []
+    @State private var mapPaths: [UUID: [CLLocationCoordinate2D]] = [:]
+    @State private var stateCountsCache: [String: Int] = [:]
+    @State private var stateCallsignsCache: [String: [String]] = [:]
 
     // MARK: - Data Loading
 
@@ -64,12 +67,70 @@ struct SessionDetailView: View {
 
         // Dedup by UUID
         var seen = Set<UUID>()
-        qsos = fetched.filter { seen.insert($0.id).inserted }
+        let dedupedQSOs = fetched.filter { seen.insert($0.id).inserted }
 
-        // Filter metadata modes for display
-        displayQSOs = qsos.filter {
+        // Filter metadata modes, snapshot to plain structs
+        let displayQSOs = dedupedQSOs.filter {
             !Self.metadataModes.contains($0.mode.uppercased())
         }
+        displayRows = displayQSOs.map { SessionQSODisplayRow(from: $0) }
+
+        // Pre-compute derived data (still uses @Model for coordinate lookups)
+        computeMappableQSOs(from: displayQSOs)
+        computeMapPaths()
+        computeStateCounts()
+    }
+
+    private func computeMappableQSOs(from qsos: [QSO]) {
+        mappableQSOs = qsos.filter { qso in
+            guard let grid = qso.theirGrid, grid.count >= 4 else {
+                return false
+            }
+            return MaidenheadConverter.coordinate(from: grid) != nil
+        }
+    }
+
+    private func computeMapPaths() {
+        guard let myGrid = session.myGrid, myGrid.count >= 4,
+              let myPos = MaidenheadConverter.coordinate(from: myGrid)
+        else {
+            mapPaths = [:]
+            return
+        }
+        let myCoord = CLLocationCoordinate2D(
+            latitude: myPos.latitude, longitude: myPos.longitude
+        )
+        var paths: [UUID: [CLLocationCoordinate2D]] = [:]
+        for qso in mappableQSOs {
+            if let grid = qso.theirGrid,
+               let coord = MaidenheadConverter.coordinate(from: grid)
+            {
+                let clCoord = CLLocationCoordinate2D(
+                    latitude: coord.latitude, longitude: coord.longitude
+                )
+                paths[qso.id] = Self.geodesicPath(
+                    from: myCoord, to: clCoord, segments: 20
+                )
+            }
+        }
+        mapPaths = paths
+    }
+
+    private func computeStateCounts() {
+        var counts: [String: Int] = [:]
+        var callsigns: [String: [String]] = [:]
+        for row in displayRows {
+            guard let state = row.state?.uppercased()
+                .trimmingCharacters(in: .whitespaces),
+                USStates.abbreviations.contains(state)
+            else {
+                continue
+            }
+            counts[state, default: 0] += 1
+            callsigns[state, default: []].append(row.callsign)
+        }
+        stateCountsCache = counts
+        stateCallsignsCache = callsigns
     }
 }
 
@@ -103,7 +164,7 @@ extension SessionDetailView {
 
     private var statStrip: some View {
         HStack(spacing: 0) {
-            statCell(value: "\(displayQSOs.count)", label: "QSOs")
+            statCell(value: "\(displayRows.count)", label: "QSOs")
             statDivider
             statCell(value: formattedDuration, label: "Duration")
             if let rate = formattedRate {
@@ -144,7 +205,7 @@ extension SessionDetailView {
         guard hours > 0 else {
             return nil
         }
-        let rate = Double(displayQSOs.count) / hours
+        let rate = Double(displayRows.count) / hours
         return String(format: "%.1f", rate)
     }
 
@@ -205,81 +266,14 @@ extension SessionDetailView {
     }
 }
 
-// MARK: - RoveStopRow
-
-/// Timeline row showing a single rove stop
-private struct RoveStopRow: View {
-    // MARK: Internal
-
-    let stop: RoveStop
-
-    var body: some View {
-        HStack(spacing: 12) {
-            Circle()
-                .fill(stop.isActive ? Color.green : Color.secondary.opacity(0.3))
-                .frame(width: 10, height: 10)
-                .accessibilityHidden(true)
-
-            VStack(alignment: .leading, spacing: 4) {
-                let parks = ParkReference.split(stop.parkReference)
-                ForEach(parks, id: \.self) { park in
-                    Text(park)
-                        .font(.subheadline.monospaced().weight(.semibold))
-                        .foregroundStyle(.green)
-                }
-
-                HStack(spacing: 8) {
-                    Text(timeRange)
-                        .font(.caption.monospaced())
-                        .foregroundStyle(.secondary)
-
-                    Text("\(stop.qsoCount) QSOs")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-
-                    if let grid = stop.myGrid {
-                        Text(grid)
-                            .font(.caption.monospaced())
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            }
-        }
-    }
-
-    // MARK: Private
-
-    private static let timeFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm"
-        formatter.timeZone = TimeZone(identifier: "UTC")
-        return formatter
-    }()
-
-    private var timeRange: String {
-        let start = Self.timeFormatter.string(from: stop.startedAt)
-        if let endedAt = stop.endedAt {
-            let end = Self.timeFormatter.string(from: endedAt)
-            return "\(start)\u{2013}\(end) UTC"
-        }
-        return "\(start)\u{2013}now UTC"
-    }
-}
-
 // MARK: - Map Section
 
 extension SessionDetailView {
     @ViewBuilder
     private var mapSection: some View {
-        let mappable = displayQSOs.filter { qso in
-            guard let grid = qso.theirGrid, grid.count >= 4 else {
-                return false
-            }
-            return MaidenheadConverter.coordinate(from: grid) != nil
-        }
-        if !mappable.isEmpty {
+        if !mappableQSOs.isEmpty {
             Section("Map") {
-                mapPreview(mappable: mappable)
+                mapPreview(mappable: mappableQSOs)
                     .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
             }
         }
@@ -293,6 +287,7 @@ extension SessionDetailView {
         } else {
             nil
         }
+        let cachedPaths = mapPaths
 
         return ZStack(alignment: .bottomTrailing) {
             Map(interactionModes: []) {
@@ -313,18 +308,9 @@ extension SessionDetailView {
                         SessionMapPin(color: .blue, size: 12)
                     }
                     ForEach(mappable) { qso in
-                        if let grid = qso.theirGrid,
-                           let theirCoord = MaidenheadConverter.coordinate(from: grid)
-                        {
-                            let clCoord = CLLocationCoordinate2D(
-                                latitude: theirCoord.latitude, longitude: theirCoord.longitude
-                            )
-                            MapPolyline(
-                                coordinates: Self.geodesicPath(
-                                    from: myCoord, to: clCoord, segments: 20
-                                )
-                            )
-                            .stroke(.white.opacity(0.5), lineWidth: 2.5)
+                        if let path = cachedPaths[qso.id] {
+                            MapPolyline(coordinates: path)
+                                .stroke(.white.opacity(0.5), lineWidth: 2.5)
                         }
                     }
                 }
@@ -348,7 +334,7 @@ extension SessionDetailView {
     }
 
     /// Great-circle interpolation for geodesic lines on the map
-    private static func geodesicPath(
+    static func geodesicPath(
         from: CLLocationCoordinate2D,
         to: CLLocationCoordinate2D,
         segments: Int
@@ -372,9 +358,9 @@ extension SessionDetailView {
         points.reserveCapacity(segments + 1)
 
         for i in 0 ... segments {
-            let f = Double(i) / Double(segments)
-            let aFrac = sin((1 - f) * angularDist) / sin(angularDist)
-            let bFrac = sin(f * angularDist) / sin(angularDist)
+            let frac = Double(i) / Double(segments)
+            let aFrac = sin((1 - frac) * angularDist) / sin(angularDist)
+            let bFrac = sin(frac * angularDist) / sin(angularDist)
 
             let x = aFrac * cos(lat1) * cos(lon1) + bFrac * cos(lat2) * cos(lon2)
             let y = aFrac * cos(lat1) * sin(lon1) + bFrac * cos(lat2) * sin(lon2)
@@ -390,274 +376,19 @@ extension SessionDetailView {
     }
 }
 
-// MARK: - SessionMapPin
-
-/// Small map pin marker
-private struct SessionMapPin: View {
-    let color: Color
-    var size: CGFloat = 9
-
-    var body: some View {
-        VStack(spacing: 0) {
-            Circle()
-                .fill(color.opacity(0.8))
-                .frame(width: size, height: size)
-            Rectangle()
-                .fill(color.opacity(0.7))
-                .frame(width: max(1.5, size * 0.17), height: max(6, size * 0.67))
-        }
-    }
-}
-
 // MARK: - States Worked Section
 
 extension SessionDetailView {
     @ViewBuilder
     private var statesWorkedSection: some View {
-        let counts = stateQSOCounts
-        if !counts.isEmpty {
+        if !stateCountsCache.isEmpty {
             Section {
                 StatesWorkedMosaic(
-                    stateCounts: counts,
-                    stateCallsigns: stateCallsignMap
+                    stateCounts: stateCountsCache,
+                    stateCallsigns: stateCallsignsCache
                 )
             }
         }
-    }
-
-    private var stateQSOCounts: [String: Int] {
-        var counts: [String: Int] = [:]
-        for qso in displayQSOs {
-            guard let state = qso.state?.uppercased().trimmingCharacters(in: .whitespaces),
-                  USStates.abbreviations.contains(state)
-            else {
-                continue
-            }
-            counts[state, default: 0] += 1
-        }
-        return counts
-    }
-
-    private var stateCallsignMap: [String: [String]] {
-        var map: [String: [String]] = [:]
-        for qso in displayQSOs {
-            guard let state = qso.state?.uppercased().trimmingCharacters(in: .whitespaces),
-                  USStates.abbreviations.contains(state)
-            else {
-                continue
-            }
-            map[state, default: []].append(qso.callsign)
-        }
-        return map
-    }
-}
-
-// MARK: - USStates
-
-enum USStates {
-    static let ordered: [String] = [
-        "AK", "AL", "AR", "AZ", "CA", "CO", "CT", "DE", "FL", "GA",
-        "HI", "IA", "ID", "IL", "IN", "KS", "KY", "LA", "MA", "MD",
-        "ME", "MI", "MN", "MO", "MS", "MT", "NC", "ND", "NE", "NH",
-        "NJ", "NM", "NV", "NY", "OH", "OK", "OR", "PA", "RI", "SC",
-        "SD", "TN", "TX", "UT", "VA", "VT", "WA", "WI", "WV", "WY",
-    ]
-
-    static let abbreviations: Set<String> = Set(ordered)
-
-    static let names: [String: String] = [
-        "AK": "Alaska", "AL": "Alabama", "AR": "Arkansas",
-        "AZ": "Arizona", "CA": "California", "CO": "Colorado",
-        "CT": "Connecticut", "DE": "Delaware", "FL": "Florida",
-        "GA": "Georgia", "HI": "Hawaii", "IA": "Iowa",
-        "ID": "Idaho", "IL": "Illinois", "IN": "Indiana",
-        "KS": "Kansas", "KY": "Kentucky", "LA": "Louisiana",
-        "MA": "Massachusetts", "MD": "Maryland", "ME": "Maine",
-        "MI": "Michigan", "MN": "Minnesota", "MO": "Missouri",
-        "MS": "Mississippi", "MT": "Montana", "NC": "North Carolina",
-        "ND": "North Dakota", "NE": "Nebraska", "NH": "New Hampshire",
-        "NJ": "New Jersey", "NM": "New Mexico", "NV": "Nevada",
-        "NY": "New York", "OH": "Ohio", "OK": "Oklahoma",
-        "OR": "Oregon", "PA": "Pennsylvania", "RI": "Rhode Island",
-        "SC": "South Carolina", "SD": "South Dakota", "TN": "Tennessee",
-        "TX": "Texas", "UT": "Utah", "VA": "Virginia",
-        "VT": "Vermont", "WA": "Washington", "WI": "Wisconsin",
-        "WV": "West Virginia", "WY": "Wyoming",
-    ]
-
-    static func fullName(for abbreviation: String) -> String? {
-        names[abbreviation.uppercased()]
-    }
-}
-
-// MARK: - StatesWorkedMosaic
-
-struct StatesWorkedMosaic: View {
-    // MARK: Internal
-
-    let stateCounts: [String: Int]
-    let stateCallsigns: [String: [String]]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            header
-            mosaic
-            legend
-        }
-        .padding(.vertical, 4)
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel("States worked mosaic, \(stateCounts.count) of 50 states")
-    }
-
-    // MARK: Private
-
-    @State private var selectedState: String?
-
-    @ScaledMetric(relativeTo: .caption2) private var cellHeight: CGFloat = 22
-
-    private let columns = 10
-    private let rows = 5
-    private let cellSpacing: CGFloat = 2
-
-    private var maxCount: Int {
-        stateCounts.values.max() ?? 1
-    }
-
-    private var header: some View {
-        HStack {
-            Label("States Worked", systemImage: "map.fill")
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.primary)
-            Spacer()
-            Text("\(stateCounts.count)")
-                .font(.subheadline.weight(.bold).monospacedDigit())
-                .foregroundStyle(.green) +
-                Text(" / 50")
-                .font(.subheadline.monospacedDigit())
-                .foregroundStyle(.secondary)
-        }
-    }
-
-    private var mosaic: some View {
-        VStack(spacing: cellSpacing) {
-            ForEach(0 ..< rows, id: \.self) { row in
-                HStack(spacing: cellSpacing) {
-                    ForEach(0 ..< columns, id: \.self) { col in
-                        let index = row * columns + col
-                        let state = USStates.ordered[index]
-                        let count = stateCounts[state] ?? 0
-                        mosaicCell(state: state, count: count)
-                    }
-                }
-            }
-        }
-    }
-
-    private var legend: some View {
-        HStack(spacing: 12) {
-            legendItem(color: Color.green, label: "3+")
-            legendItem(color: Color.green.opacity(0.55), label: "1\u{2013}2")
-            legendItem(color: Color(nsColor: .separatorColor), label: "None")
-        }
-        .accessibilityHidden(true)
-    }
-
-    private func mosaicCell(state: String, count: Int) -> some View {
-        let isWorked = count > 0
-
-        return Button {
-            withAnimation(.easeInOut(duration: 0.15)) {
-                selectedState = selectedState == state ? nil : state
-            }
-        } label: {
-            ZStack {
-                RoundedRectangle(cornerRadius: 3)
-                    .fill(cellColor(count: count))
-
-                if selectedState == state {
-                    RoundedRectangle(cornerRadius: 3)
-                        .strokeBorder(Color.primary.opacity(0.5), lineWidth: 1)
-                }
-
-                Text(state)
-                    .font(.system(size: 9, weight: .medium))
-                    .foregroundStyle(
-                        isWorked
-                            ? Color(nsColor: .windowBackgroundColor)
-                            : Color(nsColor: .tertiaryLabelColor)
-                    )
-            }
-            .frame(maxWidth: .infinity)
-            .frame(height: cellHeight)
-        }
-        .buttonStyle(.plain)
-        .popover(
-            isPresented: Binding(
-                get: { selectedState == state },
-                set: { if !$0 {
-                    selectedState = nil
-                } }
-            ),
-            arrowEdge: .top
-        ) {
-            statePopover(state: state, count: count)
-        }
-        .accessibilityLabel(cellAccessibilityLabel(state: state, count: count))
-        .accessibilityHint(count > 0 ? "Tap to see callsigns" : "")
-    }
-
-    private func statePopover(state: String, count: Int) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack(spacing: 6) {
-                Text(state)
-                    .font(.headline.monospaced())
-                if let name = USStates.names[state] {
-                    Text(name)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            Text("\(count) QSO\(count == 1 ? "" : "s")")
-                .font(.subheadline.weight(.medium))
-
-            if let callsigns = stateCallsigns[state] {
-                let unique = Array(Set(callsigns)).sorted()
-                Text(unique.joined(separator: ", "))
-                    .font(.caption.monospaced())
-                    .foregroundStyle(.secondary)
-                    .lineLimit(3)
-            }
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-    }
-
-    private func legendItem(color: Color, label: String) -> some View {
-        HStack(spacing: 4) {
-            RoundedRectangle(cornerRadius: 2)
-                .fill(color)
-                .frame(width: 10, height: 10)
-            Text(label)
-                .font(.system(size: 10))
-                .foregroundStyle(.secondary)
-        }
-    }
-
-    private func cellColor(count: Int) -> Color {
-        guard count > 0 else {
-            return Color(nsColor: .separatorColor)
-        }
-        let intensity = 0.4 + min(Double(count) / Double(max(maxCount, 1)), 1.0) * 0.6
-        return Color.green.opacity(intensity)
-    }
-
-    private func cellAccessibilityLabel(state: String, count: Int) -> String {
-        let name = USStates.names[state] ?? state
-        if count > 0 {
-            return "\(name), \(count) QSO\(count == 1 ? "" : "s")"
-        }
-        return "\(name), not worked"
     }
 }
 
@@ -674,9 +405,9 @@ extension SessionDetailView {
     }
 
     private var flatQSOSection: some View {
-        Section("\(displayQSOs.count) QSO\(displayQSOs.count == 1 ? "" : "s")") {
-            ForEach(displayQSOs.sorted { $0.timestamp > $1.timestamp }) { qso in
-                SessionDetailQSORow(qso: qso)
+        Section("\(displayRows.count) QSO\(displayRows.count == 1 ? "" : "s")") {
+            ForEach(displayRows) { row in
+                SessionDetailQSORow(row: row)
             }
         }
     }
@@ -686,15 +417,15 @@ extension SessionDetailView {
         let grouped = roveGroupedQSOs
         ForEach(grouped, id: \.parkReference) { group in
             Section {
-                ForEach(group.qsos) { qso in
-                    SessionDetailQSORow(qso: qso)
+                ForEach(group.rows) { row in
+                    SessionDetailQSORow(row: row)
                 }
             } header: {
                 HStack {
                     Text(group.parkReference)
                         .font(.subheadline.monospaced().weight(.semibold))
                     Spacer()
-                    Text("\(group.qsos.count)Q")
+                    Text("\(group.rows.count)Q")
                         .font(.caption)
                 }
             }
@@ -702,153 +433,25 @@ extension SessionDetailView {
     }
 
     private var roveGroupedQSOs: [RoveParkGroup] {
-        var parkMap: [String: [QSO]] = [:]
+        var parkMap: [String: [SessionQSODisplayRow]] = [:]
         var displayRef: [String: String] = [:]
-        for qso in displayQSOs {
-            let park = (qso.parkReference ?? "").uppercased()
-            parkMap[park, default: []].append(qso)
+        for row in displayRows {
+            let park = (row.parkReference ?? "").uppercased()
+            parkMap[park, default: []].append(row)
             if displayRef[park] == nil {
-                displayRef[park] = qso.parkReference ?? ""
+                displayRef[park] = row.parkReference ?? ""
             }
         }
 
-        return parkMap.map { key, groupQSOs in
-            let sorted = groupQSOs.sorted { $0.timestamp > $1.timestamp }
+        return parkMap.map { key, groupRows in
+            let sorted = groupRows.sorted { $0.timestamp > $1.timestamp }
             let ref = displayRef[key] ?? key
-            return RoveParkGroup(parkReference: ref.isEmpty ? "Other" : ref, qsos: sorted)
+            return RoveParkGroup(
+                parkReference: ref.isEmpty ? "Other" : ref, rows: sorted
+            )
         }.sorted {
-            ($0.qsos.first?.timestamp ?? .distantPast) > ($1.qsos.first?.timestamp ?? .distantPast)
+            ($0.rows.first?.timestamp ?? .distantPast)
+                > ($1.rows.first?.timestamp ?? .distantPast)
         }
     }
-}
-
-// MARK: - RoveParkGroup
-
-/// Grouped QSOs for a rove park
-private struct RoveParkGroup {
-    let parkReference: String
-    let qsos: [QSO]
-}
-
-// MARK: - SessionDetailQSORow
-
-/// Compact QSO row for the session detail
-private struct SessionDetailQSORow: View {
-    // MARK: Internal
-
-    let qso: QSO
-
-    var body: some View {
-        HStack(spacing: 8) {
-            Text(qso.callsign)
-                .font(.subheadline.monospaced().weight(.semibold))
-
-            Spacer()
-
-            pill(qso.band, color: .blue)
-            pill(qso.mode, color: .green)
-
-            if let rst = qso.rstSent {
-                Text(rst)
-                    .font(.caption.monospaced())
-                    .foregroundStyle(.secondary)
-            }
-
-            if let grid = qso.theirGrid {
-                Text(grid)
-                    .font(.caption.monospaced())
-                    .foregroundStyle(.purple)
-            }
-
-            Text(Self.timeFormatter.string(from: qso.timestamp))
-                .font(.caption.monospaced())
-                .foregroundStyle(.secondary)
-        }
-        .contentShape(Rectangle())
-    }
-
-    // MARK: Private
-
-    private static let timeFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm"
-        formatter.timeZone = TimeZone(identifier: "UTC")
-        return formatter
-    }()
-
-    private func pill(_ text: String, color: Color) -> some View {
-        Text(text)
-            .font(.caption.weight(.medium))
-            .padding(.horizontal, 6)
-            .padding(.vertical, 2)
-            .background(color.opacity(0.15))
-            .clipShape(Capsule())
-    }
-}
-
-// MARK: - Details Section
-
-extension SessionDetailView {
-    @ViewBuilder
-    private var detailsSection: some View {
-        let hasEquipment = session.myRig != nil || session.myAntenna != nil
-            || session.myKey != nil || session.myMic != nil
-            || session.extraEquipment != nil
-        let hasNotes = session.attendees != nil || session.notes != nil
-
-        if hasEquipment || hasNotes {
-            Section {
-                DisclosureGroup("Details") {
-                    if hasEquipment {
-                        equipmentRows
-                    }
-                    if hasNotes {
-                        notesRows
-                    }
-                }
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var equipmentRows: some View {
-        if let rig = session.myRig {
-            Label(rig, systemImage: "radio")
-        }
-        if let antenna = session.myAntenna {
-            Label(antenna, systemImage: "antenna.radiowaves.left.and.right")
-        }
-        if let key = session.myKey {
-            Label(key, systemImage: "pianokeys")
-        }
-        if let mic = session.myMic {
-            Label(mic, systemImage: "mic")
-        }
-        if let extra = session.extraEquipment {
-            Text(extra)
-                .foregroundStyle(.secondary)
-        }
-    }
-
-    @ViewBuilder
-    private var notesRows: some View {
-        if let attendees = session.attendees {
-            LabeledContent("Attendees") {
-                Text(attendees)
-                    .font(.subheadline.monospaced())
-            }
-        }
-        if let notes = session.notes {
-            Text(notes)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-        }
-    }
-}
-
-// MARK: - MetadataItem
-
-private struct MetadataItem {
-    let icon: String
-    let label: String
 }

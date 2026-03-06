@@ -16,7 +16,7 @@ struct SpotListView: View {
             filterBar
             Divider()
 
-            if filteredSpots.isEmpty {
+            if cachedFilteredSpots.isEmpty {
                 emptyState
             } else {
                 spotTable
@@ -25,6 +25,13 @@ struct SpotListView: View {
         .task(id: initialSourceFilter) {
             selectedSource = initialSourceFilter
         }
+        .onChange(of: selectedSource) { refilter() }
+        .onChange(of: selectedBand) { refilter() }
+        .onChange(of: selectedMode) { refilter() }
+        .onChange(of: selectedRegionGroup) { refilter() }
+        .onChange(of: filterText) { refilter() }
+        .onChange(of: spotAggregator.spots.count) { refilter() }
+        .onAppear { refilter() }
     }
 
     // MARK: Private
@@ -42,50 +49,11 @@ struct SpotListView: View {
     @AppStorage("autoXITEnabled") private var autoXITEnabled = false
     @AppStorage("autoXITOffsetHz") private var autoXITOffsetHz = 0
     @State private var selection: Set<EnrichedSpot.ID> = []
+    @State private var cachedFilteredSpots: [EnrichedSpot] = []
 
     // MARK: - Helpers
 
     private let commonBands = ["160m", "80m", "60m", "40m", "30m", "20m", "17m", "15m", "12m", "10m", "6m"]
-
-    // MARK: - Filtering
-
-    private var filteredSpots: [EnrichedSpot] {
-        var result = spotAggregator.spots
-
-        // Source filter
-        if selectedSource != .all {
-            result = result.filter { $0.spot.source.rawValue == selectedSource.rawValue }
-        }
-
-        // Band filter
-        if selectedBand != "All" {
-            result = result.filter { $0.spot.band == selectedBand }
-        }
-
-        // Mode filter
-        if selectedMode != .all {
-            result = result.filter { selectedMode.matches(mode: $0.spot.mode) }
-        }
-
-        // Region filter
-        if let group = selectedRegionGroup {
-            result = result.filter { $0.region.group == group }
-        }
-
-        // Text filter
-        if !filterText.isEmpty {
-            let query = filterText.lowercased()
-            result = result.filter {
-                $0.spot.callsign.lowercased().contains(query) ||
-                    ($0.spot.referenceDisplay?.lowercased().contains(query) ?? false) ||
-                    ($0.spot.locationDisplay?.lowercased().contains(query) ?? false) ||
-                    ($0.spot.spotter?.lowercased().contains(query) ?? false) ||
-                    ($0.spot.comments?.lowercased().contains(query) ?? false)
-            }
-        }
-
-        return result
-    }
 
     // MARK: - Header
 
@@ -321,7 +289,7 @@ struct SpotListView: View {
             }
             .width(min: 60, ideal: 80)
         } rows: {
-            ForEach(filteredSpots) { spot in
+            ForEach(cachedFilteredSpots) { spot in
                 TableRow(spot)
                     .contextMenu {
                         Button("Tune & Log") {
@@ -337,7 +305,7 @@ struct SpotListView: View {
         .alternatingRowBackgrounds()
         .onChange(of: selection) { _, newSelection in
             if let selectedId = newSelection.first {
-                selectionState.selectedSpot = filteredSpots.first { $0.id == selectedId }
+                selectionState.selectedSpot = cachedFilteredSpots.first { $0.id == selectedId }
                 selectionState.selectedQSOId = nil
             } else {
                 selectionState.selectedSpot = nil
@@ -345,7 +313,7 @@ struct SpotListView: View {
         }
         .onKeyPress(.return) {
             guard let selectedId = selection.first,
-                  let spot = filteredSpots.first(where: { $0.id == selectedId })
+                  let spot = cachedFilteredSpots.first(where: { $0.id == selectedId })
             else {
                 return .ignored
             }
@@ -353,8 +321,50 @@ struct SpotListView: View {
             return .handled
         }
     }
+}
 
-    private func ageColor(_ date: Date) -> Color {
+// MARK: - SpotListView + Filtering & Actions
+
+extension SpotListView {
+    func refilter() {
+        var result = spotAggregator.spots
+
+        // Source filter
+        if selectedSource != .all {
+            result = result.filter { $0.spot.source.rawValue == selectedSource.rawValue }
+        }
+
+        // Band filter
+        if selectedBand != "All" {
+            result = result.filter { $0.spot.band == selectedBand }
+        }
+
+        // Mode filter
+        if selectedMode != .all {
+            result = result.filter { selectedMode.matches(mode: $0.spot.mode) }
+        }
+
+        // Region filter
+        if let group = selectedRegionGroup {
+            result = result.filter { $0.region.group == group }
+        }
+
+        // Text filter
+        if !filterText.isEmpty {
+            let query = filterText.lowercased()
+            result = result.filter {
+                $0.spot.callsign.lowercased().contains(query) ||
+                    ($0.spot.referenceDisplay?.lowercased().contains(query) ?? false) ||
+                    ($0.spot.locationDisplay?.lowercased().contains(query) ?? false) ||
+                    ($0.spot.spotter?.lowercased().contains(query) ?? false) ||
+                    ($0.spot.comments?.lowercased().contains(query) ?? false)
+            }
+        }
+
+        cachedFilteredSpots = result
+    }
+
+    func ageColor(_ date: Date) -> Color {
         let minutes = Date().timeIntervalSince(date) / 60
         if minutes < 5 {
             return Color(nsColor: .systemGreen)
@@ -365,7 +375,7 @@ struct SpotListView: View {
         return .secondary
     }
 
-    private func sourceColor(_ source: SpotSource) -> Color {
+    func sourceColor(_ source: SpotSource) -> Color {
         switch source {
         case .rbn: .blue
         case .pota: .green
@@ -375,7 +385,7 @@ struct SpotListView: View {
         }
     }
 
-    private func tuneAndLog(_ spot: EnrichedSpot) {
+    func tuneAndLog(_ spot: EnrichedSpot) {
         let freqStr = String(format: "%.3f", spot.spot.frequencyMHz)
         selectionState.pendingSpotEntry = "\(spot.spot.callsign) \(freqStr)"
         selectionState.selectedSpot = spot
@@ -392,7 +402,7 @@ struct SpotListView: View {
         }
     }
 
-    private func tuneInToSDR(_ spot: EnrichedSpot) {
+    func tuneInToSDR(_ spot: EnrichedSpot) {
         let tuneInSpot = TuneInSpot(from: spot)
         Task {
             await tuneInManager.tuneIn(

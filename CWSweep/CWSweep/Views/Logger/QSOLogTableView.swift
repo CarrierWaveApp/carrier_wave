@@ -2,6 +2,53 @@ import CarrierWaveData
 import SwiftData
 import SwiftUI
 
+// MARK: - QSOTableRow
+
+/// Lightweight display-only snapshot of a QSO for table rendering.
+/// Using plain structs instead of @Model objects avoids SwiftData observation
+/// overhead that causes scroll jank with thousands of rows.
+struct QSOTableRow: Identifiable, Sendable {
+    // MARK: Lifecycle
+
+    init(from qso: QSO) {
+        id = qso.id
+        timestamp = qso.timestamp
+        callsign = qso.callsign
+        frequency = qso.frequency
+        band = qso.band
+        mode = qso.mode
+        rstSent = qso.rstSent
+        rstReceived = qso.rstReceived
+        parkReference = qso.parkReference
+        theirParkReference = qso.theirParkReference
+        theirGrid = qso.theirGrid
+        name = qso.name
+        contestSerialSent = qso.contestSerialSent
+        contestSerialReceived = qso.contestSerialReceived
+        contestExchangeSent = qso.contestExchangeSent
+        contestExchangeReceived = qso.contestExchangeReceived
+    }
+
+    // MARK: Internal
+
+    let id: UUID
+    let timestamp: Date
+    let callsign: String
+    let frequency: Double?
+    let band: String
+    let mode: String
+    let rstSent: String?
+    let rstReceived: String?
+    let parkReference: String?
+    let theirParkReference: String?
+    let theirGrid: String?
+    let name: String?
+    let contestSerialSent: Int?
+    let contestSerialReceived: Int?
+    let contestExchangeSent: String?
+    let contestExchangeReceived: String?
+}
+
 // MARK: - QSOLogTableView
 
 /// SwiftUI Table for QSO log display with sortable columns.
@@ -24,22 +71,22 @@ private struct StandardQSOTable: View {
     // MARK: Internal
 
     var body: some View {
-        Table(of: QSO.self, selection: $selection, sortOrder: $sortOrder) {
-            TableColumn("Date/Time", value: \.timestamp) { qso in
-                Text(qso.timestamp, format: .dateTime
+        Table(of: QSOTableRow.self, selection: $selection, sortOrder: $sortOrder) {
+            TableColumn("Date/Time", value: \.timestamp) { row in
+                Text(row.timestamp, format: .dateTime
                     .month(.abbreviated).day()
                     .hour().minute())
                     .font(.caption.monospacedDigit())
             }
             .width(min: 100, ideal: 130)
 
-            TableColumn("Callsign", value: \.callsign) { qso in
-                Text(qso.callsign).fontWeight(.medium)
+            TableColumn("Callsign", value: \.callsign) { row in
+                Text(row.callsign).fontWeight(.medium)
             }
             .width(min: 80, ideal: 100)
 
-            TableColumn("Freq") { qso in
-                if let freq = qso.frequency {
+            TableColumn("Freq") { row in
+                if let freq = row.frequency {
                     Text(String(format: "%.3f", freq)).monospacedDigit()
                 } else {
                     Text("\u{2014}").foregroundStyle(.tertiary)
@@ -47,45 +94,46 @@ private struct StandardQSOTable: View {
             }
             .width(min: 70, ideal: 80)
 
-            TableColumn("Band", value: \.band) { qso in Text(qso.band) }
+            TableColumn("Band", value: \.band) { row in Text(row.band) }
                 .width(min: 40, ideal: 50)
-            TableColumn("Mode", value: \.mode) { qso in Text(qso.mode) }
+            TableColumn("Mode", value: \.mode) { row in Text(row.mode) }
                 .width(min: 40, ideal: 50)
 
-            TableColumn("RST S") { qso in
-                Text(qso.rstSent ?? "\u{2014}").monospacedDigit()
+            TableColumn("RST S") { row in
+                Text(row.rstSent ?? "\u{2014}").monospacedDigit()
             }
             .width(min: 40, ideal: 50)
 
-            TableColumn("RST R") { qso in
-                Text(qso.rstReceived ?? "\u{2014}").monospacedDigit()
+            TableColumn("RST R") { row in
+                Text(row.rstReceived ?? "\u{2014}").monospacedDigit()
             }
             .width(min: 40, ideal: 50)
 
-            TableColumn("Park") { qso in
-                Text(qso.theirParkReference ?? qso.parkReference ?? "\u{2014}")
-                    .foregroundStyle(qso.parkReference != nil ? .primary : .tertiary)
+            TableColumn("Park") { row in
+                Text(row.theirParkReference ?? row.parkReference ?? "\u{2014}")
+                    .foregroundStyle(
+                        row.parkReference != nil ? .primary : .tertiary
+                    )
             }
             .width(min: 60, ideal: 80)
 
-            TableColumn("Grid") { qso in
-                Text(qso.theirGrid ?? "\u{2014}")
-                    .foregroundStyle(qso.theirGrid != nil ? .primary : .tertiary)
+            TableColumn("Grid") { row in
+                Text(row.theirGrid ?? "\u{2014}")
+                    .foregroundStyle(row.theirGrid != nil ? .primary : .tertiary)
             }
             .width(min: 50, ideal: 60)
 
-            TableColumn("Name") { qso in
-                Text(qso.name ?? "\u{2014}")
-                    .foregroundStyle(qso.name != nil ? .primary : .tertiary)
+            TableColumn("Name") { row in
+                Text(row.name ?? "\u{2014}")
+                    .foregroundStyle(row.name != nil ? .primary : .tertiary)
             }
             .width(min: 80, ideal: 120)
         } rows: {
-            ForEach(displayQSOs) { qso in
-                TableRow(qso)
+            ForEach(displayRows) { row in
+                TableRow(row)
                     .contextMenu {
                         Button("Delete", role: .destructive) {
-                            qso.isHidden = true
-                            loadQSOs()
+                            hideQSO(id: row.id)
                         }
                     }
             }
@@ -93,7 +141,7 @@ private struct StandardQSOTable: View {
         .alternatingRowBackgrounds()
         .task { loadQSOs() }
         .onChange(of: sortOrder) { _, _ in
-            displayQSOs.sort(using: sortOrder)
+            displayRows.sort(using: sortOrder)
         }
         .task { await observeStoreChanges(.NSPersistentStoreRemoteChange) }
         .task { await observeStoreChanges(ModelContext.didSave) }
@@ -109,14 +157,12 @@ private struct StandardQSOTable: View {
 
     private static let metadataModes: Set<String> = ["WEATHER", "SOLAR", "NOTE"]
 
-    @State private var displayQSOs: [QSO] = []
-    @State private var selection: Set<QSO.ID> = []
-    @State private var sortOrder = [KeyPathComparator(\QSO.timestamp, order: .reverse)]
+    @State private var displayRows: [QSOTableRow] = []
+    @State private var selection: Set<QSOTableRow.ID> = []
+    @State private var sortOrder = [KeyPathComparator(\QSOTableRow.timestamp, order: .reverse)]
     @Environment(\.modelContext) private var modelContext
     @Environment(SelectionState.self) private var selectionState
 
-    /// Observe a notification and re-fetch QSOs with debounce.
-    /// Runs on MainActor (inherited from .task) so loadQSOs() is main-thread safe.
     private func observeStoreChanges(_ name: Notification.Name) async {
         for await _ in NotificationCenter.default.notifications(named: name) {
             try? await Task.sleep(for: .seconds(1))
@@ -132,14 +178,28 @@ private struct StandardQSOTable: View {
             predicate: #Predicate { !$0.isHidden && !$0.callsign.isEmpty },
             sortBy: [SortDescriptor(\QSO.timestamp, order: .reverse)]
         )
-        // Fetch generously to compensate for CloudKit mirror duplicates (~3x),
-        // then dedup and show all unique QSOs.
         descriptor.fetchLimit = 10_000
         let fetched = (try? modelContext.fetch(descriptor)) ?? []
         var seen = Set<UUID>()
-        displayQSOs = fetched.filter {
-            seen.insert($0.id).inserted && !Self.metadataModes.contains($0.mode.uppercased())
-        }.sorted(using: sortOrder)
+        displayRows = fetched
+            .filter {
+                seen.insert($0.id).inserted
+                    && !Self.metadataModes.contains($0.mode.uppercased())
+            }
+            .map { QSOTableRow(from: $0) }
+            .sorted(using: sortOrder)
+    }
+
+    private func hideQSO(id: UUID) {
+        let targetId = id
+        var descriptor = FetchDescriptor<QSO>(
+            predicate: #Predicate { $0.id == targetId }
+        )
+        descriptor.fetchLimit = 1
+        if let qso = try? modelContext.fetch(descriptor).first {
+            qso.isHidden = true
+        }
+        loadQSOs()
     }
 }
 
@@ -149,22 +209,22 @@ private struct ContestQSOTable: View {
     // MARK: Internal
 
     var body: some View {
-        Table(of: QSO.self, selection: $selection, sortOrder: $sortOrder) {
-            TableColumn("Date/Time", value: \.timestamp) { qso in
-                Text(qso.timestamp, format: .dateTime
+        Table(of: QSOTableRow.self, selection: $selection, sortOrder: $sortOrder) {
+            TableColumn("Date/Time", value: \.timestamp) { row in
+                Text(row.timestamp, format: .dateTime
                     .month(.abbreviated).day()
                     .hour().minute())
                     .font(.caption.monospacedDigit())
             }
             .width(min: 100, ideal: 130)
 
-            TableColumn("Callsign", value: \.callsign) { qso in
-                Text(qso.callsign).fontWeight(.medium)
+            TableColumn("Callsign", value: \.callsign) { row in
+                Text(row.callsign).fontWeight(.medium)
             }
             .width(min: 80, ideal: 100)
 
-            TableColumn("Freq") { qso in
-                if let freq = qso.frequency {
+            TableColumn("Freq") { row in
+                if let freq = row.frequency {
                     Text(String(format: "%.3f", freq)).monospacedDigit()
                 } else {
                     Text("\u{2014}").foregroundStyle(.tertiary)
@@ -172,20 +232,20 @@ private struct ContestQSOTable: View {
             }
             .width(min: 70, ideal: 80)
 
-            TableColumn("Band", value: \.band) { qso in Text(qso.band) }
+            TableColumn("Band", value: \.band) { row in Text(row.band) }
                 .width(min: 40, ideal: 50)
-            TableColumn("Mode", value: \.mode) { qso in Text(qso.mode) }
+            TableColumn("Mode", value: \.mode) { row in Text(row.mode) }
                 .width(min: 40, ideal: 50)
 
-            TableColumn("RST") { qso in
-                let s = qso.rstSent ?? "\u{2014}"
-                let r = qso.rstReceived ?? "\u{2014}"
-                Text("\(s)/\(r)").monospacedDigit()
+            TableColumn("RST") { row in
+                let sent = row.rstSent ?? "\u{2014}"
+                let recv = row.rstReceived ?? "\u{2014}"
+                Text("\(sent)/\(recv)").monospacedDigit()
             }
             .width(min: 60, ideal: 70)
 
-            TableColumn("Srl S") { qso in
-                if let serial = qso.contestSerialSent {
+            TableColumn("Srl S") { row in
+                if let serial = row.contestSerialSent {
                     Text(String(format: "%04d", serial)).monospacedDigit()
                 } else {
                     Text("\u{2014}").foregroundStyle(.tertiary)
@@ -193,8 +253,8 @@ private struct ContestQSOTable: View {
             }
             .width(min: 40, ideal: 50)
 
-            TableColumn("Srl R") { qso in
-                if let serial = qso.contestSerialReceived {
+            TableColumn("Srl R") { row in
+                if let serial = row.contestSerialReceived {
                     Text(String(format: "%04d", serial)).monospacedDigit()
                 } else {
                     Text("\u{2014}").foregroundStyle(.tertiary)
@@ -202,24 +262,27 @@ private struct ContestQSOTable: View {
             }
             .width(min: 40, ideal: 50)
 
-            TableColumn("Exch S") { qso in
-                Text(qso.contestExchangeSent ?? "\u{2014}")
-                    .foregroundStyle(qso.contestExchangeSent != nil ? .primary : .tertiary)
+            TableColumn("Exch S") { row in
+                Text(row.contestExchangeSent ?? "\u{2014}")
+                    .foregroundStyle(
+                        row.contestExchangeSent != nil ? .primary : .tertiary
+                    )
             }
             .width(min: 50, ideal: 70)
 
-            TableColumn("Exch R") { qso in
-                Text(qso.contestExchangeReceived ?? "\u{2014}")
-                    .foregroundStyle(qso.contestExchangeReceived != nil ? .primary : .tertiary)
+            TableColumn("Exch R") { row in
+                Text(row.contestExchangeReceived ?? "\u{2014}")
+                    .foregroundStyle(
+                        row.contestExchangeReceived != nil ? .primary : .tertiary
+                    )
             }
             .width(min: 50, ideal: 70)
         } rows: {
-            ForEach(displayQSOs) { qso in
-                TableRow(qso)
+            ForEach(displayRows) { row in
+                TableRow(row)
                     .contextMenu {
                         Button("Delete", role: .destructive) {
-                            qso.isHidden = true
-                            loadQSOs()
+                            hideQSO(id: row.id)
                         }
                     }
             }
@@ -227,7 +290,7 @@ private struct ContestQSOTable: View {
         .alternatingRowBackgrounds()
         .task { loadQSOs() }
         .onChange(of: sortOrder) { _, _ in
-            displayQSOs.sort(using: sortOrder)
+            displayRows.sort(using: sortOrder)
         }
         .task { await observeStoreChanges(.NSPersistentStoreRemoteChange) }
         .task { await observeStoreChanges(ModelContext.didSave) }
@@ -243,14 +306,12 @@ private struct ContestQSOTable: View {
 
     private static let metadataModes: Set<String> = ["WEATHER", "SOLAR", "NOTE"]
 
-    @State private var displayQSOs: [QSO] = []
-    @State private var selection: Set<QSO.ID> = []
-    @State private var sortOrder = [KeyPathComparator(\QSO.timestamp, order: .reverse)]
+    @State private var displayRows: [QSOTableRow] = []
+    @State private var selection: Set<QSOTableRow.ID> = []
+    @State private var sortOrder = [KeyPathComparator(\QSOTableRow.timestamp, order: .reverse)]
     @Environment(\.modelContext) private var modelContext
     @Environment(SelectionState.self) private var selectionState
 
-    /// Observe a notification and re-fetch QSOs with debounce.
-    /// Runs on MainActor (inherited from .task) so loadQSOs() is main-thread safe.
     private func observeStoreChanges(_ name: Notification.Name) async {
         for await _ in NotificationCenter.default.notifications(named: name) {
             try? await Task.sleep(for: .seconds(1))
@@ -266,13 +327,27 @@ private struct ContestQSOTable: View {
             predicate: #Predicate { !$0.isHidden && !$0.callsign.isEmpty },
             sortBy: [SortDescriptor(\QSO.timestamp, order: .reverse)]
         )
-        // Fetch generously to compensate for CloudKit mirror duplicates (~3x),
-        // then dedup and show all unique QSOs.
         descriptor.fetchLimit = 10_000
         let fetched = (try? modelContext.fetch(descriptor)) ?? []
         var seen = Set<UUID>()
-        displayQSOs = fetched.filter {
-            seen.insert($0.id).inserted && !Self.metadataModes.contains($0.mode.uppercased())
-        }.sorted(using: sortOrder)
+        displayRows = fetched
+            .filter {
+                seen.insert($0.id).inserted
+                    && !Self.metadataModes.contains($0.mode.uppercased())
+            }
+            .map { QSOTableRow(from: $0) }
+            .sorted(using: sortOrder)
+    }
+
+    private func hideQSO(id: UUID) {
+        let targetId = id
+        var descriptor = FetchDescriptor<QSO>(
+            predicate: #Predicate { $0.id == targetId }
+        )
+        descriptor.fetchLimit = 1
+        if let qso = try? modelContext.fetch(descriptor).first {
+            qso.isHidden = true
+        }
+        loadQSOs()
     }
 }
