@@ -8,3 +8,11 @@ LoggerView+Modifiers.swift - Added .onReceive for QSY spot/tune/log notification
 LogsListView.swift - Added .onReceive for QSY lookup notification to pre-fill search field
 QSYLogConfirmation.swift - New model: QSY log confirmation data struct
 QSYLogConfirmationSheet.swift - New view: confirmation sheet for qsy://log URIs
+NetworkHealthMonitor.swift - New: tracks network connectivity and degraded states across services
+NetworkHealthBanner.swift - New: persistent network degradation/disconnection warning banner
+CallsignLookupService+QRZ.swift - Dedicated URLSession with shorter timeouts, network health reporting
+LoggerView.swift - Added networkHealthDismissed state
+LoggerView+Layout.swift - Show network health banner and compact error bar when callsign field focused
+LoggerView+DerivedState.swift - Removed !callsignFieldFocused from shouldShowLookupError
+LoggerView+Modifiers.swift - onChange handler to reset health banner dismiss state
+LoggerView+Data.swift - Report network success/failure from POTA spot fetches

@@ -234,6 +234,7 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `BackupService.swift` | Database backup actor (snapshot, manifest, pruning) |
 | `BackupService+Restore.swift` | Backup restore, validation, iCloud Drive sync |
 | `SyncDebugLog.swift` | Sync debugging utilities |
+| `NetworkHealthMonitor.swift` | Tracks network connectivity and degraded states across all services |
 | `ImportService.swift` | ADIF parsing, deduplication, QSO creation |
 | `ImportService+External.swift` | External file import handling |
 | `ADIFParser.swift` | ADIF format parser |
@@ -522,6 +523,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `CallsignTextField.swift` | UITextField wrapper for callsign entry with proper cursor handling |
 | `SCPSuggestionsView.swift` | Horizontal chip bar showing SCP callsign suggestions |
 | `LoggerCallsignCard.swift` | Callsign info display card for logger |
+| `NetworkHealthBanner.swift` | Persistent network degradation/disconnection warning banner |
 | `SessionStartSheet.swift` | Session wizard for mode, frequency, activation type, equipment |
 | `SessionStartSheet+Sections.swift` | Callsign and activation section views |
 | `SessionStartSheet+Equipment.swift` | Equipment, attendees, and notes sections for session start |

@@ -26,13 +26,19 @@ extension LoggerView {
                 )
             )
         } else if let error = lookupError, shouldShowLookupError {
-            CallsignLookupErrorBanner(error: error)
-                .transition(
-                    .asymmetric(
-                        insertion: .move(edge: .top).combined(with: .opacity),
-                        removal: .opacity
+            if callsignFieldFocused {
+                CompactLookupErrorBar(error: error)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .transition(.opacity)
+            } else {
+                CallsignLookupErrorBanner(error: error)
+                    .transition(
+                        .asymmetric(
+                            insertion: .move(edge: .top).combined(with: .opacity),
+                            removal: .opacity
+                        )
                     )
-                )
+            }
         }
     }
 
@@ -47,6 +53,21 @@ extension LoggerView {
                 SpotSummaryView(monitoringService: manager.spotMonitoringService)
                     .padding(.horizontal)
                     .padding(.top, 8)
+            }
+
+            // Network health warning
+            if !networkHealthDismissed,
+               NetworkHealthMonitor.shared.health != .healthy
+            {
+                NetworkHealthBanner(
+                    health: NetworkHealthMonitor.shared.health,
+                    onDismiss: {
+                        withAnimation { networkHealthDismissed = true }
+                    }
+                )
+                .padding(.horizontal)
+                .padding(.top, 4)
+                .transition(.move(edge: .top).combined(with: .opacity))
             }
 
             // Frequency warning banner (license violations + activity warnings)

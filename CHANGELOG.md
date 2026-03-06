@@ -6,6 +6,12 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ### Added
 - Implement `qsy://` URI scheme for inter-app ham radio interoperability (spot, tune, lookup, import, log actions)
+- Network health monitor: detect and warn when web requests consistently fail (QRZ lookups, syncing, etc.)
+- Show lookup error banner while callsign field is focused (previously only visible after dismissing keyboard)
+
+### Fixed
+- QRZ callsign lookups using 30-second timeout (now 10s) causing long hangs on degraded networks
+- Lookup errors invisible during active logging when keyboard was visible
 
 ## [1.54.1] - 2026-03-05
 

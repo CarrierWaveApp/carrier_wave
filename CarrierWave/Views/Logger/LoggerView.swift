@@ -129,6 +129,9 @@ struct LoggerView: View {
     @State var lookupError: CallsignLookupError?
     @State var lookupTask: Task<Void, Never>?
 
+    // Network health
+    @State var networkHealthDismissed = false
+
     /// All-time QSO count with the current callsign
     @State var previousQSOCount: Int = 0
 

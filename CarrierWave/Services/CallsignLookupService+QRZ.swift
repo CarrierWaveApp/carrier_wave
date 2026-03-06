@@ -7,6 +7,14 @@ extension CallsignLookupService {
     /// QRZ XML callbook API base URL
     private static let qrzXMLURL = "https://xmldata.qrz.com/xml/current/"
 
+    /// Dedicated URLSession with shorter timeouts for interactive lookups
+    private static let lookupSession: URLSession = {
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 10
+        config.timeoutIntervalForResource = 15
+        return URLSession(configuration: config)
+    }()
+
     /// Look up a callsign in QRZ XML callbook
     /// Uses the logbook API key which also works for XML callbook lookups
     func lookupInQRZ(_ callsign: String) async -> CallsignInfo? {
@@ -70,10 +78,11 @@ extension CallsignLookupService {
             request.setValue("CarrierWave/1.0", forHTTPHeaderField: "User-Agent")
             request.timeoutInterval = 30
 
-            let (data, response) = try await URLSession.shared.data(for: request)
+            let (data, response) = try await Self.lookupSession.data(for: request)
 
             guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200
             else {
+                NetworkHealthMonitor.shared.reportFailure()
                 return QRZSessionResult(sessionKey: nil, error: .qrzAuthFailed)
             }
 
@@ -83,6 +92,7 @@ extension CallsignLookupService {
 
             // Check for error in response
             if let errorMsg = parseXMLValue(from: xmlString, tag: "Error") {
+                // Auth errors are not network failures
                 if errorMsg.lowercased().contains("invalid")
                     || errorMsg.lowercased().contains("password")
                     || errorMsg.lowercased().contains("username")
@@ -96,11 +106,13 @@ extension CallsignLookupService {
 
             // Parse session key from XML response
             if let key = parseXMLValue(from: xmlString, tag: "Key") {
+                NetworkHealthMonitor.shared.reportSuccess()
                 return QRZSessionResult(sessionKey: key, error: nil)
             }
 
             return QRZSessionResult(sessionKey: nil, error: .qrzAuthFailed)
         } catch {
+            NetworkHealthMonitor.shared.reportFailure(error)
             return QRZSessionResult(
                 sessionKey: nil,
                 error: .networkError(error.localizedDescription)
@@ -151,11 +163,11 @@ extension CallsignLookupService {
     private func fetchQRZResponse(url: URL) async throws -> String {
         var request = URLRequest(url: url)
         request.setValue("CarrierWave/1.0", forHTTPHeaderField: "User-Agent")
-        request.timeoutInterval = 30
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await Self.lookupSession.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            NetworkHealthMonitor.shared.reportFailure()
             throw QRZLookupError.httpError
         }
 
@@ -163,6 +175,7 @@ extension CallsignLookupService {
             throw QRZLookupError.invalidResponse
         }
 
+        NetworkHealthMonitor.shared.reportSuccess()
         return xmlString
     }
 
@@ -247,10 +260,11 @@ extension CallsignLookupService {
             request.setValue("CarrierWave/1.0", forHTTPHeaderField: "User-Agent")
             request.timeoutInterval = 30
 
-            let (data, response) = try await URLSession.shared.data(for: request)
+            let (data, response) = try await Self.lookupSession.data(for: request)
 
             guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200
             else {
+                NetworkHealthMonitor.shared.reportFailure()
                 return nil
             }
 
@@ -260,8 +274,13 @@ extension CallsignLookupService {
 
             // Parse session key from XML response
             // Format: <Key>SESSION_KEY</Key>
-            return parseXMLValue(from: xmlString, tag: "Key")
+            if let key = parseXMLValue(from: xmlString, tag: "Key") {
+                NetworkHealthMonitor.shared.reportSuccess()
+                return key
+            }
+            return nil
         } catch {
+            NetworkHealthMonitor.shared.reportFailure(error)
             return nil
         }
     }

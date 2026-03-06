@@ -98,9 +98,10 @@ extension LoggerView {
         LoggerCommand.parse(callsignInput)
     }
 
-    /// Whether to show the lookup error banner (when keyboard is not visible)
+    /// Whether to show the lookup error banner
+    /// Shows for both focused (compact) and unfocused (full) states
     var shouldShowLookupError: Bool {
-        lookupError != nil && lookupResult == nil && !callsignFieldFocused && !callsignInput.isEmpty
+        lookupError != nil && lookupResult == nil && !callsignInput.isEmpty
             && callsignInput.count >= 3 && detectedCommand == nil
     }
 
