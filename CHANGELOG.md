@@ -7,7 +7,13 @@ All notable changes to Carrier Wave will be documented in this file.
 ### Added
 - Azimuthal equidistant projection map with live spot density heatmap and antenna radiation pattern overlay
 - Antenna type selector with compass-based or manual orientation for pattern visualization
-- Band filter and distance range controls for the azimuthal view
+- Band, mode, and distance range filters for the azimuthal view with current-value labels
+- QSO visibility toggle and loading indicators on the azimuthal map
+- Degree annotations and tick marks around azimuthal circle edge
+- All-source spot fetching (RBN, POTA, SOTA, WWFF) with HamDB grid enrichment for map projection
+- Resolve operator grid from session/settings before falling back to GPS
+- World rotation (heading-up) instead of antenna rotation on the azimuthal map
+- Prominent 36pt bearing display with HIG-compliant 44pt touch targets
 - Accessible from Map tab toolbar and iPad logger sidebar
 - Implement `qsy://` URI scheme for inter-app ham radio interoperability (spot, tune, lookup, import, log actions)
 - Network health monitor: detect and warn when web requests consistently fail (QRZ lookups, syncing, etc.)

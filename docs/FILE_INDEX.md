@@ -877,6 +877,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `AzimuthalMapView.swift` | Canvas-rendered azimuthal equidistant projection with spot heatmap and antenna pattern overlay |
 | `AzimuthalContainerView.swift` | Container wiring spots, QSOs, antenna selection, and compass into the azimuthal map |
 | `AzimuthalStandaloneView.swift` | Standalone azimuthal view for Map tab (resolves grid via GPS, loads spots/QSOs) |
+| `AzimuthalStandaloneView+Fetch.swift` | Spot fetching from RBN, POTA, SOTA, WWFF and HamDB grid enrichment |
 | `AzimuthalDataProvider.swift` | Projects spots and QSOs into azimuthal coordinates, builds sector data |
 
 ## Utilities (`CarrierWave/Utilities/`)
