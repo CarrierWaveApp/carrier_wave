@@ -16,3 +16,4 @@ LoggerView+Layout.swift - Show network health banner and compact error bar when 
 LoggerView+DerivedState.swift - Removed !callsignFieldFocused from shouldShowLookupError
 LoggerView+Modifiers.swift - onChange handler to reset health banner dismiss state
 LoggerView+Data.swift - Report network success/failure from POTA spot fetches
+SessionStartHelperViews.swift - Added UTC midnight warning to ActivationSectionView for POTA activations

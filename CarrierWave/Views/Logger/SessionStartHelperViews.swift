@@ -198,6 +198,40 @@ struct ActivationSectionView: View {
                     .foregroundStyle(.secondary)
             }
         }
+        if isNearUTCMidnight {
+            utcMidnightWarning
+        }
+    }
+
+    /// Whether the current time is within one hour of UTC midnight (23:00–00:00 UTC)
+    private var isNearUTCMidnight: Bool {
+        var utcCal = Calendar(identifier: .gregorian)
+        utcCal.timeZone = TimeZone(identifier: "UTC")!
+        let hour = utcCal.component(.hour, from: Date())
+        return hour == 23 || hour == 0
+    }
+
+    private var utcMidnightWarning: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "clock.badge.exclamationmark")
+                .foregroundStyle(.orange)
+                .font(.title3)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Near UTC midnight")
+                    .font(.subheadline.weight(.semibold))
+                Text(
+                    "POTA groups contacts by UTC date."
+                        + " Starting now means your session may be"
+                        + " auto-split at midnight. Consider waiting"
+                        + " until after 0000z to keep all QSOs on one"
+                        + " activation date."
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+        }
+        .padding(.vertical, 4)
     }
 
     private var wwffFields: some View {
