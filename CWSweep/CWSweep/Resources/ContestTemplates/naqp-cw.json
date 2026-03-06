@@ -1,0 +1,41 @@
+{
+  "id": "naqp-cw",
+  "name": "North American QSO Party CW",
+  "cabrilloCategoryContest": "NAQP-CW",
+  "bands": ["160m", "80m", "40m", "20m", "15m", "10m"],
+  "modes": ["CW"],
+  "exchange": {
+    "fields": [
+      { "id": "name", "label": "Name", "type": "name", "width": 10 },
+      { "id": "state", "label": "State/Province", "type": "state", "width": 5 }
+    ]
+  },
+  "multipliers": {
+    "types": ["state"],
+    "perBand": false
+  },
+  "scoring": {
+    "rules": [
+      { "condition": "any", "points": 1 }
+    ]
+  },
+  "dupeRules": {
+    "perBand": true,
+    "perMode": false
+  },
+  "cabrillo": {
+    "qsoTemplate": "freq mode date time mycall myname mystate call name state",
+    "fieldWidths": {
+      "freq": 5,
+      "mode": 2,
+      "date": 10,
+      "time": 4,
+      "mycall": 10,
+      "myname": 10,
+      "mystate": 5,
+      "call": 10,
+      "name": 10,
+      "state": 5
+    }
+  }
+}

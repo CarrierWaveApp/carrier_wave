@@ -6,7 +6,20 @@ SwiftUI/SwiftData iOS app for amateur radio QSO logging with cloud sync to QRZ, 
 
 ## Project Architecture
 
-This is a multi-repo project: a Rust server backend and an iOS/SwiftUI app (with Watch app). Deploy means building and deploying to a physical device. Release involves version bump, changelog, git tag, Discord notification, and App Store upload.
+Monorepo containing the iOS app, macOS companion (CW Sweep), and two shared SPM packages. A separate Rust server backend handles the activities API. Deploy means building and deploying to a physical device. Release involves version bump, changelog, git tag, Discord notification, and App Store upload.
+
+```
+carrier_wave/
+├── CarrierWave/           # iOS app (SwiftUI/SwiftData)
+├── CarrierWaveCore/       # SPM: protocol logic, parsers, utilities, FT8 codec
+├── CarrierWaveData/       # SPM: SwiftData models, cloud sync, shared services
+├── CWSweep/               # macOS companion app (xcodeproj from xcodegen)
+├── CarrierWaveTests/      # iOS app tests
+├── CarrierWaveWatch/      # watchOS companion
+└── CarrierWaveWidgets/    # Widget extension
+```
+
+All package path dependencies are monorepo-relative (e.g. `../CarrierWaveCore`).
 
 ## File Discovery
 

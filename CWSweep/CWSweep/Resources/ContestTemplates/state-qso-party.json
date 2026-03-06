@@ -1,0 +1,40 @@
+{
+  "id": "state-qso-party",
+  "name": "State QSO Party (Generic)",
+  "cabrilloCategoryContest": "STATE-QSO-PARTY",
+  "bands": ["160m", "80m", "40m", "20m", "15m", "10m", "6m", "2m"],
+  "modes": ["CW", "SSB", "DIGITAL"],
+  "exchange": {
+    "fields": [
+      { "id": "rst", "label": "RST", "type": "rst", "defaultValue": "599", "width": 3 },
+      { "id": "county", "label": "County", "type": "county", "width": 6 }
+    ]
+  },
+  "multipliers": {
+    "types": ["county"],
+    "perBand": false
+  },
+  "scoring": {
+    "rules": [
+      { "condition": "any", "points": 1 }
+    ]
+  },
+  "dupeRules": {
+    "perBand": true,
+    "perMode": true
+  },
+  "cabrillo": {
+    "qsoTemplate": "freq mode date time mycall rst myexch call rst exch",
+    "fieldWidths": {
+      "freq": 5,
+      "mode": 2,
+      "date": 10,
+      "time": 4,
+      "mycall": 13,
+      "rst": 3,
+      "myexch": 6,
+      "call": 13,
+      "exch": 6
+    }
+  }
+}

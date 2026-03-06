@@ -1,0 +1,49 @@
+{
+  "id": "arrl-sweepstakes-cw",
+  "name": "ARRL Sweepstakes CW",
+  "cabrilloCategoryContest": "ARRL-SS-CW",
+  "bands": ["160m", "80m", "40m", "20m", "15m", "10m"],
+  "modes": ["CW"],
+  "exchange": {
+    "fields": [
+      { "id": "serial", "label": "Serial", "type": "serialNumber", "width": 4 },
+      { "id": "precedence", "label": "Prec", "type": "precedence", "width": 1 },
+      { "id": "check", "label": "Check", "type": "check", "width": 2 },
+      { "id": "section", "label": "Section", "type": "arrlSection", "width": 3 }
+    ]
+  },
+  "multipliers": {
+    "types": ["arrlSection"],
+    "perBand": false
+  },
+  "scoring": {
+    "rules": [
+      { "condition": "any", "points": 2 }
+    ]
+  },
+  "dupeRules": {
+    "perBand": false,
+    "perMode": false
+  },
+  "cabrillo": {
+    "qsoTemplate": "freq mode date time mycall myserial myprec mycallsign mycheck mysect call serial prec callsign check sect",
+    "fieldWidths": {
+      "freq": 5,
+      "mode": 2,
+      "date": 10,
+      "time": 4,
+      "mycall": 10,
+      "myserial": 4,
+      "myprec": 1,
+      "mycallsign": 10,
+      "mycheck": 2,
+      "mysect": 3,
+      "call": 10,
+      "serial": 4,
+      "prec": 1,
+      "callsign": 10,
+      "check": 2,
+      "sect": 3
+    }
+  }
+}

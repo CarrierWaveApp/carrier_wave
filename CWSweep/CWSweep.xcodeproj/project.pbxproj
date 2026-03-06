@@ -1,0 +1,1279 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		01330E5E9A254E66525EBC45 /* SDRPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4220FF6CEED7E72400092E9E /* SDRPlayerView.swift */; };
+		06724ECFC8AEC66788150002 /* ClusterNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C088DB86830D6885C2DF0DA /* ClusterNode.swift */; };
+		081BC3FAE6A8973583B10EC1 /* SerialPortMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B89A2DB3FF01EEAA5CC01E1D /* SerialPortMonitor.swift */; };
+		0E02ED37F1565381C461B22F /* KiwiSDRADPCM.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE5C3263FAD66F3C7F6BAF13 /* KiwiSDRADPCM.swift */; };
+		0E866145399C1577D1076652 /* RecordingPlaybackEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = E73C6ACCCD05EE963A758ABA /* RecordingPlaybackEngine.swift */; };
+		11201AC1914B4D32D630030E /* MultiplierTrackerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB30C2AF958427C29B445CD7 /* MultiplierTrackerView.swift */; };
+		11B44B4B63A96DDE5DF57461 /* ContestTemplateLoaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37F5594F563C59434F05059F /* ContestTemplateLoaderTests.swift */; };
+		121CA8AD846C3CA94247B528 /* ContestEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79261A8A88B1D81743F4907D /* ContestEngineTests.swift */; };
+		1225051B955421D86090FDEE /* KiwiSDRStatusFetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA36951F52EE2F88F20FCBCD /* KiwiSDRStatusFetcher.swift */; };
+		12AB1A111340316F0F56905C /* RadioProtocolHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 810DCC46AD8FB4396CFCFBE4 /* RadioProtocolHandler.swift */; };
+		12B04502CA89C075227A5AEB /* CasualLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32F9252B8543BFC3A55BB36E /* CasualLayout.swift */; };
+		13E6D5FFA1EDAC85A238C894 /* CWKeyerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC3E6473D74EAE79700F505D /* CWKeyerService.swift */; };
+		147E7F67C594DD3C3C46A2D5 /* arrl-sweepstakes-cw.json in Resources */ = {isa = PBXBuildFile; fileRef = 5E8333DCA7E286CF5D37E8ED /* arrl-sweepstakes-cw.json */; };
+		15283406EA1742098BFEEF8C /* RecordingLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 646E8C64CBC5B0338A3F6381 /* RecordingLibraryView.swift */; };
+		171E9C1F24B1186693D4EDA2 /* arrl-dx-dx.json in Resources */ = {isa = PBXBuildFile; fileRef = 34C1B2354ED74254E815AE98 /* arrl-dx-dx.json */; };
+		1897A54BB1918DA630D4F4D4 /* SerialPort.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AD4A65FBB4015397306AF17 /* SerialPort.swift */; };
+		1949439CCDBEC2070031CBAE /* WinKeyerSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3F25630B25CA80A897840DA /* WinKeyerSession.swift */; };
+		1A715DDA5DE98A3C62403A66 /* LayoutConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A836D85CB09E9CD1DD89270 /* LayoutConfiguration.swift */; };
+		1D3D99FA892D9C52C7B1F6B3 /* WSJTXListenerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05708A575A766DF29D8AF1C1 /* WSJTXListenerService.swift */; };
+		1EBF1C1F197C49AC555FA1C1 /* MenuBarExtraView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8573FB4EAFF9554EFF664ED8 /* MenuBarExtraView.swift */; };
+		1F8D5CEA96831B19DDE98E89 /* CWKeyerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9229D2EBF6A00E4FBF1CA318 /* CWKeyerTests.swift */; };
+		1FE50B9060AFBBD387B3945B /* ContesterLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CC60D51A216044A34097C41 /* ContesterLayout.swift */; };
+		25F1B0CAD359CD53F8E3B4C1 /* N1MMBroadcastTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 735252B52F40A681B70D36C3 /* N1MMBroadcastTests.swift */; };
+		27A7DC2CFDA61C0904C6E8EB /* SOTASpot.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA21C42A81EFB2B6ED391718 /* SOTASpot.swift */; };
+		2902AABE1E10E0849C36D122 /* RadioCommandLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7CCEF8E17B15DAE87F76162 /* RadioCommandLog.swift */; };
+		2AA87CB03DE832E6FC18CE08 /* SpotSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE72CF8E0BB4EC4E2C24CEAC /* SpotSource.swift */; };
+		2DA7BC9FCA87E2322F70ED73 /* WWFFClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 359CF1039AF02598A2E7B10E /* WWFFClient.swift */; };
+		3025BAC72B119B15BB1898FC /* ContentAreaView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B158484444C88873F5A3255C /* ContentAreaView.swift */; };
+		321762119E92DA4F44093224 /* DXSpotParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C1A54B881B1CC640BED439 /* DXSpotParser.swift */; };
+		32681106ABC837531F0D5953 /* SpotAggregator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEA93F0580F4526FCAA7E3BB /* SpotAggregator.swift */; };
+		33784B13BCAA85CF6916EF59 /* N1MMBroadcastService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88B6FFA94E0B49F65A6A7C3A /* N1MMBroadcastService.swift */; };
+		3704B855A415594C980DDC84 /* SpotRegion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CD6BFEE8510D2E079D2408D /* SpotRegion.swift */; };
+		3923661B73C5A9CFD0D6C442 /* RadioManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A4D9263FE96FED9F51C34E8 /* RadioManager.swift */; };
+		39C91557EBCAEE25D173E4E3 /* UnitFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC5DB7B7F820CE0374C20A59 /* UnitFormatter.swift */; };
+		3AE39BBAFEE73E1D856277EF /* CloudSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60A088DD6863C1FDE2845B4C /* CloudSyncService.swift */; };
+		43281AE00011C475850FF5A1 /* WebSDRRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6629012544B77452A4C295F /* WebSDRRecorder.swift */; };
+		44253A34AF7FA1F36C431028 /* TuneInManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0181AE9555C19B33E984C6FB /* TuneInManagerTests.swift */; };
+		45B2D147C89DA0AD6AD68051 /* FocusedValues.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBD0B2CA114E82D97F11F8E4 /* FocusedValues.swift */; };
+		476947F25E4CA0D483693CD6 /* CWSweepTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3908B052547451B920E6BFBB /* CWSweepTests.swift */; };
+		4AD2D637088E788F05AD7853 /* GridCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = E01DD5FE86949FE7C24C949A /* GridCache.swift */; };
+		4B4EB3A3FA5704673E3FCFF2 /* ContestManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 442A7DBFB2A63C1CFBF85797 /* ContestManager.swift */; };
+		4B5B21A1E37010CDDCC8AAFC /* ClusterManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE8F6A3E6109D1AB6BC36F1E /* ClusterManager.swift */; };
+		4EB3EE8C677F8AFF7E332DBA /* ElecraftProtocolHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FE1B2A06EA6A6CB8528C3A6 /* ElecraftProtocolHandler.swift */; };
+		4EE5397790FF9F87325BDB24 /* KiwiSDRClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B193C72EC5EC9193A876701 /* KiwiSDRClient.swift */; };
+		576EEDD70D5872C87CD78777 /* BandEdgesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF19D1E959B3377FF4731796 /* BandEdgesTests.swift */; };
+		594EECAF5A4FB116808DC1DD /* WebSDRDirectory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8671F811BD9E20B72C2AC188 /* WebSDRDirectory.swift */; };
+		5B57433262F9B9E9940EDB17 /* KiwiSDRTypesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FF01443EB1BD45CEE3692B9 /* KiwiSDRTypesTests.swift */; };
+		611244800912266CBC189CB4 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 065906E0165C5C61BAB20BE5 /* DashboardView.swift */; };
+		6143DDF5ABD1668179B7ED7C /* BandMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9FCE182FD822E8029CC2935 /* BandMapView.swift */; };
+		6191E18B3799982CC52AF128 /* WinKeyerSettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = F639DB3AC7A7F782F4EAA1E9 /* WinKeyerSettingsTab.swift */; };
+		625CFBD58A7B951F9C29A78C /* ClusterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E9B086546B9F6B0CEA1915 /* ClusterView.swift */; };
+		63973CA78774A97F252E2758 /* QSOLogTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F65ECBD80D4195B7C287B579 /* QSOLogTableView.swift */; };
+		63D4EC51ADF3C789BDB8C86E /* RBNClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = E106FB98097FFDF0A175472E /* RBNClient.swift */; };
+		649186C39C6C12A008E5E673 /* CWSweepCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000401D18660686DB848ACEF /* CWSweepCommands.swift */; };
+		6704B94A7A1493BCFF7F9BB7 /* RBNSpot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61A60C580F635EFE9BCA0856 /* RBNSpot.swift */; };
+		6A10F0021A897FDBB49F5F22 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F19CADD4B3925B383196E50A /* SettingsView.swift */; };
+		6ABB4A903C55E8EE1AF6B249 /* WWFFSpot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7200EF7A4CAC915CF885707A /* WWFFSpot.swift */; };
+		6CA04924A61EBA3747274233 /* InteropSettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77DC21FD1352B240BC2CB309 /* InteropSettingsTab.swift */; };
+		6CA9B7401ED33995F48A0CAE /* KiwiSDRAudioEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0637C656A27B30697745FA01 /* KiwiSDRAudioEngine.swift */; };
+		6F2FCA6175623198437B73AB /* arrl-field-day.json in Resources */ = {isa = PBXBuildFile; fileRef = CA30B5FEA6BFE7ADEE40EB38 /* arrl-field-day.json */; };
+		6FAF75FA05466E4AC6628565 /* SelectionState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 834179CB0E6F1B93FD85044E /* SelectionState.swift */; };
+		71868CF531E9206AD9823FC7 /* CWSweepApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C93DFFED42EF2974EC01F6B /* CWSweepApp.swift */; };
+		740DEF8ED9B24C95A9AA11F9 /* HunterLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 130ED358D7E8B60E86416DB3 /* HunterLayout.swift */; };
+		74F8FDA1DD5CEDDCD69542D9 /* RadioProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = E40D53C5F8C6D0964483E004 /* RadioProfile.swift */; };
+		760F66E8B2561AE95431E582 /* KiwiSDRTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E9FCCE1C5251452C5A8AA18 /* KiwiSDRTypes.swift */; };
+		7695C900B51F0F20C2EC60E9 /* ContestExchangeParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F096BD4326B3487F0591263 /* ContestExchangeParserTests.swift */; };
+		7C779E207F869C27CCC5F167 /* RadioControlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D54D7862949CF1053D8B17F /* RadioControlView.swift */; };
+		7D0915486766A1D266151F39 /* PlaceholderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54CBA2EC4C1C497E6F3A2916 /* PlaceholderView.swift */; };
+		7D8F6086E42B3FA8251FB20C /* CarrierWaveCore in Frameworks */ = {isa = PBXBuildFile; productRef = B9F7CD6646A6472927743AB9 /* CarrierWaveCore */; };
+		7ED72C95ADEC827A27BE98A8 /* SDRMeterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 500234E7AEE1AA5DCF48C82C /* SDRMeterView.swift */; };
+		81409BEC16B8DD2D15480AD5 /* POTASpot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33D30FC1CD2DFE4D47C1963D /* POTASpot.swift */; };
+		8474E73126172C008BB2819A /* RecordingClipExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96D5E29C2E4148A1E01FE848 /* RecordingClipExporter.swift */; };
+		84C6498EBA2193C3DD551C5E /* DXerLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = A45D25B0215982628CE355C7 /* DXerLayout.swift */; };
+		85E4C45BE79BE122A730F840 /* ContestExchangeParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BA5860265D3D1962DA1148F /* ContestExchangeParser.swift */; };
+		85EB67B1C51BD383285D39F7 /* CallsignInfoCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 208895258634B310D2F07374 /* CallsignInfoCache.swift */; };
+		88F679228A39202A255BAE05 /* SpotTypeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDF04E7F71320C1DB29C9419 /* SpotTypeTests.swift */; };
+		8A3BF181EAA1E2378BA53EE0 /* CIVProtocolHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = D36D9DA2491272FE2815CA47 /* CIVProtocolHandler.swift */; };
+		8BD936FAEDBE49B9526C40E5 /* SDRTranscriptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBDDB71652A2EC749E6498CE /* SDRTranscriptTests.swift */; };
+		8C727A8687886F17F59F1678 /* LocationGridResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = F71EB711077BDCBE38403C07 /* LocationGridResolver.swift */; };
+		8CAD2E712760B54B87D605FA /* DXSpotParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD94DF0CC21B3579E94B656D /* DXSpotParserTests.swift */; };
+		8D2361F906500316BD7BC6B7 /* WorkspaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 441FE7D5019189EDDA3F4843 /* WorkspaceView.swift */; };
+		8D352A7207B66616266C269E /* StatusBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4BA733155B64B9C03526EB1 /* StatusBarView.swift */; };
+		8F3AB382E58326AE24CD0617 /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFD8B616187EB20E1075AD72 /* SidebarView.swift */; };
+		901463B83CF65EBF91E40D4A /* SDRSettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4689B4C5D47D8938263D9C18 /* SDRSettingsTab.swift */; };
+		9145D3402A7581FFD78871B6 /* HamDBClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1FC2F375060958EB5E80A1B /* HamDBClient.swift */; };
+		9212F24207BB7E09B925C4EA /* SpotModeFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C033FFA0D17EDE1B07DA5AD /* SpotModeFilter.swift */; };
+		9776FB154C9EC77BD8F5A097 /* KenwoodProtocolHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = E22D143808AB93F17B1665C8 /* KenwoodProtocolHandler.swift */; };
+		9BB1DF0551667CA3F2F3C057 /* WinKeyerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFFC4CCF36FF735CA8492805 /* WinKeyerView.swift */; };
+		9BF04F3C8E377DEC2ECC01E2 /* AudioRingBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF2360F1F3466D7DB6E05628 /* AudioRingBuffer.swift */; };
+		9CB162E1C970C01B852D30E5 /* POTASpotsClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBD184C919BAD8AB4E252813 /* POTASpotsClient.swift */; };
+		9DA065674010BB4A43B9288F /* arrl-dx-w-ve.json in Resources */ = {isa = PBXBuildFile; fileRef = A47728B707B1804F2DFC9C64 /* arrl-dx-w-ve.json */; };
+		9EBB3D8E5E9347553347E840 /* ParsedFieldSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42A0887286E9DFCEEAF44831 /* ParsedFieldSummary.swift */; };
+		A0FBE4E7A6C672CCADB5545B /* CommandPaletteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF379CD71BBF2CE34BA21777 /* CommandPaletteView.swift */; };
+		A1501F422CC3E96AE8E5D3E7 /* WinKeyerProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21884C5724864EF46893F691 /* WinKeyerProtocol.swift */; };
+		A3B0FAB98E32FC1B53F26953 /* FrameAssembler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F21713C6365D24F272CFC2C /* FrameAssembler.swift */; };
+		A4A183A14F35E206E3F8753C /* CabrilloExportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C079C040F8EA7D8D37C8B965 /* CabrilloExportTests.swift */; };
+		AA2DEA9A77F5A5C9735B6ED9 /* SpotDetailInspector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EB62AAB03EA7D64C138DD63 /* SpotDetailInspector.swift */; };
+		B182958A5BD9A7F6A3C2B65B /* SyncStatusIndicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F8C649AB6E8BE11DCCFFBD7 /* SyncStatusIndicator.swift */; };
+		B1F94017925A67EE1CB286A0 /* SOTAClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = C871C290EC0B709DD9DD31DC /* SOTAClient.swift */; };
+		B2253AD62FF47AAD28572EA5 /* QSOMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5BB7787034E14F1AFD8C7D /* QSOMapView.swift */; };
+		B2E868CD6D2E80ED5696D263 /* CarrierWaveData in Frameworks */ = {isa = PBXBuildFile; productRef = C1616A37B9B5F955CC72FB7C /* CarrierWaveData */; };
+		B657EE1B10B349C80B6FD8F1 /* InteropManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E91354EA51FA85D931D6A37 /* InteropManager.swift */; };
+		B66734B0C6255295E395B251 /* UnifiedSpot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 078FAC34578B347CC5EE63DE /* UnifiedSpot.swift */; };
+		B6DEDA9143191E36302EF938 /* WebSDRSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CCB9F6513BE9A1618BD17E2 /* WebSDRSession.swift */; };
+		BC462A5BF1375C039874972B /* BandEdges.swift in Sources */ = {isa = PBXBuildFile; fileRef = A75CEB62FC043C9BEDD5263E /* BandEdges.swift */; };
+		BCE084FF8848C8324C16CDB3 /* WinKeyerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E358D37ADDE634A66FD56FBB /* WinKeyerManager.swift */; };
+		BE4D3DFD0BB2617C61FC09D8 /* CWSWLClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60837D502CF3B773F2B6EA9A /* CWSWLClient.swift */; };
+		BE7BA8E8A7BBE7678190DA3A /* ContestSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E060F84705679B7242F28FFB /* ContestSetupView.swift */; };
+		BF29593FE499F39BCF05AEC5 /* ContestTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35120E27B8B87EF40198A6C7 /* ContestTypes.swift */; };
+		C0187D356C24BD91564F4FA9 /* RecordingPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46113AE2BAF34D81635E5FDC /* RecordingPlayerView.swift */; };
+		C1D61AE38BE9A54F97B18598 /* ContestManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 754FB039BCB68BB4D66D138F /* ContestManagerTests.swift */; };
+		C32537BCA2A05D285ACD3F59 /* ParsedEntryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A7209D7825757EC399D07D3 /* ParsedEntryView.swift */; };
+		C49F8B3B893C0F5941DDAE2B /* SessionsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 184BC415A5A8B3D9237ED32B /* SessionsListView.swift */; };
+		C8320234949189D371906FF6 /* naqp-cw.json in Resources */ = {isa = PBXBuildFile; fileRef = 99EE32B562FA2FB260AA989A /* naqp-cw.json */; };
+		CA5EFDD6E34EFB05953A0F5E /* RateGraphView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63697F75E273FD1993C93488 /* RateGraphView.swift */; };
+		CA91DFC75E12CF67D01F9C8E /* TuneInManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3B7D302B00545D7C18506EE /* TuneInManager.swift */; };
+		CB03CA3ECCB8D9B11446E8E6 /* CabrilloPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9746F63F40744A0D5B171EBB /* CabrilloPreviewView.swift */; };
+		D931B4C7CC92CA09F86A0E5F /* KeyerSettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0541A571F6C1F92C94D68C06 /* KeyerSettingsTab.swift */; };
+		DD1C9CB6C687BEA8F5E3E410 /* TelnetClusterClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E6EF685B2A2D4BE3C502E66 /* TelnetClusterClient.swift */; };
+		DD8F632BBCFF6CBCAAF61CE9 /* ContestEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF0571D194A5079958F9CF3C /* ContestEngine.swift */; };
+		DE584AC2490F54646248970D /* ActivatorLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 498C2218BC932EAE4C6B418D /* ActivatorLayout.swift */; };
+		DFE23EB0A2F3B58875FAD538 /* CabrilloExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 746069B9208192D0455A7D8E /* CabrilloExportService.swift */; };
+		E30B77CEB546A7933A58257A /* PortNicknameEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C603E3628D1D54E820BF191 /* PortNicknameEditor.swift */; };
+		E32A97EA276C956B9D156A19 /* SessionDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4492FAA0DEAEE325ED84F83 /* SessionDetailView.swift */; };
+		E3AF66F46F95725C365AB79A /* cq-ww-ssb.json in Resources */ = {isa = PBXBuildFile; fileRef = 003CF7C95559A81228CB1A22 /* cq-ww-ssb.json */; };
+		E5D7898F46227FB15755F813 /* ContestDefinitionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDA2FD6E58422DE2769A09F5 /* ContestDefinitionTests.swift */; };
+		E639542DA45C02CDACC31F4C /* SDRTranscriptModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6C72B8C5D1B6178EB054977 /* SDRTranscriptModels.swift */; };
+		E972602DCFCC603138F8ED80 /* AudioRingBufferTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5E2C462F2E2836D531DF7C8 /* AudioRingBufferTests.swift */; };
+		EAFA91993480C895DE9588A7 /* state-qso-party.json in Resources */ = {isa = PBXBuildFile; fileRef = 24C05499E84B51F78CD6796B /* state-qso-party.json */; };
+		EB6EC9613A2B3822B04B02A7 /* SerialRadioTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = C150CCF02A9BB60FB45C0D13 /* SerialRadioTransport.swift */; };
+		EBE5D4EDAEE23BA10E6DD360 /* ScoreSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3140A2515F11036F79FAA7C7 /* ScoreSummaryView.swift */; };
+		EC49C07628685DF21AB283A2 /* ContestTemplateLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F1C628C3FD96A4F64971534 /* ContestTemplateLoader.swift */; };
+		F237E0C85533D08F08842026 /* DXClusterSpot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F15E9E862C0AA9C5EF0695A /* DXClusterSpot.swift */; };
+		F29C8849B6A2D79F96DBFD88 /* cq-ww-cw.json in Resources */ = {isa = PBXBuildFile; fileRef = 6A3EE0625E35FAE5A3C8B80B /* cq-ww-cw.json */; };
+		F35F4D43C611FECCF52866AC /* SpotListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D246A708942035BA1339AE72 /* SpotListView.swift */; };
+		F4200447F9CE3537AE941DC8 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C14FCF8C9F11B50677599080 /* ContentView.swift */; };
+		F6CED0DA970C429EDBF5B938 /* InspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65BDF81C27B30EED035791D6 /* InspectorView.swift */; };
+		FA53E37CF64DDDCC15966EC3 /* RadioSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5481BF64FC3710AB78901C3F /* RadioSession.swift */; };
+		FCCE22EA06D24F5037752BCF /* KiwiSDRADPCMTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56F9BAF3A45DD661436CF237 /* KiwiSDRADPCMTests.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		0FDDCF74A2F12DAE6247D1A5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 22C734A5B2E2A9BCA343194B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A8E0FD1249AC12D54C425141;
+			remoteInfo = CWSweep;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		000401D18660686DB848ACEF /* CWSweepCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CWSweepCommands.swift; sourceTree = "<group>"; };
+		003CF7C95559A81228CB1A22 /* cq-ww-ssb.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "cq-ww-ssb.json"; sourceTree = "<group>"; };
+		0181AE9555C19B33E984C6FB /* TuneInManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneInManagerTests.swift; sourceTree = "<group>"; };
+		0541A571F6C1F92C94D68C06 /* KeyerSettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyerSettingsTab.swift; sourceTree = "<group>"; };
+		05708A575A766DF29D8AF1C1 /* WSJTXListenerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WSJTXListenerService.swift; sourceTree = "<group>"; };
+		0637C656A27B30697745FA01 /* KiwiSDRAudioEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KiwiSDRAudioEngine.swift; sourceTree = "<group>"; };
+		065906E0165C5C61BAB20BE5 /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
+		078FAC34578B347CC5EE63DE /* UnifiedSpot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedSpot.swift; sourceTree = "<group>"; };
+		0C088DB86830D6885C2DF0DA /* ClusterNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClusterNode.swift; sourceTree = "<group>"; };
+		0CD6BFEE8510D2E079D2408D /* SpotRegion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotRegion.swift; sourceTree = "<group>"; };
+		130ED358D7E8B60E86416DB3 /* HunterLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HunterLayout.swift; sourceTree = "<group>"; };
+		184BC415A5A8B3D9237ED32B /* SessionsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionsListView.swift; sourceTree = "<group>"; };
+		1A4D9263FE96FED9F51C34E8 /* RadioManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadioManager.swift; sourceTree = "<group>"; };
+		1E9FCCE1C5251452C5A8AA18 /* KiwiSDRTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KiwiSDRTypes.swift; sourceTree = "<group>"; };
+		208895258634B310D2F07374 /* CallsignInfoCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CallsignInfoCache.swift; sourceTree = "<group>"; };
+		21884C5724864EF46893F691 /* WinKeyerProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinKeyerProtocol.swift; sourceTree = "<group>"; };
+		24C05499E84B51F78CD6796B /* state-qso-party.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "state-qso-party.json"; sourceTree = "<group>"; };
+		2C033FFA0D17EDE1B07DA5AD /* SpotModeFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotModeFilter.swift; sourceTree = "<group>"; };
+		2CCB9F6513BE9A1618BD17E2 /* WebSDRSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebSDRSession.swift; sourceTree = "<group>"; };
+		2E6EF685B2A2D4BE3C502E66 /* TelnetClusterClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelnetClusterClient.swift; sourceTree = "<group>"; };
+		3140A2515F11036F79FAA7C7 /* ScoreSummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScoreSummaryView.swift; sourceTree = "<group>"; };
+		32F9252B8543BFC3A55BB36E /* CasualLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CasualLayout.swift; sourceTree = "<group>"; };
+		33D30FC1CD2DFE4D47C1963D /* POTASpot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = POTASpot.swift; sourceTree = "<group>"; };
+		34C1B2354ED74254E815AE98 /* arrl-dx-dx.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "arrl-dx-dx.json"; sourceTree = "<group>"; };
+		35120E27B8B87EF40198A6C7 /* ContestTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContestTypes.swift; sourceTree = "<group>"; };
+		359CF1039AF02598A2E7B10E /* WWFFClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WWFFClient.swift; sourceTree = "<group>"; };
+		37F5594F563C59434F05059F /* ContestTemplateLoaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContestTemplateLoaderTests.swift; sourceTree = "<group>"; };
+		3908B052547451B920E6BFBB /* CWSweepTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CWSweepTests.swift; sourceTree = "<group>"; };
+		3929C2FF72CC56029E75269C /* CarrierWaveData */ = {isa = PBXFileReference; lastKnownFileType = folder; name = CarrierWaveData; path = ../CarrierWaveData; sourceTree = SOURCE_ROOT; };
+		3BA5860265D3D1962DA1148F /* ContestExchangeParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContestExchangeParser.swift; sourceTree = "<group>"; };
+		3D54D7862949CF1053D8B17F /* RadioControlView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadioControlView.swift; sourceTree = "<group>"; };
+		3F096BD4326B3487F0591263 /* ContestExchangeParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContestExchangeParserTests.swift; sourceTree = "<group>"; };
+		4220FF6CEED7E72400092E9E /* SDRPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SDRPlayerView.swift; sourceTree = "<group>"; };
+		42A0887286E9DFCEEAF44831 /* ParsedFieldSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParsedFieldSummary.swift; sourceTree = "<group>"; };
+		441FE7D5019189EDDA3F4843 /* WorkspaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceView.swift; sourceTree = "<group>"; };
+		442A7DBFB2A63C1CFBF85797 /* ContestManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContestManager.swift; sourceTree = "<group>"; };
+		46113AE2BAF34D81635E5FDC /* RecordingPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingPlayerView.swift; sourceTree = "<group>"; };
+		4689B4C5D47D8938263D9C18 /* SDRSettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SDRSettingsTab.swift; sourceTree = "<group>"; };
+		498C2218BC932EAE4C6B418D /* ActivatorLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivatorLayout.swift; sourceTree = "<group>"; };
+		4B193C72EC5EC9193A876701 /* KiwiSDRClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KiwiSDRClient.swift; sourceTree = "<group>"; };
+		4D5BB7787034E14F1AFD8C7D /* QSOMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QSOMapView.swift; sourceTree = "<group>"; };
+		4F1C628C3FD96A4F64971534 /* ContestTemplateLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContestTemplateLoader.swift; sourceTree = "<group>"; };
+		500234E7AEE1AA5DCF48C82C /* SDRMeterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SDRMeterView.swift; sourceTree = "<group>"; };
+		5481BF64FC3710AB78901C3F /* RadioSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadioSession.swift; sourceTree = "<group>"; };
+		54CBA2EC4C1C497E6F3A2916 /* PlaceholderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceholderView.swift; sourceTree = "<group>"; };
+		56F9BAF3A45DD661436CF237 /* KiwiSDRADPCMTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KiwiSDRADPCMTests.swift; sourceTree = "<group>"; };
+		5A836D85CB09E9CD1DD89270 /* LayoutConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LayoutConfiguration.swift; sourceTree = "<group>"; };
+		5AD4A65FBB4015397306AF17 /* SerialPort.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SerialPort.swift; sourceTree = "<group>"; };
+		5C603E3628D1D54E820BF191 /* PortNicknameEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortNicknameEditor.swift; sourceTree = "<group>"; };
+		5C93DFFED42EF2974EC01F6B /* CWSweepApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CWSweepApp.swift; sourceTree = "<group>"; };
+		5E8333DCA7E286CF5D37E8ED /* arrl-sweepstakes-cw.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "arrl-sweepstakes-cw.json"; sourceTree = "<group>"; };
+		5F15E9E862C0AA9C5EF0695A /* DXClusterSpot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DXClusterSpot.swift; sourceTree = "<group>"; };
+		5F8C649AB6E8BE11DCCFFBD7 /* SyncStatusIndicator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncStatusIndicator.swift; sourceTree = "<group>"; };
+		5FE1B2A06EA6A6CB8528C3A6 /* ElecraftProtocolHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ElecraftProtocolHandler.swift; sourceTree = "<group>"; };
+		601E569286E70F2D2B27D8F8 /* CWSweepTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CWSweepTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		60837D502CF3B773F2B6EA9A /* CWSWLClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CWSWLClient.swift; sourceTree = "<group>"; };
+		60A088DD6863C1FDE2845B4C /* CloudSyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudSyncService.swift; sourceTree = "<group>"; };
+		61A60C580F635EFE9BCA0856 /* RBNSpot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RBNSpot.swift; sourceTree = "<group>"; };
+		63697F75E273FD1993C93488 /* RateGraphView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RateGraphView.swift; sourceTree = "<group>"; };
+		646E8C64CBC5B0338A3F6381 /* RecordingLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingLibraryView.swift; sourceTree = "<group>"; };
+		65BDF81C27B30EED035791D6 /* InspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InspectorView.swift; sourceTree = "<group>"; };
+		6A3EE0625E35FAE5A3C8B80B /* cq-ww-cw.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "cq-ww-cw.json"; sourceTree = "<group>"; };
+		6A7209D7825757EC399D07D3 /* ParsedEntryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParsedEntryView.swift; sourceTree = "<group>"; };
+		6EB62AAB03EA7D64C138DD63 /* SpotDetailInspector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotDetailInspector.swift; sourceTree = "<group>"; };
+		7200EF7A4CAC915CF885707A /* WWFFSpot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WWFFSpot.swift; sourceTree = "<group>"; };
+		735252B52F40A681B70D36C3 /* N1MMBroadcastTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = N1MMBroadcastTests.swift; sourceTree = "<group>"; };
+		746069B9208192D0455A7D8E /* CabrilloExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CabrilloExportService.swift; sourceTree = "<group>"; };
+		754FB039BCB68BB4D66D138F /* ContestManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContestManagerTests.swift; sourceTree = "<group>"; };
+		77DC21FD1352B240BC2CB309 /* InteropSettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InteropSettingsTab.swift; sourceTree = "<group>"; };
+		79261A8A88B1D81743F4907D /* ContestEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContestEngineTests.swift; sourceTree = "<group>"; };
+		7E91354EA51FA85D931D6A37 /* InteropManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InteropManager.swift; sourceTree = "<group>"; };
+		810DCC46AD8FB4396CFCFBE4 /* RadioProtocolHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadioProtocolHandler.swift; sourceTree = "<group>"; };
+		834179CB0E6F1B93FD85044E /* SelectionState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionState.swift; sourceTree = "<group>"; };
+		8573FB4EAFF9554EFF664ED8 /* MenuBarExtraView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarExtraView.swift; sourceTree = "<group>"; };
+		8671F811BD9E20B72C2AC188 /* WebSDRDirectory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebSDRDirectory.swift; sourceTree = "<group>"; };
+		88B6FFA94E0B49F65A6A7C3A /* N1MMBroadcastService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = N1MMBroadcastService.swift; sourceTree = "<group>"; };
+		8F21713C6365D24F272CFC2C /* FrameAssembler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrameAssembler.swift; sourceTree = "<group>"; };
+		9229D2EBF6A00E4FBF1CA318 /* CWKeyerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CWKeyerTests.swift; sourceTree = "<group>"; };
+		96D5E29C2E4148A1E01FE848 /* RecordingClipExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingClipExporter.swift; sourceTree = "<group>"; };
+		9746F63F40744A0D5B171EBB /* CabrilloPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CabrilloPreviewView.swift; sourceTree = "<group>"; };
+		99EE32B562FA2FB260AA989A /* naqp-cw.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "naqp-cw.json"; sourceTree = "<group>"; };
+		9CC60D51A216044A34097C41 /* ContesterLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContesterLayout.swift; sourceTree = "<group>"; };
+		9EABC69926D0CB041631ECD4 /* CarrierWaveCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = CarrierWaveCore; path = ../CarrierWaveCore; sourceTree = SOURCE_ROOT; };
+		9FF01443EB1BD45CEE3692B9 /* KiwiSDRTypesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KiwiSDRTypesTests.swift; sourceTree = "<group>"; };
+		A1C1A54B881B1CC640BED439 /* DXSpotParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DXSpotParser.swift; sourceTree = "<group>"; };
+		A4492FAA0DEAEE325ED84F83 /* SessionDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionDetailView.swift; sourceTree = "<group>"; };
+		A45D25B0215982628CE355C7 /* DXerLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DXerLayout.swift; sourceTree = "<group>"; };
+		A47728B707B1804F2DFC9C64 /* arrl-dx-w-ve.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "arrl-dx-w-ve.json"; sourceTree = "<group>"; };
+		A4BA733155B64B9C03526EB1 /* StatusBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBarView.swift; sourceTree = "<group>"; };
+		A75CEB62FC043C9BEDD5263E /* BandEdges.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BandEdges.swift; sourceTree = "<group>"; };
+		A9FCE182FD822E8029CC2935 /* BandMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BandMapView.swift; sourceTree = "<group>"; };
+		AD94DF0CC21B3579E94B656D /* DXSpotParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DXSpotParserTests.swift; sourceTree = "<group>"; };
+		AE8F6A3E6109D1AB6BC36F1E /* ClusterManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClusterManager.swift; sourceTree = "<group>"; };
+		B158484444C88873F5A3255C /* ContentAreaView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentAreaView.swift; sourceTree = "<group>"; };
+		B3B7D302B00545D7C18506EE /* TuneInManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TuneInManager.swift; sourceTree = "<group>"; };
+		B5E2C462F2E2836D531DF7C8 /* AudioRingBufferTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioRingBufferTests.swift; sourceTree = "<group>"; };
+		B6629012544B77452A4C295F /* WebSDRRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebSDRRecorder.swift; sourceTree = "<group>"; };
+		B89A2DB3FF01EEAA5CC01E1D /* SerialPortMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SerialPortMonitor.swift; sourceTree = "<group>"; };
+		BBD0B2CA114E82D97F11F8E4 /* FocusedValues.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusedValues.swift; sourceTree = "<group>"; };
+		BC3E6473D74EAE79700F505D /* CWKeyerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CWKeyerService.swift; sourceTree = "<group>"; };
+		BDDB00B384653A526CBCE283 /* CWSweep.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CWSweep.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		BE5C3263FAD66F3C7F6BAF13 /* KiwiSDRADPCM.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KiwiSDRADPCM.swift; sourceTree = "<group>"; };
+		BEA93F0580F4526FCAA7E3BB /* SpotAggregator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotAggregator.swift; sourceTree = "<group>"; };
+		C079C040F8EA7D8D37C8B965 /* CabrilloExportTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CabrilloExportTests.swift; sourceTree = "<group>"; };
+		C14FCF8C9F11B50677599080 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		C150CCF02A9BB60FB45C0D13 /* SerialRadioTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SerialRadioTransport.swift; sourceTree = "<group>"; };
+		C7CCEF8E17B15DAE87F76162 /* RadioCommandLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadioCommandLog.swift; sourceTree = "<group>"; };
+		C871C290EC0B709DD9DD31DC /* SOTAClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SOTAClient.swift; sourceTree = "<group>"; };
+		C8E9B086546B9F6B0CEA1915 /* ClusterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClusterView.swift; sourceTree = "<group>"; };
+		CA21C42A81EFB2B6ED391718 /* SOTASpot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SOTASpot.swift; sourceTree = "<group>"; };
+		CA30B5FEA6BFE7ADEE40EB38 /* arrl-field-day.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "arrl-field-day.json"; sourceTree = "<group>"; };
+		CA36951F52EE2F88F20FCBCD /* KiwiSDRStatusFetcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KiwiSDRStatusFetcher.swift; sourceTree = "<group>"; };
+		CB30C2AF958427C29B445CD7 /* MultiplierTrackerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiplierTrackerView.swift; sourceTree = "<group>"; };
+		CBD184C919BAD8AB4E252813 /* POTASpotsClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = POTASpotsClient.swift; sourceTree = "<group>"; };
+		CC5DB7B7F820CE0374C20A59 /* UnitFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnitFormatter.swift; sourceTree = "<group>"; };
+		CDF04E7F71320C1DB29C9419 /* SpotTypeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotTypeTests.swift; sourceTree = "<group>"; };
+		CF0571D194A5079958F9CF3C /* ContestEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContestEngine.swift; sourceTree = "<group>"; };
+		CF19D1E959B3377FF4731796 /* BandEdgesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BandEdgesTests.swift; sourceTree = "<group>"; };
+		CF2360F1F3466D7DB6E05628 /* AudioRingBuffer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioRingBuffer.swift; sourceTree = "<group>"; };
+		D1FC2F375060958EB5E80A1B /* HamDBClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HamDBClient.swift; sourceTree = "<group>"; };
+		D246A708942035BA1339AE72 /* SpotListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotListView.swift; sourceTree = "<group>"; };
+		D36D9DA2491272FE2815CA47 /* CIVProtocolHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CIVProtocolHandler.swift; sourceTree = "<group>"; };
+		D3F25630B25CA80A897840DA /* WinKeyerSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinKeyerSession.swift; sourceTree = "<group>"; };
+		DDA2FD6E58422DE2769A09F5 /* ContestDefinitionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContestDefinitionTests.swift; sourceTree = "<group>"; };
+		DE72CF8E0BB4EC4E2C24CEAC /* SpotSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotSource.swift; sourceTree = "<group>"; };
+		DFFC4CCF36FF735CA8492805 /* WinKeyerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinKeyerView.swift; sourceTree = "<group>"; };
+		E01DD5FE86949FE7C24C949A /* GridCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GridCache.swift; sourceTree = "<group>"; };
+		E060F84705679B7242F28FFB /* ContestSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContestSetupView.swift; sourceTree = "<group>"; };
+		E106FB98097FFDF0A175472E /* RBNClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RBNClient.swift; sourceTree = "<group>"; };
+		E22D143808AB93F17B1665C8 /* KenwoodProtocolHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KenwoodProtocolHandler.swift; sourceTree = "<group>"; };
+		E358D37ADDE634A66FD56FBB /* WinKeyerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinKeyerManager.swift; sourceTree = "<group>"; };
+		E40D53C5F8C6D0964483E004 /* RadioProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadioProfile.swift; sourceTree = "<group>"; };
+		E73C6ACCCD05EE963A758ABA /* RecordingPlaybackEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecordingPlaybackEngine.swift; sourceTree = "<group>"; };
+		EF379CD71BBF2CE34BA21777 /* CommandPaletteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandPaletteView.swift; sourceTree = "<group>"; };
+		EFD8B616187EB20E1075AD72 /* SidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarView.swift; sourceTree = "<group>"; };
+		F19CADD4B3925B383196E50A /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		F639DB3AC7A7F782F4EAA1E9 /* WinKeyerSettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinKeyerSettingsTab.swift; sourceTree = "<group>"; };
+		F65ECBD80D4195B7C287B579 /* QSOLogTableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QSOLogTableView.swift; sourceTree = "<group>"; };
+		F6C72B8C5D1B6178EB054977 /* SDRTranscriptModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SDRTranscriptModels.swift; sourceTree = "<group>"; };
+		F71EB711077BDCBE38403C07 /* LocationGridResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationGridResolver.swift; sourceTree = "<group>"; };
+		FBDDB71652A2EC749E6498CE /* SDRTranscriptTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SDRTranscriptTests.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		D6268E6F225B545F7000C2B7 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7D8F6086E42B3FA8251FB20C /* CarrierWaveCore in Frameworks */,
+				B2E868CD6D2E80ED5696D263 /* CarrierWaveData in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		05A2230DB14E6FDCCF12FBFA /* Serial */ = {
+			isa = PBXGroup;
+			children = (
+				5C603E3628D1D54E820BF191 /* PortNicknameEditor.swift */,
+			);
+			path = Serial;
+			sourceTree = "<group>";
+		};
+		0CA930231703BBAE3996336B /* CloudSync */ = {
+			isa = PBXGroup;
+			children = (
+				60A088DD6863C1FDE2845B4C /* CloudSyncService.swift */,
+			);
+			path = CloudSync;
+			sourceTree = "<group>";
+		};
+		1AD7917B622048B928D4A08C /* Spots */ = {
+			isa = PBXGroup;
+			children = (
+				A75CEB62FC043C9BEDD5263E /* BandEdges.swift */,
+				0C088DB86830D6885C2DF0DA /* ClusterNode.swift */,
+				5F15E9E862C0AA9C5EF0695A /* DXClusterSpot.swift */,
+				33D30FC1CD2DFE4D47C1963D /* POTASpot.swift */,
+				61A60C580F635EFE9BCA0856 /* RBNSpot.swift */,
+				CA21C42A81EFB2B6ED391718 /* SOTASpot.swift */,
+				2C033FFA0D17EDE1B07DA5AD /* SpotModeFilter.swift */,
+				0CD6BFEE8510D2E079D2408D /* SpotRegion.swift */,
+				DE72CF8E0BB4EC4E2C24CEAC /* SpotSource.swift */,
+				078FAC34578B347CC5EE63DE /* UnifiedSpot.swift */,
+				7200EF7A4CAC915CF885707A /* WWFFSpot.swift */,
+			);
+			path = Spots;
+			sourceTree = "<group>";
+		};
+		25092BC0A7E461259D51C76A /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				0CA930231703BBAE3996336B /* CloudSync */,
+				F09DCE87FAD2BCA73F8C194B /* Cluster */,
+				D19B8200C9F192352B2DC983 /* Contest */,
+				80CC6B140EE99F41DB93C2A6 /* Interop */,
+				69B6C2F1F8BEB33EC80544E7 /* PTT */,
+				D53378E06DCC10160B548E4D /* Radio */,
+				2CA3EDC14161A630D9EC2467 /* Serial */,
+				80BCA80C398484CDD6BCA618 /* Spots */,
+				900E9A0FB173EBAEA1F72637 /* WebSDR */,
+				71E805F7985D1E6FA5EFED48 /* WinKeyer */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		282D2762203344EE1C609754 /* CommandPalette */ = {
+			isa = PBXGroup;
+			children = (
+				EF379CD71BBF2CE34BA21777 /* CommandPaletteView.swift */,
+			);
+			path = CommandPalette;
+			sourceTree = "<group>";
+		};
+		2CA3EDC14161A630D9EC2467 /* Serial */ = {
+			isa = PBXGroup;
+			children = (
+				8F21713C6365D24F272CFC2C /* FrameAssembler.swift */,
+				5AD4A65FBB4015397306AF17 /* SerialPort.swift */,
+				B89A2DB3FF01EEAA5CC01E1D /* SerialPortMonitor.swift */,
+				C150CCF02A9BB60FB45C0D13 /* SerialRadioTransport.swift */,
+			);
+			path = Serial;
+			sourceTree = "<group>";
+		};
+		32BF02417372A656ABB496BD /* Commands */ = {
+			isa = PBXGroup;
+			children = (
+				000401D18660686DB848ACEF /* CWSweepCommands.swift */,
+			);
+			path = Commands;
+			sourceTree = "<group>";
+		};
+		33F6A767C40F5088A4173336 /* SDR */ = {
+			isa = PBXGroup;
+			children = (
+				646E8C64CBC5B0338A3F6381 /* RecordingLibraryView.swift */,
+				46113AE2BAF34D81635E5FDC /* RecordingPlayerView.swift */,
+				500234E7AEE1AA5DCF48C82C /* SDRMeterView.swift */,
+				4220FF6CEED7E72400092E9E /* SDRPlayerView.swift */,
+			);
+			path = SDR;
+			sourceTree = "<group>";
+		};
+		3E737D8BD90BA98B2AEACFA6 /* Logger */ = {
+			isa = PBXGroup;
+			children = (
+				6A7209D7825757EC399D07D3 /* ParsedEntryView.swift */,
+				42A0887286E9DFCEEAF44831 /* ParsedFieldSummary.swift */,
+				F65ECBD80D4195B7C287B579 /* QSOLogTableView.swift */,
+			);
+			path = Logger;
+			sourceTree = "<group>";
+		};
+		4272E891B9048C5F12DD56DB /* Contest */ = {
+			isa = PBXGroup;
+			children = (
+				9746F63F40744A0D5B171EBB /* CabrilloPreviewView.swift */,
+				E060F84705679B7242F28FFB /* ContestSetupView.swift */,
+				CB30C2AF958427C29B445CD7 /* MultiplierTrackerView.swift */,
+				63697F75E273FD1993C93488 /* RateGraphView.swift */,
+				3140A2515F11036F79FAA7C7 /* ScoreSummaryView.swift */,
+			);
+			path = Contest;
+			sourceTree = "<group>";
+		};
+		5E292C4C3A93E21F77563A45 /* MenuBarExtra */ = {
+			isa = PBXGroup;
+			children = (
+				8573FB4EAFF9554EFF664ED8 /* MenuBarExtraView.swift */,
+			);
+			path = MenuBarExtra;
+			sourceTree = "<group>";
+		};
+		69B6C2F1F8BEB33EC80544E7 /* PTT */ = {
+			isa = PBXGroup;
+			children = (
+				BC3E6473D74EAE79700F505D /* CWKeyerService.swift */,
+			);
+			path = PTT;
+			sourceTree = "<group>";
+		};
+		6B1EABAE760E238CF8984BC0 /* Workspace */ = {
+			isa = PBXGroup;
+			children = (
+				B158484444C88873F5A3255C /* ContentAreaView.swift */,
+				65BDF81C27B30EED035791D6 /* InspectorView.swift */,
+				EFD8B616187EB20E1075AD72 /* SidebarView.swift */,
+				A4BA733155B64B9C03526EB1 /* StatusBarView.swift */,
+				5F8C649AB6E8BE11DCCFFBD7 /* SyncStatusIndicator.swift */,
+				441FE7D5019189EDDA3F4843 /* WorkspaceView.swift */,
+			);
+			path = Workspace;
+			sourceTree = "<group>";
+		};
+		71E805F7985D1E6FA5EFED48 /* WinKeyer */ = {
+			isa = PBXGroup;
+			children = (
+				E358D37ADDE634A66FD56FBB /* WinKeyerManager.swift */,
+				21884C5724864EF46893F691 /* WinKeyerProtocol.swift */,
+				D3F25630B25CA80A897840DA /* WinKeyerSession.swift */,
+			);
+			path = WinKeyer;
+			sourceTree = "<group>";
+		};
+		72974B2591B070390BAF8B2C /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+				BBD0B2CA114E82D97F11F8E4 /* FocusedValues.swift */,
+				F71EB711077BDCBE38403C07 /* LocationGridResolver.swift */,
+				54CBA2EC4C1C497E6F3A2916 /* PlaceholderView.swift */,
+				CC5DB7B7F820CE0374C20A59 /* UnitFormatter.swift */,
+			);
+			path = Utilities;
+			sourceTree = "<group>";
+		};
+		76BF0AE475EFA8A8EB4F35A5 /* CWSweepTests */ = {
+			isa = PBXGroup;
+			children = (
+				B5E2C462F2E2836D531DF7C8 /* AudioRingBufferTests.swift */,
+				CF19D1E959B3377FF4731796 /* BandEdgesTests.swift */,
+				C079C040F8EA7D8D37C8B965 /* CabrilloExportTests.swift */,
+				DDA2FD6E58422DE2769A09F5 /* ContestDefinitionTests.swift */,
+				79261A8A88B1D81743F4907D /* ContestEngineTests.swift */,
+				3F096BD4326B3487F0591263 /* ContestExchangeParserTests.swift */,
+				754FB039BCB68BB4D66D138F /* ContestManagerTests.swift */,
+				37F5594F563C59434F05059F /* ContestTemplateLoaderTests.swift */,
+				9229D2EBF6A00E4FBF1CA318 /* CWKeyerTests.swift */,
+				3908B052547451B920E6BFBB /* CWSweepTests.swift */,
+				AD94DF0CC21B3579E94B656D /* DXSpotParserTests.swift */,
+				56F9BAF3A45DD661436CF237 /* KiwiSDRADPCMTests.swift */,
+				9FF01443EB1BD45CEE3692B9 /* KiwiSDRTypesTests.swift */,
+				735252B52F40A681B70D36C3 /* N1MMBroadcastTests.swift */,
+				FBDDB71652A2EC749E6498CE /* SDRTranscriptTests.swift */,
+				CDF04E7F71320C1DB29C9419 /* SpotTypeTests.swift */,
+				0181AE9555C19B33E984C6FB /* TuneInManagerTests.swift */,
+			);
+			path = CWSweepTests;
+			sourceTree = "<group>";
+		};
+		7867676ACD8DBF2978743549 /* WinKeyer */ = {
+			isa = PBXGroup;
+			children = (
+				DFFC4CCF36FF735CA8492805 /* WinKeyerView.swift */,
+			);
+			path = WinKeyer;
+			sourceTree = "<group>";
+		};
+		80BCA80C398484CDD6BCA618 /* Spots */ = {
+			isa = PBXGroup;
+			children = (
+				208895258634B310D2F07374 /* CallsignInfoCache.swift */,
+				E01DD5FE86949FE7C24C949A /* GridCache.swift */,
+				D1FC2F375060958EB5E80A1B /* HamDBClient.swift */,
+				CBD184C919BAD8AB4E252813 /* POTASpotsClient.swift */,
+				E106FB98097FFDF0A175472E /* RBNClient.swift */,
+				C871C290EC0B709DD9DD31DC /* SOTAClient.swift */,
+				BEA93F0580F4526FCAA7E3BB /* SpotAggregator.swift */,
+				359CF1039AF02598A2E7B10E /* WWFFClient.swift */,
+			);
+			path = Spots;
+			sourceTree = "<group>";
+		};
+		80CC6B140EE99F41DB93C2A6 /* Interop */ = {
+			isa = PBXGroup;
+			children = (
+				7E91354EA51FA85D931D6A37 /* InteropManager.swift */,
+				88B6FFA94E0B49F65A6A7C3A /* N1MMBroadcastService.swift */,
+				05708A575A766DF29D8AF1C1 /* WSJTXListenerService.swift */,
+			);
+			path = Interop;
+			sourceTree = "<group>";
+		};
+		86446E50640392BA3CB2A4BE /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				282D2762203344EE1C609754 /* CommandPalette */,
+				4272E891B9048C5F12DD56DB /* Contest */,
+				9C6BF635C57D0E807DAACB0A /* Dashboard */,
+				3E737D8BD90BA98B2AEACFA6 /* Logger */,
+				F47432DCDD5A4546823F2499 /* Map */,
+				5E292C4C3A93E21F77563A45 /* MenuBarExtra */,
+				89A37F154FD4F81633677FD0 /* Radio */,
+				C7BF5692042C106970580305 /* Roles */,
+				33F6A767C40F5088A4173336 /* SDR */,
+				05A2230DB14E6FDCCF12FBFA /* Serial */,
+				8B4690CC054AFD1DFEB28179 /* Sessions */,
+				975583E34FE95551A79B7E0E /* Settings */,
+				C51F8FFD386ECEEA5F5BFA2B /* Spots */,
+				7867676ACD8DBF2978743549 /* WinKeyer */,
+				6B1EABAE760E238CF8984BC0 /* Workspace */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		89A37F154FD4F81633677FD0 /* Radio */ = {
+			isa = PBXGroup;
+			children = (
+				3D54D7862949CF1053D8B17F /* RadioControlView.swift */,
+			);
+			path = Radio;
+			sourceTree = "<group>";
+		};
+		8B4690CC054AFD1DFEB28179 /* Sessions */ = {
+			isa = PBXGroup;
+			children = (
+				A4492FAA0DEAEE325ED84F83 /* SessionDetailView.swift */,
+				184BC415A5A8B3D9237ED32B /* SessionsListView.swift */,
+			);
+			path = Sessions;
+			sourceTree = "<group>";
+		};
+		900E9A0FB173EBAEA1F72637 /* WebSDR */ = {
+			isa = PBXGroup;
+			children = (
+				CF2360F1F3466D7DB6E05628 /* AudioRingBuffer.swift */,
+				60837D502CF3B773F2B6EA9A /* CWSWLClient.swift */,
+				BE5C3263FAD66F3C7F6BAF13 /* KiwiSDRADPCM.swift */,
+				0637C656A27B30697745FA01 /* KiwiSDRAudioEngine.swift */,
+				4B193C72EC5EC9193A876701 /* KiwiSDRClient.swift */,
+				CA36951F52EE2F88F20FCBCD /* KiwiSDRStatusFetcher.swift */,
+				1E9FCCE1C5251452C5A8AA18 /* KiwiSDRTypes.swift */,
+				96D5E29C2E4148A1E01FE848 /* RecordingClipExporter.swift */,
+				E73C6ACCCD05EE963A758ABA /* RecordingPlaybackEngine.swift */,
+				B3B7D302B00545D7C18506EE /* TuneInManager.swift */,
+				8671F811BD9E20B72C2AC188 /* WebSDRDirectory.swift */,
+				B6629012544B77452A4C295F /* WebSDRRecorder.swift */,
+				2CCB9F6513BE9A1618BD17E2 /* WebSDRSession.swift */,
+			);
+			path = WebSDR;
+			sourceTree = "<group>";
+		};
+		975583E34FE95551A79B7E0E /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				77DC21FD1352B240BC2CB309 /* InteropSettingsTab.swift */,
+				0541A571F6C1F92C94D68C06 /* KeyerSettingsTab.swift */,
+				4689B4C5D47D8938263D9C18 /* SDRSettingsTab.swift */,
+				F19CADD4B3925B383196E50A /* SettingsView.swift */,
+				F639DB3AC7A7F782F4EAA1E9 /* WinKeyerSettingsTab.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		9C6BF635C57D0E807DAACB0A /* Dashboard */ = {
+			isa = PBXGroup;
+			children = (
+				065906E0165C5C61BAB20BE5 /* DashboardView.swift */,
+			);
+			path = Dashboard;
+			sourceTree = "<group>";
+		};
+		AB3687C29B539C03AE169530 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				1AD7917B622048B928D4A08C /* Spots */,
+				5A836D85CB09E9CD1DD89270 /* LayoutConfiguration.swift */,
+				E40D53C5F8C6D0964483E004 /* RadioProfile.swift */,
+				F6C72B8C5D1B6178EB054977 /* SDRTranscriptModels.swift */,
+				834179CB0E6F1B93FD85044E /* SelectionState.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		AFDCF2145E000B0A464B59BF /* CWSweep */ = {
+			isa = PBXGroup;
+			children = (
+				32BF02417372A656ABB496BD /* Commands */,
+				AB3687C29B539C03AE169530 /* Models */,
+				F478CCC3EE54A3583ED1B82C /* Resources */,
+				25092BC0A7E461259D51C76A /* Services */,
+				72974B2591B070390BAF8B2C /* Utilities */,
+				86446E50640392BA3CB2A4BE /* Views */,
+				C14FCF8C9F11B50677599080 /* ContentView.swift */,
+				5C93DFFED42EF2974EC01F6B /* CWSweepApp.swift */,
+			);
+			path = CWSweep;
+			sourceTree = "<group>";
+		};
+		BFB9E455BEC74B2DE646B50E /* ContestTemplates */ = {
+			isa = PBXGroup;
+			children = (
+				34C1B2354ED74254E815AE98 /* arrl-dx-dx.json */,
+				A47728B707B1804F2DFC9C64 /* arrl-dx-w-ve.json */,
+				CA30B5FEA6BFE7ADEE40EB38 /* arrl-field-day.json */,
+				5E8333DCA7E286CF5D37E8ED /* arrl-sweepstakes-cw.json */,
+				6A3EE0625E35FAE5A3C8B80B /* cq-ww-cw.json */,
+				003CF7C95559A81228CB1A22 /* cq-ww-ssb.json */,
+				99EE32B562FA2FB260AA989A /* naqp-cw.json */,
+				24C05499E84B51F78CD6796B /* state-qso-party.json */,
+			);
+			path = ContestTemplates;
+			sourceTree = "<group>";
+		};
+		C51F8FFD386ECEEA5F5BFA2B /* Spots */ = {
+			isa = PBXGroup;
+			children = (
+				A9FCE182FD822E8029CC2935 /* BandMapView.swift */,
+				C8E9B086546B9F6B0CEA1915 /* ClusterView.swift */,
+				6EB62AAB03EA7D64C138DD63 /* SpotDetailInspector.swift */,
+				D246A708942035BA1339AE72 /* SpotListView.swift */,
+			);
+			path = Spots;
+			sourceTree = "<group>";
+		};
+		C7BF5692042C106970580305 /* Roles */ = {
+			isa = PBXGroup;
+			children = (
+				498C2218BC932EAE4C6B418D /* ActivatorLayout.swift */,
+				32F9252B8543BFC3A55BB36E /* CasualLayout.swift */,
+				9CC60D51A216044A34097C41 /* ContesterLayout.swift */,
+				A45D25B0215982628CE355C7 /* DXerLayout.swift */,
+				130ED358D7E8B60E86416DB3 /* HunterLayout.swift */,
+			);
+			path = Roles;
+			sourceTree = "<group>";
+		};
+		D19B8200C9F192352B2DC983 /* Contest */ = {
+			isa = PBXGroup;
+			children = (
+				746069B9208192D0455A7D8E /* CabrilloExportService.swift */,
+				CF0571D194A5079958F9CF3C /* ContestEngine.swift */,
+				3BA5860265D3D1962DA1148F /* ContestExchangeParser.swift */,
+				442A7DBFB2A63C1CFBF85797 /* ContestManager.swift */,
+				4F1C628C3FD96A4F64971534 /* ContestTemplateLoader.swift */,
+				35120E27B8B87EF40198A6C7 /* ContestTypes.swift */,
+			);
+			path = Contest;
+			sourceTree = "<group>";
+		};
+		D53378E06DCC10160B548E4D /* Radio */ = {
+			isa = PBXGroup;
+			children = (
+				D36D9DA2491272FE2815CA47 /* CIVProtocolHandler.swift */,
+				5FE1B2A06EA6A6CB8528C3A6 /* ElecraftProtocolHandler.swift */,
+				E22D143808AB93F17B1665C8 /* KenwoodProtocolHandler.swift */,
+				C7CCEF8E17B15DAE87F76162 /* RadioCommandLog.swift */,
+				1A4D9263FE96FED9F51C34E8 /* RadioManager.swift */,
+				810DCC46AD8FB4396CFCFBE4 /* RadioProtocolHandler.swift */,
+				5481BF64FC3710AB78901C3F /* RadioSession.swift */,
+			);
+			path = Radio;
+			sourceTree = "<group>";
+		};
+		F09DCE87FAD2BCA73F8C194B /* Cluster */ = {
+			isa = PBXGroup;
+			children = (
+				AE8F6A3E6109D1AB6BC36F1E /* ClusterManager.swift */,
+				A1C1A54B881B1CC640BED439 /* DXSpotParser.swift */,
+				2E6EF685B2A2D4BE3C502E66 /* TelnetClusterClient.swift */,
+			);
+			path = Cluster;
+			sourceTree = "<group>";
+		};
+		F1C35748C256703127C7C3D2 /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				9EABC69926D0CB041631ECD4 /* CarrierWaveCore */,
+				3929C2FF72CC56029E75269C /* CarrierWaveData */,
+			);
+			name = Packages;
+			sourceTree = "<group>";
+		};
+		F47432DCDD5A4546823F2499 /* Map */ = {
+			isa = PBXGroup;
+			children = (
+				4D5BB7787034E14F1AFD8C7D /* QSOMapView.swift */,
+			);
+			path = Map;
+			sourceTree = "<group>";
+		};
+		F478CCC3EE54A3583ED1B82C /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				BFB9E455BEC74B2DE646B50E /* ContestTemplates */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		F8B3C5B9A6B65344371F1258 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				BDDB00B384653A526CBCE283 /* CWSweep.app */,
+				601E569286E70F2D2B27D8F8 /* CWSweepTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		FF8BC01DB8ED494C5D92BD8A = {
+			isa = PBXGroup;
+			children = (
+				AFDCF2145E000B0A464B59BF /* CWSweep */,
+				76BF0AE475EFA8A8EB4F35A5 /* CWSweepTests */,
+				F1C35748C256703127C7C3D2 /* Packages */,
+				F8B3C5B9A6B65344371F1258 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		7B1660EEABDC8B6C012F802A /* CWSweepTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 73216DDBD74867BADD31306D /* Build configuration list for PBXNativeTarget "CWSweepTests" */;
+			buildPhases = (
+				40B13C1C6619740564A902EC /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				99CBD1AA49E662868F19FAC2 /* PBXTargetDependency */,
+			);
+			name = CWSweepTests;
+			packageProductDependencies = (
+			);
+			productName = CWSweepTests;
+			productReference = 601E569286E70F2D2B27D8F8 /* CWSweepTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		A8E0FD1249AC12D54C425141 /* CWSweep */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = ED23D37FA99A4B8F9FE2BC73 /* Build configuration list for PBXNativeTarget "CWSweep" */;
+			buildPhases = (
+				69D6FCC7D9009D92E2BD5E81 /* Sources */,
+				3EE6162C52EE66EDB72A70E3 /* Resources */,
+				D6268E6F225B545F7000C2B7 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = CWSweep;
+			packageProductDependencies = (
+				B9F7CD6646A6472927743AB9 /* CarrierWaveCore */,
+				C1616A37B9B5F955CC72FB7C /* CarrierWaveData */,
+			);
+			productName = CWSweep;
+			productReference = BDDB00B384653A526CBCE283 /* CWSweep.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		22C734A5B2E2A9BCA343194B /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 2630;
+				TargetAttributes = {
+					7B1660EEABDC8B6C012F802A = {
+						DevelopmentTeam = 7UE4RDLUSX;
+						ProvisioningStyle = Automatic;
+					};
+					A8E0FD1249AC12D54C425141 = {
+						DevelopmentTeam = 7UE4RDLUSX;
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 5E7F2DA8B72840DDF1BAD055 /* Build configuration list for PBXProject "CWSweep" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = FF8BC01DB8ED494C5D92BD8A;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				8FCBBD3D92E64E4692101549 /* XCLocalSwiftPackageReference "../CarrierWaveCore" */,
+				A386D5C237B0032484A0F214 /* XCLocalSwiftPackageReference "../CarrierWaveData" */,
+			);
+			preferredProjectObjectVersion = 77;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A8E0FD1249AC12D54C425141 /* CWSweep */,
+				7B1660EEABDC8B6C012F802A /* CWSweepTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		3EE6162C52EE66EDB72A70E3 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				171E9C1F24B1186693D4EDA2 /* arrl-dx-dx.json in Resources */,
+				9DA065674010BB4A43B9288F /* arrl-dx-w-ve.json in Resources */,
+				6F2FCA6175623198437B73AB /* arrl-field-day.json in Resources */,
+				147E7F67C594DD3C3C46A2D5 /* arrl-sweepstakes-cw.json in Resources */,
+				F29C8849B6A2D79F96DBFD88 /* cq-ww-cw.json in Resources */,
+				E3AF66F46F95725C365AB79A /* cq-ww-ssb.json in Resources */,
+				C8320234949189D371906FF6 /* naqp-cw.json in Resources */,
+				EAFA91993480C895DE9588A7 /* state-qso-party.json in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		40B13C1C6619740564A902EC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E972602DCFCC603138F8ED80 /* AudioRingBufferTests.swift in Sources */,
+				576EEDD70D5872C87CD78777 /* BandEdgesTests.swift in Sources */,
+				1F8D5CEA96831B19DDE98E89 /* CWKeyerTests.swift in Sources */,
+				476947F25E4CA0D483693CD6 /* CWSweepTests.swift in Sources */,
+				A4A183A14F35E206E3F8753C /* CabrilloExportTests.swift in Sources */,
+				E5D7898F46227FB15755F813 /* ContestDefinitionTests.swift in Sources */,
+				121CA8AD846C3CA94247B528 /* ContestEngineTests.swift in Sources */,
+				7695C900B51F0F20C2EC60E9 /* ContestExchangeParserTests.swift in Sources */,
+				C1D61AE38BE9A54F97B18598 /* ContestManagerTests.swift in Sources */,
+				11B44B4B63A96DDE5DF57461 /* ContestTemplateLoaderTests.swift in Sources */,
+				8CAD2E712760B54B87D605FA /* DXSpotParserTests.swift in Sources */,
+				FCCE22EA06D24F5037752BCF /* KiwiSDRADPCMTests.swift in Sources */,
+				5B57433262F9B9E9940EDB17 /* KiwiSDRTypesTests.swift in Sources */,
+				25F1B0CAD359CD53F8E3B4C1 /* N1MMBroadcastTests.swift in Sources */,
+				8BD936FAEDBE49B9526C40E5 /* SDRTranscriptTests.swift in Sources */,
+				88F679228A39202A255BAE05 /* SpotTypeTests.swift in Sources */,
+				44253A34AF7FA1F36C431028 /* TuneInManagerTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		69D6FCC7D9009D92E2BD5E81 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DE584AC2490F54646248970D /* ActivatorLayout.swift in Sources */,
+				9BF04F3C8E377DEC2ECC01E2 /* AudioRingBuffer.swift in Sources */,
+				BC462A5BF1375C039874972B /* BandEdges.swift in Sources */,
+				6143DDF5ABD1668179B7ED7C /* BandMapView.swift in Sources */,
+				8A3BF181EAA1E2378BA53EE0 /* CIVProtocolHandler.swift in Sources */,
+				13E6D5FFA1EDAC85A238C894 /* CWKeyerService.swift in Sources */,
+				BE4D3DFD0BB2617C61FC09D8 /* CWSWLClient.swift in Sources */,
+				71868CF531E9206AD9823FC7 /* CWSweepApp.swift in Sources */,
+				649186C39C6C12A008E5E673 /* CWSweepCommands.swift in Sources */,
+				DFE23EB0A2F3B58875FAD538 /* CabrilloExportService.swift in Sources */,
+				CB03CA3ECCB8D9B11446E8E6 /* CabrilloPreviewView.swift in Sources */,
+				85EB67B1C51BD383285D39F7 /* CallsignInfoCache.swift in Sources */,
+				12B04502CA89C075227A5AEB /* CasualLayout.swift in Sources */,
+				3AE39BBAFEE73E1D856277EF /* CloudSyncService.swift in Sources */,
+				4B5B21A1E37010CDDCC8AAFC /* ClusterManager.swift in Sources */,
+				06724ECFC8AEC66788150002 /* ClusterNode.swift in Sources */,
+				625CFBD58A7B951F9C29A78C /* ClusterView.swift in Sources */,
+				A0FBE4E7A6C672CCADB5545B /* CommandPaletteView.swift in Sources */,
+				3025BAC72B119B15BB1898FC /* ContentAreaView.swift in Sources */,
+				F4200447F9CE3537AE941DC8 /* ContentView.swift in Sources */,
+				DD8F632BBCFF6CBCAAF61CE9 /* ContestEngine.swift in Sources */,
+				85E4C45BE79BE122A730F840 /* ContestExchangeParser.swift in Sources */,
+				4B4EB3A3FA5704673E3FCFF2 /* ContestManager.swift in Sources */,
+				BE7BA8E8A7BBE7678190DA3A /* ContestSetupView.swift in Sources */,
+				EC49C07628685DF21AB283A2 /* ContestTemplateLoader.swift in Sources */,
+				BF29593FE499F39BCF05AEC5 /* ContestTypes.swift in Sources */,
+				1FE50B9060AFBBD387B3945B /* ContesterLayout.swift in Sources */,
+				F237E0C85533D08F08842026 /* DXClusterSpot.swift in Sources */,
+				321762119E92DA4F44093224 /* DXSpotParser.swift in Sources */,
+				84C6498EBA2193C3DD551C5E /* DXerLayout.swift in Sources */,
+				611244800912266CBC189CB4 /* DashboardView.swift in Sources */,
+				4EB3EE8C677F8AFF7E332DBA /* ElecraftProtocolHandler.swift in Sources */,
+				45B2D147C89DA0AD6AD68051 /* FocusedValues.swift in Sources */,
+				A3B0FAB98E32FC1B53F26953 /* FrameAssembler.swift in Sources */,
+				4AD2D637088E788F05AD7853 /* GridCache.swift in Sources */,
+				9145D3402A7581FFD78871B6 /* HamDBClient.swift in Sources */,
+				740DEF8ED9B24C95A9AA11F9 /* HunterLayout.swift in Sources */,
+				F6CED0DA970C429EDBF5B938 /* InspectorView.swift in Sources */,
+				B657EE1B10B349C80B6FD8F1 /* InteropManager.swift in Sources */,
+				6CA04924A61EBA3747274233 /* InteropSettingsTab.swift in Sources */,
+				9776FB154C9EC77BD8F5A097 /* KenwoodProtocolHandler.swift in Sources */,
+				D931B4C7CC92CA09F86A0E5F /* KeyerSettingsTab.swift in Sources */,
+				0E02ED37F1565381C461B22F /* KiwiSDRADPCM.swift in Sources */,
+				6CA9B7401ED33995F48A0CAE /* KiwiSDRAudioEngine.swift in Sources */,
+				4EE5397790FF9F87325BDB24 /* KiwiSDRClient.swift in Sources */,
+				1225051B955421D86090FDEE /* KiwiSDRStatusFetcher.swift in Sources */,
+				760F66E8B2561AE95431E582 /* KiwiSDRTypes.swift in Sources */,
+				1A715DDA5DE98A3C62403A66 /* LayoutConfiguration.swift in Sources */,
+				8C727A8687886F17F59F1678 /* LocationGridResolver.swift in Sources */,
+				1EBF1C1F197C49AC555FA1C1 /* MenuBarExtraView.swift in Sources */,
+				11201AC1914B4D32D630030E /* MultiplierTrackerView.swift in Sources */,
+				33784B13BCAA85CF6916EF59 /* N1MMBroadcastService.swift in Sources */,
+				81409BEC16B8DD2D15480AD5 /* POTASpot.swift in Sources */,
+				9CB162E1C970C01B852D30E5 /* POTASpotsClient.swift in Sources */,
+				C32537BCA2A05D285ACD3F59 /* ParsedEntryView.swift in Sources */,
+				9EBB3D8E5E9347553347E840 /* ParsedFieldSummary.swift in Sources */,
+				7D0915486766A1D266151F39 /* PlaceholderView.swift in Sources */,
+				E30B77CEB546A7933A58257A /* PortNicknameEditor.swift in Sources */,
+				63973CA78774A97F252E2758 /* QSOLogTableView.swift in Sources */,
+				B2253AD62FF47AAD28572EA5 /* QSOMapView.swift in Sources */,
+				63D4EC51ADF3C789BDB8C86E /* RBNClient.swift in Sources */,
+				6704B94A7A1493BCFF7F9BB7 /* RBNSpot.swift in Sources */,
+				2902AABE1E10E0849C36D122 /* RadioCommandLog.swift in Sources */,
+				7C779E207F869C27CCC5F167 /* RadioControlView.swift in Sources */,
+				3923661B73C5A9CFD0D6C442 /* RadioManager.swift in Sources */,
+				74F8FDA1DD5CEDDCD69542D9 /* RadioProfile.swift in Sources */,
+				12AB1A111340316F0F56905C /* RadioProtocolHandler.swift in Sources */,
+				FA53E37CF64DDDCC15966EC3 /* RadioSession.swift in Sources */,
+				CA5EFDD6E34EFB05953A0F5E /* RateGraphView.swift in Sources */,
+				8474E73126172C008BB2819A /* RecordingClipExporter.swift in Sources */,
+				15283406EA1742098BFEEF8C /* RecordingLibraryView.swift in Sources */,
+				0E866145399C1577D1076652 /* RecordingPlaybackEngine.swift in Sources */,
+				C0187D356C24BD91564F4FA9 /* RecordingPlayerView.swift in Sources */,
+				7ED72C95ADEC827A27BE98A8 /* SDRMeterView.swift in Sources */,
+				01330E5E9A254E66525EBC45 /* SDRPlayerView.swift in Sources */,
+				901463B83CF65EBF91E40D4A /* SDRSettingsTab.swift in Sources */,
+				E639542DA45C02CDACC31F4C /* SDRTranscriptModels.swift in Sources */,
+				B1F94017925A67EE1CB286A0 /* SOTAClient.swift in Sources */,
+				27A7DC2CFDA61C0904C6E8EB /* SOTASpot.swift in Sources */,
+				EBE5D4EDAEE23BA10E6DD360 /* ScoreSummaryView.swift in Sources */,
+				6FAF75FA05466E4AC6628565 /* SelectionState.swift in Sources */,
+				1897A54BB1918DA630D4F4D4 /* SerialPort.swift in Sources */,
+				081BC3FAE6A8973583B10EC1 /* SerialPortMonitor.swift in Sources */,
+				EB6EC9613A2B3822B04B02A7 /* SerialRadioTransport.swift in Sources */,
+				E32A97EA276C956B9D156A19 /* SessionDetailView.swift in Sources */,
+				C49F8B3B893C0F5941DDAE2B /* SessionsListView.swift in Sources */,
+				6A10F0021A897FDBB49F5F22 /* SettingsView.swift in Sources */,
+				8F3AB382E58326AE24CD0617 /* SidebarView.swift in Sources */,
+				32681106ABC837531F0D5953 /* SpotAggregator.swift in Sources */,
+				AA2DEA9A77F5A5C9735B6ED9 /* SpotDetailInspector.swift in Sources */,
+				F35F4D43C611FECCF52866AC /* SpotListView.swift in Sources */,
+				9212F24207BB7E09B925C4EA /* SpotModeFilter.swift in Sources */,
+				3704B855A415594C980DDC84 /* SpotRegion.swift in Sources */,
+				2AA87CB03DE832E6FC18CE08 /* SpotSource.swift in Sources */,
+				8D352A7207B66616266C269E /* StatusBarView.swift in Sources */,
+				B182958A5BD9A7F6A3C2B65B /* SyncStatusIndicator.swift in Sources */,
+				DD1C9CB6C687BEA8F5E3E410 /* TelnetClusterClient.swift in Sources */,
+				CA91DFC75E12CF67D01F9C8E /* TuneInManager.swift in Sources */,
+				B66734B0C6255295E395B251 /* UnifiedSpot.swift in Sources */,
+				39C91557EBCAEE25D173E4E3 /* UnitFormatter.swift in Sources */,
+				1D3D99FA892D9C52C7B1F6B3 /* WSJTXListenerService.swift in Sources */,
+				2DA7BC9FCA87E2322F70ED73 /* WWFFClient.swift in Sources */,
+				6ABB4A903C55E8EE1AF6B249 /* WWFFSpot.swift in Sources */,
+				594EECAF5A4FB116808DC1DD /* WebSDRDirectory.swift in Sources */,
+				43281AE00011C475850FF5A1 /* WebSDRRecorder.swift in Sources */,
+				B6DEDA9143191E36302EF938 /* WebSDRSession.swift in Sources */,
+				BCE084FF8848C8324C16CDB3 /* WinKeyerManager.swift in Sources */,
+				A1501F422CC3E96AE8E5D3E7 /* WinKeyerProtocol.swift in Sources */,
+				1949439CCDBEC2070031CBAE /* WinKeyerSession.swift in Sources */,
+				6191E18B3799982CC52AF128 /* WinKeyerSettingsTab.swift in Sources */,
+				9BB1DF0551667CA3F2F3C057 /* WinKeyerView.swift in Sources */,
+				8D2361F906500316BD7BC6B7 /* WorkspaceView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		99CBD1AA49E662868F19FAC2 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A8E0FD1249AC12D54C425141 /* CWSweep */;
+			targetProxy = 0FDDCF74A2F12DAE6247D1A5 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		04FCBBB064CEB7B979548331 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = CWSweep/CWSweep.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CWSweep/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "CW Sweep";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jsvana.CWSweep;
+				PRODUCT_MODULE_NAME = CWSweep;
+				PRODUCT_NAME = "CW Sweep";
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		6B0F2D138C7756832A9F6676 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 7UE4RDLUSX;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		B8FAAD7BD9A1E4FB69CDC481 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.jsvana.CWSweepTests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CW Sweep.app/Contents/MacOS/CW Sweep";
+			};
+			name = Release;
+		};
+		BFA35FABC1AA3C095BCCACB1 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = CWSweep/CWSweep.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CWSweep/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "CW Sweep";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jsvana.CWSweep;
+				PRODUCT_MODULE_NAME = CWSweep;
+				PRODUCT_NAME = "CW Sweep";
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		E02343CA4C1054421D4D95E2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.jsvana.CWSweepTests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CW Sweep.app/Contents/MacOS/CW Sweep";
+			};
+			name = Debug;
+		};
+		E6FCB33B0497BC05B1DED16A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 7UE4RDLUSX;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		5E7F2DA8B72840DDF1BAD055 /* Build configuration list for PBXProject "CWSweep" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6B0F2D138C7756832A9F6676 /* Debug */,
+				E6FCB33B0497BC05B1DED16A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		73216DDBD74867BADD31306D /* Build configuration list for PBXNativeTarget "CWSweepTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E02343CA4C1054421D4D95E2 /* Debug */,
+				B8FAAD7BD9A1E4FB69CDC481 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		ED23D37FA99A4B8F9FE2BC73 /* Build configuration list for PBXNativeTarget "CWSweep" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				04FCBBB064CEB7B979548331 /* Debug */,
+				BFA35FABC1AA3C095BCCACB1 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		8FCBBD3D92E64E4692101549 /* XCLocalSwiftPackageReference "../CarrierWaveCore" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../CarrierWaveCore;
+		};
+		A386D5C237B0032484A0F214 /* XCLocalSwiftPackageReference "../CarrierWaveData" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../CarrierWaveData;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		B9F7CD6646A6472927743AB9 /* CarrierWaveCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = CarrierWaveCore;
+		};
+		C1616A37B9B5F955CC72FB7C /* CarrierWaveData */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = CarrierWaveData;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 22C734A5B2E2A9BCA343194B /* Project object */;
+}

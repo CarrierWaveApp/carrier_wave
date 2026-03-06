@@ -421,8 +421,8 @@
 			mainGroup = CF8DD1A42F2098940021A936;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				CFCORE0042F4B00000021A936 /* XCLocalSwiftPackageReference "../carrier_wave_core" */,
-				CFDATA0042F4B00000021A936 /* XCLocalSwiftPackageReference "../carrier_wave_data" */,
+				CFCORE0042F4B00000021A936 /* XCLocalSwiftPackageReference "CarrierWaveCore" */,
+				CFDATA0042F4B00000021A936 /* XCLocalSwiftPackageReference "CarrierWaveData" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = CF8DD1AE2F2098940021A936 /* Products */;
@@ -1017,25 +1017,25 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		CFCORE0042F4B00000021A936 /* XCLocalSwiftPackageReference "../carrier_wave_core" */ = {
+		CFCORE0042F4B00000021A936 /* XCLocalSwiftPackageReference "CarrierWaveCore" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = ../carrier_wave_core;
+			relativePath = CarrierWaveCore;
 		};
-		CFDATA0042F4B00000021A936 /* XCLocalSwiftPackageReference "../carrier_wave_data" */ = {
+		CFDATA0042F4B00000021A936 /* XCLocalSwiftPackageReference "CarrierWaveData" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = ../carrier_wave_data;
+			relativePath = CarrierWaveData;
 		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
 		CFCORE0022F4B00000021A936 /* CarrierWaveCore */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = CFCORE0042F4B00000021A936 /* XCLocalSwiftPackageReference "../carrier_wave_core" */;
+			package = CFCORE0042F4B00000021A936 /* XCLocalSwiftPackageReference "CarrierWaveCore" */;
 			productName = CarrierWaveCore;
 		};
 		CFDATA0022F4B00000021A936 /* CarrierWaveData */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = CFDATA0042F4B00000021A936 /* XCLocalSwiftPackageReference "../carrier_wave_data" */;
+			package = CFDATA0042F4B00000021A936 /* XCLocalSwiftPackageReference "CarrierWaveData" */;
 			productName = CarrierWaveData;
 		};
 /* End XCSwiftPackageProductDependency section */

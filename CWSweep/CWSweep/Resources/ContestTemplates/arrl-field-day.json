@@ -1,0 +1,41 @@
+{
+  "id": "arrl-field-day",
+  "name": "ARRL Field Day",
+  "cabrilloCategoryContest": "ARRL-FD",
+  "bands": ["160m", "80m", "40m", "20m", "15m", "10m", "6m", "2m"],
+  "modes": ["CW", "SSB", "DIGITAL"],
+  "exchange": {
+    "fields": [
+      { "id": "class", "label": "Class", "type": "class", "width": 3 },
+      { "id": "section", "label": "Section", "type": "arrlSection", "width": 3 }
+    ]
+  },
+  "multipliers": {
+    "types": [],
+    "perBand": false
+  },
+  "scoring": {
+    "rules": [
+      { "condition": "any", "points": 1 }
+    ]
+  },
+  "dupeRules": {
+    "perBand": true,
+    "perMode": true
+  },
+  "cabrillo": {
+    "qsoTemplate": "freq mode date time mycall myclass mysect call class sect",
+    "fieldWidths": {
+      "freq": 5,
+      "mode": 2,
+      "date": 10,
+      "time": 4,
+      "mycall": 13,
+      "myclass": 3,
+      "mysect": 3,
+      "call": 13,
+      "class": 3,
+      "sect": 3
+    }
+  }
+}

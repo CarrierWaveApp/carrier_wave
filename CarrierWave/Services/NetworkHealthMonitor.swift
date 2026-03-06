@@ -94,7 +94,7 @@ final class NetworkHealthMonitor {
             failureStreakStart = Date()
         }
         if let error {
-            logger.debug("Network failure #\(consecutiveFailures): \(error.localizedDescription)")
+            logger.debug("Network failure #\(self.consecutiveFailures): \(error.localizedDescription)")
         }
         updateHealth()
     }

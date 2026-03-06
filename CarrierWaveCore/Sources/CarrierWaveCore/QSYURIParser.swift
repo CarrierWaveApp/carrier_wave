@@ -93,6 +93,8 @@ public struct QSYLogParams: Equatable, Sendable {
 
 /// Parses `qsy://` URIs into typed actions per the QSY URI specification.
 public enum QSYURIParser {
+    // MARK: Public
+
     /// Parse a URL into a QSYAction. Returns nil if the URL is not a valid qsy:// URI.
     public static func parse(_ url: URL) -> QSYAction? {
         guard url.scheme?.lowercased() == "qsy" else {
@@ -121,6 +123,8 @@ public enum QSYURIParser {
             return nil
         }
     }
+
+    // MARK: Private
 
     // MARK: - Action Parsers
 

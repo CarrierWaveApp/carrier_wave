@@ -1,0 +1,40 @@
+{
+  "id": "arrl-dx-dx",
+  "name": "ARRL DX Contest (DX)",
+  "cabrilloCategoryContest": "ARRL-DX-CW",
+  "bands": ["160m", "80m", "40m", "20m", "15m", "10m"],
+  "modes": ["CW", "SSB"],
+  "exchange": {
+    "fields": [
+      { "id": "rst", "label": "RST", "type": "rst", "defaultValue": "599", "width": 3 },
+      { "id": "state", "label": "State/Province", "type": "state", "width": 5 }
+    ]
+  },
+  "multipliers": {
+    "types": ["state"],
+    "perBand": true
+  },
+  "scoring": {
+    "rules": [
+      { "condition": "any", "points": 3 }
+    ]
+  },
+  "dupeRules": {
+    "perBand": true,
+    "perMode": false
+  },
+  "cabrillo": {
+    "qsoTemplate": "freq mode date time mycall rst myexch call rst exch",
+    "fieldWidths": {
+      "freq": 5,
+      "mode": 2,
+      "date": 10,
+      "time": 4,
+      "mycall": 13,
+      "rst": 3,
+      "myexch": 6,
+      "call": 13,
+      "exch": 6
+    }
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "id": "cq-ww-ssb",
+  "name": "CQ World Wide DX Contest SSB",
+  "cabrilloCategoryContest": "CQ-WW-SSB",
+  "bands": ["160m", "80m", "40m", "20m", "15m", "10m"],
+  "modes": ["SSB"],
+  "exchange": {
+    "fields": [
+      { "id": "rst", "label": "RST", "type": "rst", "defaultValue": "59", "width": 2 },
+      { "id": "cqZone", "label": "CQ Zone", "type": "cqZone", "width": 2 }
+    ]
+  },
+  "multipliers": {
+    "types": ["dxcc", "cqZone"],
+    "perBand": true
+  },
+  "scoring": {
+    "rules": [
+      { "condition": "sameCountry", "points": 0 },
+      { "condition": "sameContinent", "points": 1 },
+      { "condition": "differentContinent", "points": 3 }
+    ]
+  },
+  "dupeRules": {
+    "perBand": true,
+    "perMode": false
+  },
+  "cabrillo": {
+    "qsoTemplate": "freq mode date time mycall rst myexch call rst exch",
+    "fieldWidths": {
+      "freq": 5,
+      "mode": 2,
+      "date": 10,
+      "time": 4,
+      "mycall": 13,
+      "rst": 3,
+      "myexch": 6,
+      "call": 13,
+      "exch": 6
+    }
+  }
+}

@@ -933,3 +933,66 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `FT8EnrichedDecodeTests.swift` | FT8 enriched decode tests (section classification, sort priority, SNR tier) |
 | `FT8QSOStateMachineTests.swift` | FT8 QSO state machine tests (S&P, CQ, timeout, duplicate) |
 | `AntennaDescriptionParserTests.swift` | Antenna description parsing tests (models, bands, direction) |
+
+## CarrierWaveData Package (`CarrierWaveData/`)
+
+Shared SwiftData models and cloud sync engine used by both the iOS app and CW Sweep.
+
+### Models (`Sources/CarrierWaveData/Models/`)
+
+| File | Purpose |
+|------|---------|
+| `QSO.swift` | Core contact record model |
+| `QSO+Dedup.swift` | QSO deduplication logic |
+| `LoggingSession.swift` | Logging session model |
+| `ServicePresence.swift` | POTA/SOTA/WWFF service presence |
+| `SessionSpot.swift` | Spot within a logging session |
+| `ActivationMetadata.swift` | Park activation metadata |
+| `ActivityLog.swift` | Activity tracking model |
+| `CloudSyncMetadata.swift` | iCloud sync metadata per record |
+| `ContestDefinition.swift` | Contest definition model |
+| `SDRParameterEvent.swift` | SDR parameter change events |
+| `Types.swift` | Shared type definitions |
+| `UploadDestination.swift` | Upload destination configuration |
+| `WebSDRFavorite.swift` | WebSDR favorite stations |
+| `WebSDRRecording.swift` | WebSDR recording metadata |
+
+### CloudSync (`Sources/CarrierWaveData/CloudSync/`)
+
+| File | Purpose |
+|------|---------|
+| `CloudSyncEngine.swift` | Main CKSyncEngine wrapper |
+| `CloudSyncEngine+Inbound.swift` | Inbound record processing |
+| `CloudSyncEngine+InboundSession.swift` | Inbound session record handling |
+| `CloudSyncEngine+Outbound.swift` | Outbound record scheduling |
+| `CloudSyncEngine+ConflictResolution.swift` | Merge conflict resolution |
+| `CloudSyncEngine+FieldApplication.swift` | CKRecord → model field mapping |
+| `CloudSyncEngine+FieldExtraction.swift` | Model → CKRecord field extraction |
+| `CloudSyncEngine+Helpers.swift` | Sync utility helpers |
+| `CloudSyncEngine+ZoneAndState.swift` | Zone setup and state management |
+| `CKRecordMapper.swift` | CKRecord ↔ model mapping |
+| `CKRecordMapper+Fields.swift` | Field-level CKRecord mapping |
+| `CKRecordMapper+SessionMapping.swift` | Session CKRecord mapping |
+| `CKRecordMapper+SpotAndLogMapping.swift` | Spot and log CKRecord mapping |
+| `CloudSyncConflictResolver.swift` | Conflict resolution strategies |
+| `CloudSyncMetadata+CKRecord.swift` | Sync metadata CKRecord extension |
+| `CloudSyncNotifications.swift` | Sync status notifications |
+| `CloudSyncRecordCounts.swift` | Record count tracking |
+
+### Protocols (`Sources/CarrierWaveData/Protocols/`)
+
+| File | Purpose |
+|------|---------|
+| `AudioCaptureProtocol.swift` | Audio capture abstraction |
+| `POTAAuthProvider.swift` | POTA authentication provider protocol |
+| `RadioTransport.swift` | Radio transport abstraction |
+
+### Utilities (`Sources/CarrierWaveData/Utilities/`)
+
+| File | Purpose |
+|------|---------|
+| `KeychainHelper.swift` | Keychain credential storage |
+
+## CW Sweep macOS App (`CWSweep/`)
+
+macOS companion app for radio hunters and contesters. See `CWSweep/CLAUDE.md` for full architecture and `CWSweep/FILE_INDEX.md` for detailed file listing.

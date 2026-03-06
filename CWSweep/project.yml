@@ -1,0 +1,64 @@
+name: CWSweep
+options:
+  bundleIdPrefix: com.jsvana
+  deploymentTarget:
+    macOS: "14.0"
+  xcodeVersion: "26.3"
+  generateEmptyDirectories: false
+  groupSortPosition: top
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    DEVELOPMENT_TEAM: 7UE4RDLUSX
+    CODE_SIGN_STYLE: Automatic
+    ENABLE_HARDENED_RUNTIME: YES
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+
+packages:
+  CarrierWaveCore:
+    path: ../CarrierWaveCore
+  CarrierWaveData:
+    path: ../CarrierWaveData
+
+targets:
+  CWSweep:
+    type: application
+    platform: macOS
+    sources:
+      - path: CWSweep
+        excludes:
+          - "**/*.entitlements"
+          - Info.plist
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.jsvana.CWSweep
+        INFOPLIST_FILE: CWSweep/Info.plist
+        CODE_SIGN_ENTITLEMENTS: CWSweep/CWSweep.entitlements
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: "CW Sweep"
+        INFOPLIST_KEY_LSApplicationCategoryType: "public.app-category.utilities"
+        CURRENT_PROJECT_VERSION: 1
+        MARKETING_VERSION: "0.1.0"
+        PRODUCT_NAME: "CW Sweep"
+        PRODUCT_MODULE_NAME: CWSweep
+        COMBINE_HIDPI_IMAGES: YES
+    dependencies:
+      - package: CarrierWaveCore
+        product: CarrierWaveCore
+      - package: CarrierWaveData
+        product: CarrierWaveData
+
+  CWSweepTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: CWSweepTests
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.jsvana.CWSweepTests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/CW Sweep.app/Contents/MacOS/CW Sweep"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+    dependencies:
+      - target: CWSweep

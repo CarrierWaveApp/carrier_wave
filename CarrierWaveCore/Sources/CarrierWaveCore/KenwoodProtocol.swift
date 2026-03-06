@@ -33,6 +33,35 @@ public enum KenwoodProtocol {
         "MD;"
     }
 
+    // MARK: - XIT/RIT Commands
+
+    /// Build a set-XIT command.
+    /// Format: `XT` + 0 (off) or 1 (on) + `;`
+    public static func setXIT(on: Bool) -> String {
+        "XT\(on ? 1 : 0);"
+    }
+
+    /// Build a read-XIT command.
+    public static func readXIT() -> String {
+        "XT;"
+    }
+
+    /// Build an absolute RIT/XIT offset command.
+    /// Format: `RO` + sign (+/-) + 4-digit Hz value + `;`
+    /// Range: -9999 to +9999 Hz.
+    public static func setRITXITOffset(hz: Int) -> String {
+        let clamped = max(-9_999, min(9_999, hz))
+        let sign = clamped >= 0 ? "+" : "-"
+        let value = String(format: "%04d", abs(clamped))
+        return "RO\(sign)\(value);"
+    }
+
+    /// Build a clear RIT/XIT offset command.
+    /// Format: `RC;` — sets offset to zero.
+    public static func clearRITXIT() -> String {
+        "RC;"
+    }
+
     // MARK: - Response Parsing
 
     /// Parse a frequency response string (e.g. `FA00014060000`) into Hz.

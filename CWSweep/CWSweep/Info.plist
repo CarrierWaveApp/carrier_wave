@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>CW Sweep uses the microphone to decode CW (Morse code) and FT8 audio from your radio.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>CW Sweep uses your location to calculate distance and bearing to spotted stations, and to auto-detect your Maidenhead grid square.</string>
+</dict>
+</plist>
