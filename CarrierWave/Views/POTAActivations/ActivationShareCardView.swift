@@ -19,6 +19,9 @@ struct ActivationShareCardView: View {
     var equipment: [ShareCardEquipmentItem] = []
     var statisticianStats: ActivationStatistics?
 
+    /// Bound camera for globe maps — nudged after load to force annotation render
+    @State var mapCamera: MapCameraPosition = .automatic
+
     var body: some View {
         VStack(spacing: 0) {
             header
@@ -156,11 +159,10 @@ struct ActivationShareCardView: View {
     }
 
     private var activationMap: some View {
-        Map(initialPosition: mapCameraPosition) {
-            // Show markers for each QSO with a grid
+        Map(position: $mapCamera) {
             ForEach(mappableQSOs, id: \.qso.id) { item in
                 Annotation(
-                    item.qso.callsign,
+                    "",
                     coordinate: item.coordinate,
                     anchor: .bottom
                 ) {
@@ -173,7 +175,6 @@ struct ActivationShareCardView: View {
                 }
             }
 
-            // Draw geodesic paths from my location to each QSO
             if let myCoord = myCoordinate {
                 ForEach(mappableQSOs, id: \.qso.id) { item in
                     MapPolyline(
@@ -189,6 +190,13 @@ struct ActivationShareCardView: View {
             ? .imagery(elevation: .realistic)
             : .standard(elevation: .realistic))
         .allowsHitTesting(false)
+        .task {
+            mapCamera = mapCameraPosition
+            if isWideSpan {
+                try? await Task.sleep(for: .seconds(0.5))
+                nudgeShareCamera()
+            }
+        }
     }
 
     // MARK: - Park Info Section
@@ -224,6 +232,19 @@ struct ActivationShareCardView: View {
 
     private var footer: some View {
         ActivationShareCardFooter(callsign: activation.callsign)
+    }
+
+    private func nudgeShareCamera() {
+        guard let region = mapCamera.region else {
+            return
+        }
+        mapCamera = .region(MKCoordinateRegion(
+            center: CLLocationCoordinate2D(
+                latitude: region.center.latitude + 0.001,
+                longitude: region.center.longitude
+            ),
+            span: region.span
+        ))
     }
 }
 

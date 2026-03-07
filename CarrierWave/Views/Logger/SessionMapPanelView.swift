@@ -124,15 +124,12 @@ struct SessionMapPanelView: View {
 
     private var mapContent: some View {
         Map(position: $cameraPosition) {
-            // Show markers for each QSO with a grid
             ForEach(mappableQSOs) { qso in
                 if let grid = qso.theirGrid,
                    let coordinate = MaidenheadConverter.coordinate(from: grid)
                 {
                     Annotation(
-                        qso.callsign,
-                        coordinate: coordinate,
-                        anchor: .bottom
+                        qso.callsign, coordinate: coordinate, anchor: .bottom
                     ) {
                         MapPinMarker(
                             color: RSTColorHelper.color(
@@ -144,7 +141,6 @@ struct SessionMapPanelView: View {
                 }
             }
 
-            // Rove stop markers
             ForEach(
                 Array(roveStopCoordinates.enumerated()), id: \.element.stop.id
             ) { index, item in
@@ -157,7 +153,6 @@ struct SessionMapPanelView: View {
                 }
             }
 
-            // Route line between rove stops
             if roveStopCoordinates.count >= 2 {
                 let coords = roveStopCoordinates.map(\.coordinate)
                 MapPolyline(coordinates: coords)
@@ -167,7 +162,6 @@ struct SessionMapPanelView: View {
                     ))
             }
 
-            // Draw geodesic paths from my location to each QSO
             if let myCoord = myCoordinate {
                 ForEach(mappableQSOs) { qso in
                     if let grid = qso.theirGrid,
@@ -208,6 +202,11 @@ struct SessionMapPanelView: View {
                 qsoCoordinates: allCoords,
                 myCoordinate: myCoordinate
             )
+
+            if isWideSpan {
+                try? await Task.sleep(for: .seconds(0.5))
+                nudgePanelCamera()
+            }
         }
     }
 
@@ -233,6 +232,19 @@ struct SessionMapPanelView: View {
                 .padding(.vertical, 2)
                 .background(.ultraThinMaterial, in: Capsule())
         }
+    }
+
+    private func nudgePanelCamera() {
+        guard let region = cameraPosition.region else {
+            return
+        }
+        cameraPosition = .region(MKCoordinateRegion(
+            center: CLLocationCoordinate2D(
+                latitude: region.center.latitude + 0.001,
+                longitude: region.center.longitude
+            ),
+            span: region.span
+        ))
     }
 
     /// Generate a geodesic (great circle) path between two coordinates

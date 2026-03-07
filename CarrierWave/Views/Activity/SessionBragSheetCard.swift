@@ -25,6 +25,9 @@ struct SessionBragSheetCard: View {
     var onHide: (() -> Void)?
     var onDeleteFromServer: (() -> Void)?
 
+    /// Bound camera for globe maps — nudged after load to force annotation render
+    @State var mapCamera: MapCameraPosition = .automatic
+
     var body: some View {
         VStack(spacing: 0) {
             headerSection

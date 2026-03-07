@@ -1,4 +1,5 @@
 import CarrierWaveData
+import MapKit
 import SwiftData
 import SwiftUI
 
@@ -31,6 +32,7 @@ struct SessionDetailView: View {
     @Environment(\.modelContext) var modelContext
     @AppStorage("statisticianMode") var statisticianMode = false
     @AppStorage("debugMode") var debugMode = false
+    @State var mapCamera: MapCameraPosition = .automatic
     @State var qsos: [QSO] = []
     @State var qsoToDelete: QSO?
     @State var qsoToEdit: QSO?

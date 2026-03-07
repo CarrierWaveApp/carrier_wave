@@ -25,13 +25,11 @@ extension SessionBragSheetCard {
     }
 
     var mapSection: some View {
-        let cameraPosition = mapCameraPosition
         let isWideSpan = ActivationMapHelpers.requiresGlobeView(
             qsoCoordinates: contactCoordinates.map(\.coord),
             myCoordinate: myCoordinate
         )
-        return Map(initialPosition: cameraPosition) {
-            // Trace lines first (drawn behind pins)
+        return Map(position: $mapCamera) {
             if let myCoord = myCoordinate {
                 ForEach(Array(contactCoordinates.enumerated()), id: \.offset) { _, contact in
                     MapPolyline(
@@ -43,9 +41,8 @@ extension SessionBragSheetCard {
                 }
             }
 
-            // Traditional pin markers
             ForEach(Array(contactCoordinates.enumerated()), id: \.offset) { _, contact in
-                Annotation(contact.grid, coordinate: contact.coord, anchor: .bottom) {
+                Annotation("", coordinate: contact.coord, anchor: .bottom) {
                     MapPinMarker(color: bandColor(contact.band))
                 }
             }
@@ -57,6 +54,27 @@ extension SessionBragSheetCard {
         .frame(height: 180)
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .padding(.horizontal, 16)
+        .task {
+            mapCamera = mapCameraPosition
+            if isWideSpan {
+                try? await Task.sleep(for: .seconds(0.5))
+                nudgeCamera()
+            }
+        }
+    }
+
+    private func nudgeCamera() {
+        guard let region = mapCamera.region else {
+            return
+        }
+        let nudged = MKCoordinateRegion(
+            center: CLLocationCoordinate2D(
+                latitude: region.center.latitude + 0.001,
+                longitude: region.center.longitude
+            ),
+            span: region.span
+        )
+        mapCamera = .region(nudged)
     }
 
     var sessionInfoSection: some View {

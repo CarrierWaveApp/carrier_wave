@@ -64,8 +64,12 @@ struct ActivationMapView: View {
                 .disabled(isGeneratingShare)
             }
         }
-        .onAppear {
+        .task {
             computeMapData()
+            if isWideSpan {
+                try? await Task.sleep(for: .seconds(0.5))
+                nudgeActivationCamera()
+            }
         }
         .sheet(isPresented: $showShareSheet) {
             if let image = shareImage {
@@ -144,7 +148,9 @@ struct ActivationMapView: View {
                             if selectedQSO?.id == annotation.qsoId {
                                 selectedQSO = nil
                             } else {
-                                selectedQSO = activation.qsos.first { $0.id == annotation.qsoId }
+                                selectedQSO = activation.qsos.first {
+                                    $0.id == annotation.qsoId
+                                }
                             }
                         }
                     }
@@ -391,6 +397,19 @@ private extension ActivationMapView {
             qsoCoordinates: coordsForCamera,
             myCoordinate: myCoord
         )
+    }
+
+    private func nudgeActivationCamera() {
+        guard let region = cameraPosition.region else {
+            return
+        }
+        cameraPosition = .region(MKCoordinateRegion(
+            center: CLLocationCoordinate2D(
+                latitude: region.center.latitude + 0.001,
+                longitude: region.center.longitude
+            ),
+            span: region.span
+        ))
     }
 
     func generateAndShare() async {
