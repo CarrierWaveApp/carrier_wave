@@ -1,5 +1,7 @@
-Phase 2 named commands for radio command palette (CAR-123):
-- RadioCommandParser: NamedCommand enum, parseNamedCommand + helpers (lookup, spot, park, summit, power)
-- RadioPaletteView: named command UI summary, execution logic (cluster spot, session update)
-- RadioPaletteHelpers: .command icon case
-- RadioCommandParserTests: 10 Phase 2 tests
+Phase 3 radio command palette commands (CAR-123):
+- RadioCommandParser: CQ, WPM/SPEED, RUN/S&P, FIND, LAST, COUNT commands + rename ParsedToken -> RadioParsedToken
+- RadioBandDefaults: extracted band frequency table to separate file
+- RadioPaletteView: Phase 3 command summaries (CQ, speed, contest mode, find, last, count)
+- RadioPaletteActions: extracted actions to separate file, CQ/speed/contest mode execution
+- ContestManager: added toggleToMode() for palette integration
+- RadioCommandParserPhase3Tests: 16 new tests

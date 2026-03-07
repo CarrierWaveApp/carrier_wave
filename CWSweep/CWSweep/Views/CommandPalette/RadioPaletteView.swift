@@ -24,6 +24,8 @@ struct RadioPaletteView: View {
     @Environment(\.modelContext) var modelContext
     @Environment(RadioManager.self) var radioManager
     @Environment(ClusterManager.self) var clusterManager
+    @Environment(ContestManager.self) var contestManager
+    @Environment(WinKeyerManager.self) var winKeyerManager
     @AppStorage("myCallsign") var myCallsign = ""
 
     var body: some View {
@@ -72,6 +74,12 @@ struct RadioPaletteView: View {
         case .setPark,
              .setSummit: return "Set on session"
         case .setPower: return "Set power"
+        case .sendCQ: return "Send CQ"
+        case .setSpeed: return "Set speed"
+        case .setContestMode: return "Set mode"
+        case .findCall,
+             .lastQSOs,
+             .sessionCount: return "Show"
         }
     }
 
@@ -218,7 +226,14 @@ struct RadioPaletteView: View {
                 helpRow("UP 5", "Split TX +5 kHz")
                 helpRow("QRZ K4ABC", "Look up callsign")
                 helpRow("SPOT K4ABC", "Spot to cluster")
-                helpRow("PARK K-0001", "Set POTA park")
+            }
+            Group {
+                helpRow("CQ", "Send CQ macro (F1)")
+                helpRow("WPM 25", "Set CW speed")
+                helpRow("RUN / S&P", "Contest mode toggle")
+                helpRow("FIND K4ABC", "Search log")
+                helpRow("LAST 10", "Recent QSOs")
+                helpRow("COUNT", "Session QSO count")
             }
         }
     }
@@ -265,7 +280,7 @@ struct RadioPaletteView: View {
         }
     }
 
-    private func tokenPills(_ tokens: [ParsedToken]) -> some View {
+    private func tokenPills(_ tokens: [RadioParsedToken]) -> some View {
         FlowLayout(spacing: 8) {
             ForEach(tokens) { token in
                 tokenPill(token)
@@ -273,7 +288,7 @@ struct RadioPaletteView: View {
         }
     }
 
-    private func tokenPill(_ token: ParsedToken) -> some View {
+    private func tokenPill(_ token: RadioParsedToken) -> some View {
         HStack(spacing: 4) {
             Image(systemName: token.kind.icon)
                 .font(.caption2)
@@ -284,191 +299,6 @@ struct RadioPaletteView: View {
         .padding(.vertical, 4)
         .background(token.state.color.opacity(0.15), in: Capsule())
         .foregroundStyle(token.state.color)
-    }
-
-    private func commandSummary(_ command: RadioCommand) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            if let named = command.namedCommand {
-                namedCommandSummary(named)
-            }
-            if let freq = command.frequencyMHz {
-                summaryRow("Frequency", FrequencyFormatter.formatWithUnit(freq))
-            }
-            if let mode = command.mode {
-                let resolved = RadioCommandParser.resolveMode(mode, frequencyMHz: command.frequencyMHz)
-                if resolved != mode {
-                    summaryRow("Mode", "\(mode) (\(resolved))")
-                } else {
-                    summaryRow("Mode", mode)
-                }
-            }
-            if let split = command.splitDirective {
-                summaryRow("Split", split.description)
-            }
-        }
-    }
-
-    private func namedCommandSummary(_ cmd: NamedCommand) -> some View {
-        Group {
-            switch cmd {
-            case let .lookup(callsign):
-                summaryRow("Action", "Look up \(callsign)")
-            case let .spot(callsign, freq):
-                summaryRow("Action", "Spot \(callsign)")
-                if let freqKHz = freq {
-                    summaryRow("Frequency", FrequencyFormatter.formatWithUnit(freqKHz / 1_000))
-                } else {
-                    summaryRow("Frequency", "Current radio frequency")
-                }
-                if !clusterManager.isConnected {
-                    summaryRow("Warning", "Cluster not connected")
-                }
-            case let .setPark(ref):
-                summaryRow("Action", "Set POTA park to \(ref)")
-            case let .setSummit(ref):
-                summaryRow("Action", "Set SOTA summit to \(ref)")
-            case let .setPower(watts):
-                summaryRow("Action", "Set power to \(watts)W")
-            }
-        }
-    }
-
-    private func summaryRow(_ label: String, _ value: String) -> some View {
-        HStack {
-            Text(label)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .frame(width: 70, alignment: .trailing)
-            Text(value)
-                .font(.caption.weight(.medium).monospacedDigit())
-        }
-    }
-}
-
-// MARK: - RadioPaletteView + Actions
-
-extension RadioPaletteView {
-    func executeCommand() {
-        let (command, _) = RadioCommandParser.parse(searchText)
-        guard !command.isEmpty else {
-            dismiss()
-            return
-        }
-
-        let input = searchText.trimmingCharacters(in: .whitespaces)
-        if !input.isEmpty {
-            RadioPaletteHistory.add(input)
-        }
-
-        Task {
-            await applyCommand(command)
-        }
-        dismiss()
-    }
-
-    func applyCommand(_ command: RadioCommand) async {
-        if let named = command.namedCommand {
-            await applyNamedCommand(named)
-            return
-        }
-        if let freq = command.frequencyMHz {
-            try? await radioManager.tuneToFrequency(freq)
-        }
-        if let mode = command.mode {
-            let resolved = RadioCommandParser.resolveMode(mode, frequencyMHz: command.frequencyMHz)
-            try? await radioManager.setMode(resolved)
-        }
-        if let split = command.splitDirective {
-            await applySplit(split)
-        }
-    }
-
-    func applyNamedCommand(_ cmd: NamedCommand) async {
-        switch cmd {
-        case .lookup:
-            // Lookup is informational — future: open inspector with callsign info
-            break
-
-        case let .spot(callsign, frequencyKHz):
-            guard clusterManager.isConnected else {
-                return
-            }
-            let freq = frequencyKHz ?? (radioManager.frequency * 1_000)
-            let spotCmd = "DX \(String(format: "%.1f", freq)) \(callsign)"
-            clusterManager.sendCommand(spotCmd)
-
-        case let .setPark(reference):
-            updateActiveSession { $0.parkReference = reference }
-
-        case let .setSummit(reference):
-            updateActiveSession { $0.sotaReference = reference }
-
-        case .setPower:
-            // Power control requires CAT protocol extension — not yet implemented
-            break
-        }
-    }
-
-    func updateActiveSession(_ update: (LoggingSession) -> Void) {
-        var descriptor = FetchDescriptor<LoggingSession>(
-            predicate: #Predicate<LoggingSession> { session in
-                session.statusRawValue == "active"
-            },
-            sortBy: [SortDescriptor(\LoggingSession.startedAt, order: .reverse)]
-        )
-        descriptor.fetchLimit = 1
-
-        guard let session = try? modelContext.fetch(descriptor).first else {
-            return
-        }
-        update(session)
-        try? modelContext.save()
-    }
-
-    func applySplit(_ split: SplitDirective) async {
-        switch split {
-        case let .up(kHz):
-            try? await radioManager.setXIT(true)
-            try? await radioManager.setXITOffset(Int(kHz * 1_000))
-        case let .down(kHz):
-            try? await radioManager.setXIT(true)
-            try? await radioManager.setXITOffset(Int(-kHz * 1_000))
-        case let .explicitFrequency(kHz):
-            try? await radioManager.setXIT(true)
-            let currentKHz = radioManager.frequency * 1_000
-            let offsetHz = Int((kHz - currentKHz) * 1_000)
-            try? await radioManager.setXITOffset(offsetHz)
-        case .off:
-            try? await radioManager.clearRITXIT()
-        }
-    }
-
-    func navigateHistory(direction: HistoryDirection) {
-        guard !recentCommands.isEmpty else {
-            return
-        }
-
-        switch direction {
-        case .up:
-            if let current = historyIndex {
-                historyIndex = min(current + 1, recentCommands.count - 1)
-            } else {
-                historyIndex = 0
-            }
-        case .down:
-            if let current = historyIndex {
-                if current <= 0 {
-                    historyIndex = nil
-                    searchText = ""
-                    return
-                }
-                historyIndex = current - 1
-            }
-        }
-
-        if let idx = historyIndex, idx < recentCommands.count {
-            searchText = recentCommands[idx]
-        }
     }
 }
 
