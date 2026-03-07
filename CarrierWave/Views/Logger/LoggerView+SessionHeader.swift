@@ -57,58 +57,58 @@ extension LoggerView {
                 .font(.subheadline.weight(.medium))
                 .foregroundStyle(.green)
 
-            sessionActionsButton(session)
+            sessionEndButton(session)
+            sessionMoreButton(session)
         }
     }
 
-    func sessionActionsButton(_ session: LoggingSession) -> some View {
+    func sessionEndButton(_: LoggingSession) -> some View {
         Button {
             callsignFieldFocused = false
-            showEndSessionConfirmation = true
+            handleEndSession()
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: "stop.fill")
+                    .font(.system(size: 8))
+                Text("End")
+            }
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(.red)
+            .clipShape(RoundedRectangle(cornerRadius: 6))
+        }
+        .buttonStyle(.plain)
+    }
+
+    func sessionMoreButton(_ session: LoggingSession) -> some View {
+        Menu {
+            Button {
+                spotMismatchesDismissed = false
+                refreshSpotMismatches()
+            } label: {
+                Label("Review Spot Mismatches", systemImage: "exclamationmark.triangle")
+            }
+            Button {
+                sessionManager?.pauseSession()
+            } label: {
+                Label("Pause Session", systemImage: "pause")
+            }
+            Divider()
+            Button(role: .destructive) {
+                showDeleteSessionSheet = true
+            } label: {
+                Label("Delete Session", systemImage: "trash")
+            }
         } label: {
             Image(systemName: "ellipsis")
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.primary)
-                .padding(.horizontal, 12)
+                .padding(.horizontal, 8)
                 .padding(.vertical, 6)
                 .background(Color(.systemGray4))
                 .clipShape(RoundedRectangle(cornerRadius: 6))
-        }
-        .buttonStyle(.plain)
-        .confirmationDialog(
-            "Session Actions",
-            isPresented: $showEndSessionConfirmation,
-            titleVisibility: .visible
-        ) {
-            Button("Review Spot Mismatches") {
-                spotMismatchesDismissed = false
-                refreshSpotMismatches()
-            }
-            Button("Pause Session") {
-                sessionManager?.pauseSession()
-            }
-            Button("End Session") {
-                handleEndSession()
-            }
-            Button("Delete Session", role: .destructive) {
-                showDeleteSessionSheet = true
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            if session.frequency == nil, !sessionQSOs.isEmpty {
-                Text(
-                    "Pause keeps the session active for later. "
-                        + "End keeps your \(sessionQSOs.count) QSOs for sync. "
-                        + "QSOs were logged without a frequency and will show as \"Unknown\" band. "
-                        + "Delete hides them permanently."
-                )
-            } else {
-                Text(
-                    "Pause keeps the session active for later. "
-                        + "End keeps your \(sessionQSOs.count) QSOs for sync. "
-                        + "Delete hides them permanently."
-                )
-            }
         }
     }
 

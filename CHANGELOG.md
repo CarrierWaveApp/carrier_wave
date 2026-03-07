@@ -4,6 +4,17 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Add multi-step end session flow with session summary, POTA upload, and brag sheet in a single guided sheet
+- Add visible red "End" button in session header for quick session ending
+- Add session "More" menu with pause, spot mismatch review, and delete options
+
+### Changed
+- Auto-sync club member lists on app launch and foreground resume (no longer requires tapping into each club)
+
+### Fixed
+- Fix club memberships not appearing in logger until each club was manually refreshed
+
 ## [1.55.0] - 2026-03-06
 
 ### Added

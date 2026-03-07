@@ -577,7 +577,9 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `SessionMapPanelView.swift` | Map panel showing session QSOs for MAP command |
 | `NextRoveStopSheet.swift` | Half-sheet for transitioning to next park stop in a rove |
 | `RoveProgressBar.swift` | Horizontally scrolling rove stop pills for session header |
-| `POTAUploadPromptSheet.swift` | Post-session modal prompting POTA upload |
+| `EndSessionFlowView.swift` | Multi-step end session flow (summary, POTA upload, brag sheet) |
+| `EndSessionFlowView+Steps.swift` | POTA upload and brag sheet step views for end session flow |
+| `POTAUploadPromptSheet.swift` | Post-session modal prompting POTA upload (legacy, kept for reference) |
 | `SpotFilters.swift` | Band and mode filter enums for spots |
 | `QuickEntryPreview.swift` | Quick entry token display with color-coded badges |
 | `SpotContactMismatchBanner.swift` | Banner showing spot-vs-QSO callsign near-misses |

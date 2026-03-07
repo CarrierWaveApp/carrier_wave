@@ -339,24 +339,18 @@ extension LoggerView {
 
     // MARK: - Session End Handling
 
-    /// Handle end session action - checks for POTA upload prompt first
+    /// Handle end session action — shows multi-step end session flow
     func handleEndSession() {
         guard let session = sessionManager?.activeSession else {
             completeSessionEnd()
             return
         }
 
-        // Check if this is a POTA session with unuploaded QSOs
-        if session.isPOTA,
-           !potaUploadPromptDisabled
-        {
-            // Find QSOs that need upload to POTA
+        // Populate POTA upload state if applicable
+        if session.isPOTA, !potaUploadPromptDisabled {
             let qsosNeedingUpload = sessionQSOs.filter { $0.needsUpload(to: .pota) }
-
             if !qsosNeedingUpload.isEmpty {
                 pendingSessionEndQSOs = qsosNeedingUpload
-
-                // Build rove stop summaries or single park info
                 if session.isRove {
                     let stops = session.mergedRoveStops
                     var summaries: [RoveUploadSummary] = []
@@ -384,33 +378,42 @@ extension LoggerView {
                     pendingSessionEndParkRef = parkRef
                     pendingSessionEndParkName = lookupParkName(parkRef)
                     pendingSessionEndQSOCount = qsosNeedingUpload.count
-                } else {
-                    completeSessionEnd()
-                    return
                 }
 
-                // Check maintenance window status
                 pendingSessionEndInMaintenance = POTAClient.isInMaintenanceWindow()
                 pendingSessionEndMaintenanceRemaining =
                     pendingSessionEndInMaintenance
                         ? POTAClient.formatMaintenanceTimeRemaining() : nil
-
-                // Show the upload prompt (with maintenance warning if applicable)
-                showPOTAUploadPrompt = true
-                return
             }
         }
 
-        // No POTA upload needed, end session directly
-        completeSessionEnd()
+        showEndSessionFlow = true
     }
 
-    /// Complete the session end after any POTA upload prompt handling
-    func completeSessionEnd() {
+    /// Actually end the session and build the activity item for the brag sheet
+    func performSessionEnd() {
+        guard sessionManager?.activeSession != nil else {
+            return
+        }
+
         let hadQSOs = !sessionQSOs.isEmpty
         sessionManager?.endSession()
         if hadQSOs {
             onSessionEnd?()
+        }
+
+        // Find the just-created ActivityItem for the brag sheet display
+        endSessionActivityItem = fetchLatestOwnActivity()
+    }
+
+    /// Complete the session end flow (called when the flow sheet is dismissed)
+    func completeSessionEnd() {
+        let hadQSOs = !sessionQSOs.isEmpty
+        if sessionManager?.activeSession != nil {
+            sessionManager?.endSession()
+            if hadQSOs {
+                onSessionEnd?()
+            }
         }
 
         // Clear pending state
@@ -421,6 +424,7 @@ extension LoggerView {
         pendingSessionEndRoveStops = []
         pendingSessionEndInMaintenance = false
         pendingSessionEndMaintenanceRemaining = nil
+        endSessionActivityItem = nil
     }
 
     /// Upload pending POTA QSOs from the upload prompt (supports multi-park)

@@ -103,15 +103,19 @@ extension LoggerView {
 
             Button {
                 callsignFieldFocused = false
-                showEndSessionConfirmation = true
+                handleEndSession()
             } label: {
-                Image(systemName: "ellipsis")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.primary)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(Color(.systemGray4))
-                    .clipShape(RoundedRectangle(cornerRadius: 6))
+                HStack(spacing: 3) {
+                    Image(systemName: "stop.fill")
+                        .font(.system(size: 7))
+                    Text("End")
+                }
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(.red)
+                .clipShape(RoundedRectangle(cornerRadius: 6))
             }
             .buttonStyle(.plain)
         }

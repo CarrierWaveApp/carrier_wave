@@ -113,6 +113,22 @@ final class ClubsSyncService: ObservableObject {
 
         // Update local models
         try updateLocalClubs(from: clubDTOs, context: ctx)
+
+        // Fetch members for each club so the callsign cache is populated
+        // without requiring the user to tap into each club individually
+        for dto in clubDTOs {
+            do {
+                let details = try await resolvedClient.getClubDetails(
+                    clubId: dto.id,
+                    sourceURL: sourceURL,
+                    authToken: authToken,
+                    includeMembers: true
+                )
+                try updateClubFromDetails(details, context: ctx)
+            } catch {
+                // Continue with other clubs if one fails
+            }
+        }
     }
 
     /// Sync a specific club's details and members

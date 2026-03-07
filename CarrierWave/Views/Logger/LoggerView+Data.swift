@@ -387,4 +387,19 @@ extension LoggerView {
         let seconds = total % 60
         return String(format: "%d:%02d", minutes, seconds)
     }
+
+    // MARK: - Activity Item Fetch
+
+    /// Fetch the most recent own sessionCompleted ActivityItem
+    func fetchLatestOwnActivity() -> ActivityItem? {
+        let typeRaw = ActivityType.sessionCompleted.rawValue
+        var descriptor = FetchDescriptor<ActivityItem>(
+            predicate: #Predicate {
+                $0.isOwn && $0.activityTypeRawValue == typeRaw
+            },
+            sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+        )
+        descriptor.fetchLimit = 1
+        return try? modelContext.fetch(descriptor).first
+    }
 }

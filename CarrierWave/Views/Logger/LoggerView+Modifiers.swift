@@ -202,7 +202,7 @@ extension LoggerView {
             }
     }
 
-    /// QRQ Crew spot and POTA upload prompt and delete session sheets
+    /// QRQ Crew spot, end session flow, and delete session sheets
     private func applyEndSessionSheets(_ content: some View) -> some View {
         content
             .sheet(isPresented: $showQRQCrewSpotSheet) {
@@ -220,26 +220,11 @@ extension LoggerView {
                     )
                 }
             }
-            .sheet(isPresented: $showPOTAUploadPrompt) {
-                POTAUploadPromptSheet(
-                    parkReference: pendingSessionEndParkRef ?? "",
-                    parkName: pendingSessionEndParkName,
-                    qsoCount: pendingSessionEndQSOCount,
-                    roveStops: pendingSessionEndRoveStops,
-                    isInMaintenance: pendingSessionEndInMaintenance,
-                    maintenanceTimeRemaining: pendingSessionEndMaintenanceRemaining,
-                    onUpload: { await uploadPendingPOTAQSOs() },
-                    onLater: {
-                        showPOTAUploadPrompt = false
-                        completeSessionEnd()
-                    },
-                    onDontAskAgain: {
-                        potaUploadPromptDisabled = true
-                        showPOTAUploadPrompt = false
-                        completeSessionEnd()
-                    }
-                )
-            }
+            .sheet(
+                isPresented: $showEndSessionFlow,
+                onDismiss: { completeSessionEnd() },
+                content: { endSessionFlowSheet }
+            )
             .sheet(isPresented: $showDeleteSessionSheet) {
                 DeleteSessionConfirmationSheet(
                     qsoCount: sessionQSOs.count,
@@ -250,6 +235,39 @@ extension LoggerView {
                     onCancel: { showDeleteSessionSheet = false }
                 )
             }
+    }
+
+    /// Build the end session flow sheet with current session data
+    @ViewBuilder
+    private var endSessionFlowSheet: some View {
+        if let session = sessionManager?.activeSession {
+            let bands = Array(Set(sessionQSOs.map(\.band))).sorted()
+            let modes = Array(Set(sessionQSOs.map(\.mode))).sorted()
+
+            EndSessionFlowView(
+                sessionTitle: session.displayTitle,
+                qsoCount: sessionQSOs.count,
+                duration: session.formattedDuration,
+                bands: bands,
+                modes: modes,
+                isPOTA: session.isPOTA,
+                potaParkRef: pendingSessionEndParkRef,
+                potaParkName: pendingSessionEndParkName,
+                potaQSOsNeedingUpload: pendingSessionEndQSOCount,
+                roveStops: pendingSessionEndRoveStops,
+                isInMaintenance: pendingSessionEndInMaintenance,
+                maintenanceTimeRemaining: pendingSessionEndMaintenanceRemaining,
+                hasNoFrequency: session.frequency == nil && !sessionQSOs.isEmpty,
+                onEndSession: {
+                    performSessionEnd()
+                    return endSessionActivityItem
+                },
+                onUpload: { await uploadPendingPOTAQSOs() },
+                onComplete: {
+                    showEndSessionFlow = false
+                }
+            )
+        }
     }
 
     /// Handle QSY spot confirmation on band/mode sheet dismiss

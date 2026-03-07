@@ -60,8 +60,9 @@ struct LoggerView: View {
     @FocusState var compactFieldFocus: CompactField?
     @State var showWebSDRPanel = false
     @State var showBLERadioPanel = false
-    /// Session end/delete confirmation
-    @State var showEndSessionConfirmation = false
+    /// End session multi-step flow
+    @State var showEndSessionFlow = false
+    @State var endSessionActivityItem: ActivityItem?
     /// QSO being edited (for tap-to-edit callsign feature)
     @State var editingQSO: QSO?
 
@@ -169,8 +170,6 @@ struct LoggerView: View {
 
     @State var showDeleteSessionSheet = false
 
-    /// POTA upload prompt after session end
-    @State var showPOTAUploadPrompt = false
     @State var pendingSessionEndParkRef: String?
     @State var pendingSessionEndParkName: String?
     @State var pendingSessionEndQSOCount = 0
