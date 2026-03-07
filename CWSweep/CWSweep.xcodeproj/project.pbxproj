@@ -88,6 +88,7 @@
 		85E4C45BE79BE122A730F840 /* ContestExchangeParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BA5860265D3D1962DA1148F /* ContestExchangeParser.swift */; };
 		85EB67B1C51BD383285D39F7 /* CallsignInfoCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 208895258634B310D2F07374 /* CallsignInfoCache.swift */; };
 		88F679228A39202A255BAE05 /* SpotTypeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDF04E7F71320C1DB29C9419 /* SpotTypeTests.swift */; };
+		8951A048261948EE0F45FAA8 /* YaesuProtocolHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E65E2ED350272364A6EDBCD /* YaesuProtocolHandler.swift */; };
 		8A3BF181EAA1E2378BA53EE0 /* CIVProtocolHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = D36D9DA2491272FE2815CA47 /* CIVProtocolHandler.swift */; };
 		8BD936FAEDBE49B9526C40E5 /* SDRTranscriptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBDDB71652A2EC749E6498CE /* SDRTranscriptTests.swift */; };
 		8C727A8687886F17F59F1678 /* LocationGridResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = F71EB711077BDCBE38403C07 /* LocationGridResolver.swift */; };
@@ -202,6 +203,7 @@
 		3929C2FF72CC56029E75269C /* CarrierWaveData */ = {isa = PBXFileReference; lastKnownFileType = folder; name = CarrierWaveData; path = ../CarrierWaveData; sourceTree = SOURCE_ROOT; };
 		3BA5860265D3D1962DA1148F /* ContestExchangeParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContestExchangeParser.swift; sourceTree = "<group>"; };
 		3D54D7862949CF1053D8B17F /* RadioControlView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadioControlView.swift; sourceTree = "<group>"; };
+		3E65E2ED350272364A6EDBCD /* YaesuProtocolHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YaesuProtocolHandler.swift; sourceTree = "<group>"; };
 		3F096BD4326B3487F0591263 /* ContestExchangeParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContestExchangeParserTests.swift; sourceTree = "<group>"; };
 		4220FF6CEED7E72400092E9E /* SDRPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SDRPlayerView.swift; sourceTree = "<group>"; };
 		42A0887286E9DFCEEAF44831 /* ParsedFieldSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParsedFieldSummary.swift; sourceTree = "<group>"; };
@@ -730,6 +732,7 @@
 				1A4D9263FE96FED9F51C34E8 /* RadioManager.swift */,
 				810DCC46AD8FB4396CFCFBE4 /* RadioProtocolHandler.swift */,
 				5481BF64FC3710AB78901C3F /* RadioSession.swift */,
+				3E65E2ED350272364A6EDBCD /* YaesuProtocolHandler.swift */,
 			);
 			path = Radio;
 			sourceTree = "<group>";
@@ -1042,6 +1045,7 @@
 				6191E18B3799982CC52AF128 /* WinKeyerSettingsTab.swift in Sources */,
 				9BB1DF0551667CA3F2F3C057 /* WinKeyerView.swift in Sources */,
 				8D2361F906500316BD7BC6B7 /* WorkspaceView.swift in Sources */,
+				8951A048261948EE0F45FAA8 /* YaesuProtocolHandler.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
