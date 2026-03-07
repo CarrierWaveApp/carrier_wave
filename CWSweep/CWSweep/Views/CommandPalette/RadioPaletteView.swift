@@ -17,6 +17,9 @@ struct RadioPaletteView: View {
         case down
     }
 
+    /// Callback to switch to the app command palette
+    var onSwitchToAppPalette: (() -> Void)?
+
     @State var searchText = ""
     @State var recentCommands: [String] = RadioPaletteHistory.load()
     @State var historyIndex: Int?
@@ -168,6 +171,8 @@ struct RadioPaletteView: View {
         Group {
             if searchText.isEmpty {
                 emptyStateView
+            } else if searchText.hasPrefix(">") {
+                paletteBridgeView
             } else {
                 parseResultView
             }
@@ -238,12 +243,31 @@ struct RadioPaletteView: View {
         }
     }
 
+    // MARK: - Palette Bridge
+
+    private var paletteBridgeView: some View {
+        VStack(spacing: 12) {
+            Text("Switch to App Palette")
+                .font(.headline)
+            Text("Press Enter to open the app command palette (Cmd+K)")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            keyHint("Enter", "Switch")
+        }
+        .frame(maxWidth: .infinity)
+        .padding(16)
+    }
+
     // MARK: - Parse Result
 
     private var parseResultView: some View {
-        let (command, tokens) = RadioCommandParser.parse(searchText)
+        let expanded = RadioCommandParser.expandAliases(searchText, aliases: RadioAliasStore.load())
+        let (command, tokens) = RadioCommandParser.parse(expanded)
 
         return VStack(alignment: .leading, spacing: 12) {
+            if expanded != searchText.trimmingCharacters(in: .whitespaces) {
+                aliasIndicator(expanded: expanded)
+            }
             if tokens.isEmpty || tokens.allSatisfy({ $0.kind == .unknown }) {
                 noParseResult
             } else {
@@ -257,14 +281,43 @@ struct RadioPaletteView: View {
     }
 
     private var noParseResult: some View {
-        VStack(spacing: 8) {
+        let suggestions = RadioCommandParser.suggestCommands(for: searchText)
+        return VStack(spacing: 8) {
             Text("Could not parse command")
                 .foregroundStyle(.secondary)
-            Text("Try: frequency [mode] [UP/DOWN offset]")
-                .font(.caption)
-                .foregroundStyle(.tertiary)
+            if !suggestions.isEmpty {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Did you mean:")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                    ForEach(suggestions, id: \.self) { cmd in
+                        Button { searchText = cmd + " " } label: {
+                            Text(cmd)
+                                .font(.caption.monospaced())
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(.quaternary, in: RoundedRectangle(cornerRadius: 4))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            } else {
+                Text("Try: frequency [mode] [UP/DOWN offset]")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
         }
         .frame(maxWidth: .infinity)
+    }
+
+    private func aliasIndicator(expanded: String) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: "arrow.right.circle")
+                .font(.caption2)
+            Text("Alias → \(expanded)")
+                .font(.caption)
+        }
+        .foregroundStyle(.blue)
     }
 
     private func helpRow(_ command: String, _ description: String) -> some View {

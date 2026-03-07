@@ -7,7 +7,15 @@ import SwiftUI
 
 extension RadioPaletteView {
     func executeCommand() {
-        let (command, _) = RadioCommandParser.parse(searchText)
+        // Handle `>` bridge to app palette
+        if searchText.hasPrefix(">") {
+            dismiss()
+            onSwitchToAppPalette?()
+            return
+        }
+
+        let expanded = RadioCommandParser.expandAliases(searchText, aliases: RadioAliasStore.load())
+        let (command, _) = RadioCommandParser.parse(expanded)
         guard !command.isEmpty else {
             dismiss()
             return
@@ -230,4 +238,35 @@ struct QSOSearchResult: Identifiable, Sendable {
     let timestamp: Date
     let band: String
     let mode: String
+}
+
+// MARK: - RadioAliasStore
+
+/// UserDefaults-backed store for custom command aliases
+enum RadioAliasStore {
+    // MARK: Internal
+
+    static func load() -> [String: String] {
+        UserDefaults.standard.dictionary(forKey: key) as? [String: String] ?? [:]
+    }
+
+    static func save(_ aliases: [String: String]) {
+        UserDefaults.standard.set(aliases, forKey: key)
+    }
+
+    static func add(alias: String, expansion: String) {
+        var aliases = load()
+        aliases[alias.uppercased()] = expansion
+        save(aliases)
+    }
+
+    static func remove(alias: String) {
+        var aliases = load()
+        aliases.removeValue(forKey: alias.uppercased())
+        save(aliases)
+    }
+
+    // MARK: Private
+
+    private static let key = "radioPaletteAliases"
 }

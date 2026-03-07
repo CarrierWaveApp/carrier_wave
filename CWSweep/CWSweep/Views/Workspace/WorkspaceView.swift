@@ -168,10 +168,16 @@ struct WorkspaceView: View {
             }
         }
         .sheet(isPresented: $showCommandPalette) {
-            CommandPaletteView()
+            CommandPaletteView(onSwitchToRadioPalette: {
+                showCommandPalette = false
+                showRadioPalette = true
+            })
         }
         .sheet(isPresented: $showRadioPalette) {
-            RadioPaletteView()
+            RadioPaletteView(onSwitchToAppPalette: {
+                showRadioPalette = false
+                showCommandPalette = true
+            })
         }
         .sheet(isPresented: $showContestSetup) {
             ContestSetupView(contestManager: contestManager)

@@ -28,7 +28,8 @@ Pure logic library that can be tested without iOS Simulator. Run tests with `mak
 | `Sources/CarrierWaveCore/ParkReference.swift` | Park reference parsing and validation |
 | `Sources/CarrierWaveCore/QSOSnapshot.swift` | Lightweight QSO representation for matching |
 | `Sources/CarrierWaveCore/QuickEntryParser.swift` | Quick entry string parsing |
-| `Sources/CarrierWaveCore/RadioCommandParser.swift` | Radio command palette parser (frequency, mode, band shortcuts, split directives) |
+| `Sources/CarrierWaveCore/RadioBandDefaults.swift` | Band frequency defaults table (CW, SSB, FT8, FT4 per band) |
+| `Sources/CarrierWaveCore/RadioCommandParser.swift` | Radio command palette parser (frequency, mode, band shortcuts, split directives, named commands) |
 | `Sources/CarrierWaveCore/ServiceType.swift` | Sync service type enum (QRZ, POTA, LoFi, etc.) |
 | `Sources/CarrierWaveCore/StreakCalculator.swift` | Streak calculation from date sets |
 | `Sources/CarrierWaveCore/SuggestionCategory.swift` | CW suggestion category enum |

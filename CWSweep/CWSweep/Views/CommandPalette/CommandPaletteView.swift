@@ -7,6 +7,9 @@ import SwiftUI
 struct CommandPaletteView: View {
     // MARK: Internal
 
+    /// Callback to switch to the radio command palette
+    var onSwitchToRadioPalette: (() -> Void)?
+
     var body: some View {
         VStack(spacing: 0) {
             // Search field
@@ -30,6 +33,8 @@ struct CommandPaletteView: View {
             // Results
             if searchText.isEmpty {
                 quickActions
+            } else if searchText.hasPrefix(">") {
+                radioBridgeView
             } else {
                 filteredResults
             }
@@ -157,7 +162,35 @@ struct CommandPaletteView: View {
         }
     }
 
+    private var radioBridgeView: some View {
+        VStack(spacing: 12) {
+            Text("Switch to Radio Palette")
+                .font(.headline)
+            Text("Press Enter to open the radio command palette (Cmd+Shift+P)")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            HStack(spacing: 4) {
+                Text("Enter")
+                    .font(.caption.weight(.medium))
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(.quaternary, in: RoundedRectangle(cornerRadius: 4))
+                Text("Switch")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(16)
+    }
+
     private func executeTopResult() {
+        if searchText.hasPrefix(">") {
+            dismiss()
+            onSwitchToRadioPalette?()
+            return
+        }
+
         let results = matchingCommands
         if let first = results.first {
             first.action()

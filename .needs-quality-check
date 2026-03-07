@@ -1,7 +1,7 @@
-Phase 3 radio command palette commands (CAR-123):
-- RadioCommandParser: CQ, WPM/SPEED, RUN/S&P, FIND, LAST, COUNT commands + rename ParsedToken -> RadioParsedToken
-- RadioBandDefaults: extracted band frequency table to separate file
-- RadioPaletteView: Phase 3 command summaries (CQ, speed, contest mode, find, last, count)
-- RadioPaletteActions: extracted actions to separate file, CQ/speed/contest mode execution
-- ContestManager: added toggleToMode() for palette integration
-- RadioCommandParserPhase3Tests: 16 new tests
+Phase 4 radio command palette (CAR-123):
+- RadioCommandParser: fuzzy command suggestions (suggestCommands) + alias expansion (expandAliases)
+- RadioPaletteView: `>` bridge to app palette, alias indicator, fuzzy "Did you mean?" suggestions
+- RadioPaletteActions: bridge handling in executeCommand(), RadioAliasStore for custom aliases
+- CommandPaletteView: `>` bridge to radio palette (reverse direction), onSwitchToRadioPalette callback
+- WorkspaceView: wire onSwitchToAppPalette and onSwitchToRadioPalette callbacks between palettes
+- RadioCommandParserPhase4Tests: 9 new tests (suggestCommands, expandAliases)

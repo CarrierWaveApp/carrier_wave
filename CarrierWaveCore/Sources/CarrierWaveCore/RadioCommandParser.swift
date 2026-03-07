@@ -1,8 +1,3 @@
-//
-//  RadioCommandParser.swift
-//  CarrierWaveCore
-//
-
 import Foundation
 
 // MARK: - RadioCommand
@@ -147,6 +142,28 @@ public enum RadioCommandParser: Sendable {
         "CW", "SSB", "USB", "LSB", "FT8", "FT4", "RTTY",
         "PSK", "PSK31", "AM", "FM", "DIGI", "DATA",
     ]
+
+    /// All recognized command keywords for fuzzy matching
+    public static let commandKeywords: [String] = [
+        "QRZ", "SPOT", "PARK", "SUMMIT", "PWR", "POWER",
+        "CQ", "WPM", "SPEED", "RUN", "S&P", "SP",
+        "FIND", "LAST", "COUNT",
+    ]
+
+    /// Return command keywords matching a prefix (case-insensitive)
+    public static func suggestCommands(for prefix: String) -> [String] {
+        let upper = prefix.uppercased()
+        return commandKeywords.filter { $0.hasPrefix(upper) }
+    }
+
+    /// Expand user-defined aliases before parsing
+    public static func expandAliases(_ input: String, aliases: [String: String]) -> String {
+        let trimmed = input.trimmingCharacters(in: .whitespaces)
+        guard let expansion = aliases[trimmed.uppercased()] else {
+            return trimmed
+        }
+        return expansion
+    }
 
     /// Parse input string into a RadioCommand and list of parsed tokens
     public static func parse(_ input: String) -> (command: RadioCommand, tokens: [RadioParsedToken]) {
@@ -468,8 +485,6 @@ public enum RadioCommandParser: Sendable {
                                      displayText: "Session QSO count", state: .valid)
         return (RadioCommand(namedCommand: .sessionCount), [token])
     }
-
-    // MARK: - Formatting Helpers
 
     private static func formatFrequency(_ mhz: Double) -> String {
         FrequencyFormatter.format(mhz)
