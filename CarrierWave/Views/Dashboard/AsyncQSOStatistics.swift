@@ -44,10 +44,10 @@ final class AsyncQSOStatistics {
     var huntsThisMonth: Int = 0
     var newDXCCThisYear: Int = 0
 
-    // MARK: - WAS (Worked All States) - QTH only
+    // MARK: - WAS (Worked All States)
 
-    var wasStateCounts: [String: Int] = [:]
-    var wasStateCallsigns: [String: [String]] = [:]
+    var wasData: [WASFilterKey: WASStateData] = [:]
+    var wasAvailableModes: [String] = []
 
     // MARK: - Service stats
 
@@ -191,8 +191,8 @@ final class AsyncQSOStatistics {
         topFriendCount = 0
         topHunter = nil
         topHunterCount = 0
-        wasStateCounts = [:]
-        wasStateCallsigns = [:]
+        wasData = [:]
+        wasAvailableModes = []
         stats = nil
         hasComputed = false
     }
@@ -278,8 +278,8 @@ final class AsyncQSOStatistics {
         activityByDate = computed.activityByDate
         activationActivityByDate = computed.activationActivityByDate
         activityLogActivityByDate = computed.activityLogActivityByDate
-        wasStateCounts = computed.wasStateCounts
-        wasStateCallsigns = computed.wasStateCallsigns
+        wasData = computed.wasData
+        wasAvailableModes = computed.wasAvailableModes
     }
 
     private func cleanup() {

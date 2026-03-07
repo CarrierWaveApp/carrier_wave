@@ -26,6 +26,30 @@ struct StatsQSOSnapshot: Sendable {
     let loggingSessionId: UUID?
 }
 
+// MARK: - WASSource
+
+/// Source filter for WAS data
+nonisolated enum WASSource: String, Sendable, Hashable, CaseIterable {
+    case qthOnly = "From QTH"
+    case all = "All"
+}
+
+// MARK: - WASFilterKey
+
+/// Combined filter key for pre-computed WAS data
+nonisolated struct WASFilterKey: Sendable, Hashable {
+    let source: WASSource
+    let mode: String? // nil = all modes
+}
+
+// MARK: - WASStateData
+
+/// Pre-computed state counts and callsigns for a WAS filter combination
+nonisolated struct WASStateData: Sendable {
+    var stateCounts: [String: Int] = [:]
+    var stateCallsigns: [String: [String]] = [:]
+}
+
 // MARK: - ComputedStats
 
 /// All computed statistics, sent back to main actor when done.
@@ -110,9 +134,10 @@ struct ComputedStats: Sendable {
     var topHunter: String?
     var topHunterCount: Int = 0
 
-    // WAS (Worked All States) - QTH-only QSOs (no park reference)
-    var wasStateCounts: [String: Int] = [:]
-    var wasStateCallsigns: [String: [String]] = [:]
+    // WAS (Worked All States)
+    // Keyed by WASFilterKey (source × mode) for client-side filtering
+    var wasData: [WASFilterKey: WASStateData] = [:]
+    var wasAvailableModes: [String] = [] // Sorted modes with state QSOs
 }
 
 // MARK: - StatsComputationActor

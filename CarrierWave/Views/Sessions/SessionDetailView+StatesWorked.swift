@@ -93,6 +93,60 @@ enum USStates {
     }
 }
 
+// MARK: - WASCard
+
+/// Dashboard card with source/mode filter controls wrapping the mosaic
+struct WASCard: View {
+    // MARK: Internal
+
+    let wasData: [WASFilterKey: WASStateData]
+    let availableModes: [String]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            wasFilterControls
+            StatesWorkedMosaic(
+                stateCounts: currentData.stateCounts,
+                stateCallsigns: currentData.stateCallsigns
+            )
+        }
+        .padding()
+        .background(Color(.systemGray6))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+
+    // MARK: Private
+
+    @State private var selectedSource: WASSource = .qthOnly
+    @State private var selectedMode: String?
+
+    private var currentData: WASStateData {
+        let key = WASFilterKey(source: selectedSource, mode: selectedMode)
+        return wasData[key] ?? WASStateData()
+    }
+
+    private var wasFilterControls: some View {
+        HStack(spacing: 12) {
+            Picker("Source", selection: $selectedSource) {
+                ForEach(WASSource.allCases, id: \.self) { source in
+                    Text(source.rawValue).tag(source)
+                }
+            }
+            .pickerStyle(.segmented)
+            .frame(maxWidth: 200)
+
+            Picker("Mode", selection: $selectedMode) {
+                Text("All Modes").tag(String?.none)
+                ForEach(availableModes, id: \.self) { mode in
+                    Text(mode).tag(Optional(mode))
+                }
+            }
+            .pickerStyle(.menu)
+            .tint(.secondary)
+        }
+    }
+}
+
 // MARK: - StatesWorkedMosaic
 
 struct StatesWorkedMosaic: View {

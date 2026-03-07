@@ -333,27 +333,50 @@ extension StatsComputationActor {
         "SD", "TN", "TX", "UT", "VA", "VT", "WA", "WI", "WV", "WY",
     ]
 
-    /// Compute WAS (Worked All States) from QTH-only QSOs (no park reference)
+    /// Compute WAS (Worked All States) for all source × mode combinations
     func computeWAS(into stats: inout ComputedStats, from realQSOs: [StatsQSOSnapshot]) {
-        // Filter to QTH-only QSOs (not during a POTA activation)
         let qthQSOs = realQSOs.filter { $0.parkReference == nil || $0.parkReference!.isEmpty }
 
-        var stateCounts: [String: Int] = [:]
-        var stateCallsigns: [String: [String]] = [:]
+        // Collect all modes that have state QSOs
+        var modesWithStates: Set<String> = []
 
-        for qso in qthQSOs {
-            guard let state = qso.state?.uppercased().trimmingCharacters(in: .whitespaces),
-                  !state.isEmpty,
-                  Self.usStateAbbreviations.contains(state)
-            else {
-                continue
+        // Build data for each source × mode combination
+        var data: [WASFilterKey: WASStateData] = [:]
+
+        for source in WASSource.allCases {
+            let sourceQSOs = source == .qthOnly ? qthQSOs : realQSOs
+
+            // All modes for this source
+            var allModesData = WASStateData()
+            // Per-mode data
+            var modeDataMap: [String: WASStateData] = [:]
+
+            for qso in sourceQSOs {
+                guard let state = qso.state?.uppercased().trimmingCharacters(in: .whitespaces),
+                      !state.isEmpty,
+                      Self.usStateAbbreviations.contains(state)
+                else {
+                    continue
+                }
+
+                allModesData.stateCounts[state, default: 0] += 1
+                allModesData.stateCallsigns[state, default: []].append(qso.callsign)
+
+                let mode = qso.mode.uppercased()
+                modeDataMap[mode, default: WASStateData()].stateCounts[state, default: 0] += 1
+                modeDataMap[mode, default: WASStateData()].stateCallsigns[state, default: []]
+                    .append(qso.callsign)
+                modesWithStates.insert(mode)
             }
-            stateCounts[state, default: 0] += 1
-            stateCallsigns[state, default: []].append(qso.callsign)
+
+            data[WASFilterKey(source: source, mode: nil)] = allModesData
+            for (mode, modeData) in modeDataMap {
+                data[WASFilterKey(source: source, mode: mode)] = modeData
+            }
         }
 
-        stats.wasStateCounts = stateCounts
-        stats.wasStateCallsigns = stateCallsigns
+        stats.wasData = data
+        stats.wasAvailableModes = modesWithStates.sorted()
     }
 
     /// Compute top frequency, friend, and hunter for the favorites card

@@ -137,17 +137,11 @@ extension DashboardView {
 
     @ViewBuilder
     var wasCard: some View {
-        let stateCounts = asyncStats.wasStateCounts
-        if !stateCounts.isEmpty {
-            VStack(alignment: .leading, spacing: 12) {
-                StatesWorkedMosaic(
-                    stateCounts: stateCounts,
-                    stateCallsigns: asyncStats.wasStateCallsigns
-                )
-            }
-            .padding()
-            .background(Color(.systemGray6))
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+        if !asyncStats.wasData.isEmpty {
+            WASCard(
+                wasData: asyncStats.wasData,
+                availableModes: asyncStats.wasAvailableModes
+            )
         }
     }
 
