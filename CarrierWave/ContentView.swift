@@ -301,6 +301,7 @@ struct ContentView: View {
         }
         .tuneInCellularAlert(manager: tuneInManager)
         .tuneInStrategySheet(manager: tuneInManager)
+        .tuneInErrorAlert(manager: tuneInManager)
         .onReceive(NotificationCenter.default.publisher(for: .tabConfigurationChanged)) { _ in
             iPadTabs = TabConfiguration.iPadVisibleTabs()
             // Ensure selected tab is still visible
@@ -346,6 +347,7 @@ struct ContentView: View {
         }
         .tuneInCellularAlert(manager: tuneInManager)
         .tuneInStrategySheet(manager: tuneInManager)
+        .tuneInErrorAlert(manager: tuneInManager)
         .toolbar(shouldHideTabBar ? .hidden : .visible, for: .tabBar)
         .onReceive(NotificationCenter.default.publisher(for: .tabConfigurationChanged)) { _ in
             visibleTabs = TabConfiguration.visibleTabs()

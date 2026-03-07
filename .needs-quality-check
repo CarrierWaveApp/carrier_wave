@@ -1,0 +1,2 @@
+LoTWClient.swift: Added dataWithRetry() method with exponential backoff for transient URLErrors (SSL cert, connection reset, timeout). Replaced session.data(for:) calls with dataWithRetry(for:).
+LoTWError.swift: Added URLError.isTransient computed property classifying retryable error codes.

@@ -61,11 +61,14 @@ actor WebSDRDirectory {
         receivers.count
     }
 
-    /// Find nearby KiwiSDR receivers sorted by distance
+    /// Find nearby KiwiSDR receivers sorted by distance.
+    /// - Parameter maxDistanceKm: Only return receivers within this radius.
+    ///   Defaults to 500 km (regional — same state or neighboring states).
     func findNearby(
         grid: String?,
         latitude: Double? = nil,
         longitude: Double? = nil,
+        maxDistanceKm: Double = 500,
         limit: Int = 10
     ) async -> [KiwiSDRReceiver] {
         // Determine reference coordinate
@@ -84,16 +87,20 @@ actor WebSDRDirectory {
 
         var results = receivers
 
-        // Calculate distances if we have a reference point
+        // Calculate distances and filter if we have a reference point
         if let ref = refCoord {
             let refLocation = CLLocation(latitude: ref.latitude, longitude: ref.longitude)
-            results = results.map { receiver in
+            results = results.compactMap { receiver in
                 var updated = receiver
                 let loc = CLLocation(
                     latitude: receiver.latitude,
                     longitude: receiver.longitude
                 )
-                updated.distanceKm = refLocation.distance(from: loc) / 1_000
+                let km = refLocation.distance(from: loc) / 1_000
+                guard km <= maxDistanceKm else {
+                    return nil
+                }
+                updated.distanceKm = km
                 return updated
             }
             results.sort { ($0.distanceKm ?? .infinity) < ($1.distanceKm ?? .infinity) }

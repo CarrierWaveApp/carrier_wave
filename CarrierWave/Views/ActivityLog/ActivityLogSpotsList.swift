@@ -33,9 +33,15 @@ struct ActivityLogSpotsList: View {
     var sortedSpots: [EnrichedSpot] {
         let primarySorted: [EnrichedSpot] = switch sortOrder {
         case .recent:
-            dedupedSpots.sorted { $0.spot.timestamp > $1.spot.timestamp }
+            dedupedSpots.sorted {
+                ($0.spot.timestamp, $0.spot.callsign)
+                    > ($1.spot.timestamp, $1.spot.callsign)
+            }
         case .frequency:
-            dedupedSpots.sorted { $0.spot.frequencyKHz < $1.spot.frequencyKHz }
+            dedupedSpots.sorted {
+                ($0.spot.frequencyKHz, $0.spot.callsign)
+                    < ($1.spot.frequencyKHz, $1.spot.callsign)
+            }
         }
 
         // Partition: non-dupes first, dupes last (stable within each group)

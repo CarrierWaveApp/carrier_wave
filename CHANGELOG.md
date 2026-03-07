@@ -14,6 +14,11 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ### Fixed
 - Fix club memberships not appearing in logger until each club was manually refreshed
+- Add automatic retry with exponential backoff for LoTW sync transient errors (SSL certificate failures, connection resets, timeouts)
+- Fix Tune In silently failing when KiwiSDR connection fails; now retries multiple candidates
+- Add 500 km distance cap to nearby SDR search (regional only, not global)
+- Show error alert when no receivers are available instead of failing silently
+- Sort club member spots deterministically by callsign in all spot views
 
 ## [1.55.0] - 2026-03-06
 

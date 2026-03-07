@@ -5,15 +5,19 @@ import SwiftUI
 
 extension SidebarPOTASpotsView {
     var clubPOTASpots: [POTASpot] {
-        filteredSpots.filter {
-            !ClubsSyncService.shared.clubs(for: $0.activator).isEmpty
-        }
+        filteredSpots
+            .filter { !ClubsSyncService.shared.clubs(for: $0.activator).isEmpty }
+            .sorted { $0.activator.uppercased() < $1.activator.uppercased() }
     }
 
     var clubSOTASpots: [SOTASpot] {
-        filteredSOTASpots.filter {
-            !ClubsSyncService.shared.clubs(for: $0.activatorCallsign).isEmpty
-        }
+        filteredSOTASpots
+            .filter {
+                !ClubsSyncService.shared.clubs(for: $0.activatorCallsign).isEmpty
+            }
+            .sorted {
+                $0.activatorCallsign.uppercased() < $1.activatorCallsign.uppercased()
+            }
     }
 
     var hasClubSpots: Bool {
