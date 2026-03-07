@@ -1,0 +1,7 @@
+Add radio command palette (Cmd+Shift+P) with frequency/mode/band/split parsing (CAR-123)
+- CarrierWaveCore/Sources/CarrierWaveCore/RadioCommandParser.swift: new parser
+- CWSweep/CWSweep/Views/CommandPalette/RadioPaletteView.swift: new palette UI
+- CWSweep/CWSweep/Utilities/FocusedValues.swift: add ShowRadioPaletteAction
+- CWSweep/CWSweep/Commands/CWSweepCommands.swift: add Cmd+Shift+P menu item
+- CWSweep/CWSweep/Views/Workspace/WorkspaceView.swift: wire radio palette sheet
+- CarrierWaveCore/Tests/CarrierWaveCoreTests/RadioCommandParserTests.swift: parser tests

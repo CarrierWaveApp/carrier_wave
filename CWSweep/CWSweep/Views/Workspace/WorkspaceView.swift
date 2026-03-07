@@ -56,6 +56,7 @@ struct WorkspaceView: View {
     @State private var activeRole: OperatingRole = .casual
     @State private var showInspector = false
     @State private var showCommandPalette = false
+    @State private var showRadioPalette = false
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
     @Environment(\.modelContext) private var modelContext
     @State private var radioManager = RadioManager()
@@ -95,6 +96,9 @@ struct WorkspaceView: View {
             })
             .focusedSceneValue(\.showCommandPalette, ShowCommandPaletteAction {
                 showCommandPalette = true
+            })
+            .focusedSceneValue(\.showRadioPalette, ShowRadioPaletteAction {
+                showRadioPalette = true
             })
             .focusedSceneValue(\.radioManager, radioManager)
             .focusedSceneValue(\.spotAggregator, spotAggregator)
@@ -165,6 +169,9 @@ struct WorkspaceView: View {
         }
         .sheet(isPresented: $showCommandPalette) {
             CommandPaletteView()
+        }
+        .sheet(isPresented: $showRadioPalette) {
+            RadioPaletteView()
         }
         .sheet(isPresented: $showContestSetup) {
             ContestSetupView(contestManager: contestManager)

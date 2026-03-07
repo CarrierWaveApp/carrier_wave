@@ -5,6 +5,7 @@ All notable changes to Carrier Wave will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Add radio command palette (Cmd+Shift+P) for CW Sweep — parse-and-confirm pattern for frequency, mode, band shortcuts, and split directives with real-time token feedback (CAR-123)
 - Worked All States (WAS) dashboard card — shows QTH-only state progress mosaic with tap-to-inspect callsigns (CAR-126)
 - HamDB fallback for callsign lookup when QRZ is unavailable — grid, name, QTH, and license class now populate without QRZ credentials (CAR-125)
 - Re-enrich callsign data when QRZ credentials are added — logger re-triggers lookup automatically

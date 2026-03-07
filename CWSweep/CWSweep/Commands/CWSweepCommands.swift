@@ -184,6 +184,11 @@ struct CWSweepCommands: Commands {
                 showCommandPalette?()
             }
             .keyboardShortcut("k", modifiers: .command)
+
+            Button("Radio Palette") {
+                showRadioPalette?()
+            }
+            .keyboardShortcut("p", modifiers: [.command, .shift])
         }
     }
 
@@ -200,6 +205,7 @@ struct CWSweepCommands: Commands {
     @FocusedValue(\.focusEntryField) private var focusEntryField
     @FocusedValue(\.toggleInspector) private var toggleInspector
     @FocusedValue(\.showCommandPalette) private var showCommandPalette
+    @FocusedValue(\.showRadioPalette) private var showRadioPalette
     @FocusedValue(\.connectRadio) private var connectRadio
     @FocusedValue(\.disconnectRadio) private var disconnectRadio
     @FocusedValue(\.radioManager) private var radioManager
