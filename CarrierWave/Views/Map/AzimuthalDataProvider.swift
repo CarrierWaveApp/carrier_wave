@@ -20,7 +20,7 @@ struct AzimuthalSpotPoint: Identifiable, Sendable {
     let normalizedRadius: Double
     let isSpot: Bool // true = spot, false = QSO
     let band: String?
-    let source: String // "rbn", "pota", "sota", "qso"
+    let source: SpotSource? // nil for QSOs
 }
 
 // MARK: - AzimuthalDataProvider
@@ -50,7 +50,7 @@ enum AzimuthalDataProvider {
                 normalizedRadius: point.normalizedRadius,
                 isSpot: true,
                 band: BandUtilities.deriveBand(from: spot.frequencyKHz),
-                source: String(describing: spot.source)
+                source: spot.source
             )
         }
     }
@@ -79,7 +79,7 @@ enum AzimuthalDataProvider {
                 normalizedRadius: point.normalizedRadius,
                 isSpot: false,
                 band: qso.band,
-                source: "qso"
+                source: nil
             )
         }
     }

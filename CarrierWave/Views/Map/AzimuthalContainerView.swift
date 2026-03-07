@@ -47,6 +47,7 @@ struct AzimuthalContainerView: View {
     @State private var selectedBand: String?
     @State private var selectedMode: String?
     @State private var showQSOs = true
+    @State private var selectedSources: Set<SpotSource> = Set(SpotSource.allCases)
 
     private var effectiveOrientation: Double {
         if useCompass, let heading = compassService.heading {
@@ -64,11 +65,12 @@ struct AzimuthalContainerView: View {
 
     private var filteredSpots: [UnifiedSpot] {
         spots.filter { spot in
+            let sourceMatch = selectedSources.contains(spot.source)
             let bandMatch = selectedBand == nil
                 || BandUtilities.deriveBand(from: spot.frequencyKHz) == selectedBand
             let modeMatch = selectedMode == nil
                 || spot.mode.uppercased() == selectedMode
-            return bandMatch && modeMatch
+            return sourceMatch && bandMatch && modeMatch
         }
     }
 
@@ -89,6 +91,11 @@ struct AzimuthalContainerView: View {
 
     private var sectors: [BearingSector] {
         AzimuthalDataProvider.buildSectors(spots: projectedSpots, qsos: projectedQSOs)
+    }
+
+    private var availableSources: [SpotSource] {
+        let sources = Set(spots.map(\.source))
+        return SpotSource.allCases.filter { sources.contains($0) }
     }
 
     private var availableBands: [String] {
@@ -291,6 +298,11 @@ extension AzimuthalContainerView {
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel(showQSOs ? "Hide QSOs" : "Show QSOs")
+
+                    // Source toggle pills
+                    ForEach(availableSources, id: \.self) { source in
+                        sourceTogglePill(source)
+                    }
                 }
             }
 
@@ -333,6 +345,31 @@ extension AzimuthalContainerView {
             .background(isActive ? Color.blue.opacity(0.2) : Color(.systemGray5))
             .clipShape(Capsule())
         }
+    }
+
+    private func sourceTogglePill(_ source: SpotSource) -> some View {
+        let isActive = selectedSources.contains(source)
+        return Button {
+            if isActive {
+                selectedSources.remove(source)
+            } else {
+                selectedSources.insert(source)
+            }
+        } label: {
+            Text(source.displayName)
+                .font(.caption.weight(.medium))
+                .foregroundStyle(isActive ? .primary : .secondary)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(
+                    source.color.opacity(isActive ? 0.2 : 0.08)
+                )
+                .clipShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(
+            isActive ? "Hide \(source.displayName)" : "Show \(source.displayName)"
+        )
     }
 }
 

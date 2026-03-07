@@ -65,10 +65,19 @@ struct AzimuthalMapView: View {
 
     @Environment(\.colorScheme) private var colorScheme
 
+    private var spotSources: [SpotSource] {
+        let sources = Set(spotPoints.compactMap(\.source))
+        return SpotSource.allCases.filter { sources.contains($0) }
+    }
+
     private var legendOverlay: some View {
         HStack(spacing: 12) {
-            legendItem(color: .blue, label: "Spots")
-            legendItem(color: .green, label: "QSOs")
+            ForEach(spotSources, id: \.self) { source in
+                legendItem(color: source.color, label: source.displayName)
+            }
+            if !qsoPoints.isEmpty {
+                legendItem(color: .green, label: "QSOs")
+            }
             if antennaPattern != nil {
                 legendItem(color: .orange, label: "Pattern")
             }
@@ -303,8 +312,9 @@ private extension AzimuthalMapView {
                 centerY: Double(center.y),
                 viewRadius: Double(radius)
             )
+            let dotColor = point.source?.color ?? .blue
             let dot = Path(ellipseIn: CGRect(x: pos.x - 2, y: pos.y - 2, width: 4, height: 4))
-            context.fill(dot, with: .color(Color.blue.opacity(0.7)))
+            context.fill(dot, with: .color(dotColor.opacity(0.7)))
         }
     }
 

@@ -11,11 +11,31 @@ import SwiftUI
 // MARK: - SpotSource
 
 /// Source of a spot
-enum SpotSource: Sendable {
+enum SpotSource: Sendable, CaseIterable {
     case rbn
     case pota
     case sota
     case wwff
+
+    // MARK: Internal
+
+    var displayName: String {
+        switch self {
+        case .rbn: "RBN"
+        case .pota: "POTA"
+        case .sota: "SOTA"
+        case .wwff: "WWFF"
+        }
+    }
+
+    var color: Color {
+        switch self {
+        case .rbn: .blue
+        case .pota: .green
+        case .sota: .orange
+        case .wwff: .teal
+        }
+    }
 }
 
 // MARK: - UnifiedSpot

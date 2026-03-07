@@ -144,15 +144,23 @@ extension AzimuthalStandaloneView {
 // MARK: - Grid Enrichment
 
 extension AzimuthalStandaloneView {
-    /// Look up callsign grids via HamDB for map projection
+    /// Look up callsign grids via park/summit caches and HamDB for map projection
     func enrichCallsignGrids(_ spots: [UnifiedSpot]) async -> [UnifiedSpot] {
+        // First pass: resolve grids from POTA/SOTA reference caches (instant, no network)
+        var preEnriched = enrichFromReferenceCaches(spots)
+
         let hamDB = HamDBClient()
         let maxLookups = 30
 
-        // Find unique callsigns that need grid lookup
+        // Find unique callsigns that still need grid lookup
         var callsignsToLookup: [String] = []
         var seen = Set<String>()
-        for spot in spots {
+        for spot in preEnriched {
+            // Skip spots already resolved from reference caches
+            if spot.callsignGrid != nil {
+                continue
+            }
+
             let call = spot.callsign.uppercased()
             guard !seen.contains(call) else {
                 continue
@@ -188,14 +196,43 @@ extension AzimuthalStandaloneView {
             }
         }
 
-        // Apply cached grids to spots
-        var enriched: [UnifiedSpot] = []
-        for var spot in spots {
-            let call = spot.callsign.uppercased()
+        // Apply cached grids to spots that weren't resolved from reference caches
+        for index in preEnriched.indices where preEnriched[index].callsignGrid == nil {
+            let call = preEnriched[index].callsign.uppercased()
             if let cachedGrid = await GridCache.shared.get(call) {
-                spot.callsignGrid = cachedGrid
+                preEnriched[index].callsignGrid = cachedGrid
             }
-            enriched.append(spot)
+        }
+        return preEnriched
+    }
+
+    /// Resolve grids from POTA parks cache and SOTA summits cache (synchronous, no network)
+    private func enrichFromReferenceCaches(_ spots: [UnifiedSpot]) -> [UnifiedSpot] {
+        var enriched = spots
+        for index in enriched.indices {
+            let spot = enriched[index]
+            // Skip if already has a grid
+            if spot.callsignGrid != nil || spot.spotterGrid != nil {
+                continue
+            }
+
+            switch spot.source {
+            case .pota:
+                if let parkRef = spot.parkRef,
+                   let grid = POTAParksCache.shared.parkSync(for: parkRef)?.grid
+                {
+                    enriched[index].callsignGrid = grid
+                }
+            case .sota:
+                if let summitCode = spot.summitCode,
+                   let grid = SOTASummitsCache.shared.summitSync(for: summitCode)?.grid
+                {
+                    enriched[index].callsignGrid = grid
+                }
+            case .rbn,
+                 .wwff:
+                break
+            }
         }
         return enriched
     }
