@@ -182,6 +182,16 @@ struct DashboardView: View {
                     bragSheetStats.recompute(from: modelContext.container)
                 }
             }
+            .onChange(of: selectedTab) { _, newTab in
+                guard newTab == .dashboard, hasLoadedDashboard, asyncStats.hasComputed else {
+                    return
+                }
+                // Recompute stats when returning to dashboard (e.g. after logging QSOs)
+                asyncStats.recompute(from: modelContext)
+                equipmentStats.recompute(from: modelContext.container)
+                presenceCounts.recompute(from: modelContext)
+                bragSheetStats.recompute(from: modelContext.container)
+            }
             .onReceive(NotificationCenter.default.publisher(for: .didClearQSOs)) { _ in
                 asyncStats.reset()
                 equipmentStats.reset()

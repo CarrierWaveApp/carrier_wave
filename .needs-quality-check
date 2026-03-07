@@ -1,2 +1,3 @@
 LoTWClient.swift: Added dataWithRetry() method with exponential backoff for transient URLErrors (SSL cert, connection reset, timeout). Replaced session.data(for:) calls with dataWithRetry(for:).
 LoTWError.swift: Added URLError.isTransient computed property classifying retryable error codes.
+DashboardView.swift: Added .onChange(of: selectedTab) to recompute stats when returning to dashboard tab after logging QSOs.

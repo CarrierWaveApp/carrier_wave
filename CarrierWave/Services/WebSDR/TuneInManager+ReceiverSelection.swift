@@ -54,8 +54,8 @@ extension TuneInManager {
         for rx in await fallbackCandidates(for: spot)
             where !seen.contains(rx.id)
         {
-            seen.insert(r.id)
-            candidates.append(r)
+            seen.insert(rx.id)
+            candidates.append(rx)
         }
 
         return candidates
@@ -78,8 +78,8 @@ extension TuneInManager {
             for rx in await findAllNearbyAvailable(latitude: lat, longitude: lon)
                 where !seen.contains(rx.id)
             {
-                seen.insert(r.id)
-                candidates.append(r)
+                seen.insert(rx.id)
+                candidates.append(rx)
             }
         }
 
@@ -90,8 +90,8 @@ extension TuneInManager {
             for rx in await findAllNearbyAvailable(latitude: lat, longitude: lon)
                 where !seen.contains(rx.id)
             {
-                seen.insert(r.id)
-                candidates.append(r)
+                seen.insert(rx.id)
+                candidates.append(rx)
             }
         }
 
@@ -102,15 +102,15 @@ extension TuneInManager {
             for rx in await findAllNearbyAvailable(
                 latitude: coord.latitude, longitude: coord.longitude
             ) where !seen.contains(rx.id) {
-                seen.insert(r.id)
-                candidates.append(r)
+                seen.insert(rx.id)
+                candidates.append(rx)
             }
         }
 
         let rbnCandidates = await candidatesNearRBN(for: spot)
         for rx in rbnCandidates where !seen.contains(rx.id) {
-            seen.insert(r.id)
-            candidates.append(r)
+            seen.insert(rx.id)
+            candidates.append(rx)
         }
 
         return candidates
@@ -133,16 +133,16 @@ extension TuneInManager {
             for rx in await findAllNearbyAvailable(
                 latitude: coord.latitude, longitude: coord.longitude
             ) where !seen.contains(rx.id) {
-                seen.insert(r.id)
-                candidates.append(r)
+                seen.insert(rx.id)
+                candidates.append(rx)
             }
         }
 
         for rx in await candidatesNearRBN(for: spot)
             where !seen.contains(rx.id)
         {
-            seen.insert(r.id)
-            candidates.append(r)
+            seen.insert(rx.id)
+            candidates.append(rx)
         }
 
         return candidates
