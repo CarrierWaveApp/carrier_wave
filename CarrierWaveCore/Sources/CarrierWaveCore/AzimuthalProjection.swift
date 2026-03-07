@@ -261,6 +261,53 @@ public struct AzimuthalProjection {
         return (x / .pi, y / .pi)
     }
 
+    /// Inverse-project a normalized (x, y) back to (latDeg, lonDeg).
+    ///
+    /// Takes normalized coordinates in approximately [-1, 1] where ±1
+    /// represents π radians (antipodal distance). Returns nil for points
+    /// beyond the antipode (outside the unit circle).
+    ///
+    /// Uses Snyder equations 24-16/24-17 for inverse azimuthal equidistant.
+    public func inverseProject(nx: Double, ny: Double) -> (latDeg: Double, lonDeg: Double)? {
+        // Scale from normalized [-1,1] back to angular distance
+        let x = nx * .pi
+        let y = ny * .pi
+        let rho = sqrt(x * x + y * y)
+
+        // Outside the projection circle (beyond antipode)
+        if rho > .pi {
+            return nil
+        }
+
+        // Center point
+        if rho < 1e-10 {
+            return (centerLat * 180 / .pi, centerLon * 180 / .pi)
+        }
+
+        let angularDist = rho // For azimuthal equidistant, c = rho
+        let sinC = sin(angularDist)
+        let cosC = cos(angularDist)
+
+        // Snyder eq 24-16: lat = arcsin(cos(c)*sin(centerLat) + y*sin(c)*cos(centerLat)/rho)
+        let lat = asin(cosC * sinCenterLat + y * sinC * cosCenterLat / rho)
+
+        // Snyder eq 24-17: lon = centerLon + atan2(x*sin(c), rho*cos(centerLat)*cos(c) - y*sin(centerLat)*sin(c))
+        var lon = centerLon + atan2(
+            x * sinC,
+            rho * cosCenterLat * cosC - y * sinCenterLat * sinC
+        )
+
+        // Normalize longitude to [-π, π]
+        while lon > .pi {
+            lon -= 2 * .pi
+        }
+        while lon < -.pi {
+            lon += 2 * .pi
+        }
+
+        return (lat * 180 / .pi, lon * 180 / .pi)
+    }
+
     // MARK: Private
 
     private let centerLat: Double

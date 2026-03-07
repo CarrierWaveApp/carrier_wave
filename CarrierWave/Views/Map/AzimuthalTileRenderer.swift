@@ -102,6 +102,13 @@ actor AzimuthalTileRenderer {
         }
     }
 
+    /// Rasterized bitmap with a retained CGContext to keep its data pointer valid.
+    private struct RasterizedBitmap {
+        let ptr: UnsafeMutablePointer<UInt8>
+        let bytesPerRow: Int
+        let context: CGContext
+    }
+
     private static let maxCacheEntries = 4
 
     nonisolated private let logger = Logger(subsystem: "com.jsvana.FullDuplex", category: "TileRenderer")
@@ -178,7 +185,7 @@ actor AzimuthalTileRenderer {
     }
 
     /// Rasterize a CGImage into an RGBA bitmap for direct pixel access.
-    private func rasterize(_ image: CGImage) -> (ptr: UnsafeMutablePointer<UInt8>, bytesPerRow: Int)? {
+    private func rasterize(_ image: CGImage) -> RasterizedBitmap? {
         let colorSpace = CGColorSpaceCreateDeviceRGB()
         let bitmapInfo = CGImageAlphaInfo.premultipliedLast.rawValue
         guard let ctx = CGContext(
@@ -192,7 +199,7 @@ actor AzimuthalTileRenderer {
         guard let ptr = ctx.data?.assumingMemoryBound(to: UInt8.self) else {
             return nil
         }
-        return (ptr, ctx.bytesPerRow)
+        return RasterizedBitmap(ptr: ptr, bytesPerRow: ctx.bytesPerRow, context: ctx)
     }
 
     private func reprojectImage(
@@ -254,7 +261,12 @@ actor AzimuthalTileRenderer {
         logger.info(
             "rendered: \(rendered), circle: \(skippedCircle), inverse: \(skippedInverse), bounds: \(skippedBounds)"
         )
-        logger.info("srcSize: \(srcWidth)×\(srcHeight), srcBytesPerRow: \(srcBytesPerRow) (min: \(srcWidth * 4))")
+        logger.info(
+            "srcSize: \(srcWidth)×\(srcHeight), srcBytesPerRow: \(srcBytesPerRow) (min: \(srcWidth * 4))"
+        )
+
+        // Keep CGContext alive until after all pixel reads are complete
+        _ = src.context
 
         return createCGImage(from: &outBuffer, width: outWidth, height: outHeight)
     }

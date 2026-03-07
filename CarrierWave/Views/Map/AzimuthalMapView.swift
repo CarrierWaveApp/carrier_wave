@@ -21,6 +21,9 @@ struct AzimuthalMapView: View {
     let compassHeading: Double? // nil = no compass, use manual
     let maxDistanceKm: Double
     var worldRotation: Double = 0 // Degrees to rotate world (negative = CW on screen)
+    var tileImage: CGImage? // Reprojected map tile underlay
+    var tileScale: CGFloat = 1.0 // Ratio of tile render distance to current distance
+    var isLoadingSpots = false
 
     var body: some View {
         GeometryReader { geo in
@@ -33,6 +36,11 @@ struct AzimuthalMapView: View {
                 let cy = canvasSize.height / 2
 
                 drawBackground(context: context, center: CGPoint(x: cx, y: cy), radius: viewRadius)
+                if tileImage != nil {
+                    drawTileUnderlay(
+                        context: context, center: CGPoint(x: cx, y: cy), radius: viewRadius
+                    )
+                }
                 drawDistanceRings(context: context, center: CGPoint(x: cx, y: cy), radius: viewRadius)
                 drawSectorHeatmap(
                     context: context, center: CGPoint(x: cx, y: cy), radius: viewRadius
@@ -49,14 +57,31 @@ struct AzimuthalMapView: View {
                     context: context, center: CGPoint(x: cx, y: cy), radius: viewRadius
                 )
                 drawCenterDot(context: context, center: CGPoint(x: cx, y: cy))
+                drawHeadingIndicator(
+                    context: context, center: CGPoint(x: cx, y: cy), radius: viewRadius
+                )
             }
             .frame(width: geo.size.width, height: geo.size.height)
 
-            // Legend overlay
-            legendOverlay
-                .position(x: center.x, y: geo.size.height - 20)
+            // Loading indicator overlay
+            if isLoadingSpots {
+                VStack(spacing: 8) {
+                    ProgressView()
+                        .controlSize(.large)
+                    Text("Loading spots…")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 14)
+                .background(.ultraThickMaterial, in: RoundedRectangle(cornerRadius: 14))
+                .position(x: center.x, y: center.y)
+            }
         }
         .aspectRatio(1, contentMode: .fit)
+        .overlay(alignment: .bottom) {
+            legendOverlay.offset(y: 12)
+        }
     }
 
     // MARK: Private
@@ -102,6 +127,40 @@ struct AzimuthalMapView: View {
 // MARK: - Canvas Drawing
 
 private extension AzimuthalMapView {
+    func drawTileUnderlay(context: GraphicsContext, center: CGPoint, radius: CGFloat) {
+        guard let tile = tileImage else {
+            return
+        }
+
+        var ctx = context
+
+        // Clip to circular projection area
+        let clipCircle = Path(ellipseIn: CGRect(
+            x: center.x - radius,
+            y: center.y - radius,
+            width: radius * 2,
+            height: radius * 2
+        ))
+        ctx.clip(to: clipCircle)
+
+        // Rotate tile by world rotation (compass heading)
+        let rotRad = worldRotation * .pi / 180.0
+        ctx.translateBy(x: center.x, y: center.y)
+        ctx.rotate(by: Angle(radians: rotRad))
+        ctx.translateBy(x: -center.x, y: -center.y)
+
+        // Draw tile image scaled to match current zoom vs rendered zoom
+        let scaledRadius = radius * tileScale
+        let rect = CGRect(
+            x: center.x - scaledRadius,
+            y: center.y - scaledRadius,
+            width: scaledRadius * 2,
+            height: scaledRadius * 2
+        )
+        ctx.opacity = 0.6
+        ctx.draw(Image(decorative: tile, scale: 1.0), in: rect)
+    }
+
     func drawBackground(context: GraphicsContext, center: CGPoint, radius: CGFloat) {
         let bgColor = colorScheme == .dark
             ? Color(white: 0.12)
@@ -345,5 +404,20 @@ private extension AzimuthalMapView {
             height: dotSize
         ))
         context.fill(dot, with: .color(.red))
+    }
+
+    /// Draw a triangle at top dead center indicating the direction you're pointing.
+    func drawHeadingIndicator(context: GraphicsContext, center: CGPoint, radius: CGFloat) {
+        let tipY = center.y - radius - 30
+        let baseY = tipY + 10
+        let halfWidth: CGFloat = 6
+
+        var triangle = Path()
+        triangle.move(to: CGPoint(x: center.x, y: tipY))
+        triangle.addLine(to: CGPoint(x: center.x - halfWidth, y: baseY))
+        triangle.addLine(to: CGPoint(x: center.x + halfWidth, y: baseY))
+        triangle.closeSubpath()
+
+        context.fill(triangle, with: .color(.red))
     }
 }
