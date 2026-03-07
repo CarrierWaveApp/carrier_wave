@@ -14,6 +14,7 @@ All notable changes to Carrier Wave will be documented in this file.
 - Show warning when starting a POTA activation within one hour of UTC midnight
 
 ### Fixed
+- Fix dashboard freezing during stats computation — isolate progress indicator to prevent activity grid re-renders, precompute grid layout values once per frame instead of per-cell (CAR-127)
 - QRZ callsign lookups using 30-second timeout (now 10s) causing long hangs on degraded networks
 - Lookup errors invisible during active logging when keyboard was visible
 - Hunter Log spots not reloading after navigating away and back (required app restart)

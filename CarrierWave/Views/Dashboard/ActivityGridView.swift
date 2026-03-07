@@ -78,14 +78,22 @@ private struct ActivityGridContent: View {
     @Binding var selectedDate: Date?
 
     var body: some View {
+        // Precompute expensive derived values once per body evaluation
+        let combined = computeCombinedData()
+        let maxVal = combined.values.max() ?? 1
+        let columns = computeTotalColumns(from: combined)
+        let labels = computeLabelPositions(totalColumns: columns)
+
         ScrollViewReader { _ in
             ScrollView(.horizontal, showsIndicators: false) {
                 VStack(alignment: .leading, spacing: gridToLabelSpacing) {
                     HStack(alignment: .top, spacing: spacing) {
-                        ForEach(0 ..< totalColumns, id: \.self) { column in
+                        ForEach(0 ..< columns, id: \.self) { column in
                             VStack(spacing: spacing) {
                                 ForEach(0 ..< rows, id: \.self) { row in
-                                    let date = dateFor(column: column, row: row)
+                                    let date = dateFor(
+                                        column: column, row: row, totalColumns: columns
+                                    )
                                     let actCount = countFor(date: date, in: activationData)
                                     let logCount = countFor(date: date, in: activityLogData)
                                     let total = actCount + logCount
@@ -96,7 +104,8 @@ private struct ActivityGridContent: View {
                                     } else {
                                         cellView(
                                             activationCount: actCount,
-                                            activityLogCount: logCount
+                                            activityLogCount: logCount,
+                                            maxCount: maxVal
                                         )
                                         .frame(width: cellSize, height: cellSize)
                                         .clipShape(RoundedRectangle(cornerRadius: 2))
@@ -140,7 +149,7 @@ private struct ActivityGridContent: View {
                     .frame(height: gridHeight)
 
                     ZStack(alignment: .topLeading) {
-                        ForEach(labelPositions, id: \.column) { item in
+                        ForEach(labels, id: \.column) { item in
                             Text(item.label)
                                 .font(.system(size: 10))
                                 .foregroundStyle(.secondary)
@@ -149,7 +158,7 @@ private struct ActivityGridContent: View {
                         }
                     }
                     .frame(
-                        width: CGFloat(totalColumns) * columnWidth - spacing,
+                        width: CGFloat(columns) * columnWidth - spacing,
                         height: monthLabelHeight,
                         alignment: .topLeading
                     )
@@ -192,39 +201,6 @@ private struct ActivityGridContent: View {
         return 26
     }
 
-    private var combinedData: [Date: Int] {
-        var combined: [Date: Int] = [:]
-        for (date, count) in activationData {
-            combined[date, default: 0] += count
-        }
-        for (date, count) in activityLogData {
-            combined[date, default: 0] += count
-        }
-        return combined
-    }
-
-    private var maxCount: Int {
-        combinedData.values.max() ?? 1
-    }
-
-    private var totalColumns: Int {
-        let today = calendar.startOfDay(for: Date())
-
-        let oldestDate: Date
-        if let minDate = combinedData.keys.min() {
-            let weekday = calendar.component(.weekday, from: minDate)
-            oldestDate =
-                calendar.date(byAdding: .day, value: -(weekday - 1), to: minDate) ?? minDate
-        } else {
-            oldestDate =
-                calendar.date(byAdding: .weekOfYear, value: -minColumns, to: today) ?? today
-        }
-
-        let weeks =
-            calendar.dateComponents([.weekOfYear], from: oldestDate, to: today).weekOfYear ?? 0
-        return max(weeks + 1, minColumns)
-    }
-
     private var columnWidth: CGFloat {
         cellSize + spacing
     }
@@ -237,30 +213,10 @@ private struct ActivityGridContent: View {
         gridHeight + gridToLabelSpacing + monthLabelHeight
     }
 
-    private var labelPositions: [(column: Int, label: String)] {
-        var labels: [(Int, String)] = []
-        var lastMonth = -1
-        let monthFormatter = DateFormatter()
-
-        for column in 0 ..< totalColumns {
-            let date = dateFor(column: column, row: 0)
-            let month = calendar.component(.month, from: date)
-
-            if month != lastMonth {
-                if month == 1 {
-                    monthFormatter.dateFormat = "MMM ''yy"
-                } else {
-                    monthFormatter.dateFormat = "MMM"
-                }
-                labels.append((column, monthFormatter.string(from: date)))
-                lastMonth = month
-            }
-        }
-        return labels
-    }
-
     @ViewBuilder
-    private func cellView(activationCount: Int, activityLogCount: Int) -> some View {
+    private func cellView(
+        activationCount: Int, activityLogCount: Int, maxCount: Int
+    ) -> some View {
         if activationCount == 0, activityLogCount == 0 {
             RoundedRectangle(cornerRadius: 2)
                 .fill(ActivityGridColors.empty)
@@ -276,7 +232,7 @@ private struct ActivityGridContent: View {
                     topLeft,
                     with: .color(
                         ActivityGridColors.activation
-                            .opacity(intensityFor(count: activationCount))
+                            .opacity(intensityFor(count: activationCount, max: maxCount))
                     )
                 )
 
@@ -289,7 +245,7 @@ private struct ActivityGridContent: View {
                     bottomRight,
                     with: .color(
                         ActivityGridColors.activityLog
-                            .opacity(intensityFor(count: activityLogCount))
+                            .opacity(intensityFor(count: activityLogCount, max: maxCount))
                     )
                 )
             }
@@ -297,13 +253,13 @@ private struct ActivityGridContent: View {
             RoundedRectangle(cornerRadius: 2)
                 .fill(
                     ActivityGridColors.activation
-                        .opacity(intensityFor(count: activationCount))
+                        .opacity(intensityFor(count: activationCount, max: maxCount))
                 )
         } else {
             RoundedRectangle(cornerRadius: 2)
                 .fill(
                     ActivityGridColors.activityLog
-                        .opacity(intensityFor(count: activityLogCount))
+                        .opacity(intensityFor(count: activityLogCount, max: maxCount))
                 )
         }
     }
@@ -337,7 +293,58 @@ private struct ActivityGridContent: View {
         .presentationCompactAdaptation(.popover)
     }
 
-    private func dateFor(column: Int, row: Int) -> Date {
+    private func computeCombinedData() -> [Date: Int] {
+        var combined: [Date: Int] = [:]
+        for (date, count) in activationData {
+            combined[date, default: 0] += count
+        }
+        for (date, count) in activityLogData {
+            combined[date, default: 0] += count
+        }
+        return combined
+    }
+
+    private func computeTotalColumns(from combined: [Date: Int]) -> Int {
+        let today = calendar.startOfDay(for: Date())
+
+        let oldestDate: Date
+        if let minDate = combined.keys.min() {
+            let weekday = calendar.component(.weekday, from: minDate)
+            oldestDate =
+                calendar.date(byAdding: .day, value: -(weekday - 1), to: minDate) ?? minDate
+        } else {
+            oldestDate =
+                calendar.date(byAdding: .weekOfYear, value: -minColumns, to: today) ?? today
+        }
+
+        let weeks =
+            calendar.dateComponents([.weekOfYear], from: oldestDate, to: today).weekOfYear ?? 0
+        return max(weeks + 1, minColumns)
+    }
+
+    private func computeLabelPositions(totalColumns: Int) -> [(column: Int, label: String)] {
+        var labels: [(Int, String)] = []
+        var lastMonth = -1
+        let monthFormatter = DateFormatter()
+
+        for column in 0 ..< totalColumns {
+            let date = dateFor(column: column, row: 0, totalColumns: totalColumns)
+            let month = calendar.component(.month, from: date)
+
+            if month != lastMonth {
+                if month == 1 {
+                    monthFormatter.dateFormat = "MMM ''yy"
+                } else {
+                    monthFormatter.dateFormat = "MMM"
+                }
+                labels.append((column, monthFormatter.string(from: date)))
+                lastMonth = month
+            }
+        }
+        return labels
+    }
+
+    private func dateFor(column: Int, row: Int, totalColumns: Int) -> Date {
         let today = calendar.startOfDay(for: Date())
         let todayWeekday = calendar.component(.weekday, from: today)
         let weeksBack = totalColumns - 1 - column
@@ -360,7 +367,7 @@ private struct ActivityGridContent: View {
         return 0
     }
 
-    private func intensityFor(count: Int) -> Double {
+    private func intensityFor(count: Int, max maxCount: Int) -> Double {
         guard count > 0 else {
             return 0
         }

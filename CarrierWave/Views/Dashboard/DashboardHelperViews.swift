@@ -365,6 +365,44 @@ struct LazyStreakDetailView: View {
     @State private var stats: QSOStatistics?
 }
 
+// MARK: - StatsProgressIndicator
+
+/// Isolated view for stats computation progress display.
+/// Prevents progress updates from invalidating sibling views (e.g. ActivityGrid).
+struct StatsProgressIndicator: View {
+    let asyncStats: AsyncQSOStatistics
+
+    var body: some View {
+        if asyncStats.isComputing {
+            VStack(alignment: .leading, spacing: 4) {
+                ProgressView(value: asyncStats.progress)
+                    .tint(.blue)
+                if !asyncStats.progressPhase.isEmpty {
+                    Text(asyncStats.progressPhase)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .transition(.opacity)
+            .animation(.easeInOut(duration: 0.2), value: asyncStats.isComputing)
+        }
+    }
+}
+
+// MARK: - StatsQSOCountLabel
+
+/// Isolated view for the QSO count in the activity card header.
+/// Prevents count updates from invalidating the ActivityGrid.
+struct StatsQSOCountLabel: View {
+    let asyncStats: AsyncQSOStatistics
+
+    var body: some View {
+        Text("\(asyncStats.totalQSOs) QSOs")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+    }
+}
+
 // MARK: - LazyStatDetailView
 
 /// Wrapper that lazily loads QSOStatistics when the view appears
