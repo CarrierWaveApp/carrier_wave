@@ -1,3 +1,4 @@
+import AVFoundation
 import CarrierWaveData
 import SwiftUI
 
@@ -79,4 +80,62 @@ struct ShareClipSheet: View {
     // MARK: Private
 
     @Environment(\.dismiss) private var dismiss
+}
+
+// MARK: - RecordingPlayerView + Recording Export
+
+extension RecordingPlayerView {
+    func exportRecording() async {
+        guard let sourceURL = recording.fileURL else {
+            return
+        }
+        isExportingRecording = true
+        defer { isExportingRecording = false }
+
+        do {
+            let asset = AVURLAsset(url: sourceURL)
+            let duration = try await asset.load(.duration)
+            let totalSeconds = CMTimeGetSeconds(duration)
+
+            let dateStr = recording.startedAt.formatted(
+                .iso8601.year().month().day().dateSeparator(.dash)
+            )
+            let freqMHz = recording.frequencyKHz / 1_000
+            let freqStr = freqMHz == freqMHz.rounded()
+                ? String(format: "%.0fMHz", freqMHz)
+                : String(format: "%.3fMHz", freqMHz)
+            let fileName = "\(recording.kiwisdrName) \(freqStr) \(recording.mode) \(dateStr)"
+
+            let url = try await RecordingClipExporter.exportClip(
+                sourceURL: sourceURL,
+                startTime: 0,
+                endTime: totalSeconds,
+                metadata: RecordingClipMetadata(
+                    receiverName: recording.kiwisdrName,
+                    frequencyKHz: recording.frequencyKHz,
+                    mode: recording.mode,
+                    recordingDate: recording.startedAt,
+                    callsigns: sortedQSOs.map(\.callsign)
+                ),
+                outputFileName: fileName
+            )
+            exportedRecordingURL = url
+            showShareRecording = true
+        } catch {
+            // Silently fail — user can retry
+        }
+    }
+}
+
+// MARK: - RecordingShareSheet
+
+/// UIActivityViewController wrapper for sharing a recording file
+struct RecordingShareSheet: UIViewControllerRepresentable {
+    let url: URL
+
+    func makeUIViewController(context _: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: [url], applicationActivities: nil)
+    }
+
+    func updateUIViewController(_: UIActivityViewController, context _: Context) {}
 }

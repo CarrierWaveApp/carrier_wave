@@ -18,6 +18,9 @@ struct RecordingPlayerView: View {
     @State var showShareClip = false
     @State var loadedQSOs: [QSO]?
     @State var isQSOListExpanded = false
+    @State var isExportingRecording = false
+    @State var showShareRecording = false
+    @State var exportedRecordingURL: URL?
     @State var isTranscribing = false
     @State var transcriptionPhase: TranscriptionPhase = .uploading(fraction: 0)
     @State var transcriptionError: String?
@@ -81,6 +84,12 @@ struct RecordingPlayerView: View {
                 qsos: effectiveQSOs
             )
             .landscapeAdaptiveDetents(portrait: [.medium])
+        }
+        .sheet(isPresented: $showShareRecording) {
+            if let url = exportedRecordingURL {
+                RecordingShareSheet(url: url)
+                    .presentationDetents([.medium])
+            }
         }
         .task {
             await loadQSOs()
@@ -258,6 +267,20 @@ struct RecordingPlayerView: View {
                 Label("Share Clip", systemImage: "scissors")
             }
             .buttonStyle(.bordered)
+
+            if recording.fileURL != nil {
+                Button {
+                    Task { await exportRecording() }
+                } label: {
+                    if isExportingRecording {
+                        ProgressView()
+                    } else {
+                        Label("Share Recording", systemImage: "square.and.arrow.up")
+                    }
+                }
+                .buttonStyle(.bordered)
+                .disabled(isExportingRecording)
+            }
 
             if engine.transcript != nil, !cwswlServerURL.isEmpty {
                 Button {

@@ -54,7 +54,8 @@ enum RecordingClipExporter {
         sourceURL: URL,
         startTime: TimeInterval,
         endTime: TimeInterval,
-        metadata: RecordingClipMetadata? = nil
+        metadata: RecordingClipMetadata? = nil,
+        outputFileName: String? = nil
     ) async throws -> URL {
         let asset = AVURLAsset(url: sourceURL)
         let duration = try await asset.load(.duration)
@@ -77,8 +78,9 @@ enum RecordingClipExporter {
             throw ClipExportError.exportSessionFailed
         }
 
+        let fileName = outputFileName ?? "clip-\(UUID().uuidString)"
         let outputURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent("clip-\(UUID().uuidString).m4a")
+            .appendingPathComponent("\(fileName).m4a")
 
         session.timeRange = timeRange
 
