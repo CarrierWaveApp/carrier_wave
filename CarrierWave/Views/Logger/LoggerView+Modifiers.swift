@@ -313,6 +313,14 @@ extension LoggerView {
             ) { notification in
                 handleQSYLogNotification(notification)
             }
+            .onReceive(
+                NotificationCenter.default.publisher(for: .qrzCallbookCredentialsChanged)
+            ) { _ in
+                // Re-trigger lookup to get richer QRZ data (or fall back to HamDB)
+                if !callsignInput.isEmpty {
+                    onCallsignChanged(callsignInput)
+                }
+            }
     }
 
     /// Applies onChange handlers for session, network, and spot state

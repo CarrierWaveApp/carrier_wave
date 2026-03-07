@@ -29,6 +29,9 @@ public struct ADIFRecord: Sendable {
         comment: String? = nil,
         dxcc: Int? = nil,
         country: String? = nil,
+        state: String? = nil,
+        name: String? = nil,
+        qth: String? = nil,
         rawADIF: String
     ) {
         self.callsign = callsign
@@ -49,6 +52,9 @@ public struct ADIFRecord: Sendable {
         self.comment = comment
         self.dxcc = dxcc
         self.country = country
+        self.state = state
+        self.name = name
+        self.qth = qth
         self.rawADIF = rawADIF
     }
 
@@ -72,6 +78,9 @@ public struct ADIFRecord: Sendable {
     public var comment: String?
     public var dxcc: Int? // DXCC entity number
     public var country: String? // Country name
+    public var state: String? // US state abbreviation
+    public var name: String? // Operator name
+    public var qth: String? // Their QTH
     public var rawADIF: String
 
     public var timestamp: Date? {
@@ -202,6 +211,9 @@ public struct ADIFParser: Sendable {
                 comment: fields["comment"] ?? fields["notes"],
                 dxcc: fields["dxcc"].flatMap { Int($0) },
                 country: fields["country"],
+                state: fields["state"],
+                name: fields["name"],
+                qth: fields["qth"],
                 rawADIF: "<" + trimmed + "<eor>"
             )
 

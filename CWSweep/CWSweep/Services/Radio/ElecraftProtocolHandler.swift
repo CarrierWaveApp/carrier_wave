@@ -49,6 +49,30 @@ struct ElecraftProtocolHandler: RadioProtocolHandler {
         kenwood.encodeClearRITXIT()
     }
 
+    func encodeReadXIT() -> Data? {
+        kenwood.encodeReadXIT()
+    }
+
+    func encodeReadRIT() -> Data? {
+        kenwood.encodeReadRIT()
+    }
+
+    func encodeReadRITXITOffset() -> Data? {
+        kenwood.encodeReadRITXITOffset()
+    }
+
+    func decodeXITState(from data: Data) -> Bool? {
+        kenwood.decodeXITState(from: data)
+    }
+
+    func decodeRITState(from data: Data) -> Bool? {
+        kenwood.decodeRITState(from: data)
+    }
+
+    func decodeRITXITOffset(from data: Data) -> Int? {
+        kenwood.decodeRITXITOffset(from: data)
+    }
+
     func encodeSendCW(_ text: String) -> Data? {
         "KY \(text);".data(using: .ascii)
     }

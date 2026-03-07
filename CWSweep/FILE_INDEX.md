@@ -157,6 +157,7 @@
 | `Settings/CallsignNotesSettingsTab.swift` | Manage Polo callsign notes sources (add/delete/toggle, iCloud KVS sync) |
 | `Settings/SDRSettingsTab.swift` | SDR settings: default mode, auto-record, CW-SWL transcription config |
 | `CommandPalette/CommandPaletteView.swift` | Cmd+K command palette with frequency/callsign/park detection |
+| `CommandPalette/RadioPaletteView.swift` | Cmd+Shift+P radio command palette with parse-and-confirm pattern |
 | `MenuBarExtra/MenuBarExtraView.swift` | Menu bar extra showing solar conditions + session summary |
 | `Dashboard/DashboardView.swift` | Dashboard with QSO counts, band breakdown, rate chart |
 | `Map/QSOMapView.swift` | MapKit map plotting QSO locations from grid squares with band colors and date filter |

@@ -78,6 +78,12 @@ struct ParsedEntryView: View {
         .onAppear {
             isEntryFocused = true
         }
+        .onChange(of: selectionState.requestEntryFocus) { _, newValue in
+            if newValue {
+                isEntryFocused = true
+                selectionState.requestEntryFocus = false
+            }
+        }
         .onChange(of: selectionState.pendingSpotEntry) { _, newValue in
             if let entry = newValue {
                 entryText = entry
@@ -90,6 +96,14 @@ struct ParsedEntryView: View {
     // MARK: Private
 
     private enum HistoryDirection { case up, down }
+
+    private struct ContestFields {
+        var name: String?
+        var serialSent: Int?
+        var serialReceived: Int?
+        var exchangeSent: String?
+        var exchangeReceived: String?
+    }
 
     @State private var entryText = ""
     @State private var parsedResult: QuickEntryResult?
@@ -117,62 +131,54 @@ struct ParsedEntryView: View {
         let result = QuickEntryParser.parse(text)
         parsedResult = result
 
-        // Contest exchange parsing
         if contestManager.isActive, let definition = contestManager.definition, let result {
-            // Collect unmatched tokens (not callsign, freq, RST, mode, park, grid)
-            let allTokens = text.split(separator: " ").map(String.init)
-            // Skip the first token (callsign) and known parsed tokens
-            var extraTokens: [String] = []
-            for token in allTokens.dropFirst() {
-                let upper = token.uppercased()
-                // Skip tokens that QuickEntryParser already matched
-                if result.frequency != nil, String(format: "%.3f", result.frequency!).contains(upper) {
-                    continue
-                }
-                if upper == result.rstSent?.uppercased() {
-                    continue
-                }
-                if upper == result.rstReceived?.uppercased() {
-                    continue
-                }
-                if upper == result.theirPark?.uppercased() {
-                    continue
-                }
-                if upper == result.theirGrid?.uppercased() {
-                    continue
-                }
-                if upper == result.band?.uppercased() {
-                    continue
-                }
-                if upper == result.state?.uppercased() {
-                    continue
-                }
-                extraTokens.append(token)
-            }
-
-            contestParseResult = ContestExchangeParser.parse(
-                tokens: extraTokens,
-                definition: definition
-            )
-
-            // Fire dupe check
-            dupeCheckTask?.cancel()
-            dupeCheckTask = Task {
-                let band = result.band ?? BandUtilities.deriveBand(
-                    from: radioManager.frequency * 1_000
-                ) ?? "Unknown"
-                let status = await contestManager.checkDupe(
-                    callsign: result.callsign,
-                    band: band
-                )
-                if !Task.isCancelled {
-                    dupeStatus = status
-                }
-            }
+            parseContestExchange(text: text, result: result, definition: definition)
         } else {
             contestParseResult = nil
             dupeStatus = nil
         }
+    }
+
+    private func parseContestExchange(
+        text: String,
+        result: QuickEntryResult,
+        definition: ContestDefinition
+    ) {
+        let extraTokens = extractUnmatchedTokens(text: text, result: result)
+
+        contestParseResult = ContestExchangeParser.parse(
+            tokens: extraTokens,
+            definition: definition
+        )
+
+        dupeCheckTask?.cancel()
+        dupeCheckTask = Task {
+            let band = result.band ?? BandUtilities.deriveBand(
+                from: radioManager.frequency * 1_000
+            ) ?? "Unknown"
+            let status = await contestManager.checkDupe(
+                callsign: result.callsign,
+                band: band
+            )
+            if !Task.isCancelled {
+                dupeStatus = status
+            }
+        }
+    }
+
+    private func extractUnmatchedTokens(
+        text: String,
+        result: QuickEntryResult
+    ) -> [String] {
+        let allTokens = text.split(separator: " ").map(String.init)
+        let matched: [String?] = [
+            result.frequency.map { String(format: "%.3f", $0) },
+            result.rstSent, result.rstReceived,
+            result.theirPark, result.theirGrid,
+            result.band, result.state,
+        ]
+        let matchedUpper = Set(matched.compactMap { $0?.uppercased() })
+        return allTokens.dropFirst().filter { !matchedUpper.contains($0.uppercased()) }
     }
 
     private func logQSO() {
@@ -186,34 +192,7 @@ struct ParsedEntryView: View {
             from: frequency * 1_000
         ) ?? "Unknown"
 
-        // Contest fields
-        var contestName: String?
-        var serialSent: Int?
-        var serialReceived: Int?
-        var exchangeSent: String?
-        var exchangeReceived: String?
-
-        if contestManager.isActive, let definition = contestManager.definition {
-            contestName = definition.id
-
-            // Build exchange received from parsed fields
-            if let contestParse = contestParseResult {
-                let parts = definition.exchange.fields.compactMap { field -> String? in
-                    if field.type == .rst {
-                        return nil
-                    } // RST is separate
-                    return contestParse.fields[field.id]
-                }
-                exchangeReceived = parts.joined(separator: " ")
-                serialReceived = contestParse.serialReceived
-            }
-
-            // Exchange sent comes from settings / contest definition defaults
-            let sentParts = definition.exchange.fields.compactMap { field -> String? in
-                field.defaultValue
-            }
-            exchangeSent = sentParts.joined(separator: " ")
-        }
+        let contest = buildContestFields()
 
         let qso = QSO(
             callsign: result.callsign.uppercased(),
@@ -229,53 +208,75 @@ struct ParsedEntryView: View {
             parkReference: nil,
             theirParkReference: result.theirPark,
             importSource: .logger,
-            contestName: contestName,
-            contestSerialSent: serialSent,
-            contestSerialReceived: serialReceived,
-            contestExchangeSent: exchangeSent,
-            contestExchangeReceived: exchangeReceived
+            contestName: contest.name,
+            contestSerialSent: contest.serialSent,
+            contestSerialReceived: contest.serialReceived,
+            contestExchangeSent: contest.exchangeSent,
+            contestExchangeReceived: contest.exchangeReceived
         )
 
-        // Set logging session ID if contest is active
         if let session = contestManager.activeSession {
             qso.loggingSessionId = session.id
             session.incrementQSOCount()
         }
 
         modelContext.insert(qso)
-
-        // Register with contest engine
-        if contestManager.isActive {
-            Task {
-                serialSent = await contestManager.nextSerial()
-                qso.contestSerialSent = serialSent
-
-                let snapshot = QSOContestSnapshot(
-                    callsign: qso.callsign,
-                    band: qso.band,
-                    mode: qso.mode,
-                    timestamp: qso.timestamp,
-                    rstSent: qso.rstSent ?? "599",
-                    rstReceived: qso.rstReceived ?? "599",
-                    exchangeSent: exchangeSent ?? "",
-                    exchangeReceived: exchangeReceived ?? "",
-                    serialSent: serialSent,
-                    serialReceived: serialReceived,
-                    country: qso.country,
-                    dxcc: qso.dxcc,
-                    cqZone: contestParseResult?.fields["cqZone"].flatMap { Int($0) },
-                    ituZone: contestParseResult?.fields["ituZone"].flatMap { Int($0) },
-                    state: contestParseResult?.fields["state"],
-                    arrlSection: contestParseResult?.fields["section"],
-                    county: contestParseResult?.fields["county"]
-                )
-                await contestManager.logContestQSO(snapshot)
-            }
-        }
+        registerContestQSO(qso, contest: contest)
 
         history.append(entryText)
         historyIndex = nil
         clearEntry()
+    }
+
+    private func buildContestFields() -> ContestFields {
+        var fields = ContestFields()
+        guard contestManager.isActive, let definition = contestManager.definition else {
+            return fields
+        }
+        fields.name = definition.id
+
+        if let contestParse = contestParseResult {
+            let parts = definition.exchange.fields.compactMap { field -> String? in
+                field.type == .rst ? nil : contestParse.fields[field.id]
+            }
+            fields.exchangeReceived = parts.joined(separator: " ")
+            fields.serialReceived = contestParse.serialReceived
+        }
+
+        let sentParts = definition.exchange.fields.compactMap(\.defaultValue)
+        fields.exchangeSent = sentParts.joined(separator: " ")
+        return fields
+    }
+
+    private func registerContestQSO(_ qso: QSO, contest: ContestFields) {
+        guard contestManager.isActive else {
+            return
+        }
+        Task {
+            let serialSent = await contestManager.nextSerial()
+            qso.contestSerialSent = serialSent
+
+            let snapshot = QSOContestSnapshot(
+                callsign: qso.callsign,
+                band: qso.band,
+                mode: qso.mode,
+                timestamp: qso.timestamp,
+                rstSent: qso.rstSent ?? "599",
+                rstReceived: qso.rstReceived ?? "599",
+                exchangeSent: contest.exchangeSent ?? "",
+                exchangeReceived: contest.exchangeReceived ?? "",
+                serialSent: serialSent,
+                serialReceived: contest.serialReceived,
+                country: qso.country,
+                dxcc: qso.dxcc,
+                cqZone: contestParseResult?.fields["cqZone"].flatMap { Int($0) },
+                ituZone: contestParseResult?.fields["ituZone"].flatMap { Int($0) },
+                state: contestParseResult?.fields["state"],
+                arrlSection: contestParseResult?.fields["section"],
+                county: contestParseResult?.fields["county"]
+            )
+            await contestManager.logContestQSO(snapshot)
+        }
     }
 
     private func clearEntry() {

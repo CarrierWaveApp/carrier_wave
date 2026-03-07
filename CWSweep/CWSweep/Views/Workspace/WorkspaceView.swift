@@ -56,6 +56,7 @@ struct WorkspaceView: View {
     @State private var activeRole: OperatingRole = .casual
     @State private var showInspector = false
     @State private var showCommandPalette = false
+    @State private var showRadioPalette = false
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
     @Environment(\.modelContext) private var modelContext
     @State private var radioManager = RadioManager()
@@ -90,11 +91,18 @@ struct WorkspaceView: View {
             .environment(selectionState)
             .environment(winKeyerManager)
             // CloudSyncService is a singleton accessed directly by views
+            .onReceive(NotificationCenter.default.publisher(for: .focusEntryField)) { _ in
+                selectedItem = .logger
+                selectionState.requestEntryFocus = true
+            }
             .focusedSceneValue(\.toggleInspector, ToggleInspectorAction {
                 showInspector.toggle()
             })
             .focusedSceneValue(\.showCommandPalette, ShowCommandPaletteAction {
                 showCommandPalette = true
+            })
+            .focusedSceneValue(\.showRadioPalette, ShowRadioPaletteAction {
+                showRadioPalette = true
             })
             .focusedSceneValue(\.radioManager, radioManager)
             .focusedSceneValue(\.spotAggregator, spotAggregator)
@@ -164,7 +172,27 @@ struct WorkspaceView: View {
             }
         }
         .sheet(isPresented: $showCommandPalette) {
-            CommandPaletteView()
+            CommandPaletteView(
+                onSwitchToRadioPalette: {
+                    showCommandPalette = false
+                    showRadioPalette = true
+                },
+                onSelectSidebarItem: { item in
+                    selectedItem = item
+                },
+                onSetRole: { role in
+                    activeRole = role
+                },
+                onToggleInspector: {
+                    showInspector.toggle()
+                }
+            )
+        }
+        .sheet(isPresented: $showRadioPalette) {
+            RadioPaletteView(onSwitchToAppPalette: {
+                showRadioPalette = false
+                showCommandPalette = true
+            })
         }
         .sheet(isPresented: $showContestSetup) {
             ContestSetupView(contestManager: contestManager)

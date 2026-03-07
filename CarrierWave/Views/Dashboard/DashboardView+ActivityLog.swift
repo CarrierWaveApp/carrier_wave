@@ -10,9 +10,7 @@ extension DashboardView {
                 Text("Activity")
                     .font(.headline)
                 Spacer()
-                Text("\(asyncStats.totalQSOs) QSOs")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                StatsQSOCountLabel(asyncStats: asyncStats)
             }
 
             ActivityGrid(
@@ -20,24 +18,11 @@ extension DashboardView {
                 activityLogData: asyncStats.activityLogActivityByDate
             )
 
-            // Show progress bar while computing
-            if asyncStats.isComputing {
-                VStack(alignment: .leading, spacing: 4) {
-                    ProgressView(value: asyncStats.progress)
-                        .tint(.blue)
-                    if !asyncStats.progressPhase.isEmpty {
-                        Text(asyncStats.progressPhase)
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .transition(.opacity)
-            }
+            StatsProgressIndicator(asyncStats: asyncStats)
         }
         .padding()
         .background(Color(.systemGray6))
         .clipShape(RoundedRectangle(cornerRadius: 12))
-        .animation(.easeInOut(duration: 0.2), value: asyncStats.isComputing)
     }
 
     var activityLogCard: some View {

@@ -7,6 +7,14 @@ import SwiftUI
 struct CommandPaletteView: View {
     // MARK: Internal
 
+    /// Callback to switch to the radio command palette
+    var onSwitchToRadioPalette: (() -> Void)?
+
+    /// Callbacks for workspace actions that need to mutate parent state
+    var onSelectSidebarItem: ((SidebarItem) -> Void)?
+    var onSetRole: ((OperatingRole) -> Void)?
+    var onToggleInspector: (() -> Void)?
+
     var body: some View {
         VStack(spacing: 0) {
             // Search field
@@ -30,6 +38,8 @@ struct CommandPaletteView: View {
             // Results
             if searchText.isEmpty {
                 quickActions
+            } else if searchText.hasPrefix(">") {
+                radioBridgeView
             } else {
                 filteredResults
             }
@@ -54,13 +64,39 @@ struct CommandPaletteView: View {
 
     private var allCommands: [CommandMatch] {
         [
-            CommandMatch(icon: "square.and.pencil", title: "Focus Logger", shortcut: "Cmd+L") {},
-            CommandMatch(icon: "play.circle", title: "Start Session", shortcut: nil) {},
-            CommandMatch(icon: "stop.circle", title: "End Session", shortcut: nil) {},
-            CommandMatch(icon: "dot.radiowaves.right", title: "Self-Spot", shortcut: nil) {},
-            CommandMatch(icon: "arrow.triangle.2.circlepath", title: "Sync Now", shortcut: nil) {},
-            CommandMatch(icon: "sidebar.leading", title: "Toggle Sidebar", shortcut: "Cmd+0") {},
-            CommandMatch(icon: "sidebar.trailing", title: "Toggle Inspector", shortcut: "Cmd+Opt+I") {},
+            CommandMatch(icon: "square.and.pencil", title: "Focus Logger", shortcut: nil) {
+                onSelectSidebarItem?(.logger)
+            },
+            CommandMatch(icon: "play.circle", title: "Start Session", shortcut: nil) {
+                onSelectSidebarItem?(.sessions)
+            },
+            CommandMatch(icon: "stop.circle", title: "End Session", shortcut: nil) {
+                onSelectSidebarItem?(.sessions)
+            },
+            CommandMatch(icon: "antenna.radiowaves.left.and.right", title: "Tune Radio", shortcut: "Cmd+Shift+P") {
+                onSwitchToRadioPalette?()
+            },
+            CommandMatch(icon: "arrow.triangle.2.circlepath", title: "Sync Now", shortcut: nil) {
+                Task { await CloudSyncService.shared.syncPending() }
+            },
+            CommandMatch(icon: "sidebar.trailing", title: "Toggle Inspector", shortcut: "Cmd+Opt+I") {
+                onToggleInspector?()
+            },
+            CommandMatch(icon: "antenna.radiowaves.left.and.right", title: "Radio Settings", shortcut: nil) {
+                onSelectSidebarItem?(.radio)
+            },
+            CommandMatch(icon: "chart.bar", title: "Dashboard", shortcut: nil) {
+                onSelectSidebarItem?(.dashboard)
+            },
+            CommandMatch(icon: "list.bullet.rectangle", title: "QSO Log", shortcut: nil) {
+                onSelectSidebarItem?(.qsoLog)
+            },
+            CommandMatch(icon: "mappin.and.ellipse", title: "Spots", shortcut: nil) {
+                onSelectSidebarItem?(.spots)
+            },
+            CommandMatch(icon: "map", title: "Band Map", shortcut: nil) {
+                onSelectSidebarItem?(.bandMap)
+            },
         ]
     }
 
@@ -69,28 +105,63 @@ struct CommandPaletteView: View {
         return allCommands.filter { $0.title.lowercased().contains(query) }
     }
 
+    private var navigableSidebarItems: [(item: SidebarItem, icon: String)] {
+        [
+            (.logger, "square.and.pencil"),
+            (.spots, "mappin.and.ellipse"),
+            (.bandMap, "map"),
+            (.cluster, "network"),
+            (.dashboard, "chart.bar"),
+            (.qsoLog, "list.bullet.rectangle"),
+            (.sessions, "clock"),
+            (.radio, "antenna.radiowaves.left.and.right"),
+            (.sync, "arrow.triangle.2.circlepath"),
+        ]
+    }
+
     // MARK: - Quick Actions
 
     private var quickActions: some View {
         List {
+            Section("Help") {
+                helpRow("callsign", "Look up a callsign (e.g. K4ABC)")
+                helpRow("frequency", "Tune radio (e.g. 14074 or 14.074)")
+                helpRow("park ref", "Search park (e.g. K-0001)")
+                helpRow("> ...", "Switch to Radio Palette")
+            }
+
             Section("Quick Actions") {
                 CommandRow(icon: "square.and.pencil", title: "Focus Logger", shortcut: "Cmd+L") {
+                    onSelectSidebarItem?(.logger)
                     dismiss()
                 }
-                CommandRow(icon: "play.circle", title: "Start Session", shortcut: nil) {
+                CommandRow(icon: "antenna.radiowaves.left.and.right", title: "Tune Radio", shortcut: "Cmd+Shift+P") {
+                    dismiss()
+                    onSwitchToRadioPalette?()
+                }
+                CommandRow(icon: "arrow.triangle.2.circlepath", title: "Sync Now", shortcut: nil) {
+                    Task { await CloudSyncService.shared.syncPending() }
                     dismiss()
                 }
-                CommandRow(icon: "antenna.radiowaves.left.and.right", title: "Tune Radio", shortcut: nil) {
+                CommandRow(icon: "sidebar.trailing", title: "Toggle Inspector", shortcut: "Cmd+Opt+I") {
+                    onToggleInspector?()
                     dismiss()
                 }
-                CommandRow(icon: "dot.radiowaves.right", title: "Self-Spot", shortcut: nil) {
-                    dismiss()
+            }
+
+            Section("Navigate") {
+                ForEach(navigableSidebarItems, id: \.item) { entry in
+                    CommandRow(icon: entry.icon, title: entry.item.displayName, shortcut: nil) {
+                        onSelectSidebarItem?(entry.item)
+                        dismiss()
+                    }
                 }
             }
 
             Section("Roles") {
                 ForEach(OperatingRole.allCases) { role in
                     CommandRow(icon: role.icon, title: role.displayName, shortcut: "Cmd+\(role.keyboardShortcut)") {
+                        onSetRole?(role)
                         dismiss()
                     }
                 }
@@ -157,7 +228,48 @@ struct CommandPaletteView: View {
         }
     }
 
+    private var radioBridgeView: some View {
+        VStack(spacing: 12) {
+            Text("Switch to Radio Palette")
+                .font(.headline)
+            Text("Press Enter to open the radio command palette (Cmd+Shift+P)")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            HStack(spacing: 4) {
+                Text("Enter")
+                    .font(.caption.weight(.medium))
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(.quaternary, in: RoundedRectangle(cornerRadius: 4))
+                Text("Switch")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(16)
+    }
+
+    private func helpRow(_ command: String, _ description: String) -> some View {
+        HStack(spacing: 8) {
+            Text(command)
+                .font(.caption.monospaced())
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(.quaternary, in: RoundedRectangle(cornerRadius: 4))
+            Text(description)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+
     private func executeTopResult() {
+        if searchText.hasPrefix(">") {
+            dismiss()
+            onSwitchToRadioPalette?()
+            return
+        }
+
         let results = matchingCommands
         if let first = results.first {
             first.action()

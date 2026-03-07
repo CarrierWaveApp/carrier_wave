@@ -2,6 +2,14 @@ import CarrierWaveData
 import Foundation
 import SwiftData
 
+// MARK: - Notifications
+
+extension Notification.Name {
+    /// Posted when QRZ Callbook credentials are added or removed.
+    /// Observers should re-trigger lookups to get richer data from QRZ.
+    static let qrzCallbookCredentialsChanged = Notification.Name("qrzCallbookCredentialsChanged")
+}
+
 // MARK: - CallsignLookupError
 
 /// Errors that can occur during callsign lookup
@@ -78,6 +86,11 @@ struct CallsignLookupResult: Equatable, Sendable {
         CallsignLookupResult(info: info, error: nil, qrzAttempted: true, poloNotesChecked: true)
     }
 
+    /// Create a result from HamDB fallback lookup
+    nonisolated static func fromHamDB(_ info: CallsignInfo) -> CallsignLookupResult {
+        CallsignLookupResult(info: info, error: nil, qrzAttempted: false, poloNotesChecked: true)
+    }
+
     /// Create a not found result
     nonisolated static func notFound(qrzAttempted: Bool, poloNotesChecked: Bool)
         -> CallsignLookupResult
@@ -108,9 +121,10 @@ struct CallsignLookupResult: Equatable, Sendable {
 // MARK: - CallsignLookupService
 
 /// Service for looking up callsign information from multiple sources.
-/// Uses a two-tier lookup strategy:
+/// Uses a three-tier lookup strategy:
 /// 1. Polo notes lists (local, fast, offline-capable)
 /// 2. QRZ XML callbook API (remote, comprehensive)
+/// 3. HamDB (free fallback for grid/name when QRZ unavailable)
 @MainActor
 final class CallsignLookupService {
     // MARK: Lifecycle
@@ -181,13 +195,16 @@ final class CallsignLookupService {
 
             // QRZ detects callsign changes via the `call` field — if QRZ returns
             // a different callsign than queried, the queried call was an old/alias.
+            // HamDB runs in parallel as a free fallback when QRZ is unavailable.
             async let poloInfoTask = lookupInPoloNotes(normalizedCallsign)
             async let qrzResultTask = lookupInQRZWithResult(normalizedCallsign)
+            async let hamdbInfoTask = lookupInHamDB(normalizedCallsign)
 
             let poloInfo = await poloInfoTask
             let qrzResult = await qrzResultTask
+            let hamdbInfo = await hamdbInfoTask
 
-            return mergeResults(polo: poloInfo, qrz: qrzResult)
+            return mergeResults(polo: poloInfo, qrz: qrzResult, hamdb: hamdbInfo)
         }
 
         pendingResultLookups[normalizedCallsign] = task
@@ -303,6 +320,40 @@ final class CallsignLookupService {
         return result.info?.name
     }
 
+    // MARK: - HamDB Lookup (free fallback)
+
+    /// Look up callsign info from HamDB as a fallback when QRZ is unavailable.
+    /// Returns grid, name, QTH, state, country, and license class.
+    func lookupInHamDB(_ callsign: String) async -> CallsignInfo? {
+        let client = HamDBClient()
+        guard let license = try? await client.lookup(callsign: callsign) else {
+            return nil
+        }
+
+        let name = license.fullName
+        let grid = license.grid
+        let qth = license.city
+        let state = license.state
+        let country = license.country
+        let licenseClass = license.parsedLicenseClass?.rawValue
+
+        // Only return if we got meaningful data
+        guard name != nil || grid != nil || qth != nil else {
+            return nil
+        }
+
+        return CallsignInfo(
+            callsign: callsign,
+            name: name,
+            qth: qth,
+            state: state,
+            country: country,
+            grid: grid,
+            licenseClass: licenseClass,
+            source: .hamdb
+        )
+    }
+
     // MARK: - Cache Management
 
     func updateCache(_ info: CallsignInfo) {
@@ -328,37 +379,42 @@ final class CallsignLookupService {
 
     // MARK: Private
 
-    /// Merge Polo Notes and QRZ results into a single lookup result
+    /// Merge Polo Notes, QRZ, and HamDB results into a single lookup result.
+    /// Priority: QRZ > HamDB for data fields; Polo notes always merged for emoji/note.
     private func mergeResults(
-        polo: CallsignInfo?, qrz: CallsignLookupResult
+        polo: CallsignInfo?, qrz: CallsignLookupResult, hamdb: CallsignInfo?
     ) -> CallsignLookupResult {
-        // Polo Notes emoji/note + QRZ name/grid/location
-        if let polo, let qrzInfo = qrz.info {
+        // Best remote info: QRZ if available, otherwise HamDB fallback
+        let remoteInfo = qrz.info ?? hamdb
+        let source: CallsignInfoSource = qrz.info != nil ? .qrz : .hamdb
+
+        // Polo Notes emoji/note + remote data (QRZ or HamDB)
+        if let polo, let remote = remoteInfo {
             let merged = CallsignInfo(
-                callsign: qrzInfo.callsign,
-                name: qrzInfo.name,
-                firstName: qrzInfo.firstName,
-                nickname: qrzInfo.nickname,
+                callsign: remote.callsign,
+                name: remote.name,
+                firstName: remote.firstName,
+                nickname: remote.nickname,
                 note: polo.note,
                 emoji: polo.emoji,
-                qth: qrzInfo.qth,
-                state: qrzInfo.state,
-                country: qrzInfo.country,
-                grid: qrzInfo.grid,
-                licenseClass: qrzInfo.licenseClass,
-                previousCallsign: qrzInfo.previousCallsign,
-                source: .qrz,
+                qth: remote.qth,
+                state: remote.state,
+                country: remote.country,
+                grid: remote.grid,
+                licenseClass: remote.licenseClass,
+                previousCallsign: remote.previousCallsign,
+                source: source,
                 allEmojis: polo.allEmojis,
                 matchingSources: polo.matchingSources,
-                callsignChangeNote: qrzInfo.callsignChangeNote
+                callsignChangeNote: remote.callsignChangeNote
             )
             updateCache(merged)
-            return .fromQRZ(merged)
+            return source == .qrz ? .fromQRZ(merged) : .fromHamDB(merged)
         }
 
-        if let qrzInfo = qrz.info {
-            updateCache(qrzInfo)
-            return .fromQRZ(qrzInfo)
+        if let remote = remoteInfo {
+            updateCache(remote)
+            return source == .qrz ? .fromQRZ(remote) : .fromHamDB(remote)
         }
 
         if let polo {

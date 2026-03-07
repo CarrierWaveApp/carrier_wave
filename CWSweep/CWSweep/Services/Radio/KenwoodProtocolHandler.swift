@@ -51,6 +51,18 @@ struct KenwoodProtocolHandler: RadioProtocolHandler {
         KenwoodProtocol.clearRITXIT().data(using: .ascii)
     }
 
+    func encodeReadXIT() -> Data? {
+        KenwoodProtocol.readXIT().data(using: .ascii)
+    }
+
+    func encodeReadRIT() -> Data? {
+        KenwoodProtocol.readRIT().data(using: .ascii)
+    }
+
+    func encodeReadRITXITOffset() -> Data? {
+        KenwoodProtocol.readRITXITOffset().data(using: .ascii)
+    }
+
     func decodeFrequency(from data: Data) -> Double? {
         guard let str = String(data: data, encoding: .ascii) else {
             return nil
@@ -82,9 +94,46 @@ struct KenwoodProtocolHandler: RadioProtocolHandler {
             return nil
         }
         let responses = KenwoodProtocol.extractResponses(from: str)
+        for response in responses.responses where response.hasPrefix("TX") {
+            return response.contains("1")
+        }
+        return nil
+    }
+
+    func decodeXITState(from data: Data) -> Bool? {
+        guard let str = String(data: data, encoding: .ascii) else {
+            return nil
+        }
+        let responses = KenwoodProtocol.extractResponses(from: str)
         for response in responses.responses {
-            if response.hasPrefix("TX") {
-                return response.contains("1")
+            if let state = KenwoodProtocol.parseXITResponse(response) {
+                return state
+            }
+        }
+        return nil
+    }
+
+    func decodeRITState(from data: Data) -> Bool? {
+        guard let str = String(data: data, encoding: .ascii) else {
+            return nil
+        }
+        let responses = KenwoodProtocol.extractResponses(from: str)
+        for response in responses.responses {
+            if let state = KenwoodProtocol.parseRITResponse(response) {
+                return state
+            }
+        }
+        return nil
+    }
+
+    func decodeRITXITOffset(from data: Data) -> Int? {
+        guard let str = String(data: data, encoding: .ascii) else {
+            return nil
+        }
+        let responses = KenwoodProtocol.extractResponses(from: str)
+        for response in responses.responses {
+            if let offset = KenwoodProtocol.parseRITXITOffsetResponse(response) {
+                return offset
             }
         }
         return nil

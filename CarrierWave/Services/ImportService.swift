@@ -238,6 +238,9 @@ class ImportService: ObservableObject {
             parkReference: parkReference,
             theirParkReference: theirParkReference,
             notes: record.comment, importSource: source, rawADIF: record.rawADIF,
+            name: record.name,
+            qth: record.qth,
+            state: record.state,
             wwffRef: wwffRef
         )
     }

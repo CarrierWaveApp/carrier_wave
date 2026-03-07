@@ -56,6 +56,16 @@ public enum KenwoodProtocol {
         return "RO\(sign)\(value);"
     }
 
+    /// Build a read-RIT command.
+    public static func readRIT() -> String {
+        "RT;"
+    }
+
+    /// Build a read-RIT/XIT offset command.
+    public static func readRITXITOffset() -> String {
+        "RO;"
+    }
+
     /// Build a clear RIT/XIT offset command.
     /// Format: `RC;` — sets offset to zero.
     public static func clearRITXIT() -> String {
@@ -84,6 +94,31 @@ public enum KenwoodProtocol {
             return nil
         }
         return KenwoodMode(rawValue: digit)
+    }
+
+    /// Parse an XIT response string (e.g. `XT1`) into on/off.
+    public static func parseXITResponse(_ response: String) -> Bool? {
+        guard response.hasPrefix("XT"), response.count >= 3 else {
+            return nil
+        }
+        return response.dropFirst(2) == "1"
+    }
+
+    /// Parse a RIT response string (e.g. `RT1`) into on/off.
+    public static func parseRITResponse(_ response: String) -> Bool? {
+        guard response.hasPrefix("RT"), response.count >= 3 else {
+            return nil
+        }
+        return response.dropFirst(2) == "1"
+    }
+
+    /// Parse a RIT/XIT offset response (e.g. `RO+0100` or `RO-0050`) into Hz.
+    public static func parseRITXITOffsetResponse(_ response: String) -> Int? {
+        guard response.hasPrefix("RO"), response.count >= 7 else {
+            return nil
+        }
+        let offsetStr = response.dropFirst(2)
+        return Int(offsetStr)
     }
 
     /// Extract complete `;`-terminated responses from a text buffer.

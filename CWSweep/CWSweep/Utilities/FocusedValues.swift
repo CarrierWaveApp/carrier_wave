@@ -90,6 +90,16 @@ struct TuneInToSpotAction {
     }
 }
 
+// MARK: - ShowRadioPaletteAction
+
+struct ShowRadioPaletteAction {
+    let action: () -> Void
+
+    func callAsFunction() {
+        action()
+    }
+}
+
 // MARK: - DisconnectSDRAction
 
 struct DisconnectSDRAction {
@@ -194,6 +204,12 @@ struct DisconnectSDRKey: FocusedValueKey {
     typealias Value = DisconnectSDRAction
 }
 
+// MARK: - ShowRadioPaletteKey
+
+struct ShowRadioPaletteKey: FocusedValueKey {
+    typealias Value = ShowRadioPaletteAction
+}
+
 // MARK: - ToggleSDRRecordingKey
 
 struct ToggleSDRRecordingKey: FocusedValueKey {
@@ -271,6 +287,11 @@ extension FocusedValues {
     var disconnectSDR: DisconnectSDRAction? {
         get { self[DisconnectSDRKey.self] }
         set { self[DisconnectSDRKey.self] = newValue }
+    }
+
+    var showRadioPalette: ShowRadioPaletteAction? {
+        get { self[ShowRadioPaletteKey.self] }
+        set { self[ShowRadioPaletteKey.self] = newValue }
     }
 
     var toggleSDRRecording: ToggleSDRRecordingAction? {

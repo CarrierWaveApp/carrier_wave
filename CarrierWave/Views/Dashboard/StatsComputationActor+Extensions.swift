@@ -324,6 +324,38 @@ extension StatsComputationActor {
         )
     }
 
+    /// All 50 US state abbreviations for WAS computation (avoids @MainActor USStates access)
+    private static let usStateAbbreviations: Set<String> = [
+        "AK", "AL", "AR", "AZ", "CA", "CO", "CT", "DE", "FL", "GA",
+        "HI", "IA", "ID", "IL", "IN", "KS", "KY", "LA", "MA", "MD",
+        "ME", "MI", "MN", "MO", "MS", "MT", "NC", "ND", "NE", "NH",
+        "NJ", "NM", "NV", "NY", "OH", "OK", "OR", "PA", "RI", "SC",
+        "SD", "TN", "TX", "UT", "VA", "VT", "WA", "WI", "WV", "WY",
+    ]
+
+    /// Compute WAS (Worked All States) from QTH-only QSOs (no park reference)
+    func computeWAS(into stats: inout ComputedStats, from realQSOs: [StatsQSOSnapshot]) {
+        // Filter to QTH-only QSOs (not during a POTA activation)
+        let qthQSOs = realQSOs.filter { $0.parkReference == nil || $0.parkReference!.isEmpty }
+
+        var stateCounts: [String: Int] = [:]
+        var stateCallsigns: [String: [String]] = [:]
+
+        for qso in qthQSOs {
+            guard let state = qso.state?.uppercased().trimmingCharacters(in: .whitespaces),
+                  !state.isEmpty,
+                  Self.usStateAbbreviations.contains(state)
+            else {
+                continue
+            }
+            stateCounts[state, default: 0] += 1
+            stateCallsigns[state, default: []].append(qso.callsign)
+        }
+
+        stats.wasStateCounts = stateCounts
+        stats.wasStateCallsigns = stateCallsigns
+    }
+
     /// Compute top frequency, friend, and hunter for the favorites card
     func computeTopFavorites(into stats: inout ComputedStats, from qsos: [StatsQSOSnapshot]) {
         // Top frequency - group by rounded frequency

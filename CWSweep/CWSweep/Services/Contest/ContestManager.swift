@@ -1,3 +1,4 @@
+import CarrierWaveCore
 import CarrierWaveData
 import Foundation
 
@@ -93,6 +94,10 @@ final class ContestManager {
 
     func toggleOperatingMode() {
         operatingMode = operatingMode == .cq ? .sp : .cq
+    }
+
+    func toggleToMode(_ mode: ContestModeValue) {
+        operatingMode = mode == .run ? .cq : .sp
     }
 
     func rememberBand(_ band: String, frequency: Double) {
