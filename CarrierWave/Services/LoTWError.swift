@@ -1,6 +1,31 @@
 import CarrierWaveData
 import Foundation
 
+// MARK: - URLError Transient Classification
+
+extension URLError {
+    /// Whether this error is transient and worth retrying.
+    /// Covers SSL certificate failures, connection resets, and network interruptions.
+    var isTransient: Bool {
+        switch code {
+        case .serverCertificateUntrusted,
+             .serverCertificateHasBadDate,
+             .serverCertificateNotYetValid,
+             .serverCertificateHasUnknownRoot,
+             .secureConnectionFailed,
+             .networkConnectionLost,
+             .notConnectedToInternet,
+             .cannotConnectToHost,
+             .timedOut:
+            true
+        default:
+            false
+        }
+    }
+}
+
+// MARK: - LoTWError
+
 enum LoTWError: Error, LocalizedError {
     case authenticationFailed
     case serviceError(String)

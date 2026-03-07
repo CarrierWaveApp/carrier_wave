@@ -51,6 +51,32 @@ final class LoTWClient {
         return URLSession(configuration: config)
     }()
 
+    /// Maximum retry attempts for transient network errors (SSL cert, connection reset, etc.)
+    let maxTransientRetries = 3
+
+    /// Perform a URLSession data request with automatic retries for transient errors.
+    /// LoTW's server occasionally returns invalid SSL certificates on the first attempt.
+    func dataWithRetry(for request: URLRequest) async throws -> (Data, URLResponse) {
+        let debugLog = SyncDebugLog.shared
+        var lastError: Error?
+
+        for attempt in 1 ... maxTransientRetries {
+            do {
+                return try await session.data(for: request)
+            } catch let urlError as URLError where urlError.isTransient {
+                lastError = urlError
+                let delay = UInt64(1 << attempt) // 2s, 4s, 8s
+                debugLog.warning(
+                    "Transient error (attempt \(attempt)/\(maxTransientRetries)): "
+                        + "\(urlError.localizedDescription), retrying in \(delay)s",
+                    service: .lotw
+                )
+                try await Task.sleep(nanoseconds: delay * 1_000_000_000)
+            }
+        }
+        throw lastError!
+    }
+
     // MARK: - Configuration
 
     var isConfigured: Bool {
@@ -155,7 +181,7 @@ final class LoTWClient {
         var request = URLRequest(url: components.url!)
         request.setValue(userAgent, forHTTPHeaderField: "User-Agent")
 
-        let (data, response) = try await session.data(for: request)
+        let (data, response) = try await dataWithRetry(for: request)
 
         // Check HTTP status code first - LoTW uses 403/503 for rate limiting
         if let httpResponse = response as? HTTPURLResponse {
@@ -221,7 +247,7 @@ final class LoTWClient {
         var request = URLRequest(url: components.url!)
         request.setValue(userAgent, forHTTPHeaderField: "User-Agent")
 
-        let (data, response) = try await session.data(for: request)
+        let (data, response) = try await dataWithRetry(for: request)
 
         // Check HTTP status code first - LoTW uses 403/503 for rate limiting
         if let httpResponse = response as? HTTPURLResponse {
