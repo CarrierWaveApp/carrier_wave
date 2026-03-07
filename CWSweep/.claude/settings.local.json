@@ -1,0 +1,40 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git:*)",
+      "Bash(python3:*)",
+      "Bash(xargs bash:*)",
+      "Bash(for f in /Users/jsvana/.claude/plans/*.md)",
+      "Bash(do head -3 \"$f\")",
+      "Bash(do:*)",
+      "Bash(swift build:*)",
+      "Bash(swift test:*)",
+      "Bash(xcodebuild:*)",
+      "Bash(~/.claude/skills/xcode-build/scripts/xc test:*)",
+      "Bash(xcodegen generate:*)",
+      "Bash(log show --predicate 'process == \"\"CW Sweep\"\"' --last 10m --style compact)",
+      "Bash(log show --predicate 'process == \"\"CW Sweep\"\"' --last 10m)",
+      "Bash(/usr/bin/log show --predicate 'process == \"\"CW Sweep\"\"' --last 10m)",
+      "Bash(timeout 10 \"/Users/jsvana/Library/Developer/Xcode/DerivedData/CWSweep-gdshdakwfjnzemghzfvaonmjntuw/Build/Products/Debug/CW Sweep.app/Contents/MacOS/CW Sweep\")",
+      "Bash(gtimeout 10 \"/Users/jsvana/Library/Developer/Xcode/DerivedData/CWSweep-gdshdakwfjnzemghzfvaonmjntuw/Build/Products/Debug/CW Sweep.app/Contents/MacOS/CW Sweep\")",
+      "Bash(perl -e 'alarm 10; exec @ARGV' \"/Users/jsvana/Library/Developer/Xcode/DerivedData/CWSweep-gdshdakwfjnzemghzfvaonmjntuw/Build/Products/Debug/CW Sweep.app/Contents/MacOS/CW Sweep\")",
+      "Bash(~/.claude/skills/xcode-build/scripts/xc build)",
+      "Bash(ioreg:*)",
+      "Bash(system_profiler SPUSBDataType:*)",
+      "Bash(curl:*)",
+      "Bash(pdftotext:*)",
+      "Bash(linear project:*)",
+      "Bash(linear team:*)",
+      "Bash(linear issue:*)",
+      "Bash(swift:*)",
+      "Bash(~/.claude/skills/xcode-build/scripts/xc build:*)",
+      "Bash(log show:*)",
+      "Bash(/usr/bin/log show:*)",
+      "Bash(open:*)",
+      "Bash(pgrep:*)",
+      "Bash(codesign:*)",
+      "Bash(pkill:*)",
+      "Bash(sudo log:*)"
+    ]
+  }
+}
