@@ -4,6 +4,9 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- Add automatic retry with exponential backoff for LoTW sync transient errors (SSL certificate failures, connection resets, timeouts)
+
 ## [1.55.0] - 2026-03-06
 
 ### Added
