@@ -17,6 +17,7 @@ Pure logic library that can be tested without iOS Simulator. Run tests with `mak
 | `Sources/CarrierWaveCore/CIVProtocol.swift` | CI-V protocol: frame building/parsing, BCD frequency encoding, mode mapping |
 | `Sources/CarrierWaveCore/CoastlineData.swift` | Simplified continent outlines for azimuthal map rendering |
 | `Sources/CarrierWaveCore/KenwoodProtocol.swift` | Kenwood/Elecraft K3 text command building/parsing, mode mapping |
+| `Sources/CarrierWaveCore/YaesuProtocol.swift` | Yaesu CAT text command building/parsing, IF response parsing, mode mapping |
 | `Sources/CarrierWaveCore/CallsignEditDistance.swift` | Levenshtein edit distance for callsign comparison |
 | `Sources/CarrierWaveCore/SCPDatabase.swift` | Super Check Partial in-memory database (partial match, exact lookup, near-miss) |
 | `Sources/CarrierWaveCore/CWTextElement.swift` | CW text element types for transcript highlighting |

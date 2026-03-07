@@ -7,7 +7,7 @@ enum RadioProtocolType: String, Codable, CaseIterable {
     case civ // Icom CI-V
     case kenwood // Kenwood TS-xxx
     case elecraft // Elecraft (Kenwood extended)
-    case yaesu // Yaesu CAT (future)
+    case yaesu // Yaesu CAT (FTDX10, FT-991A, FT-710, FTDX101D)
     case flex // FlexRadio SmartSDR (future)
 }
 
@@ -48,6 +48,20 @@ struct RadioModel: Codable, Identifiable, Hashable {
         RadioModel(id: "k4", name: "K4", manufacturer: "Elecraft",
                    protocolType: .elecraft, defaultBaudRate: 115_200, civAddress: nil,
                    dtrDefault: false, rtsDefault: false),
+
+        // Yaesu — USB virtual COM port (built-in UART bridge)
+        RadioModel(id: "ftdx10", name: "FTDX10", manufacturer: "Yaesu",
+                   protocolType: .yaesu, defaultBaudRate: 38_400, civAddress: nil,
+                   dtrDefault: true, rtsDefault: true),
+        RadioModel(id: "ft991a", name: "FT-991A", manufacturer: "Yaesu",
+                   protocolType: .yaesu, defaultBaudRate: 38_400, civAddress: nil,
+                   dtrDefault: true, rtsDefault: true),
+        RadioModel(id: "ft710", name: "FT-710", manufacturer: "Yaesu",
+                   protocolType: .yaesu, defaultBaudRate: 38_400, civAddress: nil,
+                   dtrDefault: true, rtsDefault: true),
+        RadioModel(id: "ftdx101d", name: "FTDX101D", manufacturer: "Yaesu",
+                   protocolType: .yaesu, defaultBaudRate: 38_400, civAddress: nil,
+                   dtrDefault: true, rtsDefault: true),
     ]
 
     let id: String

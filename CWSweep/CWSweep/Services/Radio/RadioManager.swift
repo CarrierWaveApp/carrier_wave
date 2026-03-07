@@ -106,8 +106,9 @@ final class RadioManager {
             KenwoodProtocolHandler()
         case .elecraft:
             ElecraftProtocolHandler()
-        case .yaesu,
-             .flex:
+        case .yaesu:
+            YaesuProtocolHandler()
+        case .flex:
             KenwoodProtocolHandler() // Placeholder
         }
 

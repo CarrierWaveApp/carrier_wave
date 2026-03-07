@@ -58,6 +58,7 @@
 | `CIVProtocolHandler.swift` | Icom CI-V protocol handler wrapping CarrierWaveCore CIVProtocol |
 | `KenwoodProtocolHandler.swift` | Kenwood CAT protocol handler wrapping CarrierWaveCore KenwoodProtocol |
 | `ElecraftProtocolHandler.swift` | Elecraft K3/K4 handler extending KenwoodProtocolHandler with CW keying |
+| `YaesuProtocolHandler.swift` | Yaesu CAT protocol handler using IF command for efficient polling |
 | `RadioSession.swift` | Actor managing transport + protocol; polls frequency/mode state |
 | `RadioCommandLog.swift` | @MainActor @Observable ring-buffer log of TX/RX commands for in-app visibility |
 | `RadioManager.swift` | @MainActor @Observable managing multiple radio sessions (SO2R ready) |
