@@ -4,6 +4,8 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.55.0] - 2026-03-06
+
 ### Added
 - Add Yaesu CAT protocol support in CW Sweep — FTDX10, FT-991A, FT-710, FTDX101D with frequency, mode, PTT, RIT/XIT, clarifier offset, and CW keying via keyer memory
 - Azimuthal equidistant projection map with live spot density heatmap and antenna radiation pattern overlay
