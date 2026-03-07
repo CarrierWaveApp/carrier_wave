@@ -4,6 +4,8 @@ import SwiftUI
 // MARK: - ConsolidatedActivityRow
 
 struct ConsolidatedActivityRow: View {
+    // MARK: Internal
+
     let group: ActivityGroup
     var onShare: ((ActivityItem) -> Void)?
     var onHide: ((ActivityItem) -> Void)?
@@ -29,11 +31,37 @@ struct ConsolidatedActivityRow: View {
     @State private var isExpanded = false
     @AppStorage("useMetricUnits") private var useMetricUnits = false
 
-    private func deleteHandler(for item: ActivityItem) -> (() -> Void)? {
-        guard item.isOwn, item.serverId != nil, let onDelete = onDeleteFromServer else {
-            return nil
+    private var summaryText: String {
+        switch group.activityType {
+        case .dxContact:
+            group.dxContactSummary
+        case .workedFriend:
+            group.workedFriendSummary
+        case .newDXCCEntity,
+             .newBand,
+             .newMode:
+            group.milestoneSummary
+        default:
+            "\(group.count) activities"
         }
-        return { onDelete(item) }
+    }
+
+    private var iconColor: Color {
+        switch group.activityType {
+        case .challengeTierUnlock,
+             .challengeCompletion: .yellow
+        case .newDXCCEntity: .blue
+        case .newBand,
+             .newMode: .purple
+        case .dxContact: .green
+        case .potaActivation: .green
+        case .sotaActivation: .orange
+        case .dailyStreak,
+             .potaDailyStreak: .orange
+        case .personalBest: .red
+        case .workedFriend: .cyan
+        case .sessionCompleted: .indigo
+        }
     }
 
     private var consolidatedView: some View {
@@ -139,19 +167,6 @@ struct ConsolidatedActivityRow: View {
         }
     }
 
-    private var summaryText: String {
-        switch group.activityType {
-        case .dxContact:
-            return group.dxContactSummary
-        case .workedFriend:
-            return group.workedFriendSummary
-        case .newDXCCEntity, .newBand, .newMode:
-            return group.milestoneSummary
-        default:
-            return "\(group.count) activities"
-        }
-    }
-
     private var bandTags: some View {
         HStack(spacing: 4) {
             ForEach(group.uniqueBands, id: \.self) { band in
@@ -241,7 +256,6 @@ struct ConsolidatedActivityRow: View {
         }
     }
 
-    @ViewBuilder
     private func dxContactLabel(_ details: ActivityDetails?) -> some View {
         HStack(spacing: 4) {
             if let callsign = details?.workedCallsign {
@@ -257,7 +271,6 @@ struct ConsolidatedActivityRow: View {
         }
     }
 
-    @ViewBuilder
     private func friendContactLabel(_ details: ActivityDetails?) -> some View {
         HStack(spacing: 4) {
             if let callsign = details?.workedCallsign {
@@ -283,6 +296,13 @@ struct ConsolidatedActivityRow: View {
         }
     }
 
+    private func deleteHandler(for item: ActivityItem) -> (() -> Void)? {
+        guard item.isOwn, item.serverId != nil, let onDelete = onDeleteFromServer else {
+            return nil
+        }
+        return { onDelete(item) }
+    }
+
     private func detailParts(_ details: ActivityDetails?) -> [String] {
         var parts: [String] = []
 
@@ -300,20 +320,5 @@ struct ConsolidatedActivityRow: View {
         }
 
         return parts
-    }
-
-    private var iconColor: Color {
-        switch group.activityType {
-        case .challengeTierUnlock, .challengeCompletion: .yellow
-        case .newDXCCEntity: .blue
-        case .newBand, .newMode: .purple
-        case .dxContact: .green
-        case .potaActivation: .green
-        case .sotaActivation: .orange
-        case .dailyStreak, .potaDailyStreak: .orange
-        case .personalBest: .red
-        case .workedFriend: .cyan
-        case .sessionCompleted: .indigo
-        }
     }
 }

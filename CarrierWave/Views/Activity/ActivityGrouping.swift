@@ -27,20 +27,10 @@ struct ActivityGroup: Identifiable {
     }
 }
 
-// MARK: - Grouping Logic
+// MARK: - ActivityGrouping
 
 enum ActivityGrouping {
-    /// Types that should be consolidated when multiple appear from the same callsign.
-    private static let consolidatableTypes: Set<ActivityType> = [
-        .dxContact,
-        .workedFriend,
-        .newDXCCEntity,
-        .newBand,
-        .newMode,
-    ]
-
-    /// Maximum time gap between items to be grouped together (2 hours).
-    private static let groupingWindowSeconds: TimeInterval = 2 * 3_600
+    // MARK: Internal
 
     /// Groups activity items by (callsign, activityType) within a time window.
     /// Items are expected to be sorted by timestamp descending (newest first).
@@ -90,6 +80,20 @@ enum ActivityGrouping {
 
         return groups
     }
+
+    // MARK: Private
+
+    /// Types that should be consolidated when multiple appear from the same callsign.
+    private static let consolidatableTypes: Set<ActivityType> = [
+        .dxContact,
+        .workedFriend,
+        .newDXCCEntity,
+        .newBand,
+        .newMode,
+    ]
+
+    /// Maximum time gap between items to be grouped together (2 hours).
+    private static let groupingWindowSeconds: TimeInterval = 2 * 3_600
 
     private static func isWithinWindow(
         _ newer: ActivityItem,

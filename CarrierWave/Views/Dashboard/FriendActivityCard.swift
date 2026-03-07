@@ -52,6 +52,10 @@ struct FriendActivityCard: View {
         Set(acceptedFriends.map { $0.friendCallsign.uppercased() })
     }
 
+    private var groupedActivities: [ActivityGroup] {
+        ActivityGrouping.group(friendActivities)
+    }
+
     private var header: some View {
         Button {
             onActivityTap()
@@ -77,10 +81,6 @@ struct FriendActivityCard: View {
         Text("No recent friend activity")
             .font(.subheadline)
             .foregroundStyle(.secondary)
-    }
-
-    private var groupedActivities: [ActivityGroup] {
-        ActivityGrouping.group(friendActivities)
     }
 
     private var activityRows: some View {
