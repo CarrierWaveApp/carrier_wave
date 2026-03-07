@@ -125,8 +125,10 @@ struct WebSDRPickerSheet: View {
         isLoading = true
         loadFavorites()
         await WebSDRDirectory.shared.refresh()
+        let grid = myGrid
+            ?? UserDefaults.standard.string(forKey: "loggerDefaultGrid")
         receivers = await WebSDRDirectory.shared.findNearby(
-            grid: myGrid,
+            grid: grid,
             limit: 20
         )
         isLoading = false

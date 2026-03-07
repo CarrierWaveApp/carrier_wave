@@ -112,6 +112,9 @@ final class TuneInManager {
     /// Whether the expanded player sheet is shown
     var showExpandedPlayer = false
 
+    /// Error message to present as an alert (e.g. no receivers found)
+    var errorMessage: String?
+
     /// Whether a cellular data warning needs confirmation
     var showCellularWarning = false
 
@@ -257,6 +260,14 @@ final class TuneInManager {
 
     private var cwFrameContinuation: AsyncStream<[Int16]>.Continuation?
 
+    /// Whether the session is in an error state
+    private var isErrorState: Bool {
+        if case .error = session.state {
+            return true
+        }
+        return false
+    }
+
     private func performTuneIn(
         spot: TuneInSpot,
         modelContext: ModelContext,
@@ -269,11 +280,16 @@ final class TuneInManager {
         }
 
         self.spot = spot
+        session.state = .connecting
 
-        guard let receiver = await selectReceiver(
+        let candidates = await selectCandidateReceivers(
             for: spot, strategy: strategy
-        ) else {
-            session.state = .error("No receivers available")
+        )
+
+        guard !candidates.isEmpty else {
+            session.state = .idle
+            self.spot = nil
+            errorMessage = "No KiwiSDR receivers are available right now. Try again later."
             return
         }
 
@@ -299,17 +315,31 @@ final class TuneInManager {
         // Use a standalone session ID (not tied to a logging session)
         let standaloneId = UUID()
 
-        await session.start(
-            receiver: receiver,
-            frequencyMHz: spot.frequencyMHz,
-            mode: spot.mode,
-            loggingSessionId: standaloneId,
-            modelContext: modelContext
-        )
+        // Try each candidate until one connects successfully
+        for receiver in candidates {
+            await session.start(
+                receiver: receiver,
+                frequencyMHz: spot.frequencyMHz,
+                mode: spot.mode,
+                loggingSessionId: standaloneId,
+                modelContext: modelContext
+            )
 
-        // Start smart feature monitors
-        startQSYMonitor()
-        startReceiverMonitor()
+            if !isErrorState {
+                // Connected successfully
+                startQSYMonitor()
+                startReceiverMonitor()
+                return
+            }
+
+            // Connection failed — finalize before trying next candidate
+            await session.finalize()
+        }
+
+        // All candidates exhausted
+        await stopCWTranscription()
+        self.spot = nil
+        errorMessage = "Could not connect to any available receiver. Try again later."
     }
 
     private func setupCWTranscription() {

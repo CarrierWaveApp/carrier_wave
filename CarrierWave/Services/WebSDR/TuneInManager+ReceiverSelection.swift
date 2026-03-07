@@ -5,131 +5,147 @@ import Foundation
 // MARK: - Receiver Selection
 
 extension TuneInManager {
-    /// Select a receiver using the chosen listening strategy.
-    func selectReceiver(
+    /// Ranked list of candidate receivers for the chosen strategy.
+    /// Returns available receivers in priority order (best first),
+    /// filtered to within `maxReceiverDistanceKm`.
+    func selectCandidateReceivers(
         for spot: TuneInSpot,
         strategy: TuneInStrategy
-    ) async -> KiwiSDRReceiver? {
+    ) async -> [KiwiSDRReceiver] {
         switch strategy {
         case .nearStrongRBN:
-            await selectReceiverNearRBN(for: spot)
+            await candidatesNearRBN(for: spot)
         case .nearActivator:
-            await selectReceiverNearActivator(for: spot)
+            await candidatesNearActivator(for: spot)
         case .nearMyQTH:
-            await selectReceiverNearMyQTH(for: spot)
+            await candidatesNearMyQTH(for: spot)
         }
     }
 
     // MARK: - Near Strong RBN
 
-    /// Find a receiver near the strongest RBN spotter for this activator.
-    /// Falls back to the closest-available receiver if RBN lookup fails.
-    private func selectReceiverNearRBN(
+    /// Candidate receivers near the strongest RBN spotters,
+    /// with fallback candidates appended.
+    private func candidatesNearRBN(
         for spot: TuneInSpot
-    ) async -> KiwiSDRReceiver? {
-        let rbn = RBNClient()
-        do {
-            let spots = try await rbn.spots(
-                for: spot.callsign, hours: 1, limit: 20
-            )
-            // Sort by SNR descending — strongest signal first
-            let sorted = spots.sorted { $0.snr > $1.snr }
+    ) async -> [KiwiSDRReceiver] {
+        var seen = Set<String>()
+        var candidates: [KiwiSDRReceiver] = []
 
+        if let spots = try? await RBNClient().spots(
+            for: spot.callsign, hours: 1, limit: 20
+        ) {
+            let sorted = spots.sorted { $0.snr > $1.snr }
             for rbnSpot in sorted {
                 guard let grid = rbnSpot.spotterGrid,
                       let coord = MaidenheadConverter.coordinate(from: grid)
                 else {
                     continue
                 }
-                if let receiver = await findNearbyAvailable(
-                    latitude: coord.latitude,
-                    longitude: coord.longitude
-                ) {
-                    return receiver
+                for rx in await findAllNearbyAvailable(
+                    latitude: coord.latitude, longitude: coord.longitude
+                ) where !seen.contains(rx.id) {
+                    seen.insert(rx.id)
+                    candidates.append(rx)
                 }
             }
-        } catch {
-            // RBN lookup failed — fall through to fallback
         }
 
-        return await selectReceiverFallback(for: spot)
+        for rx in await fallbackCandidates(for: spot)
+            where !seen.contains(rx.id)
+        {
+            seen.insert(r.id)
+            candidates.append(r)
+        }
+
+        return candidates
     }
 
     // MARK: - Near Activator
 
-    /// Find a receiver near the activator's location.
-    /// Tries: park coords → summit coords → HamDB grid → fallback to nearRBN.
-    private func selectReceiverNearActivator(
+    /// Candidate receivers near the activator's location.
+    /// Tries: park → summit → HamDB grid → falls back to RBN candidates.
+    private func candidatesNearActivator(
         for spot: TuneInSpot
-    ) async -> KiwiSDRReceiver? {
-        // Try park coordinates
+    ) async -> [KiwiSDRReceiver] {
+        var seen = Set<String>()
+        var candidates: [KiwiSDRReceiver] = []
+
         if let parkRef = spot.parkRef,
            let park = POTAParksCache.shared.parkSync(for: parkRef),
            let lat = park.latitude, let lon = park.longitude
         {
-            if let receiver = await findNearbyAvailable(
-                latitude: lat, longitude: lon
-            ) {
-                return receiver
+            for rx in await findAllNearbyAvailable(latitude: lat, longitude: lon)
+                where !seen.contains(rx.id)
+            {
+                seen.insert(r.id)
+                candidates.append(r)
             }
         }
 
-        // Try summit coordinates
         if let summitCode = spot.summitCode,
            let summit = SOTASummitsCache.shared.lookupSummit(summitCode),
            let lat = summit.latitude, let lon = summit.longitude
         {
-            if let receiver = await findNearbyAvailable(
-                latitude: lat, longitude: lon
-            ) {
-                return receiver
-            }
-        }
-
-        // Try HamDB callsign lookup for grid
-        let hamDB = HamDBClient()
-        do {
-            if let license = try await hamDB.lookup(callsign: spot.callsign),
-               let grid = license.grid,
-               let coord = MaidenheadConverter.coordinate(from: grid)
+            for rx in await findAllNearbyAvailable(latitude: lat, longitude: lon)
+                where !seen.contains(rx.id)
             {
-                if let receiver = await findNearbyAvailable(
-                    latitude: coord.latitude,
-                    longitude: coord.longitude
-                ) {
-                    return receiver
-                }
+                seen.insert(r.id)
+                candidates.append(r)
             }
-        } catch {
-            // HamDB lookup failed — fall through
         }
 
-        // Fall back to nearRBN strategy
-        return await selectReceiverNearRBN(for: spot)
+        if let license = try? await HamDBClient().lookup(callsign: spot.callsign),
+           let grid = license.grid,
+           let coord = MaidenheadConverter.coordinate(from: grid)
+        {
+            for rx in await findAllNearbyAvailable(
+                latitude: coord.latitude, longitude: coord.longitude
+            ) where !seen.contains(rx.id) {
+                seen.insert(r.id)
+                candidates.append(r)
+            }
+        }
+
+        let rbnCandidates = await candidatesNearRBN(for: spot)
+        for rx in rbnCandidates where !seen.contains(rx.id) {
+            seen.insert(r.id)
+            candidates.append(r)
+        }
+
+        return candidates
     }
 
     // MARK: - Near My QTH
 
-    /// Find a receiver near the user's configured grid square.
-    /// Falls back to nearRBN if no grid is configured or no receivers found.
-    private func selectReceiverNearMyQTH(
+    /// Candidate receivers near the user's QTH, with RBN fallback.
+    private func candidatesNearMyQTH(
         for spot: TuneInSpot
-    ) async -> KiwiSDRReceiver? {
+    ) async -> [KiwiSDRReceiver] {
+        var seen = Set<String>()
+        var candidates: [KiwiSDRReceiver] = []
+
         if let grid = UserDefaults.standard.string(
             forKey: "loggerDefaultGrid"
         ),
             let coord = MaidenheadConverter.coordinate(from: grid)
         {
-            if let receiver = await findNearbyAvailable(
-                latitude: coord.latitude,
-                longitude: coord.longitude
-            ) {
-                return receiver
+            for rx in await findAllNearbyAvailable(
+                latitude: coord.latitude, longitude: coord.longitude
+            ) where !seen.contains(rx.id) {
+                seen.insert(r.id)
+                candidates.append(r)
             }
         }
 
-        // Fall back to nearRBN strategy
-        return await selectReceiverNearRBN(for: spot)
+        for rx in await candidatesNearRBN(for: spot)
+            where !seen.contains(rx.id)
+        {
+            seen.insert(r.id)
+            candidates.append(r)
+        }
+
+        return candidates
     }
 
     // MARK: - Receiver Failover
@@ -155,7 +171,6 @@ extension TuneInManager {
             return
         }
 
-        // Resume the existing recording on the new receiver
         await session.resumeFromDormant(
             receiver: alternate,
             frequencyMHz: spot.frequencyMHz,
@@ -165,31 +180,30 @@ extension TuneInManager {
 
     // MARK: - Helpers
 
-    /// Find the first available receiver near a coordinate.
-    private func findNearbyAvailable(
+    /// All available receivers near a coordinate, sorted by distance.
+    private func findAllNearbyAvailable(
         latitude: Double,
         longitude: Double
-    ) async -> KiwiSDRReceiver? {
+    ) async -> [KiwiSDRReceiver] {
         let receivers = await WebSDRDirectory.shared.findNearby(
             grid: nil,
             latitude: latitude,
             longitude: longitude,
             limit: 20
         )
-        return receivers.first(where: \.isAvailable)
+        return receivers.filter(\.isAvailable)
     }
 
-    /// Closest-available receiver using the spot's own location data.
-    /// This is the original pre-strategy behavior.
-    func selectReceiverFallback(
+    /// Fallback candidates using the spot's own location data.
+    private func fallbackCandidates(
         for spot: TuneInSpot
-    ) async -> KiwiSDRReceiver? {
+    ) async -> [KiwiSDRReceiver] {
         let receivers = await WebSDRDirectory.shared.findNearby(
             grid: spot.grid,
             latitude: spot.latitude,
             longitude: spot.longitude,
             limit: 20
         )
-        return receivers.first(where: \.isAvailable)
+        return receivers.filter(\.isAvailable)
     }
 }

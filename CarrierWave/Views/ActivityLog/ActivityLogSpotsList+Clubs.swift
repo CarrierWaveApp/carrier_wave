@@ -17,9 +17,9 @@ extension ActivityLogSpotsList {
         guard !filters.clubOnly else {
             return []
         }
-        return clubFilteredSpots.filter {
-            !ClubsSyncService.shared.clubs(for: $0.spot.callsign).isEmpty
-        }
+        return clubFilteredSpots
+            .filter { !ClubsSyncService.shared.clubs(for: $0.spot.callsign).isEmpty }
+            .sorted { $0.spot.callsign.uppercased() < $1.spot.callsign.uppercased() }
     }
 
     var otherSpots: [EnrichedSpot] {

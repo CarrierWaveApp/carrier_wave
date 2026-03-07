@@ -49,3 +49,40 @@ extension View {
         modifier(TuneInCellularAlert(manager: manager))
     }
 }
+
+// MARK: - TuneInErrorAlert
+
+/// ViewModifier that presents an error alert when Tune In fails
+/// (e.g. no receivers available or all connections failed).
+struct TuneInErrorAlert: ViewModifier {
+    let manager: TuneInManager
+
+    func body(content: Content) -> some View {
+        content
+            .alert(
+                "Tune In Unavailable",
+                isPresented: Binding(
+                    get: { manager.errorMessage != nil },
+                    set: {
+                        if !$0 {
+                            manager.errorMessage = nil
+                        }
+                    }
+                )
+            ) {
+                Button("OK", role: .cancel) {
+                    manager.errorMessage = nil
+                }
+            } message: {
+                if let message = manager.errorMessage {
+                    Text(message)
+                }
+            }
+    }
+}
+
+extension View {
+    func tuneInErrorAlert(manager: TuneInManager) -> some View {
+        modifier(TuneInErrorAlert(manager: manager))
+    }
+}
