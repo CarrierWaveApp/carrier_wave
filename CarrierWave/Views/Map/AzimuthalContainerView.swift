@@ -28,6 +28,7 @@ struct AzimuthalContainerView: View {
             filtersRow
             Divider()
             azimuthalContent
+            Spacer(minLength: 0)
         }
         .onAppear { compassService.startUpdating() }
         .onDisappear { compassService.stopUpdating() }
@@ -120,7 +121,7 @@ struct AzimuthalContainerView: View {
 
 extension AzimuthalContainerView {
     private var bearingHeader: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: 12) {
             // Large bearing display
             VStack(alignment: .leading, spacing: 2) {
                 Text("\(Int(effectiveOrientation))°")
@@ -130,11 +131,11 @@ extension AzimuthalContainerView {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
-            .frame(minWidth: 90, alignment: .leading)
+            .frame(minWidth: 80, alignment: .leading)
 
             Spacer()
 
-            // Antenna type
+            // Antenna type pill
             Menu {
                 ForEach(AntennaType.allCases, id: \.self) { type in
                     Button {
@@ -156,8 +157,11 @@ extension AzimuthalContainerView {
                     Text(selectedAntennaType.displayName)
                         .lineLimit(1)
                 }
-                .font(.subheadline)
-                .frame(minHeight: 44)
+                .font(.caption.weight(.medium))
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(Color.blue.opacity(0.2))
+                .clipShape(Capsule())
             }
 
             // Compass / manual toggle
@@ -179,125 +183,156 @@ extension AzimuthalContainerView {
             }
         }
         .padding(.horizontal)
-        .padding(.vertical, 8)
+        .padding(.vertical, 4)
         .background(Color(.systemGroupedBackground))
     }
 
     private var filtersRow: some View {
-        HStack(spacing: 8) {
-            // Band filter
-            Menu {
-                Button {
-                    selectedBand = nil
-                } label: {
-                    HStack {
-                        Text("All Bands")
-                        if selectedBand == nil {
-                            Image(systemName: "checkmark")
+        HStack(spacing: 6) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 6) {
+                    // Band filter pill
+                    filterPill(
+                        label: selectedBand ?? "Band",
+                        icon: "waveform",
+                        isActive: selectedBand != nil
+                    ) {
+                        Button {
+                            selectedBand = nil
+                        } label: {
+                            HStack {
+                                Text("All Bands")
+                                if selectedBand == nil {
+                                    Image(systemName: "checkmark")
+                                }
+                            }
                         }
-                    }
-                }
-                Divider()
-                ForEach(availableBands, id: \.self) { band in
-                    Button {
-                        selectedBand = band
-                    } label: {
-                        HStack {
-                            Text(band)
-                            if selectedBand == band {
-                                Image(systemName: "checkmark")
+                        Divider()
+                        ForEach(availableBands, id: \.self) { band in
+                            Button {
+                                selectedBand = band
+                            } label: {
+                                HStack {
+                                    Text(band)
+                                    if selectedBand == band {
+                                        Image(systemName: "checkmark")
+                                    }
+                                }
                             }
                         }
                     }
-                }
-            } label: {
-                Label(selectedBand ?? "All Bands", systemImage: "waveform")
-                    .font(.subheadline)
-                    .lineLimit(1)
-                    .frame(minHeight: 44)
-            }
 
-            // Mode filter
-            Menu {
-                Button {
-                    selectedMode = nil
-                } label: {
-                    HStack {
-                        Text("All Modes")
-                        if selectedMode == nil {
-                            Image(systemName: "checkmark")
+                    // Mode filter pill
+                    filterPill(
+                        label: selectedMode ?? "Mode",
+                        icon: "dot.radiowaves.right",
+                        isActive: selectedMode != nil
+                    ) {
+                        Button {
+                            selectedMode = nil
+                        } label: {
+                            HStack {
+                                Text("All Modes")
+                                if selectedMode == nil {
+                                    Image(systemName: "checkmark")
+                                }
+                            }
                         }
-                    }
-                }
-                Divider()
-                ForEach(availableModes, id: \.self) { mode in
-                    Button {
-                        selectedMode = mode
-                    } label: {
-                        HStack {
-                            Text(mode)
-                            if selectedMode == mode {
-                                Image(systemName: "checkmark")
+                        Divider()
+                        ForEach(availableModes, id: \.self) { mode in
+                            Button {
+                                selectedMode = mode
+                            } label: {
+                                HStack {
+                                    Text(mode)
+                                    if selectedMode == mode {
+                                        Image(systemName: "checkmark")
+                                    }
+                                }
                             }
                         }
                     }
-                }
-            } label: {
-                Label(selectedMode ?? "All Modes", systemImage: "dot.radiowaves.right")
-                    .font(.subheadline)
-                    .lineLimit(1)
-                    .frame(minHeight: 44)
-            }
 
-            // Distance
-            Menu {
-                ForEach(DistanceOption.allCases, id: \.self) { option in
-                    Button {
-                        maxDistanceKm = option.km
-                    } label: {
-                        HStack {
-                            Text(option.label)
-                            if maxDistanceKm == option.km {
-                                Image(systemName: "checkmark")
+                    // Distance pill
+                    filterPill(
+                        label: currentDistanceLabel,
+                        icon: "arrow.left.and.right",
+                        isActive: maxDistanceKm != 5_000.0
+                    ) {
+                        ForEach(DistanceOption.allCases, id: \.self) { option in
+                            Button {
+                                maxDistanceKm = option.km
+                            } label: {
+                                HStack {
+                                    Text(option.label)
+                                    if maxDistanceKm == option.km {
+                                        Image(systemName: "checkmark")
+                                    }
+                                }
                             }
                         }
                     }
+
+                    // QSOs toggle pill
+                    Button {
+                        showQSOs.toggle()
+                    } label: {
+                        HStack(spacing: 3) {
+                            Image(systemName: showQSOs ? "eye" : "eye.slash")
+                                .font(.system(size: 10))
+                            Text("QSOs")
+                        }
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(showQSOs ? .primary : .secondary)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.green.opacity(showQSOs ? 0.2 : 0.08))
+                        .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(showQSOs ? "Hide QSOs" : "Show QSOs")
                 }
-            } label: {
-                Label(currentDistanceLabel, systemImage: "arrow.left.and.right")
-                    .font(.subheadline)
-                    .lineLimit(1)
-                    .frame(minHeight: 44)
             }
 
-            Spacer()
-
-            // QSOs toggle
-            Button {
-                showQSOs.toggle()
-            } label: {
-                Image(systemName: showQSOs ? "eye" : "eye.slash")
-                    .font(.body)
-                    .foregroundStyle(showQSOs ? .green : .secondary)
-                    .frame(minWidth: 44, minHeight: 44)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(showQSOs ? "Hide QSOs" : "Show QSOs")
-
-            // Spot count / loading
+            // Spot count / loading — outside scroll so it's always visible
             if isLoadingSpots {
                 ProgressView()
                     .controlSize(.small)
-                    .frame(width: 44)
             } else {
-                Text(spotSummary)
+                Label("\(projectedSpots.count)", systemImage: "dot.radiowaves.up.forward")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                    .frame(minWidth: 44, alignment: .trailing)
+                    .fixedSize()
             }
         }
         .padding(.horizontal)
+        .padding(.vertical, 6)
         .background(Color(.systemGroupedBackground))
+    }
+
+    private func filterPill(
+        label: String,
+        icon: String,
+        isActive: Bool,
+        @ViewBuilder menuContent: @escaping () -> some View
+    ) -> some View {
+        Menu {
+            menuContent()
+        } label: {
+            HStack(spacing: 2) {
+                Image(systemName: icon)
+                    .font(.system(size: 10))
+                Text(label)
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.system(size: 8))
+                    .foregroundStyle(.secondary)
+            }
+            .font(.caption.weight(.medium))
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(isActive ? Color.blue.opacity(0.2) : Color(.systemGray5))
+            .clipShape(Capsule())
+        }
     }
 }
 
