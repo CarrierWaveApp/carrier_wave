@@ -1,7 +1,7 @@
 # CAR-123: Command Palette for Radio Tuning (Cmd+Shift+P)
 
 **Date:** 2026-03-06
-**Status:** Phase 1 implemented (parser + palette UI + keyboard shortcut wiring)
+**Status:** Phase 2 implemented (named commands: QRZ, SPOT, PARK, SUMMIT, PWR)
 
 ## Context
 

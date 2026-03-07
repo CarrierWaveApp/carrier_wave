@@ -76,6 +76,7 @@ extension TokenKind {
         case .mode: "waveform"
         case .band: "dial.low"
         case .split: "arrow.up.arrow.down"
+        case .command: "terminal"
         case .unknown: "questionmark.circle"
         }
     }

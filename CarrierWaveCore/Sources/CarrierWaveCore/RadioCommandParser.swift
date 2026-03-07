@@ -14,11 +14,13 @@ public struct RadioCommand: Sendable, Equatable {
     public init(
         frequencyMHz: Double? = nil,
         mode: String? = nil,
-        splitDirective: SplitDirective? = nil
+        splitDirective: SplitDirective? = nil,
+        namedCommand: NamedCommand? = nil
     ) {
         self.frequencyMHz = frequencyMHz
         self.mode = mode
         self.splitDirective = splitDirective
+        self.namedCommand = namedCommand
     }
 
     // MARK: Public
@@ -26,10 +28,27 @@ public struct RadioCommand: Sendable, Equatable {
     public var frequencyMHz: Double?
     public var mode: String?
     public var splitDirective: SplitDirective?
+    public var namedCommand: NamedCommand?
 
     public var isEmpty: Bool {
-        frequencyMHz == nil && mode == nil && splitDirective == nil
+        frequencyMHz == nil && mode == nil && splitDirective == nil && namedCommand == nil
     }
+}
+
+// MARK: - NamedCommand
+
+/// Named commands beyond radio tuning (Phase 2)
+public enum NamedCommand: Sendable, Equatable {
+    /// Callsign lookup via QRZ/HamDB
+    case lookup(callsign: String)
+    /// Spot a callsign to the DX cluster
+    case spot(callsign: String, frequencyKHz: Double?)
+    /// Set POTA park reference on active session
+    case setPark(reference: String)
+    /// Set SOTA summit reference on active session
+    case setSummit(reference: String)
+    /// Set TX power
+    case setPower(watts: Int)
 }
 
 // MARK: - SplitDirective
@@ -80,6 +99,7 @@ public enum TokenKind: Sendable, Equatable {
     case mode
     case band
     case split
+    case command
     case unknown
 }
 
@@ -116,6 +136,13 @@ public enum RadioCommandParser: Sendable {
         }
 
         let rawTokens = tokenize(trimmed)
+
+        // Try named command parse first (keyword at position 0)
+        if let result = parseNamedCommand(rawTokens) {
+            return result
+        }
+
+        // Fall through to radio tuning parse
         var command = RadioCommand()
         var parsedTokens: [ParsedToken] = []
         var index = 0
@@ -170,6 +197,8 @@ public enum RadioCommandParser: Sendable {
         let consumed: Int
         let rawText: String
     }
+
+    private enum ReferenceKind { case setPark, setSummit }
 
     private static let bandDefaults: [String: BandDefault] = [
         "160M": BandDefault(cw: 1.810, ssb: 1.900, ft8: 1.840, ft4: 1.840),
@@ -241,6 +270,77 @@ public enum RadioCommandParser: Sendable {
                 command.frequencyMHz = resolved.frequencyMHz
             }
         }
+    }
+
+    // MARK: - Named Command Parsing
+
+    private static func parseNamedCommand(_ tokens: [String]) -> (RadioCommand, [ParsedToken])? {
+        guard let first = tokens.first else {
+            return nil
+        }
+        let keyword = first.uppercased()
+        let args = Array(tokens.dropFirst())
+        let raw = tokens.joined(separator: " ")
+
+        switch keyword {
+        case "QRZ",
+             "?": return parseLookupCommand(args, raw: raw)
+        case "SPOT": return parseSpotCommand(args, raw: raw)
+        case "PARK": return parseReferenceCommand(args, raw: raw, kind: .setPark)
+        case "SUMMIT": return parseReferenceCommand(args, raw: raw, kind: .setSummit)
+        case "PWR",
+             "POWER": return parsePowerCommand(args, raw: raw)
+        default: return nil
+        }
+    }
+
+    private static func parseLookupCommand(_ args: [String], raw: String) -> (RadioCommand, [ParsedToken])? {
+        guard let call = args.first else {
+            return nil
+        }
+        let callsign = call.uppercased()
+        let token = ParsedToken(kind: .command, rawText: raw,
+                                displayText: "Lookup \(callsign)", state: .valid)
+        return (RadioCommand(namedCommand: .lookup(callsign: callsign)), [token])
+    }
+
+    private static func parseSpotCommand(_ args: [String], raw: String) -> (RadioCommand, [ParsedToken])? {
+        guard let call = args.first else {
+            return nil
+        }
+        let callsign = call.uppercased()
+        let freq = args.count > 1 ? FrequencyFormatter.parse(args[1]).map { $0 * 1_000 } : nil
+        let freqText = freq.map { " on \(formatFrequency($0 / 1_000)) MHz" } ?? ""
+        let token = ParsedToken(kind: .command, rawText: raw,
+                                displayText: "Spot \(callsign)\(freqText) to cluster", state: .valid)
+        return (RadioCommand(namedCommand: .spot(callsign: callsign, frequencyKHz: freq)), [token])
+    }
+
+    private static func parseReferenceCommand(
+        _ args: [String], raw: String, kind: ReferenceKind
+    ) -> (RadioCommand, [ParsedToken])? {
+        guard let ref = args.first else {
+            return nil
+        }
+        let reference = ref.uppercased()
+        let label = kind == .setPark ? "park" : "summit"
+        let named: NamedCommand = kind == .setPark ? .setPark(reference: reference) : .setSummit(reference: reference)
+        let token = ParsedToken(kind: .command, rawText: raw,
+                                displayText: "Set \(label) \(reference)", state: .valid)
+        return (RadioCommand(namedCommand: named), [token])
+    }
+
+    private static func parsePowerCommand(_ args: [String], raw: String) -> (RadioCommand, [ParsedToken])? {
+        guard let arg = args.first else {
+            return nil
+        }
+        let watts: Int? = arg.uppercased() == "QRP" ? 5 : Int(arg)
+        guard let validWatts = watts, validWatts > 0, validWatts <= 1_500 else {
+            return nil
+        }
+        let token = ParsedToken(kind: .command, rawText: raw,
+                                displayText: "Set power \(validWatts)W", state: .valid)
+        return (RadioCommand(namedCommand: .setPower(watts: validWatts)), [token])
     }
 
     private static func tokenize(_ input: String) -> [String] {

@@ -1,4 +1,6 @@
 import CarrierWaveCore
+import CarrierWaveData
+import SwiftData
 import SwiftUI
 
 // MARK: - RadioPaletteView
@@ -19,7 +21,10 @@ struct RadioPaletteView: View {
     @State var recentCommands: [String] = RadioPaletteHistory.load()
     @State var historyIndex: Int?
     @Environment(\.dismiss) var dismiss
+    @Environment(\.modelContext) var modelContext
     @Environment(RadioManager.self) var radioManager
+    @Environment(ClusterManager.self) var clusterManager
+    @AppStorage("myCallsign") var myCallsign = ""
 
     var body: some View {
         VStack(spacing: 0) {
@@ -34,11 +39,11 @@ struct RadioPaletteView: View {
         .frame(minWidth: 500, idealWidth: 600, minHeight: 280, idealHeight: 360)
     }
 
-    func actionBar(_: RadioCommand) -> some View {
+    func actionBar(_ command: RadioCommand) -> some View {
         HStack {
             Spacer()
             HStack(spacing: 16) {
-                keyHint("Enter", "Apply to radio")
+                keyHint("Enter", actionLabel(for: command))
                 keyHint("Esc", "Cancel")
             }
         }
@@ -54,6 +59,19 @@ struct RadioPaletteView: View {
             Text(label)
                 .font(.caption)
                 .foregroundStyle(.secondary)
+        }
+    }
+
+    func actionLabel(for command: RadioCommand) -> String {
+        guard let named = command.namedCommand else {
+            return "Apply to radio"
+        }
+        switch named {
+        case .lookup: return "Look up"
+        case .spot: return "Send spot"
+        case .setPark,
+             .setSummit: return "Set on session"
+        case .setPower: return "Set power"
         }
     }
 
@@ -102,7 +120,7 @@ struct RadioPaletteView: View {
                 .foregroundStyle(.secondary)
 
             TextField(
-                "e.g. '14074 CW' or '20m FT8 UP 5'",
+                "e.g. '14074 CW', 'QRZ K4ABC', or 'PARK K-0001'",
                 text: $searchText
             )
             .textFieldStyle(.plain)
@@ -198,6 +216,9 @@ struct RadioPaletteView: View {
                 helpRow("20m FT8", "20m FT8 segment")
                 helpRow("CW", "Change mode only")
                 helpRow("UP 5", "Split TX +5 kHz")
+                helpRow("QRZ K4ABC", "Look up callsign")
+                helpRow("SPOT K4ABC", "Spot to cluster")
+                helpRow("PARK K-0001", "Set POTA park")
             }
         }
     }
@@ -267,6 +288,9 @@ struct RadioPaletteView: View {
 
     private func commandSummary(_ command: RadioCommand) -> some View {
         VStack(alignment: .leading, spacing: 4) {
+            if let named = command.namedCommand {
+                namedCommandSummary(named)
+            }
             if let freq = command.frequencyMHz {
                 summaryRow("Frequency", FrequencyFormatter.formatWithUnit(freq))
             }
@@ -280,6 +304,31 @@ struct RadioPaletteView: View {
             }
             if let split = command.splitDirective {
                 summaryRow("Split", split.description)
+            }
+        }
+    }
+
+    private func namedCommandSummary(_ cmd: NamedCommand) -> some View {
+        Group {
+            switch cmd {
+            case let .lookup(callsign):
+                summaryRow("Action", "Look up \(callsign)")
+            case let .spot(callsign, freq):
+                summaryRow("Action", "Spot \(callsign)")
+                if let freqKHz = freq {
+                    summaryRow("Frequency", FrequencyFormatter.formatWithUnit(freqKHz / 1_000))
+                } else {
+                    summaryRow("Frequency", "Current radio frequency")
+                }
+                if !clusterManager.isConnected {
+                    summaryRow("Warning", "Cluster not connected")
+                }
+            case let .setPark(ref):
+                summaryRow("Action", "Set POTA park to \(ref)")
+            case let .setSummit(ref):
+                summaryRow("Action", "Set SOTA summit to \(ref)")
+            case let .setPower(watts):
+                summaryRow("Action", "Set power to \(watts)W")
             }
         }
     }
@@ -318,6 +367,10 @@ extension RadioPaletteView {
     }
 
     func applyCommand(_ command: RadioCommand) async {
+        if let named = command.namedCommand {
+            await applyNamedCommand(named)
+            return
+        }
         if let freq = command.frequencyMHz {
             try? await radioManager.tuneToFrequency(freq)
         }
@@ -328,6 +381,48 @@ extension RadioPaletteView {
         if let split = command.splitDirective {
             await applySplit(split)
         }
+    }
+
+    func applyNamedCommand(_ cmd: NamedCommand) async {
+        switch cmd {
+        case .lookup:
+            // Lookup is informational — future: open inspector with callsign info
+            break
+
+        case let .spot(callsign, frequencyKHz):
+            guard clusterManager.isConnected else {
+                return
+            }
+            let freq = frequencyKHz ?? (radioManager.frequency * 1_000)
+            let spotCmd = "DX \(String(format: "%.1f", freq)) \(callsign)"
+            clusterManager.sendCommand(spotCmd)
+
+        case let .setPark(reference):
+            updateActiveSession { $0.parkReference = reference }
+
+        case let .setSummit(reference):
+            updateActiveSession { $0.sotaReference = reference }
+
+        case .setPower:
+            // Power control requires CAT protocol extension — not yet implemented
+            break
+        }
+    }
+
+    func updateActiveSession(_ update: (LoggingSession) -> Void) {
+        var descriptor = FetchDescriptor<LoggingSession>(
+            predicate: #Predicate<LoggingSession> { session in
+                session.statusRawValue == "active"
+            },
+            sortBy: [SortDescriptor(\LoggingSession.startedAt, order: .reverse)]
+        )
+        descriptor.fetchLimit = 1
+
+        guard let session = try? modelContext.fetch(descriptor).first else {
+            return
+        }
+        update(session)
+        try? modelContext.save()
     }
 
     func applySplit(_ split: SplitDirective) async {

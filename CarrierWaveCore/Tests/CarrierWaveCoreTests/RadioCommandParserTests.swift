@@ -242,4 +242,72 @@ struct RadioCommandParserTests {
         #expect(cmd.mode == "CW")
         #expect(cmd.splitDirective == nil)
     }
+
+    // MARK: - Named Commands (Phase 2)
+
+    @Test("QRZ lookup with callsign")
+    func parseQRZLookup() {
+        let (cmd, tokens) = RadioCommandParser.parse("QRZ K4ABC")
+        #expect(cmd.namedCommand == .lookup(callsign: "K4ABC"))
+        #expect(tokens.count == 1)
+        #expect(tokens[0].kind == .command)
+    }
+
+    @Test("? shorthand for lookup")
+    func parseQuestionMarkLookup() {
+        let (cmd, _) = RadioCommandParser.parse("? W1AW")
+        #expect(cmd.namedCommand == .lookup(callsign: "W1AW"))
+    }
+
+    @Test("SPOT callsign without frequency")
+    func parseSpotNoFreq() {
+        let (cmd, _) = RadioCommandParser.parse("SPOT K4ABC")
+        #expect(cmd.namedCommand == .spot(callsign: "K4ABC", frequencyKHz: nil))
+    }
+
+    @Test("SPOT callsign with frequency")
+    func parseSpotWithFreq() {
+        let (cmd, _) = RadioCommandParser.parse("SPOT K4ABC 14074")
+        #expect(cmd.namedCommand == .spot(callsign: "K4ABC", frequencyKHz: 14_074))
+    }
+
+    @Test("PARK sets park reference")
+    func parsePark() {
+        let (cmd, tokens) = RadioCommandParser.parse("PARK K-0001")
+        #expect(cmd.namedCommand == .setPark(reference: "K-0001"))
+        #expect(tokens[0].kind == .command)
+    }
+
+    @Test("SUMMIT sets summit reference")
+    func parseSummit() {
+        let (cmd, _) = RadioCommandParser.parse("SUMMIT W7W/KG-001")
+        #expect(cmd.namedCommand == .setSummit(reference: "W7W/KG-001"))
+    }
+
+    @Test("PWR sets power in watts")
+    func parsePower() {
+        let (cmd, _) = RadioCommandParser.parse("PWR 100")
+        #expect(cmd.namedCommand == .setPower(watts: 100))
+    }
+
+    @Test("PWR QRP sets 5 watts")
+    func parsePowerQRP() {
+        let (cmd, _) = RadioCommandParser.parse("PWR QRP")
+        #expect(cmd.namedCommand == .setPower(watts: 5))
+    }
+
+    @Test("Named command takes priority over radio tuning tokens")
+    func namedCommandPriority() {
+        let (cmd, _) = RadioCommandParser.parse("QRZ K4ABC")
+        // Should be a lookup, not try to parse K4ABC as a token
+        #expect(cmd.namedCommand != nil)
+        #expect(cmd.frequencyMHz == nil)
+    }
+
+    @Test("QRZ without callsign falls through to radio parse")
+    func qrzNoCallFallsThrough() {
+        let (cmd, _) = RadioCommandParser.parse("QRZ")
+        // No argument means it can't be a lookup
+        #expect(cmd.namedCommand == nil)
+    }
 }
