@@ -91,6 +91,10 @@ struct WorkspaceView: View {
             .environment(selectionState)
             .environment(winKeyerManager)
             // CloudSyncService is a singleton accessed directly by views
+            .onReceive(NotificationCenter.default.publisher(for: .focusEntryField)) { _ in
+                selectedItem = .logger
+                selectionState.requestEntryFocus = true
+            }
             .focusedSceneValue(\.toggleInspector, ToggleInspectorAction {
                 showInspector.toggle()
             })
@@ -168,10 +172,21 @@ struct WorkspaceView: View {
             }
         }
         .sheet(isPresented: $showCommandPalette) {
-            CommandPaletteView(onSwitchToRadioPalette: {
-                showCommandPalette = false
-                showRadioPalette = true
-            })
+            CommandPaletteView(
+                onSwitchToRadioPalette: {
+                    showCommandPalette = false
+                    showRadioPalette = true
+                },
+                onSelectSidebarItem: { item in
+                    selectedItem = item
+                },
+                onSetRole: { role in
+                    activeRole = role
+                },
+                onToggleInspector: {
+                    showInspector.toggle()
+                }
+            )
         }
         .sheet(isPresented: $showRadioPalette) {
             RadioPaletteView(onSwitchToAppPalette: {

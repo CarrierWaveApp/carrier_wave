@@ -36,11 +36,25 @@ protocol RadioProtocolHandler: Sendable {
     /// Returns nil if the radio doesn't support RIT/XIT clearing via CAT.
     func encodeClearRITXIT() -> Data?
 
+    // MARK: - XIT/RIT Reading
+
+    /// Encode a read-XIT command. Returns nil if unsupported.
+    func encodeReadXIT() -> Data?
+
+    /// Encode a read-RIT command. Returns nil if unsupported.
+    func encodeReadRIT() -> Data?
+
+    /// Encode a read-RIT/XIT offset command. Returns nil if unsupported.
+    func encodeReadRITXITOffset() -> Data?
+
     // MARK: - Decoding (Responses from Radio)
 
     func decodeFrequency(from data: Data) -> Double?
     func decodeMode(from data: Data) -> String?
     func decodePTTState(from data: Data) -> Bool?
+    func decodeXITState(from data: Data) -> Bool?
+    func decodeRITState(from data: Data) -> Bool?
+    func decodeRITXITOffset(from data: Data) -> Int?
 }
 
 /// Default implementations
@@ -62,6 +76,30 @@ extension RadioProtocolHandler {
     }
 
     func encodeClearRITXIT() -> Data? {
+        nil
+    }
+
+    func encodeReadXIT() -> Data? {
+        nil
+    }
+
+    func encodeReadRIT() -> Data? {
+        nil
+    }
+
+    func encodeReadRITXITOffset() -> Data? {
+        nil
+    }
+
+    func decodeXITState(from _: Data) -> Bool? {
+        nil
+    }
+
+    func decodeRITState(from _: Data) -> Bool? {
+        nil
+    }
+
+    func decodeRITXITOffset(from _: Data) -> Int? {
         nil
     }
 }

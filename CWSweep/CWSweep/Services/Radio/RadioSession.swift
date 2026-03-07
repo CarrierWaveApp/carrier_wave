@@ -24,6 +24,9 @@ actor RadioSession {
         var isTransmitting: Bool = false
         var signalStrength: Int? // S-meter
         var isConnected: Bool = false
+        var xitEnabled: Bool = false
+        var ritEnabled: Bool = false
+        var ritXitOffset: Int = 0 // Hz
     }
 
     private(set) var state = RadioState()
@@ -127,6 +130,15 @@ actor RadioSession {
         if let tx = protocolHandler.decodePTTState(from: frame) {
             state.isTransmitting = tx
         }
+        if let xit = protocolHandler.decodeXITState(from: frame) {
+            state.xitEnabled = xit
+        }
+        if let rit = protocolHandler.decodeRITState(from: frame) {
+            state.ritEnabled = rit
+        }
+        if let offset = protocolHandler.decodeRITXITOffset(from: frame) {
+            state.ritXitOffset = offset
+        }
     }
 
     private func pollLoop() async {
@@ -147,6 +159,33 @@ actor RadioSession {
                     try await transport.send(cmd)
                 } catch {
                     logger.error("Failed to send mode poll: \(error)")
+                }
+            }
+
+            // Request XIT state
+            if let cmd = protocolHandler.encodeReadXIT() {
+                do {
+                    try await transport.send(cmd)
+                } catch {
+                    logger.error("Failed to send XIT poll: \(error)")
+                }
+            }
+
+            // Request RIT state
+            if let cmd = protocolHandler.encodeReadRIT() {
+                do {
+                    try await transport.send(cmd)
+                } catch {
+                    logger.error("Failed to send RIT poll: \(error)")
+                }
+            }
+
+            // Request RIT/XIT offset
+            if let cmd = protocolHandler.encodeReadRITXITOffset() {
+                do {
+                    try await transport.send(cmd)
+                } catch {
+                    logger.error("Failed to send RIT/XIT offset poll: \(error)")
                 }
             }
 

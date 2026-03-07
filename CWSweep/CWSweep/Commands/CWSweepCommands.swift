@@ -54,7 +54,7 @@ struct CWSweepCommands: Commands {
         // Logging menu
         CommandMenu("Logging") {
             Button("Focus Entry Field") {
-                focusEntryField?()
+                NotificationCenter.default.post(name: .focusEntryField, object: nil)
             }
             .keyboardShortcut("l", modifiers: .command)
 

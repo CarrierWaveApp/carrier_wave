@@ -38,10 +38,12 @@ struct RadioPaletteView: View {
             inputSection
             Divider()
             contentSection
+            Divider()
+            radioStatusFooter
         }
         .background(.ultraThinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 12))
-        .frame(minWidth: 500, idealWidth: 600, minHeight: 280, idealHeight: 360)
+        .frame(minWidth: 500, idealWidth: 600, minHeight: 280, idealHeight: 400)
     }
 
     func actionBar(_ command: RadioCommand) -> some View {
@@ -164,11 +166,15 @@ struct RadioPaletteView: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
     }
+}
 
+// MARK: - RadioPaletteView + Content
+
+extension RadioPaletteView {
     // MARK: - Content
 
-    private var contentSection: some View {
-        Group {
+    var contentSection: some View {
+        ScrollView {
             if searchText.isEmpty {
                 emptyStateView
             } else if searchText.hasPrefix(">") {
@@ -181,7 +187,7 @@ struct RadioPaletteView: View {
 
     // MARK: - Empty State
 
-    private var emptyStateView: some View {
+    var emptyStateView: some View {
         VStack(alignment: .leading, spacing: 12) {
             if !recentCommands.isEmpty {
                 recentCommandsSection
@@ -193,7 +199,7 @@ struct RadioPaletteView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private var recentCommandsSection: some View {
+    var recentCommandsSection: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Recent")
                 .font(.caption.weight(.semibold))
@@ -218,7 +224,7 @@ struct RadioPaletteView: View {
         }
     }
 
-    private var syntaxHelpSection: some View {
+    var syntaxHelpSection: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Syntax")
                 .font(.caption.weight(.semibold))
@@ -245,7 +251,7 @@ struct RadioPaletteView: View {
 
     // MARK: - Palette Bridge
 
-    private var paletteBridgeView: some View {
+    var paletteBridgeView: some View {
         VStack(spacing: 12) {
             Text("Switch to App Palette")
                 .font(.headline)
@@ -260,7 +266,7 @@ struct RadioPaletteView: View {
 
     // MARK: - Parse Result
 
-    private var parseResultView: some View {
+    var parseResultView: some View {
         let expanded = RadioCommandParser.expandAliases(searchText, aliases: RadioAliasStore.load())
         let (command, tokens) = RadioCommandParser.parse(expanded)
 
@@ -280,7 +286,7 @@ struct RadioPaletteView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private var noParseResult: some View {
+    var noParseResult: some View {
         let suggestions = RadioCommandParser.suggestCommands(for: searchText)
         return VStack(spacing: 8) {
             Text("Could not parse command")
@@ -310,7 +316,50 @@ struct RadioPaletteView: View {
         .frame(maxWidth: .infinity)
     }
 
-    private func aliasIndicator(expanded: String) -> some View {
+    // MARK: - Radio Status Footer
+
+    var radioStatusFooter: some View {
+        HStack(spacing: 8) {
+            if radioManager.isConnected {
+                if let name = radioManager.connectedRadioName {
+                    statusPill(icon: "radio", text: name)
+                }
+                statusPill(
+                    icon: "antenna.radiowaves.left.and.right",
+                    text: FrequencyFormatter.formatWithUnit(radioManager.frequency)
+                )
+                if !radioManager.mode.isEmpty {
+                    statusPill(icon: "waveform", text: radioManager.mode)
+                }
+                if radioManager.xitEnabled {
+                    statusPill(
+                        icon: "arrow.up.arrow.down",
+                        text: "XIT \(formatOffset(radioManager.ritXitOffset))",
+                        highlight: true
+                    )
+                }
+                if radioManager.ritEnabled {
+                    statusPill(
+                        icon: "arrow.down.arrow.up",
+                        text: "RIT \(formatOffset(radioManager.ritXitOffset))",
+                        highlight: true
+                    )
+                }
+                if radioManager.isTransmitting {
+                    statusPill(icon: "bolt.fill", text: "TX", highlight: true)
+                }
+            } else {
+                Label("No radio connected", systemImage: "antenna.radiowaves.left.and.right.slash")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
+            Spacer()
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+    }
+
+    func aliasIndicator(expanded: String) -> some View {
         HStack(spacing: 4) {
             Image(systemName: "arrow.right.circle")
                 .font(.caption2)
@@ -320,7 +369,23 @@ struct RadioPaletteView: View {
         .foregroundStyle(.blue)
     }
 
-    private func helpRow(_ command: String, _ description: String) -> some View {
+    func statusPill(icon: String, text: String, highlight: Bool = false) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: icon)
+                .font(.caption2)
+            Text(text)
+                .font(.caption.monospacedDigit())
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 3)
+        .background(
+            highlight ? AnyShapeStyle(.tint.opacity(0.2)) : AnyShapeStyle(.quaternary),
+            in: Capsule()
+        )
+        .foregroundStyle(highlight ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
+    }
+
+    func helpRow(_ command: String, _ description: String) -> some View {
         HStack(spacing: 8) {
             Text(command)
                 .font(.caption.monospaced())
@@ -333,7 +398,7 @@ struct RadioPaletteView: View {
         }
     }
 
-    private func tokenPills(_ tokens: [RadioParsedToken]) -> some View {
+    func tokenPills(_ tokens: [RadioParsedToken]) -> some View {
         FlowLayout(spacing: 8) {
             ForEach(tokens) { token in
                 tokenPill(token)
@@ -341,7 +406,7 @@ struct RadioPaletteView: View {
         }
     }
 
-    private func tokenPill(_ token: RadioParsedToken) -> some View {
+    func tokenPill(_ token: RadioParsedToken) -> some View {
         HStack(spacing: 4) {
             Image(systemName: token.kind.icon)
                 .font(.caption2)
@@ -352,6 +417,13 @@ struct RadioPaletteView: View {
         .padding(.vertical, 4)
         .background(token.state.color.opacity(0.15), in: Capsule())
         .foregroundStyle(token.state.color)
+    }
+
+    func formatOffset(_ hz: Int) -> String {
+        if hz >= 0 {
+            return "+\(hz) Hz"
+        }
+        return "\(hz) Hz"
     }
 }
 

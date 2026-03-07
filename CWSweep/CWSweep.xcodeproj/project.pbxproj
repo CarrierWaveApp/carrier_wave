@@ -54,6 +54,7 @@
 		4EE5397790FF9F87325BDB24 /* KiwiSDRClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B193C72EC5EC9193A876701 /* KiwiSDRClient.swift */; };
 		576EEDD70D5872C87CD78777 /* BandEdgesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF19D1E959B3377FF4731796 /* BandEdgesTests.swift */; };
 		594EECAF5A4FB116808DC1DD /* WebSDRDirectory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8671F811BD9E20B72C2AC188 /* WebSDRDirectory.swift */; };
+		5B0869F6FA0084C8EA412BA8 /* RadioPaletteHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 122483BF80B62A04B9B4F1F4 /* RadioPaletteHelpers.swift */; };
 		5B57433262F9B9E9940EDB17 /* KiwiSDRTypesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FF01443EB1BD45CEE3692B9 /* KiwiSDRTypesTests.swift */; };
 		611244800912266CBC189CB4 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 065906E0165C5C61BAB20BE5 /* DashboardView.swift */; };
 		6143DDF5ABD1668179B7ED7C /* BandMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9FCE182FD822E8029CC2935 /* BandMapView.swift */; };
@@ -61,6 +62,7 @@
 		625CFBD58A7B951F9C29A78C /* ClusterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8E9B086546B9F6B0CEA1915 /* ClusterView.swift */; };
 		63973CA78774A97F252E2758 /* QSOLogTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F65ECBD80D4195B7C287B579 /* QSOLogTableView.swift */; };
 		63D4EC51ADF3C789BDB8C86E /* RBNClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = E106FB98097FFDF0A175472E /* RBNClient.swift */; };
+		643B466A14E1A3A61E9704F4 /* RadioPaletteSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D750381E8AAF51E6754253C /* RadioPaletteSummary.swift */; };
 		649186C39C6C12A008E5E673 /* CWSweepCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000401D18660686DB848ACEF /* CWSweepCommands.swift */; };
 		6704B94A7A1493BCFF7F9BB7 /* RBNSpot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61A60C580F635EFE9BCA0856 /* RBNSpot.swift */; };
 		6A10F0021A897FDBB49F5F22 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F19CADD4B3925B383196E50A /* SettingsView.swift */; };
@@ -99,6 +101,7 @@
 		9A3F839E1D9935FB36FFF09A /* PoloNotesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF0C142F6AEFF2B4AB884F93 /* PoloNotesStore.swift */; };
 		9BB1DF0551667CA3F2F3C057 /* WinKeyerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFFC4CCF36FF735CA8492805 /* WinKeyerView.swift */; };
 		9BF04F3C8E377DEC2ECC01E2 /* AudioRingBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF2360F1F3466D7DB6E05628 /* AudioRingBuffer.swift */; };
+		9C9266F5ECAF5EEDF968C2D5 /* RadioPaletteActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD554139FC4857A7459CBB60 /* RadioPaletteActions.swift */; };
 		9CB162E1C970C01B852D30E5 /* POTASpotsClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBD184C919BAD8AB4E252813 /* POTASpotsClient.swift */; };
 		9DA065674010BB4A43B9288F /* arrl-dx-w-ve.json in Resources */ = {isa = PBXBuildFile; fileRef = A47728B707B1804F2DFC9C64 /* arrl-dx-w-ve.json */; };
 		9EBB3D8E5E9347553347E840 /* ParsedFieldSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42A0887286E9DFCEEAF44831 /* ParsedFieldSummary.swift */; };
@@ -148,6 +151,7 @@
 		F29C8849B6A2D79F96DBFD88 /* cq-ww-cw.json in Resources */ = {isa = PBXBuildFile; fileRef = 6A3EE0625E35FAE5A3C8B80B /* cq-ww-cw.json */; };
 		F35F4D43C611FECCF52866AC /* SpotListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D246A708942035BA1339AE72 /* SpotListView.swift */; };
 		F4200447F9CE3537AE941DC8 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C14FCF8C9F11B50677599080 /* ContentView.swift */; };
+		F55E7A5BA29F730BF191D40E /* RadioPaletteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9ADC020C3B66DA6EF69A4EF /* RadioPaletteView.swift */; };
 		F6CED0DA970C429EDBF5B938 /* InspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65BDF81C27B30EED035791D6 /* InspectorView.swift */; };
 		FA53E37CF64DDDCC15966EC3 /* RadioSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5481BF64FC3710AB78901C3F /* RadioSession.swift */; };
 		FCCE22EA06D24F5037752BCF /* KiwiSDRADPCMTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56F9BAF3A45DD661436CF237 /* KiwiSDRADPCMTests.swift */; };
@@ -174,6 +178,7 @@
 		078FAC34578B347CC5EE63DE /* UnifiedSpot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedSpot.swift; sourceTree = "<group>"; };
 		0C088DB86830D6885C2DF0DA /* ClusterNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClusterNode.swift; sourceTree = "<group>"; };
 		0CD6BFEE8510D2E079D2408D /* SpotRegion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotRegion.swift; sourceTree = "<group>"; };
+		122483BF80B62A04B9B4F1F4 /* RadioPaletteHelpers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadioPaletteHelpers.swift; sourceTree = "<group>"; };
 		130ED358D7E8B60E86416DB3 /* HunterLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HunterLayout.swift; sourceTree = "<group>"; };
 		184BC415A5A8B3D9237ED32B /* SessionsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionsListView.swift; sourceTree = "<group>"; };
 		1A4D9263FE96FED9F51C34E8 /* RadioManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadioManager.swift; sourceTree = "<group>"; };
@@ -205,6 +210,7 @@
 		498C2218BC932EAE4C6B418D /* ActivatorLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivatorLayout.swift; sourceTree = "<group>"; };
 		4B193C72EC5EC9193A876701 /* KiwiSDRClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KiwiSDRClient.swift; sourceTree = "<group>"; };
 		4D5BB7787034E14F1AFD8C7D /* QSOMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QSOMapView.swift; sourceTree = "<group>"; };
+		4D750381E8AAF51E6754253C /* RadioPaletteSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadioPaletteSummary.swift; sourceTree = "<group>"; };
 		4F1C628C3FD96A4F64971534 /* ContestTemplateLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContestTemplateLoader.swift; sourceTree = "<group>"; };
 		500234E7AEE1AA5DCF48C82C /* SDRMeterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SDRMeterView.swift; sourceTree = "<group>"; };
 		5481BF64FC3710AB78901C3F /* RadioSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadioSession.swift; sourceTree = "<group>"; };
@@ -264,6 +270,7 @@
 		B5E2C462F2E2836D531DF7C8 /* AudioRingBufferTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioRingBufferTests.swift; sourceTree = "<group>"; };
 		B6629012544B77452A4C295F /* WebSDRRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebSDRRecorder.swift; sourceTree = "<group>"; };
 		B89A2DB3FF01EEAA5CC01E1D /* SerialPortMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SerialPortMonitor.swift; sourceTree = "<group>"; };
+		B9ADC020C3B66DA6EF69A4EF /* RadioPaletteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadioPaletteView.swift; sourceTree = "<group>"; };
 		BBD0B2CA114E82D97F11F8E4 /* FocusedValues.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusedValues.swift; sourceTree = "<group>"; };
 		BC3E6473D74EAE79700F505D /* CWKeyerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CWKeyerService.swift; sourceTree = "<group>"; };
 		BDDB00B384653A526CBCE283 /* CWSweep.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CWSweep.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -292,6 +299,7 @@
 		D246A708942035BA1339AE72 /* SpotListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotListView.swift; sourceTree = "<group>"; };
 		D36D9DA2491272FE2815CA47 /* CIVProtocolHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CIVProtocolHandler.swift; sourceTree = "<group>"; };
 		D3F25630B25CA80A897840DA /* WinKeyerSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinKeyerSession.swift; sourceTree = "<group>"; };
+		DD554139FC4857A7459CBB60 /* RadioPaletteActions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadioPaletteActions.swift; sourceTree = "<group>"; };
 		DDA2FD6E58422DE2769A09F5 /* ContestDefinitionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContestDefinitionTests.swift; sourceTree = "<group>"; };
 		DE72CF8E0BB4EC4E2C24CEAC /* SpotSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotSource.swift; sourceTree = "<group>"; };
 		DFFC4CCF36FF735CA8492805 /* WinKeyerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinKeyerView.swift; sourceTree = "<group>"; };
@@ -380,6 +388,10 @@
 			isa = PBXGroup;
 			children = (
 				EF379CD71BBF2CE34BA21777 /* CommandPaletteView.swift */,
+				DD554139FC4857A7459CBB60 /* RadioPaletteActions.swift */,
+				122483BF80B62A04B9B4F1F4 /* RadioPaletteHelpers.swift */,
+				4D750381E8AAF51E6754253C /* RadioPaletteSummary.swift */,
+				B9ADC020C3B66DA6EF69A4EF /* RadioPaletteView.swift */,
 			);
 			path = CommandPalette;
 			sourceTree = "<group>";
@@ -972,6 +984,10 @@
 				2902AABE1E10E0849C36D122 /* RadioCommandLog.swift in Sources */,
 				7C779E207F869C27CCC5F167 /* RadioControlView.swift in Sources */,
 				3923661B73C5A9CFD0D6C442 /* RadioManager.swift in Sources */,
+				9C9266F5ECAF5EEDF968C2D5 /* RadioPaletteActions.swift in Sources */,
+				5B0869F6FA0084C8EA412BA8 /* RadioPaletteHelpers.swift in Sources */,
+				643B466A14E1A3A61E9704F4 /* RadioPaletteSummary.swift in Sources */,
+				F55E7A5BA29F730BF191D40E /* RadioPaletteView.swift in Sources */,
 				74F8FDA1DD5CEDDCD69542D9 /* RadioProfile.swift in Sources */,
 				12AB1A111340316F0F56905C /* RadioProtocolHandler.swift in Sources */,
 				FA53E37CF64DDDCC15966EC3 /* RadioSession.swift in Sources */,

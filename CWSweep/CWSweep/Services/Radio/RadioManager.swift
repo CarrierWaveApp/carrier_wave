@@ -24,8 +24,23 @@ final class RadioManager {
     /// Whether any radio is connected
     var isConnected: Bool = false
 
+    /// Whether XIT is enabled on the active radio
+    var xitEnabled: Bool = false
+
+    /// Whether RIT is enabled on the active radio
+    var ritEnabled: Bool = false
+
+    /// Current RIT/XIT offset in Hz
+    var ritXitOffset: Int = 0
+
+    /// Whether the active radio is transmitting
+    var isTransmitting: Bool = false
+
     /// Port path of the currently connected radio (nil when disconnected)
     private(set) var connectedPortPath: String?
+
+    /// Name of the currently connected radio (nil when disconnected)
+    private(set) var connectedRadioName: String?
 
     /// In-app command log for radio TX/RX visibility
     let commandLog = RadioCommandLog()
@@ -75,10 +90,10 @@ final class RadioManager {
 
     /// Connect to a radio with the given profile
     func connect(profile: RadioProfile) async throws -> UUID {
-        logger
-            .info(
-                "Connecting: \(profile.name) via \(profile.serialPortPath) (\(profile.protocolType.rawValue), \(profile.baudRate) baud)"
-            )
+        let proto = profile.protocolType.rawValue
+        logger.info(
+            "Connecting: \(profile.name) via \(profile.serialPortPath) (\(proto), \(profile.baudRate) baud)"
+        )
         let transport = SerialRadioTransport(
             profile: profile,
             logCallback: commandLog.makeCallback()
@@ -109,6 +124,7 @@ final class RadioManager {
 
         isConnected = true
         connectedPortPath = profile.serialPortPath
+        connectedRadioName = profile.name
         commandLog.append(direction: .status, text: "Connected to \(profile.name) on \(profile.serialPortPath)")
 
         // Start state polling
@@ -136,6 +152,7 @@ final class RadioManager {
         isConnected = !sessions.isEmpty
         if !isConnected {
             connectedPortPath = nil
+            connectedRadioName = nil
         }
         commandLog.append(direction: .status, text: "Disconnected")
     }
@@ -148,6 +165,7 @@ final class RadioManager {
         activeRadioId = nil
         isConnected = false
         connectedPortPath = nil
+        connectedRadioName = nil
         commandLog.append(direction: .status, text: "Disconnected all radios")
     }
 
@@ -201,6 +219,10 @@ final class RadioManager {
                 let state = await session.state
                 frequency = state.frequency
                 mode = state.mode
+                xitEnabled = state.xitEnabled
+                ritEnabled = state.ritEnabled
+                ritXitOffset = state.ritXitOffset
+                isTransmitting = state.isTransmitting
             }
             try? await Task.sleep(for: .milliseconds(100))
         }
