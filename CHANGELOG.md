@@ -8,6 +8,8 @@ All notable changes to Carrier Wave will be documented in this file.
 - Add multi-step end session flow with session summary, POTA upload, and brag sheet in a single guided sheet
 - Add visible red "End" button in session header for quick session ending
 - Add session "More" menu with pause, spot mismatch review, and delete options
+- Consolidate activity feed entries from same operator/time window into expandable groups (DX contacts, friends, milestones)
+- Enrich DX contact and friend activity entries with operator name and DXCC entity
 
 ### Changed
 - Auto-sync club member lists on app launch and foreground resume (no longer requires tapping into each club)

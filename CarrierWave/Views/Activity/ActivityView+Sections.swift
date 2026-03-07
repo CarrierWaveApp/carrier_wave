@@ -178,6 +178,10 @@ extension ActivityView {
 
     // MARK: - Activity Feed Section
 
+    var groupedActivityItems: [ActivityGroup] {
+        ActivityGrouping.group(filteredActivityItems)
+    }
+
     var activityFeedSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Recent Activity")
@@ -189,14 +193,14 @@ extension ActivityView {
                 activityEmptyState
             } else {
                 LazyVStack(spacing: 12) {
-                    ForEach(filteredActivityItems) { item in
-                        ActivityItemRow(
-                            item: item,
-                            onShare: { shareActivity(item) },
-                            onHide: { hideActivity(item) },
-                            onDeleteFromServer: item.isOwn && item.serverId != nil
-                                ? { deleteActivityFromServer(item) }
-                                : nil,
+                    ForEach(groupedActivityItems) { group in
+                        ConsolidatedActivityRow(
+                            group: group,
+                            onShare: { item in shareActivity(item) },
+                            onHide: { item in hideActivity(item) },
+                            onDeleteFromServer: { item in
+                                deleteActivityFromServer(item)
+                            },
                             onCallsignTap: { callsign in
                                 navigateToProfile(callsign: callsign)
                             }

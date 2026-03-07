@@ -133,6 +133,8 @@ extension ActivityDetector {
             band: qso.band,
             mode: qso.mode,
             workedCallsign: qso.callsign,
+            workedName: qso.name,
+            workedEntity: qso.country,
             distanceKm: distance
         )
     }
@@ -372,7 +374,8 @@ extension ActivityDetector {
                     timestamp: qso.timestamp,
                     band: qso.band,
                     mode: qso.mode,
-                    workedCallsign: qso.callsign
+                    workedCallsign: qso.callsign,
+                    workedName: qso.name
                 )
             )
         }

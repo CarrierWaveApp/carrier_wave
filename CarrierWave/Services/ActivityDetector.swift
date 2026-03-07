@@ -221,6 +221,8 @@ final class ActivityDetector {
             details.band = activity.band
         case .dxContact:
             details.workedCallsign = activity.workedCallsign
+            details.workedName = activity.workedName
+            details.workedEntity = activity.workedEntity
             details.distanceKm = activity.distanceKm
             details.band = activity.band
             details.mode = activity.mode
@@ -237,6 +239,7 @@ final class ActivityDetector {
             details.recordValue = activity.recordValue
         case .workedFriend:
             details.workedCallsign = activity.workedCallsign
+            details.workedName = activity.workedName
             details.band = activity.band
             details.mode = activity.mode
         case .challengeTierUnlock,
@@ -262,6 +265,8 @@ struct DetectedActivity {
     var band: String?
     var mode: String?
     var workedCallsign: String?
+    var workedName: String?
+    var workedEntity: String?
     var distanceKm: Double?
     var parkReference: String?
     var parkName: String?

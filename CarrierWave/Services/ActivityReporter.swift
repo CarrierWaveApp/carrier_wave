@@ -95,6 +95,8 @@ final class ActivityReporter {
         details.entityCode = activity.entityCode
         details.band = activity.band
         details.mode = activity.mode
+        details.workedName = activity.workedName
+        details.workedEntity = activity.workedEntity
         details.distanceKm = activity.distanceKm
         details.parkReference = activity.parkReference
         details.parkName = activity.parkName

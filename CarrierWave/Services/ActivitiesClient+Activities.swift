@@ -148,6 +148,8 @@ struct ReportActivityDetails: Codable {
     var band: String?
     var mode: String?
     var workedCallsign: String?
+    var workedName: String?
+    var workedEntity: String?
     var distanceKm: Double?
     var parkReference: String?
     var parkName: String?
