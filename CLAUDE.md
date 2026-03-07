@@ -93,8 +93,24 @@ SwiftLint + SwiftFormat. **Pre-commit hooks block on ANY violation.** Run `xc fo
 **Hard limits:**
 - File: 500 lines | Function body: 50 lines | Type body: 300 lines
 - Line length: 120 chars | Cyclomatic complexity: 15
+- Nesting: 2 type levels, 3 function levels
 
 Split proactively when approaching limits.
+
+### SwiftLint Naming Rules
+
+Follow these when writing code — violations block commits:
+
+- **No single-letter variables.** Minimum 2 characters. Allowed exceptions: `id`, `ok`, `i`, `j`, `k`, `x`, `y`, `z`, `db`, `tz`, `rx`, `tx`, `n`, `m`, `dp`, `e`, `v`, `a`, `b`.
+- **Type names:** 3–50 characters.
+- **No trailing closures with multiple closure arguments** — use labeled syntax instead.
+- **Prefer `first(where:)` over `filter(...).first`**, `last(where:)` over `filter(...).last`, `contains(where:)` over `filter(...).isEmpty`.
+- **Prefer `sorted().first`/`.last` over manual min/max** — use `sorted_first_last` pattern.
+- **Use `reduce(into:)` over `reduce()`** for collections (avoids copies).
+- **No explicit `.init()`** — use implicit initialization.
+- **No Yoda conditions** (e.g., `42 == x`) — use `x == 42`.
+- **No redundant nil coalescing** (e.g., `x ?? nil`).
+- **No redundant type annotations** when the type is obvious from context.
 
 ## Model Selection
 
