@@ -755,7 +755,9 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | File | Purpose |
 |------|---------|
 | `ActivityView.swift` | Main activity tab with challenges section and activity feed |
+| `ActivityGrouping.swift` | Groups consecutive same-callsign activity items within time windows |
 | `ActivityItemRow.swift` | Individual activity feed item display |
+| `ConsolidatedActivityRow.swift` | Consolidated/expandable row for grouped activity feed items |
 | `SessionBragSheetCard.swift` | Full brag sheet card for completed sessions in activity feed (map, stats, timeline) |
 | `SessionBragSheetCard+Components.swift` | Map, stats, equipment, and footer sections for session brag sheet card |
 | `FilterBar.swift` | Feed filter chips (All/Friends) |

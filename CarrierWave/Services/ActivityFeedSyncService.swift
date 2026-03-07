@@ -80,6 +80,8 @@ final class ActivityFeedSyncService: ObservableObject {
         details.band = dto.band
         details.mode = dto.mode
         details.workedCallsign = dto.workedCallsign
+        details.workedName = dto.workedName
+        details.workedEntity = dto.workedEntity
         details.distanceKm = dto.distanceKm
         details.parkReference = dto.parkReference
         details.parkName = dto.parkName

@@ -79,30 +79,34 @@ struct FriendActivityCard: View {
             .foregroundStyle(.secondary)
     }
 
+    private var groupedActivities: [ActivityGroup] {
+        ActivityGrouping.group(friendActivities)
+    }
+
     private var activityRows: some View {
         VStack(spacing: 8) {
-            ForEach(friendActivities.prefix(3)) { item in
+            ForEach(groupedActivities.prefix(3)) { group in
                 Button {
                     onActivityTap()
                 } label: {
-                    compactActivityRow(item)
+                    compactGroupRow(group)
                 }
                 .buttonStyle(.plain)
             }
         }
     }
 
-    private func compactActivityRow(_ item: ActivityItem) -> some View {
+    private func compactGroupRow(_ group: ActivityGroup) -> some View {
         HStack(spacing: 8) {
-            Image(systemName: item.activityType.icon)
+            Image(systemName: group.activityType.icon)
                 .font(.caption)
-                .foregroundStyle(iconColor(for: item.activityType))
+                .foregroundStyle(iconColor(for: group.activityType))
                 .frame(width: 20)
 
             VStack(alignment: .leading, spacing: 1) {
-                Text(item.callsign)
+                Text(group.callsign)
                     .font(.subheadline.weight(.semibold).monospaced())
-                Text(item.activityType.displayName)
+                Text(compactDescription(for: group))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
@@ -110,10 +114,65 @@ struct FriendActivityCard: View {
 
             Spacer()
 
-            Text(relativeTime(item.timestamp))
+            Text(relativeTime(group.latestTimestamp))
                 .font(.caption2)
                 .foregroundStyle(.secondary)
         }
+    }
+
+    private func compactDescription(for group: ActivityGroup) -> String {
+        if group.isConsolidated {
+            switch group.activityType {
+            case .dxContact:
+                return "Worked \(group.count) DX stations"
+            case .workedFriend:
+                return "Worked \(group.count) friends"
+            case .newDXCCEntity:
+                return "\(group.count) new DXCC entities"
+            case .newBand:
+                return "\(group.count) new bands"
+            case .newMode:
+                return "\(group.count) new modes"
+            default:
+                return group.activityType.displayName
+            }
+        }
+
+        let item = group.primaryItem
+        let details = item.details
+        switch item.activityType {
+        case .dxContact:
+            return enrichedDXDescription(details)
+        case .workedFriend:
+            return enrichedFriendDescription(details)
+        default:
+            return item.activityType.displayName
+        }
+    }
+
+    private func enrichedDXDescription(
+        _ details: ActivityDetails?
+    ) -> String {
+        var desc = "DX"
+        if let callsign = details?.workedCallsign {
+            desc = callsign
+        }
+        if let entity = details?.workedEntity, !entity.isEmpty {
+            desc += " · \(entity)"
+        }
+        return desc
+    }
+
+    private func enrichedFriendDescription(
+        _ details: ActivityDetails?
+    ) -> String {
+        if let callsign = details?.workedCallsign {
+            if let name = details?.workedName, !name.isEmpty {
+                return "Worked \(callsign) (\(name))"
+            }
+            return "Worked \(callsign)"
+        }
+        return "Worked Friend"
     }
 
     private func iconColor(for type: ActivityType) -> Color {

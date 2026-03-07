@@ -69,6 +69,8 @@ struct ActivityDetails: Sendable {
     var parkName: String?
     var qsoCount: Int? // For activations
     var streakDays: Int? // For streak activities
+    var workedName: String? // Operator name for DX/friend contacts
+    var workedEntity: String? // DXCC entity name for DX contacts
     var challengeName: String? // For challenge activities
     var tierName: String? // For tier unlock
     var recordType: String? // For personal bests (e.g., "distance", "qsos_in_day")
@@ -115,6 +117,8 @@ extension ActivityDetails: Codable {
         case parkName
         case qsoCount
         case streakDays
+        case workedName
+        case workedEntity
         case challengeName
         case tierName
         case recordType
@@ -145,6 +149,8 @@ extension ActivityDetails: Codable {
         parkName = try container.decodeIfPresent(String.self, forKey: .parkName)
         qsoCount = try container.decodeIfPresent(Int.self, forKey: .qsoCount)
         streakDays = try container.decodeIfPresent(Int.self, forKey: .streakDays)
+        workedName = try container.decodeIfPresent(String.self, forKey: .workedName)
+        workedEntity = try container.decodeIfPresent(String.self, forKey: .workedEntity)
         challengeName = try container.decodeIfPresent(String.self, forKey: .challengeName)
         tierName = try container.decodeIfPresent(String.self, forKey: .tierName)
         recordType = try container.decodeIfPresent(String.self, forKey: .recordType)
@@ -175,6 +181,8 @@ extension ActivityDetails: Codable {
         try container.encodeIfPresent(parkName, forKey: .parkName)
         try container.encodeIfPresent(qsoCount, forKey: .qsoCount)
         try container.encodeIfPresent(streakDays, forKey: .streakDays)
+        try container.encodeIfPresent(workedName, forKey: .workedName)
+        try container.encodeIfPresent(workedEntity, forKey: .workedEntity)
         try container.encodeIfPresent(challengeName, forKey: .challengeName)
         try container.encodeIfPresent(tierName, forKey: .tierName)
         try container.encodeIfPresent(recordType, forKey: .recordType)
