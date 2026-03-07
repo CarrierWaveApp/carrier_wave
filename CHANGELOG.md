@@ -15,6 +15,16 @@ All notable changes to Carrier Wave will be documented in this file.
 - World rotation (heading-up) instead of antenna rotation on the azimuthal map
 - Prominent 36pt bearing display with HIG-compliant 44pt touch targets
 - Accessible from Map tab toolbar and iPad logger sidebar
+- Apple Maps tile underlay for azimuthal map with per-pixel Mercator-to-azimuthal reprojection
+- Inverse azimuthal equidistant projection (`inverseProject`) for geographic coordinate recovery
+- Pinch-to-zoom on azimuthal map with visual tile scaling during gesture
+- Red heading indicator triangle at top of compass circle
+- Centered loading overlay on azimuthal map while spots load
+
+### Changed
+- Azimuthal map defaults: show map tiles, hide QSOs and antenna pattern on first load
+- Redesign azimuthal header: compact Compass/Manual segmented picker, full-width manual slider
+- Move antenna pattern picker from header to scrollable filter pills row
 - Implement `qsy://` URI scheme for inter-app ham radio interoperability (spot, tune, lookup, import, log actions)
 - Network health monitor: detect and warn when web requests consistently fail (QRZ lookups, syncing, etc.)
 - Show lookup error banner while callsign field is focused (previously only visible after dismissing keyboard)

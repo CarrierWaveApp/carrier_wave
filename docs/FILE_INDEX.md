@@ -876,9 +876,13 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `MapDataLoadingActor.swift` | Background actor for loading map QSO data off main thread |
 | `AzimuthalMapView.swift` | Canvas-rendered azimuthal equidistant projection with spot heatmap and antenna pattern overlay |
 | `AzimuthalContainerView.swift` | Container wiring spots, QSOs, antenna selection, and compass into the azimuthal map |
+| `AzimuthalContainerView+Filters.swift` | Filter pills and source toggles for the azimuthal map (band, mode, distance, antenna, QSOs, map tiles) |
 | `AzimuthalStandaloneView.swift` | Standalone azimuthal view for Map tab (resolves grid via GPS, loads spots/QSOs) |
 | `AzimuthalStandaloneView+Fetch.swift` | Spot fetching from RBN, POTA, SOTA, WWFF and HamDB grid enrichment |
 | `AzimuthalDataProvider.swift` | Projects spots and QSOs into azimuthal coordinates, builds sector data |
+| `AzimuthalTileRenderer.swift` | Background actor: MKMapSnapshotter capture + per-pixel reprojection to azimuthal equidistant CGImage |
+| `AntennaType+DisplayName.swift` | Display names for antenna types (extracted from container view) |
+| `DistanceOption.swift` | Distance range options for azimuthal map (regional, continental, hemispheric, global) |
 
 ## Utilities (`CarrierWave/Utilities/`)
 | File | Purpose |
@@ -946,6 +950,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `FT8EnrichedDecodeTests.swift` | FT8 enriched decode tests (section classification, sort priority, SNR tier) |
 | `FT8QSOStateMachineTests.swift` | FT8 QSO state machine tests (S&P, CQ, timeout, duplicate) |
 | `AntennaDescriptionParserTests.swift` | Antenna description parsing tests (models, bands, direction) |
+| `AzimuthalProjectionInverseTests.swift` | Inverse azimuthal projection round-trip and edge case tests |
 
 ## CarrierWaveData Package (`CarrierWaveData/`)
 
