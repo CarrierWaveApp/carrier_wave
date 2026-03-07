@@ -16,6 +16,7 @@ struct StatsQSOSnapshot: Sendable {
     let timestamp: Date
     let myCallsign: String
     let theirGrid: String?
+    let state: String?
     let parkReference: String?
     let theirParkReference: String?
     let importSource: ImportSource
@@ -108,6 +109,10 @@ struct ComputedStats: Sendable {
     var topFriendCount: Int = 0
     var topHunter: String?
     var topHunterCount: Int = 0
+
+    // WAS (Worked All States) - QTH-only QSOs (no park reference)
+    var wasStateCounts: [String: Int] = [:]
+    var wasStateCallsigns: [String: [String]] = [:]
 }
 
 // MARK: - StatsComputationActor
@@ -248,6 +253,7 @@ actor StatsComputationActor {
                 timestamp: qso.timestamp,
                 myCallsign: qso.myCallsign,
                 theirGrid: qso.theirGrid,
+                state: qso.state,
                 parkReference: qso.parkReference,
                 theirParkReference: qso.theirParkReference,
                 importSource: qso.importSource,
@@ -340,6 +346,11 @@ actor StatsComputationActor {
         try Task.checkCancellation()
         onProgress(0.72, "Computing favorites...")
         computeTopFavorites(into: &stats, from: realQSOs)
+
+        // Compute WAS (Worked All States) - QTH-only QSOs
+        try Task.checkCancellation()
+        onProgress(0.74, "Computing WAS...")
+        computeWAS(into: &stats, from: realQSOs)
 
         return stats
     }
