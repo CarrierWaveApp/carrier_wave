@@ -158,6 +158,7 @@ struct QRZCallbookSettingsView: View {
         try? KeychainHelper.shared.delete(for: KeychainHelper.Keys.qrzCallbookSessionKey)
         isAuthenticated = false
         savedUsername = nil
+        NotificationCenter.default.post(name: .qrzCallbookCredentialsChanged, object: nil)
     }
 
     private func login() async {
@@ -225,6 +226,7 @@ struct QRZCallbookSettingsView: View {
         try KeychainHelper.shared.save(username, for: KeychainHelper.Keys.qrzCallbookUsername)
         try KeychainHelper.shared.save(password, for: KeychainHelper.Keys.qrzCallbookPassword)
         try KeychainHelper.shared.save(sessionKey, for: KeychainHelper.Keys.qrzCallbookSessionKey)
+        NotificationCenter.default.post(name: .qrzCallbookCredentialsChanged, object: nil)
     }
 
     private func parseXMLValue(from xml: String, tag: String) -> String? {
