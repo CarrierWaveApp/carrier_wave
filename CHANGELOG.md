@@ -4,6 +4,8 @@ All notable changes to Carrier Wave will be documented in this file.
 
 ## [Unreleased]
 
+## [1.56.0] - 2026-03-07
+
 ### Added
 - Add POTA activator awards tracking with progress toward 8 award categories (unique parks, DX entities, rover, repeat offender, park-to-park, kilo, LaPorta N1CC, six pack)
 - Add multi-step end session flow with session summary, POTA upload, and brag sheet in a single guided sheet
