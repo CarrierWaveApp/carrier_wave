@@ -300,6 +300,7 @@ struct DashboardView: View {
                     friendActivityCard
                     streaksCard
                     summaryCard
+                    potaAwardsCard
                     wasCard
                     bragSheetEntryCard
                     favoritesCard

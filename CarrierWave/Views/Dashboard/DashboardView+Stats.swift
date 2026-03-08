@@ -171,4 +171,10 @@ extension DashboardView {
         .background(Color(.systemGray6))
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
+
+    // MARK: - POTA Awards Card
+
+    var potaAwardsCard: some View {
+        POTAAwardsDashboardCard()
+    }
 }

@@ -116,6 +116,8 @@ Standalone CLI tool for testing LoFi downloads without iOS Simulator. Run with `
 | `ChallengeTypes+DTOs.swift` | API DTOs (register, list, definition, join, progress report) |
 | `LeaderboardCache.swift` | Cached leaderboard data |
 | `POTAActivation.swift` | POTA activation grouping view model |
+| `POTAAwards.swift` | POTA activator award tier definitions (8 categories: unique parks, DX, rover, etc.) |
+| `POTAAwardsComputation.swift` | Pure computation logic for POTA award progress from activation data |
 | `TourState.swift` | UserDefaults-backed tour progress tracking |
 | `StreakInfo.swift` | Streak data model and calculation utilities |
 | `DashboardMetricType.swift` | Dashboard metric type enum, display properties, MetricDisplayValue |
@@ -641,6 +643,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 | `DashboardView+Repairs.swift` | One-time backfill and repair jobs (WPM, conditions, park refs, K-index) |
 | `DashboardView+Services.swift` | Services list builder and detail sheet builders |
 | `DashboardView+Stats.swift` | Stats grid and streak row components |
+| `POTAAwardsDashboardCard.swift` | POTA awards summary card for dashboard (unique parks progress) |
 | `DashboardHelperViews.swift` | Reusable dashboard components (StatBox, StatBoxDeferred, ActivityGrid, StreaksCard) |
 | `QSOStatistics.swift` | QSO statistics calculations (entities, grids, bands, parks, frequencies) |
 | `QSOStatistics+Streaks.swift` | Streak calculation extensions for QSOStatistics |
@@ -693,6 +696,7 @@ Most Query Language types are now in CarrierWaveCore. Only the compiler remains 
 ## Views - POTA Activations (`CarrierWave/Views/POTAActivations/`)
 | File | Purpose |
 |------|---------|
+| `POTAAwardsView.swift` | POTA activator awards progress view with 8 award categories |
 | `POTAActivationsView.swift` | POTA activations grouped by park with upload |
 | `POTAActivationsView+Actions.swift` | Actions extension (upload, reject, share, subviews, helpers) |
 | `POTAActivationsHelperViews.swift` | Helper views for POTA activations (ActivationRow, sheets) |

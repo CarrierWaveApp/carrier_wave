@@ -290,6 +290,14 @@ extension SessionsView {
                 header()
             }
 
+            Section {
+                NavigationLink {
+                    POTAAwardsView()
+                } label: {
+                    Label("POTA Awards", systemImage: "trophy.fill")
+                }
+            }
+
             if isInMaintenance {
                 Section { maintenanceBanner }
             }
