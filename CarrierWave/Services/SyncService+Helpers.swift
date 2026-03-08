@@ -202,6 +202,9 @@ extension SyncService {
         // Repair QRZ records stuck in isSubmitted state (should be isPresent)
         await repairQRZSubmittedStateAsync()
 
+        // Group orphan POTA QSOs into sessions
+        await groupOrphanPOTAQSOsAsync()
+
         // One-time: force full QRZ download to reconcile QSOs stuck from batch upload bug
         await repairQRZPerQSOUpload()
 

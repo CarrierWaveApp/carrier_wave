@@ -15,6 +15,7 @@ All notable changes to Carrier Wave will be documented in this file.
 - Auto-sync club member lists on app launch and foreground resume (no longer requires tapping into each club)
 
 ### Fixed
+- Combine downloaded POTA QSOs into logging sessions automatically during sync
 - Fix club memberships not appearing in logger until each club was manually refreshed
 - Add automatic retry with exponential backoff for LoTW sync transient errors (SSL certificate failures, connection resets, timeouts)
 - Fix Tune In silently failing when KiwiSDR connection fails; now retries multiple candidates

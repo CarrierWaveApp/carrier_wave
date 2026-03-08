@@ -211,4 +211,24 @@ extension SyncService {
             SyncDebugLog.shared.error("Failed to repair QRZ submitted state: \(error)")
         }
     }
+
+    /// Group orphan POTA QSOs (downloaded without a session) into LoggingSession records.
+    func groupOrphanPOTAQSOsAsync() async {
+        do {
+            let result = try await Self.processingActor.groupOrphanPOTAQSOsIntoSessions(
+                container: modelContext.container
+            )
+            if result.sessionsCreated > 0 {
+                SyncDebugLog.shared.info(
+                    "Created \(result.sessionsCreated) session(s) for "
+                        + "\(result.qsosAssigned) orphan POTA QSO(s)",
+                    service: .pota
+                )
+            }
+        } catch {
+            SyncDebugLog.shared.error(
+                "Failed to group orphan POTA QSOs into sessions: \(error)"
+            )
+        }
+    }
 }
