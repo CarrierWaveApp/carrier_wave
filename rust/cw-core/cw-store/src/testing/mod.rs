@@ -59,5 +59,7 @@ pub fn sample_qso_min(id: &str) -> Qso {
         station_callsign: None,
         logging_session_id: None,
         dirty: true,
+        sat_name: None,
+        prop_mode: None,
     }
 }

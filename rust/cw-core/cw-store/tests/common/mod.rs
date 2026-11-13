@@ -54,5 +54,7 @@ pub fn sample_qso(id: &str, when: i64) -> Qso {
         station_callsign: None,
         logging_session_id: None,
         dirty: true,
+        sat_name: None,
+        prop_mode: None,
     }
 }
