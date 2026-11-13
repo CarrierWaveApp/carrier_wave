@@ -133,10 +133,7 @@ fn is_valid_callsign(candidate: &str) -> bool {
         return false;
     }
     const FALSE_POSITIVES: &[&str] = &["1ST", "2ND", "3RD", "4TH", "5TH", "73S", "88S", "599S"];
-    if FALSE_POSITIVES.contains(&candidate) {
-        return false;
-    }
-    true
+    !FALSE_POSITIVES.contains(&candidate)
 }
 
 fn determine_context(index: usize, words: &[&str]) -> CallsignContext {
