@@ -1,0 +1,39 @@
+# cw-web-crypto — WASM bindings over cw-crypto for the browser logbook viewer.
+#
+# Deliberately its OWN workspace (empty [workspace] table below) so it is NOT
+# pulled into the cw-core workspace: it enables getrandom's `js` feature, which
+# only compiles for wasm32 and would break host builds of the sibling crates.
+# Build with: wasm-pack build --target web
+[package]
+name = "cw-web-crypto"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Browser (WASM) bindings over cw-crypto: passphrase escrow open + AEAD blob decrypt for the logbook web viewer"
+
+[workspace]
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+cw-crypto = { path = "../cw-crypto" }
+# The shared query language + in-memory evaluator, reused verbatim so browser
+# filtering can never drift from the iOS/Android apps.
+cw-domain = { path = "../cw-domain" }
+wasm-bindgen = "0.2"
+base64 = "0.22"
+flate2 = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+# Enable getrandom's browser backend so rand (pulled transitively by cw-crypto)
+# links on wasm32. The decrypt path itself draws no randomness.
+getrandom = { version = "0.2", features = ["js"] }
+# `wasmbind` makes chrono's `Local` read the browser's clock/timezone, so the
+# query language's relative dates (`after:30d`, `date:today`) resolve correctly
+# in the browser exactly as `DateMatch::resolve()` does on device.
+chrono = { version = "0.4", default-features = false, features = ["clock", "wasmbind"] }
+
+[profile.release]
+opt-level = "s"
+lto = true

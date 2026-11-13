@@ -1,0 +1,39 @@
+{{ define "main" }}
+<article class="page-content macros-index">
+  <header class="page-header">
+    <h1>{{ .Title }}</h1>
+    {{ with .Description }}<p class="page-description">{{ . }}</p>{{ end }}
+  </header>
+
+  <div class="content">
+    {{ .Content }}
+
+    <div class="macros-filters" role="region" aria-label="Filter macros">
+      <input id="macros-search" type="search" placeholder="Search macros…" autocomplete="off" />
+      <select id="macros-radio-filter" aria-label="Filter by radio family">
+        <option value="">All radios</option>
+        <option value="civ">CI-V (Icom)</option>
+        <option value="kenwood">Kenwood / Elecraft</option>
+        <option value="yaesu">Yaesu</option>
+      </select>
+      <label class="macros-filter-checkbox">
+        <input id="macros-tx-filter" type="checkbox" />
+        <span>Transmits only</span>
+      </label>
+      <span id="macros-empty" class="macros-empty" hidden>No macros match those filters.</span>
+    </div>
+
+    <div id="macro-grid" class="macro-grid">
+      {{ range (index site.Data "macros").entries }}
+        {{ partial "macro-card.html" . }}
+      {{ else }}
+        <p class="macros-empty">
+          Catalog not yet synced. Run
+          <code>scripts/sync-website-macros.sh</code> before building.
+        </p>
+      {{ end }}
+    </div>
+  </div>
+</article>
+<script src="{{ "js/macros-live-refresh.js" | relURL }}" defer></script>
+{{ end }}

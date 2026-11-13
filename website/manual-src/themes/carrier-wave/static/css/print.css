@@ -1,0 +1,182 @@
+/* Carrier Wave Manual - Print Stylesheet */
+
+@media print {
+  /* Hide non-essential elements */
+  .site-header,
+  .sidebar,
+  .toc,
+  .theme-toggle,
+  .mobile-menu-toggle,
+  .page-nav,
+  .site-footer .footer-links {
+    display: none !important;
+  }
+
+  /* Reset layout */
+  body {
+    background: white;
+    color: black;
+    font-size: 11pt;
+    line-height: 1.5;
+  }
+
+  .site-wrapper {
+    display: block;
+    padding-top: 0;
+  }
+
+  .main-content {
+    margin: 0;
+    padding: 0;
+    max-width: none;
+  }
+
+  .page-content {
+    max-width: none;
+  }
+
+  /* Typography */
+  h1 { font-size: 24pt; }
+  h2 { font-size: 18pt; page-break-after: avoid; }
+  h3 { font-size: 14pt; page-break-after: avoid; }
+  h4 { font-size: 12pt; page-break-after: avoid; }
+
+  h1, h2, h3, h4, h5, h6 {
+    color: black;
+    page-break-after: avoid;
+  }
+
+  p, li {
+    orphans: 3;
+    widows: 3;
+  }
+
+  /* Links show URL */
+  a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 9pt;
+    color: #666;
+  }
+
+  a[href^="#"]::after {
+    content: "";
+  }
+
+  a {
+    color: black;
+    text-decoration: underline;
+  }
+
+  /* Code blocks */
+  pre, code {
+    background-color: #f5f5f5 !important;
+    border: 1px solid #ddd;
+  }
+
+  pre {
+    page-break-inside: avoid;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+
+  /* Images */
+  img {
+    max-width: 100% !important;
+    page-break-inside: avoid;
+    border: 1px solid #ddd !important;
+  }
+
+  /* Tables */
+  table {
+    page-break-inside: avoid;
+  }
+
+  th {
+    background-color: #f5f5f5 !important;
+  }
+
+  /* Blockquotes */
+  blockquote {
+    border-left: 3px solid #333;
+    background: #f9f9f9;
+  }
+
+  /* Callouts */
+  .callout {
+    border: 1px solid #ddd;
+    background-color: #f9f9f9 !important;
+  }
+
+  /* Page breaks */
+  .page-break-before {
+    page-break-before: always;
+  }
+
+  .page-break-after {
+    page-break-after: always;
+  }
+
+  /* Footer */
+  .site-footer {
+    margin: 0;
+    padding: 20pt 0;
+    border-top: 1px solid #ddd;
+    text-align: center;
+  }
+
+  .footer-copyright {
+    color: #666;
+  }
+
+  /* Landing page - simplify for print */
+  .landing-page {
+    padding: 0;
+  }
+
+  .hero {
+    padding: 20pt 0;
+  }
+
+  .hero-icon {
+    width: 60px;
+    height: 60px;
+    box-shadow: none;
+  }
+
+  .hero-title {
+    background: none;
+    -webkit-text-fill-color: black;
+    color: black;
+  }
+
+  .audience-cards {
+    display: block;
+  }
+
+  .audience-card {
+    border: 1px solid #ddd;
+    margin-bottom: 10pt;
+    page-break-inside: avoid;
+  }
+
+  .card-icon {
+    background: #f5f5f5;
+    color: #333;
+  }
+
+  /* Page numbers - requires browser support */
+  @page {
+    margin: 0.75in;
+
+    @bottom-center {
+      content: "Carrier Wave Manual";
+      font-size: 9pt;
+      color: #666;
+    }
+
+    @bottom-right {
+      content: counter(page);
+      font-size: 9pt;
+    }
+  }
+}

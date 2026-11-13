@@ -1,0 +1,87 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint & Format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install SwiftLint
+        run: |
+          curl -sL https://github.com/realm/SwiftLint/releases/download/0.63.2/swiftlint_linux_amd64.zip \
+            -o /tmp/swiftlint.zip
+          unzip -o /tmp/swiftlint.zip -d /tmp/swiftlint_bin
+          sudo cp /tmp/swiftlint_bin/swiftlint-static /usr/local/bin/swiftlint
+          sudo chmod +x /usr/local/bin/swiftlint
+
+      - name: Install SwiftFormat
+        run: |
+          curl -sL https://github.com/nicklockwood/SwiftFormat/releases/download/0.60.1/swiftformat_linux.zip \
+            -o /tmp/swiftformat.zip
+          unzip -o /tmp/swiftformat.zip -d /tmp/swiftformat_bin
+          sudo cp /tmp/swiftformat_bin/swiftformat_linux /usr/local/bin/swiftformat
+          sudo chmod +x /usr/local/bin/swiftformat
+
+      - name: Check formatting
+        run: swiftformat --lint .
+
+      - name: Run SwiftLint
+        run: swiftlint lint --strict --reporter github-actions-logging
+
+  # Versions live in swift/Versions.xcconfig (CAR-158). This job fails if the
+  # xcconfig, the newest WhatsNewCatalog entry, and the newest released
+  # CHANGELOG.md heading disagree for either Apple app, if Android's
+  # versionName drifts from its changelog, or if a version literal is
+  # hardcoded back into the pbxproj / project.yml. Pure grep/awk — no Xcode.
+  check-versions:
+    name: Version Consistency
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check all version locations agree
+        run: bash scripts/check-versions.sh
+
+  # NOTE: macOS-runner jobs (iOS app build, CwFfi.xcframework, and the
+  # CarrierWaveCore / CarrierWaveData swift-test suites) are intentionally NOT
+  # run in CI — macOS runners are too expensive. Those builds and the app-target
+  # seam tests are verified locally instead.
+  # See docs/plans/2026-06-19-ci-build-requirements.md.
+
+  performance-audit:
+    name: Performance Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run performance audit on changed files
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          CHANGED=$(git diff --name-only --diff-filter=ACM "origin/${BASE_REF}...HEAD" | grep '\.swift$' | grep -v '^Tools/' || true)
+          if [ -n "$CHANGED" ]; then
+            bash scripts/performance-audit.sh $CHANGED
+          else
+            echo "No Swift files changed"
+          fi
+
+      - name: Run performance audit on all files
+        if: github.event_name == 'push'
+        run: bash scripts/performance-audit.sh

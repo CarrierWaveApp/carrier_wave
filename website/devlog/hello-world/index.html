@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hello, World — Carrier Wave Devlog</title>
+<meta name="description" content="Welcome to the Carrier Wave devlog. We're starting this space to share what we're building, why we're building it, and the decisions behind the app.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --bg-primary: #09090b;
+  --bg-elevated: #131316;
+  --bg-card: rgba(255, 255, 255, 0.03);
+  --bg-card-hover: rgba(255, 255, 255, 0.06);
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-medium: rgba(255, 255, 255, 0.1);
+  --text-primary: #f0f0f2;
+  --text-secondary: rgba(240, 240, 242, 0.6);
+  --text-tertiary: rgba(240, 240, 242, 0.35);
+  --accent: #3B82F6;
+  --accent-glow: rgba(59, 130, 246, 0.15);
+  --accent-dim: rgba(59, 130, 246, 0.08);
+  --green: #34d399;
+  --green-dim: rgba(52, 211, 153, 0.08);
+  --orange: #F59E0B;
+  --purple: #A78BFA;
+  --red: #EF4444;
+  --font-body: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  overflow-x: hidden;
+  line-height: 1.6;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.015'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 9999;
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+
+/* -- Layout -- */
+.page-wrapper {
+  position: relative;
+  z-index: 1;
+}
+
+.container {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* -- Navigation -- */
+nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  padding: 0 24px;
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  background: rgba(9, 9, 11, 0.72);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+nav .nav-inner {
+  max-width: 980px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 52px;
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--text-primary);
+}
+
+.nav-logo {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+}
+
+.nav-brand span {
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+}
+
+.nav-links {
+  display: flex;
+  gap: 28px;
+  list-style: none;
+}
+
+.nav-links a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 400;
+  transition: color 0.2s;
+}
+
+.nav-links a:hover {
+  color: var(--text-primary);
+}
+
+.nav-links a.active {
+  color: var(--text-primary);
+}
+
+/* -- Article Header -- */
+.article-header {
+  padding: 140px 0 40px;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-tertiary);
+  text-decoration: none;
+  font-family: var(--font-mono);
+  letter-spacing: 0.02em;
+  margin-bottom: 32px;
+  transition: color 0.2s;
+}
+
+.back-link:hover {
+  color: var(--accent);
+}
+
+.article-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--text-tertiary);
+}
+
+.article-tag {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.article-tag.update { background: var(--green-dim); color: var(--green); }
+.article-tag.release { background: var(--accent-dim); color: var(--accent); }
+.article-tag.behind-the-scenes { background: rgba(167, 139, 250, 0.08); color: var(--purple); }
+
+.article-header h1 {
+  font-size: clamp(32px, 5vw, 44px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  animation: fadeInUp 0.8s ease-out;
+}
+
+/* -- Article Body -- */
+.article-body {
+  padding: 0 0 80px;
+}
+
+.article-body p {
+  font-size: 16px;
+  line-height: 1.75;
+  color: var(--text-secondary);
+  font-weight: 300;
+  margin-bottom: 24px;
+}
+
+.article-body p:first-child {
+  font-size: 18px;
+  color: var(--text-primary);
+  font-weight: 400;
+  line-height: 1.7;
+}
+
+.article-body h2 {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: 48px 0 16px;
+  color: var(--text-primary);
+}
+
+.article-body h3 {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 32px 0 12px;
+  color: var(--text-primary);
+}
+
+.article-body ul, .article-body ol {
+  margin: 0 0 24px 20px;
+  color: var(--text-secondary);
+  font-size: 16px;
+  line-height: 1.75;
+  font-weight: 300;
+}
+
+.article-body li {
+  margin-bottom: 8px;
+}
+
+.article-body code {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  padding: 2px 6px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+}
+
+.article-body blockquote {
+  margin: 24px 0;
+  padding: 16px 24px;
+  border-left: 2px solid var(--accent);
+  background: var(--accent-dim);
+  border-radius: 0 8px 8px 0;
+  font-size: 15px;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.article-body hr {
+  border: none;
+  border-top: 1px solid var(--border-subtle);
+  margin: 40px 0;
+}
+
+/* -- Divider -- */
+.article-divider {
+  border: none;
+  border-top: 1px solid var(--border-subtle);
+  margin: 0 0 48px;
+}
+
+/* -- Back to devlog (bottom) -- */
+.article-footer-nav {
+  padding: 0 0 80px;
+}
+
+.article-footer-nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--accent);
+  text-decoration: none;
+  transition: gap 0.2s;
+}
+
+.article-footer-nav a:hover {
+  gap: 12px;
+}
+
+/* -- Footer -- */
+footer {
+  padding: 48px 0;
+  text-align: center;
+}
+
+.footer-brand {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.footer-sub {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+}
+
+.footer-links {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin-top: 16px;
+}
+
+.footer-links a {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.footer-links a:hover {
+  color: var(--accent);
+}
+
+.footer-cw {
+  margin-top: 20px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-tertiary);
+  opacity: 0.5;
+  letter-spacing: 0.3em;
+}
+
+/* -- Animations -- */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* -- Responsive -- */
+@media (max-width: 768px) {
+  .nav-links {
+    display: none;
+  }
+
+  .article-header {
+    padding: 110px 0 32px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="page-wrapper">
+
+  <nav>
+    <div class="nav-inner">
+      <a href="/" class="nav-brand">
+        <img src="/icon.png" alt="Carrier Wave" class="nav-logo">
+        <span>Carrier Wave</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="/#features">Features</a></li>
+        <li><a href="/mission.html">Mission</a></li>
+        <li><a href="/devlog/" class="active">Devlog</a></li>
+        <li><a href="https://apps.apple.com/us/app/carrier-wave/id6758229084">Download</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <div class="container">
+
+    <header class="article-header">
+      <a href="/devlog/" class="back-link"><span aria-hidden="true">&larr;</span> All posts</a>
+      <div class="article-meta">
+        <span>2026-04-02</span>
+        <span class="article-tag update">Update</span>
+      </div>
+      <h1>Hello, World</h1>
+    </header>
+
+    <article class="article-body">
+      <p>Welcome to the Carrier Wave devlog. We're starting this space to share what we're building, why we're building it, and the occasional deep-dive into the decisions behind the app.</p>
+
+      <p>Carrier Wave has been growing steadily since launch, and we've heard from a lot of operators who want to know more about what's coming, how things work under the hood, and the thinking behind the features they use every day. This devlog is our answer to that.</p>
+
+      <h2>What to expect</h2>
+
+      <p>We'll use this space for a mix of things:</p>
+
+      <ul>
+        <li>Release notes and commentary on new versions</li>
+        <li>Behind-the-scenes looks at how features are designed and built</li>
+        <li>Deep-dives into the technical decisions that shape the app</li>
+        <li>Previews of what we're working on next</li>
+      </ul>
+
+      <p>Posts won't follow a fixed schedule. We'll write when we have something worth sharing rather than posting on a calendar. Quality over cadence.</p>
+
+      <h2>Stay in the loop</h2>
+
+      <p>The best way to follow along is to check back here, or join us on <a href="https://discord.gg/PqubUxWW62" target="_blank" style="color: var(--accent); text-decoration: none;">Discord</a> where we share updates and chat with operators directly.</p>
+
+      <p>73 de the Carrier Wave team.</p>
+    </article>
+
+    <hr class="article-divider">
+
+    <div class="article-footer-nav">
+      <a href="/devlog/"><span aria-hidden="true">&larr;</span> Back to all posts</a>
+    </div>
+
+  </div>
+
+  <footer>
+    <div class="footer-brand">Carrier Wave</div>
+    <div class="footer-sub">Amateur Radio Software & Hardware</div>
+    <div class="footer-links">
+      <a href="/privacy.html">Privacy Policy</a>
+      <a href="https://discord.gg/PqubUxWW62" target="_blank">Discord</a>
+    </div>
+    <div class="footer-cw">-.-. .--</div>
+  </footer>
+
+</div>
+
+</body>
+</html>

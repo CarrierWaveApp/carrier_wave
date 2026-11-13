@@ -1,0 +1,315 @@
+// WWFF Representative Lookup View
+//
+// Allows users to find their WWFF national program representative
+// and compose an email for log submissions or inquiries.
+// Lookup by WWFF reference, program code, or country search.
+
+import SwiftUI
+
+// MARK: - WWFFRepresentativeLookupView
+
+struct WWFFRepresentativeLookupView: View {
+    // MARK: Internal
+
+    var body: some View {
+        List {
+            lookupSection
+
+            if let rep = selectedRepresentative {
+                representativeDetailSection(rep)
+                emailComposeSection(rep)
+            }
+
+            if selectedRepresentative == nil, searchText.isEmpty {
+                allRepresentativesSection
+            }
+        }
+        .navigationTitle("WWFF Representatives")
+        .searchable(text: $searchText, prompt: "Search by country or program code")
+        .onChange(of: searchText) { _, newValue in
+            performSearch(newValue)
+        }
+    }
+
+    // MARK: Private
+
+    @State private var searchText = ""
+    @State private var selectedRepresentative: WWFFRepresentative?
+    @State private var referenceInput = ""
+    @State private var searchResults: [WWFFRepresentative] = []
+    @State private var userCallsign = ""
+    @State private var activationDate = ""
+    @State private var qsoCount = ""
+
+    private var canSubmit: Bool {
+        !userCallsign.trimmingCharacters(in: .whitespaces).isEmpty
+            && !referenceInput.trimmingCharacters(in: .whitespaces).isEmpty
+            && !activationDate.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+
+    private var qsoCountInt: Int {
+        Int(qsoCount) ?? 0
+    }
+
+    private var expectedFilename: String? {
+        let call = userCallsign.trimmingCharacters(in: .whitespaces)
+        let ref = referenceInput.trimmingCharacters(in: .whitespaces)
+        let date = activationDate.trimmingCharacters(in: .whitespaces)
+        guard !call.isEmpty, !ref.isEmpty, !date.isEmpty else {
+            return nil
+        }
+        return WWFFRepresentativeDirectory.logFilename(
+            reference: ref.uppercased(),
+            callsign: call.uppercased(),
+            dateYYYYMMDD: WWFFRepresentativeDirectory.compactDate(date)
+        )
+    }
+
+    private var lookupSection: some View {
+        Section("Find by Reference") {
+            HStack {
+                TextField("WWFF Reference (e.g., KFF-1234)", text: $referenceInput)
+                    .textInputAutocapitalization(.characters)
+                    .autocorrectionDisabled()
+
+                Button("Look Up") {
+                    lookupByReference()
+                }
+                .buttonStyle(.bordered)
+                .disabled(referenceInput.isEmpty)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var allRepresentativesSection: some View {
+        let reps = searchResults.isEmpty
+            ? WWFFRepresentativeDirectory.allRepresentatives
+            : searchResults
+
+        Section("All Programs (\(reps.count))") {
+            ForEach(reps) { rep in
+                Button {
+                    selectedRepresentative = rep
+                } label: {
+                    HStack {
+                        VStack(alignment: .leading) {
+                            Text(rep.country)
+                                .font(.subheadline)
+                            Text(rep.coordinatorCallsign)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Text(rep.programCode)
+                            .font(.caption.monospaced())
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .tint(.primary)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var submissionFields: some View {
+        TextField("Your Callsign", text: $userCallsign)
+            .textInputAutocapitalization(.characters)
+            .autocorrectionDisabled()
+
+        TextField("Activation Date (YYYY-MM-DD)", text: $activationDate)
+            .keyboardType(.numbersAndPunctuation)
+
+        TextField("Number of QSOs", text: $qsoCount)
+            .keyboardType(.numberPad)
+    }
+
+    private var minimumQSOWarning: some View {
+        Label(
+            "WWFF requires \(WWFFRepresentativeDirectory.minimumValidQSOs) QSOs for activator credit.",
+            systemImage: "exclamationmark.triangle"
+        )
+        .font(.caption)
+        .foregroundStyle(.orange)
+    }
+
+    private func representativeDetailSection(
+        _ rep: WWFFRepresentative
+    ) -> some View {
+        Section("Representative") {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Label(rep.country, systemImage: "globe")
+                        .font(.headline)
+                    Spacer()
+                    Text(rep.programCode)
+                        .font(.caption)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 2)
+                        .background(.fill.tertiary)
+                        .clipShape(Capsule())
+                }
+
+                Divider()
+
+                contactRow(
+                    label: "Coordinator",
+                    callsign: rep.coordinatorCallsign,
+                    name: rep.coordinatorName
+                )
+
+                if let logMgr = rep.logManagerCallsign {
+                    contactRow(label: "Log Manager", callsign: logMgr, name: nil)
+                }
+
+                if let awardMgr = rep.awardManagerCallsign,
+                   awardMgr != rep.coordinatorCallsign
+                {
+                    contactRow(label: "Award Manager", callsign: awardMgr, name: nil)
+                }
+
+                if let website = rep.website, let url = URL(string: website) {
+                    Link(destination: url) {
+                        Label(website, systemImage: "link")
+                            .font(.subheadline)
+                    }
+                }
+
+                if rep.email == nil {
+                    Text("Email not publicly listed. Look up callsign on QRZ.com for contact info.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .padding(.vertical, 4)
+        }
+    }
+
+    private func contactRow(
+        label: String,
+        callsign: String,
+        name: String?
+    ) -> some View {
+        HStack {
+            Text(label)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            Spacer()
+            if let name {
+                Text("\(name) (\(callsign))")
+                    .font(.subheadline)
+            } else {
+                Text(callsign)
+                    .font(.subheadline.monospaced())
+            }
+        }
+    }
+
+    private func emailComposeSection(
+        _ rep: WWFFRepresentative
+    ) -> some View {
+        Section("Compose Email") {
+            VStack(alignment: .leading, spacing: 8) {
+                submissionFields
+                if let filename = expectedFilename {
+                    filenameRow(filename)
+                }
+                if qsoCountInt > 0,
+                   qsoCountInt < WWFFRepresentativeDirectory.minimumValidQSOs
+                {
+                    minimumQSOWarning
+                }
+                submitButton(for: rep)
+            }
+            .padding(.vertical, 4)
+        }
+    }
+
+    @ViewBuilder
+    private func filenameRow(_ filename: String) -> some View {
+        HStack {
+            Label(filename, systemImage: "doc.text")
+                .font(.caption.monospaced())
+                .lineLimit(1)
+                .truncationMode(.middle)
+            Spacer()
+            Button {
+                UIPasteboard.general.string = filename
+            } label: {
+                Image(systemName: "doc.on.doc")
+            }
+            .buttonStyle(.borderless)
+            .accessibilityLabel("Copy filename")
+        }
+        Text("WWFF requires this exact filename for the ADIF attachment.")
+            .font(.caption2)
+            .foregroundStyle(.secondary)
+    }
+
+    @ViewBuilder
+    private func submitButton(for rep: WWFFRepresentative) -> some View {
+        if let url = composeMailtoURL(for: rep) {
+            Link(destination: url) {
+                Label("Open in Mail", systemImage: "envelope")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .disabled(!canSubmit)
+        } else {
+            Text(
+                "No email on file. Use QRZ.com to find \(rep.coordinatorCallsign)'s email."
+            )
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        }
+    }
+
+    private func lookupByReference() {
+        let trimmed = referenceInput.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else {
+            return
+        }
+        selectedRepresentative = WWFFRepresentativeDirectory.representative(
+            forReference: trimmed
+        ) ?? WWFFRepresentativeDirectory.nonProgramFallbackRepresentative
+    }
+
+    private func performSearch(_ query: String) {
+        if query.isEmpty {
+            searchResults = []
+            return
+        }
+        searchResults = WWFFRepresentativeDirectory.search(query)
+        if searchResults.count == 1 {
+            selectedRepresentative = searchResults.first
+        }
+    }
+
+    private func composeMailtoURL(for rep: WWFFRepresentative) -> URL? {
+        guard canSubmit else {
+            return nil
+        }
+        let ref = referenceInput.uppercased()
+        let call = userCallsign.uppercased()
+        let programCode = WWFFRepresentativeDirectory.extractProgramCode(
+            from: ref
+        )
+        let subject = WWFFRepresentativeDirectory.logSubmissionSubject(
+            reference: ref,
+            callsign: call,
+            date: activationDate
+        )
+        let body = WWFFRepresentativeDirectory.logSubmissionBody(
+            reference: ref,
+            callsign: call,
+            date: activationDate,
+            qsoCount: qsoCountInt,
+            programCode: programCode
+        )
+        return WWFFRepresentativeDirectory.mailtoURL(
+            representative: rep,
+            subject: subject,
+            body: body
+        )
+    }
+}

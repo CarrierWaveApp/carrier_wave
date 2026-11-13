@@ -1,0 +1,3 @@
+target/
+sdkconfig
+.embuild/

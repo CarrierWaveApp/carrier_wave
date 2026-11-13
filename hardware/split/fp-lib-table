@@ -1,0 +1,3 @@
+(fp_lib_table
+  (lib (name "heltec_htit-wb32")(type "KiCad")(uri "${KIPRJMOD}/../libraries/heltec_htit-wb32/heltec_htit-wb32.pretty")(options "")(descr "Heltec HTIT-WB32 ESP32 dev board"))
+)

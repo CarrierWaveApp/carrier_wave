@@ -1,0 +1,26 @@
+[build]
+target = "riscv32imafc-esp-espidf"
+
+[target.riscv32imafc-esp-espidf]
+linker = "ldproxy"
+runner = "espflash flash --monitor"
+
+[unstable]
+build-std = ["std", "panic_abort"]
+
+[env]
+MCU = "esp32p4"
+ESP_IDF_SDKCONFIG_DEFAULTS = "sdkconfig.defaults"
+# v5.5.4: esp_hosted needs IDF >=5.5 (BLE via the board's SDIO-attached
+# ESP32-C6). v5.5.0 (what a bare "v5.5" resolves to) predates the
+# multi-peripheral USB host feature and is hardcoded single-port. We need
+# `usb_host_config_t.peripheral_map` to host a radio on BOTH OTG controllers
+# at once (HS = peripheral 0, FS on GPIO 27/26 = peripheral 1) — two physical
+# radios, no hub (see usb.rs `init`). That field exists from v5.5.1 on, BUT
+# v5.5.5 also added new members to sdmmc_host_t and esp_lcd_dsi_bus_config_t
+# that break esp-idf-hal 0.46.2's struct literals (E0063). v5.5.1 is the
+# earliest v5.5.x with peripheral_map — minimal delta from the known-good
+# v5.5.0 that booted on this P4 rev v1.3 (the v5.5.4 bootloader illegal-
+# instructions at its entry on this chip). Range that both has peripheral_map
+# and compiles with esp-idf-hal 0.46.2 is v5.5.1..=v5.5.4.
+ESP_IDF_VERSION = "v5.5.1"

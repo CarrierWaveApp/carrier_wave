@@ -1,0 +1,14 @@
+# Local Development Environment
+
+> Copy this file to `CLAUDE.local.md` and fill in your own values. `CLAUDE.local.md` is gitignored — it's per-developer notes that Claude Code loads as private project instructions.
+
+## Device
+
+- **Physical test device:** <nickname> (<model>, <internal identifier>)
+- **Device UDID:** <40-char UDID from Xcode → Window → Devices and Simulators>
+
+## Personal Notes
+
+Anything else you want Claude Code to know that's specific to your machine, accounts, or workflow — secrets you have access to, local paths, half-finished local experiments, etc.
+
+Project-wide reminders (status of unfinished setup, conventions, etc.) belong in `CLAUDE.md`, not here, so everyone sees them.

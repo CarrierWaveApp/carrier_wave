@@ -1,0 +1,45 @@
+{
+  "slug": "kx2-cw-setup",
+  "name": "KX2 CW setup",
+  "icon": "dot.radiowaves.left.and.right",
+  "description": "Reset the Elecraft KX2 from FT8/DATA into CW operation on the 20 m QRP calling frequency (14.060 MHz). Undoes the four FT8-incompatible settings — mode (DATA → CW), filter (4 kHz → 400 Hz), AGC MD (off → on, critical for CW), VOX (on → off) — and clears split / RIT / XIT defensively. Leaves preamp, NB, MIC BIAS, MIC BTN, and TX power at the values the FT8 setup macro left them in, since those are sensible defaults for CW too.",
+  "tags": ["cw", "elecraft", "kx2"],
+  "appliesTo": ["kenwood"],
+  "capabilities": {
+    "transmits": false,
+    "changesFrequency": true,
+    "changesMode": true,
+    "changesPower": true,
+    "usesRawBytes": false
+  },
+  "args": [],
+  "steps": [
+    { "kind": "setFrequency", "hz": 14060000 },
+    { "kind": "delay", "durationMs": 600 },
+
+    { "kind": "setMode", "mode": "CW" },
+    { "kind": "delay", "durationMs": 150 },
+
+    { "kind": "vendorCommand", "commandId": "kw.elecraftBandwidth", "args": { "hz10": "40" } },
+    { "kind": "delay", "durationMs": 100 },
+
+    { "kind": "vendorCommand", "commandId": "kw.elecraftTxVfo", "args": { "vfo": "a" } },
+    { "kind": "delay", "durationMs": 100 },
+    { "kind": "vendorCommand", "commandId": "kw.rit", "args": { "enabled": "false" } },
+    { "kind": "delay", "durationMs": 50 },
+    { "kind": "vendorCommand", "commandId": "kw.xit", "args": { "enabled": "false" } },
+    { "kind": "delay", "durationMs": 50 },
+    { "kind": "vendorCommand", "commandId": "kw.clearRitXit" },
+    { "kind": "delay", "durationMs": 100 },
+
+    { "kind": "vendorCommand", "commandId": "kw.elecraftMenuSet", "args": { "item": "128", "value": "1" } },
+    { "kind": "delay", "durationMs": 200 },
+
+    { "kind": "vendorCommand", "commandId": "kw.vox", "args": { "enabled": "false" } },
+    { "kind": "delay", "durationMs": 100 },
+
+    { "kind": "setPowerWatts", "watts": 5 }
+  ],
+  "format": 2,
+  "status": "approved"
+}

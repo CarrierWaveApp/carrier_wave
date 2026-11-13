@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Activity Grid — Color Combo Comparison (Round 3)</title>
+<style>
+  :root {
+    --bg: #1c1c1e;
+    --card-bg: #2c2c2e;
+    --cell-empty: #3a3a3c;
+    --text: #f5f5f7;
+    --text-secondary: #98989d;
+    --text-tertiary: #636366;
+    --cell-size: 12px;
+    --cell-gap: 2px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+    padding: 24px;
+    min-height: 100vh;
+  }
+
+  h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  .subtitle { color: var(--text-secondary); font-size: 13px; margin-bottom: 24px; }
+
+  .section-divider {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-tertiary);
+    padding: 12px 0 8px;
+    grid-column: 1 / -1;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    margin-top: 8px;
+  }
+
+  .combos {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 16px;
+  }
+
+  .combo-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 16px;
+    cursor: pointer;
+    transition: outline 0.15s;
+    outline: 2px solid transparent;
+  }
+
+  .combo-card:hover { outline-color: rgba(255,255,255,0.15); }
+  .combo-card.selected { outline-color: rgba(255,255,255,0.5); }
+  .combo-card.favorite { outline-color: rgba(255,200,50,0.4); }
+  .combo-card.favorite.selected { outline-color: rgba(255,200,50,0.7); }
+
+  .combo-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .combo-number {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-tertiary);
+    background: rgba(255,255,255,0.06);
+    width: 28px;
+    height: 28px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .combo-name {
+    font-size: 15px;
+    font-weight: 600;
+    flex: 1;
+    margin-left: 10px;
+  }
+
+  .color-codes {
+    font-size: 11px;
+    font-family: 'SF Mono', Menlo, monospace;
+    color: var(--text-tertiary);
+  }
+
+  .swatches {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .swatch-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .swatch {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+
+  .swatch-label {
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+
+  .swatch-split {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+
+  .swatch-split svg {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+  }
+
+  .mini-grid {
+    display: inline-flex;
+    flex-direction: row;
+    gap: var(--cell-gap);
+  }
+
+  .mini-col {
+    display: flex;
+    flex-direction: column;
+    gap: var(--cell-gap);
+  }
+
+  .mini-cell {
+    width: var(--cell-size);
+    height: var(--cell-size);
+    border-radius: 2px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .mini-cell svg {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+  }
+
+  .enlarged-row {
+    display: flex;
+    gap: 6px;
+    margin-top: 10px;
+    align-items: center;
+  }
+
+  .enlarged-cell {
+    width: 32px;
+    height: 32px;
+    border-radius: 3px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .enlarged-cell svg {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+  }
+
+  .enlarged-labels {
+    display: flex;
+    gap: 6px;
+    margin-top: 4px;
+  }
+
+  .enlarged-label {
+    width: 32px;
+    text-align: center;
+    font-size: 9px;
+    color: var(--text-tertiary);
+  }
+
+  .combo-note {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-top: 8px;
+    line-height: 1.4;
+  }
+</style>
+</head>
+<body>
+
+<h1>Activity Grid — Round 3</h1>
+<p class="subtitle">3 favorites from rounds 1–2, then 12 new combos. A = Activation (top-left), B = Activity Log (bottom-right). Click to highlight.</p>
+
+<div class="combos" id="combos"></div>
+
+<script>
+let seed = 42;
+function seededRandom() {
+  seed = (seed * 16807) % 2147483647;
+  return (seed - 1) / 2147483646;
+}
+
+const combos = [
+  // ── Previous favorites ──
+  {
+    name: "Mint + Rose",
+    note: "ROUND 1 FAVORITE (#8). Soft, modern palette. Lower saturation, gentle on the eyes.",
+    a: [99, 210, 175], b: [215, 110, 140],
+    aHex: "#63D2AF", bHex: "#D76E8C",
+    aMinAlpha: 0.3, bMinAlpha: 0.3,
+    fav: true
+  },
+  {
+    name: "Forest + Gold",
+    note: "ROUND 1 FAVORITE (#17). Deep hunter green with bright gold. Classic, refined.",
+    a: [40, 140, 75], b: [240, 190, 40],
+    aHex: "#288C4B", bHex: "#F0BE28",
+    aMinAlpha: 0.3, bMinAlpha: 0.3,
+    fav: true
+  },
+  {
+    name: "Dusty Rose + Sage",
+    note: "ROUND 1 FAVORITE (#19). Muted, desaturated pair. Calm, understated.",
+    a: [190, 120, 130], b: [110, 155, 120],
+    aHex: "#BE7882", bHex: "#6E9B78",
+    aMinAlpha: 0.35, bMinAlpha: 0.35,
+    fav: true
+  },
+
+  // ── Near Mint + Rose ──
+  {
+    name: "Seafoam + Mauve",
+    note: "Cooler, greyer mint with a dustier rose. More subdued than Mint+Rose, closer to Dusty Rose's calm.",
+    a: [110, 190, 170], b: [185, 115, 145],
+    aHex: "#6EBEAA", bHex: "#B97391",
+    aMinAlpha: 0.3, bMinAlpha: 0.3
+  },
+  {
+    name: "Eucalyptus + Blush",
+    note: "Grey-green leaf tone with soft warm pink. The halfway point between Mint+Rose and Dusty Rose+Sage.",
+    a: [130, 175, 150], b: [210, 145, 150],
+    aHex: "#82AF96", bHex: "#D29196",
+    aMinAlpha: 0.35, bMinAlpha: 0.35
+  },
+  {
+    name: "Jade + Apricot",
+    note: "Richer, more saturated green with soft warm peach-orange. More energy than Mint+Rose, same spirit.",
+    a: [70, 190, 130], b: [235, 155, 100],
+    aHex: "#46BE82", bHex: "#EB9B64",
+    aMinAlpha: 0.3, bMinAlpha: 0.3
+  },
+
+  // ── Near Forest + Gold ──
+  {
+    name: "Pine + Honey",
+    note: "Deeper, bluer forest green with warmer, less saturated gold. More natural, less 'sports team'.",
+    a: [35, 120, 85], b: [220, 175, 65],
+    aHex: "#237855", bHex: "#DCAF41",
+    aMinAlpha: 0.3, bMinAlpha: 0.3
+  },
+  {
+    name: "Spruce + Marigold",
+    note: "Blue-tinted evergreen with rich warm yellow. Slightly cooler forest variant.",
+    a: [40, 125, 100], b: [235, 170, 45],
+    aHex: "#287D64", bHex: "#EBAA2D",
+    aMinAlpha: 0.3, bMinAlpha: 0.3
+  },
+  {
+    name: "Fern + Wheat",
+    note: "Warm, living green with soft muted golden-beige. Gentler, quieter Forest+Gold.",
+    a: [80, 155, 80], b: [215, 190, 120],
+    aHex: "#509B50", bHex: "#D7BE78",
+    aMinAlpha: 0.3, bMinAlpha: 0.35
+  },
+
+  // ── Near Dusty Rose + Sage ──
+  {
+    name: "Clay + Lichen",
+    note: "Warmer terracotta rose with cooler blue-green sage. Earthier, more grounded than Dusty Rose+Sage.",
+    a: [185, 115, 100], b: [105, 150, 140],
+    aHex: "#B97364", bHex: "#69968C",
+    aMinAlpha: 0.35, bMinAlpha: 0.35
+  },
+  {
+    name: "Rosewood + Juniper",
+    note: "Deeper, richer take on Dusty Rose+Sage. Rose pulls toward berry, sage pulls toward teal.",
+    a: [165, 95, 105], b: [85, 145, 125],
+    aHex: "#A55F69", bHex: "#55917D",
+    aMinAlpha: 0.35, bMinAlpha: 0.35
+  },
+  {
+    name: "Sandstone + Moss",
+    note: "Warm neutral tan-pink with dark olive moss. Very earthy — desert meets forest floor.",
+    a: [195, 150, 120], b: [90, 130, 80],
+    aHex: "#C39678", bHex: "#5A8250",
+    aMinAlpha: 0.35, bMinAlpha: 0.35
+  },
+
+  // ── Wildcards ──
+  {
+    name: "Patina + Sand",
+    note: "WILDCARD. Oxidized copper green with warm sandy neutral. Extremely subtle, almost tonal.",
+    a: [95, 160, 140], b: [200, 175, 140],
+    aHex: "#5FA08C", bHex: "#C8AF8C",
+    aMinAlpha: 0.35, bMinAlpha: 0.35
+  },
+  {
+    name: "Glacier + Sienna",
+    note: "WILDCARD. Icy blue-grey with warm burnt orange-brown. Unusual temperature pairing.",
+    a: [140, 175, 200], b: [185, 100, 55],
+    aHex: "#8CAFC8", bHex: "#B96437",
+    aMinAlpha: 0.3, bMinAlpha: 0.3
+  },
+  {
+    name: "Moss + Wine",
+    note: "WILDCARD. Both dark and moody — forest floor meets cabernet. Dramatic, brooding.",
+    a: [85, 130, 65], b: [155, 60, 75],
+    aHex: "#558241", bHex: "#9B3C4B",
+    aMinAlpha: 0.4, bMinAlpha: 0.4
+  }
+];
+
+const gridCols = 14;
+const gridRows = 7;
+
+function generatePattern() {
+  const pattern = [];
+  for (let c = 0; c < gridCols; c++) {
+    const col = [];
+    for (let r = 0; r < gridRows; r++) {
+      const rand = seededRandom();
+      let type, aCount, bCount;
+      if (rand < 0.30) {
+        type = 'empty'; aCount = 0; bCount = 0;
+      } else if (rand < 0.52) {
+        type = 'a'; aCount = Math.floor(seededRandom() * 20) + 1; bCount = 0;
+      } else if (rand < 0.78) {
+        type = 'b'; aCount = 0; bCount = Math.floor(seededRandom() * 10) + 1;
+      } else {
+        type = 'both';
+        aCount = Math.floor(seededRandom() * 15) + 3;
+        bCount = Math.floor(seededRandom() * 8) + 1;
+      }
+      col.push({ type, aCount, bCount });
+    }
+    pattern.push(col);
+  }
+  return pattern;
+}
+
+const pattern = generatePattern();
+
+let maxA = 1, maxB = 1;
+pattern.forEach(col => col.forEach(d => {
+  if (d.aCount > maxA) maxA = d.aCount;
+  if (d.bCount > maxB) maxB = d.bCount;
+}));
+
+function makeColor(rgb, count, maxCount, minAlpha) {
+  if (count === 0) return null;
+  const intensity = Math.min(count / maxCount, 1.0);
+  const alpha = minAlpha + intensity * (1.0 - minAlpha);
+  return `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${alpha.toFixed(2)})`;
+}
+
+function makeSolidColor(rgb, alpha) {
+  return `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${alpha})`;
+}
+
+const combosContainer = document.getElementById('combos');
+
+let lastSection = '';
+
+combos.forEach((combo, idx) => {
+  // Section dividers
+  let section = '';
+  if (combo.fav && lastSection !== 'fav') section = 'Previous Favorites';
+  else if (!combo.fav && idx === 3) section = 'Near Mint + Rose';
+  else if (idx === 6) section = 'Near Forest + Gold';
+  else if (idx === 9) section = 'Near Dusty Rose + Sage';
+  else if (idx === 12) section = 'Wildcards';
+
+  if (section) {
+    const divider = document.createElement('div');
+    divider.className = 'section-divider';
+    divider.textContent = section;
+    combosContainer.appendChild(divider);
+    lastSection = section;
+  }
+
+  const card = document.createElement('div');
+  card.className = 'combo-card' + (combo.fav ? ' favorite' : '');
+  card.onclick = () => card.classList.toggle('selected');
+
+  const header = document.createElement('div');
+  header.className = 'combo-header';
+  header.innerHTML = `
+    <div class="combo-number">${idx + 1}</div>
+    <div class="combo-name">${combo.fav ? '&#9733; ' : ''}${combo.name}</div>
+    <div class="color-codes">${combo.aHex} + ${combo.bHex}</div>
+  `;
+  card.appendChild(header);
+
+  const swatches = document.createElement('div');
+  swatches.className = 'swatches';
+
+  swatches.innerHTML += `
+    <div class="swatch-group">
+      <div class="swatch" style="background: var(--cell-empty)"></div>
+      <span class="swatch-label">Empty</span>
+    </div>
+  `;
+
+  const aLow = makeSolidColor(combo.a, combo.aMinAlpha + 0.15);
+  const aMid = makeSolidColor(combo.a, 0.6);
+  const aMax = makeSolidColor(combo.a, 1.0);
+  swatches.innerHTML += `
+    <div class="swatch-group">
+      <div class="swatch" style="background: ${aLow}"></div>
+      <div class="swatch" style="background: ${aMid}"></div>
+      <div class="swatch" style="background: ${aMax}"></div>
+      <span class="swatch-label">A</span>
+    </div>
+  `;
+
+  const bLow = makeSolidColor(combo.b, combo.bMinAlpha + 0.1);
+  const bMid = makeSolidColor(combo.b, 0.6);
+  const bMax = makeSolidColor(combo.b, 1.0);
+  swatches.innerHTML += `
+    <div class="swatch-group">
+      <div class="swatch" style="background: ${bLow}"></div>
+      <div class="swatch" style="background: ${bMid}"></div>
+      <div class="swatch" style="background: ${bMax}"></div>
+      <span class="swatch-label">B</span>
+    </div>
+  `;
+
+  const aSplit = makeSolidColor(combo.a, 0.85);
+  const bSplit = makeSolidColor(combo.b, 0.85);
+  swatches.innerHTML += `
+    <div class="swatch-group">
+      <div class="swatch-split">
+        <svg viewBox="0 0 20 20" preserveAspectRatio="none">
+          <polygon points="0,0 20,0 0,20" fill="${aSplit}"/>
+          <polygon points="20,0 20,20 0,20" fill="${bSplit}"/>
+        </svg>
+      </div>
+      <span class="swatch-label">Both</span>
+    </div>
+  `;
+
+  card.appendChild(swatches);
+
+  const gridContainer = document.createElement('div');
+  gridContainer.className = 'mini-grid';
+
+  pattern.forEach(col => {
+    const colDiv = document.createElement('div');
+    colDiv.className = 'mini-col';
+    col.forEach(cell => {
+      const cellDiv = document.createElement('div');
+      cellDiv.className = 'mini-cell';
+      if (cell.type === 'empty') {
+        cellDiv.style.background = 'var(--cell-empty)';
+      } else if (cell.type === 'a') {
+        cellDiv.style.background = makeColor(combo.a, cell.aCount, maxA, combo.aMinAlpha);
+      } else if (cell.type === 'b') {
+        cellDiv.style.background = makeColor(combo.b, cell.bCount, maxB, combo.bMinAlpha);
+      } else {
+        const af = makeColor(combo.a, cell.aCount, maxA, combo.aMinAlpha);
+        const bf = makeColor(combo.b, cell.bCount, maxB, combo.bMinAlpha);
+        cellDiv.innerHTML = `<svg viewBox="0 0 12 12" preserveAspectRatio="none">
+          <polygon points="0,0 12,0 0,12" fill="${af}"/>
+          <polygon points="12,0 12,12 0,12" fill="${bf}"/>
+        </svg>`;
+      }
+      colDiv.appendChild(cellDiv);
+    });
+    gridContainer.appendChild(colDiv);
+  });
+
+  card.appendChild(gridContainer);
+
+  const enlarged = document.createElement('div');
+  enlarged.className = 'enlarged-row';
+  enlarged.innerHTML += `<div class="enlarged-cell" style="background: var(--cell-empty)"></div>`;
+  enlarged.innerHTML += `<div class="enlarged-cell" style="background: ${aLow}"></div>`;
+  enlarged.innerHTML += `<div class="enlarged-cell" style="background: ${aMax}"></div>`;
+  enlarged.innerHTML += `<div class="enlarged-cell" style="background: ${bLow}"></div>`;
+  enlarged.innerHTML += `<div class="enlarged-cell" style="background: ${bMax}"></div>`;
+  enlarged.innerHTML += `
+    <div class="enlarged-cell">
+      <svg viewBox="0 0 32 32" preserveAspectRatio="none">
+        <polygon points="0,0 32,0 0,32" fill="${aSplit}"/>
+        <polygon points="32,0 32,32 0,32" fill="${bSplit}"/>
+      </svg>
+    </div>`;
+  card.appendChild(enlarged);
+
+  const labels = document.createElement('div');
+  labels.className = 'enlarged-labels';
+  ['None', 'A low', 'A max', 'B low', 'B max', 'Both'].forEach(l => {
+    labels.innerHTML += `<div class="enlarged-label">${l}</div>`;
+  });
+  card.appendChild(labels);
+
+  const note = document.createElement('div');
+  note.className = 'combo-note';
+  note.textContent = combo.note;
+  card.appendChild(note);
+
+  combosContainer.appendChild(card);
+});
+</script>
+
+</body>
+</html>

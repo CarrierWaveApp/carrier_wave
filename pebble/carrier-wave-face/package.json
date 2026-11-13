@@ -1,0 +1,58 @@
+{
+  "name": "carrier-wave-face",
+  "author": "Carrier Wave",
+  "version": "0.1.0",
+  "keywords": ["pebble-app"],
+  "private": true,
+  "dependencies": {},
+  "pebble": {
+    "uuid": "b7e41c8a-3f19-4d6e-a152-8c0e7a5d9b31",
+    "shortName": "CW Face",
+    "longName": "Carrier Wave Face",
+    "displayName": "Carrier Wave Face",
+    "sdkVersion": "3",
+    "enableMultiJS": true,
+    "targetPlatforms": ["basalt", "chalk", "diorite", "emery"],
+    "watchapp": {
+      "watchface": true
+    },
+    "messageKeys": [
+      "ACTION",
+      "STATUS",
+      "K_INDEX",
+      "A_INDEX",
+      "SOLAR_FLUX",
+      "PROPAGATION",
+      "TEMPERATURE"
+    ],
+    "resources": {
+      "media": [
+        {
+          "type": "font",
+          "name": "FONT_ROUTED_GOTHIC_40",
+          "file": "fonts/routed-gothic.ttf",
+          "characterRegex": "[0-9:]"
+        },
+        {
+          "type": "font",
+          "name": "FONT_ROUTED_GOTHIC_26",
+          "file": "fonts/routed-gothic.ttf",
+          "characterRegex": "[0-9:]"
+        },
+        {
+          "type": "font",
+          "name": "FONT_ROUTED_GOTHIC_20",
+          "file": "fonts/routed-gothic.ttf",
+          "characterRegex": "[0-9° -]"
+        },
+        {
+          "type": "font",
+          "name": "FONT_ROUTED_GOTHIC_18",
+          "file": "fonts/routed-gothic.ttf",
+          "characterRegex": "[A-Za-z0-9 ]"
+        }
+      ]
+    },
+    "capabilities": ["location"]
+  }
+}

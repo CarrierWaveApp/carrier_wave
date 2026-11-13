@@ -1,0 +1,14 @@
+services:
+  sdr-server:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./config.toml:/home/sdr/config.toml:ro
+      - sdr-data:/home/sdr/data
+    environment:
+      - RUST_LOG=sdr_core::transcription=debug,info
+    restart: unless-stopped
+
+volumes:
+  sdr-data:

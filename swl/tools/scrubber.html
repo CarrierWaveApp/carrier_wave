@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SDR Alignment Scrubber</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+    background: #1a1a2e;
+    color: #e0e0e0;
+    min-height: 100vh;
+    padding: 20px;
+  }
+  h1 { font-size: 16px; color: #7ecfff; margin-bottom: 16px; }
+
+  #drop-zone {
+    border: 2px dashed #444;
+    border-radius: 8px;
+    padding: 32px;
+    text-align: center;
+    color: #888;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    margin-bottom: 20px;
+  }
+  #drop-zone.dragover { border-color: #7ecfff; background: rgba(126, 207, 255, 0.05); }
+  #drop-zone input { display: none; }
+  #drop-zone span { font-size: 13px; }
+
+  #warnings { margin-bottom: 12px; }
+  .warning {
+    background: #3a2a00;
+    border: 1px solid #665500;
+    color: #ffcc00;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    margin-bottom: 4px;
+  }
+
+  #ruler {
+    height: 28px;
+    background: #111;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    position: relative;
+    overflow: hidden;
+  }
+  #ruler canvas { width: 100%; height: 100%; }
+
+  .track {
+    margin-bottom: 12px;
+    background: #111;
+    border-radius: 4px;
+    padding: 8px 12px;
+  }
+  .track-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 12px;
+    color: #aaa;
+    margin-bottom: 6px;
+  }
+  .track-header .sdr-id { color: #7ecfff; font-weight: bold; }
+  .track-header .freq { color: #ff9f43; }
+  .track-header .mode { color: #6fcf97; text-transform: uppercase; }
+  .track-btn {
+    background: #2a2a4a;
+    border: 1px solid #444;
+    color: #888;
+    padding: 2px 8px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: bold;
+    min-width: 24px;
+    text-align: center;
+  }
+  .track-btn:hover { background: #3a3a5a; }
+  .track-btn.muted { background: #5a2020; border-color: #883333; color: #ff6666; }
+  .track-btn.soloed { background: #204a20; border-color: #338833; color: #66ff66; }
+  .track-canvas-wrap {
+    position: relative;
+    height: 80px;
+    cursor: crosshair;
+  }
+  .track-canvas-wrap canvas { width: 100%; height: 100%; border-radius: 2px; }
+
+  #controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 12px;
+    padding: 8px 0;
+  }
+  #controls button {
+    background: #2a2a4a;
+    border: 1px solid #444;
+    color: #e0e0e0;
+    padding: 6px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 13px;
+  }
+  #controls button:hover { background: #3a3a5a; }
+  #controls button:active { background: #4a4a6a; }
+  #time-display {
+    font-size: 14px;
+    color: #7ecfff;
+    min-width: 180px;
+  }
+
+  #empty-state {
+    text-align: center;
+    color: #555;
+    padding: 60px 20px;
+    font-size: 13px;
+  }
+
+  #transcription {
+    display: none;
+    background: #111;
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 12px 16px;
+    margin-top: 12px;
+  }
+  #transcription .tx-label {
+    font-size: 11px;
+    color: #6fcf97;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+  #transcription .tx-text {
+    font-size: 16px;
+    color: #ffcc00;
+    letter-spacing: 2px;
+    word-break: break-all;
+    line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+
+<h1>SDR Alignment Scrubber</h1>
+
+<div id="drop-zone">
+  <span>Drop WAV + JSON + transcription.txt files here, or click to browse</span>
+  <input type="file" id="file-input" multiple accept=".wav,.json,.txt">
+</div>
+
+<div id="warnings"></div>
+
+<div id="ruler"><canvas id="ruler-canvas"></canvas></div>
+
+<div id="tracks"></div>
+
+<div id="controls" style="display:none;">
+  <button id="btn-start" title="Jump to start">&#9198;</button>
+  <button id="btn-play">&#9654; Play</button>
+  <button id="btn-end" title="Jump to end">&#9197;</button>
+  <span id="time-display">--:--:--.--- UTC</span>
+</div>
+
+<div id="transcription">
+  <div class="tx-label">CW Transcription</div>
+  <div class="tx-text"></div>
+</div>
+
+<div id="empty-state">Load WAV + JSON file pairs to begin</div>
+
+<script>
+'use strict';
+
+const state = {
+  tracks: [],          // { name, audioBuffer, metadata, peaks, offsetSec, muted, gainNode }
+  audioCtx: null,
+  sources: [],         // { source, gainNode }[]
+  playing: false,
+  playStartWall: 0,
+  playStartCursor: 0,
+  cursorSec: 0,        // seconds from global timeline start
+  globalStartUtc: null, // Date
+  globalEndUtc: null,   // Date
+  globalDurSec: 0,
+  animFrame: null,
+  pendingFiles: new Map(), // basename -> { wav?, json? }
+  transcriptionText: null,  // string if transcription.txt was loaded
+};
+
+// --- File handling ---
+
+const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
+
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  handleFiles(e.dataTransfer.files);
+});
+fileInput.addEventListener('change', e => handleFiles(e.target.files));
+
+function basename(filename) {
+  return filename.replace(/\.(wav|json)$/i, '');
+}
+
+function handleFiles(fileList) {
+  for (const file of fileList) {
+    if (file.name.toLowerCase().endsWith('.txt')) {
+      file.text().then(t => {
+        state.transcriptionText = t.trim();
+        renderTranscription();
+      });
+      continue;
+    }
+    const name = basename(file.name);
+    if (!state.pendingFiles.has(name)) state.pendingFiles.set(name, {});
+    const entry = state.pendingFiles.get(name);
+    if (file.name.toLowerCase().endsWith('.wav')) entry.wav = file;
+    else if (file.name.toLowerCase().endsWith('.json')) entry.json = file;
+  }
+  processPending();
+}
+
+async function processPending() {
+  const warnings = [];
+
+  for (const [name, entry] of state.pendingFiles) {
+    if (!entry.wav) continue; // need at least WAV
+    if (state.tracks.some(t => t.name === name)) continue; // already loaded
+
+    let metadata = null;
+    if (entry.json) {
+      try {
+        const text = await entry.json.text();
+        metadata = JSON.parse(text);
+      } catch {
+        warnings.push(`${name}.json: invalid JSON, loading without metadata`);
+      }
+    } else {
+      warnings.push(`${name}: no matching .json, loading without alignment`);
+    }
+
+    if (!state.audioCtx) {
+      state.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+
+    try {
+      const arrayBuf = await entry.wav.arrayBuffer();
+      const audioBuffer = await state.audioCtx.decodeAudioData(arrayBuf);
+      const peaks = computePeaks(audioBuffer, 2000);
+      state.tracks.push({ name, audioBuffer, metadata, peaks, offsetSec: 0, muted: false });
+    } catch (err) {
+      console.error(`Failed to decode ${name}.wav:`, err);
+      warnings.push(`${name}.wav: failed to decode audio`);
+    }
+  }
+
+  showWarnings(warnings);
+  computeTimeline();
+  render();
+}
+
+// --- Peak computation ---
+
+function computePeaks(audioBuffer, numBins) {
+  const channel = audioBuffer.getChannelData(0);
+  const samplesPerBin = Math.max(1, Math.floor(channel.length / numBins));
+  const peaks = [];
+  for (let i = 0; i < numBins; i++) {
+    let min = 1, max = -1;
+    const start = i * samplesPerBin;
+    const end = Math.min(start + samplesPerBin, channel.length);
+    for (let j = start; j < end; j++) {
+      if (channel[j] < min) min = channel[j];
+      if (channel[j] > max) max = channel[j];
+    }
+    peaks.push({ min, max });
+  }
+  return peaks;
+}
+
+// --- Timeline computation ---
+
+function computeTimeline() {
+  if (state.tracks.length === 0) return;
+
+  // Tracks with metadata use recording_started_at (reference time) for alignment,
+  // falling back to started_at (segment creation time).
+  const getStartTime = (t) => t.metadata?.recording_started_at || t.metadata?.started_at;
+  const withMeta = state.tracks.filter(t => getStartTime(t));
+  const withoutMeta = state.tracks.filter(t => !getStartTime(t));
+
+  if (withMeta.length > 0) {
+    let earliest = Infinity, latest = -Infinity;
+    for (const t of withMeta) {
+      const start = new Date(getStartTime(t)).getTime();
+      const end = start + t.audioBuffer.duration * 1000;
+      if (start < earliest) earliest = start;
+      if (end > latest) latest = end;
+    }
+    // Also account for non-meta tracks (they start at earliest)
+    for (const t of withoutMeta) {
+      const end = earliest + t.audioBuffer.duration * 1000;
+      if (end > latest) latest = end;
+    }
+
+    state.globalStartUtc = new Date(earliest);
+    state.globalEndUtc = new Date(latest);
+    state.globalDurSec = (latest - earliest) / 1000;
+
+    for (const t of withMeta) {
+      t.offsetSec = (new Date(getStartTime(t)).getTime() - earliest) / 1000;
+    }
+    for (const t of withoutMeta) {
+      t.offsetSec = 0;
+    }
+  } else {
+    // No metadata — just overlay from 0
+    let maxDur = 0;
+    for (const t of state.tracks) {
+      t.offsetSec = 0;
+      if (t.audioBuffer.duration > maxDur) maxDur = t.audioBuffer.duration;
+    }
+    state.globalStartUtc = null;
+    state.globalEndUtc = null;
+    state.globalDurSec = maxDur;
+  }
+}
+
+// --- Rendering ---
+
+function showWarnings(warnings) {
+  const el = document.getElementById('warnings');
+  el.innerHTML = warnings.map(w => `<div class="warning">${esc(w)}</div>`).join('');
+}
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function formatFreq(hz) {
+  if (hz >= 1e6) return (hz / 1e6).toFixed(3) + ' MHz';
+  if (hz >= 1e3) return (hz / 1e3).toFixed(1) + ' kHz';
+  return hz + ' Hz';
+}
+
+function formatUtcTime(date) {
+  if (!date) return '--:--:--.---';
+  const h = String(date.getUTCHours()).padStart(2, '0');
+  const m = String(date.getUTCMinutes()).padStart(2, '0');
+  const s = String(date.getUTCSeconds()).padStart(2, '0');
+  const ms = String(date.getUTCMilliseconds()).padStart(3, '0');
+  return `${h}:${m}:${s}.${ms} UTC`;
+}
+
+function render() {
+  const tracksEl = document.getElementById('tracks');
+  const emptyEl = document.getElementById('empty-state');
+  const controlsEl = document.getElementById('controls');
+
+  if (state.tracks.length === 0) {
+    emptyEl.style.display = '';
+    controlsEl.style.display = 'none';
+    return;
+  }
+
+  emptyEl.style.display = 'none';
+  controlsEl.style.display = 'flex';
+
+  // Build track DOM if needed
+  if (tracksEl.children.length !== state.tracks.length) {
+    tracksEl.innerHTML = '';
+    for (let i = 0; i < state.tracks.length; i++) {
+      const t = state.tracks[i];
+      const div = document.createElement('div');
+      div.className = 'track';
+      div.innerHTML = `
+        <div class="track-header">
+          <button class="track-btn btn-mute" data-track="${i}" title="Mute">M</button>
+          <button class="track-btn btn-solo" data-track="${i}" title="Solo">S</button>
+          <span class="sdr-id">${esc(t.metadata?.sdr_id || t.name)}</span>
+          ${t.metadata?.frequency ? `<span class="freq">${formatFreq(t.metadata.frequency)}</span>` : ''}
+          ${t.metadata?.mode ? `<span class="mode">${esc(t.metadata.mode)}</span>` : ''}
+          ${!t.metadata ? '<span style="color:#888">(no metadata)</span>' : ''}
+        </div>
+        <div class="track-canvas-wrap" data-track="${i}">
+          <canvas></canvas>
+        </div>
+      `;
+      tracksEl.appendChild(div);
+
+      div.querySelector('.btn-mute').addEventListener('click', () => toggleMute(i));
+      div.querySelector('.btn-solo').addEventListener('click', () => toggleSolo(i));
+      const wrap = div.querySelector('.track-canvas-wrap');
+      wrap.addEventListener('click', e => onTrackClick(e, i));
+    }
+  }
+
+  drawRuler();
+  for (let i = 0; i < state.tracks.length; i++) {
+    drawTrack(i);
+  }
+  updateTimeDisplay();
+}
+
+function drawRuler() {
+  const canvas = document.getElementById('ruler-canvas');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width * devicePixelRatio;
+  canvas.height = rect.height * devicePixelRatio;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+  const w = rect.width, h = rect.height;
+
+  ctx.fillStyle = '#111';
+  ctx.fillRect(0, 0, w, h);
+
+  if (state.globalDurSec <= 0) return;
+
+  ctx.fillStyle = '#555';
+  ctx.font = '10px monospace';
+  ctx.textBaseline = 'middle';
+
+  // Draw tick marks
+  const numTicks = Math.min(20, Math.max(4, Math.floor(w / 80)));
+  for (let i = 0; i <= numTicks; i++) {
+    const frac = i / numTicks;
+    const x = frac * w;
+    ctx.strokeStyle = '#333';
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, h);
+    ctx.stroke();
+
+    if (state.globalStartUtc) {
+      const t = new Date(state.globalStartUtc.getTime() + frac * state.globalDurSec * 1000);
+      const label = formatUtcTime(t).slice(0, -4); // drop " UTC"
+      ctx.fillText(label, x + 3, h / 2);
+    } else {
+      const sec = frac * state.globalDurSec;
+      ctx.fillText(sec.toFixed(1) + 's', x + 3, h / 2);
+    }
+  }
+
+  // Playhead on ruler
+  if (state.globalDurSec > 0) {
+    const px = (state.cursorSec / state.globalDurSec) * w;
+    ctx.strokeStyle = '#ff4444';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(px, 0);
+    ctx.lineTo(px, h);
+    ctx.stroke();
+  }
+}
+
+function drawTrack(index) {
+  const wrap = document.querySelectorAll('.track-canvas-wrap')[index];
+  if (!wrap) return;
+  const canvas = wrap.querySelector('canvas');
+  const rect = wrap.getBoundingClientRect();
+  canvas.width = rect.width * devicePixelRatio;
+  canvas.height = rect.height * devicePixelRatio;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+  const w = rect.width, h = rect.height;
+
+  ctx.fillStyle = '#0a0a1a';
+  ctx.fillRect(0, 0, w, h);
+
+  const t = state.tracks[index];
+  if (!t.peaks.length || state.globalDurSec <= 0) return;
+
+  // Track occupies [offsetSec, offsetSec + duration] in global timeline
+  const trackDur = t.audioBuffer.duration;
+  const xStart = (t.offsetSec / state.globalDurSec) * w;
+  const xEnd = ((t.offsetSec + trackDur) / state.globalDurSec) * w;
+  const trackW = xEnd - xStart;
+
+  // Draw waveform
+  const mid = h / 2;
+  ctx.fillStyle = t.muted ? '#1a2a3a' : '#3a7bd5';
+  for (let i = 0; i < t.peaks.length; i++) {
+    const frac = i / t.peaks.length;
+    const x = xStart + frac * trackW;
+    const bw = Math.max(1, trackW / t.peaks.length);
+    const yMin = mid + t.peaks[i].min * mid * 0.9;
+    const yMax = mid + t.peaks[i].max * mid * 0.9;
+    ctx.fillRect(x, yMin, bw, yMax - yMin || 1);
+  }
+
+  // Playhead
+  const px = (state.cursorSec / state.globalDurSec) * w;
+  ctx.strokeStyle = '#ff4444';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(px, 0);
+  ctx.lineTo(px, h);
+  ctx.stroke();
+}
+
+function updateTimeDisplay() {
+  const el = document.getElementById('time-display');
+  if (state.globalStartUtc) {
+    const t = new Date(state.globalStartUtc.getTime() + state.cursorSec * 1000);
+    el.textContent = formatUtcTime(t);
+  } else {
+    el.textContent = state.cursorSec.toFixed(3) + 's';
+  }
+}
+
+function renderTranscription() {
+  const el = document.getElementById('transcription');
+  if (state.transcriptionText) {
+    el.style.display = '';
+    el.querySelector('.tx-text').textContent = state.transcriptionText;
+  } else {
+    el.style.display = 'none';
+  }
+}
+
+// --- Playback ---
+
+async function ensureAudioCtx() {
+  if (!state.audioCtx) state.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (state.audioCtx.state === 'suspended') await state.audioCtx.resume();
+}
+
+async function startPlayback() {
+  if (state.tracks.length === 0) return;
+  await ensureAudioCtx();
+  stopPlayback();
+
+  state.playing = true;
+  state.playStartCursor = state.cursorSec;
+  state.playStartWall = state.audioCtx.currentTime;
+
+  let started = 0;
+  for (const t of state.tracks) {
+    const source = state.audioCtx.createBufferSource();
+    source.buffer = t.audioBuffer;
+    const gainNode = state.audioCtx.createGain();
+    gainNode.gain.value = t.muted ? 0 : 1;
+    source.connect(gainNode);
+    gainNode.connect(state.audioCtx.destination);
+    t.gainNode = gainNode;
+
+    // How far into this track's audio does the cursor sit?
+    const trackLocalSec = state.cursorSec - t.offsetSec;
+    const trackDur = t.audioBuffer.duration;
+
+    if (trackLocalSec >= trackDur) continue; // cursor past this track
+    if (trackLocalSec >= 0) {
+      source.start(0, trackLocalSec);
+    } else {
+      // Track hasn't started yet at cursor — schedule in future
+      source.start(state.audioCtx.currentTime + (-trackLocalSec), 0);
+    }
+    state.sources.push(source);
+    started++;
+  }
+
+  console.log(`Playback: ${started}/${state.tracks.length} sources, ctx=${state.audioCtx.state}, cursor=${state.cursorSec.toFixed(2)}s/${state.globalDurSec.toFixed(2)}s`);
+  document.getElementById('btn-play').innerHTML = '&#9646;&#9646; Pause';
+  animate();
+}
+
+function stopPlayback() {
+  state.playing = false;
+  for (const s of state.sources) {
+    try { s.stop(); } catch {}
+  }
+  state.sources = [];
+  if (state.animFrame) cancelAnimationFrame(state.animFrame);
+  state.animFrame = null;
+  document.getElementById('btn-play').innerHTML = '&#9654; Play';
+}
+
+function animate() {
+  if (!state.playing) return;
+  const elapsed = state.audioCtx.currentTime - state.playStartWall;
+  state.cursorSec = state.playStartCursor + elapsed;
+
+  if (state.cursorSec >= state.globalDurSec) {
+    state.cursorSec = state.globalDurSec;
+    stopPlayback();
+    render();
+    return;
+  }
+
+  drawRuler();
+  for (let i = 0; i < state.tracks.length; i++) drawTrack(i);
+  updateTimeDisplay();
+  state.animFrame = requestAnimationFrame(animate);
+}
+
+// --- Interaction ---
+
+function toggleMute(index) {
+  state.tracks[index].muted = !state.tracks[index].muted;
+  applyMuteState();
+}
+
+function toggleSolo(index) {
+  // If this track is already the only unmuted one, unsolo (unmute all)
+  const soloActive = state.tracks.every((t, i) => i === index ? !t.muted : t.muted);
+  if (soloActive) {
+    for (const t of state.tracks) t.muted = false;
+  } else {
+    for (let i = 0; i < state.tracks.length; i++) {
+      state.tracks[i].muted = (i !== index);
+    }
+  }
+  applyMuteState();
+}
+
+function applyMuteState() {
+  for (const t of state.tracks) {
+    if (t.gainNode) t.gainNode.gain.value = t.muted ? 0 : 1;
+  }
+  updateMuteButtons();
+  for (let i = 0; i < state.tracks.length; i++) drawTrack(i);
+}
+
+function updateMuteButtons() {
+  const soloActive = state.tracks.filter(t => !t.muted).length === 1;
+  document.querySelectorAll('.btn-mute').forEach(btn => {
+    const i = parseInt(btn.dataset.track);
+    btn.classList.toggle('muted', state.tracks[i].muted);
+  });
+  document.querySelectorAll('.btn-solo').forEach(btn => {
+    const i = parseInt(btn.dataset.track);
+    btn.classList.toggle('soloed', soloActive && !state.tracks[i].muted);
+  });
+}
+
+function onTrackClick(e, trackIndex) {
+  const wrap = e.currentTarget;
+  const rect = wrap.getBoundingClientRect();
+  const frac = (e.clientX - rect.left) / rect.width;
+  seekTo(frac * state.globalDurSec);
+}
+
+document.getElementById('ruler').addEventListener('click', e => {
+  const rect = e.currentTarget.getBoundingClientRect();
+  const frac = (e.clientX - rect.left) / rect.width;
+  seekTo(frac * state.globalDurSec);
+});
+
+function seekTo(sec) {
+  const wasPlaying = state.playing;
+  if (wasPlaying) stopPlayback();
+  state.cursorSec = Math.max(0, Math.min(sec, state.globalDurSec));
+  render();
+  if (wasPlaying) startPlayback();
+}
+
+document.getElementById('btn-play').addEventListener('click', () => {
+  if (state.playing) stopPlayback();
+  else startPlayback();
+});
+document.getElementById('btn-start').addEventListener('click', () => seekTo(0));
+document.getElementById('btn-end').addEventListener('click', () => seekTo(state.globalDurSec));
+
+// Keyboard shortcuts
+document.addEventListener('keydown', e => {
+  if (e.code === 'Space') { e.preventDefault(); e.stopPropagation(); state.playing ? stopPlayback() : startPlayback(); }
+  if (e.code === 'Home') seekTo(0);
+  if (e.code === 'End') seekTo(state.globalDurSec);
+  if (e.code === 'ArrowLeft') seekTo(state.cursorSec - 1);
+  if (e.code === 'ArrowRight') seekTo(state.cursorSec + 1);
+});
+
+// Resize
+window.addEventListener('resize', () => { if (state.tracks.length) render(); });
+</script>
+</body>
+</html>

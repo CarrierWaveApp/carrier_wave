@@ -1,0 +1,8 @@
+# Cargo config discovery walks UP the directory tree, so without this file
+# sat-core would inherit ../firmware-sat/.cargo/config.toml (riscv target +
+# ldproxy linker) and `cargo test` would try to link host tests with the
+# ESP toolchain. Pin the host triple for this pure-logic crate's tests.
+# (On an Intel Mac or Linux box, override with
+#  `cargo test --target <host-triple>`.)
+[build]
+target = "aarch64-apple-darwin"

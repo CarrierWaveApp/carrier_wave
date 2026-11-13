@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-cw-bg text-cw-text font-sans antialiased;
+  }
+}
+
+@layer components {
+  /* Monospaced, wide-tracked eyebrow label — the "radio console" motif used
+     across the Carrier Wave brand for section/field labels. */
+  .cw-eyebrow {
+    @apply font-mono uppercase tracking-[0.14em] text-cw-dim;
+  }
+}

@@ -1,0 +1,152 @@
+{
+  "version": "0.3.0",
+  "contests": [
+    {
+      "id": "nccc-cw-ns",
+      "name": "NCCC Sprint",
+      "short_name": "NS",
+      "sponsor": {
+        "name": "Northern California Contest Club",
+        "url": "https://ncccsprint.com/rules.html"
+      },
+      "modes": [
+        "CW"
+      ],
+      "bands": [
+        "160m",
+        "80m",
+        "40m",
+        "20m",
+        "15m"
+      ],
+      "data_dependencies": {
+        "country_file": {
+          "id": "cty_dat",
+          "url": "https://www.country-files.com/contest/",
+          "file": "cty.dat",
+          "description": "Standard DXCC entity list",
+          "provides": [
+            "their_country",
+            "their_continent"
+          ]
+        },
+        "section_list": {
+          "id": "naqp_sections_dc",
+          "description": "NAQP multipliers: US states + DC, Canadian provinces, NA countries"
+        }
+      },
+      "schedule": {
+        "type": "recurring_weekly",
+        "sessions": [
+          {
+            "day": "friday",
+            "start_utc": "02:30",
+            "duration_minutes": 30
+          }
+        ],
+        "session_scoring": "independent"
+      },
+      "exchange": {
+        "sent": [
+          {
+            "name": "serial",
+            "type": "serial_number",
+            "label": "Serial #",
+            "required": true,
+            "auto_increment": true
+          },
+          {
+            "name": "name",
+            "type": "name",
+            "label": "Name",
+            "required": true
+          },
+          {
+            "name": "section",
+            "type": "section_list",
+            "label": "QTH",
+            "required": true,
+            "list": "naqp_sections_dc"
+          }
+        ],
+        "received": [
+          {
+            "name": "serial",
+            "type": "serial_number",
+            "label": "Serial #",
+            "required": true
+          },
+          {
+            "name": "name",
+            "type": "name",
+            "label": "Name",
+            "required": true
+          },
+          {
+            "name": "section",
+            "type": "section_list",
+            "label": "QTH",
+            "required": true,
+            "list": "naqp_sections_dc"
+          }
+        ]
+      },
+      "dupe_rules": {
+        "scope": "session",
+        "key": [
+          "callsign",
+          "band"
+        ]
+      },
+      "scoring": {
+        "phases": [
+          {
+            "id": "qso_points",
+            "type": "per_qso",
+            "rules": [
+              {
+                "value": 1
+              }
+            ]
+          },
+          {
+            "id": "mult_sections",
+            "type": "multiplier_count",
+            "description": "Unique NAQP sections per band",
+            "source": "received.section",
+            "scope": "per_band",
+            "include_zero_point_qsos": false
+          },
+          {
+            "id": "total",
+            "type": "aggregate",
+            "operation": {
+              "op": "multiply",
+              "inputs": [
+                {
+                  "op": "ref",
+                  "phase": "qso_points"
+                },
+                {
+                  "op": "ref",
+                  "phase": "mult_sections"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "cabrillo": {
+        "contest_name": "NCCC-SPRINT",
+        "version": "3.0"
+      },
+      "categories": [
+        {
+          "id": "single_op",
+          "label": "Single Operator"
+        }
+      ],
+      "experimental": true
+    }
+  ]
+}

@@ -1,0 +1,484 @@
+// Session Detail View - QSO Sections & Data Loading
+//
+// Extracted QSO list sections and data loading for SessionDetailView.
+// Handles both flat and rove-grouped QSO display.
+
+import CarrierWaveCore
+import CarrierWaveData
+import Combine
+import SwiftData
+import SwiftUI
+
+// MARK: - QSO Sections
+
+extension SessionDetailView {
+    @ViewBuilder
+    var qsoSection: some View {
+        if let session, session.isRove {
+            roveQSOSections
+        } else {
+            flatQSOSection
+        }
+        if canAddLateQSO {
+            addQSOSection
+        }
+    }
+
+    // MARK: - Late entry (session already ended)
+
+    /// A QSO can be added after the fact to any ended session except contests,
+    /// whose exchange/serial fields the quick-entry line can't supply.
+    var canAddLateQSO: Bool {
+        guard let session else {
+            return false
+        }
+        return session.status == .completed && !session.isContest
+    }
+
+    private var addQSOSection: some View {
+        Section {
+            Button {
+                showAddQSOSheet = true
+            } label: {
+                Label("Add QSO", systemImage: "plus.circle")
+            }
+        } footer: {
+            Text("Log a contact you missed without reopening the session.")
+        }
+    }
+
+    @ViewBuilder
+    var addQSOSheet: some View {
+        if let session {
+            SessionAddQSOSheet(session: session, existingQSOs: qsos) {
+                Task {
+                    await loadQSOs()
+                    computeStatistics()
+                    computePercentiles()
+                    LoggingSessionManager.rebuildSessionActivityItem(
+                        session: session,
+                        qsos: qsos.filter { !QSOMode.isMetadata($0.mode) },
+                        modelContext: modelContext
+                    )
+                }
+            }
+        }
+    }
+
+    var flatQSOSection: some View {
+        let entries = flatQSOEntriesWithBoundaries
+        return Section("\(qsos.count) QSO\(qsos.count == 1 ? "" : "s")") {
+            ForEach(entries) { entry in
+                switch entry {
+                case let .qso(qso):
+                    flatQSORow(qso)
+                case let .boundary(marker):
+                    BoundaryMarkerRow(marker: marker)
+                case .note:
+                    EmptyView()
+                }
+            }
+        }
+    }
+
+    private func flatQSORow(_ qso: QSO) -> some View {
+        Button {
+            qsoToEdit = qso
+        } label: {
+            if activation != nil {
+                POTAQSORow(
+                    qso: qso, parks: activation?.parks ?? [],
+                    isSpotted: spotQSOMatch?.qsoWasSpotted(qso) ?? false,
+                    sessionCallsign: session?.myCallsign,
+                    sessionPark: session?.parkReference
+                )
+            } else {
+                SessionQSORow(
+                    qso: qso,
+                    isSpotted: spotQSOMatch?.qsoWasSpotted(qso) ?? false,
+                    myGrid: session?.myGrid == nil ? qso.myGrid : nil,
+                    sessionCallsign: session?.myCallsign,
+                    sessionPark: session?.parkReference
+                )
+            }
+        }
+        .tint(.primary)
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            Button(role: .destructive) {
+                qsoToDelete = qso
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
+        }
+    }
+
+    private var flatQSOEntriesWithBoundaries: [SessionLogEntry] {
+        let parkRef = session?.parkReference ?? activation?.parkReference
+        let longitude = parkRef.flatMap { POTAParksCache.shared.parkSync(for: $0)?.longitude }
+        return SessionLogEntry.combineWithBoundaries(
+            qsos: qsos, notes: [], parkLongitude: longitude
+        )
+    }
+
+    @ViewBuilder
+    var roveQSOSections: some View {
+        let grouped = roveGroupedQSOs
+        ForEach(grouped, id: \.parkReference) { group in
+            Section {
+                ForEach(group.qsos) { qso in
+                    Button {
+                        qsoToEdit = qso
+                    } label: {
+                        if activation != nil {
+                            POTAQSORow(
+                                qso: qso, parks: activation?.parks ?? [],
+                                isSpotted: spotQSOMatch?.qsoWasSpotted(qso) ?? false
+                            )
+                        } else {
+                            SessionQSORow(
+                                qso: qso,
+                                isSpotted: spotQSOMatch?.qsoWasSpotted(qso) ?? false,
+                                myGrid: session?.myGrid == nil ? qso.myGrid : nil
+                            )
+                        }
+                    }
+                    .tint(.primary)
+                    .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                        Button(role: .destructive) {
+                            qsoToDelete = qso
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                    }
+                }
+            } header: {
+                HStack {
+                    Text(group.parkReference)
+                        .font(.subheadline.monospaced().weight(.semibold))
+                    if let name = POTAParksCache.shared.nameSync(for: group.primaryPark) {
+                        Text(name)
+                            .font(.caption)
+                    }
+                    Spacer()
+                    Text("\(group.qsos.count)Q")
+                        .font(.caption)
+                }
+            }
+        }
+    }
+
+    /// Current grid values from rove stops, keyed by park reference.
+    var roveStopGridMap: [String: String] {
+        guard let session, session.isRove else {
+            return [:]
+        }
+        var map: [String: String] = [:]
+        for stop in session.roveStops {
+            if let grid = stop.myGrid, !grid.isEmpty {
+                map[stop.parkReference] = grid
+            }
+        }
+        return map
+    }
+
+    /// Group QSOs by park reference, sorted by latest QSO timestamp (most recent park first).
+    var roveGroupedQSOs: [RoveParkGroup] {
+        var parkMap: [String: [QSO]] = [:]
+        var displayRef: [String: String] = [:]
+        for qso in qsos {
+            let park = (qso.parkReference ?? "").uppercased()
+            parkMap[park, default: []].append(qso)
+            if displayRef[park] == nil {
+                displayRef[park] = qso.parkReference ?? ""
+            }
+        }
+
+        return parkMap.map { key, groupQSOs in
+            let sorted = groupQSOs.sorted { $0.timestamp > $1.timestamp }
+            let ref = displayRef[key] ?? key
+            return RoveParkGroup(parkReference: ref.isEmpty ? "Other" : ref, qsos: sorted)
+        }.sorted {
+            ($0.qsos.first?.timestamp ?? .distantPast) > ($1.qsos.first?.timestamp ?? .distantPast)
+        }
+    }
+}
+
+// MARK: - Import Refresh
+
+extension SessionDetailView {
+    var sessionImportPublisher: AnyPublisher<Notification, Never> {
+        NotificationCenter.default.publisher(for: .sessionQSOsDidChange)
+            .eraseToAnyPublisher()
+    }
+
+    func handleSessionImportNotification(_ notification: Notification) {
+        guard let changedId = notification.object as? UUID,
+              changedId == session?.id
+        else {
+            return
+        }
+        Task { await loadQSOs() }
+        computeStatistics()
+    }
+}
+
+// MARK: - Data Loading
+
+extension SessionDetailView {
+    func loadQSOs() async {
+        guard let session else {
+            // For orphan activations without a session, use activation QSOs
+            if let activation {
+                var seenKeys = Set<String>()
+                qsos = activation.qsos
+                    .filter { !hiddenQSOIds.contains($0.id) }
+                    .sorted { $0.timestamp > $1.timestamp }
+                    .filter { seenKeys.insert($0.deduplicationKey).inserted }
+            }
+            return
+        }
+
+        qsos = fetchSessionQSOs(session)
+
+        // Build spot/QSO cross-reference for display linking
+        let sessionId = session.id
+        let spotPredicate = #Predicate<SessionSpot> { spot in
+            spot.loggingSessionId == sessionId
+        }
+        var spotDescriptor = FetchDescriptor<SessionSpot>(predicate: spotPredicate)
+        spotDescriptor.fetchLimit = 500
+        let spots = (try? modelContext.fetch(spotDescriptor)) ?? []
+        if !spots.isEmpty {
+            spotQSOMatch = SpotQSOMatch(qsos: qsos, spots: spots)
+
+            // Compute spot-vs-QSO mismatch warnings
+            let validQSOs = qsos.filter { !QSOMode.isMetadata($0.mode) }
+            spotMismatches = SpotContactValidator.findMismatches(
+                spots: spots,
+                qsos: validQSOs
+            )
+        } else {
+            spotMismatches = []
+        }
+    }
+
+    func applyBatchGridEdit(_ result: BatchGridResult) {
+        guard let session else {
+            return
+        }
+
+        // Fetch all session QSOs
+        let sessionId = session.id
+        let descriptor = BoundedDescriptor<QSO>(
+            predicate: #Predicate { $0.loggingSessionId == sessionId && !$0.isHidden },
+            limit: 500
+        )
+
+        guard let fetchedQSOs = try? modelContext.boundedFetch(descriptor) else {
+            return
+        }
+
+        let now = Date()
+        let realQSOs = fetchedQSOs.filter {
+            !QSOMode.isMetadata($0.mode)
+        }
+
+        switch result {
+        case let .uniform(grid):
+            session.myGrid = grid
+            for qso in realQSOs {
+                qso.myGrid = grid
+                qso.cloudDirtyFlag = true
+                qso.modifiedAt = now
+            }
+        case let .perPark(parkGrids):
+            applyPerParkGrids(parkGrids, to: realQSOs, session: session, at: now)
+        }
+
+        try? modelContext.save()
+
+        Task {
+            await loadQSOs()
+            LoggingSessionManager.rebuildSessionActivityItem(
+                session: session, qsos: realQSOs, modelContext: modelContext
+            )
+        }
+    }
+
+    private func applyPerParkGrids(
+        _ parkGrids: [String: String],
+        to qsos: [QSO],
+        session: LoggingSession,
+        at now: Date
+    ) {
+        // Normalize keys to uppercase for matching
+        let normalized = Dictionary(
+            parkGrids.map { ($0.key.uppercased(), $0.value) },
+            uniquingKeysWith: { _, last in last }
+        )
+
+        for qso in qsos {
+            let park = (qso.parkReference ?? "").uppercased()
+            if let grid = normalized[park] {
+                qso.myGrid = grid
+                qso.cloudDirtyFlag = true
+                qso.modifiedAt = now
+            }
+        }
+
+        // Update rove stops
+        var stops = session.roveStops
+        for i in stops.indices {
+            if let grid = normalized[stops[i].parkReference.uppercased()] {
+                stops[i].myGrid = grid
+            }
+        }
+        session.roveStops = stops
+
+        // Set session grid to first stop's grid as fallback
+        if let firstGrid = stops.first(where: { $0.myGrid != nil })?.myGrid {
+            session.myGrid = firstGrid
+        }
+    }
+
+    func applyEditResult(_ result: SessionMetadataEditResult) {
+        guard let session else {
+            return
+        }
+
+        if let newCallsign = result.newCallsign {
+            session.myCallsign = newCallsign
+            updateQSOCallsigns(sessionId: session.id, newCallsign: newCallsign)
+        }
+
+        if let newPark = result.newParkReference {
+            // Rove sessions manage per-stop parks; only cascade for single-park
+            // activations. The session field updates either way.
+            if !session.isRove {
+                updateQSOParks(sessionId: session.id, newPark: newPark)
+            }
+            session.parkReference = newPark
+        }
+
+        session.customTitle = result.title
+        session.power = result.watts
+        session.myRig = result.radio
+        session.myAntenna = result.antenna
+        session.myKey = result.key
+        session.myMic = result.mic
+        session.extraEquipment = result.extraEquipment
+        session.attendees = result.attendees
+        session.operatorCallsigns = result.operatorCallsigns
+        session.notes = result.notes
+        session.qsoComment = result.qsoComment
+
+        for photo in result.addedPhotos {
+            if let filename = try? SessionPhotoManager.savePhoto(
+                photo, sessionID: session.id
+            ) {
+                session.photoFilenames.append(filename)
+            }
+        }
+        for filename in result.deletedPhotoFilenames {
+            try? SessionPhotoManager.deletePhoto(
+                filename: filename, sessionID: session.id
+            )
+            session.photoFilenames.removeAll { $0 == filename }
+        }
+
+        try? modelContext.save()
+    }
+
+    /// Fetch QSOs belonging to a session by loggingSessionId and time range,
+    /// merging both sets to handle imported QSOs with different dates/calls.
+    private func fetchSessionQSOs(_ session: LoggingSession) -> [QSO] {
+        let sessionId = session.id
+        let sessionStart = session.startedAt
+        let sessionEnd = session.endedAt ?? Date()
+        let callsign = session.myCallsign
+
+        let bySessionDesc = BoundedDescriptor<QSO>(
+            predicate: #Predicate {
+                $0.loggingSessionId == sessionId && !$0.isHidden
+            },
+            sortBy: [SortDescriptor(\.timestamp, order: .reverse)],
+            limit: 500
+        )
+        let bySession = (try? modelContext.boundedFetch(bySessionDesc)) ?? []
+
+        let byTimeDesc = BoundedDescriptor<QSO>(
+            predicate: #Predicate {
+                $0.myCallsign == callsign
+                    && $0.timestamp >= sessionStart
+                    && $0.timestamp <= sessionEnd
+                    && !$0.isHidden
+            },
+            sortBy: [SortDescriptor(\.timestamp, order: .reverse)],
+            limit: 500
+        )
+        let byTime = (try? modelContext.boundedFetch(byTimeDesc)) ?? []
+
+        let existingIds = Set(bySession.map(\.id))
+        let additional = byTime.filter { !existingIds.contains($0.id) }
+        let merged = (bySession + additional)
+            .sorted { $0.timestamp > $1.timestamp }
+
+        // Deduplicate by content (callsign+band+mode+time) to handle
+        // iCloud sync creating multiple records for the same QSO
+        var seenKeys = Set<String>()
+        return merged.filter { seenKeys.insert($0.deduplicationKey).inserted }
+    }
+
+    private func updateQSOCallsigns(sessionId: UUID, newCallsign: String) {
+        var descriptor = FetchDescriptor<QSO>(
+            predicate: #Predicate { $0.loggingSessionId == sessionId }
+        )
+        descriptor.fetchLimit = 1_000
+        guard let sessionQSOs = try? modelContext.fetch(descriptor) else {
+            return
+        }
+        for qso in sessionQSOs {
+            qso.myCallsign = newCallsign
+        }
+    }
+
+    /// Apply a changed park reference to every QSO in the session and clear
+    /// their POTA upload status so the activation re-uploads under the new
+    /// park — the cascade the park-change confirmation dialog promises.
+    private func updateQSOParks(sessionId: UUID, newPark: String) {
+        var descriptor = FetchDescriptor<QSO>(
+            predicate: #Predicate { $0.loggingSessionId == sessionId }
+        )
+        descriptor.fetchLimit = 1_000
+        guard let sessionQSOs = try? modelContext.fetch(descriptor) else {
+            return
+        }
+
+        let newParks = POTAClient.splitParkReferences(newPark).map { $0.uppercased() }
+        let now = Date()
+        for qso in sessionQSOs {
+            qso.parkReference = newPark
+
+            // Clear POTA upload status: rows for parks no longer in the
+            // reference go inert; rows still in it reset to needing upload.
+            for presence in qso.potaPresenceRecords() {
+                presence.isPresent = false
+                presence.isSubmitted = false
+                presence.uploadRejected = false
+                presence.rejectedAtBuild = nil
+                presence.lastConfirmedAt = nil
+                let stale = presence.parkReference
+                    .map { !newParks.contains($0.uppercased()) } ?? false
+                presence.needsUpload = !stale
+            }
+            for park in newParks {
+                qso.markNeedsUploadToPark(park, context: modelContext)
+            }
+
+            qso.cloudDirtyFlag = true
+            qso.modifiedAt = now
+        }
+
+        try? QSOWriteSink.commitUpsertBatch(sessionQSOs, in: modelContext)
+    }
+}

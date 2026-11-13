@@ -1,0 +1,4803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logger Interface Mockup</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+            /* iOS Dark Mode: systemGroupedBackground */
+            background: #000000;
+            min-height: 100vh;
+            color: #fff;
+            padding: 20px;
+            display: flex;
+            gap: 40px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        h1 {
+            width: 100%;
+            text-align: center;
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #fff;
+        }
+
+        .state-label {
+            width: 100%;
+            text-align: center;
+            font-size: 14px;
+            color: #8e8e93;
+            margin-bottom: 20px;
+        }
+
+        /* Section Headers */
+        .section {
+            width: 100%;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 40px;
+            justify-content: center;
+            margin-bottom: 60px;
+        }
+
+        .section-header {
+            width: 100%;
+            margin-top: 60px;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #3A3A3C;
+        }
+
+        .section-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+
+        .section-description {
+            font-size: 15px;
+            color: #8e8e93;
+        }
+
+        .phone-frame {
+            width: 375px;
+            height: 780px;
+            background: #000;
+            border-radius: 40px;
+            padding: 12px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+        }
+
+        .phone-screen {
+            width: 100%;
+            height: 100%;
+            /* iOS Dark Mode: systemGroupedBackground #1C1C1E */
+            background: #1C1C1E;
+            border-radius: 32px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Status Bar */
+        .status-bar {
+            height: 54px;
+            padding: 14px 24px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .status-icons {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+
+        /* Header */
+        .header {
+            padding: 8px 16px 12px;
+            /* iOS Dark Mode: secondarySystemGroupedBackground */
+            background: #2C2C2E;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .header-title {
+            font-size: 17px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .header-subtitle {
+            font-size: 13px;
+            color: #8e8e93;
+            margin-top: 2px;
+        }
+
+        .header-stats {
+            display: flex;
+            gap: 16px;
+            margin-top: 8px;
+        }
+
+        .stat-badge {
+            font-size: 13px;
+            color: #30d158;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .stat-badge.neutral {
+            color: #8e8e93;
+        }
+
+        /* Main Content */
+        .content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 16px;
+            gap: 12px;
+            overflow-y: auto;
+        }
+
+        /* Callsign Input - Hero */
+        .callsign-input-container {
+            /* iOS Dark Mode: systemGray5 */
+            background: #2C2C2E;
+            border-radius: 12px;
+            padding: 14px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .callsign-input-container.focused {
+            /* iOS Dark Mode: systemGray4 */
+            background: #3A3A3C;
+            box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.5);
+        }
+
+        .search-icon {
+            color: #8e8e93;
+            font-size: 18px;
+        }
+
+        .callsign-input {
+            flex: 1;
+            font-size: 20px;
+            font-weight: 500;
+            color: #fff;
+            letter-spacing: 1px;
+        }
+
+        .callsign-input.placeholder {
+            color: #6e6e73;
+            font-weight: 400;
+            letter-spacing: 0;
+        }
+
+        .input-badge {
+            background: rgba(48, 209, 88, 0.2);
+            color: #30d158;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+
+        .input-badge.command {
+            background: rgba(255, 159, 10, 0.2);
+            color: #ff9f0a;
+        }
+
+        .input-badge.batch {
+            background: rgba(94, 92, 230, 0.2);
+            color: #5e5ce6;
+        }
+
+        /* Callsign Info Card */
+        .callsign-card {
+            /* iOS Dark Mode: systemGray6 */
+            background: #2C2C2E;
+            border-radius: 12px;
+            padding: 14px 16px;
+            animation: slideIn 0.2s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .callsign-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .callsign-card-call {
+            font-size: 22px;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: 1px;
+        }
+
+        .callsign-card-flag {
+            font-size: 24px;
+        }
+
+        .callsign-card-name {
+            font-size: 15px;
+            color: #ebebf5;
+            margin-top: 4px;
+        }
+
+        .callsign-card-details {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+
+        .detail-chip {
+            /* iOS Dark Mode: systemGray4 */
+            background: #3A3A3C;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 13px;
+            /* iOS Dark Mode: secondaryLabel */
+            color: #EBEBF599;
+        }
+
+        .callsign-card-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .card-action {
+            font-size: 14px;
+            color: #0a84ff;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* Quick Fields Row */
+        .quick-fields {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .field-group {
+            flex: 1;
+        }
+
+        .field-label {
+            font-size: 11px;
+            color: #8e8e93;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .field-input {
+            /* iOS Dark Mode: systemGray5 */
+            background: #2C2C2E;
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-size: 17px;
+            font-weight: 500;
+            color: #fff;
+            text-align: center;
+        }
+
+        .field-input.small {
+            font-size: 15px;
+        }
+
+        .more-button {
+            /* iOS Dark Mode: systemGray5 */
+            background: #2C2C2E;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 14px;
+            /* iOS Dark Mode: systemGray */
+            color: #8E8E93;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 15px;
+        }
+
+        .log-button {
+            background: #30d158;
+            border-radius: 8px;
+            padding: 12px 20px;
+            font-size: 17px;
+            font-weight: 600;
+            color: #fff;
+            margin-top: 15px;
+            min-width: 70px;
+            text-align: center;
+        }
+
+        .log-button.disabled {
+            background: rgba(48, 209, 88, 0.3);
+            color: rgba(255,255,255,0.5);
+        }
+
+        /* Quick Actions Bar */
+        .quick-actions {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding: 2px 0;
+        }
+
+        .action-chip {
+            /* iOS Dark Mode: systemGray5 */
+            background: #2C2C2E;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 14px;
+            /* iOS Dark Mode: label */
+            color: #EBEBF5;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .action-chip.active {
+            background: rgba(0, 122, 255, 0.2);
+            color: #0a84ff;
+        }
+
+        .action-chip .icon {
+            font-size: 14px;
+        }
+
+        /* QSO List */
+        .qso-list {
+            flex: 1;
+            margin-top: 8px;
+        }
+
+        .qso-list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .qso-list-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #8e8e93;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .qso-count {
+            font-size: 13px;
+            color: #8e8e93;
+        }
+
+        .qso-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            gap: 12px;
+        }
+
+        .qso-time {
+            font-size: 13px;
+            color: #8e8e93;
+            font-variant-numeric: tabular-nums;
+            min-width: 50px;
+        }
+
+        .qso-call {
+            font-size: 17px;
+            font-weight: 600;
+            color: #30d158;
+            letter-spacing: 0.5px;
+            min-width: 80px;
+        }
+
+        .qso-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .qso-name {
+            font-size: 14px;
+            color: #ebebf5;
+        }
+
+        .qso-location {
+            font-size: 12px;
+            color: #8e8e93;
+        }
+
+        .qso-rst {
+            font-size: 14px;
+            color: #8e8e93;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Expanded Fields */
+        .expanded-fields {
+            /* iOS Dark Mode: systemGray6 */
+            background: #2C2C2E;
+            border-radius: 12px;
+            padding: 14px 16px;
+        }
+
+        .expanded-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .expanded-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .full-width {
+            flex: 1;
+        }
+
+        .field-input.notes {
+            min-height: 44px;
+            text-align: left;
+        }
+
+        .collapse-button {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 12px;
+        }
+
+        .collapse-btn {
+            font-size: 14px;
+            color: #0a84ff;
+        }
+
+        /* Command Mode */
+        .command-panel {
+            background: rgba(255, 159, 10, 0.1);
+            border: 1px solid rgba(255, 159, 10, 0.3);
+            border-radius: 12px;
+            padding: 14px 16px;
+        }
+
+        .command-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #ff9f0a;
+            margin-bottom: 8px;
+        }
+
+        .command-description {
+            font-size: 14px;
+            color: #ebebf599;
+            margin-bottom: 12px;
+        }
+
+        .command-options {
+            display: flex;
+            gap: 8px;
+        }
+
+        .command-option {
+            /* iOS Dark Mode: systemGray4 */
+            background: #3A3A3C;
+            border-radius: 8px;
+            padding: 10px 16px;
+            font-size: 14px;
+            color: #fff;
+        }
+
+        .command-option.primary {
+            background: #ff9f0a;
+            color: #000;
+            font-weight: 600;
+        }
+
+        /* Batch Mode */
+        .batch-panel {
+            background: rgba(94, 92, 230, 0.1);
+            border: 1px solid rgba(94, 92, 230, 0.3);
+            border-radius: 12px;
+            padding: 14px 16px;
+        }
+
+        .batch-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #5e5ce6;
+            margin-bottom: 8px;
+        }
+
+        .batch-calls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .batch-call-chip {
+            /* iOS Dark Mode: systemGray4 */
+            background: #3A3A3C;
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 15px;
+            font-weight: 600;
+            color: #fff;
+            letter-spacing: 0.5px;
+        }
+
+        .batch-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .batch-action {
+            flex: 1;
+            text-align: center;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .batch-action.secondary {
+            /* iOS Dark Mode: systemGray4 */
+            background: #3A3A3C;
+            color: #fff;
+        }
+
+        .batch-action.primary {
+            background: #5e5ce6;
+            color: #fff;
+        }
+
+        /* CW Transcription Panel */
+        .cw-panel {
+            background: #2C2C2E;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .cw-panel-header {
+            display: flex;
+            align-items: center;
+            padding: 10px 14px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            gap: 12px;
+        }
+
+        .cw-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex: 1;
+        }
+
+        .cw-status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #8E8E93;
+        }
+
+        .cw-status-dot.listening {
+            background: #30D158;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .cw-status-text {
+            font-size: 13px;
+            font-weight: 500;
+            color: #30D158;
+        }
+
+        .cw-wpm {
+            display: flex;
+            align-items: baseline;
+            gap: 3px;
+            background: #3A3A3C;
+            padding: 4px 10px;
+            border-radius: 6px;
+        }
+
+        .cw-wpm-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .cw-wpm-label {
+            font-size: 11px;
+            color: #8E8E93;
+        }
+
+        .cw-panel-close {
+            font-size: 16px;
+            color: #8E8E93;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #3A3A3C;
+            border-radius: 50%;
+        }
+
+        .cw-waveform {
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 3px;
+            height: 40px;
+            padding: 8px 14px;
+            background: #1C1C1E;
+        }
+
+        .waveform-bar {
+            width: 8px;
+            background: #3A3A3C;
+            border-radius: 2px;
+            transition: height 0.1s ease;
+        }
+
+        .waveform-bar.active {
+            background: #30D158;
+        }
+
+        .cw-transcript {
+            padding: 10px 14px;
+            max-height: 140px;
+            overflow-y: auto;
+            font-family: 'SF Mono', 'Menlo', monospace;
+        }
+
+        .cw-line {
+            display: flex;
+            gap: 10px;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .cw-line.old {
+            opacity: 0.6;
+        }
+
+        .cw-line.current {
+            background: rgba(48, 209, 88, 0.1);
+            margin: 0 -14px;
+            padding: 6px 14px;
+            border-bottom: none;
+        }
+
+        .cw-timestamp {
+            font-size: 11px;
+            color: #636366;
+            min-width: 55px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .cw-text {
+            font-size: 14px;
+            color: #EBEBF5;
+            flex: 1;
+            word-break: break-all;
+        }
+
+        .cw-callsign {
+            color: #5E5CE6;
+            font-weight: 600;
+        }
+
+        .cw-callsign.you {
+            color: #FF453A;
+        }
+
+        .cw-cursor {
+            display: inline-block;
+            width: 2px;
+            height: 14px;
+            background: #30D158;
+            margin-left: 2px;
+            animation: blink 0.8s step-end infinite;
+            vertical-align: text-bottom;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        .cw-detected {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 14px;
+            background: rgba(94, 92, 230, 0.15);
+            border-top: 1px solid rgba(94, 92, 230, 0.3);
+        }
+
+        .cw-detected-label {
+            font-size: 12px;
+            color: #8E8E93;
+        }
+
+        .cw-detected-call {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .cw-detected-callsign {
+            font-size: 17px;
+            font-weight: 700;
+            color: #5E5CE6;
+            letter-spacing: 0.5px;
+        }
+
+        .cw-detected-action {
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
+            background: #5E5CE6;
+            padding: 6px 14px;
+            border-radius: 6px;
+        }
+
+        .cw-controls {
+            display: flex;
+            padding: 10px 14px;
+            gap: 8px;
+            background: #3A3A3C;
+        }
+
+        .cw-control-btn {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 8px;
+            background: #2C2C2E;
+            border-radius: 8px;
+        }
+
+        .cw-control-btn.active {
+            background: rgba(255, 69, 58, 0.2);
+        }
+
+        .cw-control-icon {
+            font-size: 18px;
+        }
+
+        .cw-control-label {
+            font-size: 10px;
+            color: #8E8E93;
+        }
+
+        .cw-control-btn.active .cw-control-label {
+            color: #FF453A;
+        }
+
+        /* RBN Panel */
+        .rbn-panel {
+            background: #2C2C2E;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .rbn-panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 14px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .rbn-panel-close-x {
+            font-size: 18px;
+            color: #8E8E93;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #3A3A3C;
+            border-radius: 50%;
+        }
+
+        .rbn-panel-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .rbn-panel-close {
+            font-size: 15px;
+            font-weight: 600;
+            color: #0A84FF;
+        }
+
+        .rbn-map-container {
+            padding: 0;
+            background: #0d1a24;
+            position: relative;
+        }
+
+        .rbn-world-map {
+            width: 100%;
+            height: 160px;
+            background: linear-gradient(180deg, #0a1520 0%, #1a2a3a 50%, #0d1a24 100%);
+        }
+
+        .rbn-map-legend {
+            position: absolute;
+            bottom: 8px;
+            left: 8px;
+            display: flex;
+            gap: 10px;
+            background: rgba(0,0,0,0.5);
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 10px;
+            color: #8E8E93;
+        }
+
+        .legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .legend-dot.you {
+            background: #FF453A;
+        }
+
+        .legend-dot.high {
+            background: #30D158;
+        }
+
+        .legend-dot.med {
+            background: #FFD60A;
+        }
+
+        .legend-dot.low {
+            background: #FF9F0A;
+        }
+
+        .rbn-stats-row {
+            display: flex;
+            padding: 10px 14px;
+            gap: 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .rbn-stat {
+            flex: 1;
+            text-align: center;
+            padding: 8px;
+            background: #3A3A3C;
+            border-radius: 8px;
+        }
+
+        .rbn-stat-value {
+            display: block;
+            font-size: 17px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .rbn-stat-label {
+            display: block;
+            font-size: 11px;
+            color: #8E8E93;
+            margin-top: 2px;
+        }
+
+        .rbn-spot-list {
+            max-height: 180px;
+            overflow-y: auto;
+        }
+
+        .rbn-spot-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .rbn-spot-color {
+            width: 4px;
+            height: 36px;
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+
+        .rbn-spot-color.high {
+            background: #30D158;
+        }
+
+        .rbn-spot-color.med {
+            background: #FFD60A;
+        }
+
+        .rbn-spot-color.low {
+            background: #FF9F0A;
+        }
+
+        .rbn-spot-main {
+            display: flex;
+            flex-direction: column;
+            min-width: 70px;
+        }
+
+        .rbn-skimmer-call {
+            font-size: 15px;
+            font-weight: 600;
+            color: #5E5CE6;
+        }
+
+        .rbn-skimmer-grid {
+            font-size: 12px;
+            color: #8E8E93;
+        }
+
+        .rbn-spot-details {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            min-width: 65px;
+        }
+
+        .rbn-skimmer-snr {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .rbn-skimmer-snr.high {
+            color: #30D158;
+        }
+
+        .rbn-skimmer-snr.med {
+            color: #FFD60A;
+        }
+
+        .rbn-skimmer-snr.low {
+            color: #FF9F0A;
+        }
+
+        .rbn-skimmer-dist {
+            font-size: 12px;
+            color: #8E8E93;
+        }
+
+        .rbn-spot-meta {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            flex: 1;
+        }
+
+        .rbn-skimmer-wpm {
+            font-size: 12px;
+            color: #8E8E93;
+        }
+
+        .rbn-skimmer-age {
+            font-size: 11px;
+            color: #636366;
+        }
+
+        .rbn-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 14px;
+            background: #3A3A3C;
+        }
+
+        .rbn-last-update {
+            font-size: 12px;
+            color: #8E8E93;
+        }
+
+        .rbn-refresh {
+            font-size: 14px;
+            color: #0A84FF;
+        }
+
+        /* PoLo Notes Section */
+        .polo-notes-section {
+            /* iOS Dark Mode: systemGray6 */
+            background: #2C2C2E;
+            border-radius: 12px;
+            padding: 10px 12px;
+            overflow: hidden;
+        }
+
+        .polo-notes-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .polo-notes-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #8E8E93;
+        }
+
+        .polo-notes-count {
+            font-size: 12px;
+            /* iOS Dark Mode: secondaryLabel */
+            color: #8E8E93;
+            background: #3A3A3C;
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+
+        .polo-notes-list-compact {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .polo-note-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-height: 22px;
+        }
+
+        .polo-note-call {
+            font-size: 13px;
+            font-weight: 600;
+            color: #30D158;
+            letter-spacing: 0.3px;
+            min-width: 56px;
+        }
+
+        .polo-note-emoji {
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .polo-note-text-compact {
+            font-size: 14px;
+            color: #EBEBF5;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex: 1;
+        }
+
+        /* License Class Warning */
+        .license-warning-banner {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 12px;
+            background: rgba(255, 159, 10, 0.12);
+            border: 1px solid rgba(255, 159, 10, 0.3);
+            border-radius: 10px;
+            margin-bottom: 12px;
+        }
+
+        .license-warning-icon {
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .license-warning-content {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .license-warning-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #FF9F0A;
+        }
+
+        .license-warning-text {
+            font-size: 13px;
+            color: #EBEBF599;
+        }
+
+        .license-info-card {
+            background: #3A3A3C;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+
+        .license-info-header {
+            margin-bottom: 10px;
+        }
+
+        .license-info-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #8E8E93;
+        }
+
+        .license-segments {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .license-segment {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+
+        .license-segment.extra {
+            background: rgba(175, 82, 222, 0.15);
+        }
+
+        .license-segment.general {
+            background: rgba(0, 122, 255, 0.15);
+        }
+
+        .license-segment.technician {
+            background: rgba(48, 209, 88, 0.15);
+        }
+
+        .license-segment.current {
+            border: 1px solid rgba(255, 159, 10, 0.5);
+            background: rgba(255, 159, 10, 0.15);
+        }
+
+        .segment-range {
+            font-size: 12px;
+            font-variant-numeric: tabular-nums;
+            color: #EBEBF5;
+            min-width: 100px;
+        }
+
+        .segment-label {
+            font-size: 12px;
+            color: #8E8E93;
+            min-width: 36px;
+        }
+
+        .segment-class {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+            min-width: 20px;
+            text-align: center;
+        }
+
+        .extra .segment-class {
+            background: rgba(175, 82, 222, 0.3);
+            color: #BF5AF2;
+        }
+
+        .general .segment-class {
+            background: rgba(0, 122, 255, 0.3);
+            color: #0A84FF;
+        }
+
+        .technician .segment-class {
+            background: rgba(48, 209, 88, 0.3);
+            color: #30D158;
+        }
+
+        .current .segment-class {
+            background: rgba(255, 159, 10, 0.3);
+            color: #FF9F0A;
+        }
+
+        .segment-current {
+            font-size: 11px;
+            color: #FF9F0A;
+            margin-left: auto;
+        }
+
+        .license-info-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .license-your-class {
+            font-size: 13px;
+            color: #8E8E93;
+        }
+
+        .license-change {
+            font-size: 13px;
+            color: #0A84FF;
+        }
+
+        /* Frequency Info Banner (informational, not warning) */
+        .freq-info-banner {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 12px;
+            background: rgba(0, 122, 255, 0.12);
+            border: 1px solid rgba(0, 122, 255, 0.3);
+            border-radius: 10px;
+            margin-bottom: 12px;
+        }
+
+        .freq-info-icon {
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .freq-info-content {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .freq-info-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #0A84FF;
+        }
+
+        .freq-info-text {
+            font-size: 13px;
+            color: #EBEBF599;
+        }
+
+        /* Mode Mismatch Warning */
+        .mode-mismatch-banner {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 12px;
+            background: rgba(255, 69, 58, 0.12);
+            border: 1px solid rgba(255, 69, 58, 0.3);
+            border-radius: 10px;
+            margin-bottom: 12px;
+        }
+
+        .mode-mismatch-icon {
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .mode-mismatch-content {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            flex: 1;
+        }
+
+        .mode-mismatch-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #FF453A;
+        }
+
+        .mode-mismatch-text {
+            font-size: 13px;
+            color: #EBEBF599;
+        }
+
+        .mode-mismatch-action {
+            font-size: 14px;
+            font-weight: 600;
+            color: #0A84FF;
+            white-space: nowrap;
+            align-self: center;
+        }
+
+        /* Band Segment Visual */
+        .band-segment-visual {
+            background: #3A3A3C;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+
+        .band-segment-bar {
+            display: flex;
+            height: 28px;
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .segment-fill {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .segment-fill.cw {
+            background: rgba(175, 82, 222, 0.4);
+        }
+
+        .segment-fill.ssb {
+            background: rgba(0, 122, 255, 0.4);
+        }
+
+        .segment-fill-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: #fff;
+            text-transform: uppercase;
+        }
+
+        .segment-marker {
+            position: absolute;
+            top: -4px;
+            bottom: -4px;
+            width: 3px;
+            background: #FF453A;
+            border-radius: 2px;
+            box-shadow: 0 0 8px rgba(255, 69, 58, 0.6);
+        }
+
+        .band-segment-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 6px;
+            font-size: 11px;
+            color: #8E8E93;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .picker-option.suggested {
+            border: 1px solid rgba(48, 209, 88, 0.5);
+            color: #30D158;
+        }
+
+        .picker-option.warning {
+            border: 1px solid rgba(255, 69, 58, 0.5);
+            color: #FF453A;
+        }
+
+        /* Frequency/Mode Picker */
+        .picker-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            /* iOS Dark Mode: secondarySystemBackground */
+            background: #2C2C2E;
+            border-radius: 16px 16px 0 0;
+            padding: 16px;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.4);
+        }
+
+        .picker-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .picker-title {
+            font-size: 17px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .picker-done {
+            font-size: 17px;
+            font-weight: 600;
+            color: #0a84ff;
+        }
+
+        .picker-section {
+            margin-bottom: 16px;
+        }
+
+        .picker-section-title {
+            font-size: 13px;
+            color: #8e8e93;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .picker-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        .picker-option {
+            /* iOS Dark Mode: systemGray5 */
+            background: #3A3A3C;
+            border-radius: 8px;
+            padding: 12px 8px;
+            text-align: center;
+            font-size: 15px;
+            color: #fff;
+        }
+
+        .picker-option.selected {
+            background: #0a84ff;
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .picker-option.recent {
+            border: 1px solid rgba(48, 209, 88, 0.4);
+        }
+
+        .freq-input-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .freq-input {
+            flex: 1;
+            /* iOS Dark Mode: systemGray5 */
+            background: #3A3A3C;
+            border-radius: 8px;
+            padding: 14px 16px;
+            font-size: 24px;
+            font-weight: 600;
+            color: #fff;
+            text-align: center;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .freq-unit {
+            font-size: 15px;
+            color: #8e8e93;
+        }
+
+        .recent-freqs {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            overflow-x: auto;
+        }
+
+        .recent-freq {
+            /* iOS Dark Mode: systemGray5 */
+            background: #3A3A3C;
+            border: 1px solid rgba(48, 209, 88, 0.3);
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 14px;
+            /* iOS systemGreen */
+            color: #30D158;
+            white-space: nowrap;
+        }
+
+        /* Edit QSO Sheet */
+        .edit-sheet {
+            position: absolute;
+            top: 54px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            /* iOS Dark Mode: systemGroupedBackground */
+            background: #1C1C1E;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .edit-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .edit-cancel {
+            font-size: 17px;
+            color: #0a84ff;
+        }
+
+        .edit-title {
+            font-size: 17px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .edit-save {
+            font-size: 17px;
+            font-weight: 600;
+            color: #0a84ff;
+        }
+
+        .edit-content {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+        }
+
+        .edit-callsign-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .edit-callsign {
+            font-size: 28px;
+            font-weight: 700;
+            color: #30d158;
+            letter-spacing: 1px;
+        }
+
+        .edit-timestamp {
+            font-size: 14px;
+            color: #8e8e93;
+        }
+
+        .edit-section {
+            margin-bottom: 20px;
+        }
+
+        .edit-section-title {
+            font-size: 13px;
+            color: #8e8e93;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .edit-row {
+            display: flex;
+            gap: 12px;
+        }
+
+        .edit-field {
+            flex: 1;
+        }
+
+        .edit-field-label {
+            font-size: 13px;
+            color: #8e8e93;
+            margin-bottom: 4px;
+        }
+
+        .edit-field-input {
+            /* iOS Dark Mode: systemGray5 */
+            background: #2C2C2E;
+            border-radius: 8px;
+            padding: 12px 14px;
+            font-size: 17px;
+            color: #fff;
+        }
+
+        .edit-field-input.centered {
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .edit-field-input.editable {
+            /* iOS Dark Mode: systemGray4 */
+            background: #3A3A3C;
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.1);
+        }
+
+        .edit-notes {
+            min-height: 80px;
+        }
+
+        .delete-section {
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .delete-button {
+            background: rgba(255, 69, 58, 0.15);
+            border: 1px solid rgba(255, 69, 58, 0.3);
+            border-radius: 10px;
+            padding: 14px;
+            text-align: center;
+            font-size: 17px;
+            color: #ff453a;
+            font-weight: 500;
+        }
+
+        .qso-item.editing {
+            background: rgba(10, 132, 255, 0.15);
+            border-radius: 8px;
+            margin: 0 -8px;
+            padding: 12px 8px;
+            border: 1px solid rgba(10, 132, 255, 0.3);
+        }
+
+        /* Frequency Activity */
+        .freq-activity {
+            /* iOS Dark Mode: systemGray5 */
+            background: #3A3A3C;
+            border-radius: 10px;
+            padding: 12px;
+            margin-top: 4px;
+        }
+
+        .freq-activity-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .freq-activity-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #8e8e93;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .freq-activity-status {
+            font-size: 12px;
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+
+        .freq-activity-status.clear {
+            background: rgba(48, 209, 88, 0.2);
+            color: #30d158;
+        }
+
+        .freq-activity-status.busy {
+            background: rgba(255, 69, 58, 0.2);
+            color: #ff453a;
+        }
+
+        .freq-activity-status.nearby {
+            background: rgba(255, 159, 10, 0.2);
+            color: #ff9f0a;
+        }
+
+        .activity-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 10px;
+            /* iOS Dark Mode: systemGray5 */
+            background: #3A3A3C;
+            border-radius: 8px;
+        }
+
+        .activity-item.conflict {
+            background: rgba(255, 69, 58, 0.1);
+            border: 1px solid rgba(255, 69, 58, 0.2);
+        }
+
+        .activity-item.warning {
+            background: rgba(255, 159, 10, 0.1);
+            border: 1px solid rgba(255, 159, 10, 0.2);
+        }
+
+        .activity-source {
+            font-size: 10px;
+            font-weight: 700;
+            padding: 3px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .activity-source.pota {
+            background: rgba(48, 209, 88, 0.2);
+            color: #30d158;
+        }
+
+        .activity-source.rbn {
+            background: rgba(94, 92, 230, 0.2);
+            color: #5e5ce6;
+        }
+
+        .activity-source.sota {
+            background: rgba(255, 159, 10, 0.2);
+            color: #ff9f0a;
+        }
+
+        .activity-details {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .activity-call {
+            font-size: 15px;
+            font-weight: 600;
+            color: #fff;
+            letter-spacing: 0.5px;
+        }
+
+        .activity-info {
+            font-size: 12px;
+            color: #8e8e93;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .activity-freq {
+            font-size: 14px;
+            font-weight: 500;
+            color: #ebebf5;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .activity-delta {
+            font-size: 11px;
+            color: #8e8e93;
+        }
+
+        .activity-delta.close {
+            color: #ff453a;
+        }
+
+        .activity-delta.ok {
+            color: #30d158;
+        }
+
+        .activity-age {
+            font-size: 11px;
+            color: #8e8e93;
+        }
+
+        .freq-clear-message {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px;
+            color: #30d158;
+            font-size: 14px;
+        }
+
+        .freq-warning-banner {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            background: rgba(255, 69, 58, 0.15);
+            border: 1px solid rgba(255, 69, 58, 0.3);
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .freq-warning-icon {
+            font-size: 18px;
+        }
+
+        .freq-warning-text {
+            flex: 1;
+            font-size: 14px;
+            color: #ff453a;
+        }
+
+        .freq-warning-action {
+            font-size: 14px;
+            font-weight: 600;
+            color: #0a84ff;
+        }
+
+        /* Toast Notifications */
+        .toast-notification {
+            position: absolute;
+            top: 62px;
+            left: 12px;
+            right: 12px;
+            background: #2C2C2E;
+            border-radius: 14px;
+            padding: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            z-index: 100;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .toast-notification.friend {
+            border: 1px solid rgba(48, 209, 88, 0.3);
+        }
+
+        .toast-notification.club {
+            border: 1px solid rgba(94, 92, 230, 0.3);
+        }
+
+        .toast-notification.message {
+            border: 1px solid rgba(0, 122, 255, 0.3);
+        }
+
+        .toast-icon-container {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .toast-icon-container.friend {
+            background: rgba(48, 209, 88, 0.2);
+        }
+
+        .toast-icon-container.club {
+            background: rgba(94, 92, 230, 0.2);
+        }
+
+        .toast-icon-container.message {
+            background: rgba(0, 122, 255, 0.2);
+        }
+
+        .toast-icon {
+            font-size: 20px;
+        }
+
+        .toast-status-dot {
+            position: absolute;
+            bottom: -2px;
+            right: -2px;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 2px solid #2C2C2E;
+        }
+
+        .toast-status-dot.online {
+            background: #30D158;
+        }
+
+        .toast-notification.friend,
+        .toast-notification.club {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .toast-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .toast-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .toast-subtitle {
+            font-size: 13px;
+            color: #8E8E93;
+            margin-top: 2px;
+        }
+
+        .toast-club-badge {
+            font-size: 11px;
+            color: #5E5CE6;
+            margin-top: 4px;
+        }
+
+        .toast-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .toast-action-btn {
+            background: #0A84FF;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 600;
+            padding: 8px 16px;
+            border-radius: 8px;
+        }
+
+        /* Message Toast */
+        .toast-message-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .toast-sender {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .toast-sender-call {
+            font-size: 15px;
+            font-weight: 600;
+            color: #30D158;
+        }
+
+        .toast-sender-label {
+            font-size: 11px;
+            color: #8E8E93;
+        }
+
+        .toast-time {
+            font-size: 12px;
+            color: #8E8E93;
+        }
+
+        .toast-message-body {
+            font-size: 14px;
+            color: #EBEBF5;
+            line-height: 1.4;
+            padding: 10px 12px;
+            background: #3A3A3C;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+
+        .toast-message-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .toast-action-link {
+            font-size: 14px;
+            color: #0A84FF;
+        }
+
+        .toast-action-link.mute {
+            color: #8E8E93;
+        }
+
+        /* FT8 Mode Styles */
+        .ft8-panel {
+            background: #2C2C2E;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .ft8-header {
+            display: flex;
+            align-items: center;
+            padding: 10px 14px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            gap: 12px;
+        }
+
+        .ft8-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex: 1;
+        }
+
+        .ft8-status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #30D158;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        .ft8-status-text {
+            font-size: 13px;
+            font-weight: 500;
+            color: #30D158;
+        }
+
+        .ft8-freq-badge {
+            display: flex;
+            align-items: baseline;
+            gap: 3px;
+            background: #3A3A3C;
+            padding: 4px 10px;
+            border-radius: 6px;
+        }
+
+        .ft8-freq-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: #fff;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .ft8-freq-label {
+            font-size: 11px;
+            color: #8E8E93;
+        }
+
+        .ft8-close {
+            font-size: 16px;
+            color: #8E8E93;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #3A3A3C;
+            border-radius: 50%;
+        }
+
+        .ft8-decode-list {
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: 'SF Mono', 'Menlo', monospace;
+        }
+
+        .ft8-decode-row {
+            display: flex;
+            gap: 8px;
+            padding: 6px 12px;
+            font-size: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+        }
+
+        .ft8-decode-row.cq {
+            background: rgba(48, 209, 88, 0.1);
+        }
+
+        .ft8-decode-row.calling-you {
+            background: rgba(255, 69, 58, 0.15);
+            border: 1px solid rgba(255, 69, 58, 0.3);
+        }
+
+        .ft8-decode-row.selected {
+            background: rgba(10, 132, 255, 0.2);
+            border: 1px solid rgba(10, 132, 255, 0.4);
+        }
+
+        .ft8-utc {
+            color: #636366;
+            font-variant-numeric: tabular-nums;
+            min-width: 50px;
+        }
+
+        .ft8-db {
+            min-width: 35px;
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .ft8-db.strong { color: #30D158; }
+        .ft8-db.medium { color: #FFD60A; }
+        .ft8-db.weak { color: #FF453A; }
+
+        .ft8-dt {
+            min-width: 30px;
+            color: #8E8E93;
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .ft8-freq-offset {
+            min-width: 40px;
+            color: #BF5AF2;
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .ft8-message {
+            flex: 1;
+            color: #EBEBF5;
+        }
+
+        .ft8-message .call {
+            color: #5E5CE6;
+            font-weight: 600;
+        }
+
+        .ft8-message .call.cq {
+            color: #30D158;
+        }
+
+        .ft8-message .call.you {
+            color: #FF453A;
+            font-weight: 700;
+        }
+
+        .ft8-message .grid {
+            color: #FF9F0A;
+        }
+
+        .ft8-message .report {
+            color: #64D2FF;
+        }
+
+        .ft8-flag {
+            font-size: 14px;
+        }
+
+        .ft8-controls {
+            display: flex;
+            padding: 10px 14px;
+            gap: 8px;
+            background: #1C1C1E;
+            border-top: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .ft8-control-btn {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 10px 8px;
+            background: #2C2C2E;
+            border-radius: 8px;
+        }
+
+        .ft8-control-btn.active {
+            background: rgba(48, 209, 88, 0.2);
+        }
+
+        .ft8-control-btn.tx {
+            background: rgba(255, 69, 58, 0.2);
+        }
+
+        .ft8-control-icon {
+            font-size: 18px;
+        }
+
+        .ft8-control-label {
+            font-size: 10px;
+            color: #8E8E93;
+        }
+
+        .ft8-control-btn.active .ft8-control-label {
+            color: #30D158;
+        }
+
+        .ft8-control-btn.tx .ft8-control-label {
+            color: #FF453A;
+        }
+
+        /* FT8 Waterfall */
+        .ft8-waterfall {
+            height: 80px;
+            background: #000;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .waterfall-gradient {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(
+                to bottom,
+                rgba(10, 20, 40, 0.95),
+                rgba(5, 10, 30, 0.95)
+            );
+        }
+
+        .waterfall-traces {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+        }
+
+        .waterfall-trace {
+            position: absolute;
+            height: 100%;
+            width: 8px;
+            background: linear-gradient(
+                to bottom,
+                rgba(255, 200, 50, 0.9) 0%,
+                rgba(255, 100, 50, 0.7) 30%,
+                rgba(200, 50, 100, 0.5) 60%,
+                rgba(100, 50, 150, 0.3) 100%
+            );
+            border-radius: 2px;
+        }
+
+        .waterfall-marker {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #FF453A;
+            box-shadow: 0 0 8px rgba(255, 69, 58, 0.8);
+        }
+
+        .waterfall-freq-scale {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 12px;
+            font-size: 10px;
+            color: #636366;
+            background: linear-gradient(transparent, rgba(0,0,0,0.8));
+        }
+
+        /* FT8 TX Panel */
+        .ft8-tx-panel {
+            background: #2C2C2E;
+            border-radius: 10px;
+            padding: 12px;
+        }
+
+        .ft8-tx-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .ft8-tx-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #8E8E93;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .ft8-auto-seq {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .ft8-auto-seq-label {
+            font-size: 12px;
+            color: #8E8E93;
+        }
+
+        .ft8-auto-seq-toggle {
+            width: 44px;
+            height: 24px;
+            background: #3A3A3C;
+            border-radius: 12px;
+            position: relative;
+        }
+
+        .ft8-auto-seq-toggle.on {
+            background: #30D158;
+        }
+
+        .ft8-auto-seq-toggle::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: #fff;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.2s;
+        }
+
+        .ft8-auto-seq-toggle.on::after {
+            transform: translateX(20px);
+        }
+
+        .ft8-tx-messages {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .ft8-tx-msg {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            background: #3A3A3C;
+            border-radius: 8px;
+            font-family: 'SF Mono', 'Menlo', monospace;
+            font-size: 13px;
+        }
+
+        .ft8-tx-msg.active {
+            background: rgba(255, 69, 58, 0.2);
+            border: 1px solid rgba(255, 69, 58, 0.4);
+        }
+
+        .ft8-tx-msg.next {
+            background: rgba(255, 159, 10, 0.15);
+            border: 1px solid rgba(255, 159, 10, 0.3);
+        }
+
+        .ft8-tx-num {
+            font-size: 11px;
+            font-weight: 600;
+            color: #8E8E93;
+            min-width: 20px;
+        }
+
+        .ft8-tx-msg.active .ft8-tx-num {
+            color: #FF453A;
+        }
+
+        .ft8-tx-msg.next .ft8-tx-num {
+            color: #FF9F0A;
+        }
+
+        .ft8-tx-text {
+            flex: 1;
+            color: #EBEBF5;
+        }
+
+        .ft8-tx-msg.active .ft8-tx-text {
+            color: #fff;
+        }
+
+        /* FT8 DX Info */
+        .ft8-dx-info {
+            display: flex;
+            gap: 10px;
+            padding: 12px;
+            background: rgba(94, 92, 230, 0.15);
+            border: 1px solid rgba(94, 92, 230, 0.3);
+            border-radius: 10px;
+        }
+
+        .ft8-dx-call {
+            font-size: 18px;
+            font-weight: 700;
+            color: #5E5CE6;
+            letter-spacing: 0.5px;
+        }
+
+        .ft8-dx-grid {
+            font-size: 14px;
+            color: #FF9F0A;
+            font-weight: 500;
+        }
+
+        .ft8-dx-details {
+            display: flex;
+            gap: 8px;
+            margin-top: 4px;
+        }
+
+        .ft8-dx-chip {
+            background: #3A3A3C;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #EBEBF599;
+        }
+
+        .ft8-progress {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: #3A3A3C;
+            border-radius: 8px;
+        }
+
+        .ft8-progress-bar {
+            flex: 1;
+            height: 4px;
+            background: #1C1C1E;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .ft8-progress-fill {
+            height: 100%;
+            background: #30D158;
+            border-radius: 2px;
+            transition: width 0.1s linear;
+        }
+
+        .ft8-progress-fill.tx {
+            background: #FF453A;
+        }
+
+        .ft8-progress-text {
+            font-size: 12px;
+            color: #8E8E93;
+            min-width: 60px;
+            text-align: right;
+        }
+
+        /* Column headers */
+        .mockup-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .mockup-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .mockup-description {
+            font-size: 12px;
+            color: #8e8e93;
+            margin-bottom: 16px;
+            text-align: center;
+            max-width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Logger Interface Design</h1>
+    <div class="state-label">Carrier Wave — Proposed Logger UI</div>
+
+    <!-- SECTION: Core Logging -->
+    <div class="section-header">
+        <div class="section-title">Core Logging</div>
+        <div class="section-description">Basic logging flow — callsign entry, RST fields, and QSO list</div>
+    </div>
+    <div class="section">
+
+    <!-- State 1: Empty/Default -->
+    <div class="mockup-container">
+        <div class="mockup-title">Default State</div>
+        <div class="mockup-description">Clean, minimal — ready for input. QSO list is the hero content.</div>
+        <div class="phone-frame">
+            <div class="phone-screen">
+                <div class="status-bar">
+                    <span>9:55</span>
+                    <div class="status-icons">
+                        <span>📶</span>
+                        <span>🔋</span>
+                    </div>
+                </div>
+
+                <div class="header">
+                    <div class="header-title">N9HO at US-12740</div>
+                    <div class="header-subtitle">Hinds Road Outcrop Forever Wild</div>
+                    <div class="header-stats">
+                        <span class="stat-badge">● 14 QSOs</span>
+                        <span class="stat-badge neutral">14.056 MHz · CW</span>
+                    </div>
+                </div>
+
+                <div class="content">
+                    <div class="callsign-input-container">
+                        <span class="search-icon">🔍</span>
+                        <span class="callsign-input placeholder">Callsign, command, or search...</span>
+                    </div>
+
+                    <div class="quick-fields">
+                        <div class="field-group">
+                            <div class="field-label">RST/S</div>
+                            <div class="field-input">599</div>
+                        </div>
+                        <div class="field-group">
+                            <div class="field-label">RST/R</div>
+                            <div class="field-input">599</div>
+                        </div>
+                        <div class="more-button">▾ More</div>
+                        <div class="log-button disabled">Log</div>
+                    </div>
+
+                    <div class="quick-actions">
+                        <div class="action-chip active">
+                            <span class="icon">⚡</span>
+                            14.056 · CW
+                        </div>
+                        <div class="action-chip">
+                            <span class="icon">📍</span>
+                            Spot
+                        </div>
+                        <div class="action-chip">
+                            <span class="icon">📻</span>
+                            RBN
+                        </div>
+                    </div>
+
+                    <div class="qso-list">
+                        <div class="qso-list-header">
+                            <span class="qso-list-title">Entries</span>
+                            <span class="qso-count">14</span>
+                        </div>
+                        <div class="qso-item">
+                            <span class="qso-time">19:23</span>
+                            <span class="qso-call">KJ5W</span>
+                            <div class="qso-info">
+                                <span class="qso-name">Kirk W. Bollinger</span>
+                                <span class="qso-location">TX · EM12</span>
+                            </div>
+                            <span class="qso-rst">599</span>
+                        </div>
+                        <div class="qso-item">
+                            <span class="qso-time">19:22</span>
+                            <span class="qso-call">W2DWL</span>
+                            <div class="qso-info">
+                                <span class="qso-name">Ronald A. Lopez</span>
+                                <span class="qso-location">NJ · FN20</span>
+                            </div>
+                            <span class="qso-rst">599</span>
+                        </div>
+                        <div class="qso-item">
+                            <span class="qso-time">19:19</span>
+                            <span class="qso-call">KD8IE</span>
+                            <div class="qso-info">
+                                <span class="qso-name">Michael Jefferson</span>
+                                <span class="qso-location">OH · EN81</span>
+                            </div>
+                            <span class="qso-rst">599</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- State 2: Callsign Entered with Lookup -->
+    <div class="mockup-container">
+        <div class="mockup-title">Single Callsign</div>
+        <div class="mockup-description">Callsign info card appears with lookup data. Log button activates.</div>
+        <div class="phone-frame">
+            <div class="phone-screen">
+                <div class="status-bar">
+                    <span>9:55</span>
+                    <div class="status-icons">
+                        <span>📶</span>
+                        <span>🔋</span>
+                    </div>
+                </div>
+
+                <div class="header">
+                    <div class="header-title">N9HO at US-12740</div>
+                    <div class="header-subtitle">Hinds Road Outcrop Forever Wild</div>
+                    <div class="header-stats">
+                        <span class="stat-badge">● 14 QSOs</span>
+                        <span class="stat-badge neutral">14.056 MHz · CW</span>
+                    </div>
+                </div>
+
+                <div class="content">
+                    <div class="callsign-input-container focused">
+                        <span class="search-icon">🔍</span>
+                        <span class="callsign-input">W1AW</span>
+                        <span class="input-badge">✓ Found</span>
+                    </div>
+
+                    <div class="callsign-card">
+                        <div class="callsign-card-header">
+                            <div>
+                                <div class="callsign-card-call">W1AW</div>
+                                <div class="callsign-card-name">ARRL Headquarters Station</div>
+                            </div>
+                            <span class="callsign-card-flag">🇺🇸</span>
+                        </div>
+                        <div class="callsign-card-details">
+                            <span class="detail-chip">CT</span>
+                            <span class="detail-chip">FN31pr</span>
+                            <span class="detail-chip">DXCC: 291</span>
+                        </div>
+                        <div class="callsign-card-actions">
+                            <span class="card-action">View QRZ Profile</span>
+                            <span class="card-action">Previous QSOs: 2</span>
+                        </div>
+                    </div>
+
+                    <div class="quick-fields">
+                        <div class="field-group">
+                            <div class="field-label">RST/S</div>
+                            <div class="field-input">599</div>
+                        </div>
+                        <div class="field-group">
+                            <div class="field-label">RST/R</div>
+                            <div class="field-input">599</div>
+                        </div>
+                        <div class="more-button">▾ More</div>
+                        <div class="log-button">Log</div>
+                    </div>
+
+                    <div class="qso-list">
+                        <div class="qso-list-header">
+                            <span class="qso-list-title">Entries</span>
+                            <span class="qso-count">14</span>
+                        </div>
+                        <div class="qso-item">
+                            <span class="qso-time">19:23</span>
+                            <span class="qso-call">KJ5W</span>
+                            <div class="qso-info">
+                                <span class="qso-name">Kirk W. Bollinger</span>
+                                <span class="qso-location">TX · EM12</span>
+                            </div>
+                            <span class="qso-rst">599</span>
+                        </div>
+                        <div class="qso-item">
+                            <span class="qso-time">19:22</span>
+                            <span class="qso-call">W2DWL</span>
+                            <div class="qso-info">
+                                <span class="qso-name">Ronald A. Lopez</span>
+                                <span class="qso-location">NJ · FN20</span>
+                            </div>
+                            <span class="qso-rst">599</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- State 3: Expanded Fields -->
+    <div class="mockup-container">
+        <div class="mockup-title">Expanded Fields</div>
+        <div class="mockup-description">Tap "More" to reveal additional fields. Progressive disclosure keeps UI clean.</div>
+        <div class="phone-frame">
+            <div class="phone-screen">
+                <div class="status-bar">
+                    <span>9:55</span>
+                    <div class="status-icons">
+                        <span>📶</span>
+                        <span>🔋</span>
+                    </div>
+                </div>
+
+                <div class="header">
+                    <div class="header-title">N9HO at US-12740</div>
+                    <div class="header-subtitle">Hinds Road Outcrop Forever Wild</div>
+                    <div class="header-stats">
+                        <span class="stat-badge">● 14 QSOs</span>
+                        <span class="stat-badge neutral">14.056 MHz · CW</span>
+                    </div>
+                </div>
+
+                <div class="content">
+                    <div class="callsign-input-container focused">
+                        <span class="search-icon">🔍</span>
+                        <span class="callsign-input">W1AW</span>
+                        <span class="input-badge">✓ Found</span>
+                    </div>
+
+                    <div class="callsign-card">
+                        <div class="callsign-card-header">
+                            <div>
+                                <div class="callsign-card-call">W1AW</div>
+                                <div class="callsign-card-name">ARRL Headquarters Station</div>
+                            </div>
+                            <span class="callsign-card-flag">🇺🇸</span>
+                        </div>
+                        <div class="callsign-card-details">
+                            <span class="detail-chip">CT</span>
+                            <span class="detail-chip">FN31pr</span>
+                            <span class="detail-chip">DXCC: 291</span>
+                        </div>
+                    </div>
+
+                    <div class="expanded-fields">
+                        <div class="expanded-row">
+                            <div class="field-group">
+                                <div class="field-label">RST/S</div>
+                                <div class="field-input">599</div>
+                            </div>
+                            <div class="field-group">
+                                <div class="field-label">RST/R</div>
+                                <div class="field-input">599</div>
+                            </div>
+                            <div class="field-group">
+                                <div class="field-label">Their Park</div>
+                                <div class="field-input small">—</div>
+                            </div>
+                        </div>
+                        <div class="expanded-row">
+                            <div class="field-group full-width">
+                                <div class="field-label">Notes</div>
+                                <div class="field-input notes">Great signal into CT</div>
+                            </div>
+                        </div>
+                        <div class="expanded-row">
+                            <div class="field-group full-width">
+                                <div class="field-label">Operator</div>
+                                <div class="field-input notes">—</div>
+                            </div>
+                        </div>
+                        <div class="collapse-button">
+                            <span class="collapse-btn">▴ Less</span>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; justify-content: flex-end;">
+                        <div class="log-button">Log</div>
+                    </div>
+
+                    <div class="qso-list">
+                        <div class="qso-list-header">
+                            <span class="qso-list-title">Entries</span>
+                            <span class="qso-count">14</span>
+                        </div>
+                        <div class="qso-item">
+                            <span class="qso-time">19:23</span>
+                            <span class="qso-call">KJ5W</span>
+                            <div class="qso-info">
+                                <span class="qso-name">Kirk W. Bollinger</span>
+                                <span class="qso-location">TX · EM12</span>
+                            </div>
+                            <span class="qso-rst">599</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    </div><!-- /section: Core Logging -->
+
+    <!-- SECTION: Commands -->
+    <div class="section-header">
+        <div class="section-title">Commands</div>
+        <div class="section-description">Special commands like SPOT and RBN entered in the callsign field</div>
+    </div>
+    <div class="section">
+
+    <!-- State 4: Command Mode (SPOT) -->
+    <div class="mockup-container">
+        <div class="mockup-title">Command Mode</div>
+        <div class="mockup-description">Typing "SPOT" triggers command UI. Clear visual distinction from logging.</div>
+        <div class="phone-frame">
+            <div class="phone-screen">
+                <div class="status-bar">
+                    <span>9:55</span>
+                    <div class="status-icons">
+                        <span>📶</span>
+                        <span>🔋</span>
+                    </div>
+                </div>
+
+                <div class="header">
+                    <div class="header-title">N9HO at US-12740</div>
+                    <div class="header-subtitle">Hinds Road Outcrop Forever Wild</div>
+                    <div class="header-stats">
+                        <span class="stat-badge">● 14 QSOs</span>
+                        <span class="stat-badge neutral">14.056 MHz · CW</span>
+                    </div>
+                </div>
+
+                <div class="content">
+                    <div class="callsign-input-container focused">
+                        <span class="search-icon">🔍</span>
+                        <span class="callsign-input">SPOT</span>
+                        <span class="input-badge command">Command</span>
+                    </div>
+
+                    <div class="command-panel">
+                        <div class="command-title">📍 Self-Spot to POTA</div>
+                        <div class="command-description">Post your activation to the POTA spotting network. Hunters will see you on pota.app.</div>
+                        <div class="callsign-card-details" style="margin-bottom: 12px;">
+                            <span class="detail-chip">14.056 MHz</span>
+                            <span class="detail-chip">CW</span>
+                            <span class="detail-chip">US-12740</span>
+                        </div>
+                        <div class="command-options">
+                            <div class="command-option">Cancel</div>
+                            <div class="command-option primary">Post Spot</div>
+                        </div>
+                    </div>
+
+                    <div class="qso-list">
+                        <div class="qso-list-header">
+                            <span class="qso-list-title">Entries</span>
+                            <span class="qso-count">14</span>
+                        </div>
+                        <div class="qso-item">
+                            <span class="qso-time">19:23</span>
+                            <span class="qso-call">KJ5W</span>
+                            <div class="qso-info">
+                                <span class="qso-name">Kirk W. Bollinger</span>
+                                <span class="qso-location">TX · EM12</span>
+                            </div>
+                            <span class="qso-rst">599</span>
+                        </div>
+                        <div class="qso-item">
+                            <span class="qso-time">19:22</span>
+                            <span class="qso-call">W2DWL</span>
+                            <div class="qso-info">
+                                <span class="qso-name">Ronald A. Lopez</span>
+                                <span class="qso-location">NJ · FN20</span>
+                            </div>
+                            <span class="qso-rst">599</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- State 5: RBN Command - Map View -->
+    <div class="mockup-container">
+        <div class="mockup-title">RBN Map View</div>
+        <div class="mockup-description">Type "RBN" to see where your signal is being heard by skimmers.</div>
+        <div class="phone-frame">
+            <div class="phone-screen" style="position: relative;">
+                <div class="status-bar">
+                    <span>9:55</span>
+                    <div class="status-icons">
+                        <span>📶</span>
+                        <span>🔋</span>
+                    </div>
+                </div>
+
+                <div class="header">
+                    <div class="header-title">N9HO at US-12740</div>
+                    <div class="header-subtitle">Hinds Road Outcrop Forever Wild</div>
+                    <div class="header-stats">
+                        <span class="stat-badge">● 14 QSOs</span>
+                        <span class="stat-badge neutral">14.056 MHz · CW</span>
+                    </div>
+                </div>
+
+                <div class="content">
+                    <div class="callsign-input-container focused">
+                        <span class="search-icon">🔍</span>
+                        <span class="callsign-input">RBN</span>
+                        <span class="input-badge command">Command</span>
+                    </div>
+
+                    <!-- RBN Map Panel -->
+                    <div class="rbn-panel">
+                        <div class="rbn-panel-header">
+                            <span class="rbn-panel-close-x">✕</span>
+                            <span class="rbn-panel-title">📡 RBN Spots for N9HO</span>
+                            <span class="rbn-panel-close">Hide</span>
+                        </div>
+
+                        <div class="rbn-map-container">
+                            <!-- World map with SVG paths -->
+                            <svg class="rbn-world-map" viewBox="0 0 360 180" preserveAspectRatio="xMidYMid slice">
+                                <!-- Simplified world landmasses -->
+                                <defs>
+                                    <linearGradient id="pathGradientHigh" x1="0%" y1="0%" x2="100%" y2="0%">
+                                        <stop offset="0%" style="stop-color:#30D158;stop-opacity:0.8" />
+                                        <stop offset="100%" style="stop-color:#30D158;stop-opacity:0.2" />
+                                    </linearGradient>
+                                    <linearGradient id="pathGradientMed" x1="0%" y1="0%" x2="100%" y2="0%">
+                                        <stop offset="0%" style="stop-color:#FFD60A;stop-opacity:0.8" />
+                                        <stop offset="100%" style="stop-color:#FFD60A;stop-opacity:0.2" />
+                                    </linearGradient>
+                                    <linearGradient id="pathGradientLow" x1="0%" y1="0%" x2="100%" y2="0%">
+                                        <stop offset="0%" style="stop-color:#FF9F0A;stop-opacity:0.8" />
+                                        <stop offset="100%" style="stop-color:#FF9F0A;stop-opacity:0.2" />
+                                    </linearGradient>
+                                </defs>
+
+                                <!-- North America -->
+                                <path d="M45,25 L95,20 L120,35 L125,55 L115,75 L95,85 L70,80 L50,70 L35,50 L40,35 Z"
+                                      fill="#2a3a4a" stroke="#3a4a5a" stroke-width="0.5"/>
+                                <!-- Europe -->
+                                <path d="M165,30 L200,25 L210,40 L205,55 L185,60 L170,55 L160,45 Z"
+                                      fill="#2a3a4a" stroke="#3a4a5a" stroke-width="0.5"/>
+                                <!-- South America -->
+                                <path d="M85,95 L100,90 L110,105 L105,130 L90,145 L75,130 L80,110 Z"
+                                      fill="#2a3a4a" stroke="#3a4a5a" stroke-width="0.5"/>
+                                <!-- Africa -->
+                                <path d="M170,70 L195,65 L205,85 L195,115 L175,120 L160,100 L165,80 Z"
+                                      fill="#2a3a4a" stroke="#3a4a5a" stroke-width="0.5"/>
+                                <!-- Asia -->
+                                <path d="M210,30 L280,25 L300,45 L290,70 L250,80 L220,70 L205,50 Z"
+                                      fill="#2a3a4a" stroke="#3a4a5a" stroke-width="0.5"/>
+                                <!-- Australia -->
+                                <path d="M270,105 L295,100 L305,115 L295,130 L275,125 L265,115 Z"
+                                      fill="#2a3a4a" stroke="#3a4a5a" stroke-width="0.5"/>
+
+                                <!-- Arc paths from you (Alabama ~87W, 33N → x=93, y=57) to skimmers -->
+                                <!-- To KM3T NH (71W, 43N → x=109, y=47) - high signal -->
+                                <path d="M93,57 Q101,42 109,47" fill="none" stroke="url(#pathGradientHigh)" stroke-width="2" stroke-linecap="round"/>
+                                <!-- To W3LPL MD (77W, 39N → x=103, y=51) - high signal -->
+                                <path d="M93,57 Q98,48 103,51" fill="none" stroke="url(#pathGradientHigh)" stroke-width="2" stroke-linecap="round"/>
+                                <!-- To VE3EID ON (79W, 44N → x=101, y=46) - med signal -->
+                                <path d="M93,57 Q92,46 101,46" fill="none" stroke="url(#pathGradientMed)" stroke-width="1.5" stroke-linecap="round"/>
+                                <!-- To DL9GTB Germany (10E, 51N → x=190, y=39) - low signal -->
+                                <path d="M93,57 Q140,20 190,39" fill="none" stroke="url(#pathGradientLow)" stroke-width="1" stroke-linecap="round" stroke-dasharray="3,2"/>
+                                <!-- To G4ZFE England (0W, 52N → x=180, y=38) - low signal -->
+                                <path d="M93,57 Q135,18 180,38" fill="none" stroke="url(#pathGradientLow)" stroke-width="1" stroke-linecap="round" stroke-dasharray="3,2"/>
+
+                                <!-- Your location marker -->
+                                <circle cx="93" cy="57" r="5" fill="#FF453A" stroke="#fff" stroke-width="1.5"/>
+                                <circle cx="93" cy="57" r="8" fill="none" stroke="#FF453A" stroke-width="1" opacity="0.5"/>
+
+                                <!-- Skimmer markers -->
+                                <circle cx="109" cy="47" r="4" fill="#30D158"/>
+                                <circle cx="103" cy="51" r="4" fill="#30D158"/>
+                                <circle cx="101" cy="46" r="3.5" fill="#FFD60A"/>
+                                <circle cx="190" cy="39" r="3" fill="#FF9F0A"/>
+                                <circle cx="180" cy="38" r="3" fill="#FF9F0A"/>
+                            </svg>
+
+                            <div class="rbn-map-legend">
+                                <span class="legend-item"><span class="legend-dot you"></span>You</span>
+                                <span class="legend-item"><span class="legend-dot high"></span>&gt;20 dB</span>
+                                <span class="legend-item"><span class="legend-dot med"></span>10-20 dB</span>
+                                <span class="legend-item"><span class="legend-dot low"></span>&lt;10 dB</span>
+                            </div>
+                        </div>
+
+                        <div class="rbn-stats-row">
+                            <div class="rbn-stat">
+                                <span class="rbn-stat-value">5</span>
+                                <span class="rbn-stat-label">Skimmers</span>
+                            </div>
+                            <div class="rbn-stat">
+                                <span class="rbn-stat-value">32 dB</span>
+                                <span class="rbn-stat-label">Best SNR</span>
+                            </div>
+                            <div class="rbn-stat">
+                                <span class="rbn-stat-value">4,200 mi</span>
+                                <span class="rbn-stat-label">Furthest</span>
+                            </div>
+                        </div>
+
+                        <div class="rbn-spot-list">
+                            <div class="rbn-spot-item">
+                                <div class="rbn-spot-color high"></div>
+                                <div class="rbn-spot-main">
+                                    <span class="rbn-skimmer-call">KM3T</span>
+                                    <span class="rbn-skimmer-grid">FN43</span>
+                                </div>
+                                <div class="rbn-spot-details">
+                                    <span class="rbn-skimmer-snr high">32 dB</span>
+                                    <span class="rbn-skimmer-dist">850 mi</span>
+                                </div>
+                                <div class="rbn-spot-meta">
+                                    <span class="rbn-skimmer-wpm">22 WPM</span>
+                                    <span class="rbn-skimmer-age">10s ago</span>
+                                </div>
+                            </div>
+                            <div class="rbn-spot-item">
+                                <div class="rbn-spot-color high"></div>
+                                <div class="rbn-spot-main">
+                                    <span class="rbn-skimmer-call">W3LPL</span>
+                                    <span class="rbn-skimmer-grid">FM19</span>
+                                </div>
+                                <div class="rbn-spot-details">
+                                    <span class="rbn-skimmer-snr high">28 dB</span>
+                                    <span class="rbn-skimmer-dist">720 mi</span>
+                                </div>
+                                <div class="rbn-spot-meta">
+                                    <span class="rbn-skimmer-wpm">22 WPM</span>
+                                    <span class="rbn-skimmer-age">12s ago</span>
+                                </div>
+                            </div>
+                            <div class="rbn-spot-item">
+                                <div class="rbn-spot-color med"></div>
+                                <div class="rbn-spot-main">
+                                    <span class="rbn-skimmer-call">VE3EID</span>
+                                    <span class="rbn-skimmer-grid">FN03</span>
+                                </div>
+                                <div class="rbn-spot-details">
+                                    <span class="rbn-skimmer-snr med">18 dB</span>
+                                    <span class="rbn-skimmer-dist">680 mi</span>
+                                </div>
+                                <div class="rbn-spot-meta">
+                                    <span class="rbn-skimmer-wpm">22 WPM</span>
+                                    <span class="rbn-skimmer-age">15s ago</span>
+                                </div>
+                            </div>
+                            <div class="rbn-spot-item">
+                                <div class="rbn-spot-color low"></div>
+                                <div class="rbn-spot-main">
+                                    <span class="rbn-skimmer-call">DL9GTB</span>
+                                    <span class="rbn-skimmer-grid">JO31</span>
+                                </div>
+                                <div class="rbn-spot-details">
+                                    <span class="rbn-skimmer-snr low">12 dB</span>
+                                    <span class="rbn-skimmer-dist">4,890 mi</span>
+                                </div>
+                                <div class="rbn-spot-meta">
+                                    <span class="rbn-skimmer-wpm">22 WPM</span>
+                                    <span class="rbn-skimmer-age">18s ago</span>
+                                </div>
+                            </div>
+                            <div class="rbn-spot-item">
+                                <div class="rbn-spot-color low"></div>
+                                <div class="rbn-spot-main">
+                                    <span class="rbn-skimmer-call">G4ZFE</span>
+                                    <span class="rbn-skimmer-grid">IO91</span>
+                                </div>
+                                <div class="rbn-spot-details">
+                                    <span class="rbn-skimmer-snr low">8 dB</span>
+                                    <span class="rbn-skimmer-dist">4,200 mi</span>
+                                </div>
+                                <div class="rbn-spot-meta">
+                                    <span class="rbn-skimmer-wpm">22 WPM</span>
+                                    <span class="rbn-skimmer-age">22s ago</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="rbn-footer">
+                            <span class="rbn-last-update">Updated 10s ago · 14.056 MHz CW</span>
+                            <span class="rbn-refresh">↻ Refresh</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    </div><!-- /section: Commands -->
+
+    <!-- SECTION: CW Mode -->
+    <div class="section-header">
+        <div class="section-title">CW Mode</div>
+        <div class="section-description">Audio transcription and decode for Morse code operation</div>
+    </div>
+    <div class="section">
+
+    <!-- State 6: CW Audio Transcription -->
+    <div class="mockup-container">
+        <div class="mockup-title">CW Transcription</div>
+        <div class="mockup-description">Live decode of CW audio with automatic callsign detection.</div>
+        <div class="phone-frame">
+            <div class="phone-screen">
+                <div class="status-bar">
+                    <span>9:55</span>
+                    <div class="status-icons">
+                        <span>📶</span>
+                        <span>🔋</span>
+                    </div>
+                </div>
+
+                <div class="header">
+                    <div class="header-title">N9HO at US-12740</div>
+                    <div class="header-subtitle">Hinds Road Outcrop Forever Wild</div>
+                    <div class="header-stats">
+                        <span class="stat-badge">● 14 QSOs</span>
+                        <span class="stat-badge neutral">14.056 MHz · CW</span>
+                    </div>
+                </div>
+
+                <div class="content">
+                    <div class="callsign-input-container">
+                        <span class="search-icon">🔍</span>
+                        <span class="callsign-input placeholder">Callsign, command, or search...</span>
+                    </div>
+
+                    <!-- CW Transcription Panel -->
+                    <div class="cw-panel">
+                        <div class="cw-panel-header">
+                            <div class="cw-status">
+                                <span class="cw-status-dot listening"></span>
+                                <span class="cw-status-text">Listening</span>
+                            </div>
+                            <div class="cw-wpm">
+                                <span class="cw-wpm-value">22</span>
+                                <span class="cw-wpm-label">WPM</span>
+                            </div>
+                            <span class="cw-panel-close">✕</span>
+                        </div>
+
+                        <div class="cw-waveform">
+                            <div class="waveform-bar" style="height: 15%"></div>
+                            <div class="waveform-bar" style="height: 45%"></div>
+                            <div class="waveform-bar" style="height: 80%"></div>
+                            <div class="waveform-bar" style="height: 60%"></div>
+                            <div class="waveform-bar" style="height: 90%"></div>
+                            <div class="waveform-bar" style="height: 40%"></div>
+                            <div class="waveform-bar active" style="height: 75%"></div>
+                            <div class="waveform-bar active" style="height: 95%"></div>
+                            <div class="waveform-bar active" style="height: 85%"></div>
+                            <div class="waveform-bar" style="height: 30%"></div>
+                            <div class="waveform-bar" style="height: 20%"></div>
+                            <div class="waveform-bar" style="height: 55%"></div>
+                            <div class="waveform-bar" style="height: 70%"></div>
+                            <div class="waveform-bar" style="height: 45%"></div>
+                            <div class="waveform-bar" style="height: 25%"></div>
+                            <div class="waveform-bar" style="height: 10%"></div>
+                        </div>
+
+                        <div class="cw-transcript">
+                            <div class="cw-line old">
+                                <span class="cw-timestamp">19:24:02</span>
+                                <span class="cw-text">CQ CQ CQ DE <span class="cw-callsign">K4SWL</span> K4SWL K</span>
+                            </div>
+                            <div class="cw-line old">
+                                <span class="cw-timestamp">19:24:18</span>
+                                <span class="cw-text"><span class="cw-callsign">K4SWL</span> DE <span class="cw-callsign you">N9HO</span> N9HO KN</span>
+                            </div>
+                            <div class="cw-line">
+                                <span class="cw-timestamp">19:24:35</span>
+                                <span class="cw-text"><span class="cw-callsign you">N9HO</span> GM UR 599 599 NC NC BK</span>
+                            </div>
+                            <div class="cw-line current">
+                                <span class="cw-timestamp">19:24:52</span>
+                                <span class="cw-text">R R <span class="cw-callsign">K4SWL</span> UR 599 AL AL TU<span class="cw-cursor"></span></span>
+                            </div>
+                        </div>
+
+                        <div class="cw-detected">
+                            <div class="cw-detected-label">Detected callsign</div>
+                            <div class="cw-detected-call">
+                                <span class="cw-detected-callsign">K4SWL</span>
+                                <span class="cw-detected-action">Use</span>
+                            </div>
+                        </div>
+
+                        <div class="cw-controls">
+                            <div class="cw-control-btn">
+                                <span class="cw-control-icon">🔊</span>
+                                <span class="cw-control-label">Audio</span>
+                            </div>
+                            <div class="cw-control-btn active">
+                                <span class="cw-control-icon">⏺</span>
+                                <span class="cw-control-label">Record</span>
+                            </div>
+                            <div class="cw-control-btn">
+                                <span class="cw-control-icon">📋</span>
+                                <span class="cw-control-label">Copy</span>
+                            </div>
+                            <div class="cw-control-btn">
+                                <span class="cw-control-icon">🗑</span>
+                                <span class="cw-control-label">Clear</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="quick-fields">
+                        <div class="field-group">
+                            <div class="field-label">RST/S</div>
+                            <div class="field-input">599</div>
+                        </div>
+                        <div class="field-group">
+                            <div class="field-label">RST/R</div>
+                            <div class="field-input">599</div>
+                        </div>
+                        <div class="more-button">▾ More</div>
+                        <div class="log-button disabled">Log</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    </div><!-- /section: CW Mode -->
+
+    <!-- SECTION: Batch Logging -->
+    <div class="section-header">
+        <div class="section-title">Batch Logging</div>
+        <div class="section-description">Log multiple callsigns at once with the same signal report</div>
+    </div>
+    <div class="section">
+
+    <!-- State 7: Batch Mode -->
+    <div class="mockup-container">
+        <div class="mockup-title">Batch Mode</div>
+        <div class="mockup-description">Multiple callsigns entered (space-separated). Log all at once with same RST.</div>
+        <div class="phone-frame">
+            <div class="phone-screen">
+                <div class="status-bar">
+                    <span>9:55</span>
+                    <div class="status-icons">
+                        <span>📶</span>
+                        <span>🔋</span>
+                    </div>
+                </div>
+
+                <div class="header">
+                    <div class="header-title">N9HO at US-12740</div>
+                    <div class="header-subtitle">Hinds Road Outcrop Forever Wild</div>
+                    <div class="header-stats">
+                        <span class="stat-badge">● 14 QSOs</span>
+                        <span class="stat-badge neutral">14.056 MHz · CW</span>
+                    </div>
+                </div>
+
+                <div class="content">
+                    <div class="callsign-input-container focused">
+                        <span class="search-icon">🔍</span>
+                        <span class="callsign-input">W1AW K3LR N1MM</span>
+                        <span class="input-badge batch">3 calls</span>
+                    </div>
+
+                    <div class="batch-panel">
+                        <div class="batch-title">Batch Log — 3 Callsigns</div>
+                        <div class="batch-calls">
+                            <span class="batch-call-chip">W1AW</span>
+                            <span class="batch-call-chip">K3LR</span>
+                            <span class="batch-call-chip">N1MM</span>
+                        </div>
+                        <div class="quick-fields" style="margin-top: 12px;">
+                            <div class="field-group">
+                                <div class="field-label">RST/S (all)</div>
+                                <div class="field-input">599</div>
+                            </div>
+                            <div class="field-group">
+                                <div class="field-label">RST/R (all)</div>
+                                <div class="field-input">599</div>
+                            </div>
+                        </div>
+                        <div class="batch-actions">
+                            <div class="batch-action secondary">Cancel</div>
+                            <div class="batch-action primary">Log All 3</div>
+                        </div>
+                    </div>
+
+                    <div class="qso-list">
+                        <div class="qso-list-header">
+                            <span class="qso-list-title">Entries</span>
+                            <span class="qso-count">14</span>
+                        </div>
+                        <div class="qso-item">
+                            <span class="qso-time">19:23</span>
+                            <span class="qso-call">KJ5W</span>
+                            <div class="qso-info">
+                                <span class="qso-name">Kirk W. Bollinger</span>
+                                <span class="qso-location">TX · EM12</span>
+                            </div>
+                            <span class="qso-rst">599</span>
+                        </div>
+                        <div class="qso-item">
+                            <span class="qso-time">19:22</span>
+                            <span class="qso-call">W2DWL</span>
+                            <div class="qso-info">
+                                <span class="qso-name">Ronald A. Lopez</span>
+                                <span class="qso-location">NJ · FN20</span>
+                            </div>
+                            <span class="qso-rst">599</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    </div><!-- /section: Batch Logging -->
+
+    <!-- SECTION: Callsign Features -->
+    <div class="section-header">
+        <div class="section-title">Callsign Features</div>
+        <div class="section-description">Enhanced callsign display with PoLo notes and additional context</div>
+    </div>
+    <div class="section">
+
+    <!-- State 8: Multiple PoLo Notes -->
+    <div class="mockup-container">
+        <div class="mockup-title">Multiple PoLo Notes</div>
+        <div class="mockup-description">Callsign matches multiple notes from different clubs/lists. User can see all relevant context.</div>
+        <div class="phone-frame">
+            <div class="phone-screen">
+                <div class="status-bar">
+                    <span>9:55</span>
+                    <div class="status-icons">
+                        <span>📶</span>
+                        <span>🔋</span>
+                    </div>
+                </div>
+
+                <div class="header">
+                    <div class="header-title">N9HO at US-12740</div>
+                    <div class="header-subtitle">Hinds Road Outcrop Forever Wild</div>
+                    <div class="header-stats">
+                        <span class="stat-badge">● 14 QSOs</span>
+                        <span class="stat-badge neutral">14.056 MHz · CW</span>
+                    </div>
+                </div>
+
+                <div class="content">
+                    <div class="callsign-input-container focused">
+                        <span class="search-icon">🔍</span>
+                        <span class="callsign-input">K4SWL</span>
+                        <span class="input-badge">✓ Found</span>
+                    </div>
+
+                    <div class="callsign-card">
+                        <div class="callsign-card-header">
+                            <div>
+                                <div class="callsign-card-call">K4SWL</div>
+                                <div class="callsign-card-name">Thomas Witherspoon</div>
+                            </div>
+                            <span class="callsign-card-flag">🇺🇸</span>
+                        </div>
+                        <div class="callsign-card-details">
+                            <span class="detail-chip">NC</span>
+                            <span class="detail-chip">EM85</span>
+                            <span class="detail-chip">DXCC: 291</span>
+                        </div>
+                        <div class="callsign-card-actions">
+                            <span class="card-action">View QRZ Profile</span>
+                            <span class="card-action">Previous QSOs: 5</span>
+                        </div>
+                    </div>
+
+                    <!-- PoLo Notes Section -->
+                    <div class="polo-notes-section">
+                        <div class="polo-notes-header">
+                            <span class="polo-notes-title">📝 Notes</span>
+                            <span class="polo-notes-count">3</span>
+                        </div>
+                        <div class="polo-notes-list-compact">
+                            <div class="polo-note-row">
+                                <span class="polo-note-emoji">🏕️</span>
+                                <span class="polo-note-text-compact">QRP enthusiast, runs **5W** portable</span>
+                            </div>
+                            <div class="polo-note-row">
+                                <span class="polo-note-emoji">📻</span>
+                                <span class="polo-note-text-compact">CWops #2847, excellent fist 25+ WPM</span>
+                            </div>
+                            <div class="polo-note-row">
+                                <span class="polo-note-emoji">⭐</span>
+                                <span class="polo-note-text-compact">Met at Hamvention 2024, runs [QRPer.com](https://qrper.com)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="quick-fields">
+                        <div class="field-group">
+                            <div class="field-label">RST/S</div>
+                            <div class="field-input">599</div>
+                        </div>
+                        <div class="field-group">
+                            <div class="field-label">RST/R</div>
+                            <div class="field-input">599</div>
+                        </div>
+                        <div class="more-button">▾ More</div>
+                        <div class="log-button">Log</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    </div><!-- /section: Callsign Features -->
+
+    <!-- SECTION: Frequency & Mode -->
+    <div class="section-header">
+        <div class="section-title">Frequency & Mode</div>
+        <div class="section-description">Band/mode selection with license class warnings and activity detection</div>
+    </div>
+    <div class="section">
+
+    <!-- State 9: Frequency/Mode Picker (Clear) -->
+    <div class="mockup-container">
+        <div class="mockup-title">Frequency/Mode</div>
+        <div class="mockup-description">Tap the frequency chip to change band/mode. Recent frequencies shown for quick access.</div>
+        <div class="phone-frame">
+            <div class="phone-screen" style="position: relative;">
+                <div class="status-bar">
+                    <span>9:55</span>
+                    <div class="status-icons">
+                        <span>📶</span>
+                        <span>🔋</span>
+                    </div>
+                </div>
+
+                <div class="header">
+                    <div class="header-title">N9HO at US-12740</div>
+                    <div class="header-subtitle">Hinds Road Outcrop Forever Wild</div>
+                    <div class="header-stats">
+                        <span class="stat-badge">● 14 QSOs</span>
+                        <span class="stat-badge neutral">14.056 MHz · CW</span>
+                    </div>
+                </div>
+
+                <div class="content" style="opacity: 0.3;">
+                    <div class="callsign-input-container">
+                        <span class="search-icon">🔍</span>
+                        <span class="callsign-input placeholder">Callsign, command, or search...</span>
+                    </div>
+                    <div class="quick-fields">
+                        <div class="field-group">
+                            <div class="field-label">RST/S</div>
+                            <div class="field-input">599</div>
+                        </div>
+                        <div class="field-group">
+                            <div class="field-label">RST/R</div>
+                            <div class="field-input">599</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="picker-overlay" style="max-height: 85%; overflow-y: auto;">
+                    <div class="picker-header">
+                        <span style="width: 60px;"></span>
+                        <span class="picker-title">Frequency & Mode</span>
+                        <span class="picker-done">Done</span>
+                    </div>
+
+                    <div class="picker-section">
+                        <div class="picker-section-title">Frequency (MHz)</div>
+                        <div class="freq-input-row">
+                            <div class="freq-input">14.062</div>
+                            <span class="freq-unit">MHz</span>
+                        </div>
+                        <div class="recent-freqs">
+                            <div class="recent-freq">14.056</div>
+                            <div class="recent-freq">7.030</div>
+                            <div class="recent-freq">21.060</div>
+                        </div>
+                    </div>
+
+                    <div class="freq-activity">
+                        <div class="freq-activity-header">
+                            <span class="freq-activity-title">Nearby Activity</span>
+                            <span class="freq-activity-status clear">Clear ±1 kHz</span>
+                        </div>
+                        <div class="activity-list">
+                            <div class="activity-item">
+                                <span class="activity-source pota">POTA</span>
+                                <div class="activity-details">
+                                    <span class="activity-call">K4SWL</span>
+                                    <span class="activity-info">US-0683 · NC</span>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div class="activity-freq">14.059</div>
+                                    <div class="activity-delta ok">-3 kHz</div>
+                                </div>
+                            </div>
+                            <div class="activity-item">
+                                <span class="activity-source rbn">RBN</span>
+                                <div class="activity-details">
+                                    <span class="activity-call">W3LPL</span>
+                                    <span class="activity-info">20 WPM · 22 dB</span>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div class="activity-freq">14.065</div>
+                                    <div class="activity-delta ok">+3 kHz</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="picker-section">
+                        <div class="picker-section-title">Mode</div>
+                        <div class="picker-grid">
+                            <div class="picker-option selected">CW</div>
+                            <div class="picker-option">SSB</div>
+                            <div class="picker-option">FT8</div>
+                            <div class="picker-option">FT4</div>
+                        </div>
+                    </div>
+
+                    <div class="picker-section">
+                        <div class="picker-section-title">Band</div>
+                        <div class="picker-grid">
+                            <div class="picker-option">40m</div>
+                            <div class="picker-option selected">20m</div>
+                            <div class="picker-option">15m</div>
+                            <div class="picker-option">10m</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- State 10: License Class Warning -->
+    <div class="mockup-container">
+        <div class="mockup-title">License Class Warning</div>
+        <div class="mockup-description">Frequency outside operator's license privileges. Warning shown but logging still allowed.</div>
+        <div class="phone-frame">
+            <div class="phone-screen" style="position: relative;">
+                <div class="status-bar">
+                    <span>9:55</span>
+                    <div class="status-icons">
+                        <span>📶</span>
+                        <span>🔋</span>
+                    </div>
+                </div>
+
+                <div class="header">
+                    <div class="header-title">N9HO at US-12740</div>
+                    <div class="header-subtitle">Hinds Road Outcrop Forever Wild</div>
+                    <div class="header-stats">
+                        <span class="stat-badge">● 14 QSOs</span>
+                        <span class="stat-badge neutral">14.350 MHz · SSB</span>
+                    </div>
+                </div>
+
+                <div class="content" style="opacity: 0.3;">
+                    <div class="callsign-input-container">
+                        <span class="search-icon">🔍</span>
+                        <span class="callsign-input placeholder">Callsign, command, or search...</span>
+                    </div>
+                </div>
+
+                <div class="picker-overlay" style="max-height: 85%; overflow-y: auto;">
+                    <div class="picker-header">
+                        <span style="width: 60px;"></span>
+                        <span class="picker-title">Frequency & Mode</span>
+                        <span class="picker-done">Done</span>
+                    </div>
+
+                    <div class="picker-section">
+                        <div class="picker-section-title">Frequency (MHz)</div>
+                        <div class="freq-input-row">
+                            <div class="freq-input" style="border: 2px solid rgba(255, 159, 10, 0.6);">14.350</div>
+                            <span class="freq-unit">MHz</span>
+                        </div>
+                    </div>
+
+                    <div class="license-warning-banner">
+                        <span class="license-warning-icon">⚠️</span>
+                        <div class="license-warning-content">
+                            <span class="license-warning-title">Outside Technician Privileges</span>
+                            <span class="license-warning-text">14.350 MHz requires General class or higher</span>
+                        </div>
+                    </div>
+
+                    <div class="license-info-card">
+                        <div class="license-info-header">
+                            <span class="license-info-title">20m Band Plan (14.000–14.350)</span>
+                        </div>
+                        <div class="license-segments">
+                            <div class="license-segment extra">
+                                <span class="segment-range">14.000–14.150</span>
+                                <span class="segment-label">CW</span>
+                                <span class="segment-class">E</span>
+                            </div>
+                            <div class="license-segment general">
+                                <span class="segment-range">14.025–14.150</span>
+                                <span class="segment-label">CW</span>
+                                <span class="segment-class">G</span>
+                            </div>
+                            <div class="license-segment extra">
+                                <span class="segment-range">14.150–14.175</span>
+                                <span class="segment-label">SSB</span>
+                                <span class="segment-class">E</span>
+                            </div>
+                            <div class="license-segment general current">
+                                <span class="segment-range">14.225–14.350</span>
+                                <span class="segment-label">SSB</span>
+                                <span class="segment-class">G</span>
+                                <span class="segment-current">◀ You are here</span>
+                            </div>
+                        </div>
+                        <div class="license-info-footer">
+                            <span class="license-your-class">Your license: Technician</span>
+                            <span class="license-change">Change in Settings</span>
+                        </div>
+                    </div>
+
+                    <div class="picker-section">
+                        <div class="picker-section-title">Mode</div>
+                        <div class="picker-grid">
+                            <div class="picker-option">CW</div>
+                            <div class="picker-option selected">SSB</div>
+                            <div class="picker-option">FT8</div>
+                            <div class="picker-option">FT4</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- State 11: Frequency Usage Warning (QRP Calling Freq) -->
+    <div class="mockup-container">
+        <div class="mockup-title">QRP Calling Frequency</div>
+        <div class="mockup-description">Informational notice when on a well-known calling frequency.</div>
+        <div class="phone-frame">
+            <div class="phone-screen" style="position: relative;">
+                <div class="status-bar">
+                    <span>9:55</span>
+                    <div class="status-icons">
+                        <span>📶</span>
+                        <span>🔋</span>
+                    </div>
+                </div>
+
+                <div class="header">
+                    <div class="header-title">N9HO at US-12740</div>
+                    <div class="header-subtitle">Hinds Road Outcrop Forever Wild</div>
+                    <div class="header-stats">
+                        <span class="stat-badge">● 14 QSOs</span>
+                        <span class="stat-badge neutral">14.060 MHz · CW</span>
+                    </div>
+                </div>
+
+                <div class="content" style="opacity: 0.3;">
+                    <div class="callsign-input-container">
+                        <span class="search-icon">🔍</span>
+                        <span class="callsign-input placeholder">Callsign, command, or search...</span>
+                    </div>
+                </div>
+
+                <div class="picker-overlay" style="max-height: 85%; overflow-y: auto;">
+                    <div class="picker-header">
+                        <span style="width: 60px;"></span>
+                        <span class="picker-title">Frequency & Mode</span>
+                        <span class="picker-done">Done</span>
+                    </div>
+
+                    <div class="picker-section">
+                        <div class="picker-section-title">Frequency (MHz)</div>
+                        <div class="freq-input-row">
+                            <div class="freq-input">14.060</div>
+                            <span class="freq-unit">MHz</span>
+                        </div>
+                    </div>
+
+                    <div class="freq-info-banner">
+                        <span class="freq-info-icon">📍</span>
+                        <div class="freq-info-content">
+                            <span class="freq-info-title">QRP Calling Frequency</span>
+                            <span class="freq-info-text">International QRP CW calling frequency. Expect low-power stations.</span>
+                        </div>
+                    </div>
+
+                    <div class="freq-activity">
+                        <div class="freq-activity-header">
+                            <span class="freq-activity-title">Nearby Activity</span>
+                            <span class="freq-activity-status nearby">Busy</span>
+                        </div>
+                        <div class="activity-list">
+                            <div class="activity-item">
+                                <span class="activity-source rbn">RBN</span>
+                                <div class="activity-details">
+                                    <span class="activity-call">WB5JJJ</span>
+                                    <span class="activity-info">12 WPM · 8 dB</span>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div class="activity-freq">14.060</div>
+                                    <div class="activity-delta close">0 kHz</div>
+                                </div>
+                            </div>
+                            <div class="activity-item">
+                                <span class="activity-source rbn">RBN</span>
+                                <div class="activity-details">
+                                    <span class="activity-call">K1USN</span>
+                                    <span class="activity-info">15 WPM · 12 dB</span>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div class="activity-freq">14.058</div>
+                                    <div class="activity-delta ok">-2 kHz</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="picker-section">
+                        <div class="picker-section-title">Mode</div>
+                        <div class="picker-grid">
+                            <div class="picker-option selected">CW</div>
+                            <div class="picker-option">SSB</div>
+                            <div class="picker-option">FT8</div>
+                            <div class="picker-option">FT4</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- State 12: Mode Mismatch Warning -->
+    <div class="mockup-container">
+        <div class="mockup-title">Mode Mismatch</div>
+        <div class="mockup-description">Warning when selected mode doesn't match band plan for the frequency.</div>
+        <div class="phone-frame">
+            <div class="phone-screen" style="position: relative;">
+                <div class="status-bar">
+                    <span>9:55</span>
+                    <div class="status-icons">
+                        <span>📶</span>
+                        <span>🔋</span>
+                    </div>
+                </div>
+
+                <div class="header">
+                    <div class="header-title">N9HO at US-12740</div>
+                    <div class="header-subtitle">Hinds Road Outcrop Forever Wild</div>
+                    <div class="header-stats">
+                        <span class="stat-badge">● 14 QSOs</span>
+                        <span class="stat-badge neutral">14.030 MHz · SSB</span>
+                    </div>
+                </div>
+
+                <div class="content" style="opacity: 0.3;">
+                    <div class="callsign-input-container">
+                        <span class="search-icon">🔍</span>
+                        <span class="callsign-input placeholder">Callsign, command, or search...</span>
+                    </div>
+                </div>
+
+                <div class="picker-overlay" style="max-height: 85%; overflow-y: auto;">
+                    <div class="picker-header">
+                        <span style="width: 60px;"></span>
+                        <span class="picker-title">Frequency & Mode</span>
+                        <span class="picker-done">Done</span>
+                    </div>
+
+                    <div class="picker-section">
+                        <div class="picker-section-title">Frequency (MHz)</div>
+                        <div class="freq-input-row">
+                            <div class="freq-input">14.030</div>
+                            <span class="freq-unit">MHz</span>
+                        </div>
+                    </div>
+
+                    <div class="mode-mismatch-banner">
+                        <span class="mode-mismatch-icon">⚠️</span>
+                        <div class="mode-mismatch-content">
+                            <span class="mode-mismatch-title">Mode Mismatch</span>
+                            <span class="mode-mismatch-text">14.030 MHz is in the CW-only portion (14.000–14.150)</span>
+                        </div>
+                        <span class="mode-mismatch-action">Use CW</span>
+                    </div>
+
+                    <div class="band-segment-visual">
+                        <div class="band-segment-bar">
+                            <div class="segment-fill cw" style="width: 43%;">
+                                <span class="segment-fill-label">CW</span>
+                            </div>
+                            <div class="segment-fill ssb" style="width: 57%;">
+                                <span class="segment-fill-label">SSB/Data</span>
+                            </div>
+                            <div class="segment-marker" style="left: 8.5%;"></div>
+                        </div>
+                        <div class="band-segment-labels">
+                            <span>14.000</span>
+                            <span>14.150</span>
+                            <span>14.350</span>
+                        </div>
+                    </div>
+
+                    <div class="picker-section">
+                        <div class="picker-section-title">Mode</div>
+                        <div class="picker-grid">
+                            <div class="picker-option suggested">CW ✓</div>
+                            <div class="picker-option selected warning">SSB ⚠</div>
+                            <div class="picker-option">FT8</div>
+                            <div class="picker-option">FT4</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- State 13: Frequency Conflict (Spotted Activity) -->
+    <div class="mockup-container">
+        <div class="mockup-title">Frequency Conflict</div>
+        <div class="mockup-description">Warning when selected frequency is within 1 kHz of spotted activity.</div>
+        <div class="phone-frame">
+            <div class="phone-screen" style="position: relative;">
+                <div class="status-bar">
+                    <span>9:55</span>
+                    <div class="status-icons">
+                        <span>📶</span>
+                        <span>🔋</span>
+                    </div>
+                </div>
+
+                <div class="header">
+                    <div class="header-title">N9HO at US-12740</div>
+                    <div class="header-subtitle">Hinds Road Outcrop Forever Wild</div>
+                    <div class="header-stats">
+                        <span class="stat-badge">● 14 QSOs</span>
+                        <span class="stat-badge neutral">14.056 MHz · CW</span>
+                    </div>
+                </div>
+
+                <div class="content" style="opacity: 0.3;">
+                    <div class="callsign-input-container">
+                        <span class="search-icon">🔍</span>
+                        <span class="callsign-input placeholder">Callsign, command, or search...</span>
+                    </div>
+                </div>
+
+                <div class="picker-overlay" style="max-height: 85%; overflow-y: auto;">
+                    <div class="picker-header">
+                        <span style="width: 60px;"></span>
+                        <span class="picker-title">Frequency & Mode</span>
+                        <span class="picker-done">Done</span>
+                    </div>
+
+                    <div class="picker-section">
+                        <div class="picker-section-title">Frequency (MHz)</div>
+                        <div class="freq-input-row">
+                            <div class="freq-input" style="border: 2px solid rgba(255, 69, 58, 0.5);">14.059</div>
+                            <span class="freq-unit">MHz</span>
+                        </div>
+                    </div>
+
+                    <div class="freq-warning-banner">
+                        <span class="freq-warning-icon">⚠️</span>
+                        <span class="freq-warning-text">POTA activator spotted here</span>
+                        <span class="freq-warning-action">+2 kHz</span>
+                    </div>
+
+                    <div class="freq-activity">
+                        <div class="freq-activity-header">
+                            <span class="freq-activity-title">Nearby Activity</span>
+                            <span class="freq-activity-status busy">Conflict</span>
+                        </div>
+                        <div class="activity-list">
+                            <div class="activity-item conflict">
+                                <span class="activity-source pota">POTA</span>
+                                <div class="activity-details">
+                                    <span class="activity-call">K4SWL</span>
+                                    <span class="activity-info">US-0683 · Pisgah NF · NC</span>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div class="activity-freq">14.059</div>
+                                    <div class="activity-delta close">0 kHz</div>
+                                    <div class="activity-age">2m ago</div>
+                                </div>
+                            </div>
+                            <div class="activity-item warning">
+                                <span class="activity-source rbn">RBN</span>
+                                <div class="activity-details">
+                                    <span class="activity-call">K4SWL</span>
+                                    <span class="activity-info">18 WPM · 28 dB · KM5FA</span>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div class="activity-freq">14.059</div>
+                                    <div class="activity-delta close">0 kHz</div>
+                                    <div class="activity-age">30s ago</div>
+                                </div>
+                            </div>
+                            <div class="activity-item">
+                                <span class="activity-source sota">SOTA</span>
+                                <div class="activity-details">
+                                    <span class="activity-call">VK3ARR</span>
+                                    <span class="activity-info">VK3/VC-029</span>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div class="activity-freq">14.063</div>
+                                    <div class="activity-delta ok">+4 kHz</div>
+                                    <div class="activity-age">5m ago</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="picker-section">
+                        <div class="picker-section-title">Mode</div>
+                        <div class="picker-grid">
+                            <div class="picker-option selected">CW</div>
+                            <div class="picker-option">SSB</div>
+                            <div class="picker-option">FT8</div>
+                            <div class="picker-option">FT4</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    </div><!-- /section: Frequency & Mode -->
+
+    <!-- SECTION: QSO Management -->
+    <div class="section-header">
+        <div class="section-title">QSO Management</div>
+        <div class="section-description">View, select, and edit logged contacts</div>
+    </div>
+    <div class="section">
+
+    <!-- State 14: Edit QSO (Full Sheet) -->
+    <div class="mockup-container">
+        <div class="mockup-title">Edit QSO</div>
+        <div class="mockup-description">Tap a QSO row to edit. Full sheet allows changing all fields including delete.</div>
+        <div class="phone-frame">
+            <div class="phone-screen" style="position: relative;">
+                <div class="status-bar">
+                    <span>9:55</span>
+                    <div class="status-icons">
+                        <span>📶</span>
+                        <span>🔋</span>
+                    </div>
+                </div>
+
+                <div class="edit-sheet">
+                    <div class="edit-header">
+                        <span class="edit-cancel">Cancel</span>
+                        <span class="edit-title">Edit QSO</span>
+                        <span class="edit-save">Save</span>
+                    </div>
+
+                    <div class="edit-content">
+                        <div class="edit-callsign-header">
+                            <span class="edit-callsign">KJ5W</span>
+                            <div>
+                                <div class="edit-timestamp">19:23:11 UTC</div>
+                                <div style="font-size: 13px; color: #8e8e93;">Jan 14, 2026</div>
+                            </div>
+                        </div>
+
+                        <div class="callsign-card" style="margin-bottom: 20px;">
+                            <div class="callsign-card-header">
+                                <div>
+                                    <div class="callsign-card-name">Kirk W. Bollinger</div>
+                                </div>
+                                <span class="callsign-card-flag">🇺🇸</span>
+                            </div>
+                            <div class="callsign-card-details">
+                                <span class="detail-chip">TX</span>
+                                <span class="detail-chip">EM12</span>
+                                <span class="detail-chip">DXCC: 291</span>
+                            </div>
+                        </div>
+
+                        <div class="edit-section">
+                            <div class="edit-section-title">Signal Reports</div>
+                            <div class="edit-row">
+                                <div class="edit-field">
+                                    <div class="edit-field-label">RST Sent</div>
+                                    <div class="edit-field-input centered editable">599</div>
+                                </div>
+                                <div class="edit-field">
+                                    <div class="edit-field-label">RST Received</div>
+                                    <div class="edit-field-input centered editable">599</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="edit-section">
+                            <div class="edit-section-title">Frequency & Mode</div>
+                            <div class="edit-row">
+                                <div class="edit-field">
+                                    <div class="edit-field-label">Frequency</div>
+                                    <div class="edit-field-input centered">14.056 MHz</div>
+                                </div>
+                                <div class="edit-field">
+                                    <div class="edit-field-label">Mode</div>
+                                    <div class="edit-field-input centered">CW</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="edit-section">
+                            <div class="edit-section-title">POTA</div>
+                            <div class="edit-row">
+                                <div class="edit-field">
+                                    <div class="edit-field-label">My Park</div>
+                                    <div class="edit-field-input">US-12740</div>
+                                </div>
+                                <div class="edit-field">
+                                    <div class="edit-field-label">Their Park</div>
+                                    <div class="edit-field-input editable">—</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="edit-section">
+                            <div class="edit-section-title">Notes</div>
+                            <div class="edit-field-input edit-notes editable">First contact on 20m CW</div>
+                        </div>
+
+                        <div class="delete-section">
+                            <div class="delete-button">Delete QSO</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    </div><!-- /section: QSO Management -->
+
+    <!-- SECTION: Notifications -->
+    <div class="section-header">
+        <div class="section-title">Notifications</div>
+        <div class="section-description">Toast notifications for social features — friends, clubs, and activator messages</div>
+    </div>
+    <div class="section">
+
+    <!-- State 15: Friend Online Notification -->
+    <div class="mockup-container">
+        <div class="mockup-title">Friend Online</div>
+        <div class="mockup-description">Toast notification when a friend starts an activation or goes on air.</div>
+        <div class="phone-frame">
+            <div class="phone-screen" style="position: relative;">
+                <div class="status-bar">
+                    <span>9:55</span>
+                    <div class="status-icons">
+                        <span>📶</span>
+                        <span>🔋</span>
+                    </div>
+                </div>
+
+                <div class="header">
+                    <div class="header-title">N9HO at US-12740</div>
+                    <div class="header-subtitle">Hinds Road Outcrop Forever Wild</div>
+                    <div class="header-stats">
+                        <span class="stat-badge">● 14 QSOs</span>
+                        <span class="stat-badge neutral">14.056 MHz · CW</span>
+                    </div>
+                </div>
+
+                <!-- Friend Online Toast -->
+                <div class="toast-notification friend">
+                    <div class="toast-icon-container friend">
+                        <span class="toast-icon">👤</span>
+                        <span class="toast-status-dot online"></span>
+                    </div>
+                    <div class="toast-content">
+                        <div class="toast-title">K4SWL is on the air!</div>
+                        <div class="toast-subtitle">14.062 MHz · CW · US-0683</div>
+                    </div>
+                    <div class="toast-actions">
+                        <span class="toast-action-btn">Work</span>
+                    </div>
+                </div>
+
+                <div class="content">
+                    <div class="callsign-input-container">
+                        <span class="search-icon">🔍</span>
+                        <span class="callsign-input placeholder">Callsign, command, or search...</span>
+                    </div>
+
+                    <div class="quick-fields">
+                        <div class="field-group">
+                            <div class="field-label">RST/S</div>
+                            <div class="field-input">599</div>
+                        </div>
+                        <div class="field-group">
+                            <div class="field-label">RST/R</div>
+                            <div class="field-input">599</div>
+                        </div>
+                        <div class="more-button">▾ More</div>
+                        <div class="log-button disabled">Log</div>
+                    </div>
+
+                    <div class="quick-actions">
+                        <div class="action-chip active">
+                            <span class="icon">⚡</span>
+                            14.056 · CW
+                        </div>
+                        <div class="action-chip">
+                            <span class="icon">📍</span>
+                            Spot
+                        </div>
+                    </div>
+
+                    <div class="qso-list">
+                        <div class="qso-list-header">
+                            <span class="qso-list-title">Entries</span>
+                            <span class="qso-count">14</span>
+                        </div>
+                        <div class="qso-item">
+                            <span class="qso-time">19:23</span>
+                            <span class="qso-call">KJ5W</span>
+                            <div class="qso-info">
+                                <span class="qso-name">Kirk W. Bollinger</span>
+                                <span class="qso-location">TX · EM12</span>
+                            </div>
+                            <span class="qso-rst">599</span>
+                        </div>
+                        <div class="qso-item">
+                            <span class="qso-time">19:22</span>
+                            <span class="qso-call">W2DWL</span>
+                            <div class="qso-info">
+                                <span class="qso-name">Ronald A. Lopez</span>
+                                <span class="qso-location">NJ · FN20</span>
+                            </div>
+                            <span class="qso-rst">599</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- State 16: Club Member Live -->
+    <div class="mockup-container">
+        <div class="mockup-title">Club Member Live</div>
+        <div class="mockup-description">Notification when a member of your club starts activating.</div>
+        <div class="phone-frame">
+            <div class="phone-screen" style="position: relative;">
+                <div class="status-bar">
+                    <span>9:55</span>
+                    <div class="status-icons">
+                        <span>📶</span>
+                        <span>🔋</span>
+                    </div>
+                </div>
+
+                <div class="header">
+                    <div class="header-title">N9HO at US-12740</div>
+                    <div class="header-subtitle">Hinds Road Outcrop Forever Wild</div>
+                    <div class="header-stats">
+                        <span class="stat-badge">● 14 QSOs</span>
+                        <span class="stat-badge neutral">14.056 MHz · CW</span>
+                    </div>
+                </div>
+
+                <!-- Club Member Toast -->
+                <div class="toast-notification club">
+                    <div class="toast-icon-container club">
+                        <span class="toast-icon">🏛️</span>
+                    </div>
+                    <div class="toast-content">
+                        <div class="toast-title">W1AW is activating!</div>
+                        <div class="toast-subtitle">7.030 MHz · CW · US-1234</div>
+                        <div class="toast-club-badge">Straight Key Century Club</div>
+                    </div>
+                    <div class="toast-actions">
+                        <span class="toast-action-btn">Work</span>
+                    </div>
+                </div>
+
+                <div class="content">
+                    <div class="callsign-input-container">
+                        <span class="search-icon">🔍</span>
+                        <span class="callsign-input placeholder">Callsign, command, or search...</span>
+                    </div>
+
+                    <div class="quick-fields">
+                        <div class="field-group">
+                            <div class="field-label">RST/S</div>
+                            <div class="field-input">599</div>
+                        </div>
+                        <div class="field-group">
+                            <div class="field-label">RST/R</div>
+                            <div class="field-input">599</div>
+                        </div>
+                        <div class="more-button">▾ More</div>
+                        <div class="log-button disabled">Log</div>
+                    </div>
+
+                    <div class="quick-actions">
+                        <div class="action-chip active">
+                            <span class="icon">⚡</span>
+                            14.056 · CW
+                        </div>
+                        <div class="action-chip">
+                            <span class="icon">📍</span>
+                            Spot
+                        </div>
+                    </div>
+
+                    <div class="qso-list">
+                        <div class="qso-list-header">
+                            <span class="qso-list-title">Entries</span>
+                            <span class="qso-count">14</span>
+                        </div>
+                        <div class="qso-item">
+                            <span class="qso-time">19:23</span>
+                            <span class="qso-call">KJ5W</span>
+                            <div class="qso-info">
+                                <span class="qso-name">Kirk W. Bollinger</span>
+                                <span class="qso-location">TX · EM12</span>
+                            </div>
+                            <span class="qso-rst">599</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- State 17: Activator Message -->
+    <div class="mockup-container">
+        <div class="mockup-title">Activator Message</div>
+        <div class="mockup-description">Broadcast message from the activator with option to mute.</div>
+        <div class="phone-frame">
+            <div class="phone-screen" style="position: relative;">
+                <div class="status-bar">
+                    <span>9:55</span>
+                    <div class="status-icons">
+                        <span>📶</span>
+                        <span>🔋</span>
+                    </div>
+                </div>
+
+                <div class="header">
+                    <div class="header-title">N9HO at US-12740</div>
+                    <div class="header-subtitle">Hinds Road Outcrop Forever Wild</div>
+                    <div class="header-stats">
+                        <span class="stat-badge">● 14 QSOs</span>
+                        <span class="stat-badge neutral">14.056 MHz · CW</span>
+                    </div>
+                </div>
+
+                <!-- Activator Message Toast -->
+                <div class="toast-notification message">
+                    <div class="toast-message-header">
+                        <div class="toast-icon-container message">
+                            <span class="toast-icon">💬</span>
+                        </div>
+                        <div class="toast-sender">
+                            <span class="toast-sender-call">K4SWL</span>
+                            <span class="toast-sender-label">Activator</span>
+                        </div>
+                        <span class="toast-time">Just now</span>
+                    </div>
+                    <div class="toast-message-body">
+                        QRT in 10 mins for lunch break. Back around 1400 UTC. Thanks for the Qs!
+                    </div>
+                    <div class="toast-message-actions">
+                        <span class="toast-action-link">Dismiss</span>
+                        <span class="toast-action-link mute">🔇 Mute K4SWL</span>
+                    </div>
+                </div>
+
+                <div class="content">
+                    <div class="callsign-input-container">
+                        <span class="search-icon">🔍</span>
+                        <span class="callsign-input placeholder">Callsign, command, or search...</span>
+                    </div>
+
+                    <div class="quick-fields">
+                        <div class="field-group">
+                            <div class="field-label">RST/S</div>
+                            <div class="field-input">599</div>
+                        </div>
+                        <div class="field-group">
+                            <div class="field-label">RST/R</div>
+                            <div class="field-input">599</div>
+                        </div>
+                        <div class="more-button">▾ More</div>
+                        <div class="log-button disabled">Log</div>
+                    </div>
+
+                    <div class="quick-actions">
+                        <div class="action-chip active">
+                            <span class="icon">⚡</span>
+                            14.056 · CW
+                        </div>
+                        <div class="action-chip">
+                            <span class="icon">📍</span>
+                            Spot
+                        </div>
+                    </div>
+
+                    <div class="qso-list">
+                        <div class="qso-list-header">
+                            <span class="qso-list-title">Entries</span>
+                            <span class="qso-count">14</span>
+                        </div>
+                        <div class="qso-item">
+                            <span class="qso-time">19:23</span>
+                            <span class="qso-call">KJ5W</span>
+                            <div class="qso-info">
+                                <span class="qso-name">Kirk W. Bollinger</span>
+                                <span class="qso-location">TX · EM12</span>
+                            </div>
+                            <span class="qso-rst">599</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    </div><!-- /section: Notifications -->
+
+    <!-- SECTION: QSO Selection -->
+    <div class="section-header">
+        <div class="section-title">QSO Selection</div>
+        <div class="section-description">Selecting QSOs from the list for editing</div>
+    </div>
+    <div class="section">
+
+    <!-- State 18: QSO Selected (before edit sheet) -->
+    <div class="mockup-container">
+        <div class="mockup-title">QSO Selected</div>
+        <div class="mockup-description">Visual feedback when tapping a QSO row before edit sheet appears.</div>
+        <div class="phone-frame">
+            <div class="phone-screen">
+                <div class="status-bar">
+                    <span>9:55</span>
+                    <div class="status-icons">
+                        <span>📶</span>
+                        <span>🔋</span>
+                    </div>
+                </div>
+
+                <div class="header">
+                    <div class="header-title">N9HO at US-12740</div>
+                    <div class="header-subtitle">Hinds Road Outcrop Forever Wild</div>
+                    <div class="header-stats">
+                        <span class="stat-badge">● 14 QSOs</span>
+                        <span class="stat-badge neutral">14.056 MHz · CW</span>
+                    </div>
+                </div>
+
+                <div class="content">
+                    <div class="callsign-input-container">
+                        <span class="search-icon">🔍</span>
+                        <span class="callsign-input placeholder">Callsign, command, or search...</span>
+                    </div>
+
+                    <div class="quick-fields">
+                        <div class="field-group">
+                            <div class="field-label">RST/S</div>
+                            <div class="field-input">599</div>
+                        </div>
+                        <div class="field-group">
+                            <div class="field-label">RST/R</div>
+                            <div class="field-input">599</div>
+                        </div>
+                        <div class="more-button">▾ More</div>
+                        <div class="log-button disabled">Log</div>
+                    </div>
+
+                    <div class="quick-actions">
+                        <div class="action-chip active">
+                            <span class="icon">⚡</span>
+                            14.056 · CW
+                        </div>
+                        <div class="action-chip">
+                            <span class="icon">📍</span>
+                            Spot
+                        </div>
+                        <div class="action-chip">
+                            <span class="icon">📻</span>
+                            RBN
+                        </div>
+                    </div>
+
+                    <div class="qso-list">
+                        <div class="qso-list-header">
+                            <span class="qso-list-title">Entries</span>
+                            <span class="qso-count">14</span>
+                        </div>
+                        <div class="qso-item editing">
+                            <span class="qso-time">19:23</span>
+                            <span class="qso-call">KJ5W</span>
+                            <div class="qso-info">
+                                <span class="qso-name">Kirk W. Bollinger</span>
+                                <span class="qso-location">TX · EM12</span>
+                            </div>
+                            <span class="qso-rst">599</span>
+                        </div>
+                        <div class="qso-item">
+                            <span class="qso-time">19:22</span>
+                            <span class="qso-call">W2DWL</span>
+                            <div class="qso-info">
+                                <span class="qso-name">Ronald A. Lopez</span>
+                                <span class="qso-location">NJ · FN20</span>
+                            </div>
+                            <span class="qso-rst">599</span>
+                        </div>
+                        <div class="qso-item">
+                            <span class="qso-time">19:19</span>
+                            <span class="qso-call">KD8IE</span>
+                            <div class="qso-info">
+                                <span class="qso-name">Michael Jefferson</span>
+                                <span class="qso-location">OH · EN81</span>
+                            </div>
+                            <span class="qso-rst">599</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    </div><!-- /section: QSO Selection -->
+
+    <!-- SECTION: FT8 Mode -->
+    <div class="section-header">
+        <div class="section-title">FT8 Mode</div>
+        <div class="section-description">Digital mode interface for FT8/FT4 with decode list, waterfall, and auto-sequence</div>
+    </div>
+    <div class="section">
+
+    <!-- FT8 State 1: Decode List -->
+    <div class="mockup-container">
+        <div class="mockup-title">FT8 Decode List</div>
+        <div class="mockup-description">Live decodes with signal strength, timing, and message content. CQ calls highlighted.</div>
+        <div class="phone-frame">
+            <div class="phone-screen">
+                <div class="status-bar">
+                    <span>9:55</span>
+                    <div class="status-icons">
+                        <span>📶</span>
+                        <span>🔋</span>
+                    </div>
+                </div>
+
+                <div class="header">
+                    <div class="header-title">N9HO FT8</div>
+                    <div class="header-subtitle">14.074 MHz · FT8</div>
+                    <div class="header-stats">
+                        <span class="stat-badge">● 23 QSOs</span>
+                        <span class="stat-badge neutral">Grid: EN73</span>
+                    </div>
+                </div>
+
+                <div class="content" style="padding: 12px; gap: 10px;">
+                    <!-- FT8 Panel -->
+                    <div class="ft8-panel">
+                        <div class="ft8-header">
+                            <div class="ft8-status">
+                                <div class="ft8-status-dot listening"></div>
+                                <span class="ft8-status-text">Decoding</span>
+                            </div>
+                            <div class="ft8-freq-badge">
+                                <span class="ft8-freq-value">14.074</span>
+                                <span class="ft8-freq-label">MHz</span>
+                            </div>
+                            <div class="ft8-close">✕</div>
+                        </div>
+
+                        <!-- Decode List -->
+                        <div class="ft8-decode-list">
+                            <div class="ft8-decode-row cq">
+                                <span class="ft8-utc">19:45:00</span>
+                                <span class="ft8-db strong">+12</span>
+                                <span class="ft8-dt">0.1</span>
+                                <span class="ft8-freq-offset">1247</span>
+                                <span class="ft8-message"><span class="call cq">CQ</span> <span class="call">JA1XYZ</span> <span class="grid">PM95</span></span>
+                                <span class="ft8-flag">🇯🇵</span>
+                            </div>
+                            <div class="ft8-decode-row">
+                                <span class="ft8-utc">19:45:00</span>
+                                <span class="ft8-db medium">-4</span>
+                                <span class="ft8-dt">-0.2</span>
+                                <span class="ft8-freq-offset">892</span>
+                                <span class="ft8-message"><span class="call">W1AW</span> <span class="call">K5ABC</span> <span class="report">-08</span></span>
+                                <span class="ft8-flag">🇺🇸</span>
+                            </div>
+                            <div class="ft8-decode-row calling-you">
+                                <span class="ft8-utc">19:45:00</span>
+                                <span class="ft8-db strong">+6</span>
+                                <span class="ft8-dt">0.0</span>
+                                <span class="ft8-freq-offset">1580</span>
+                                <span class="ft8-message"><span class="call you">N9HO</span> <span class="call">DL3ABC</span> <span class="report">+02</span></span>
+                                <span class="ft8-flag">🇩🇪</span>
+                            </div>
+                            <div class="ft8-decode-row cq">
+                                <span class="ft8-utc">19:45:00</span>
+                                <span class="ft8-db weak">-18</span>
+                                <span class="ft8-dt">0.3</span>
+                                <span class="ft8-freq-offset">2103</span>
+                                <span class="ft8-message"><span class="call cq">CQ</span> <span class="call">VK2XYZ</span> <span class="grid">QF56</span></span>
+                                <span class="ft8-flag">🇦🇺</span>
+                            </div>
+                            <div class="ft8-decode-row selected">
+                                <span class="ft8-utc">19:45:00</span>
+                                <span class="ft8-db medium">-2</span>
+                                <span class="ft8-dt">-0.1</span>
+                                <span class="ft8-freq-offset">756</span>
+                                <span class="ft8-message"><span class="call cq">CQ</span> <span class="call">G4ABC</span> <span class="grid">IO91</span></span>
+                                <span class="ft8-flag">🇬🇧</span>
+                            </div>
+                            <div class="ft8-decode-row">
+                                <span class="ft8-utc">19:44:45</span>
+                                <span class="ft8-db strong">+8</span>
+                                <span class="ft8-dt">0.0</span>
+                                <span class="ft8-freq-offset">1892</span>
+                                <span class="ft8-message"><span class="call">EA3XYZ</span> <span class="call">F5ABC</span> RR73</span>
+                                <span class="ft8-flag">🇪🇸</span>
+                            </div>
+                        </div>
+
+                        <!-- Controls -->
+                        <div class="ft8-controls">
+                            <div class="ft8-control-btn active">
+                                <span class="ft8-control-icon">📡</span>
+                                <span class="ft8-control-label">RX</span>
+                            </div>
+                            <div class="ft8-control-btn">
+                                <span class="ft8-control-icon">📻</span>
+                                <span class="ft8-control-label">TX</span>
+                            </div>
+                            <div class="ft8-control-btn">
+                                <span class="ft8-control-icon">⚡</span>
+                                <span class="ft8-control-label">Auto</span>
+                            </div>
+                            <div class="ft8-control-btn">
+                                <span class="ft8-control-icon">📋</span>
+                                <span class="ft8-control-label">Log</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- DX Info Card (when station selected) -->
+                    <div class="ft8-dx-info">
+                        <div style="flex: 1;">
+                            <div class="ft8-dx-call">G4ABC</div>
+                            <div class="ft8-dx-grid">IO91 • England</div>
+                            <div class="ft8-dx-details">
+                                <span class="ft8-dx-chip">5,634 km</span>
+                                <span class="ft8-dx-chip">DXCC: G</span>
+                                <span class="ft8-dx-chip">-2 dB</span>
+                            </div>
+                        </div>
+                        <span style="font-size: 32px;">🇬🇧</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FT8 State 2: Waterfall View -->
+    <div class="mockup-container">
+        <div class="mockup-title">FT8 Waterfall</div>
+        <div class="mockup-description">Visual spectrum showing signal activity. Tap traces to select stations.</div>
+        <div class="phone-frame">
+            <div class="phone-screen">
+                <div class="status-bar">
+                    <span>9:55</span>
+                    <div class="status-icons">
+                        <span>📶</span>
+                        <span>🔋</span>
+                    </div>
+                </div>
+
+                <div class="header">
+                    <div class="header-title">N9HO FT8</div>
+                    <div class="header-subtitle">14.074 MHz · FT8</div>
+                    <div class="header-stats">
+                        <span class="stat-badge">● 23 QSOs</span>
+                        <span class="stat-badge neutral">Grid: EN73</span>
+                    </div>
+                </div>
+
+                <div class="content" style="padding: 12px; gap: 10px;">
+                    <!-- FT8 Panel with Waterfall -->
+                    <div class="ft8-panel">
+                        <div class="ft8-header">
+                            <div class="ft8-status">
+                                <div class="ft8-status-dot listening"></div>
+                                <span class="ft8-status-text">Decoding</span>
+                            </div>
+                            <div class="ft8-freq-badge">
+                                <span class="ft8-freq-value">14.074</span>
+                                <span class="ft8-freq-label">MHz</span>
+                            </div>
+                            <div class="ft8-close">✕</div>
+                        </div>
+
+                        <!-- Waterfall Display -->
+                        <div class="ft8-waterfall">
+                            <div class="waterfall-gradient"></div>
+                            <div class="waterfall-traces">
+                                <!-- Simulated signal traces -->
+                                <div class="waterfall-trace" style="left: 15%; opacity: 0.9;"></div>
+                                <div class="waterfall-trace" style="left: 25%; opacity: 0.6;"></div>
+                                <div class="waterfall-trace" style="left: 38%; opacity: 0.95;"></div>
+                                <div class="waterfall-trace" style="left: 52%; opacity: 0.4;"></div>
+                                <div class="waterfall-trace" style="left: 65%; opacity: 0.85;"></div>
+                                <div class="waterfall-trace" style="left: 78%; opacity: 0.7;"></div>
+                                <div class="waterfall-trace" style="left: 88%; opacity: 0.5;"></div>
+                                <!-- TX marker -->
+                                <div class="waterfall-marker" style="left: 52%;"></div>
+                            </div>
+                            <div class="waterfall-freq-scale">
+                                <span>200</span>
+                                <span>800</span>
+                                <span>1400</span>
+                                <span>2000</span>
+                                <span>2600 Hz</span>
+                            </div>
+                        </div>
+
+                        <!-- Compact decode list -->
+                        <div class="ft8-decode-list" style="max-height: 120px;">
+                            <div class="ft8-decode-row cq">
+                                <span class="ft8-utc">19:45:00</span>
+                                <span class="ft8-db strong">+12</span>
+                                <span class="ft8-dt">0.1</span>
+                                <span class="ft8-freq-offset">1247</span>
+                                <span class="ft8-message"><span class="call cq">CQ</span> <span class="call">JA1XYZ</span> <span class="grid">PM95</span></span>
+                                <span class="ft8-flag">🇯🇵</span>
+                            </div>
+                            <div class="ft8-decode-row calling-you">
+                                <span class="ft8-utc">19:45:00</span>
+                                <span class="ft8-db strong">+6</span>
+                                <span class="ft8-dt">0.0</span>
+                                <span class="ft8-freq-offset">1580</span>
+                                <span class="ft8-message"><span class="call you">N9HO</span> <span class="call">DL3ABC</span> <span class="report">+02</span></span>
+                                <span class="ft8-flag">🇩🇪</span>
+                            </div>
+                            <div class="ft8-decode-row">
+                                <span class="ft8-utc">19:44:45</span>
+                                <span class="ft8-db medium">-4</span>
+                                <span class="ft8-dt">-0.2</span>
+                                <span class="ft8-freq-offset">892</span>
+                                <span class="ft8-message"><span class="call">W1AW</span> <span class="call">K5ABC</span> <span class="report">-08</span></span>
+                                <span class="ft8-flag">🇺🇸</span>
+                            </div>
+                        </div>
+
+                        <!-- Controls -->
+                        <div class="ft8-controls">
+                            <div class="ft8-control-btn active">
+                                <span class="ft8-control-icon">📡</span>
+                                <span class="ft8-control-label">RX</span>
+                            </div>
+                            <div class="ft8-control-btn">
+                                <span class="ft8-control-icon">📻</span>
+                                <span class="ft8-control-label">TX</span>
+                            </div>
+                            <div class="ft8-control-btn">
+                                <span class="ft8-control-icon">⚡</span>
+                                <span class="ft8-control-label">Auto</span>
+                            </div>
+                            <div class="ft8-control-btn">
+                                <span class="ft8-control-icon">📊</span>
+                                <span class="ft8-control-label">List</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Progress bar for cycle -->
+                    <div class="ft8-progress">
+                        <span style="font-size: 12px; color: #30D158;">RX</span>
+                        <div class="ft8-progress-bar">
+                            <div class="ft8-progress-fill" style="width: 65%;"></div>
+                        </div>
+                        <span class="ft8-progress-text">9.8s / 15s</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FT8 State 3: Transmit Sequence -->
+    <div class="mockup-container">
+        <div class="mockup-title">FT8 Transmit</div>
+        <div class="mockup-description">Auto-sequence with standard message flow. Current TX highlighted.</div>
+        <div class="phone-frame">
+            <div class="phone-screen">
+                <div class="status-bar">
+                    <span>9:55</span>
+                    <div class="status-icons">
+                        <span>📶</span>
+                        <span>🔋</span>
+                    </div>
+                </div>
+
+                <div class="header" style="background: rgba(255, 69, 58, 0.15);">
+                    <div class="header-title" style="color: #FF453A;">N9HO FT8 — TRANSMITTING</div>
+                    <div class="header-subtitle">14.074 MHz · FT8</div>
+                    <div class="header-stats">
+                        <span class="stat-badge" style="color: #FF453A;">● TX 1580 Hz</span>
+                        <span class="stat-badge neutral">Grid: EN73</span>
+                    </div>
+                </div>
+
+                <div class="content" style="padding: 12px; gap: 10px;">
+                    <!-- DX Station Info -->
+                    <div class="ft8-dx-info">
+                        <div style="flex: 1;">
+                            <div class="ft8-dx-call">DL3ABC</div>
+                            <div class="ft8-dx-grid">JO31 • Germany</div>
+                            <div class="ft8-dx-details">
+                                <span class="ft8-dx-chip">7,234 km</span>
+                                <span class="ft8-dx-chip">DXCC: DL</span>
+                                <span class="ft8-dx-chip">Rcvd: +02</span>
+                            </div>
+                        </div>
+                        <span style="font-size: 32px;">🇩🇪</span>
+                    </div>
+
+                    <!-- TX Messages Panel -->
+                    <div class="ft8-tx-panel">
+                        <div class="ft8-tx-header">
+                            <span class="ft8-tx-title">TX Sequence</span>
+                            <div class="ft8-auto-seq">
+                                <span class="ft8-auto-seq-label">Auto</span>
+                                <div class="ft8-auto-seq-toggle on"></div>
+                            </div>
+                        </div>
+                        <div class="ft8-tx-messages">
+                            <div class="ft8-tx-msg">
+                                <span class="ft8-tx-num">1</span>
+                                <span class="ft8-tx-text">CQ N9HO EN73</span>
+                            </div>
+                            <div class="ft8-tx-msg">
+                                <span class="ft8-tx-num">2</span>
+                                <span class="ft8-tx-text">DL3ABC N9HO -05</span>
+                            </div>
+                            <div class="ft8-tx-msg active">
+                                <span class="ft8-tx-num">3</span>
+                                <span class="ft8-tx-text">DL3ABC N9HO R-08</span>
+                            </div>
+                            <div class="ft8-tx-msg next">
+                                <span class="ft8-tx-num">4</span>
+                                <span class="ft8-tx-text">DL3ABC N9HO RR73</span>
+                            </div>
+                            <div class="ft8-tx-msg">
+                                <span class="ft8-tx-num">5</span>
+                                <span class="ft8-tx-text">DL3ABC N9HO 73</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TX Progress -->
+                    <div class="ft8-progress">
+                        <span style="font-size: 12px; color: #FF453A; font-weight: 600;">TX</span>
+                        <div class="ft8-progress-bar">
+                            <div class="ft8-progress-fill tx" style="width: 40%;"></div>
+                        </div>
+                        <span class="ft8-progress-text">6.0s / 15s</span>
+                    </div>
+
+                    <!-- Controls -->
+                    <div class="ft8-controls" style="background: transparent; padding: 0;">
+                        <div class="ft8-control-btn">
+                            <span class="ft8-control-icon">⏹️</span>
+                            <span class="ft8-control-label">Halt TX</span>
+                        </div>
+                        <div class="ft8-control-btn tx">
+                            <span class="ft8-control-icon">📻</span>
+                            <span class="ft8-control-label">TX Now</span>
+                        </div>
+                        <div class="ft8-control-btn active">
+                            <span class="ft8-control-icon">⚡</span>
+                            <span class="ft8-control-label">Auto Seq</span>
+                        </div>
+                        <div class="ft8-control-btn">
+                            <span class="ft8-control-icon">✓</span>
+                            <span class="ft8-control-label">Log QSO</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    </div><!-- /section: FT8 Mode -->
+
+</body>
+</html>

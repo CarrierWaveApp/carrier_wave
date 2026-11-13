@@ -1,0 +1,199 @@
+{
+  "version": "0.3.0",
+  "contests": [
+    {
+      "id": "wwsac",
+      "name": "Worldwide Sideband Activity Contest",
+      "short_name": "WWSAC",
+      "sponsor": {
+        "name": "WWSAC Committee",
+        "url": "https://wwsac.com/rules.html"
+      },
+      "modes": [
+        "SSB"
+      ],
+      "bands": [
+        "160m",
+        "80m",
+        "40m",
+        "20m",
+        "15m",
+        "10m",
+        "6m"
+      ],
+      "data_dependencies": {
+        "country_file": {
+          "id": "cty_dat",
+          "url": "https://www.country-files.com/contest/",
+          "file": "cty.dat",
+          "description": "Standard DXCC entity list for prefix multipliers",
+          "provides": [
+            "their_country",
+            "their_continent"
+          ]
+        }
+      },
+      "schedule": {
+        "type": "recurring_weekly",
+        "sessions": [
+          {
+            "day": "tuesday",
+            "start_utc": "01:00",
+            "duration_minutes": 59
+          }
+        ],
+        "session_scoring": "independent"
+      },
+      "exchange": {
+        "sent": [
+          {
+            "name": "rs",
+            "type": "signal_report",
+            "label": "RS",
+            "required": true
+          },
+          {
+            "name": "age_group",
+            "type": "text",
+            "label": "Age Group",
+            "required": true,
+            "pattern": "^(OM|YL|Y|YYL)$"
+          }
+        ],
+        "received": [
+          {
+            "name": "rs",
+            "type": "signal_report",
+            "label": "RS",
+            "required": true
+          },
+          {
+            "name": "age_group",
+            "type": "text",
+            "label": "Age Group",
+            "required": true,
+            "pattern": "^(OM|YL|Y|YYL)$"
+          }
+        ]
+      },
+      "dupe_rules": {
+        "scope": "session",
+        "key": [
+          "callsign",
+          "band"
+        ]
+      },
+      "scoring": {
+        "phases": [
+          {
+            "id": "qso_points",
+            "type": "per_qso",
+            "rules": [
+              {
+                "description": "Youth YL contact: 15 points",
+                "conditions": [
+                  {
+                    "field": "received.age_group",
+                    "op": "eq",
+                    "value": "YYL"
+                  }
+                ],
+                "value": 15
+              },
+              {
+                "description": "Youth contact: 10 points",
+                "conditions": [
+                  {
+                    "field": "received.age_group",
+                    "op": "eq",
+                    "value": "Y"
+                  }
+                ],
+                "value": 10
+              },
+              {
+                "description": "YL contact: 5 points",
+                "conditions": [
+                  {
+                    "field": "received.age_group",
+                    "op": "eq",
+                    "value": "YL"
+                  }
+                ],
+                "value": 5
+              },
+              {
+                "description": "OM contact: 1 point",
+                "conditions": [],
+                "value": 1
+              }
+            ]
+          },
+          {
+            "id": "mult_countries",
+            "type": "multiplier_count",
+            "description": "Unique DXCC entities per band",
+            "source": "their_country",
+            "scope": "per_band",
+            "include_zero_point_qsos": false
+          },
+          {
+            "id": "total",
+            "type": "aggregate",
+            "operation": {
+              "op": "multiply",
+              "inputs": [
+                {
+                  "op": "ref",
+                  "phase": "qso_points"
+                },
+                {
+                  "op": "ref",
+                  "phase": "mult_countries"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "cabrillo": {
+        "contest_name": "WWSAC",
+        "version": "3.0"
+      },
+      "categories": [
+        {
+          "id": "SOHP",
+          "label": "Single Op High Power",
+          "power_classes": [
+            "HP"
+          ]
+        },
+        {
+          "id": "SOLP",
+          "label": "Single Op Low Power",
+          "power_classes": [
+            "LP"
+          ]
+        },
+        {
+          "id": "SOQRP",
+          "label": "Single Op QRP",
+          "power_classes": [
+            "QRP"
+          ]
+        }
+      ],
+      "overlay_categories": [
+        {
+          "id": "YOUTH",
+          "label": "Youth (26 and under)"
+        },
+        {
+          "id": "YL",
+          "label": "YL"
+        }
+      ],
+      "experimental": true
+    }
+  ]
+}

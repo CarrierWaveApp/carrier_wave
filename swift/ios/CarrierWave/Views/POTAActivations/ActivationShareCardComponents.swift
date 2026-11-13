@@ -1,0 +1,313 @@
+// Activation Share Card Components
+//
+// Reusable component views for activation share cards.
+
+import CarrierWaveCore
+import CarrierWaveData
+import SwiftUI
+
+// MARK: - ActivationShareCardHeader
+
+struct ActivationShareCardHeader: View {
+    var body: some View {
+        Text("CARRIER WAVE")
+            .font(.headline)
+            .fontWeight(.bold)
+            .foregroundStyle(.white)
+            .padding(.top, 24)
+            .padding(.bottom, 12)
+    }
+}
+
+// MARK: - ActivationShareCardEmptyMap
+
+/// Shown only when not a single contact could be placed (no grid, park,
+/// summit, or DXCC match). Snapshot/tile failures never land here — they
+/// render `ActivationShareOfflineMap` instead.
+struct ActivationShareCardEmptyMap: View {
+    var withoutLocationCount = 0
+
+    var body: some View {
+        ZStack {
+            Color.white.opacity(0.2)
+            VStack(spacing: 8) {
+                Image(systemName: "map")
+                    .font(.title)
+                Text("Contact locations not available yet")
+                    .font(.caption)
+                if let caption = ActivationShareMapMarkers.caption(forCount: withoutLocationCount) {
+                    Text(caption)
+                        .font(.caption2)
+                }
+            }
+            .foregroundStyle(.white.opacity(0.7))
+        }
+    }
+}
+
+// MARK: - ActivationShareCardReferenceInfo
+
+/// Header block for the share card. Renders an SF Symbol + reference code
+/// (park, summit, or anything else), optional reference name, optional title,
+/// and the display date. Replaces the old POTA-only `ActivationShareCardParkInfo`
+/// so the same card layout drives POTA, SOTA, and casual session shares.
+struct ActivationShareCardReferenceInfo: View {
+    let referenceCode: String?
+    let referenceName: String?
+    let referenceIcon: String
+    let displayDate: String
+    var title: String?
+
+    var body: some View {
+        VStack(spacing: 4) {
+            if let referenceCode {
+                HStack(spacing: 8) {
+                    Image(systemName: referenceIcon)
+                        .font(.title3)
+                    Text(referenceCode)
+                        .font(.title2)
+                        .fontWeight(.bold)
+                }
+                .foregroundStyle(.white)
+            }
+
+            if let name = referenceName {
+                Text(name)
+                    .font(.subheadline)
+                    .foregroundStyle(.white.opacity(0.9))
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+            }
+
+            if let title, !title.isEmpty {
+                Text(title)
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.9))
+                    .italic()
+            }
+
+            Text(displayDate)
+                .font(.caption)
+                .foregroundStyle(.white.opacity(0.8))
+        }
+        .padding(.vertical, 16)
+        .padding(.horizontal, 24)
+    }
+}
+
+// MARK: - ShareCardEquipmentItem
+
+struct ShareCardEquipmentItem: Hashable {
+    let icon: String
+    let text: String
+}
+
+// MARK: - ActivationShareCardStats
+
+struct ActivationShareCardStats: View {
+    // MARK: Internal
+
+    let qsoCount: Int
+    let duration: String
+    let bandsCount: Int
+    let modes: [String]
+    var qsoRate: Double?
+    var watts: Int?
+    var avgDistanceKm: Double?
+    var medianDistanceKm: Double?
+    var maxDistanceKm: Double?
+    var wattsPerMile: Double?
+    var radio: String?
+    var equipment: [ShareCardEquipmentItem] = []
+
+    var body: some View {
+        let _ = useMetricUnits // Trigger re-render when unit preference changes
+        VStack(spacing: 8) {
+            HStack(spacing: 16) {
+                ShareCardStatItem(value: "\(qsoCount)", label: "QSOs")
+                ShareCardStatItem(value: duration, label: "Duration")
+                if let rate = qsoRate {
+                    ShareCardStatItem(
+                        value: String(format: "%.1f", rate),
+                        label: "QSOs/hr"
+                    )
+                }
+                ShareCardStatItem(
+                    value: "\(bandsCount)",
+                    label: bandsCount == 1 ? "Band" : "Bands"
+                )
+                ShareCardStatItem(
+                    value: modes.joined(separator: " "),
+                    label: modes.count == 1 ? "Mode" : "Modes"
+                )
+            }
+            if hasDetailRow {
+                detailRows
+            }
+            if !allEquipment.isEmpty {
+                equipmentGrid
+            }
+        }
+        .padding(.vertical, 12)
+        .padding(.horizontal, 16)
+        .background(Color.purple.opacity(0.2))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .padding(.horizontal, 16)
+    }
+
+    // MARK: Private
+
+    @AppStorage("useMetricUnits") private var useMetricUnits = false
+
+    private var hasDetailRow: Bool {
+        watts != nil || avgDistanceKm != nil || medianDistanceKm != nil
+    }
+
+    /// Radio merged with equipment for the grid display
+    private var allEquipment: [ShareCardEquipmentItem] {
+        var items: [ShareCardEquipmentItem] = []
+        if let radio {
+            items.append(ShareCardEquipmentItem(icon: "radio", text: radio))
+        }
+        items.append(contentsOf: equipment)
+        return items
+    }
+
+    private var detailRows: some View {
+        HStack(spacing: 12) {
+            if let watts {
+                detailBadge("\(watts)W")
+            }
+            if let wpm = wattsPerMile {
+                detailBadge(UnitFormatter.wattsPerDistance(wpm))
+            }
+            if let median = medianDistanceKm {
+                detailBadge(compactDistance(median, label: "p50"))
+            } else if let avg = avgDistanceKm {
+                detailBadge(compactDistance(avg, label: "avg"))
+            }
+            if let max = maxDistanceKm {
+                detailBadge(compactDistance(max, label: "max"))
+            }
+        }
+    }
+
+    private var equipmentGrid: some View {
+        let rows = stride(from: 0, to: allEquipment.count, by: 2).map { i in
+            let end = min(i + 2, allEquipment.count)
+            return Array(allEquipment[i ..< end])
+        }
+        return VStack(spacing: 4) {
+            ForEach(Array(rows.enumerated()), id: \.offset) { _, row in
+                HStack(spacing: 8) {
+                    ForEach(row, id: \.self) { item in
+                        equipmentBadge(icon: item.icon, text: item.text)
+                    }
+                }
+            }
+        }
+    }
+
+    private func equipmentBadge(icon: String, text: String) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: icon)
+                .font(.caption2)
+            Text(text)
+                .font(.caption2)
+                .fontWeight(.medium)
+                .lineLimit(1)
+        }
+        .foregroundStyle(.white.opacity(0.9))
+        .padding(.horizontal, 8)
+        .padding(.vertical, 3)
+        .background(Color.white.opacity(0.15))
+        .clipShape(Capsule())
+    }
+
+    private func detailBadge(_ text: String) -> some View {
+        Text(text)
+            .font(.caption2)
+            .fontWeight(.medium)
+            .foregroundStyle(.white.opacity(0.9))
+            .padding(.horizontal, 8)
+            .padding(.vertical, 3)
+            .background(Color.white.opacity(0.15))
+            .clipShape(Capsule())
+    }
+
+    private func compactDistance(_ km: Double, label: String) -> String {
+        UnitFormatter.distanceCompact(km, label: label)
+    }
+}
+
+// MARK: - ActivationShareCardClubMembers
+
+struct ActivationShareCardClubMembers: View {
+    // MARK: Internal
+
+    let members: [(callsign: String, clubs: [String])]
+
+    var body: some View {
+        FlowLayout(spacing: 6) {
+            ForEach(clubCounts, id: \.club) { entry in
+                Text("\(entry.count) \(entry.club)")
+                    .font(.caption2)
+                    .fontWeight(.medium)
+                    .foregroundStyle(.white.opacity(0.9))
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(Color.white.opacity(0.15))
+                    .clipShape(Capsule())
+            }
+        }
+        .padding(.top, 4)
+        .padding(.horizontal, 16)
+    }
+
+    // MARK: Private
+
+    private var clubCounts: [(club: String, count: Int)] {
+        var counts: [String: Int] = [:]
+        for member in members {
+            for club in member.clubs {
+                counts[club, default: 0] += 1
+            }
+        }
+        return counts.sorted { $0.key < $1.key }
+            .map { (club: $0.key, count: $0.value) }
+    }
+}
+
+// MARK: - ActivationShareCardFooter
+
+struct ActivationShareCardFooter: View {
+    let callsign: String
+
+    var body: some View {
+        Text(callsign)
+            .font(.headline)
+            .fontWeight(.semibold)
+            .foregroundStyle(.white)
+            .padding(.top, 16)
+            .padding(.bottom, 24)
+    }
+}
+
+// MARK: - ShareCardStatItem
+
+struct ShareCardStatItem: View {
+    let value: String
+    let label: String
+
+    var body: some View {
+        VStack(spacing: 4) {
+            Text(value)
+                .font(.title3)
+                .fontWeight(.bold)
+                .foregroundStyle(.white)
+            Text(label)
+                .font(.caption2)
+                .foregroundStyle(.white.opacity(0.8))
+        }
+    }
+}

@@ -1,0 +1,27 @@
+# SDR Recording Server — Docker Configuration
+
+[server]
+name = "my-sdr-server"
+listen_addr = "0.0.0.0"
+port = 8080
+
+# --- SDR Discovery ---
+
+[discovery]
+enabled = true
+rescan_interval_secs = 30
+kiwisdr_directory = true
+kiwisdr_regions = ["US", "CA", "EU"]
+
+# --- Storage ---
+
+[storage]
+data_dir = "data/recordings"
+db_path = "data/sdr-server.db"
+segment_duration_secs = 300  # 5 minutes
+
+# --- Time Synchronization ---
+
+[time]
+ntp_server = "pool.ntp.org"
+sync_interval_secs = 3600   # 1 hour

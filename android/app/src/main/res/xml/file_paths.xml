@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    FileProvider path map. Only the "share" subdirectory of the app cache is
+    exposed — share images are written to
+    context.cacheDir/share/<name>.png and nothing else under cacheDir is
+    reachable through the provider's content:// URIs.
+-->
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <cache-path name="share" path="share/" />
+</paths>

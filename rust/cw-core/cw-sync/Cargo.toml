@@ -1,0 +1,23 @@
+[package]
+name = "cw-sync"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+description = "Carrier Wave sync journal, conflict resolution, and transport"
+
+[dependencies]
+cw-domain = { path = "../cw-domain" }
+cw-net = { path = "../cw-net" }
+cw-crypto = { path = "../cw-crypto" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tokio = { version = "1", features = ["rt-multi-thread", "time"] }
+base64 = "0.22"
+sha2 = "0.10"
+flate2 = { version = "1", default-features = false, features = ["rust_backend"] }
+
+[dev-dependencies]
+wiremock = "0.6"
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }

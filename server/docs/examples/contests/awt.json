@@ -1,0 +1,127 @@
+{
+  "version": "0.3.0",
+  "contests": [
+    {
+      "id": "a1club-awt",
+      "name": "A1CLUB Weekly Test",
+      "short_name": "AWT",
+      "sponsor": {
+        "name": "A1CLUB",
+        "url": "https://a1club.org/contest/awt/"
+      },
+      "modes": [
+        "CW"
+      ],
+      "bands": [
+        "160m",
+        "80m",
+        "40m",
+        "20m",
+        "15m",
+        "10m"
+      ],
+      "schedule": {
+        "type": "recurring_weekly",
+        "sessions": [
+          {
+            "day": "wednesday",
+            "start_utc": "11:45",
+            "duration_minutes": 75
+          }
+        ],
+        "session_scoring": "independent"
+      },
+      "exchange": {
+        "sent": [
+          {
+            "name": "rst",
+            "type": "signal_report",
+            "label": "RST",
+            "required": true
+          },
+          {
+            "name": "name",
+            "type": "name",
+            "label": "Name",
+            "required": true
+          }
+        ],
+        "received": [
+          {
+            "name": "rst",
+            "type": "signal_report",
+            "label": "RST",
+            "required": true
+          },
+          {
+            "name": "name",
+            "type": "name",
+            "label": "Name",
+            "required": true
+          }
+        ]
+      },
+      "dupe_rules": {
+        "scope": "session",
+        "key": [
+          "callsign",
+          "band"
+        ]
+      },
+      "scoring": {
+        "phases": [
+          {
+            "id": "qso_points",
+            "type": "per_qso",
+            "rules": [
+              {
+                "value": 1
+              }
+            ]
+          },
+          {
+            "id": "mult_callsigns",
+            "type": "multiplier_count",
+            "description": "Unique callsigns worked across all bands",
+            "source": "their_callsign",
+            "scope": "per_contest",
+            "include_zero_point_qsos": false
+          },
+          {
+            "id": "total",
+            "type": "aggregate",
+            "operation": {
+              "op": "multiply",
+              "inputs": [
+                {
+                  "op": "ref",
+                  "phase": "qso_points"
+                },
+                {
+                  "op": "ref",
+                  "phase": "mult_callsigns"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "cabrillo": {
+        "contest_name": "A1AWT",
+        "version": "3.0"
+      },
+      "categories": [
+        {
+          "id": "single_op",
+          "label": "Single Operator",
+          "power_classes": [
+            "HP",
+            "LP",
+            "QRP"
+          ]
+        }
+      ],
+      "experimental": true
+    }
+  ]
+}

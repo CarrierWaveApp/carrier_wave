@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Activities-server networking (clubs + OAuth, via the Rust reqwest core)
+         and osmdroid map tiles. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- Satellite pass alerts: exact AOS-lead alarms (user-revocable on 31+;
+         the scheduler degrades to setWindow), notification posting (runtime
+         permission on 33+), and alarm re-registration after reboot. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <!-- Satellite pass recording: record the pass audio with tap marks,
+         log after LOS from the playback (runtime permission). -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+    <application
+        android:name=".CwApp"
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.CarrierWave">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:windowSoftInputMode="adjustResize"
+            android:theme="@style/Theme.CarrierWave">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!-- Magic-link sign-in return (Android App Links). autoVerify makes
+                 the OS open the app directly for the emailed verification link
+                 once /.well-known/assetlinks.json is served on the host. If
+                 verification fails (e.g. a custom/staging server without
+                 assetlinks), the link falls back to the browser + polling. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="https"
+                    android:host="activities.carrierwave.app"
+                    android:path="/v1/auth/verify/complete" />
+            </intent-filter>
+
+            <!-- Custom-scheme return (carrierwave://auth?code=…), mirroring iOS.
+                 Works without App Links verification — useful for testing and
+                 non-default servers. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="carrierwave" android:host="auth" />
+            </intent-filter>
+        </activity>
+
+        <!-- Satellite pass alerts: alarm fire → notification post, and boot →
+             alarm re-registration (alarms don't survive reboot). Both are
+             system-invoked only; the boot receiver's intent-filter is exempt
+             from the exported requirement for protected system broadcasts. -->
+        <receiver
+            android:name=".notifications.SatelliteAlertReceiver"
+            android:exported="false" />
+        <receiver
+            android:name=".notifications.SatelliteBootReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Grants short-lived content:// URIs for share-image PNGs written to
+             cacheDir/share/ (see res/xml/file_paths.xml) so ACTION_SEND targets
+             (Messages, Mail, other apps) can read the file without it being
+             world-readable. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="app.carrierwave.android.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+    </application>
+</manifest>

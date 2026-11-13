@@ -1,0 +1,491 @@
+import CarrierWaveData
+import SwiftData
+import SwiftUI
+
+// MARK: - Data Loading
+
+extension SessionsView {
+    func loadSessions() async {
+        var descriptor = FetchDescriptor<LoggingSession>(
+            predicate: #Predicate { $0.statusRawValue == "completed" },
+            sortBy: [SortDescriptor(\.startedAt, order: .reverse)]
+        )
+        descriptor.fetchLimit = 200
+
+        sessions = (try? modelContext.fetch(descriptor)) ?? []
+
+        // Load QSOs per session
+        var qsoMap: [UUID: [QSO]] = [:]
+        var activationMap: [UUID: [POTAActivation]] = [:]
+
+        for session in sessions {
+            let sessionId = session.id
+            let qsoDescriptor = BoundedDescriptor<QSO>(
+                predicate: #Predicate {
+                    $0.loggingSessionId == sessionId && !$0.isHidden
+                },
+                sortBy: [SortDescriptor(\.timestamp)],
+                limit: 500
+            )
+            let qsos = (try? modelContext.boundedFetch(qsoDescriptor)) ?? []
+            qsoMap[sessionId] = qsos
+
+            // Build POTAActivation(s) for POTA sessions
+            if session.isPOTA, !qsos.isEmpty {
+                let grouped = POTAActivation.groupQSOs(qsos)
+                if !grouped.isEmpty {
+                    activationMap[sessionId] = grouped
+                }
+            }
+
+            await Task.yield()
+        }
+
+        qsosBySessionId = qsoMap
+        activationsBySessionId = activationMap
+
+        loadMetadata()
+        rebuildJobIndex()
+        computeQRZPendingCounts(qsoMap: qsoMap)
+    }
+
+    /// Load POTA activations that don't have a matching LoggingSession
+    func loadOrphanActivations() async {
+        let descriptor = BoundedDescriptor<QSO>(
+            predicate: #Predicate {
+                $0.parkReference != nil && !$0.isHidden && !$0.isActivityLogQSO
+            },
+            limit: 500
+        )
+        let parkQSOs = (try? modelContext.boundedFetch(descriptor)) ?? []
+
+        let sessionIds = Set(sessions.map(\.id))
+
+        let orphanQSOs = parkQSOs.filter { qso in
+            guard let sid = qso.loggingSessionId else {
+                return true
+            }
+            return !sessionIds.contains(sid)
+        }
+
+        let allOrphan = POTAActivation.groupQSOs(orphanQSOs)
+        let sessionActivationIds = Set(activationsBySessionId.values.flatMap { $0 }.map(\.id))
+        orphanActivations = allOrphan.filter { !sessionActivationIds.contains($0.id) }
+
+        rebuildJobIndex()
+    }
+
+    func loadRecordings() async {
+        let sessionIds = sessions.map(\.id)
+        guard !sessionIds.isEmpty else {
+            return
+        }
+
+        let recordings = (try? WebSDRRecording.findRecordings(
+            forSessionIds: sessionIds, in: modelContext
+        )) ?? []
+
+        var dict: [UUID: WebSDRRecording] = [:]
+        for recording in recordings {
+            dict[recording.loggingSessionId] = recording
+        }
+        recordingsBySessionId = dict
+    }
+
+    func loadMetadata() {
+        // This list shows at most 200 sessions (`loadSessions`) plus orphan
+        // activations built from a 500-QSO fetch, so the 1,000 most recent
+        // activation-days cover every visible row. Never scan the whole table.
+        let descriptor = BoundedDescriptor<ActivationMetadata>(
+            sortBy: [SortDescriptor(\.date, order: .reverse)],
+            limit: BoundedDescriptor<ActivationMetadata>.maxLimit
+        )
+        let recentMetadata = (try? modelContext.boundedFetch(descriptor)) ?? []
+
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.timeZone = TimeZone(identifier: "UTC")
+
+        var dict: [String: ActivationMetadata] = [:]
+        for item in recentMetadata {
+            let dateStr = formatter.string(from: item.date)
+            dict["\(item.parkReference)|\(dateStr)"] = item
+        }
+        metadataByKey = dict
+    }
+
+    func loadCachedParkNames() async {
+        await POTAParksCache.shared.ensureLoaded()
+        let activations = activationsBySessionId.values.flatMap { $0 } + orphanActivations
+        var names: [String: String] = [:]
+        for activation in activations {
+            let ref = activation.parkReference.uppercased()
+            if let name = await POTAParksCache.shared.name(for: ref) {
+                names[ref] = name
+            }
+        }
+        await MainActor.run {
+            cachedParkNames = names
+        }
+    }
+}
+
+// MARK: - POTA Actions
+
+extension SessionsView {
+    func refreshJobs() async {
+        guard isAuthenticated, let potaClient else {
+            return
+        }
+        isLoadingJobs = true
+        errorMessage = nil
+
+        do {
+            let fetchedJobs = try await potaClient.fetchJobs()
+            await MainActor.run {
+                jobs = fetchedJobs
+                rebuildJobIndex()
+                let didReconcile = confirmUploadsFromJobs()
+                if didReconcile {
+                    Task {
+                        await loadSessions()
+                        await loadOrphanActivations()
+                    }
+                }
+            }
+        } catch POTAError.notAuthenticated {
+            await MainActor.run {
+                errorMessage = "Session expired. Please re-authenticate in Settings."
+            }
+        } catch {
+            await MainActor.run {
+                errorMessage = error.localizedDescription
+            }
+        }
+
+        await MainActor.run { isLoadingJobs = false }
+    }
+
+    func performUploadReturningErrors(
+        for activation: POTAActivation
+    ) async -> [String: String] {
+        guard let potaClient else {
+            return ["": "POTA client not available"]
+        }
+
+        let parksToUpload = activation.parksNeedingUpload
+        guard !parksToUpload.isEmpty else {
+            return [:]
+        }
+
+        var errors: [String: String] = [:]
+        for park in parksToUpload {
+            let pendingQSOs = activation.pendingQSOs(forPark: park)
+            guard !pendingQSOs.isEmpty else {
+                continue
+            }
+
+            do {
+                let result = try await potaClient.uploadActivationWithRecording(
+                    parkReference: park, qsos: pendingQSOs, modelContext: modelContext
+                )
+                if result.success {
+                    for qso in pendingQSOs {
+                        qso.markSubmittedToPark(park, context: modelContext)
+                    }
+                } else {
+                    errors[park] = "Upload returned success=false"
+                }
+            } catch {
+                errors[park] = error.localizedDescription
+            }
+        }
+
+        await refreshJobs()
+        return errors
+    }
+
+    func rejectActivation(_ activation: POTAActivation) {
+        for qso in activation.pendingQSOs() {
+            qso.markUploadRejected(for: .pota, context: modelContext)
+        }
+        activationToReject = nil
+        Task {
+            await loadSessions()
+            await loadOrphanActivations()
+        }
+    }
+
+    func forceReupload(_ activation: POTAActivation) {
+        for qso in activation.qsos {
+            for park in activation.parks {
+                qso.forceResetParkUpload(park, context: modelContext)
+            }
+        }
+        try? modelContext.save()
+        Task {
+            await loadSessions()
+            await loadOrphanActivations()
+            if let fresh = allActivations.first(where: { $0.id == activation.id }) {
+                _ = await performUploadReturningErrors(for: fresh)
+            }
+            await loadSessions()
+            await loadOrphanActivations()
+        }
+    }
+
+    @discardableResult
+    func confirmUploadsFromJobs() -> Bool {
+        var changed = false
+        for activation in allActivations {
+            let matching = jobsByActivationId[activation.id] ?? []
+            guard !matching.isEmpty else {
+                continue
+            }
+
+            let hasCompleted = matching.contains { $0.status == .completed }
+            let hasFailed = !hasCompleted && matching.contains { $0.status.isFailure }
+
+            for park in activation.parks {
+                if hasCompleted {
+                    for qso in activation.qsos where !qso.isUploadedToPark(park) {
+                        qso.confirmUploadedToPark(park, context: modelContext)
+                        changed = true
+                    }
+                } else if hasFailed {
+                    for qso in activation.qsos where qso.isSubmittedToPark(park) {
+                        qso.resetSubmittedToPark(park, context: modelContext)
+                        changed = true
+                    }
+                }
+            }
+        }
+        if changed {
+            try? modelContext.save()
+        }
+        return changed
+    }
+
+    func rebuildJobIndex() {
+        var index: [String: [POTAJob]] = [:]
+        for activation in allActivations {
+            let matching = activation.matchingJobs(from: jobs)
+            if !matching.isEmpty {
+                index[activation.id] = matching
+            }
+        }
+        jobsByActivationId = index
+    }
+
+    // MARK: - Session Deletion
+
+    var deleteConfirmationMessage: String {
+        guard let item = itemToDelete else {
+            return "This action cannot be undone."
+        }
+        switch item {
+        case let .session(session):
+            let count = qsosBySessionId[session.id]?.count ?? 0
+            return "Delete this session and hide \(count) QSO(s)? "
+                + "Hidden QSOs will not be synced or counted in statistics."
+        case let .orphanActivation(activation):
+            return "Delete activation \(activation.parkReference) "
+                + "and hide \(activation.qsos.count) QSO(s)? "
+                + "Hidden QSOs will not be synced or counted in statistics."
+        }
+    }
+
+    func deleteItem(_ item: ListItem) {
+        switch item {
+        case let .session(session):
+            deleteSession(session)
+        case let .orphanActivation(activation):
+            deleteOrphanActivation(activation)
+        }
+    }
+
+    private func deleteSession(_ session: LoggingSession) {
+        let sessionId = session.id
+
+        // Hide all QSOs in this session
+        if let qsos = qsosBySessionId[sessionId] {
+            for qso in qsos {
+                qso.isHidden = true
+                for presence in qso.servicePresence where presence.needsUpload {
+                    presence.needsUpload = false
+                }
+            }
+        }
+
+        // Clean up session spots
+        let spotPredicate = #Predicate<SessionSpot> { $0.loggingSessionId == sessionId }
+        if let spots = try? modelContext.fetch(FetchDescriptor(predicate: spotPredicate)) {
+            for spot in spots {
+                modelContext.delete(spot)
+            }
+        }
+
+        // Clean up session photos
+        try? SessionPhotoManager.deleteAllPhotos(for: sessionId)
+
+        // Delete the session
+        modelContext.delete(session)
+        try? modelContext.save()
+
+        Task {
+            await loadSessions()
+            await loadOrphanActivations()
+        }
+    }
+
+    private func deleteOrphanActivation(_ activation: POTAActivation) {
+        for qso in activation.qsos {
+            qso.isHidden = true
+            for presence in qso.servicePresence where presence.needsUpload {
+                presence.needsUpload = false
+            }
+        }
+        try? modelContext.save()
+
+        Task {
+            await loadSessions()
+            await loadOrphanActivations()
+        }
+    }
+
+    // MARK: - Helpers
+
+    func parkName(for reference: String) -> String? {
+        if let name = jobs.first(where: {
+            $0.reference.uppercased() == reference.uppercased()
+        })?.parkName {
+            return name
+        }
+        return cachedParkNames[reference.uppercased()]
+    }
+
+    func activationMetadata(for activation: POTAActivation) -> ActivationMetadata? {
+        metadataByKey["\(activation.parkReference)|\(activation.utcDateString)"]
+    }
+
+    /// Merge multiple park activations into one for rove brag sheet. Deduplicates consecutive
+    /// same-park entries (UTC midnight splits) and sorts chronologically.
+    func mergedRoveActivation(_ activations: [POTAActivation]) -> POTAActivation {
+        guard activations.count > 1 else {
+            return activations[0]
+        }
+
+        // Sort activations chronologically by earliest QSO timestamp
+        let sorted = activations.sorted {
+            ($0.qsos.first?.timestamp ?? .distantPast)
+                < ($1.qsos.first?.timestamp ?? .distantPast)
+        }
+
+        let first = sorted[0]
+        let allQSOs = sorted.flatMap(\.qsos).sorted { $0.timestamp < $1.timestamp }
+
+        // Deduplicate park refs (preserve order, remove consecutive dupes)
+        var uniqueParks: [String] = []
+        for activation in sorted {
+            let park = activation.parkReference.uppercased()
+            if uniqueParks.last?.uppercased() != park {
+                uniqueParks.append(activation.parkReference)
+            }
+        }
+        let parkRefs = uniqueParks.joined(separator: " \u{2192} ")
+
+        return POTAActivation(
+            parkReference: parkRefs,
+            utcDate: first.utcDate,
+            callsign: first.callsign,
+            qsos: allQSOs
+        )
+    }
+
+    func saveMetadataEdit(
+        _ result: ActivationMetadataEditResult, for activation: POTAActivation
+    ) {
+        let sanitizedNewPark = result.newParkReference.flatMap { ParkReference.sanitizeMulti($0) }
+        let parkRef = sanitizedNewPark ?? activation.parkReference
+        if let newPark = sanitizedNewPark {
+            for qso in activation.qsos {
+                qso.parkReference = newPark
+                let potaPresence = qso.potaPresenceRecords()
+                for presence in potaPresence {
+                    modelContext.delete(presence)
+                }
+            }
+        }
+
+        let existingMetadata = activationMetadata(for: activation)
+        let meta: ActivationMetadata
+        if let existing = existingMetadata {
+            meta = existing
+            if result.newParkReference != nil {
+                meta.parkReference = parkRef
+            }
+        } else {
+            meta = ActivationMetadata(parkReference: parkRef, date: activation.utcDate)
+            modelContext.insert(meta)
+        }
+
+        meta.title = result.title
+        meta.watts = result.watts
+
+        if let session = findSession(for: activation) {
+            applySessionEdits(result, to: session)
+        }
+
+        for qso in activation.qsos {
+            qso.myRig = result.radio
+        }
+
+        try? modelContext.save()
+
+        Task {
+            await loadSessions()
+            await loadOrphanActivations()
+            await loadCachedParkNames()
+        }
+    }
+
+    func applySessionEdits(
+        _ result: ActivationMetadataEditResult, to session: LoggingSession
+    ) {
+        if let newCallsign = result.newCallsign {
+            session.myCallsign = newCallsign
+            let sessionId = session.id
+            var desc = FetchDescriptor<QSO>(
+                predicate: #Predicate { $0.loggingSessionId == sessionId }
+            )
+            desc.fetchLimit = 1_000
+            if let qsos = try? modelContext.fetch(desc) {
+                for qso in qsos {
+                    qso.myCallsign = newCallsign
+                }
+            }
+        }
+        session.myRig = result.radio
+        session.myAntenna = result.antenna
+        session.myKey = result.key
+        session.myMic = result.mic
+        session.extraEquipment = result.extraEquipment
+        session.attendees = result.attendees
+        session.notes = result.notes
+        session.qsoComment = result.qsoComment
+
+        for photo in result.addedPhotos {
+            if let filename = try? SessionPhotoManager.savePhoto(
+                photo, sessionID: session.id
+            ) {
+                session.photoFilenames.append(filename)
+            }
+        }
+        for filename in result.deletedPhotoFilenames {
+            try? SessionPhotoManager.deletePhoto(
+                filename: filename, sessionID: session.id
+            )
+            session.photoFilenames.removeAll { $0 == filename }
+        }
+    }
+}

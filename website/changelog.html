@@ -1,0 +1,1660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Carrier Wave — Changelog</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0e0f11;
+      --bg2:       #131518;
+      --bg3:       #1a1d21;
+      --border:    #1f2328;
+      --border2:   #2a2f38;
+      --text:      #c9cdd6;
+      --text-dim:  #666c7a;
+      --text-xdim: #35393f;
+      --blue:      #4a8cff;
+      --blue2:     #3a7aee;
+      --green:     #3ad98b;
+      --orange:    #e8944a;
+      --white:     #f2f4f8;
+      --mono:      'IBM Plex Mono', monospace;
+      --sans:      'Outfit', sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 16px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* NAV */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2.5rem;
+      height: 60px;
+      background: rgba(14,15,17,0.82);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      text-decoration: none;
+      color: var(--white);
+      font-family: var(--sans);
+      font-weight: 700;
+      font-size: 1rem;
+      letter-spacing: -0.01em;
+    }
+
+    .nav-logo img { width: 28px; height: 28px; border-radius: 7px; }
+
+    .nav-links { display: flex; align-items: center; gap: 2rem; list-style: none; }
+
+    .nav-links a {
+      color: var(--text-dim);
+      text-decoration: none;
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--white); }
+
+    .nav-cta {
+      background: var(--blue);
+      color: var(--white) !important;
+      padding: 0.45rem 1.1rem;
+      border-radius: 8px;
+      font-weight: 500;
+    }
+    .nav-cta:hover { background: var(--blue2); }
+
+    /* CONTENT */
+    .changelog-wrapper {
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 100px 2rem 4rem;
+    }
+
+    .changelog-header {
+      margin-bottom: 3rem;
+    }
+
+    .changelog-header h1 {
+      font-family: var(--sans);
+      font-size: 2.4rem;
+      font-weight: 800;
+      color: var(--white);
+      letter-spacing: -0.03em;
+      margin-bottom: 0.5rem;
+    }
+
+    .changelog-header p {
+      color: var(--text-dim);
+      font-size: 0.95rem;
+    }
+
+    /* VERSION BLOCK */
+    .version-block {
+      margin-bottom: 3rem;
+      padding-bottom: 3rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .version-block:last-child {
+      border-bottom: none;
+    }
+
+    .version-heading {
+      display: flex;
+      align-items: baseline;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .version-heading h2 {
+      font-family: var(--mono);
+      font-size: 1.4rem;
+      font-weight: 500;
+      color: var(--white);
+      letter-spacing: -0.01em;
+    }
+
+    .version-heading .date {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--text-dim);
+      letter-spacing: 0.04em;
+    }
+
+    /* SECTION (Added / Changed / Fixed) */
+    .changelog-section {
+      margin-bottom: 1.5rem;
+    }
+
+    .changelog-section h3 {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .changelog-section.added h3 { color: var(--green); }
+    .changelog-section.changed h3 { color: var(--orange); }
+    .changelog-section.fixed h3 { color: var(--blue); }
+
+    .changelog-section ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .changelog-section li {
+      position: relative;
+      padding: 0.4rem 0 0.4rem 1.2rem;
+      font-size: 0.9rem;
+      line-height: 1.55;
+      color: var(--text);
+    }
+
+    .changelog-section li::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0.85rem;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--text-xdim);
+    }
+
+    .changelog-section.added li::before { background: var(--green); opacity: 0.5; }
+    .changelog-section.changed li::before { background: var(--orange); opacity: 0.5; }
+    .changelog-section.fixed li::before { background: var(--blue); opacity: 0.5; }
+
+    .changelog-section li strong {
+      color: var(--white);
+      font-weight: 600;
+    }
+
+    /* PLATFORM TRACK TOGGLE */
+    .track-toggle {
+      display: inline-flex;
+      gap: 0.25rem;
+      padding: 0.25rem;
+      margin-bottom: 3rem;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+    }
+
+    .track-toggle button {
+      appearance: none;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      color: var(--text-dim);
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+      padding: 0.4rem 0.9rem;
+      border-radius: 7px;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .track-toggle button:hover { color: var(--white); }
+
+    .track-toggle button[aria-selected="true"] {
+      background: var(--bg3);
+      color: var(--white);
+    }
+
+    .track { display: none; }
+    .track.is-active { display: block; }
+
+    /* FOOTER */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 2rem 2.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .footer-logo {
+      font-family: var(--sans);
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: var(--text-dim);
+      letter-spacing: -0.01em;
+    }
+
+    .footer-links { display: flex; gap: 1.5rem; list-style: none; }
+
+    .footer-links a {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--text-xdim);
+      text-decoration: none;
+      letter-spacing: 0.04em;
+      transition: color 0.2s;
+    }
+    .footer-links a:hover { color: var(--text-dim); }
+
+    .footer-morse { font-family: var(--mono); font-size: 0.7rem; color: var(--text-xdim); letter-spacing: 0.12em; }
+
+    @media (max-width: 640px) {
+      nav { padding: 0 1.2rem; }
+      .nav-links li:not(:last-child) { display: none; }
+      footer { flex-direction: column; align-items: flex-start; }
+      .changelog-wrapper { padding: 80px 1.2rem 3rem; }
+      .changelog-header h1 { font-size: 1.8rem; }
+      .version-heading { flex-direction: column; gap: 0.25rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="/">
+    <img src="/icon.png" alt="" onerror="this.style.display='none'" />
+    Carrier Wave
+  </a>
+  <ul class="nav-links">
+    <li><a href="/#features">Features</a></li>
+    <li><a href="/sweep.html">Sweep</a></li>
+    <li><a href="/android.html">Android</a></li>
+    <li><a href="/changelog.html">Changelog</a></li>
+    <li><a href="/devlog/">Devlog</a></li>
+    <li><a href="https://apps.apple.com/us/app/carrier-wave/id6758229084" class="nav-cta">Download</a></li>
+  </ul>
+</nav>
+
+<div class="changelog-wrapper">
+  <div class="changelog-header">
+    <h1>Changelog</h1>
+    <p>What's new in Carrier Wave — iOS, macOS, Android, firmware, and server.</p>
+  </div>
+
+  <div class="track-toggle" role="tablist" aria-label="Platform">
+    <button role="tab" id="tab-apple" aria-controls="track-apple" aria-selected="true" onclick="showTrack('apple')">iOS · macOS</button>
+    <button role="tab" id="tab-android" aria-controls="track-android" aria-selected="false" onclick="showTrack('android')">Android</button>
+  </div>
+
+  <div class="track is-active" id="track-apple" role="tabpanel" aria-labelledby="tab-apple">
+
+  <!-- 1.105.0 -->
+  <div class="version-block">
+    <div class="version-heading">
+      <h2>1.105.0</h2>
+      <span class="date">2026-10-23</span>
+    </div>
+
+    <div class="changelog-section added">
+      <h3>Added</h3>
+      <ul>
+        <li><strong>Satellite list that points at the bird.</strong> The Satellites tab&rsquo;s search button opens a full list of every bird with a pass in the next 24 hours, its primary transmitter and a compass arrow that turns with the phone. Tap one to open antenna pointing.</li>
+        <li><strong>Pass plot while pointing.</strong> Below the horizon the pointing view draws the next pass on a compact polar sky plot, rotated so the boom direction is up, with the rise point marked.</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section fixed">
+      <h3>Fixed</h3>
+      <ul>
+        <li><strong>Works with the new pota.app.</strong> Parks on the Air relaunched its site on October 15. POTA sign-in and the logs link follow the new site, the upload job list reads its new paginated response, and park names are back on POTA spots everywhere (iOS, watch, widgets, CW Sweep, Android, the activities server and the Pebble app).</li>
+        <li><strong>Merged sessions export in full.</strong> Export ADIF on a session now includes every QSO in it &mdash; across parks, UTC days and rove stops &mdash; and the sheet&rsquo;s count matches the file.</li>
+        <li><strong>Satellites tab opens instantly.</strong> Cached orbital data shows right away and refreshes in the background instead of waiting on a slow SatNOGS download.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 1.102.0 -->
+  <div class="version-block">
+    <div class="version-heading">
+      <h2>1.102.0</h2>
+      <span class="date">2026-10-05</span>
+    </div>
+
+    <div class="changelog-section added">
+      <h3>Added</h3>
+      <ul>
+        <li><strong>Rotator &amp; Trackers.</strong> CSN S.A.T. and WA4MCM PSR-100 rotators are found on your network automatically (even across VLANs once added by address), with Point &amp; Track from the sky view and hand controls &mdash; a jog pad with a 1&deg;/5&deg;/15&deg; step, go-to, Park and Stop.</li>
+        <li><strong>Two-radio FM satellite duplex.</strong> Bind one CW Bridge to the uplink handheld and one to the downlink; both follow the pass with Doppler and the right CTCSS tone, or tune the downlink by ear and let the uplink follow.</li>
+        <li><strong>Send a pass to CW Sat Bridge.</strong> Long-press an upcoming pass to upload its Doppler schedule to a bridge, which flies it on its own clock while the phone sleeps.</li>
+        <li><strong>QRZ key check after a callsign change.</strong> A warning names the callsign your QRZ Logbook key belongs to and offers to add one, so QSOs under a new callsign reach QRZ.</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section fixed">
+      <h3>Fixed</h3>
+      <ul>
+        <li><strong>No crash when switching apps mid-sync.</strong> The local log moved out of the shared App Group container, so iOS no longer kills the app while it writes.</li>
+        <li><strong>Callsign changes stick.</strong> A changed callsign no longer reverts on relaunch, and it now reaches your account on the server for signed-in users.</li>
+        <li><strong>Faster first Carrier Wave Sync.</strong> The first pull applies the whole journal in one step and downloads blobs in parallel instead of one at a time.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- CW Sweep 0.14.0 -->
+  <div class="version-block">
+    <div class="version-heading">
+      <h2>CW Sweep 0.14.0</h2>
+      <span class="date">2026-10-05</span>
+    </div>
+
+    <div class="changelog-section added">
+      <h3>Added</h3>
+      <ul>
+        <li><strong>Satellite mode (macOS).</strong> A Satellites panel with upcoming passes, a polar sky plot, Doppler-corrected RX/TX rows and a synthetic waterfall; Doppler CAT tunes the rig each second.</li>
+        <li><strong>Rotator panel (macOS).</strong> Link state, a hold-to-repeat jog pad, go-to, Park and Stop, and network discovery under System. CSN S.A.T. and PSR-100 units are detected automatically.</li>
+        <li><strong>IC-9700 waterfall over LAN (macOS).</strong> Scope output streams into the waterfall panel and follows Main or Sub.</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section changed">
+      <h3>Changed</h3>
+      <ul>
+        <li><strong>Carrier Wave Sync replaces iCloud (macOS).</strong> Sign in with your callsign, enter your sync passphrase, and QSOs and sessions sync end-to-end encrypted with Field and Android. iCloud sync and its toggle are gone from the Mac app.</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section fixed">
+      <h3>Fixed</h3>
+      <ul>
+        <li><strong>No more &ldquo;access data from other apps&rdquo; prompt (macOS).</strong> Your data moves to a team-prefixed container once and the dialog stops.</li>
+        <li><strong>Far less CPU (macOS).</strong> The waterfall and band scopes no longer redraw constantly; Icom LAN connects in about a second.</li>
+        <li><strong>Launch crash on macOS 15.</strong> The SCU-LAN10 audio player no longer trips AVAudioEngine at startup.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 1.101.0 -->
+  <div class="version-block">
+    <div class="version-heading">
+      <h2>1.101.0</h2>
+      <span class="date">2026-09-27</span>
+    </div>
+
+    <div class="changelog-section added">
+      <h3>Added</h3>
+      <ul>
+        <li><strong>Scheduled club roster sync.</strong> Clubs with a published member list (BKG&rsquo;s members.txt, for example) are reconciled every 6 hours instead of only when an admin pressed import, so rosters that had stalled at ~30 members now track the real list.</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section changed">
+      <h3>Changed</h3>
+      <ul>
+        <li><strong>Faster activation start.</strong> The session wizard fills in a frequency the instant it opens, gives live spot sources three seconds to suggest a clear gap, then lets you go &mdash; no more 30-second &ldquo;Finding an open frequency&rdquo; spinner on a bad connection. A Set manually button is always available.</li>
+        <li><strong>Smoother Sessions list.</strong> Month groups are cached and rebuilt off the main thread only when sessions change, instead of being re-sorted on every screen update.</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section fixed">
+      <h3>Fixed</h3>
+      <ul>
+        <li><strong>Re-spots use your own frequency.</strong> Tapping a spot to hunt another activator from inside your activation set the session frequency to theirs, and the periodic re-spot, <code>SPOT REPEAT</code>, QSY and QRT spots all read it &mdash; so your call was re-spotted on the other operator&rsquo;s frequency. Self-spots now track only your own QSYs.</li>
+        <li><strong>Brag sheet works offline.</strong> With no connection the activation share card falls back to a vector map with your contacts and paths instead of &ldquo;No grid data available&rdquo;; contacts without a grid are placed by park, summit or DXCC entity, and reopening the sheet once you&rsquo;re online retries the lookups and re-renders.</li>
+        <li><strong>PoLo markers no longer stuck as pending upload.</strong> Ham2K WEATHER, SOLAR, NOTE, TODO, START and BREAK rows are metadata, not contacts; they no longer count as pending for any service and existing installs are repaired on first launch.</li>
+        <li><strong>Brag sheet club counts follow the roster.</strong> Session club-member counts were a one-time snapshot; they now recompute whenever the club roster changes.</li>
+        <li><strong>Self-spot toasts show the real comment.</strong> A QRT spot no longer reports &ldquo;QSY&rdquo; in the app.</li>
+        <li><strong>Frequency scope readout matches the reticle</strong> after the scope opens on an auto-picked frequency.</li>
+        <li><strong>Web logbook (carrierwave.app).</strong> Accounts with more than 500 sync entries now load their full log; ADIF export uses correct byte lengths for non-ASCII names; duplicate deletes retry failed uploads, warn before you close the tab, and can be resumed.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 1.100.1 -->
+  <div class="version-block">
+    <div class="version-heading">
+      <h2>1.100.1</h2>
+      <span class="date">2026-09-20</span>
+    </div>
+
+    <div class="changelog-section changed">
+      <h3>Changed</h3>
+      <ul>
+        <li><strong>Steadier pointing mode.</strong> The Doppler-corrected tuning readout stays on screen while you steer, and the frequency no longer shifts when you land on target.</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section fixed">
+      <h3>Fixed</h3>
+      <ul>
+        <li><strong>Real satellite names.</strong> Birds that showed catalog placeholders like &ldquo;OBJECT C&rdquo; now use their real names &mdash; TO-108, FO-29, and friends.</li>
+        <li><strong>FO-29 restored.</strong> Satellites with mislabeled catalog data no longer vanish from the list while the community still hears them.</li>
+        <li><strong>Clearer network errors.</strong> Failed data fetches now say what actually went wrong (DNS, connection, timeout) instead of a generic error.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 1.100.0 -->
+  <div class="version-block">
+    <div class="version-heading">
+      <h2>1.100.0</h2>
+      <span class="date">2026-09-20</span>
+    </div>
+
+    <div class="changelog-section added">
+      <h3>Added</h3>
+      <ul>
+        <li><strong>Satellite logging (iOS, experimental).</strong> QSOs carry SAT_NAME and PROP_MODE end-to-end (log, sync, ADIF, uploads) for LoTW satellite credit, with a post-pass quick log that pre-fills the bird, transmitter, mode, and time &mdash; and never disturbs a live activation. Enable Satellites under Settings &rarr; Experiments.</li>
+        <li><strong>Pass alerts + Live Activity (iOS).</strong> Favorite a bird to get notified before its passes, with an AOS countdown on the Lock Screen. Record the pass audio and tap a mark for each contact &mdash; the marks pre-seed your quick-log rows.</li>
+        <li><strong>Shared Rust satellite engine.</strong> SGP4 propagation, pass prediction, mutual planning, and alert planning now run in the shared core on both platforms &mdash; one set of orbits and alerts everywhere.</li>
+        <li><strong>Pass filters.</strong> Filter the map and every pass list by mode (FM / linear / digital / telemetry), uplink and downlink band, community heard-today activity, favorites, minimum elevation, and a per-direction horizon mask ("deaf below 30&deg; to the north"). Mutual windows show which way to point from your sky and honor the same filters.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 1.99.0 -->
+  <div class="version-block">
+    <div class="version-heading">
+      <h2>1.99.0</h2>
+      <span class="date">2026-08-27</span>
+    </div>
+
+    <div class="changelog-section added">
+      <h3>Added</h3>
+      <ul>
+        <li><strong>Connected apps.</strong> Third-party tools can now read and add to your log with your consent, using standard OAuth sign-in on a Carrier Wave authorization page. Access is granted per app, revocable any time, and your log stays end-to-end encrypted &mdash; a connected app never receives your decryption key from the server.</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section fixed">
+      <h3>Fixed</h3>
+      <ul>
+        <li><strong>Fresher callsign lookups (iOS).</strong> Cached operator info now refreshes instead of sticking forever &mdash; when a ham changes their callsign, or a call is re-issued to a new operator, lookups show the current holder instead of stale cached details.</li>
+        <li><strong>Callsign changes stick (server).</strong> Changing your callsign no longer leaves the old call lingering in club rosters, achievements, and signed-in sessions &mdash; everything moves to the new call immediately.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 1.98.0 -->
+  <div class="version-block">
+    <div class="version-heading">
+      <h2>1.98.0</h2>
+      <span class="date">2026-08-03</span>
+    </div>
+
+    <div class="changelog-section added">
+      <h3>Added</h3>
+      <ul>
+        <li><strong>Park n-fers when hunting (iOS &amp; Android).</strong> Log a multi-park activation in a single quick-entry line &mdash; type the callsign then every park (e.g. <code>US-1044 US-3791</code>). Each park counts and de-dupes on its own, so working one park of an n-fer leaves the others still showing as needed.</li>
+        <li><strong>Callsign prefix hot keys (iOS).</strong> A Prefixes row above the logger keyboard types common callsign prefixes with a single tap.</li>
+        <li><strong>Parks &amp; Summits map overlays (iOS).</strong> The Parks &amp; Summits map gains toggleable overlays, and multi-unit parks now draw as one merged boundary.</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section changed">
+      <h3>Changed</h3>
+      <ul>
+        <li><strong>Richer Hunter Log quick entry (iOS).</strong> Quick entry now looks up the operator and resolves each park&apos;s name as you type &mdash; including every park of an n-fer.</li>
+        <li><strong>Keyboard Rows settings hub (iOS).</strong> The logger&apos;s keyboard accessory rows are now configured from one place in Settings.</li>
+        <li><strong>Faster maps (iOS).</strong> Embedded maps and the club map now render grid-first so pins appear immediately instead of waiting on the full map.</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section fixed">
+      <h3>Fixed</h3>
+      <ul>
+        <li><strong>Session park edits stick (iOS).</strong> Changing a session&apos;s park reference in the Edit sheet now actually saves instead of silently doing nothing.</li>
+        <li><strong>Cleaner timeline replay (iOS).</strong> Weather, solar, and note metadata entries no longer appear as QSOs in timeline replay.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 1.97.0 -->
+  <div class="version-block">
+    <div class="version-heading">
+      <h2>1.97.0</h2>
+      <span class="date">2026-07-16</span>
+    </div>
+
+    <div class="changelog-section added">
+      <h3>Added</h3>
+      <ul>
+        <li><strong>Split ADIF export by park (iOS).</strong> Bulk-exporting several activations can now write one ADIF per park &mdash; n-fer QSOs fan out into each of their parks, and the same park across different days merges into a single file &mdash; or stay combined in one file as before.</li>
+        <li><strong>Sign-in link opens the app (iOS &amp; Android).</strong> Tapping the emailed verification link now hands off to the app via Universal &amp; App Links and completes sign-in itself, instead of finishing in the browser and making you switch back.</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section fixed">
+      <h3>Fixed</h3>
+      <ul>
+        <li><strong>Right callsign on every session (iOS).</strong> A new session now takes your callsign straight from your profile, so a callsign you&apos;ve since corrected can no longer be frozen into that session&apos;s logged QSOs or its ADIF exports.</li>
+        <li><strong>No crash when closing mid-sync (iOS).</strong> A background sync that overran the grace period while you backgrounded the app could be killed while still writing; it now stops cleanly between writes and resumes on next launch.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 1.96.0 -->
+  <div class="version-block">
+    <div class="version-heading">
+      <h2>1.96.0</h2>
+      <span class="date">2026-07-09</span>
+    </div>
+
+    <div class="changelog-section added">
+      <h3>Added</h3>
+      <ul>
+        <li><strong>Auto-picked starting frequency (iOS).</strong> Leave the frequency blank in the session wizard and Carrier Wave picks your most-active band &mdash; limited to what your radio can work &mdash; then finds a clear spot on it, nestled among live POTA, SOTA, and RBN spots with room to avoid interference.</li>
+        <li><strong>Park field auto-fill (iOS).</strong> For a POTA activation, the park field prepopulates with the best nearby candidate &mdash; the one you activate most within 16 km, or the closest &mdash; updating once your GPS fix lands and never overwriting a park you typed.</li>
+        <li><strong>Set session fields from quick entry (iOS &amp; Android).</strong> A callsign-less line like <code>14.046 CW CN87</code> updates the active session&apos;s frequency, mode, and grid for QSOs logged from then on, with tokens a session can&apos;t take called out as ignored.</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section changed">
+      <h3>Changed</h3>
+      <ul>
+        <li><strong>Rebuilt session start wizard (iOS).</strong> Starting a session now flows top to bottom &mdash; your callsign and gear, then the essentials (programs, mode, frequency, power), with everything optional tucked under a single &ldquo;More Options&rdquo; row. Required fields are the loudest thing on screen, and Start is a pinned bottom button.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 1.95.0 -->
+  <div class="version-block">
+    <div class="version-heading">
+      <h2>1.95.0</h2>
+      <span class="date">2026-07-08</span>
+    </div>
+
+    <div class="changelog-section added">
+      <h3>Added</h3>
+      <ul>
+        <li><strong>Pull-to-refresh spots (iOS &amp; Android).</strong> Pull the hunter spot list down to poll immediately instead of waiting out the 2-minute timer. A &ldquo;last refreshed&rdquo; pill shows how long ago spots were last fetched, ticking live.</li>
+        <li><strong>Carrier Wave Sync accounts.</strong> Sync now requires a verified email account (magic-link sign-in), so a synced log is always recoverable by its owner. Anonymous device-token sync is retired.</li>
+        <li><strong>POTA respot on Android.</strong> POTA spots gain a respot button that posts a fresh spot through the shared Rust core &mdash; with a confirmation previewing exactly what will be published and a 5-minute anti-spam cooldown.</li>
+        <li><strong>SDR Tune-In on Android.</strong> Listen to an activator on a public KiwiSDR straight from the hunter feed &mdash; receiver selection and audio decode run in the shared Rust core, with a mini player bar for live listening.</li>
+        <li><strong>External Data on Android.</strong> The Account screen gains an External Data card &mdash; FCC callsigns, POTA parks, SOTA summits &amp; zones, WWFF directory, Super Check Partial, equipment catalog, and contest definitions, each with count, age, and refresh.</li>
+        <li><strong>More Android logging smarts.</strong> Dupe badges and Super Check Partial callsign suggestions in every command bar, an Awards &amp; Streaks dashboard card, and UTC-midnight splitting of multi-day POTA activations on session end.</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section changed">
+      <h3>Changed</h3>
+      <ul>
+        <li><strong>Spots publish much faster.</strong> New spots now appear about a second after each poll instead of waiting up to 15 seconds for callsign enrichment; enrichment details fill in right after, and the lookup cache now persists across relaunches.</li>
+        <li><strong>Respot always confirms (iOS).</strong> The hunter-log Spot action shows a &ldquo;Spot on POTA?&rdquo; confirmation previewing the exact post before publishing &mdash; and respots no longer require a POTA sign-in.</li>
+        <li><strong>External Data on the shared core (iOS).</strong> The six reference-data download pipelines (POTA parks, SOTA summits, WWFF, FCC callsigns, equipment catalog, SOTA zones) now download, parse, and store through the shared Rust core.</li>
+        <li><strong>Android is hunting-focused for now.</strong> The Hunter tab is now top-level with today&apos;s stats, the live spot feed, and the quick-entry bar; the Spots feed runs on the same shared Rust spot engine as iOS, with a new &ldquo;All&rdquo; merged-feed filter.</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section fixed">
+      <h3>Fixed</h3>
+      <ul>
+        <li><strong>Stale callsign resurrection (iOS &amp; macOS).</strong> A mistyped callsign synced through iCloud could silently overwrite the corrected one on every launch. The profile is now the single canonical store, and CW Sweep no longer persists half-typed callsigns while you type.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 1.94.1 -->
+  <div class="version-block">
+    <div class="version-heading">
+      <h2>1.94.1</h2>
+      <span class="date">2026-07-04</span>
+    </div>
+
+    <div class="changelog-section added">
+      <h3>Added</h3>
+      <ul>
+        <li><strong>More spot sources (iOS).</strong> DX Summit, DXHeat, DXWatch, and telnet DX cluster spots are available as optional sources (off by default) in the Hunt spot filters. The cluster node is configurable under Settings &rarr; Features &rarr; Hunt &amp; P2P.</li>
+        <li><strong>Contest engine on the shared core.</strong> Contest scoring, dupe detection, multipliers, and Cabrillo export now run in the shared Rust engine on both iOS and macOS &mdash; behavior-identical, with contest definitions cached by the core.</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section changed">
+      <h3>Changed</h3>
+      <ul>
+        <li><strong>Settings reorganized (iOS).</strong> Settings are regrouped around what you&apos;re doing &mdash; My Profile, Account &amp; Data, Services, Features, Hardware, General, Advanced, Help &amp; Support, and About &mdash; with every feature screen&apos;s settings at one consistent depth and clearer screen headers throughout.</li>
+        <li><strong>Spots run on the shared core (iOS).</strong> The hunter feed, activator spots, RBN panel, and needs matching moved to the shared Rust spot engine for consistent behavior across platforms.</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section fixed">
+      <h3>Fixed</h3>
+      <ul>
+        <li><strong>Launch crash loop on large logbooks (iOS).</strong> The first launch after updating re-imported the log one row at a time on the main thread &mdash; on 100k-QSO logbooks iOS killed the app before it finished, looping forever. The import now runs off-main in batched transactions.</li>
+        <li><strong>Sync killed when backgrounded (iOS).</strong> Switching apps mid-sync could get Carrier Wave terminated while it was saving QSOs. Sync now finishes its writes safely in the background.</li>
+        <li><strong>Club sync freezes (iOS).</strong> Applying large club rosters no longer freezes the app &mdash; membership data is applied in small chunks that let the UI keep breathing.</li>
+        <li><strong>&ldquo;Resume session&rdquo; lands in the logger (iOS).</strong> Home&apos;s resume row now opens the live logger directly instead of the Sessions screen.</li>
+        <li><strong>Sync reliability (iOS &amp; Android).</strong> First sync against a new server now seeds the full log automatically, rate-limited requests retry instead of aborting the pass, the encryption key is scoped per server, and key mismatches surface an actionable message instead of a cryptic error.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 1.94.0 -->
+  <div class="version-block">
+    <div class="version-heading">
+      <h2>1.94.0</h2>
+      <span class="date">2026-07-01</span>
+    </div>
+
+    <div class="changelog-section added">
+      <h3>Added</h3>
+      <ul>
+        <li><strong>Home hero (iOS).</strong> Your next action is pinned to the top of Home &mdash; resume an open or paused session, or jump straight to Start Session / Hunt Spots.</li>
+        <li><strong>Explore feature gallery (iOS).</strong> A curated tour of the app&apos;s marquee features &mdash; each with a quick pitch and where to find it &mdash; under More &rarr; Explore Features.</li>
+        <li><strong>Simple Logging Mode (iOS).</strong> An optional toggle (Settings &rarr; Appearance) that hides the situational chips in the session header, keeping the controls bar short during a pileup.</li>
+        <li><strong>Operating style (iOS).</strong> Tell the app how you operate &mdash; Activator, Hunter, A Bit of Everything, or New to Ham Radio &mdash; during onboarding or in Settings &rarr; My Profile. Defaults adapt to your style; nothing is hidden.</li>
+        <li><strong>Hunter Log new-spots divider (iOS).</strong> A &ldquo;+N new since you looked&rdquo; divider marks how many spots arrived since your last visit.</li>
+        <li><strong>&ldquo;Same as Last Session&rdquo; quick-start (iOS).</strong> One tap starts a new session with your last session&apos;s mode, frequency, programs, and gear.</li>
+        <li><strong>Today&apos;s Gear row (iOS).</strong> Session start shows your applied radio, antenna, key, and mic as chips &mdash; tap to tweak gear for the day.</li>
+        <li><strong>&ldquo;Show more cards&rdquo; footer (iOS).</strong> Home now points to the hidden card categories beneath the visible cards, so customization is discoverable.</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section changed">
+      <h3>Changed</h3>
+      <ul>
+        <li><strong>Clearer tab names (iOS).</strong> Dashboard is now <strong>Home</strong>, Logs is <strong>Logbook</strong>, and Activity is <strong>Friends</strong>. Your tab order and integrations are unaffected.</li>
+        <li><strong>CW Transcription &amp; Log Scanning are now stable (iOS).</strong> Both graduated from Experiments. The CW tab can be added from More &rarr; Customize; Scan Handwritten Log is always available in the Logbook.</li>
+        <li><strong>Calmer On Air card (iOS).</strong> Spot sections condense to a one-line summary &mdash; the full list is one tap away on the On Air sheet.</li>
+        <li><strong>Tune In runs on the shared core (iOS).</strong> KiwiSDR selection and listening moved to the shared Rust engine for more consistent behavior across platforms.</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section fixed">
+      <h3>Fixed</h3>
+      <ul>
+        <li><strong>Web logbook frequencies (server).</strong> The logbook viewer displayed and exported frequencies 1000&times; too small (e.g. 0.014 instead of 14.074 MHz).</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 1.93.0 -->
+  <div class="version-block">
+    <div class="version-heading">
+      <h2>1.93.0</h2>
+      <span class="date">2026-05-30</span>
+    </div>
+
+    <div class="changelog-section added">
+      <h3>Added</h3>
+      <ul>
+        <li><strong>Radio macros (iOS).</strong> Build, share, and run reusable CAT routines for your rig &mdash; tune-and-set-mode, voice memory triggers, RIT/XIT, CW templates with live preview, vendor-command picker. Enable under Settings &rarr; Experiments &rarr; Radio CAT Control &rarr; Macros. Imports <code>.cwmacro</code> files via AirDrop / Files / Finder.</li>
+        <li><strong>Macros Browse + Updates (iOS).</strong> The Macros library&apos;s Browse tab lists community-curated starters (POTA hunter, tuner cycle, voice memory, more) &mdash; install with one tap. Updates tab alerts you when an installed macro has a newer revision and shows a per-field diff before applying.</li>
+        <li><strong>Public macros catalog at carrierwave.app/manual/macros.</strong> Every approved macro from the activities server now has a public page with capability chips, a human-readable step list, args table, and an &ldquo;Open in Carrier Wave&rdquo; deep link.</li>
+        <li><strong>Contest as a first-class Sessions intent (iOS).</strong> The Sessions tab&apos;s 2&times;2 intent grid is now Activate / Hunt / Casual / Contest. Tap Contest to pick a definition and start scoring in one flow. Standalone Contests destination removed from the Activity tab.</li>
+        <li><strong>Yaesu CAT vendor catalog.</strong> Vendor command picker now ships 15 common Yaesu CAT commands (VFO/mode/PTT/power/split/RIT/XIT/preamp/AGC) for FT-857/897/817/991(A) and FT-DX10/710/DX101 generations.</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section changed">
+      <h3>Changed</h3>
+      <ul>
+        <li><strong>Richer contest picker (iOS).</strong> Selecting a contest from session start or QSO edit now opens the full calendar/catalog browser with Live-now and schedule captions, replacing the thin list picker.</li>
+        <li><strong>Sessions intent picker graduated from Experiments (iOS).</strong> The intent grid is now the canonical landing for the Sessions tab whenever there&apos;s no active session.</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section fixed">
+      <h3>Fixed</h3>
+      <ul>
+        <li><strong>Add Step no longer dismisses the macro editor (iOS).</strong> Nested-sheet collapse fixed so adding or editing a step keeps the editor open.</li>
+        <li><strong>Vendor command catalog bootstraps at app launch.</strong> The Vendor Command step picker now lists CI-V, Kenwood/Elecraft, and Yaesu commands from first launch instead of showing the empty state.</li>
+        <li><strong>Yaesu vendor commands encode as ASCII CAT.</strong> Yaesu commands now route through ASCII (FT-857 onwards) instead of being lumped with CI-V binary encoding. Vintage FT-1000-style binary CAT can still be sent via the raw-bytes step.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- CW Sweep 0.13.0 -->
+  <div class="version-block">
+    <div class="version-heading">
+      <h2>CW Sweep 0.13.0</h2>
+      <span class="date">2026-05-28</span>
+    </div>
+
+    <div class="changelog-section added">
+      <h3>Added</h3>
+      <ul>
+        <li><strong>Sessions sidebar with intent picker (macOS).</strong> The Logger sidebar is now &ldquo;Sessions&rdquo; and lands on a 2&times;2 intent grid &mdash; Activate / Hunt / Casual / Contest &mdash; with a Continue strip of paused sessions below.</li>
+        <li><strong>Contest as a first-class Sessions intent (macOS).</strong> Tap Contest, pick a definition, and the live operating UI opens inline with the score header, exchange bar, and Cabrillo export on the toolbar. The standalone Contests sidebar item retired in the same release.</li>
+        <li><strong>End / Pause from the toolbar (macOS).</strong> The active session now sits next to the layout picker with End and Pause actions. The same commands appear in Cmd+K under &ldquo;Active Session.&rdquo;</li>
+        <li><strong>Pre-unification log auto-grouped (macOS).</strong> Loose QSOs from before this release are silently grouped into per-day Casual sessions on first launch, so every record lives under a session.</li>
+        <li><strong>Radio macros parity (macOS).</strong> CW Sweep gains the full macros experience &mdash; library, editor, run window, Finder drop, and <code>cwmacro://</code> deep links &mdash; bringing the iOS feature to the desktop.</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section fixed">
+      <h3>Fixed</h3>
+      <ul>
+        <li><strong>Contester scoreboard stays put (macOS).</strong> The contester layout pins the score panel to a slim fixed slot so it no longer drifts as the log fills.</li>
+        <li><strong>Manual frequency / mode changes stick without a radio (macOS).</strong> Cmd+Shift+P radio palette, band-map click-to-tune, and vim <code>:freq</code> now update app state and the active session even when no radio is connected.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 1.92.0 -->
+  <div class="version-block">
+    <div class="version-heading">
+      <h2>1.92.0</h2>
+      <span class="date">2026-05-22</span>
+    </div>
+
+    <div class="changelog-section added">
+      <h3>Added</h3>
+      <ul>
+        <li><strong>RST Sent auto-advances to RST Received.</strong> Once the value you&rsquo;re typing into RST Sent reaches the mode&rsquo;s expected length &mdash; 3 characters for CW/digital, 2 for phone &mdash; focus jumps to RST Received. Only fires on the upward edge, so editing or shrinking the value doesn&rsquo;t re-trigger.</li>
+        <li><strong>Hunter spot monitor adds 6m FT8.</strong> The PSK Reporter hunter fetch now rotates through 6m (50.313 MHz &plusmn;3 kHz) alongside 20 / 40 / 15 / 10 / 17, so VHF sporadic-E openings surface in the hunter spot stream without switching sources.</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section changed">
+      <h3>Changed</h3>
+      <ul>
+        <li><strong>Unified Day Summary on activity-grid taps.</strong> Tapping a cell in the dashboard&rsquo;s activity grid now opens a full day view: hero stats, band/mode pills with counts, a swipeable insights carousel (map + US states mosaic) covering every QSO on the day, a band timeline, and a Sessions section listing every session that overlapped the UTC day. Sessions that straddle midnight are sliced on both days with a continued/continues chip. Long-press still shows the old quick popover.</li>
+        <li><strong>Hunter Log day summary mirrors session detail.</strong> The Hunter Log&rsquo;s daily summary switched from grey card panels to a List-based layout matching the session detail screen &mdash; same hero, same swipeable insights carousel, same band timeline, same QSO list primitives. Both screens now render from one shared set of components, so touching either no longer drifts the other.</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section fixed">
+      <h3>Fixed</h3>
+      <ul>
+        <li><strong>Clear All QSOs now restores from iCloud.</strong> Wiping the local logbook used to leave the device empty even with sync on, because the CKSyncEngine change token survived the wipe and the next fetch saw the cloud journals as &ldquo;already applied.&rdquo; The wipe path now resets the sync state and rotates the device ID, so the engine re-bootstraps from the cloud snapshot and replays every journal &mdash; the same way a fresh install would. Disable sync first if you want a clean wipe.</li>
+        <li><strong>Legacy <code>OP:</code> segments scrubbed from existing notes.</strong> QSOs created before the May 6 fix that stopped emitting <code>OP: &lt;name&gt;</code> still carried the prefix baked into their local notes. A one-time background pass on next launch removes those segments from non-user-authored QSOs, clearing the field when nothing else remains.</li>
+        <li><strong>Hunter Log sort affects Club Members too.</strong> The Club Members section was re-sorting alphabetically by callsign, ignoring the user&rsquo;s Recent / Frequency / Needs selection &mdash; which read as &ldquo;sort doesn&rsquo;t work&rdquo; because Club Members render above Other Spots. Removed the hardcoded sort so the section inherits ordering from the rest of the list.</li>
+        <li><strong>FT8 &ldquo;input too high&rdquo; warning no longer gets stuck.</strong> Four converging causes fixed: an out-of-bounds decimator read producing phantom peaks, wide-band peak detection latching on adjacent-channel signals, missed audio route changes keeping clipped-peak history alive against a new device, and stale main-actor timestamps collapsing queued loud samples onto the current second.</li>
+        <li><strong>Carrier Wave Status Bar on CW Sweep now matches the Sync Diagnostic Report.</strong> The QSO count in Sweep&rsquo;s status bar was deduping by UUID, but CloudKit&rsquo;s private + shared zones can produce mirror rows with the same content and different UUIDs, inflating the displayed total. Switched to dedup by content key and routed metadata-mode filtering through the project&rsquo;s single source of truth.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 1.91.0 -->
+  <div class="version-block">
+    <div class="version-heading">
+      <h2>1.91.0</h2>
+      <span class="date">2026-05-19</span>
+    </div>
+
+    <div class="changelog-section added">
+      <h3>Added</h3>
+      <ul>
+        <li><strong>Weather Radar overlay on the Map tab.</strong> The Weather Radar experiment now extends to the Parks &amp; Summits map &mdash; a cloud-rain toolbar button toggles a NEXRAD CONUS base-reflectivity overlay alongside park polygons, trails, and pins. The overlay pans and zooms in lockstep with the basemap, an opacity picker (25 / 50 / 75 / 100 %) tunes the look, and an NWS active-alerts chip surfaces severity-tinted warnings for the visible area. US only.</li>
+        <li><strong>Per-radio connection profile + session auto-connect.</strong> Each radio in your inventory can now store its own connection profile &mdash; transport (BLE / WiFi / LAN), protocol, saved device, host/port, and CW Bridge routing. Picking a radio at session start auto-connects using that profile instead of the global Radio settings. A one-shot migration moves your existing Radio settings onto the matching inventory item.</li>
+        <li><strong>Propagation Check detail view, redesigned.</strong> Tapping a saved propagation check now opens a richer results screen: an inline map with geodesic arcs from your grid to each skimmer (band-colored pins, &ldquo;You&rdquo; pin at home), an azimuthal/standard map toggle, a newest-first spots list with callsign / band / source / SNR / distance, and stats that honor HamDB-resolved skimmer grids. The map card honors your share-card map theme.</li>
+        <li><strong>Notes &amp; equipment on propagation checks.</strong> Each saved propagation check can carry notes plus the radio / antenna / key / mic you used, edited via the same pickers the session metadata sheet uses. Hidden on the detail view when nothing is set.</li>
+        <li><strong>CAT macros (foundation).</strong> New macro subsystem in the shared CarrierWaveData package &mdash; a model for sharable <code>.cwmacro</code> documents, a template engine for <code>{TOKEN}</code> / <code>{name:format}</code> placeholder expansion (BCD, zero-padded decimal, hex), and a vendor command catalog bundled as JSON so adding an Icom or Kenwood command no longer requires a release. Editor and run surface are follow-up work &mdash; no UI yet.</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section changed">
+      <h3>Changed</h3>
+      <ul>
+        <li><strong>Faster Parks &amp; Summits map.</strong> Map clustering moved off the main thread via an actor-backed quadtree (ClusterMap), so panning and zooming the full 22 000-pin POTA + SOTA set no longer freezes the UI. The map only ever sees the visible cluster bubbles plus de-clustered leaves for the current zoom level &mdash; cluster bubbles are green for parks-only, brown for summits-only, teal for mixed, and tap zoom-to-fits the underlying members.</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section fixed">
+      <h3>Fixed</h3>
+      <ul>
+        <li><strong>Keyer bar self-heals on bridge reconnect.</strong> If the CW Bridge&rsquo;s initial USB-status push was dropped or raced during handshake reconnect, the keyer row stayed hidden in CW sessions until the user kicked something. Field and Sweep now both interrogate the bridge for status immediately after handshake and again every three seconds while framed, so missed pushes self-heal within one tick.</li>
+        <li><strong>iCloud restore on a new device no longer fails with &ldquo;backup file not found.&rdquo;</strong> On a fresh device, iCloud Drive replicates the backup directory listing but not the file contents until something asks for them. Field now downloads the backup database and session photos from iCloud and waits for the download to complete (up to 180 s) before validating, with a per-file progress overlay so the user sees <em>N of M files ready</em> instead of a frozen screen.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 1.90.0 -->
+  <div class="version-block">
+    <div class="version-heading">
+      <h2>1.90.0</h2>
+      <span class="date">2026-05-09</span>
+    </div>
+
+    <div class="changelog-section added">
+      <h3>Added</h3>
+      <ul>
+        <li><strong>New Hunt widget.</strong> Small home-screen widget showing propagation rating, K/A/SFI gauges, the four band-condition pairs, and a binoculars badge with the live count of active POTA + SOTA + RBN spots. Tap to jump straight into the Hunter Log &mdash; works whether or not you have a session running.</li>
+        <li><strong>Solar widget surfaces a space-storm summary line.</strong> The Solar widget&rsquo;s small variant now shows a one-line headline beneath the K/A/SFI gauges describing the worst active space-weather event (geomagnetic storm, solar flare, CME) with an impact-tinted icon. Lock-screen rectangular and inline variants pick up the same headline. When everything is calm the line reads &ldquo;All quiet&rdquo; with a shield icon.</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section changed">
+      <h3>Changed</h3>
+      <ul>
+        <li><strong>Session END button reads &ldquo;END&rdquo; (all caps).</strong> Both portrait and landscape session-header end buttons bumped to all caps to match the visual weight of the red destructive treatment.</li>
+        <li><strong>Solar widget tap no longer auto-opens the On Air Now sheet.</strong> Tapping the Solar widget previously navigated to the Dashboard <em>and</em> immediately presented the OnAirCard pull-up sheet, which made it impossible to enter the app from the widget without dismissing a sheet first. The deep link now just selects the Dashboard.</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section fixed">
+      <h3>Fixed</h3>
+      <ul>
+        <li><strong>Dashboard scroll and Grid Tracker typing no longer chop on tab return.</strong> Five-cause performance regression diagnosed and fixed: friendship queries in three On-Air cards no longer invalidate on every unrelated SwiftData save; dashboard recompute now serialises its four full-table scans instead of running them concurrently and waits for the tab transition to finish; the On Air Now panel skips re-fetching solar/DX/spot data within 60 s of the last load; Grid Tracker filter/sort is debounced and cached per input change instead of recomputing per keystroke (and per visible row); the Grid Heatmap Canvas only redraws when the underlying data changes, not on every keystroke in the search field above it.</li>
+        <li><strong>iPad sidebar settings now match what&rsquo;s actually shown.</strong> On first launch on iPad, the tab settings screen listed CW / Activity / Events / Remote under &ldquo;Hidden&rdquo; while the actual sidebar still showed them &mdash; the two were reading different default sets. They now agree, and the sidebar column has been tightened to a more compact width so the detail pane has more horizontal room.</li>
+        <li><strong>Ended sessions no longer resurrect themselves after kill/relaunch.</strong> Long-standing bug where a session ended on iPhone would come back as the active session on the next launch &mdash; even after multiple ends. Root cause was a four-layer leak in the continuity layer: stale LAN snapshots from CW Sweep on Mac (or another peer) could replay an &ldquo;active&rdquo; view onto the just-ended local record, clearing <code>endedAt</code> and flipping <code>status</code> back to active. The fix refuses to overwrite a locally-ended session from any remote source, and heals corrupt records on cold launch. The user&rsquo;s deliberate end-session action now always wins.</li>
+        <li><strong>Activation Suggestion widget now opens directly to Sessions.</strong> Previously the widget had no deep link, so tapping it fell through to whatever tab was last selected (often Dashboard). It now routes to the Sessions tab, matching the Active Session widget&rsquo;s behavior.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 1.89.0 -->
+  <div class="version-block">
+    <div class="version-heading">
+      <h2>1.89.0</h2>
+      <span class="date">2026-05-07</span>
+    </div>
+
+    <div class="changelog-section added">
+      <h3>Added</h3>
+      <ul>
+        <li><strong>Activation start wizard auto-suggests the 3 nearest references within 10 mi.</strong> Tap POTA, SOTA, or WWFF in the session wizard and the closest references appear instantly &mdash; no need to open the search picker first. GPS-first with a grid-square fallback. The picker (magnifying-glass button) is still there for searching by name or going beyond 10 mi.</li>
+        <li><strong>Inline S2S Summit field for SOTA logging.</strong> The Logger expanded fields row now shows a Summit field for SOTA sessions in place of Park, so summit-to-summit references no longer require a trip to the QSO edit sheet. Dual POTA + SOTA sessions show both: Summit on the primary row next to Grid, Park beneath.</li>
+        <li><strong>SOTA session details get Brag Sheet and Export ADIF.</strong> SOTA-only and any non-POTA session now have full action menus. The brag sheet is program-neutral &mdash; the same card renders POTA, SOTA, and casual sessions with the right SF Symbol and reference type. Per-session ADIF export emits <code>MY_SOTA_REF</code> for SOTA sessions, both <code>MY_SOTA_REF</code> and <code>MY_POTA_REF</code> for dual sessions, and S2S/P2P tags from each QSO&rsquo;s own references.</li>
+        <li><strong>SOTA self-spotting and multi-program SPOT dispatch.</strong> <code>SPOT</code> previously hardcoded POTA; sessions activating SOTA only, or dual POTA + SOTA, returned an error. The command now dispatches per-program: POTA spots fan out across every park reference (n-fer behaviour preserved), SOTA spots one self-spot to SOTAwatch. <code>SPOT REPEAT</code> and the QSY auto-spot use the same dispatcher, so SOTA-only sessions also get repeating and post-QSY spots.</li>
+        <li><strong>8-character Maidenhead grid option for <code>MY_GRIDSQUARE</code>.</strong> New Logger setting picks 4 / 6 / 8 character precision. 8-character grids matter for VHF/UHF and grid-square contests where 6-character is too coarse. The same precision is honoured wherever Carrier Wave derives a grid &mdash; POTA park / SOTA summit coordinates, GPS, manual entry &mdash; and round-trips through the parser unchanged.</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section changed">
+      <h3>Changed</h3>
+      <ul>
+        <li><strong>SOTA / POTA session grid pinned to summit/park surveyed coordinates.</strong> Session start used to fall back from a caller-provided <code>myGrid</code> straight to GPS &mdash; unreliable at session start with a cold fix, indoors, or with the phone in a backpack at the summit. The Logger now resolves <code>session.myGrid</code> in priority order: caller-provided &rarr; SOTA summit lat/lng &rarr; POTA park lat/lng &rarr; GPS, honouring your grid precision preference.</li>
+        <li><strong>SOTA activation threshold is 4 QSOs, not 10.</strong> The Logger session-header QSO chip and the watch&rsquo;s activation progress ring both hardcoded 10, so SOTA-only sessions never hit their actual qualifying line. iOS, watch, and widgets now read one shared <code>LoggingSession.activationThreshold</code> source (POTA = 10, SOTA = 4, WWFF = 44, lowest of any active program).</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section fixed">
+      <h3>Fixed</h3>
+      <ul>
+        <li><strong>Nearby-spot frequency popup no longer reappears after dismissal.</strong> The frequency-warning banner used the warning&rsquo;s message string as its dismissal key and cleared the dismissed set on every <code>session.frequency</code> / <code>session.mode</code> change. Any retune, mode auto-switch, or session-model re-emission of the same value cleared the dismissed set and the popup popped right back. The banner now uses a stable dismissal key (<code>spot:&lt;activator&gt;:&lt;reference&gt;</code> for spot warnings) and the dismissed set is cleared only when the active session id changes.</li>
+        <li><strong>Reject Upload / Reopen Session confirmations now appear from the session detail view.</strong> Both <code>confirmationDialog</code> modifiers were attached to the parent Sessions list, so when the user tapped these from inside a pushed session detail view, the dialog stayed dormant until the user popped back. The session detail view now owns its own confirmations and runs the action immediately.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 1.88.0 -->
+  <div class="version-block">
+    <div class="version-heading">
+      <h2>1.88.0</h2>
+      <span class="date">2026-05-07</span>
+    </div>
+
+    <div class="changelog-section added">
+      <h3>Added</h3>
+      <ul>
+        <li><strong>iOS Remote pane redesigned as a control surface.</strong> The Form-with-sections layout is gone. The Radio pane now has a hero VFO display (tabular monospaced digits, MHz.kHz at 56pt and a smaller Hz triplet), a TX/RX dot LED next to the connected Sweep name, an audio strip with a chunky speaker button + thick volume slider, and an inline tune entry. The nested <code>TabView</code> for Radio/Scope/Waterfall/Spots/CW that collided with the system tab bar is replaced by a horizontal capsule chip strip mounted under the nav title.</li>
+        <li><strong>RX audio over the Remote LAN.</strong> CW Sweep now forwards the radio&rsquo;s RX audio to Carrier Wave: Field over the new <code>radio.audio</code> RemoteOp topic. Field hosts a foreground-only audio player with a speaker toggle and volume slider in the Remote Radio pane; subscription is gated on the toggle so Sweep skips encoding when no client is listening. An opt-in Opus codec drops bandwidth from ~256&nbsp;kbps PCM to ~24&nbsp;kbps &mdash; meaningful on cell uplink.</li>
+        <li><strong>Tap straight key on the iOS Remote.</strong> New pad in the Radio sub-tab: tap for a dit, hold past 180&nbsp;ms for a dah. Each gesture fires a single CW element through Sweep&rsquo;s keyer. The remote keyer path is now transport-agnostic &mdash; previously bridge-only, it now routes through CW Bridge &rarr; WinKeyer &rarr; the radio&rsquo;s CAT keyer (CI-V <code>1A 02</code>, Kenwood/Elecraft/Yaesu <code>KY</code>) automatically.</li>
+        <li><strong>Callsign membership chips for CWops, BKG, and SKCC.</strong> Carrier Wave now ships a daily-refreshed offline cache of public membership lists. The callsign card and QSO detail view show inline chips for each match (e.g. <code>&#x1F3B9; CWops #1532</code>, <code>&#x1F91C; BKG #29</code>, <code>&#x1F511; SKCC #6707T</code>). Lookups are local once cached, so chips appear instantly during contesting with no per-callsign network call.</li>
+        <li><strong>CWT contest strike card.</strong> During CWT (and any contest with member-list enrichment) the separate QRZ card + RST/QTH row + contest exchange card collapse into one dense card that fits above the keyboard fold: callsign + membership chips + dupe / NEW MULT badge in the header, a single status line summarising name &middot; state &middot; grid &middot; distance &middot; bearing &middot; prior-contact-count, two big monospaced exchange inputs (NAME and #/S/P/C, 50pt tall) for thumb-targeting at 100&nbsp;QSOs/hr, and a tertiary <code>47Q &middot; 47P &middot; 12M &middot; 564</code> score footer.</li>
+        <li><strong>CWT auto-fill for non-CWops members too.</strong> Per CWT rules, non-members send first name + state / province / DXCC prefix. Stations with no CWops row now get both fields prefilled: name from QRZ (preferring the <code>&lt;nickname&gt;</code> tag, ALL CAPS), and identifier from W/VE state/province or the DXCC primary prefix derived from the callsign. CWops member numbers still take precedence when present.</li>
+        <li><strong>{MYNAME} keyer macro.</strong> New macro that expands to the operator&rsquo;s first name (e.g. <code>TU {MYNAME}</code> &rarr; <code>TU JAY</code>). Mirrored from the user profile into <code>UserDefaults["loggerDefaultName"]</code> and synced via iCloud KVS alongside the callsign, with a one-shot keychain backfill on the keyer settings screen for users who saved their profile before this change.</li>
+        <li><strong>Enriched share link landing pages with great-circle map and club chips.</strong> The <code>/link/{call,park,sum,qso,act}/:id</code> share-URL routes now ship a simplified equirectangular world map with an orange great-circle arc and glowing endpoint dots, plus a parallel fetch against the callsign-enrichment API that renders inline membership pill chips. Brand styling is fully Carrier Wave-themed (orange/cyan accents, inline wave-logo SVG in the brand bar, signal-gradient page background). The QSO/activation/callsign/park/summit fragment is still never sent in HTTP requests &mdash; the page only carries opaque path tokens.</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section fixed">
+      <h3>Fixed</h3>
+      <ul>
+        <li><strong>{MYCALL} keyer macro now resolves to the operator&rsquo;s callsign.</strong> The CW Messages editor and slot-row preview were reading the wrong UserDefaults key (<code>stationCallsign</code> instead of <code>loggerDefaultCallsign</code>), so previews always fell back to the placeholder regardless of the operator&rsquo;s profile. Both views now read the canonical key.</li>
+        <li><strong>CWT auto-fill clears name and number when the callsign is cleared.</strong> The matcher returns the fields it wrote so the logger tracks auto-filled values and can clear them when the callsign input goes empty &mdash; no more lingering data from the previous QSO.</li>
+        <li><strong>iOS Remote waterfall stretched lines, washing out the time axis.</strong> Each waterfall row now renders at exactly 1&nbsp;pt tall (newest at top, older lines push down by 1&nbsp;pt each frame), with the rest of the canvas left empty when the 200-line history hasn&rsquo;t filled it yet. Restores the natural arrival cadence so an operator can see how recent a signal is from how far down the screen it sits.</li>
+        <li><strong>Server callsign-enrichment endpoints returning 500 instead of data.</strong> <code>/v1/callsign-enrichment/{callsign}</code> and <code>/dataset</code> were using the wrong Axum extractor (<code>Extension(pool)</code> while the rest of the v1 router supplied the connection pool via <code>with_state(pool)</code>), so both handlers responded with &ldquo;Pool extension missing&rdquo;. Switched both to <code>State(pool)</code>.</li>
+        <li><strong>iOS FT8 mode-toggle race that left FT8 silently broken until force-quit.</strong> Toggling Logger mode away from FT8 fired a fire-and-forget <code>Task { await ft8Manager.stop() }</code> while immediately nilling the manager. <code>FT8AudioEngine.stop()</code> ended with <code>setActive(false)</code> on the process-wide audio session; toggling back to FT8 before that finished meant the new manager&rsquo;s <code>setActive(true)</code> was raced in by the old <code>setActive(false)</code>, leaving a black waterfall with no decodes. The audio session belongs to the process, not the FT8 component &mdash; <code>stop()</code> no longer deactivates it.</li>
+        <li><strong>iOS FT8 start failures were silently swallowed.</strong> An unsupported sample rate (Bluetooth/USB-C route the OS picked), mic permission denied, or any other init failure used to leave the user staring at a black waterfall with no diagnosis &mdash; the view did <code>try? await ft8Manager.start()</code>. The session view now renders an orange error banner with a <strong>Retry</strong> button driven by a new <code>retryStart()</code> path that fully tears down the engine before re-running configure + start; <code>FT8AudioEngine.start()</code> also cleans up partial state on throw so the retry has a known-good baseline.</li>
+        <li><strong>iOS FT8 waterfall FFT moved off the main thread.</strong> The per-buffer FFT + per-bin percentile sort (the recent low-band yellow-block fix) was running on <code>@MainActor</code>, ~6 times/sec, on the same thread as SwiftUI rebuilds and TX state transitions in the conversation card &mdash; a plausible contributor to the freeze-on-answer reports. Split <code>FT8WaterfallData</code> into a small <code>@MainActor @Observable</code> published-state class plus a new <code>FT8WaterfallProcessor</code> actor that owns the FFT setup, Hann window, and pending-sample buffer. The per-bin reference algorithm (window size, percentile, sliding sort) is byte-for-byte identical to the existing fix.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- CW Sweep 0.12.0 -->
+  <div class="version-block">
+    <div class="version-heading">
+      <h2>CW Sweep 0.12.0</h2>
+      <span class="date">2026-05-05</span>
+    </div>
+
+    <div class="changelog-section added">
+      <h3>Added</h3>
+      <ul>
+        <li><strong>CW Sweep updates itself.</strong> Auto-update via Sparkle 2 — &ldquo;Check for Updates&hellip;&rdquo; lives in the CW Sweep menu, and a daily background check pulls new releases straight from <code>carrierwave.app/sweep/appcast.xml</code> the day they&rsquo;re notarized. DMGs are Ed25519-signed and verified before install. The new <a href="/sweep.html">Sweep download page</a> covers fresh installs.</li>
+        <li><strong>Sessions sync between Field and Sweep automatically.</strong> Start a POTA, SOTA, or contest activation on either device and the other picks it up without pressing Sync, Connect, or pairing. Three layers cooperate so this works whether the devices are co-located or apart &mdash; CloudKit-side active-session normalization, silent LAN auto-reconnect, and a new <code>activeSession</code> RemoteOp topic. Marked alpha while the lifecycle plumbing settles.</li>
+        <li><strong>Waterfall is a first-class panel.</strong> The previously orphaned waterfall view can be dropped into any custom CW Sweep layout via the layout editor. Source-agnostic &mdash; rendering reads from a shared <code>WaterfallStore</code> any radio producer can push into, with a placeholder state that explains which radios produce spectrum data.</li>
+        <li><strong>FlexRadio (SmartSDR) panadapter ingestion.</strong> CW Sweep binds a UDP listener, requests a panadapter from SmartSDR over the existing TCP control session, and decodes incoming VITA-49 frames into normalized spectrum lines that feed the shared waterfall store. Defaults to 1024 bins / 100&nbsp;kHz / 10&nbsp;fps; geometry follows the active slice frequency.</li>
+        <li><strong>Distance and bearing in the Query Workbench.</strong> New <code>cw_*</code> SQL functions: <code>cw_distance_km</code> / <code>cw_distance_mi</code> / <code>cw_bearing_deg(lat1, lon1, lat2, lon2)</code>, grid-aware versions (<code>cw_grid_distance_km</code>, <code>cw_grid_bearing_deg</code>), user-relative helpers (<code>cw_user_grid()</code>, <code>cw_user_distance_km(lat, lon)</code>, &hellip;), and <code>cw_now()</code> for time math. Two starter queries demonstrate &ldquo;spots sorted by nearest&rdquo; and &ldquo;spots heard by nearby spotters&rdquo;.</li>
+        <li><strong>Spot coordinates denormalised in <code>scope.spot_observations</code>.</strong> New <code>spot_lat</code> / <code>spot_lon</code> columns are populated at observation-write time, so distance queries don&rsquo;t need to join through anything to compute the user &rarr; DX great-circle distance.</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section changed">
+      <h3>Changed</h3>
+      <ul>
+        <li><strong>Query Workbench polish.</strong> Full-width / full-height results table that pins to top-left, alternating row striping, click-to-sort column headers (three-state with stable sort and NULLs last), and a <strong>Copy CSV</strong> button. The SQL editor gained code-editor key behaviours: Tab inserts four spaces, Backspace at a 4-column boundary removes four leading spaces in one keystroke, and Shift-Tab dedents.</li>
+        <li><strong>Sync progress bar actually moves.</strong> CW Sweep advances the <em>Uploading&hellip; N remaining</em> count after each successful CloudKit batch instead of staying frozen at the initial dirty count for the whole sync.</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section fixed">
+      <h3>Fixed</h3>
+      <ul>
+        <li><strong>Tune commands silently dropped on every non-CW-Bridge transport.</strong> Frequency, PTT, XIT, and RIT-offset commands had been no-ops on Flex TCP, serial CAT, IcomWiFi, and SCU-LAN10 since the April set-and-verify refactor &mdash; only the CW Bridge implements the verified-set frame, and every other transport returned UNSUPPORTED so nothing reached the wire. CW Sweep now falls back to encoding via the protocol handler and writing raw bytes whenever set-verify reports the field as unsupported, restoring pre-refactor behavior.</li>
+        <li><strong>VFO no longer jumps powers of 10.</strong> After the CW Bridge auto-detected the radio and swapped protocol handlers, two RadioSessions were both consuming the shared BLE byte stream and decoding partial frames. CW Sweep now cancels the old session&rsquo;s tasks (without tearing down the transport) before installing the new one.</li>
+        <li><strong>Big sync no longer roasts the device.</strong> Fixed a runaway loop where every 10-record CloudKit batch save kicked off a fresh full scan of all dirty rows and rebuilt CKRecords from scratch. Force Full Sync now drains progressively without burning the battery.</li>
+        <li><strong>Hunter Log spot rows no longer wrap.</strong> Tightened so each spot stays a single line, with club &amp; award memberships rendered in a secondary row underneath instead of pushing the primary fields onto a second line.</li>
+        <li><strong>Scroll-wheel theft.</strong> Scrolling the Query Workbench schema browser no longer steals events from the workspace band scope. The Query Workbench schema browser also scrolls correctly inside its split pane now.</li>
+        <li><strong><code>received_at</code> stored as a number.</strong> Spot observations now write <code>received_at</code> as Unix epoch seconds REAL (matching <code>cw_now()</code> and <code>last_seen_at</code>) instead of a formatted text string, so SQL like <code>cw_now() - received_at</code> returns sensible ages.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 1.87.0 -->
+  <div class="version-block">
+    <div class="version-heading">
+      <h2>1.87.0</h2>
+      <span class="date">2026-05-04</span>
+    </div>
+
+    <div class="changelog-section added">
+      <h3>Added</h3>
+      <ul>
+        <li><strong>Sweep waterfall on the iOS Remote tab.</strong> CW Sweep now broadcasts its active waterfall over the LAN at up to 10&nbsp;fps, and Carrier Wave: Field renders it in the Remote tab strip with the same color ramp as the macOS panel. The iOS view only subscribes while visible, so background tabs don&rsquo;t pay the bandwidth cost.</li>
+        <li><strong>Waterfall is a first-class CW Sweep panel.</strong> The previously orphaned waterfall view is now exposed as <code>PanelIdentifier.waterfall</code> and can be dropped into any custom Sweep layout via the layout editor. Source-agnostic &mdash; rendering reads from a shared <code>WaterfallStore</code> any radio producer can push into.</li>
+        <li><strong>FlexRadio (SmartSDR) panadapter ingestion.</strong> CW Sweep now binds a UDP listener, requests a panadapter from SmartSDR over the existing TCP control session, and decodes incoming VITA-49 frames into normalized spectrum lines that feed the shared waterfall store. Defaults to 1024 bins / 100&nbsp;kHz / 10&nbsp;fps; geometry follows the active slice frequency.</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section fixed">
+      <h3>Fixed</h3>
+      <ul>
+        <li><strong>CW Sweep tune commands silently dropped on every non-CW-Bridge transport.</strong> Frequency, PTT, XIT, and RIT-offset commands had been no-ops on Flex TCP, serial CAT, IcomWiFi, and SCU-LAN10 since the April set-and-verify refactor &mdash; only the CW Bridge implements the verified-set frame, and every other transport returned UNSUPPORTED so nothing reached the wire. Sweep now falls back to encoding via the protocol handler and writing raw bytes whenever set-verify reports the field as unsupported, restoring pre-refactor behavior.</li>
+        <li><strong>iOS FT8 overload banners firing under normal operating conditions.</strong> Three compounding issues fixed: the &ldquo;too hot&rdquo; RMS threshold was tuned for clipping not normal headroom; there was no hysteresis so banners flapped; and the waterfall used a fixed magnitude scale that painted hot-but-unclipped audio entirely red. The waterfall now renormalises to dB-above-noise over a 30&nbsp;dB span (matching WSJT-X) and the overload tracker uses split enter/exit thresholds with a 1.5&nbsp;s dwell. The audio engine also re-installs the input tap on USB-C DAC route changes mid-session.</li>
+        <li><strong>Quick entry accepts more UTC time formats.</strong> Typing <code>W1AW 14:30</code> in a quick-entry field now sets the timestamp override to 14:30 UTC. The parser accepts <code>HH:MM</code>, <code>HH:MMZ</code>, <code>HHMMZ</code>, and bare <code>HHMM</code> (e.g. <code>0930</code>, <code>1430</code>) &mdash; matching how the paper-log scanner has always read handwritten times. Bare 4-digit values that are also valid amateur frequencies (e.g. <code>1804</code> on 160m) keep their frequency interpretation; append <code>Z</code> to force a time.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 1.86.0 -->
+  <div class="version-block">
+    <div class="version-heading">
+      <h2>1.86.0</h2>
+      <span class="date">2026-05-04</span>
+    </div>
+
+    <div class="changelog-section added">
+      <h3>Added</h3>
+      <ul>
+        <li><strong>Phone-to-Mac remote control (alpha).</strong> Pair Carrier Wave: Field with CW Sweep over your local network. The phone shows live frequency, mode, and TX state from Sweep, plus the curated spot feed; tap a spot or type a frequency to tune the radio. Includes a CW keyer pane that triggers Sweep&rsquo;s slot keyer, with Sweep expanding macros (<code>{CALL}</code>, <code>{HISCALL}</code>, <code>{RST}</code>, <code>{NAME}</code>, <code>{HISSTATE}</code>, <code>{FREQ}</code>, <code>{MYCALL}</code>) from its Quick Entry box. LAN-only over plain TCP with token auth; TLS, push, voice, and audio streaming are follow-ups. Hidden by default &mdash; enable from <strong>Settings &rarr; Experiments</strong> as <strong>Remote Control of CW Sweep</strong>.</li>
+        <li><strong>CW keyer presets.</strong> The new PRESETS tile in the Remote CW pane programs slot templates in a single tap. Built-in POTA preset writes <code>CQ CQ POTA DE {MYCALL} K</code> into slot 1 and <code>BK RR TU {HISSTATE} ES 73 EE</code> into slot 2.</li>
+        <li><strong>Distance and bearing in CW Sweep&rsquo;s Query Workbench.</strong> New <code>cw_*</code> SQL functions: <code>cw_distance_km</code> / <code>cw_distance_mi</code> / <code>cw_bearing_deg(lat1, lon1, lat2, lon2)</code>, grid-aware versions (<code>cw_grid_distance_km</code>, <code>cw_grid_bearing_deg</code>), user-relative helpers (<code>cw_user_grid()</code>, <code>cw_user_distance_km(lat, lon)</code>, &hellip;), and <code>cw_now()</code> for time math. Two starter queries demonstrate &ldquo;spots sorted by nearest&rdquo; and &ldquo;spots heard by nearby spotters&rdquo;.</li>
+        <li><strong>Spot coordinates denormalised in CW Sweep.</strong> <code>scope.spot_observations</code> now stores <code>spot_lat</code> / <code>spot_lon</code> at write time, so distance queries don&rsquo;t need to join through anything to compute the user &rarr; DX great-circle distance.</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section changed">
+      <h3>Changed</h3>
+      <ul>
+        <li><strong>Remote CW pane redesigned for &ldquo;phone as dashboard accessory&rdquo;.</strong> Slot buttons are now an adaptive 2&ndash;4 column grid of large tiles &mdash; bold slot label on top, monospaced template text below &mdash; with matching tiles for STOP, CUSTOM, and PRESETS. Empty slots render as ghost <code>+ Slot N</code> tiles.</li>
+        <li><strong>Remote CW reads its macro context from CW Sweep.</strong> Removed the parallel current-QSO entry strip on iOS &mdash; Sweep&rsquo;s Quick Entry box is now the single source of truth for CW macro values, and the iOS keyer just sends the slot id for Sweep to expand at play time.</li>
+        <li><strong>FT8 audio level meter.</strong> Replaced the No&nbsp;Signal / Low / OK / Hot status pill with an inline 8-pip level meter that lights green &rarr; yellow &rarr; red as the live RMS climbs, with a peak indicator dot when the buffer hits clipping.</li>
+        <li><strong>Sweep Query Workbench polish.</strong> Full-width / full-height results table that pins to top-left, alternating row striping, click-to-sort column headers (three-state with stable sort and NULLs last), and a <strong>Copy CSV</strong> button. The SQL editor gained code-editor key behaviours: Tab inserts four spaces, Backspace at a 4-column boundary removes four leading spaces in one keystroke, and Shift-Tab dedents.</li>
+        <li><strong>Sync progress bar actually moves.</strong> CW Sweep and iOS now advance the <em>Uploading&hellip; N remaining</em> count after each successful CloudKit batch instead of staying frozen at the initial dirty count for the whole sync.</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section fixed">
+      <h3>Fixed</h3>
+      <ul>
+        <li><strong>POTA Activations crash (iOS).</strong> Fixed an <code>EXC_BREAKPOINT</code> that could hit the POTA Activations list when iCloud sync arrived mid-render. Per-activation upload status (<code>pendingCount</code>, <code>uploadedCount</code>, &hellip;) is now precomputed at struct init and the activations list is cached, so view body reads never traverse SwiftData while CKSyncEngine is merging.</li>
+        <li><strong>FT8 &ldquo;Call CQ&rdquo; menu (iOS).</strong> The CQ / CQ POTA / CQ DX / CQ SOTA menu options now actually open the channel-picker sheet on iOS 18+ &mdash; previously the menu&rsquo;s dismissal animation raced with the sheet state and the sheet never presented.</li>
+        <li><strong>FT8 false &ldquo;audio is clipping&rdquo; banner (iOS).</strong> The overload tracker now uses peak magnitude instead of RMS, so the critical warning only fires when ~40% of recent buffers actually clip at digital full-scale &mdash; not whenever the rig was hooked up at any reasonable level.</li>
+        <li><strong>CW Sweep VFO no longer jumps powers of 10.</strong> After the CW Bridge auto-detected the radio and swapped protocol handlers, two RadioSessions were both consuming the shared BLE byte stream and decoding partial frames. Sweep now cancels the old session&rsquo;s tasks (without tearing down the transport) before installing the new one.</li>
+        <li><strong>Big sync no longer roasts the device.</strong> Fixed a runaway loop where every 10-record CloudKit batch save kicked off a fresh full scan of all dirty rows and rebuilt CKRecords from scratch. Force Full Sync now drains progressively without burning the battery.</li>
+        <li><strong>Friend requests no longer say &ldquo;not found&rdquo; after accepting.</strong> The accept endpoint is idempotent now &mdash; a duplicate accept (double-tap, retry, second device) returns the existing record at 200 instead of a 404. The iOS Accept/Decline buttons also disable while a request is in flight.</li>
+        <li><strong>iOS Remote tune commands stuck after Sweep restart.</strong> The iOS client now cancels its TCP connection on send failure so a half-open socket doesn&rsquo;t leave you on a zombie session; the keyboard also dismisses correctly after typing a tune frequency.</li>
+        <li><strong>CW Sweep scroll-wheel theft.</strong> Scrolling the Query Workbench schema browser no longer steals events from the workspace band scope. The Query Workbench schema browser also scrolls correctly inside its split pane now.</li>
+        <li><strong>CW Sweep <code>received_at</code> stored as a number.</strong> Spot observations now write <code>received_at</code> as Unix epoch seconds REAL (matching <code>cw_now()</code> and <code>last_seen_at</code>) instead of a formatted text string, so SQL like <code>cw_now() - received_at</code> returns sensible ages.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- CW Sweep 0.10.0 -->
+  <div class="version-block">
+    <div class="version-heading">
+      <h2>CW Sweep 0.10.0</h2>
+      <span class="date">2026-05-02</span>
+    </div>
+
+    <div class="changelog-section added">
+      <h3>Added</h3>
+      <ul>
+        <li><strong>CW Bridge over Bluetooth (macOS).</strong> Pair the Carrier Wave CW Bridge from CW Sweep over BLE &mdash; scan, pair, connect, and forget from a dedicated section in the Radio Control tab. The bridge auto-detects the attached radio (CI-V / Kenwood / Elecraft) and CW Sweep hot-swaps to the right protocol handler. Live status card shows firmware version, USB presence, detected radio, handshake state, and keyer availability.</li>
+        <li><strong>Server-published contests (macOS).</strong> Contest definitions now come from the server (format v0.3) instead of bundled templates &mdash; same source of truth as iOS, with shared scoring, dupe checking, exchange parsing, and Cabrillo export from a single <code>ContestDefinition</code> model.</li>
+        <li><strong>SKCC member badges (macOS).</strong> Spots from Straight Key Century Club members display the operator&rsquo;s number and award level (Centurion / Tribune / Senator) in the spot inspector header.</li>
+        <li><strong>Share callsigns and QSOs (macOS).</strong> Share enriched callsign / QSO / park / SOTA links via the macOS share sheet. Recipients with Carrier Wave installed deeplink straight into the matching detail view via <code>https://carrierwave.app/link/&hellip;</code>.</li>
+        <li><strong>What&rsquo;s New sheet (macOS).</strong> Release notes now ship in CW Sweep &mdash; presented on first launch after an update, suppressed on fresh install.</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section changed">
+      <h3>Changed</h3>
+      <ul>
+        <li><strong>Band scope redesign (macOS).</strong> Structured rows with diagonal leader lines from a linear frequency axis, row displacement for crowded spots, vim-style keyboard navigation (j/k spots, J/K mults, h/l pan, ? help), right-click context menu (tune, copy callsign, QRZ lookup, watch marker), fit-to-spots zoom (0 / FIT), and a keyboard shortcut overlay.</li>
+        <li><strong>iCloud sync is journal-only.</strong> Removed the per-record CKSyncEngine path on both iOS and macOS. CW Sweep now uses only the journal engine: dirty records batch into ChangeJournal records plus a periodic SQLite snapshot for new-device bootstrap. The Sync Report / Sync Repair UI is gone in favor of the simpler model. CW Sweep also re-fetches journal entries when the window comes forward (<code>didBecomeActive</code>) so QSOs logged on iOS appear on Mac the moment you focus the app.</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section added">
+      <h3>Security</h3>
+      <ul>
+        <li><strong>BLE pairing now requires LE Secure Connections + MITM passkey.</strong> The CW Bridge generates a random 6-digit passkey on each first-pair attempt and shows it on the OLED; macOS prompts you to enter it. Bonds persist on the bridge so paired Macs reconnect silently. Closes the window where an unbonded peer could inject CAT commands or snoop USB / jack / radio-info broadcasts.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 1.85.0 -->
+  <div class="version-block">
+    <div class="version-heading">
+      <h2>1.85.0</h2>
+      <span class="date">2026-05-02</span>
+    </div>
+
+    <div class="changelog-section added">
+      <h3>Added</h3>
+      <ul>
+        <li><strong>Tiles on the Air integration &amp; scoring.</strong> Tag a session as TOTA at start and Carrier Wave detects the activated 6-character Maidenhead tile(s) from your GPS track, computes a four-tier score ledger (Confirmed / Estimated from spots / Asserted / Pending server-confirmed), and ships an ADIF upload path. Standard and Mobile categories, QRP &times;2, winter / ruck / elevation / pets / kids percentages, Winlink / APRS / VarAC flat bonuses, and Tile-to-Tile (T3) detection from the spots feed are all there. See the <a href="/manual/reference/tota/">manual</a> and <a href="https://tilesontheair.com/">tilesontheair.com</a>.</li>
+        <li><strong>TOTA session detail view.</strong> Sessions tagged TOTA get a dedicated section with the tile name, score breakdown, path map (track polyline + tile boundary overlay) with GPX export, bonus chips, T3 candidate list, Personal Effort Factor badge, and a refresh-spots button.</li>
+        <li><strong>Personal Effort Factor (PEF).</strong> Opt in from <strong>Settings &rarr; Tiles on the Air</strong> with a 1&ndash;10 stepper. PEF scales the distance term of your TOTA score on the Personal Effort leaderboard only &mdash; Standard ranking is unaffected. Frozen onto each session at start.</li>
+        <li><strong>What&rsquo;s New, on demand.</strong> <strong>Settings &rarr; About &rarr; What&rsquo;s New</strong> opens the in-app release notes any time, not just on first launch after an update.</li>
+        <li><strong>Brag sheets, redesigned.</strong> A new unified purple look for every session brag sheet (TOTA, POTA, contests, casual, periodic stats), driven from a shared theme. The TOTA brag sheet is the canonical card &mdash; tile name headline, score with ESTIMATED/OFFICIAL label, contact map (geodesic arcs from QTH), path map (track + tile boundary), bonus chips, eight-column stat grid (QSOs / Distance / Bands / Duration / DXCC / Farthest / Modes / Q/hr), equipment chips, and a mini timeline.</li>
+        <li><strong>Brag sheet sharing copies the image.</strong> Sharing a brag sheet now produces a high-resolution PNG that lands in Copy Image / Save Image / AirDrop / Messages with maps and theming intact &mdash; same UX iOS already had for POTA share cards. Themed map renderers (midnight / warm / ocean / arctic / ember / azimuthal) snapshot correctly into the shared image.</li>
+        <li><strong>Edit TOTA after the session.</strong> <strong>Edit Session</strong> now exposes TOTA category, distance, elevation, ruck weight, winter override, first-ever-tile, and bonus toggles. PEF stays read-only because the rules require it to be frozen at session start. The whole section locks once the activation has been submitted.</li>
+        <li><strong>Distance-zero banner on TOTA score.</strong> When a TOTA session has QSOs but no distance recorded, the score ledger now shows an orange banner explaining that Standard scoring requires a non-zero distance &mdash; rather than reading 0 with no context.</li>
+        <li><strong>TOTA icon on session rows.</strong> Sessions tagged TOTA show the tile-grid icon in the sessions list alongside the existing tree (POTA), leaf (WWFF), and mountain (SOTA) icons.</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section changed">
+      <h3>Changed</h3>
+      <ul>
+        <li><strong>iCloud sync is journal-only.</strong> Removed the per-record CKSyncEngine path on both iOS and macOS. Both apps now use only the journal engine: dirty records batch into ChangeJournal records plus a periodic SQLite snapshot for new-device bootstrap. The "Journal Sync" toggle in Settings is gone &mdash; journal is the only path. Existing per-record CKRecords in your CloudKit zone are inert and will be cleaned up in a future zone wipe.</li>
+        <li><strong>About &rarr; Version reads from the bundle.</strong> Replaced a hardcoded version string with a live read from the app bundle so the Settings screen always matches the running build.</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section fixed">
+      <h3>Fixed</h3>
+      <ul>
+        <li><strong>Frequency parsing with commas.</strong> Inputs like <code>14,060</code> now parse as 14.060 MHz instead of being silently dropped. Fixes en-AU/en-GB locales where the keyboard inserts commas.</li>
+        <li><strong>Mid-session frequency edit.</strong> Tapping a logged QSO inside an active session now exposes Frequency and Band in the edit sheet &mdash; a CW operator can fix a wrong-frequency QSO without leaving the session. The band auto-derives from the frequency.</li>
+        <li><strong>QSO edit auto-derives band.</strong> Editing a QSO in the Logs tab no longer requires picking the band manually after entering a frequency. Save is no longer disabled when the band picker is empty as long as the frequency parses to an amateur band.</li>
+        <li><strong>iPad sidebar after Hunter Log.</strong> Sidebar tabs no longer get stuck after navigating Dashboard &rarr; Hunter Log. Detail-column nav stack now rebuilds on tab change.</li>
+        <li><strong>Start Session sheet scroll jitter.</strong> The bottom warning banner no longer fights the scroll layout when scrolling all the way down then back up.</li>
+        <li><strong>Hunter Log loading state.</strong> "Loading spots&hellip;" no longer sits indefinitely on first open. The first spot fetch fires immediately and switches to the empty state once it completes regardless of result.</li>
+        <li><strong>WiFi CAT thermal/battery drain.</strong> Stopped two CPU-pinning loops in the Icom RS-BA1 transport when the radio is unreachable: UDP receive errors now back off 500 ms instead of busy-looping, and a failed connect tears down both UDP channels so failed retries no longer leak threads.</li>
+        <li><strong>QRZ uploads off the main thread.</strong> Background QRZ uploads no longer hold the main actor; logger UI stays smooth during sync.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 1.84.2 -->
+  <div class="version-block">
+    <div class="version-heading">
+      <h2>1.84.2</h2>
+      <span class="date">2026-04-29</span>
+    </div>
+
+    <div class="changelog-section fixed">
+      <h3>Fixed</h3>
+      <ul>
+        <li><strong>Apple Watch battery drain.</strong> Stopped a WatchConnectivity activate/deactivate loop that pinned a CPU core and drained battery on phones with no paired Apple Watch. The session re-activation that lets a newly-paired Watch take over is now throttled to once every 30s.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 1.84.1 -->
+  <div class="version-block">
+    <div class="version-heading">
+      <h2>1.84.1</h2>
+      <span class="date">2026-04-27</span>
+    </div>
+
+    <div class="changelog-section fixed">
+      <h3>Fixed</h3>
+      <ul>
+        <li><strong>SOTA spot taps in HUNT.</strong> Tapping a SOTA spot in the HUNT panel now prefills the logger with callsign, frequency, and notes (summit ref, name, points). The tap was previously a no-op. FT8 in-session routing also recognizes SOTA spot taps.</li>
+        <li><strong>N-fer ADIF split.</strong> Split ADIF export now emits one file per park for N-fer POTA sessions &mdash; a 5-fer produces 5 ADIFs, a 3-fer produces 3, each with the right <code>MY_POTA_REF</code>. The "Split by Park" toggle also appears whenever any QSO carries a multi-park reference.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 1.84.0 -->
+  <div class="version-block">
+    <div class="version-heading">
+      <h2>1.84.0</h2>
+      <span class="date">2026-04-26</span>
+    </div>
+
+    <div class="changelog-section added">
+      <h3>Added</h3>
+      <ul>
+        <li><strong>HUNT command.</strong> Type <code>HUNT N9HO 14060</code> (or include a mode) in the logger to log a one-off off-frequency QSO without changing your active session. Missing freq/mode falls back to the session. Bare <code>HUNT</code> still opens the activator-spots panel.</li>
+        <li><strong>Files.app access.</strong> Carrier Wave now appears under <strong>Files &rarr; On My iPhone &rarr; Carrier Wave</strong>, exposing <code>Documents/QSOLedger/*.adi</code> for self-service ADIF recovery without the in-app share UI.</li>
+        <li><strong>What's New sheet.</strong> First-launch-after-update sheet showing release highlights bundled with the binary &mdash; iOS and macOS each track their own last-seen version.</li>
+        <li><strong>iOS data-loss debuggability.</strong> ContainerInitFailure record (timestamp, error, version, store/WAL/SHM file sizes, emergency-backup filename) now ships with the diagnostic bundle alongside every emergency-backup snapshot &mdash; future incidents arrive with the broken store + structured "why" attached.</li>
+        <li><strong>CW Sweep:</strong> Full CW Bridge support over BLE (CWBP). New radio-model entry, Radio Control tab section for scan/pair/connect/monitor, BLE handshake &rarr; bridge auto-detection &rarr; protocol hot-swap (CIV / Kenwood / Elecraft).</li>
+        <li><strong>Firmware:</strong> QRP Labs QCX and QMX radio support, TRS jack plug detection (mic/phone), FT8 encoding and decoding on the bridge with shared CFT8 codec.</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section changed">
+      <h3>Changed</h3>
+      <ul>
+        <li><strong>Recovery Mode replaces silent ModelContainer wipe.</strong> If the database fails to open at launch, the broken file is preserved (and copied to <code>Library/EmergencyBackup/</code>) and a full-screen recovery view shows the failure record and three explicit actions: <em>Restore from this backup</em>, <em>Send diagnostics</em>, and <em>Reset to empty database</em> (typed-confirmation gate). The user is locked into recovery mode until they pick one. (CAR-246)</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section fixed">
+      <h3>Security</h3>
+      <ul>
+        <li><strong>Firmware BLE NUS pairing.</strong> Bridge now requires LE Secure Connections + MITM-protected pairing with a random 6-digit passkey shown on the OLED. Bonds persist in NVS for silent reconnect; the NUS RX characteristic requires authenticated encryption. Closes the window where an unbonded peer could inject CAT commands or snoop USB / jack / radio-info broadcasts.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 1.83.0 -->
+  <div class="version-block">
+    <div class="version-heading">
+      <h2>1.83.0</h2>
+      <span class="date">2026-04-22</span>
+    </div>
+
+    <div class="changelog-section added">
+      <h3>Added</h3>
+      <ul>
+        <li><strong>Xiegu G90 full CI-V support.</strong> RIT/XIT offset set/clear and power level read/set for all CI-V radios (G90, IC-705, IC-7300). Kenwood/Elecraft power level via PC command.</li>
+        <li><strong>CW memory keyer over BLE bridge.</strong> Eight configurable message slots with template variables and prosign support. Keyer button row in the logger, settings page with tappable macro pills and live preview, long-press inline editing.</li>
+        <li><strong>Protobuf bridge protocol.</strong> Migrated BLE bridge from custom binary framing to protobuf serialization. Protocol version 2.</li>
+        <li><strong>Horizon Survey (alpha).</strong> LIDAR-based 360&deg; obstruction profile tool. Polar plot with takeoff-angle slider, blocked-bearing analysis, and gap guidance. Requires iPhone Pro with LIDAR.</li>
+        <li><strong>Send Debug Info.</strong> Session detail action that gathers full session state, QSOs, service presences, spots, sync log, and ADIF into a shareable bundle.</li>
+        <li><strong>Contests browser.</strong> Full catalog of server-published contest definitions in the Activity tab with live/upcoming times, schedule, rules summary, friend participation, and drill-into detail.</li>
+        <li><strong>Server-published contest definitions (v0.3).</strong> Phase-based scoring engine, dupe checking, exchange parsing, Cabrillo export, off-time badges, and band-change violation counts &mdash; all driven from a single shared model.</li>
+        <li><strong>Contest calendar enrichment.</strong> Live countdown, colored chips, contest detail sheet with Log Now / Remind / Add to Calendar actions, and full month-grid calendar view.</li>
+        <li><strong>QSO editor overhaul.</strong> Editable operator callsign, collapsible sections, rich pickers for DXCC/mode/band/state/contest/parks, ADIF catalog with custom entry support, and Other ADIF Fields disclosure for imported logs.</li>
+        <li><strong>RBN Lookup dashboard card.</strong> Check Reverse Beacon Network spots for any callsign from the dashboard without starting a session.</li>
+        <li><strong>SKCC spot enrichment.</strong> Daily roster download tags spots with SKCC member number and award level on both iOS and CW Sweep.</li>
+        <li><strong>Group QSOs into session.</strong> Select logged QSOs in the Logs tab and create a completed session. Smart defaults for activation type, callsign, and time range.</li>
+        <li><strong>QSON export and safety ledger.</strong> Full log export in Ham2K-compatible JSON format with append-only monthly ledger files.</li>
+        <li><strong>Enriched share links.</strong> Rich link previews for callsigns, QSOs, parks, and SOTA summits via iMessage/Mail/Notes. Deep links into the app.</li>
+        <li><strong>CoreSpotlight indexing.</strong> QSOs and sessions searchable from the iOS home screen and Siri. Background reindex with deep-link tap-back.</li>
+        <li><strong>Spotlight Debug (Developer).</strong> In-app view showing reindex state, indexed counts, and force-rebuild button.</li>
+        <li><strong>Server:</strong> Contest visualizer at /contests, seed script for loading contest definitions.</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section changed">
+      <h3>Changed</h3>
+      <ul>
+        <li><strong>macOS band scope redesign.</strong> Structured rows, diagonal leader lines, crowded-spot displacement, vim-style keyboard nav, right-click context menu, fit-to-spots zoom, keyboard help overlay.</li>
+        <li><strong>Centralized polling timer.</strong> All periodic network polling consolidated behind a single 60-second timer for better battery life.</li>
+        <li><strong>Onboarding simplified.</strong> Reduced to callsign-only entry. Service credentials and community registration moved to a persistent Getting Started card on the Dashboard.</li>
+        <li><strong>Merged Callsign &amp; RBN Lookup cards.</strong> Single dashboard card with unified search, enriched profile, and inline RBN spots.</li>
+        <li><strong>QSO detail redesign.</strong> Hero card with callsign/name/badges, colored band/mode/freq pills, RST exchange, distance/bearing/efficiency strip, side-by-side station cards, activity chips, and quote-style notes.</li>
+        <li><strong>Edit QSO tappable section headers.</strong> Collapsible sections now use explicit button headers with rotating chevrons.</li>
+        <li><strong>Group into Session improvements.</strong> Shows which sessions block QSOs, with option to unlink and regroup. Orphaned QSOs auto-included.</li>
+        <li><strong>Safety Ledger improvements.</strong> ADIF/QSON format pills, iCloud Drive mirroring for ledger files.</li>
+        <li><strong>Daily Activity redesign.</strong> Day-at-a-glance QSO map, merged date header, full-fidelity QSO rows with enrichment.</li>
+        <li><strong>Brag sheet map improvements.</strong> Antimeridian-aware viewport, gray line overlay, magenta trace lines, dot+halo pin style.</li>
+        <li><strong>POTA uploads &mdash; fully manual via ADIF export.</strong> Upload buttons on the session list and activation rows now open the ADIF export sheet instead of uploading directly. Users save the file, then upload it themselves on pota.app. First-time instruction card walks through the steps. POTA upload page URL corrected to <code>/user/logs</code>.</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section fixed">
+      <h3>Fixed</h3>
+      <ul>
+        <li><strong>POTA upload ADIF validation.</strong> Comprehensive field validator catches invalid modes/bands before upload. Generic modes normalized to ADIF-compliant equivalents.</li>
+        <li><strong>QRZ upload count mismatch.</strong> Credential checks aligned with ServiceConfiguration; missing QRZ presences backfilled.</li>
+        <li><strong>RBN spotter-grid enrichment.</strong> Skimmer callsign suffixes now stripped before grid lookup so mini-map appears correctly.</li>
+        <li><strong>iCloud sync duplicates.</strong> Fixed ~3x duplicate QSOs for phone-mode contacts from dedup key mismatch.</li>
+        <li><strong>iCloud sync re-uploads.</strong> Dirty flags only set when merge produces data the server doesn't have.</li>
+        <li><strong>Multiple crash fixes.</strong> ClubsSyncService, Activity feed, FriendsSyncService, and all remaining Dictionary(uniqueKeysWithValues:) sites hardened against duplicate keys.</li>
+        <li><strong>Brag sheet map stripes.</strong> Antimeridian longitude-wrap picking closest representation to viewport center.</li>
+        <li><strong>Spotlight deep linking, reindex reliability, UTType, priority, and edited-QSO detection.</strong></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 1.82.1 -->
+  <div class="version-block">
+    <div class="version-heading">
+      <h2>1.82.1</h2>
+      <span class="date">2026-04-06</span>
+    </div>
+    <p style="color: var(--text-dim); font-size: 0.9rem;">Bug fix release.</p>
+  </div>
+
+  <!-- 1.82.0 -->
+  <div class="version-block">
+    <div class="version-heading">
+      <h2>1.82.0</h2>
+      <span class="date">2026-04-06</span>
+    </div>
+
+    <div class="changelog-section added">
+      <h3>Added</h3>
+      <ul>
+        <li><strong>QSO safety ledger.</strong> Append-only ADIF file records every QSO outside SwiftData &mdash; survives database destruction.</li>
+        <li><strong>Location-based call sign prefix picker.</strong> GPS-based portable prefix suggestions with searchable country list.</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section fixed">
+      <h3>Fixed</h3>
+      <ul>
+        <li><strong>Critical:</strong> ModelContainer init failure silently deleting entire database &mdash; now creates emergency backup before reset.</li>
+        <li><strong>Critical:</strong> iCloud snapshot restore replacing local database without validating contents.</li>
+        <li>Prevent uploading empty database snapshots to iCloud.</li>
+        <li>Auto-backup no longer overwrites good backups with empty database after data loss.</li>
+        <li>Backup pruning prefers backups with data over empty ones.</li>
+        <li>iCloud Drive backup sync prefers backups with data over empty ones.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 1.81.0 -->
+  <div class="version-block">
+    <div class="version-heading">
+      <h2>1.81.0</h2>
+      <span class="date">2026-04-02</span>
+    </div>
+
+    <div class="changelog-section added">
+      <h3>Added</h3>
+      <ul>
+        <li><strong>CW Sweep:</strong> Icom WiFi (RS-BA1) radio connection support for IC-705 and IC-7610.</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section fixed">
+      <h3>Fixed</h3>
+      <ul>
+        <li>IC-705 WiFi sessions disconnecting after ~60 seconds (missing periodic reauth).</li>
+        <li>Frequency/mode changes from logger not reaching radio over WiFi.</li>
+        <li>WiFi reconnect leaving connectionStatus stuck at .connecting permanently.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 1.80.0 -->
+  <div class="version-block">
+    <div class="version-heading">
+      <h2>1.80.0</h2>
+      <span class="date">2026-04-02</span>
+    </div>
+
+    <div class="changelog-section added">
+      <h3>Added</h3>
+      <ul>
+        <li>Grid square display for rove sessions.</li>
+        <li>Instagram album-style park card carousel with GIS boundaries and grid overlay.</li>
+        <li>RST sent/received on QSO rows.</li>
+        <li>Percentile rankings for QSO count, duration, and rate.</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section changed">
+      <h3>Changed</h3>
+      <ul>
+        <li><strong>Session detail redesign.</strong> Three-tier layout: hero summary, QSO list, insights carousel. Unified POTA/regular session hero card with equipment display, band/mode badges, and shift windows.</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section fixed">
+      <h3>Fixed</h3>
+      <ul>
+        <li>iCloud sync duplicate QSOs appearing as triplicates in session detail.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 1.79.0 -->
+  <div class="version-block">
+    <div class="version-heading">
+      <h2>1.79.0</h2>
+      <span class="date">2026-04-02</span>
+    </div>
+
+    <div class="changelog-section added">
+      <h3>Added</h3>
+      <ul>
+        <li><strong>Per-service sync mode.</strong> Bidirectional / Upload Only / Download Only for QRZ, POTA, and eQSL.</li>
+        <li><strong>DONKI API note field</strong> for solar flares and CMEs in space weather views.</li>
+        <li><strong>Journal-based iCloud sync engine.</strong> SQLite snapshot bootstrap for instant device setup, batched JSON journal entries, cross-device sync mode toggle via KVS.</li>
+        <li>Snapshot and journal sync telemetry with file size and duration tracking.</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section changed">
+      <h3>Changed</h3>
+      <ul>
+        <li>Renamed "Sync Sources" to "Sync Services" throughout the app.</li>
+        <li>Enriched spots widgets with activity type icons, band/mode, park/summit references, and SOTA spot source.</li>
+      </ul>
+    </div>
+  </div>
+
+  </div><!-- /track-apple -->
+
+  <div class="track" id="track-android" role="tabpanel" aria-labelledby="tab-android">
+
+  <!-- Android 0.7.1 -->
+  <div class="version-block">
+    <div class="version-heading">
+      <h2>Android 0.7.1</h2>
+      <span class="date">2026-10-23</span>
+    </div>
+
+    <div class="changelog-section fixed">
+      <h3>Fixed</h3>
+      <ul>
+        <li><strong>Park names on POTA spots.</strong> The relaunched POTA API moved the park name to a new field; spot lists show park names again.</li>
+        <li><strong>Satellites open instantly.</strong> The satellite screen shows cached orbital data right away and refreshes in the background, with a longer budget for SatNOGS&rsquo;s slow downloads.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Android 0.7.0 -->
+  <div class="version-block">
+    <div class="version-heading">
+      <h2>Android 0.7.0</h2>
+      <span class="date">2026-10-14</span>
+    </div>
+
+    <div class="changelog-section added">
+      <h3>Added</h3>
+      <ul>
+        <li><strong>Import ADIF files.</strong> Logbook &rarr; &#8942; &rarr; Import ADIF&hellip; opens the system file picker for any <code>.adi</code>/<code>.adif</code> log. QSOs you already have &mdash; same callsign, band, mode and 2-minute window, the same rule as iOS &mdash; are skipped, multi-operator logs keep only your QSOs, and a summary reports what was imported.</li>
+        <li><strong>Another Morse Trainer streak.</strong> More &rarr; Another Morse Trainer links your AMT account with an emailed sign-in link. Home shows a Morse practice streak and marks practice days on the activity grid, cached for offline use.</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section changed">
+      <h3>Changed</h3>
+      <ul>
+        <li><strong>One-time reinstall.</strong> 0.7.0 is signed with a new release key, so it can&rsquo;t install over 0.6.x. Sign in to Carrier Wave Sync so your log comes back, uninstall the old app, then install 0.7.0 and sign back in.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Android 0.6.2 -->
+  <div class="version-block">
+    <div class="version-heading">
+      <h2>Android 0.6.2</h2>
+      <span class="date">2026-09-20</span>
+    </div>
+
+    <div class="changelog-section changed">
+      <h3>Changed</h3>
+      <ul>
+        <li><strong>Steadier pointing mode.</strong> The Doppler-corrected tuning readout stays on screen while you steer, and the frequency no longer shifts when you land on target.</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section fixed">
+      <h3>Fixed</h3>
+      <ul>
+        <li><strong>Satellite search crash.</strong> Opening satellite search no longer crashes once the catalog has loaded.</li>
+        <li><strong>Chart zoom crash.</strong> Pinch-zooming the sky chart with a satellite selected no longer crashes.</li>
+        <li><strong>Real satellite names.</strong> Birds that showed catalog placeholders like &ldquo;OBJECT C&rdquo; now use their real names &mdash; TO-108, FO-29, and friends &mdash; and FO-29-class satellites with mislabeled catalog data are back in the list.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Android 0.6.1 -->
+  <div class="version-block">
+    <div class="version-heading">
+      <h2>Android 0.6.1</h2>
+      <span class="date">2026-09-20</span>
+    </div>
+
+    <div class="changelog-section fixed">
+      <h3>Fixed</h3>
+      <ul>
+        <li><strong>Diagnosable network errors.</strong> Fetch failures (like the Satellites orbital-data load) now report the underlying cause &mdash; DNS, TLS, connection refused, or timeout &mdash; instead of an opaque &ldquo;error sending request&rdquo; message.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Android 0.6.0 -->
+  <div class="version-block">
+    <div class="version-heading">
+      <h2>Android 0.6.0</h2>
+      <span class="date">2026-09-20</span>
+    </div>
+
+    <div class="changelog-section added">
+      <h3>Added</h3>
+      <ul>
+        <li><strong>Satellites.</strong> The full satellite suite arrives on Android, driven by the shared Rust engine: a live azimuthal sky chart with coastlines, search and pass lists with favorites, exact-alarm pass alerts with boot recovery and notification deep links, a post-pass quick log that writes SAT_NAME / PROP_MODE QSOs, in-pass audio recording with tap marks, a tilt-aware sky dome, and a boom-mounted antenna pointing mode with Doppler-corrected tuning and gyro boom calibration.</li>
+        <li><strong>Pass filters.</strong> Filter the chart and pass lists by mode (FM / linear / digital / telemetry), uplink and downlink band, community heard-today activity, favorites, minimum elevation, and a per-direction horizon mask.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Android 0.5.2 -->
+  <div class="version-block">
+    <div class="version-heading">
+      <h2>Android 0.5.2</h2>
+      <span class="date">2026-08-27</span>
+    </div>
+
+    <div class="changelog-section changed">
+      <h3>Changed</h3>
+      <ul>
+        <li><strong>SOTA spots temporarily disabled.</strong> The SOTAwatch API shuts down on August 31, 2026, and its replacement requires approval before apps may connect. SOTA spots return once Carrier Wave migrates to the new API &mdash; SOTA summit data and SOTA session logging are unaffected.</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section fixed">
+      <h3>Fixed</h3>
+      <ul>
+        <li><strong>&ldquo;SOTA: JSON parse error&rdquo; banner on the Hunter page.</strong> SOTAwatch began injecting an invalid notice entry into its spots feed, which broke the whole SOTA source. Spots now decode independently, so one bad entry can never take down a feed.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Android 0.5.1 -->
+  <div class="version-block">
+    <div class="version-heading">
+      <h2>Android 0.5.1</h2>
+      <span class="date">2026-08-02</span>
+    </div>
+
+    <div class="changelog-section changed">
+      <h3>Changed</h3>
+      <ul>
+        <li><strong>Hunter Log filter menu collapses on scroll.</strong> The source chips, map and filter toggles, last-refresh pill, and sort picker slide away as you scroll down the spot list and slide back when you scroll up &mdash; giving spots more room on smaller screens.</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section fixed">
+      <h3>Fixed</h3>
+      <ul>
+        <li><strong>Contacts logged during a session now appear immediately.</strong> QSOs logged through an active session show up on the Home and Logbook tabs right away instead of only after relaunching the app.</li>
+        <li><strong>Session detail edit and delete work again.</strong> Opening a finished session with a large log no longer breaks its detail screen &mdash; the summary card, Delete, Reopen, and Edit Info all work, and the session and replay title bars sit at the correct height.</li>
+        <li><strong>Map top-edge flicker.</strong> The full-screen Map tab and Parks &amp; Summits search no longer flicker along the top edge while panning.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Android 0.5 -->
+  <div class="version-block">
+    <div class="version-heading">
+      <h2>Android 0.5</h2>
+      <span class="date">2026-07-21</span>
+    </div>
+
+    <div class="changelog-section added">
+      <h3>Added</h3>
+      <ul>
+        <li><strong>Parks &amp; Summits map.</strong> A new map (Parks chip on the Map tab): clustered POTA park and SOTA summit pins with name search, park boundary and trail overlays (server-merged polygons), SOTA activation zones, US state and county lines, WWFF areas, grid-square and TOTA tile layers, tappable callouts, and the Rosette multiplier finder &mdash; all on the shared Rust core.</li>
+        <li><strong>POTA activation browser.</strong> Browse your park activations with a detail screen: header stats, a session map card, a QSO timeline, a POTA Awards &amp; Certificates screen (tiered progress plus Kilo/LaPorta/Six Pack specials), a Conditions sheet, single and bulk ADIF export via the shared Rust writer, and an activation share card &mdash; mirroring iOS.</li>
+        <li><strong>Propagation check (&ldquo;How&rsquo;s my antenna?&rdquo;).</strong> A live view over the shared Rust engine: headline stats, an interactive map, an azimuthal range-ring card, per-source (RBN / PSK Reporter) connectivity indicators, and a streaming spot feed, plus a results view with a per-band breakdown and recorded connectivity gaps. Receive-only for now.</li>
+        <li><strong>Brag sheet share card.</strong> Share your Brag Sheet as an image with six custom map styles (Azimuthal, Midnight, Warm, Ocean, Arctic, Ember), rendered by the shared Rust rasterizer.</li>
+        <li><strong>Embedded map cards &amp; timeline replay.</strong> Session detail, QSO detail, callsign, and spots-mini map cards, plus a full-screen session replay that scrubs or plays through a session at 1&times;&ndash;8&times; while QSO pins accumulate and RBN spot circles fade on the shared decay curves.</li>
+        <li><strong>Map camera auto-fit, spot sorting &amp; a debug log.</strong> The QSO map frames your contacts on first load (antimeridian-aware); a Recent / Frequency / Needs control sorts the spot feed; and a More-tab debug log collects diagnostics, mirroring iOS.</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section fixed">
+      <h3>Fixed</h3>
+      <ul>
+        <li><strong>SOTA activation-zone downloads no longer fail with a rate-limit error.</strong> The download paces itself under the server&rsquo;s per-IP limit and honors its retry backoff, so it completes and resumes instead of aborting on the first hit.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Android 0.4 -->
+  <div class="version-block">
+    <div class="version-heading">
+      <h2>Android 0.4</h2>
+      <span class="date">2026-07-16</span>
+    </div>
+
+    <div class="changelog-section added">
+      <h3>Added</h3>
+      <ul>
+        <li><strong>The activation logger.</strong> Starting a session now opens a live QSO-entry logger on a new <strong>Sessions</strong> tab &mdash; a session header, a callsign/RST/grid/notes form with mode-default RST, Super Check Partial suggestions, day-scoped dupe detection, a running QSO list, and pause/end &mdash; all on the shared Rust core, mirroring the iOS Sessions tab.</li>
+        <li><strong>Redesigned session start wizard.</strong> Icon-led section headers, an operator hero (callsign &amp; grid), a segmented mode picker, program chips with POTA selected by default, an inventory-backed gear loadout selector, a collapsed &ldquo;More Options&rdquo; disclosure, and a pinned Start button carrying the disabled reason. Frequency and park auto-populate on open.</li>
+        <li><strong>Interactive frequency scope.</strong> A scroll-to-tune ruler with a band/step strip, live spot rows, a Set field, and Find-clear, matching the iOS selector.</li>
+        <li><strong>Brag Sheet.</strong> Customizable achievement stats across weekly, monthly, and all-time periods, backed by the shared Rust engine.</li>
+        <li><strong>Inline QSO editing from the Hunter tab.</strong> Tapping the Hunter Log summary card expands today&apos;s logged contacts; tapping one opens an inline editor for the common fields, with delete &mdash; saves and deletes go through the shared store.</li>
+        <li><strong>Band, mode &amp; needs filters on the spot feed.</strong> A new filter button on the Hunter and Sessions spot browsers narrows the feed by band, mode, and &ldquo;needs only,&rdquo; layered on the source chips, with a badge showing the active-filter count.</li>
+        <li><strong>Sign-in link opens the app.</strong> Tapping the emailed verification link now hands off to the app (App Links plus a <code>carrierwave://auth</code> scheme) and completes sign-in itself instead of finishing in the browser.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Android 0.3 -->
+  <div class="version-block">
+    <div class="version-heading">
+      <h2>Android 0.3</h2>
+      <span class="date">2026-07-12</span>
+    </div>
+
+    <div class="changelog-section added">
+      <h3>Added</h3>
+      <ul>
+        <li><strong>Self-spotting from the logger.</strong> In an active POTA session, the <code>SPOT</code> command posts a self-spot through the shared Rust spot engine &mdash; fanning out across every park in an n-fer reference &mdash; and <code>SPOT REPEAT &lt;minutes&gt;</code> / <code>SPOT STOP</code> run a repeating self-spot timer.</li>
+        <li><strong>Hunt browser.</strong> <code>HUNT</code> (and <code>POTA</code> / <code>SPOTS</code>) opens the live activator-spots feed as a sheet over the logger, defaulting to the session&apos;s mode family (CW/Phone/Digital); tapping a spot seeds the quick-entry bar.</li>
+        <li><strong>Themes.</strong> Six selectable app themes from a new Appearance card on the More tab, applied instantly and persisted across launches: Instrument (the original green-on-charcoal default), Nixie (warm tube glow), Waterfall (SDR spectrogram blues), Boatanchor (Collins-style cream light theme), Phosphor (monochrome green CRT), and Grey Line (vaporwave dusk).</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section fixed">
+      <h3>Fixed</h3>
+      <ul>
+        <li><strong>Resume a paused session.</strong> Pausing a session deactivated it with no way back &mdash; the Sessions tab now lists paused sessions with a Resume button (resuming one pauses any other active session).</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Android 0.2 -->
+  <div class="version-block">
+    <div class="version-heading">
+      <h2>Android 0.2</h2>
+      <span class="date">2026-07-12</span>
+    </div>
+
+    <div class="changelog-section added">
+      <h3>Added</h3>
+      <ul>
+        <li><strong>Session start wizard.</strong> Starting a session opens a full wizard at parity with iOS &mdash; Activate / Casual / Contest flows, an operator hero (callsign + grid), a segmented mode picker, program chips (POTA selected by default), an inventory-backed gear loadout with a collapsed summary, a collapsed &ldquo;More Options&rdquo; disclosure, and a pinned Start button carrying the disabled reason. Frequency and park auto-populate on open, and park references show name, location, and your own activation/hunter stats. Includes TOTA, pack checklist, multi-operator, and prefix sections.</li>
+        <li><strong>Activation logger.</strong> A live QSO-entry logger (new <strong>Sessions</strong> tab) &mdash; session header, a callsign/RST/grid/notes form with mode-default RST, Super Check Partial suggestions, day-scoped dupe detection, a running QSO list, and pause/end &mdash; all driven by the shared Rust core.</li>
+        <li><strong>Interactive frequency scope.</strong> A scroll-to-tune ruler with a band/step strip, live spot rows, a Set field, and Find-clear, matching the iOS selector.</li>
+        <li><strong>Logger command bar.</strong> Quick-entry commands (<code>FREQ</code>, <code>MODE</code>, <code>SPOT</code>, <code>RBN</code>, <code>HUNT</code>, and their aliases) run through the shared Rust command handler.</li>
+        <li><strong>Brag Sheet.</strong> Customizable achievement stats across weekly, monthly, and all-time periods, backed by the shared Rust engine.</li>
+        <li><strong>SDR Tune-In.</strong> Listen to an activator on a public KiwiSDR straight from the hunter feed &mdash; receiver selection and audio decode run in the shared Rust core, with a mini player bar.</li>
+        <li><strong>External Data card.</strong> The Account screen gains FCC callsigns, POTA parks, SOTA summits &amp; zones, WWFF directory, Super Check Partial, equipment catalog, and contest definitions &mdash; each with count, age, and refresh.</li>
+        <li><strong>POTA respot.</strong> POTA spots gain a respot button that posts a fresh spot through the shared Rust core, with a confirmation preview and a 5-minute anti-spam cooldown.</li>
+        <li><strong>Pull-to-refresh spots.</strong> Pull the hunter spot list down to poll immediately, with a live &ldquo;last refreshed&rdquo; pill.</li>
+        <li><strong>Set session fields from quick entry.</strong> A callsign-less line like <code>14.046 CW CN87</code> updates the active session&apos;s frequency, mode, and grid for QSOs logged from then on.</li>
+      </ul>
+    </div>
+
+    <div class="changelog-section changed">
+      <h3>Changed</h3>
+      <ul>
+        <li><strong>Frequency-scope logic on the shared core.</strong> Ruler rows and band-plan verdicts now come from the shared Rust core, identical to iOS.</li>
+        <li><strong>Brag Sheet config on the shared store.</strong> Brag configuration is stored in the shared <code>synced_config</code> store.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Android 0.1 -->
+  <div class="version-block">
+    <div class="version-heading">
+      <h2>Android 0.1</h2>
+      <span class="date">2026-07-04</span>
+    </div>
+
+    <div class="changelog-section added">
+      <h3>Added</h3>
+      <ul>
+        <li><strong>First Android release.</strong> Carrier Wave on Android, built on the same shared Rust core (via UniFFI) as iOS and macOS.</li>
+        <li><strong>iOS-mirroring tabs.</strong> Home, Sessions, Logbook, Map, Friends, and More.</li>
+        <li><strong>Live spot monitoring.</strong> The hunter feed runs on the shared Rust spot engine with callsign enrichment and an &ldquo;All&rdquo; merged feed; command bars show dupe badges and Super Check Partial suggestions.</li>
+        <li><strong>Quick-entry command bar.</strong> Lone-callsign recognition with live enrichment shown inline.</li>
+        <li><strong>End-to-end encrypted log sync.</strong> Per-server data keys, an auto-seeded first sync, 429 retry, and a live sync phase and timing readout.</li>
+        <li><strong>Clubs &amp; Friends.</strong> Membership on the shared Rust core, applied in batched transactions and auto-syncing on launch and sign-in.</li>
+        <li><strong>Profile &amp; activity.</strong> Profile settings and an activity heatmap.</li>
+        <li><strong>Awards &amp; Streaks card.</strong> A dashboard card built from shared Rust aggregates.</li>
+        <li><strong>POTA UTC-midnight split.</strong> Multi-day POTA activations split at UTC midnight on session end.</li>
+        <li><strong>Signed release APKs.</strong> Release-signing config for shareable builds.</li>
+      </ul>
+    </div>
+  </div>
+
+  </div><!-- /track-android -->
+
+</div>
+
+<script>
+  function showTrack(name) {
+    var tracks = { apple: 'track-apple', android: 'track-android' };
+    var tabs = { apple: 'tab-apple', android: 'tab-android' };
+    Object.keys(tracks).forEach(function (key) {
+      document.getElementById(tracks[key]).classList.toggle('is-active', key === name);
+      document.getElementById(tabs[key]).setAttribute('aria-selected', key === name ? 'true' : 'false');
+    });
+  }
+</script>
+
+<footer>
+  <span class="footer-logo">Carrier Wave</span>
+  <ul class="footer-links">
+    <li><a href="/devlog/">Devlog</a></li>
+    <li><a href="/changelog.html">Changelog</a></li>
+    <li><a href="/privacy.html">Privacy Policy</a></li>
+    <li><a href="https://discord.gg/PqubUxWW62">Discord</a></li>
+  </ul>
+  <span class="footer-morse">-.-. .--</span>
+</footer>
+
+</body>
+</html>

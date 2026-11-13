@@ -1,0 +1,38 @@
+{{- /* Project-level override of the theme's head.html. Mirrors the theme
+       version verbatim and adds per-page OG/Twitter cards for macro
+       single pages (CAR-273). */ -}}
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="{{ with .Description }}{{ . }}{{ else }}{{ .Site.Params.description }}{{ end }}">
+
+<title>{{ if .IsHome }}{{ .Site.Title }}{{ else }}{{ .Title }} | {{ .Site.Title }}{{ end }}</title>
+
+<!-- Preload fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<!-- Favicon -->
+<link rel="icon" type="image/png" href="{{ "images/icon.png" | relURL }}">
+
+<!-- Stylesheets -->
+<link rel="stylesheet" href="{{ "css/main.css" | relURL }}">
+{{ with .OutputFormats.Get "markdown" }}<link rel="alternate" type="text/markdown" href="{{ .Permalink }}" title="{{ $.Title }} (Markdown)">{{ end }}
+<link rel="stylesheet" href="{{ "css/macros.css" | relURL }}">
+<link rel="stylesheet" href="{{ "css/print.css" | relURL }}" media="print">
+
+<!-- Theme color for mobile browsers -->
+<meta name="theme-color" content="#9B4DCA">
+
+{{- /* OG + Twitter cards for macro single pages. */ -}}
+{{- if eq .Section "macros" -}}
+  {{- if not .IsNode -}}
+<meta property="og:title" content="{{ .Title }} · Carrier Wave Macros">
+<meta property="og:type" content="article">
+<meta property="og:url" content="{{ .Permalink }}">
+<meta property="og:description" content="{{ with .Params.description }}{{ . }}{{ else }}{{ .Site.Params.description }}{{ end }}">
+<meta property="og:site_name" content="Carrier Wave">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="{{ .Title }} · Carrier Wave Macros">
+<meta name="twitter:description" content="{{ with .Params.description }}{{ . }}{{ else }}{{ .Site.Params.description }}{{ end }}">
+  {{- end -}}
+{{- end -}}

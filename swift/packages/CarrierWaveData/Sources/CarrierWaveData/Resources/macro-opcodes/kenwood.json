@@ -1,0 +1,11 @@
+{
+  "protocol": "kenwood",
+  "$comment": "Kenwood / Elecraft ASCII opcode prefixes. Patterns matched against the raw byte payload as ASCII. Reference: K3/KX3 Programmer's Reference, TS-590 manual.",
+  "opcodes": [
+    { "match": "54 58 3B",    "capabilities": { "transmits": true },  "comment": "'TX;' transmit" },
+    { "match": "52 58 3B",    "capabilities": { "transmits": false }, "comment": "'RX;' receive" },
+    { "match": "46 41 ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ??", "capabilities": { "changesFrequency": true }, "comment": "'FA<11-digit hz>;' set VFO A frequency (full 14-byte command minus the closing ;)" },
+    { "match": "4D 44 ??",    "capabilities": { "changesMode": true }, "comment": "'MD<n>' set mode" },
+    { "match": "50 43",       "capabilities": { "changesPower": true }, "comment": "'PC' power level command (3-digit)" }
+  ]
+}

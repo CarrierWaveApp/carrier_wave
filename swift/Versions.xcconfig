@@ -1,0 +1,27 @@
+// Single source of truth for the Apple app versions (CAR-158).
+//
+// Both Xcode projects read this file:
+//   - swift/ios/CarrierWave.xcodeproj  (project-level xcconfig; every target —
+//     app, watch, widgets, unit tests, UI tests — inherits MARKETING_VERSION /
+//     CURRENT_PROJECT_VERSION from the CARRIER_WAVE_IOS_* values below)
+//   - swift/macos/project.yml          (xcodegen `configFiles`; CW Sweep maps
+//     MARKETING_VERSION / CURRENT_PROJECT_VERSION to the CW_SWEEP_* values)
+//
+// The two apps ship on independent version lines, so each has its own pair.
+// Do not hardcode MARKETING_VERSION or CURRENT_PROJECT_VERSION in the pbxproj
+// or project.yml — `scripts/check-versions.sh` fails if a literal creeps back
+// in, and it also requires the values here to match the newest
+// `WhatsNewCatalog` entry and the newest released CHANGELOG.md heading for
+// each platform. Android is versioned separately in android/app/build.gradle.kts.
+//
+// Xcode Cloud overwrites CARRIER_WAVE_IOS_BUILD_NUMBER with $CI_BUILD_NUMBER at
+// build time (swift/ios/ci_scripts/ci_pre_xcodebuild.sh); the committed value
+// is the local/dev build number.
+
+// Carrier Wave: Field (iOS app + watch + widgets)
+CARRIER_WAVE_IOS_MARKETING_VERSION = 1.106.0
+CARRIER_WAVE_IOS_BUILD_NUMBER = 32
+
+// Carrier Wave: Sweep (macOS)
+CW_SWEEP_MARKETING_VERSION = 0.14.0
+CW_SWEEP_BUILD_NUMBER = 17

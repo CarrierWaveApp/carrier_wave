@@ -1,0 +1,9 @@
+{{- $src := .Get "src" -}}
+{{- $alt := .Get "alt" | default "Screenshot" -}}
+{{- $caption := .Get "caption" -}}
+<figure class="screenshot">
+  <img src="{{ $src | relURL }}" alt="{{ $alt }}" loading="lazy">
+  {{- if $caption -}}
+  <figcaption>{{ $caption | markdownify }}</figcaption>
+  {{- end -}}
+</figure>

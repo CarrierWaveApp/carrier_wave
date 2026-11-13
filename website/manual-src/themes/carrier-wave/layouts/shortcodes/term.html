@@ -1,0 +1,10 @@
+{{- $term := .Get 0 -}}
+{{- $termLower := lower $term -}}
+{{- $glossary := .Site.Data.glossary -}}
+{{- $definition := "" -}}
+{{- range $key, $value := $glossary -}}
+  {{- if eq (lower $key) $termLower -}}
+    {{- $definition = $value -}}
+  {{- end -}}
+{{- end -}}
+<span class="glossary-term">{{ $term }}{{- if $definition -}}<span class="glossary-tooltip">{{ $definition }}</span>{{- end -}}</span>

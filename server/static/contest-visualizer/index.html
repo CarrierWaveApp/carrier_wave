@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Contest Scoring Visualizer</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+  :root {
+    --font-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --font-mono: "JetBrains Mono", "SF Mono", "Menlo", "Monaco", monospace;
+
+    /* Semantic backgrounds */
+    --bg-base: #f2f2f7;
+    --bg-card: #ffffff;
+    --bg-card-secondary: #f5f5f5;
+    --bg-field: #e5e5ea;
+    --bg-elevated: #ffffff;
+
+    /* Semantic text */
+    --text-primary: #1c1c1e;
+    --text-secondary: #8e8e93;
+    --text-tertiary: #c7c7cc;
+
+    /* Borders */
+    --border: #d1d1d6;
+    --border-light: #e5e5ea;
+    --separator: #c6c6c8;
+
+    /* Semantic accent colors */
+    --color-blue: #007aff;
+    --color-green: #34c759;
+    --color-red: #ff3b30;
+    --color-orange: #ff9500;
+    --color-purple: #af52de;
+    --color-yellow: #ffcc00;
+
+    /* Phase colors */
+    --phase-per-qso: #ff9500;
+    --phase-multiplier: #007aff;
+    --phase-aggregate: #af52de;
+
+    /* Badge backgrounds */
+    --badge-blue-bg: rgba(0, 122, 255, 0.12);
+    --badge-green-bg: rgba(52, 199, 89, 0.12);
+    --badge-red-bg: rgba(255, 59, 48, 0.12);
+    --badge-orange-bg: rgba(255, 149, 0, 0.12);
+    --badge-purple-bg: rgba(175, 82, 222, 0.12);
+
+    /* Interaction */
+    --row-hover: rgba(0, 122, 255, 0.06);
+    --row-selected: rgba(0, 122, 255, 0.1);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg-base: #000000;
+      --bg-card: #1c1c1e;
+      --bg-card-secondary: #2c2c2e;
+      --bg-field: #3a3a3c;
+      --bg-elevated: #2c2c2e;
+
+      --text-primary: #f5f5f7;
+      --text-secondary: #98989d;
+      --text-tertiary: #48484a;
+
+      --border: #38383a;
+      --border-light: #2c2c2e;
+      --separator: #38383a;
+
+      --color-blue: #0a84ff;
+      --color-green: #30d158;
+      --color-red: #ff453a;
+      --color-orange: #ff9f0a;
+      --color-purple: #bf5af2;
+      --color-yellow: #ffd60a;
+
+      --phase-per-qso: #ff9f0a;
+      --phase-multiplier: #0a84ff;
+      --phase-aggregate: #bf5af2;
+
+      --badge-blue-bg: rgba(10, 132, 255, 0.18);
+      --badge-green-bg: rgba(48, 209, 88, 0.18);
+      --badge-red-bg: rgba(255, 69, 58, 0.18);
+      --badge-orange-bg: rgba(255, 159, 10, 0.18);
+      --badge-purple-bg: rgba(191, 90, 242, 0.18);
+
+      --row-hover: rgba(10, 132, 255, 0.08);
+      --row-selected: rgba(10, 132, 255, 0.15);
+    }
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--font-body);
+    background: var(--bg-base);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--text-tertiary); border-radius: 3px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useCallback } = React;
+
+/* -- API -- */
+const API_BASE = "/v1";
+async function fetchContestList() {
+  const res = await fetch(`${API_BASE}/contests`);
+  if (!res.ok) throw new Error(`Failed to fetch contests: ${res.status}`);
+  const body = await res.json();
+  return body.data.contests;
+}
+async function fetchContestDefinition(id) {
+  const res = await fetch(`${API_BASE}/contests/${encodeURIComponent(id)}`);
+  if (!res.ok) throw new Error(`Failed to fetch contest ${id}: ${res.status}`);
+  const body = await res.json();
+  return body.data.definition;
+}
+
+/* -- QSO generation -- */
+const CONTINENTS = ["NA","SA","EU","AF","AS","OC"];
+const COUNTRIES = {
+  NA:["K","VE","XE","KP4","KH6"], SA:["LU","PY","CE","HC","YV"],
+  EU:["G","DL","F","I","EA","SM","OH","SP","OK","HA"], AF:["ZS","5N","SU","CN","7X"],
+  AS:["JA","BV","HL","VU","A4"], OC:["VK","ZL","KH2","P29","YB"],
+};
+const SUFFIXES = ["AA","BB","CC","DD","EE","FF","GG","HH","KK","LL","MM"];
+const rnd = (arr) => arr[Math.floor(Math.random()*arr.length)];
+
+function generateQSOs(n, bands) {
+  const bandList = bands && bands.length > 0 ? bands : ["160m","80m","40m","20m","15m","10m"];
+  return Array.from({length:n}, (_,i) => {
+    const cont = rnd(CONTINENTS);
+    const country = rnd(COUNTRIES[cont]);
+    return {
+      callsign: `${country}${Math.floor(Math.random()*9)+1}${rnd(SUFFIXES)}`,
+      band: rnd(bandList),
+      continent: cont,
+      country,
+      cq_zone: Math.floor(Math.random()*40)+1,
+      itu_zone: Math.floor(Math.random()*90)+1,
+      serial: i+1,
+    };
+  });
+}
+
+/* -- Generic scoring engine -- */
+const MY = { continent:"NA", country:"K", cq_zone:3, itu_zone:6 };
+
+function resolveField(field, qso) {
+  if (field === "their_country") return qso.country;
+  if (field === "their_continent") return qso.continent;
+  if (field === "their_cq_zone") return qso.cq_zone;
+  if (field === "their_itu_zone") return qso.itu_zone;
+  if (field === "their_callsign") return qso.callsign;
+  if (field === "my_country") return MY.country;
+  if (field === "my_continent") return MY.continent;
+  if (field === "my_cq_zone") return MY.cq_zone;
+  if (field === "my_itu_zone") return MY.itu_zone;
+  if (field === "band") return qso.band;
+  if (field === "mode") return qso.mode || "CW";
+  if (field && field.startsWith("received.")) {
+    const key = field.slice(9);
+    return qso[key] !== undefined ? qso[key] : qso.cq_zone;
+  }
+  return undefined;
+}
+
+function evalCondition(cond, qso) {
+  const lhs = resolveField(cond.field, qso);
+  const rhs = cond.ref ? resolveField(cond.ref, qso) : cond.value;
+  if (lhs === undefined) return false;
+  const op = cond.op;
+  const lhsN = typeof lhs === "string" ? lhs.toLowerCase() : lhs;
+  const rhsN = typeof rhs === "string" ? rhs.toLowerCase() : rhs;
+  if (op === "eq") return lhsN === rhsN;
+  if (op === "ne") return lhsN !== rhsN;
+  if (op === "in") return Array.isArray(rhs) && rhs.some(v => (typeof v === "string" ? v.toLowerCase() : v) === lhsN);
+  if (op === "not_in") return Array.isArray(rhs) && !rhs.some(v => (typeof v === "string" ? v.toLowerCase() : v) === lhsN);
+  if (op === "gt") return lhs > rhs;
+  if (op === "gte") return lhs >= rhs;
+  if (op === "lt") return lhs < rhs;
+  if (op === "lte") return lhs <= rhs;
+  return false;
+}
+
+function evalPerQsoRules(rules, qso) {
+  if (!rules || rules.length === 0) return { value: 1, ruleIdx: 0, ruleDesc: "1 pt/QSO" };
+  for (let i = 0; i < rules.length; i++) {
+    const rule = rules[i];
+    const conditions = rule.conditions || [];
+    if (conditions.length === 0 || conditions.every(c => evalCondition(c, qso))) {
+      return { value: rule.value || 0, ruleIdx: i, ruleDesc: rule.description || `rule ${i}` };
+    }
+  }
+  return { value: 0, ruleIdx: -1, ruleDesc: "no match" };
+}
+
+function resolveMultSource(source, qso) {
+  if (source === "their_callsign") return qso.callsign;
+  if (source === "their_country") return qso.country;
+  if (source === "their_continent") return qso.continent;
+  if (source === "their_cq_zone") return qso.cq_zone;
+  if (source === "their_itu_zone") return qso.itu_zone;
+  if (source && source.startsWith("received.")) {
+    const key = source.slice(9);
+    return qso[key] !== undefined ? qso[key] : qso.cq_zone;
+  }
+  return qso.callsign;
+}
+
+function evalAggregateOp(op, phaseResults) {
+  if (op.op === "ref") return phaseResults[op.phase] || 0;
+  if (op.op === "literal") return op.value || 0;
+  if (op.op === "add") return (op.inputs || []).reduce((s, inp) => s + evalAggregateOp(inp, phaseResults), 0);
+  if (op.op === "multiply") return (op.inputs || []).reduce((p, inp) => p * evalAggregateOp(inp, phaseResults), 1);
+  if (op.op === "max") return Math.max(...(op.inputs || []).map(inp => evalAggregateOp(inp, phaseResults)));
+  return 0;
+}
+
+function scoreAll(contest, raw) {
+  const phases = contest.scoring?.phases || [];
+  const dupeKey = contest.dupe_rules?.key || ["callsign", "band"];
+  const zeroPtMults = contest.dupe_rules?.zero_point_qsos_count_for_mults || false;
+
+  const dupes = new Set();
+  const mults = {};
+  const phaseAccum = {};
+
+  for (const phase of phases) {
+    if (phase.type === "multiplier_count") {
+      mults[phase.id] = { scope: phase.scope, pb: {}, pc: new Set(), count: 0, source: phase.source, includeZero: phase.include_zero_point_qsos || false };
+    }
+    if (phase.type === "per_qso") {
+      phaseAccum[phase.id] = 0;
+    }
+  }
+
+  function buildDupeKey(qso) {
+    return dupeKey.map(k => {
+      if (k === "callsign") return qso.callsign.toUpperCase();
+      if (k === "band") return qso.band;
+      if (k === "mode") return qso.mode || "CW";
+      if (k === "mode_group") return "CW";
+      return "";
+    }).join("|");
+  }
+
+  function addMult(id, val, band) {
+    const m = mults[id];
+    let isNew = false;
+    const key = String(val);
+    if (m.scope === "per_band") {
+      if (!m.pb[band]) m.pb[band] = new Set();
+      if (!m.pb[band].has(key)) { m.pb[band].add(key); isNew = true; }
+      m.count = Object.values(m.pb).reduce((s, st) => s + st.size, 0);
+    } else {
+      if (!m.pc.has(key)) { m.pc.add(key); isNew = true; }
+      m.count = m.pc.size;
+    }
+    return isNew;
+  }
+
+  const scored = raw.map((q, idx) => {
+    const dk = buildDupeKey(q);
+    const isDupe = dupes.has(dk);
+    dupes.add(dk);
+    const pt = {};
+    let qsoPoints = 0;
+
+    for (const phase of phases) {
+      if (phase.type === "per_qso") {
+        const result = evalPerQsoRules(phase.rules, q);
+        const pts = result.value;
+        if (!isDupe) {
+          phaseAccum[phase.id] = (phaseAccum[phase.id] || 0) + pts;
+          qsoPoints = pts;
+        }
+        pt[phase.id] = {
+          type: "per_qso", points: pts,
+          effective: isDupe ? 0 : pts,
+          matchedRuleIdx: result.ruleIdx,
+          matchedRuleDesc: result.ruleDesc,
+          isDupe,
+          runningSum: phaseAccum[phase.id] || 0,
+        };
+      } else if (phase.type === "multiplier_count") {
+        const val = resolveMultSource(phase.source, q);
+        const canCountZero = zeroPtMults && qsoPoints === 0 && !isDupe && mults[phase.id].includeZero;
+        const shouldCount = (!isDupe && (qsoPoints > 0 || canCountZero));
+        const isNew = shouldCount ? addMult(phase.id, val, q.band) : false;
+        pt[phase.id] = {
+          type: "mult", value: val, isNew, isDupe,
+          reason: isDupe ? "dupe" : (isNew
+            ? (mults[phase.id].scope === "per_band" ? `new on ${q.band}` : "new")
+            : (mults[phase.id].scope === "per_band" ? `seen on ${q.band}` : "already worked")),
+          running: mults[phase.id].count,
+        };
+      }
+    }
+
+    const phaseResults = {};
+    for (const phase of phases) {
+      if (phase.type === "per_qso") phaseResults[phase.id] = phaseAccum[phase.id] || 0;
+      else if (phase.type === "multiplier_count") phaseResults[phase.id] = mults[phase.id].count;
+    }
+    for (const phase of phases) {
+      if (phase.type === "aggregate") {
+        const total = evalAggregateOp(phase.operation, phaseResults);
+        phaseResults[phase.id] = total;
+        const qsoSum = phaseResults[phases.find(p => p.type === "per_qso")?.id] || 0;
+        const multSum = Object.entries(mults).reduce((s, [, m]) => s + m.count, 0);
+        pt[phase.id] = { type: "agg", total, qsoSum, multSum };
+      }
+    }
+
+    return { ...q, idx, isDupe, points: isDupe ? 0 : qsoPoints, pt };
+  });
+
+  const phaseResults = {};
+  for (const phase of phases) {
+    if (phase.type === "per_qso") phaseResults[phase.id] = phaseAccum[phase.id] || 0;
+    else if (phase.type === "multiplier_count") phaseResults[phase.id] = mults[phase.id].count;
+  }
+  for (const phase of phases) {
+    if (phase.type === "aggregate") phaseResults[phase.id] = evalAggregateOp(phase.operation, phaseResults);
+  }
+
+  const multSum = Object.entries(mults).reduce((s, [, m]) => s + m.count, 0);
+  const qsoPointsPhase = phases.find(p => p.type === "per_qso");
+  const totalPhase = phases.find(p => p.type === "aggregate" && p.id === "total") || phases.find(p => p.type === "aggregate");
+
+  return {
+    scored,
+    summary: {
+      qsoPoints: phaseResults[qsoPointsPhase?.id] || 0,
+      mults: Object.fromEntries(Object.entries(mults).map(([k, v]) => [k, v.count])),
+      multSum,
+      total: phaseResults[totalPhase?.id] || 0,
+    },
+  };
+}
+
+/* -- Style helpers -- */
+const S = {
+  mono: { fontFamily: "var(--font-mono)" },
+  badge: (color) => ({
+    display: "inline-block",
+    fontSize: 12,
+    fontWeight: 500,
+    fontFamily: "var(--font-mono)",
+    padding: "2px 8px",
+    borderRadius: 999,
+    background: `var(--badge-${color}-bg)`,
+    color: `var(--color-${color})`,
+  }),
+  phaseBadge: (type) => {
+    const color = type === "per_qso" ? "orange" : type === "multiplier_count" ? "blue" : "purple";
+    return {
+      display: "inline-block",
+      fontSize: 11,
+      fontWeight: 600,
+      fontFamily: "var(--font-body)",
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+      padding: "2px 8px",
+      borderRadius: 999,
+      background: `var(--badge-${color}-bg)`,
+      color: `var(--color-${color})`,
+    };
+  },
+  card: {
+    background: "var(--bg-card)",
+    borderRadius: 12,
+    padding: 16,
+  },
+  cardCompact: {
+    background: "var(--bg-card)",
+    borderRadius: 12,
+    padding: "12px 16px",
+  },
+};
+
+const PC = { per_qso: "var(--phase-per-qso)", multiplier_count: "var(--phase-multiplier)", aggregate: "var(--phase-aggregate)" };
+const OPS = { multiply: "\u00d7", add: "+", max: "max" };
+
+/* -- Trace detail inside phase card -- */
+const Trace = ({t}) => {
+  if (!t) return null;
+  if (t.type === "per_qso") return (
+    <div style={{ marginTop: 10, borderTop: "1px solid var(--border-light)", paddingTop: 10 }}>
+      {t.isDupe ? (
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={S.badge("red")}>DUPE</span>
+          <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>would be {t.points} pts</span>
+        </div>
+      ) : (
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontSize: 24, fontWeight: 700, color: t.points === 0 ? "var(--text-tertiary)" : "var(--phase-per-qso)", ...S.mono }}>{t.points}</span>
+          <span style={{ fontSize: 13, color: "var(--text-secondary)", flex: 1 }}>{t.matchedRuleDesc}</span>
+        </div>
+      )}
+      <div style={{ fontSize: 12, color: "var(--text-secondary)", ...S.mono, marginTop: 4 }}>Running total: {t.runningSum} pts</div>
+    </div>
+  );
+  if (t.type === "mult") {
+    return (
+      <div style={{ marginTop: 10, borderTop: "1px solid var(--border-light)", paddingTop: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+          {t.isNew ? <span style={S.badge("green")}>NEW</span> : t.isDupe ? <span style={S.badge("red")}>DUPE</span> : <span style={S.badge("blue")}>seen</span>}
+          <span style={{ fontSize: 14, fontWeight: 600, ...S.mono, color: "var(--text-primary)" }}>{String(t.value)}</span>
+        </div>
+        <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>{t.reason}</div>
+        <div style={{ fontSize: 12, color: "var(--text-secondary)", ...S.mono, marginTop: 2 }}>
+          {t.isNew ? `+1 \u2192 ${t.running} unique` : `${t.running} unique (unchanged)`}
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
+
+/* -- Phase Card -- */
+const PhaseCard = ({phase, trace, active, onClick}) => {
+  const phaseColor = PC[phase.type] || "var(--text-secondary)";
+  const isHighlighted = trace ? (trace.isDupe ? true : trace.isNew ? true : false) : active;
+  return (
+    <div onClick={onClick} style={{
+      ...S.card,
+      border: isHighlighted ? `2px solid ${phaseColor}` : "2px solid transparent",
+      cursor: "pointer",
+      transition: "border-color 0.15s, box-shadow 0.15s",
+      boxShadow: isHighlighted ? `0 2px 12px ${phaseColor}20` : "0 1px 3px rgba(0,0,0,0.08)",
+      width: "100%",
+      maxWidth: 320,
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+        <span style={S.phaseBadge(phase.type)}>{phase.type.replace(/_/g, " ")}</span>
+      </div>
+      <div style={{ fontSize: 16, fontWeight: 600, color: "var(--text-primary)", ...S.mono }}>{phase.id}</div>
+      {phase.description && !trace && <div style={{ fontSize: 13, color: "var(--text-secondary)", marginTop: 4 }}>{phase.description}</div>}
+      {phase.type === "multiplier_count" && !trace && (
+        <div style={{ fontSize: 12, color: "var(--text-secondary)", ...S.mono, marginTop: 4 }}>
+          {phase.source} {"\u00b7"} {phase.scope}
+        </div>
+      )}
+      <Trace t={trace} />
+    </div>
+  );
+};
+
+/* -- Vertical DAG -- */
+const DAG = ({op, phases, tq, ap, setAp}) => {
+  if (!op) return null;
+  const pi = id => phases.findIndex(p => p.id === id);
+  if (op.op === "ref") {
+    const idx = pi(op.phase);
+    const ph = phases[idx];
+    if (!ph) return null;
+    if (ph.type === "aggregate") return <DAG op={ph.operation} phases={phases} tq={tq} ap={ap} setAp={setAp} />;
+    return <PhaseCard phase={ph} trace={tq?.pt?.[ph.id]} active={ap === idx} onClick={() => setAp(ap === idx ? null : idx)} />;
+  }
+  if (op.op === "literal") return (
+    <div style={{ ...S.cardCompact, textAlign: "center" }}>
+      <div style={{ fontSize: 20, fontWeight: 700, color: "var(--phase-per-qso)", ...S.mono }}>{op.value}</div>
+    </div>
+  );
+  const inputs = op.inputs || [];
+  const sym = OPS[op.op] || op.op;
+  const isCompound = (node) => node.op === "add" || node.op === "multiply" || node.op === "max";
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", gap: 0 }}>
+      {inputs.map((inp, i) => (
+        <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%" }}>
+          {isCompound(inp) ? (
+            <div style={{
+              ...S.card,
+              background: "var(--bg-base)",
+              width: "100%",
+              maxWidth: 340,
+              padding: 12,
+              border: "1px solid var(--border)",
+            }}>
+              <div style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, color: "var(--text-tertiary)", textAlign: "center", marginBottom: 8 }}>
+                {OPS[inp.op] || inp.op} group
+              </div>
+              <DAG op={inp} phases={phases} tq={tq} ap={ap} setAp={setAp} />
+            </div>
+          ) : (
+            <DAG op={inp} phases={phases} tq={tq} ap={ap} setAp={setAp} />
+          )}
+          {i < inputs.length - 1 && (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "2px 0" }}>
+              <div style={{ width: 2, height: 8, background: "var(--border)", borderRadius: 1 }} />
+              <div style={{
+                color: "var(--phase-aggregate)",
+                fontSize: 14,
+                fontWeight: 700,
+                ...S.mono,
+                background: "var(--bg-card)",
+                border: "2px solid var(--border)",
+                borderRadius: "50%",
+                width: 28,
+                height: 28,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}>{sym}</div>
+              <div style={{ width: 2, height: 8, background: "var(--border)", borderRadius: 1 }} />
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+};
+
+/* -- Phase Detail Panel -- */
+const Detail = ({phase, tq}) => {
+  if (!phase) return null;
+  const trace = tq?.pt?.[phase.id];
+  return (
+    <div style={{ ...S.card, marginTop: 12 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+        <span style={{ fontSize: 16, fontWeight: 600, ...S.mono, color: "var(--text-primary)" }}>{phase.id}</span>
+        <span style={S.phaseBadge(phase.type)}>{phase.type.replace(/_/g, " ")}</span>
+      </div>
+      {phase.type === "per_qso" && phase.rules && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          {phase.rules.map((rule, ri) => {
+            const match = trace && !trace.isDupe && trace.matchedRuleIdx === ri;
+            const skip = trace && !trace.isDupe && trace.matchedRuleIdx !== ri;
+            return (
+              <div key={ri} style={{
+                background: match ? "var(--badge-orange-bg)" : "var(--bg-base)",
+                border: match ? "1px solid var(--phase-per-qso)" : "1px solid var(--border-light)",
+                borderRadius: 8,
+                padding: "10px 12px",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                opacity: skip ? 0.3 : 1,
+                transition: "opacity 0.15s",
+              }}>
+                <div style={{ flex: 1 }}>
+                  {rule.description && <div style={{ fontSize: 14, color: match ? "var(--text-primary)" : "var(--text-secondary)" }}>{rule.description}</div>}
+                  {rule.conditions?.length > 0 ? (
+                    <div style={{ display: "flex", gap: 4, marginTop: 6, flexWrap: "wrap" }}>
+                      {rule.conditions.map((cd, ci) => (
+                        <span key={ci} style={{
+                          fontSize: 11,
+                          ...S.mono,
+                          background: "var(--bg-card-secondary)",
+                          padding: "2px 6px",
+                          borderRadius: 4,
+                          color: "var(--text-secondary)",
+                          border: "1px solid var(--border-light)",
+                        }}>
+                          {cd.field} {cd.op} {cd.ref || JSON.stringify(cd.value)}
+                        </span>
+                      ))}
+                    </div>
+                  ) : <div style={{ fontSize: 12, color: "var(--text-tertiary)", ...S.mono, marginTop: 4 }}>fallback</div>}
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginLeft: 12 }}>
+                  {match && <span style={{ fontSize: 12, color: "var(--phase-per-qso)" }}>{"\u25b8"}</span>}
+                  <span style={{ fontSize: 22, fontWeight: 700, color: rule.value === 0 ? "var(--text-tertiary)" : "var(--phase-per-qso)", ...S.mono }}>{rule.value}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+      {phase.type === "multiplier_count" && (
+        <div style={{ fontSize: 14, color: "var(--text-secondary)" }}>
+          <div style={{ marginBottom: 4 }}>Source: <span style={{ color: "var(--phase-multiplier)", ...S.mono }}>{phase.source}</span></div>
+          <div>Scope: <span style={{ color: "var(--phase-multiplier)", ...S.mono }}>{phase.scope}</span></div>
+          {phase.include_zero_point_qsos && <div style={{ color: "var(--color-green)", marginTop: 6 }}>{"\u2713"} 0-pt QSOs count for multipliers</div>}
+        </div>
+      )}
+    </div>
+  );
+};
+
+/* -- Stat Box -- */
+const StatBox = ({label, value, color}) => (
+  <div style={{
+    background: "var(--bg-card)",
+    borderRadius: 8,
+    padding: "10px 16px",
+    textAlign: "center",
+    minWidth: 80,
+    flex: 1,
+  }}>
+    <div style={{ fontSize: 12, fontWeight: 500, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 4 }}>{label}</div>
+    <div style={{ fontSize: 22, fontWeight: 700, color, ...S.mono }}>{value}</div>
+  </div>
+);
+
+/* -- Main App -- */
+function App() {
+  const [contestList, setContestList] = useState(null);
+  const [contestDefs, setContestDefs] = useState({});
+  const [selectedId, setSelectedId] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const [ap, setAp] = useState(null);
+  const [res, setRes] = useState(null);
+  const [ti, setTi] = useState(null);
+  const [n, setN] = useState(50);
+  const [tab, setTab] = useState("dag");
+  const [info, setInfo] = useState(false);
+
+  useEffect(() => {
+    fetchContestList()
+      .then(list => {
+        setContestList(list);
+        if (list.length > 0) setSelectedId(list[0].id);
+        setLoading(false);
+      })
+      .catch(e => { setError(e.message); setLoading(false); });
+  }, []);
+
+  useEffect(() => {
+    if (!selectedId) return;
+    if (contestDefs[selectedId]) return;
+    fetchContestDefinition(selectedId)
+      .then(def => setContestDefs(prev => ({ ...prev, [selectedId]: def })))
+      .catch(e => setError(e.message));
+  }, [selectedId]);
+
+  useEffect(() => {
+    setAp(null); setRes(null); setTi(null); setTab("dag");
+  }, [selectedId]);
+
+  const c = selectedId ? contestDefs[selectedId] : null;
+
+  const run = () => {
+    if (!c) return;
+    setRes(scoreAll(c, generateQSOs(n, c.bands)));
+    setTi(null);
+    setTab("log");
+  };
+
+  const tq = res && ti !== null ? res.scored[ti] : null;
+  const tp = c?.scoring?.phases?.find(p => p.id === "total") || c?.scoring?.phases?.find(p => p.type === "aggregate");
+
+  const selectQso = (i) => { setTi(ti === i ? null : i); setTab("dag"); };
+
+  /* Loading state */
+  if (loading) return (
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ color: "var(--text-secondary)", fontSize: 15 }}>Loading contests...</div>
+    </div>
+  );
+
+  /* Error state */
+  if (error) return (
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 12, padding: 24 }}>
+      <div style={{ color: "var(--color-red)", fontSize: 15, fontWeight: 600 }}>Error: {error}</div>
+      <div style={{ color: "var(--text-secondary)", fontSize: 13 }}>Make sure contest definitions are seeded (see scripts/seed-contests.sh)</div>
+    </div>
+  );
+
+  /* Empty state */
+  if (!contestList || contestList.length === 0) return (
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 12, padding: 24 }}>
+      <div style={{ color: "var(--text-secondary)", fontSize: 15 }}>No contest definitions found</div>
+      <div style={{ color: "var(--text-tertiary)", fontSize: 13 }}>Run scripts/seed-contests.sh to load example contests</div>
+    </div>
+  );
+
+  return (
+    <div style={{ minHeight: "100vh" }}>
+      {/* Header */}
+      <div style={{
+        borderBottom: "1px solid var(--separator)",
+        padding: "12px 16px",
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        background: "var(--bg-card)",
+        flexWrap: "wrap",
+      }}>
+        <div style={{ fontSize: 17, fontWeight: 600, color: "var(--text-primary)", letterSpacing: -0.3 }}>Contest Scoring</div>
+        <div style={{ flex: 1, minWidth: 16 }} />
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          {contestList.map(ct => (
+            <button key={ct.id} onClick={() => setSelectedId(ct.id)} style={{
+              background: ct.id === selectedId ? "var(--color-blue)" : "var(--bg-base)",
+              border: "none",
+              color: ct.id === selectedId ? "#fff" : "var(--text-secondary)",
+              padding: "6px 14px",
+              borderRadius: 999,
+              cursor: "pointer",
+              fontSize: 13,
+              fontWeight: ct.id === selectedId ? 600 : 500,
+              fontFamily: "var(--font-mono)",
+              minHeight: 32,
+              transition: "all 0.15s",
+            }}>{ct.shortName || ct.name}</button>
+          ))}
+        </div>
+        <button onClick={() => setInfo(!info)} style={{
+          background: info ? "var(--badge-blue-bg)" : "var(--bg-base)",
+          border: "none",
+          borderRadius: 999,
+          color: info ? "var(--color-blue)" : "var(--text-secondary)",
+          padding: "6px 12px",
+          cursor: "pointer",
+          fontSize: 13,
+          fontWeight: 500,
+          minHeight: 32,
+        }}>{info ? "Hide Info" : "Info"}</button>
+      </div>
+
+      {/* Info panel */}
+      {info && c && (
+        <div style={{
+          background: "var(--bg-card)",
+          borderBottom: "1px solid var(--separator)",
+          padding: 16,
+          maxHeight: "50vh",
+          overflowY: "auto",
+        }}>
+          <div style={{ fontSize: 20, fontWeight: 600, color: "var(--text-primary)", marginBottom: 4 }}>{c.name}</div>
+          {c.sponsor?.name && <div style={{ fontSize: 14, color: "var(--text-secondary)", marginBottom: 16 }}>{c.sponsor.name}</div>}
+
+          <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 16 }}>
+            <div style={{ flex: 1, minWidth: 140 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, color: "var(--text-secondary)", marginBottom: 6 }}>Schedule</div>
+              {c.schedule?.sessions ? c.schedule.sessions.map((s, i) => (
+                <div key={i} style={{ fontSize: 14, ...S.mono, color: "var(--text-primary)", marginBottom: 2 }}>{s.day} {s.start_utc}z {"\u00b7"} {s.duration_minutes}m</div>
+              )) : <div style={{ fontSize: 14, ...S.mono, color: "var(--text-primary)" }}>{c.schedule?.rule} {"\u00b7"} {c.schedule?.duration_hours}h</div>}
+            </div>
+            <div style={{ flex: 1, minWidth: 140 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, color: "var(--text-secondary)", marginBottom: 6 }}>Exchange</div>
+              <div style={{ fontSize: 14, color: "var(--text-primary)", marginBottom: 2 }}>Sent: <span style={S.mono}>{c.exchange?.sent?.map(f => f.label).join(", ")}</span></div>
+              <div style={{ fontSize: 14, color: "var(--text-primary)" }}>Rcvd: <span style={S.mono}>{c.exchange?.received?.map(f => f.label).join(", ")}</span></div>
+            </div>
+          </div>
+
+          <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, color: "var(--text-secondary)", marginBottom: 6 }}>Modes</div>
+              <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                {(c.modes || []).map(m => <span key={m} style={S.badge("blue")}>{m}</span>)}
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, color: "var(--text-secondary)", marginBottom: 6 }}>Bands</div>
+              <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                {(c.bands || []).map(b => <span key={b} style={S.badge("blue")}>{b}</span>)}
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, color: "var(--text-secondary)", marginBottom: 6 }}>Dupes</div>
+              <div style={{ fontSize: 14, ...S.mono, color: "var(--text-primary)" }}>{c.dupe_rules?.scope} {"\u00b7"} [{(c.dupe_rules?.key || []).join(", ")}]</div>
+              {c.dupe_rules?.zero_point_qsos_count_for_mults && <div style={{ fontSize: 13, color: "var(--color-green)", marginTop: 4 }}>{"\u2713"} 0pt count for mults</div>}
+            </div>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, color: "var(--text-secondary)", marginBottom: 6 }}>Categories</div>
+              {(c.categories || []).map(ct => <div key={ct.id} style={{ fontSize: 14, color: "var(--text-primary)", marginBottom: 2 }}><span style={S.mono}>{ct.id}</span> {"\u2014"} {ct.label}</div>)}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Loading definition */}
+      {!c && selectedId && (
+        <div style={{ textAlign: "center", padding: "48px 0", color: "var(--text-secondary)", fontSize: 14 }}>Loading definition...</div>
+      )}
+
+      {c && (<>
+        {/* Controls */}
+        <div style={{
+          display: "flex",
+          gap: 10,
+          alignItems: "center",
+          padding: "10px 16px",
+          borderBottom: "1px solid var(--border-light)",
+          background: "var(--bg-card)",
+          flexWrap: "wrap",
+        }}>
+          <label style={{ fontSize: 13, color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: 8 }}>
+            QSOs
+            <input type="range" min={10} max={200} value={n} onChange={e => setN(+e.target.value)} style={{ width: 100, accentColor: "var(--color-blue)" }} />
+            <span style={{ ...S.mono, fontSize: 14, fontWeight: 600, color: "var(--color-blue)", minWidth: 28 }}>{n}</span>
+          </label>
+          <span style={{ fontSize: 12, color: "var(--text-tertiary)", ...S.mono }}>W6JY / NA / K</span>
+          <div style={{ flex: 1 }} />
+          <button onClick={run} style={{
+            background: "var(--color-blue)",
+            color: "#fff",
+            border: "none",
+            borderRadius: 8,
+            padding: "8px 20px",
+            cursor: "pointer",
+            fontSize: 14,
+            fontWeight: 600,
+            minHeight: 36,
+            transition: "opacity 0.15s",
+          }}>Run</button>
+        </div>
+
+        {/* Tab bar */}
+        <div style={{ display: "flex", borderBottom: "1px solid var(--border-light)", background: "var(--bg-card)" }}>
+          {[
+            { id: "dag", label: "Scoring DAG" },
+            { id: "log", label: `Log${res ? ` (${res.scored.length})` : ""}` },
+          ].map(t => (
+            <button key={t.id} onClick={() => setTab(t.id)} style={{
+              flex: 1,
+              background: "transparent",
+              border: "none",
+              borderBottom: tab === t.id ? "2px solid var(--color-blue)" : "2px solid transparent",
+              color: tab === t.id ? "var(--color-blue)" : "var(--text-secondary)",
+              padding: "12px 0",
+              cursor: "pointer",
+              fontSize: 14,
+              fontWeight: tab === t.id ? 600 : 500,
+              minHeight: 44,
+              transition: "all 0.15s",
+            }}>{t.label}</button>
+          ))}
+        </div>
+
+        {/* Content */}
+        <div style={{ overflowY: "auto", height: "calc(100vh - 160px)", WebkitOverflowScrolling: "touch" }}>
+          {/* DAG Tab */}
+          {tab === "dag" && (
+            <div style={{ padding: "20px 16px", display: "flex", flexDirection: "column", alignItems: "center" }}>
+              {/* Traced QSO bar */}
+              {tq && (
+                <div style={{ ...S.card, width: "100%", maxWidth: 380, marginBottom: 16, border: "1px solid var(--border)" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                    <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>Tracing QSO #{tq.idx + 1}</span>
+                    <button onClick={() => setTi(null)} style={{
+                      background: "var(--bg-base)",
+                      border: "1px solid var(--border)",
+                      borderRadius: 6,
+                      color: "var(--text-secondary)",
+                      padding: "4px 10px",
+                      cursor: "pointer",
+                      fontSize: 12,
+                      minHeight: 28,
+                    }}>Dismiss</button>
+                  </div>
+                  <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+                    {[
+                      { l: "Call", v: tq.callsign, mono: true, bold: true },
+                      { l: "Band", v: tq.band, mono: true },
+                      { l: "Cont", v: tq.continent, mono: true },
+                      { l: "Ctry", v: tq.country, mono: true },
+                      { l: "Zone", v: tq.cq_zone, mono: true },
+                    ].map(a => (
+                      <div key={a.l}>
+                        <div style={{ fontSize: 11, color: "var(--text-tertiary)", fontWeight: 500, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 2 }}>{a.l}</div>
+                        <div style={{ fontSize: 15, color: "var(--text-primary)", fontWeight: a.bold ? 600 : 500, ...(a.mono ? S.mono : {}) }}>{String(a.v)}</div>
+                      </div>
+                    ))}
+                    {tq.isDupe && <span style={{ ...S.badge("red"), alignSelf: "center" }}>DUPE</span>}
+                  </div>
+                </div>
+              )}
+
+              {/* DAG */}
+              <div style={{ width: "100%", maxWidth: 340, display: "flex", flexDirection: "column", alignItems: "center" }}>
+                {tp && <DAG op={tp.operation} phases={c.scoring.phases} tq={tq} ap={ap} setAp={setAp} />}
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                  <div style={{ width: 2, height: 10, background: "var(--border)", borderRadius: 1 }} />
+                  <div style={{
+                    ...S.card,
+                    border: "2px solid var(--phase-aggregate)",
+                    textAlign: "center",
+                    padding: "12px 24px",
+                  }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, color: "var(--phase-aggregate)", marginBottom: 4 }}>Total Score</div>
+                    {tq && <div style={{ fontSize: 28, fontWeight: 700, color: "var(--color-green)", ...S.mono }}>{tq.pt[tp.id]?.total?.toLocaleString?.() || tq.pt[tp.id]?.total}</div>}
+                    {tq && <div style={{ fontSize: 13, color: "var(--text-secondary)", ...S.mono, marginTop: 4 }}>pts({tq.pt[tp.id]?.qsoSum}) {"\u00d7"} mults({tq.pt[tp.id]?.multSum})</div>}
+                    {tq && <div style={{ fontSize: 12, color: "var(--text-tertiary)", marginTop: 2 }}>after QSO #{tq.idx + 1}</div>}
+                    {!tq && res && <div style={{ fontSize: 28, fontWeight: 700, color: "var(--color-green)", ...S.mono }}>{res.summary.total.toLocaleString()}</div>}
+                    {!tq && res && <div style={{ fontSize: 13, color: "var(--text-secondary)", ...S.mono, marginTop: 4 }}>pts({res.summary.qsoPoints}) {"\u00d7"} mults({res.summary.multSum})</div>}
+                  </div>
+                </div>
+              </div>
+
+              {/* Phase detail */}
+              {ap !== null && (
+                <div style={{ width: "100%", maxWidth: 380, marginTop: 12 }}>
+                  <Detail phase={c.scoring.phases[ap]} tq={tq} />
+                </div>
+              )}
+
+              {/* Summary stat boxes */}
+              {res && !tq && (
+                <div style={{ display: "flex", gap: 8, marginTop: 20, flexWrap: "wrap", justifyContent: "center", width: "100%", maxWidth: 480 }}>
+                  <StatBox label="QSO Pts" value={res.summary.qsoPoints} color="var(--phase-per-qso)" />
+                  {Object.entries(res.summary.mults).map(([k, v]) => (
+                    <StatBox key={k} label={k.replace("mult_", "").toUpperCase().slice(0, 10)} value={v} color="var(--phase-multiplier)" />
+                  ))}
+                  <StatBox label="Total" value={res.summary.total.toLocaleString()} color="var(--color-green)" />
+                </div>
+              )}
+
+              {/* Empty state */}
+              {!res && (
+                <div style={{ textAlign: "center", padding: "48px 0", color: "var(--text-tertiary)" }}>
+                  <div style={{ fontSize: 36, marginBottom: 12, opacity: 0.5 }}>{"\u26a1"}</div>
+                  <div style={{ fontSize: 15, color: "var(--text-secondary)" }}>Tap <strong>Run</strong> to generate QSOs, then tap a QSO to trace it</div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Log Tab */}
+          {tab === "log" && (
+            <div>
+              {!res ? (
+                <div style={{ textAlign: "center", padding: "48px 0", color: "var(--text-tertiary)", fontSize: 15 }}>No data {"\u2014"} tap <strong>Run</strong> to generate</div>
+              ) : (
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+                  <thead>
+                    <tr style={{ background: "var(--bg-card)" }}>
+                      {["#", "Callsign", "Band", "Cont", "Pts", "Mults"].map(h => (
+                        <th key={h} style={{
+                          padding: "10px 8px",
+                          textAlign: "left",
+                          color: "var(--text-secondary)",
+                          fontWeight: 600,
+                          fontSize: 12,
+                          textTransform: "uppercase",
+                          letterSpacing: 0.5,
+                          borderBottom: "1px solid var(--separator)",
+                          position: "sticky",
+                          top: 0,
+                          background: "var(--bg-card)",
+                          zIndex: 1,
+                        }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {res.scored.map((q, i) => {
+                      const sel = ti === i;
+                      return (
+                        <tr key={i} onClick={() => selectQso(i)} style={{
+                          borderBottom: "1px solid var(--border-light)",
+                          cursor: "pointer",
+                          background: sel ? "var(--row-selected)" : "transparent",
+                          opacity: q.isDupe && !sel ? 0.45 : 1,
+                          transition: "background 0.1s",
+                          minHeight: 44,
+                        }}>
+                          <td style={{ padding: "10px 8px", color: sel ? "var(--color-blue)" : "var(--text-tertiary)", ...S.mono, fontSize: 13 }}>{i + 1}</td>
+                          <td style={{ padding: "10px 8px", fontWeight: 600, ...S.mono, color: sel ? "var(--text-primary)" : "var(--text-primary)" }}>{q.callsign}</td>
+                          <td style={{ padding: "10px 8px" }}><span style={S.badge("blue")}>{q.band}</span></td>
+                          <td style={{ padding: "10px 8px", color: "var(--text-secondary)", ...S.mono }}>{q.continent}</td>
+                          <td style={{
+                            padding: "10px 8px",
+                            fontWeight: 600,
+                            ...S.mono,
+                            color: q.isDupe ? "var(--color-red)" : q.points >= 3 ? "var(--color-green)" : q.points === 0 ? "var(--text-tertiary)" : "var(--phase-per-qso)",
+                          }}>{q.isDupe ? "D" : q.points}</td>
+                          <td style={{ padding: "10px 8px" }}>
+                            {Object.entries(q.pt).filter(([, v]) => v.type === "mult" && v.isNew).map(([k]) => (
+                              <span key={k} style={{
+                                ...S.badge("blue"),
+                                fontSize: 10,
+                                padding: "1px 5px",
+                                marginRight: 3,
+                              }}>{k.includes("zone") ? "Z" : k.includes("country") ? "C" : "M"}</span>
+                            ))}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )}
+        </div>
+      </>)}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

@@ -1,0 +1,60 @@
+{
+  "name": "carrier-wave",
+  "author": "Carrier Wave",
+  "version": "0.1.0",
+  "keywords": ["pebble-app"],
+  "private": true,
+  "dependencies": {},
+  "pebble": {
+    "uuid": "9533d3ad-9612-48bd-bd52-a064da4e535d",
+    "shortName": "CarrierWave",
+    "longName": "Carrier Wave",
+    "displayName": "Carrier Wave",
+    "sdkVersion": "3",
+    "enableMultiJS": true,
+    "targetPlatforms": ["basalt", "chalk", "diorite", "emery"],
+    "watchapp": {
+      "watchface": false
+    },
+    "messageKeys": [
+      "ACTION",
+      "STATUS",
+      "ERROR_TEXT",
+      "K_INDEX",
+      "A_INDEX",
+      "SOLAR_FLUX",
+      "SUNSPOTS",
+      "PROPAGATION",
+      "SOLAR_UPDATED_AT",
+      "SPOT_INDEX",
+      "SPOT_COUNT",
+      "SPOT_CALLSIGN",
+      "SPOT_FREQ_MHZ",
+      "SPOT_MODE",
+      "SPOT_BAND",
+      "SPOT_PARK_REF",
+      "SPOT_PARK_NAME",
+      "SESSION_ACTIVE",
+      "SESSION_PARK_REF",
+      "SESSION_PARK_NAME",
+      "SESSION_FREQ",
+      "SESSION_MODE",
+      "SESSION_QSO_COUNT",
+      "SESSION_LAST_CALL",
+      "SESSION_STARTED_AT",
+      "BRIDGE_URL",
+      "BRIDGE_OK",
+      "MEMORY_COUNT",
+      "MEMORY_INDEX",
+      "MEMORY_ID",
+      "MEMORY_NAME",
+      "MEMORY_FREQ",
+      "MEMORY_MODE",
+      "MEMORY_RECALL_ID"
+    ],
+    "resources": {
+      "media": []
+    },
+    "capabilities": ["configurable"]
+  }
+}

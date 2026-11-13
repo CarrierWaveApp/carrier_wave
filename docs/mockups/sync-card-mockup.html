@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sync Card Mockup — Carrier Wave: Field</title>
+<style>
+  :root {
+    --font-system: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
+    --bg-primary: #000000;
+    --bg-secondary: #1C1C1E;
+    --bg-tertiary: #2C2C2E;
+    --bg-elevated: #2C2C2E;
+    --label-primary: #FFFFFF;
+    --label-secondary: rgba(235, 235, 245, 0.6);
+    --label-tertiary: rgba(235, 235, 245, 0.3);
+    --separator: rgba(84, 84, 88, 0.6);
+    --system-blue: #0A84FF;
+    --system-green: #30D158;
+    --system-orange: #FF9F0A;
+    --system-purple: #BF5AF2;
+    --system-teal: #64D2FF;
+    --system-yellow: #FFD60A;
+    --system-red: #FF453A;
+    --system-gray: #8E8E93;
+    --system-gray3: #48484A;
+    --system-gray4: #3A3A3C;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: var(--font-system);
+    background: #111;
+    color: var(--label-primary);
+    display: flex;
+    justify-content: center;
+    gap: 48px;
+    padding: 40px 24px;
+    flex-wrap: wrap;
+    min-height: 100vh;
+  }
+
+  .state-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--label-tertiary);
+    margin-bottom: 12px;
+    text-align: center;
+  }
+
+  /* ── iPhone Frame ── */
+  .phone-frame {
+    width: 393px;
+    flex-shrink: 0;
+  }
+
+  .screen {
+    background: var(--bg-primary);
+    border-radius: 24px;
+    overflow: hidden;
+    border: 1px solid var(--system-gray3);
+  }
+
+  /* ── State 1: Compact Card ── */
+  .dashboard-bg {
+    padding: 16px;
+    min-height: 320px;
+  }
+
+  .card {
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px 0 16px;
+  }
+
+  .card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--label-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+
+  /* Secondary action button — matches .buttonStyle(.borderedProminent) */
+  .sync-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    min-height: 30px;
+    font-family: var(--font-system);
+    font-size: 15px;
+    font-weight: 500;
+    color: #FFFFFF;
+    background: var(--system-blue);
+    border: none;
+    border-radius: 15px;
+    cursor: pointer;
+  }
+
+  .sync-btn svg {
+    flex-shrink: 0;
+  }
+
+  .service-pills {
+    display: flex;
+    gap: 8px;
+    padding: 12px 16px 0 16px;
+    flex-wrap: wrap;
+  }
+
+  .service-pill {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--label-secondary);
+  }
+
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .status-dot.connected { background: var(--system-green); }
+  .status-dot.pending { background: var(--system-orange); }
+  .status-dot.inactive { background: var(--system-gray); }
+
+  .card-stats {
+    padding: 14px 16px;
+  }
+
+  .primary-stat {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--label-primary);
+    letter-spacing: -0.5px;
+  }
+  .primary-stat span {
+    font-size: 17px;
+    font-weight: 400;
+    color: var(--label-secondary);
+  }
+
+  .secondary-stat {
+    font-size: 13px;
+    color: var(--label-secondary);
+    margin-top: 2px;
+  }
+
+  .card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    border-top: 0.5px solid var(--separator);
+  }
+
+  .footer-caption {
+    font-size: 12px;
+    color: var(--label-tertiary);
+  }
+
+  .chevron {
+    color: var(--label-tertiary);
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .tap-hint {
+    font-size: 11px;
+    color: var(--label-tertiary);
+    text-align: center;
+    margin-top: 12px;
+    font-style: italic;
+  }
+
+  /* ── State 2: Sheet ── */
+  .sheet-bg {
+    position: relative;
+    min-height: 700px;
+  }
+
+  .sheet-dimmed {
+    background: rgba(0,0,0,0.5);
+    padding: 16px;
+    min-height: 100px;
+  }
+
+  .sheet {
+    background: var(--bg-secondary);
+    border-radius: 16px 16px 0 0;
+    overflow: hidden;
+  }
+
+  .grabber {
+    width: 36px;
+    height: 5px;
+    background: rgba(235, 235, 245, 0.3);
+    border-radius: 2.5px;
+    margin: 8px auto 0;
+  }
+
+  .sheet-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px 8px;
+  }
+
+  .sheet-title {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--label-primary);
+  }
+
+  .sheet-subtitle {
+    font-size: 12px;
+    color: var(--label-tertiary);
+    padding: 0 16px 12px;
+  }
+
+  .done-btn {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--system-blue);
+  }
+
+  /* ── Funnel ── */
+  .funnel {
+    padding: 0 16px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .funnel-stage {
+    position: relative;
+    display: flex;
+    align-items: stretch;
+    min-height: 64px;
+  }
+
+  .funnel-bar-col {
+    width: 48px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  .funnel-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    z-index: 1;
+    flex-shrink: 0;
+    margin-top: 4px;
+  }
+
+  .funnel-connector {
+    width: 2px;
+    flex: 1;
+    margin-top: 4px;
+    margin-bottom: -4px;
+  }
+
+  .funnel-content {
+    flex: 1;
+    padding: 4px 0 16px 8px;
+    min-width: 0;
+  }
+
+  .funnel-label {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--label-primary);
+  }
+
+  .funnel-explain {
+    font-size: 12px;
+    color: var(--label-tertiary);
+    margin-top: 1px;
+    line-height: 1.35;
+  }
+
+  .funnel-value {
+    font-size: 13px;
+    color: var(--label-secondary);
+    margin-top: 3px;
+  }
+
+  .funnel-breakdown {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+    flex-wrap: wrap;
+  }
+
+  .breakdown-chip {
+    font-size: 11px;
+    color: var(--label-tertiary);
+    background: var(--system-gray3);
+    padding: 2px 8px;
+    border-radius: 6px;
+  }
+
+  /* stage colors */
+  .stage-fetched .funnel-icon { background: rgba(10, 132, 255, 0.2); color: var(--system-blue); }
+  .stage-fetched .funnel-connector { background: rgba(10, 132, 255, 0.3); }
+
+  .stage-validated .funnel-icon { background: rgba(191, 90, 242, 0.2); color: var(--system-purple); }
+  .stage-validated .funnel-connector { background: rgba(191, 90, 242, 0.3); }
+
+  .stage-applied .funnel-icon { background: rgba(48, 209, 88, 0.2); color: var(--system-green); }
+  .stage-applied .funnel-connector { background: rgba(48, 209, 88, 0.3); }
+
+  /* ── Diamond split ── */
+  .diamond-split {
+    position: relative;
+    display: flex;
+    align-items: stretch;
+    min-height: 56px;
+  }
+
+  .diamond-bar-col {
+    width: 48px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  .diamond-icon {
+    width: 28px;
+    height: 28px;
+    background: rgba(48, 209, 88, 0.2);
+    transform: rotate(45deg);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+    flex-shrink: 0;
+    margin-top: 4px;
+  }
+
+  .diamond-icon-inner {
+    transform: rotate(-45deg);
+    font-size: 12px;
+    color: var(--system-green);
+  }
+
+  .diamond-branches {
+    flex: 1;
+    padding: 0 0 0 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    min-width: 0;
+  }
+
+  .diamond-label {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--label-primary);
+    padding: 4px 0 6px;
+  }
+
+  .diamond-explain {
+    font-size: 12px;
+    color: var(--label-tertiary);
+    margin-bottom: 8px;
+    line-height: 1.35;
+  }
+
+  .branch-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 10px;
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    margin-bottom: 6px;
+  }
+
+  .branch-connector {
+    width: 16px;
+    height: 2px;
+    flex-shrink: 0;
+  }
+
+  .branch-num {
+    font-size: 20px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    min-width: 32px;
+  }
+
+  .branch-desc {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .branch-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--label-primary);
+  }
+
+  .branch-subtitle {
+    font-size: 11px;
+    color: var(--label-tertiary);
+    line-height: 1.3;
+  }
+
+  .branch-new .branch-num { color: var(--system-green); }
+  .branch-enriched .branch-num { color: var(--system-teal); }
+
+  .stage-uploaded .funnel-icon { background: rgba(255, 159, 10, 0.2); color: var(--system-orange); }
+
+  /* ── Service Detail Rows ── */
+  .section-header {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--label-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    padding: 16px 16px 8px;
+  }
+
+  .service-rows {
+    margin: 0 16px 16px;
+    background: var(--bg-tertiary);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .service-row {
+    display: flex;
+    align-items: center;
+    padding: 11px 12px;
+    gap: 10px;
+    position: relative;
+  }
+
+  .service-row:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    left: 44px;
+    right: 0;
+    bottom: 0;
+    border-bottom: 0.5px solid var(--separator);
+  }
+
+  .svc-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .svc-icon.qrz  { background: #1a3a5c; color: #4a9eff; }
+  .svc-icon.pota  { background: #1a3d1a; color: #4ade80; }
+  .svc-icon.lotw  { background: #3d2a1a; color: #fbbf24; }
+  .svc-icon.eqsl  { background: #2d1a3d; color: #c084fc; }
+  .svc-icon.lofi  { background: #1a2d3d; color: #67e8f9; }
+
+  .svc-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .svc-name {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--label-primary);
+  }
+
+  .svc-time {
+    font-size: 11px;
+    color: var(--label-tertiary);
+    margin-top: 1px;
+  }
+
+  .svc-counts {
+    display: flex;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+
+  .svc-count {
+    text-align: right;
+  }
+
+  .svc-count-value {
+    font-size: 15px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .svc-count-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--label-tertiary);
+  }
+
+  .count-blue .svc-count-value { color: var(--system-blue); }
+  .count-green .svc-count-value { color: var(--system-green); }
+  .count-orange .svc-count-value { color: var(--system-orange); }
+
+  /* ── Visual bar chart behind funnel ── */
+  .funnel-bar-bg {
+    position: absolute;
+    right: 0;
+    top: 4px;
+    bottom: 16px;
+    border-radius: 4px;
+    opacity: 0.06;
+  }
+</style>
+</head>
+<body>
+
+<!-- ════════ STATE 1: Compact Card ════════ -->
+<div class="phone-frame">
+  <div class="state-label">State 1 — Dashboard Card (pre-tap)</div>
+  <div class="screen">
+    <div class="dashboard-bg">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Sync Services</span>
+          <button class="sync-btn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/>
+            </svg>
+            Sync
+          </button>
+        </div>
+
+        <div class="service-pills">
+          <div class="service-pill"><span class="status-dot connected"></span>QRZ</div>
+          <div class="service-pill"><span class="status-dot connected"></span>POTA</div>
+          <div class="service-pill"><span class="status-dot connected"></span>LoTW</div>
+          <div class="service-pill"><span class="status-dot pending"></span>eQSL</div>
+          <div class="service-pill"><span class="status-dot inactive"></span>LoFi</div>
+        </div>
+
+        <div class="card-stats">
+          <div class="primary-stat">312 <span>synced</span></div>
+          <div class="secondary-stat">4 pending uploads &middot; 8 QSL confirmations</div>
+        </div>
+
+        <div class="card-footer">
+          <span class="footer-caption">Synced 12 min ago</span>
+          <span class="chevron">&rsaquo;</span>
+        </div>
+      </div>
+      <div class="tap-hint">Tap card to see sync details</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════ STATE 2: Expanded Sheet ════════ -->
+<div class="phone-frame">
+  <div class="state-label">State 2 — Sync Report Sheet (post-tap)</div>
+  <div class="screen">
+    <div class="sheet-bg">
+      <div class="sheet-dimmed"></div>
+      <div class="sheet">
+        <div class="grabber"></div>
+
+        <div class="sheet-header">
+          <span class="sheet-title">Last Sync Report</span>
+          <span class="done-btn">Done</span>
+        </div>
+        <div class="sheet-subtitle">Today at 7:47 AM &middot; completed in 4s</div>
+
+        <!-- Funnel -->
+        <div class="funnel">
+
+          <!-- Fetched -->
+          <div class="funnel-stage stage-fetched">
+            <div class="funnel-bar-col">
+              <div class="funnel-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              </div>
+              <div class="funnel-connector"></div>
+            </div>
+            <div class="funnel-content">
+              <div class="funnel-label">Fetched</div>
+              <div class="funnel-explain">QSOs downloaded from each connected service</div>
+              <div class="funnel-value">247 QSOs downloaded</div>
+              <div class="funnel-breakdown">
+                <span class="breakdown-chip">QRZ 180</span>
+                <span class="breakdown-chip">POTA 42</span>
+                <span class="breakdown-chip">LoTW 25</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Validated -->
+          <div class="funnel-stage stage-validated">
+            <div class="funnel-bar-col">
+              <div class="funnel-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              </div>
+              <div class="funnel-connector"></div>
+            </div>
+            <div class="funnel-content">
+              <div class="funnel-label">Validated</div>
+              <div class="funnel-explain">Checked for duplicates, bad dates, and missing fields</div>
+              <div class="funnel-value">235 passed &middot; <span style="color: var(--system-orange)">12 skipped</span></div>
+            </div>
+          </div>
+
+          <!-- Applied (diamond split) -->
+          <div class="diamond-split">
+            <div class="diamond-bar-col">
+              <div class="diamond-icon">
+                <div class="diamond-icon-inner">?</div>
+              </div>
+              <div class="funnel-connector" style="background: rgba(48, 209, 88, 0.3);"></div>
+            </div>
+            <div class="diamond-branches">
+              <div class="diamond-label">Applied</div>
+              <div class="diamond-explain">Matched against your existing log</div>
+              <div class="branch-row branch-new">
+                <div class="branch-num">28</div>
+                <div class="branch-desc">
+                  <div class="branch-title">New QSOs</div>
+                  <div class="branch-subtitle">No local match — added to your log</div>
+                </div>
+              </div>
+              <div class="branch-row branch-enriched">
+                <div class="branch-num">147</div>
+                <div class="branch-desc">
+                  <div class="branch-title">Enriched</div>
+                  <div class="branch-subtitle">Existing QSOs updated with names, grids, QSL confirmations</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Uploaded -->
+          <div class="funnel-stage stage-uploaded">
+            <div class="funnel-bar-col">
+              <div class="funnel-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              </div>
+            </div>
+            <div class="funnel-content">
+              <div class="funnel-label">Uploaded</div>
+              <div class="funnel-explain">Your local QSOs sent back to services that accept uploads</div>
+              <div class="funnel-value">89 QSOs sent</div>
+              <div class="funnel-breakdown">
+                <span class="breakdown-chip">QRZ 52</span>
+                <span class="breakdown-chip">POTA 22</span>
+                <span class="breakdown-chip">eQSL 15</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Per-Service Detail -->
+        <div class="section-header">Per Service</div>
+        <div class="service-rows">
+
+          <div class="service-row">
+            <div class="svc-icon qrz">QRZ</div>
+            <div class="svc-info">
+              <div class="svc-name">QRZ.com</div>
+              <div class="svc-time">12 min ago</div>
+            </div>
+            <div class="svc-counts">
+              <div class="svc-count count-blue"><div class="svc-count-value">180</div><div class="svc-count-label">Fetched</div></div>
+              <div class="svc-count count-green"><div class="svc-count-value">94</div><div class="svc-count-label">Enriched</div></div>
+              <div class="svc-count count-orange"><div class="svc-count-value">52</div><div class="svc-count-label">Uploaded</div></div>
+            </div>
+          </div>
+
+          <div class="service-row">
+            <div class="svc-icon pota">POTA</div>
+            <div class="svc-info">
+              <div class="svc-name">Parks on the Air</div>
+              <div class="svc-time">12 min ago</div>
+            </div>
+            <div class="svc-counts">
+              <div class="svc-count count-blue"><div class="svc-count-value">42</div><div class="svc-count-label">Fetched</div></div>
+              <div class="svc-count count-green"><div class="svc-count-value">38</div><div class="svc-count-label">Enriched</div></div>
+              <div class="svc-count count-orange"><div class="svc-count-value">22</div><div class="svc-count-label">Uploaded</div></div>
+            </div>
+          </div>
+
+          <div class="service-row">
+            <div class="svc-icon lotw">LoTW</div>
+            <div class="svc-info">
+              <div class="svc-name">Logbook of the World</div>
+              <div class="svc-time">12 min ago</div>
+            </div>
+            <div class="svc-counts">
+              <div class="svc-count count-blue"><div class="svc-count-value">25</div><div class="svc-count-label">Fetched</div></div>
+              <div class="svc-count count-green"><div class="svc-count-value">15</div><div class="svc-count-label">Enriched</div></div>
+              <div class="svc-count count-orange"><div class="svc-count-value">&mdash;</div><div class="svc-count-label">Uploaded</div></div>
+            </div>
+          </div>
+
+          <div class="service-row">
+            <div class="svc-icon eqsl">eQSL</div>
+            <div class="svc-info">
+              <div class="svc-name">eQSL.cc</div>
+              <div class="svc-time">Pending auth</div>
+            </div>
+            <div class="svc-counts">
+              <div class="svc-count count-blue"><div class="svc-count-value">&mdash;</div><div class="svc-count-label">Fetched</div></div>
+              <div class="svc-count count-green"><div class="svc-count-value">&mdash;</div><div class="svc-count-label">Enriched</div></div>
+              <div class="svc-count count-orange"><div class="svc-count-value">15</div><div class="svc-count-label">Uploaded</div></div>
+            </div>
+          </div>
+
+          <div class="service-row">
+            <div class="svc-icon lofi">LoFi</div>
+            <div class="svc-info">
+              <div class="svc-name">Ham2K LoFi</div>
+              <div class="svc-time">Not configured</div>
+            </div>
+            <div class="svc-counts">
+              <div class="svc-count count-blue"><div class="svc-count-value">&mdash;</div><div class="svc-count-label">Fetched</div></div>
+              <div class="svc-count count-green"><div class="svc-count-value">&mdash;</div><div class="svc-count-label">Enriched</div></div>
+              <div class="svc-count count-orange"><div class="svc-count-value">&mdash;</div><div class="svc-count-label">Uploaded</div></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

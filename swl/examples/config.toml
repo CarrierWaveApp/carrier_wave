@@ -1,0 +1,69 @@
+# SDR Recording Server — Example Configuration
+#
+# Copy this file and edit for your station.
+
+[server]
+name = "my-sdr-server"
+listen_addr = "0.0.0.0"
+port = 8080
+# Maidenhead grid locator (optional)
+# location = "FN42ig"
+
+# --- SDR Discovery ---
+
+[discovery]
+enabled = true
+rescan_interval_secs = 30
+mdns_enabled = true
+mdns_browse_types = ["_kiwisdr._tcp", "_smartsdr._tcp"]
+
+# Override labels/settings for specific discovered SDRs by serial number.
+# SDRs not listed here still work with defaults.
+# [discovery.overrides."00000001"]
+# label = "40m Dipole"
+# antenna = "dipole-40m"
+# gain = { manual = 40.0 }
+
+# Network SDRs that can't be auto-discovered
+# [[discovery.network_sdrs]]
+# driver = "kiwisdr"
+# url = "http://vk4rza.proxy.kiwisdr.com:8073"
+# label = "VK4 KiwiSDR"
+
+# Auto-discover public KiwiSDRs from http://kiwisdr.com/public/
+# Filtered by country/region bounding boxes.
+# Regions: "US", "CA", "EU", "AS", "SA", "OC", "AF", or "*" for all.
+# kiwisdr_directory = true
+# kiwisdr_regions = ["US", "CA"]
+
+# --- Recordings ---
+# Each [[recording]] block defines a continuous or scheduled recording.
+
+# [[recording]]
+# sdr = "00000001"          # matches by discovered serial/ID
+# frequency = 7_030_000     # 40m CW (Hz)
+# bandwidth = 2_400          # Hz
+# mode = "cw"
+# schedule = "always"        # or "00:00-06:00 UTC"
+# retention_days = 30
+
+# [[recording]]
+# sdr = "00000001"
+# frequency = 14_035_000    # 20m CW (Hz)
+# bandwidth = 2_400
+# mode = "cw"
+# schedule = "always"
+# retention_days = 90
+
+# --- Storage ---
+
+[storage]
+data_dir = "data/recordings"
+db_path = "data/sdr-server.db"
+segment_duration_secs = 300  # 5 minutes
+
+# --- Time Synchronization ---
+
+[time]
+ntp_server = "pool.ntp.org"
+sync_interval_secs = 3600   # 1 hour

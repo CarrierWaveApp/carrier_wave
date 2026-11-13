@@ -1,0 +1,25 @@
+[package]
+name = "duplex-uart-spike"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.77"
+description = "Bench spike: classic ESP32 devkit bridging its USB console to two K1-jack CAT UARTs"
+
+[[bin]]
+name = "duplex-uart-spike"
+harness = false
+
+[dependencies]
+esp-idf-svc = { version = "0.52", features = ["alloc", "binstart"] }
+esp-idf-hal = "0.46"
+esp-idf-sys = "0.37"
+
+[build-dependencies]
+embuild = "0.33"
+
+[profile.release]
+opt-level = "s"
+
+[profile.dev]
+debug = true
+opt-level = "z"

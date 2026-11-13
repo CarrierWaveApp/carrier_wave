@@ -1,0 +1,96 @@
+import CarrierWaveData
+import Foundation
+
+/// Elecraft K3/K4 protocol handler.
+/// Extends Kenwood protocol with Elecraft-specific commands.
+struct ElecraftProtocolHandler: RadioProtocolHandler {
+    // MARK: Internal
+
+    func encodeReadFrequency() -> Data? {
+        kenwood.encodeReadFrequency()
+    }
+
+    func encodeReadMode() -> Data? {
+        kenwood.encodeReadMode()
+    }
+
+    func encodeSetFrequency(_ freqMHz: Double) -> Data {
+        kenwood.encodeSetFrequency(freqMHz)
+    }
+
+    func encodeSetMode(_ mode: String) -> Data {
+        kenwood.encodeSetMode(mode)
+    }
+
+    func encodeSetPTT(_ on: Bool) -> Data {
+        kenwood.encodeSetPTT(on)
+    }
+
+    func decodeFrequency(from data: Data) -> Double? {
+        kenwood.decodeFrequency(from: data)
+    }
+
+    func decodeMode(from data: Data) -> String? {
+        kenwood.decodeMode(from: data)
+    }
+
+    func decodePTTState(from data: Data) -> Bool? {
+        kenwood.decodePTTState(from: data)
+    }
+
+    func encodeSetXIT(_ on: Bool) -> Data? {
+        kenwood.encodeSetXIT(on)
+    }
+
+    func encodeSetXITOffset(_ hz: Int) -> Data? {
+        kenwood.encodeSetXITOffset(hz)
+    }
+
+    func encodeClearRITXIT() -> Data? {
+        kenwood.encodeClearRITXIT()
+    }
+
+    func encodeReadXIT() -> Data? {
+        kenwood.encodeReadXIT()
+    }
+
+    func encodeReadRIT() -> Data? {
+        kenwood.encodeReadRIT()
+    }
+
+    func encodeReadRITXITOffset() -> Data? {
+        kenwood.encodeReadRITXITOffset()
+    }
+
+    func decodeXITState(from data: Data) -> Bool? {
+        kenwood.decodeXITState(from: data)
+    }
+
+    func decodeRITState(from data: Data) -> Bool? {
+        kenwood.decodeRITState(from: data)
+    }
+
+    func decodeRITXITOffset(from data: Data) -> Int? {
+        kenwood.decodeRITXITOffset(from: data)
+    }
+
+    func encodeSendCW(_ text: String) -> Data? {
+        "KY \(text);".data(using: .ascii)
+    }
+
+    func encodeAbortCW() -> Data? {
+        "KY0;".data(using: .ascii)
+    }
+
+    func encodeReadPowerLevel() -> Data? {
+        kenwood.encodeReadPowerLevel()
+    }
+
+    func decodePowerLevel(from data: Data) -> UInt8? {
+        kenwood.decodePowerLevel(from: data)
+    }
+
+    // MARK: Private
+
+    private let kenwood = KenwoodProtocolHandler()
+}

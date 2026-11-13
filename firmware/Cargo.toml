@@ -1,0 +1,29 @@
+[package]
+name = "cw-bridge"
+version = "1.0.0"
+edition = "2021"
+description = "CW Bridge: BLE-to-USB radio CAT bridge firmware for ESP32-S3"
+
+[dependencies]
+esp-idf-svc = { version = "0.52", features = ["alloc", "binstart"] }
+esp-idf-hal = "0.46"
+esp-idf-sys = "0.37"
+log = "0.4"
+prost = "0.13"
+
+# Display + shared I2C bus trait
+ssd1306 = "0.9"
+embedded-graphics = "0.8"
+embedded-hal = "1.0"
+
+[build-dependencies]
+embuild = "0.33"
+cc = "1.1"
+
+[profile.release]
+opt-level = "s"
+lto = true
+
+[profile.dev]
+debug = true
+opt-level = "z"

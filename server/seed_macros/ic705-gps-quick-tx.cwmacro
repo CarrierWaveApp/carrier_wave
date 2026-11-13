@@ -1,0 +1,23 @@
+{
+  "slug": "ic705-gps-quick-tx",
+  "name": "IC-705 GPS quick TX",
+  "icon": "location.fill",
+  "description": "Tap-to-transmit your current grid via the IC-705's TX message memory. Edits the M1 voice memory text on the radio before keying down; restore your usual call after with the editor.",
+  "tags": ["ic-705", "icom", "gps", "voice-memory"],
+  "appliesTo": ["civ"],
+  "capabilities": {
+    "transmits": true,
+    "changesFrequency": false,
+    "changesMode": false,
+    "changesPower": false,
+    "usesRawBytes": true
+  },
+  "args": [],
+  "steps": [
+    { "kind": "rawBytes", "protocol": "civ", "bytes": "FE FE A4 E0 1C 00 01 FD" },
+    { "kind": "delay", "durationMs": 1500 },
+    { "kind": "rawBytes", "protocol": "civ", "bytes": "FE FE A4 E0 1C 00 00 FD" }
+  ],
+  "format": 2,
+  "status": "approved"
+}

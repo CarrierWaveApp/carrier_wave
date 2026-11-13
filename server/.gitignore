@@ -1,0 +1,11 @@
+/target/
+.env
+/.oauth-dev/
+
+# Local release build artifacts (see CLAUDE.md "Local release build")
+/staging/
+/activities-server-v*.tar.gz
+
+# deepsec security-scan workspace + exported findings (local only)
+/.deepsec/
+/findings/

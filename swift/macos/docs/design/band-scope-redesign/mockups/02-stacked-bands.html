@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>02 — Stacked bands (N1MM-inspired)</title>
+<link rel="stylesheet" href="theme.css">
+<style>
+  .stacked {
+    width: 1392px;
+    height: 760px;
+    background: var(--bg-card);
+    border: 1px solid var(--divider);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+  }
+  .toolbar {
+    height: 36px;
+    background: #2c2c2e;
+    border-bottom: 1px solid var(--divider);
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    gap: 12px;
+    font-size: 11px;
+  }
+  .toolbar .title {
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--text-primary);
+  }
+  .toolbar .filter-chip {
+    padding: 3px 8px;
+    border-radius: 9px;
+    font-size: 10px;
+    font-weight: 500;
+  }
+  .toolbar .spacer { flex: 1; }
+  .toolbar .vfo {
+    font-family: var(--font-mono);
+    background: #1c1c1e;
+    border: 1.5px solid var(--red);
+    color: var(--red);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 11px;
+  }
+  .toolbar .vfo-label { color: var(--text-secondary); }
+
+  .columns {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0;
+    border-top: 1px solid var(--divider);
+  }
+  .col {
+    background: var(--bg-base);
+    border-right: 1px solid var(--divider);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+  .col:last-child { border-right: none; }
+  .col.active { background: #18221a; box-shadow: inset 0 0 0 2px var(--green); }
+  .col-header {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--divider);
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    background: var(--bg-card);
+  }
+  .col.active .col-header { background: #1f2c22; }
+  .col-band {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+  .col.active .col-band { color: var(--green); }
+  .col-meta {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-secondary);
+  }
+  .col-meta .mults { color: var(--green); font-weight: 600; }
+  .col-spots {
+    flex: 1;
+    padding: 8px 0;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    overflow: hidden;
+    position: relative;
+  }
+  .spot-row {
+    display: flex;
+    align-items: center;
+    padding: 1px 12px;
+    line-height: 1.4;
+  }
+  .spot-row.mult { font-weight: 700; color: var(--green); }
+  .spot-row.new { font-weight: 700; color: var(--red); }
+  .spot-row.bandslot { font-weight: 700; color: var(--orange); }
+  .spot-row.dupe { color: var(--gray); }
+  .spot-row.spot { color: var(--blue); }
+  .spot-freq {
+    width: 56px;
+    color: var(--text-tertiary);
+    font-size: 10px;
+    text-align: right;
+    margin-right: 8px;
+  }
+  .spot-row.mult .spot-freq,
+  .spot-row.new .spot-freq,
+  .spot-row.bandslot .spot-freq { color: rgba(255,255,255,0.45); }
+  .spot-call { flex: 1; }
+  .spot-tag {
+    font-size: 8px;
+    font-weight: 700;
+    padding: 1px 4px;
+    border-radius: 2px;
+    margin-left: 4px;
+  }
+  .spot-tag.dx { background: var(--red); color: #fff; }
+  .spot-tag.bs { background: var(--orange); color: #1c1c1e; }
+
+  .col-vfo {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 16px;
+    background: rgba(255, 69, 58, 0.12);
+    border-top: 1px solid rgba(255, 69, 58, 0.6);
+    border-bottom: 1px solid rgba(255, 69, 58, 0.6);
+    pointer-events: none;
+  }
+  .col-vfo .vfo-mark {
+    position: absolute;
+    left: 0;
+    top: -1px;
+    bottom: -1px;
+    width: 4px;
+    background: var(--red);
+  }
+  .col-vfo .vfo-freq {
+    position: absolute;
+    right: 4px;
+    top: 1px;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--red);
+    font-weight: 700;
+  }
+
+  .col-footer {
+    padding: 6px 12px;
+    border-top: 1px solid var(--divider);
+    background: var(--bg-card);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 9px;
+    color: var(--text-tertiary);
+  }
+  .col.active .col-footer { background: #1f2c22; }
+  .col-footer .heat {
+    display: flex;
+    gap: 2px;
+  }
+  .col-footer .heat .bar {
+    width: 4px;
+    background: var(--green);
+    opacity: 0.6;
+  }
+  .col-footer .heat .bar.tall { height: 12px; }
+  .col-footer .heat .bar.med  { height: 8px; }
+  .col-footer .heat .bar.low  { height: 4px; }
+
+  .bottom-bar {
+    height: 38px;
+    border-top: 1px solid var(--divider);
+    background: #1c1c1e;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    gap: 16px;
+    font-size: 10px;
+    color: var(--text-secondary);
+  }
+  .bottom-bar .key {
+    background: #3a3a3c;
+    border-radius: 3px;
+    padding: 1px 5px;
+    font-family: var(--font-mono);
+    color: var(--text-primary);
+    margin: 0 2px;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="page-header">
+    <h1>02 · Stacked bands (N1MM-inspired)</h1>
+    <div class="crumbs"><a href="index.html">← gallery</a> · <a href="../README.md">research notes</a></div>
+  </div>
+  <p class="lead">
+    Five band columns side by side: 80 / 40 / 20 / 15 / 10 m. No spectrum, no
+    waterfall — just spot text at frequency position, color-coded for mults and
+    dupes. Active band (20 m) has the green outline. <code>←</code>/<code>→</code>
+    moves between columns, <code>↑</code>/<code>↓</code> moves between spots in
+    the active column. Click any spot in any column to QSY both band and frequency.
+  </p>
+
+  <div class="stacked">
+    <div class="toolbar">
+      <span class="title">Stacked Band Scope</span>
+      <span class="filter-chip" style="background: rgba(10,132,255,0.2); color: var(--blue);">RBN ⨯ 73</span>
+      <span class="filter-chip" style="background: rgba(255,214,10,0.2); color: var(--yellow);">DX ⨯ 41</span>
+      <span class="filter-chip" style="background: #48484a; color: var(--text-secondary);">+5 hidden</span>
+      <span class="spacer"></span>
+      <span class="vfo-label">cursor</span>
+      <span class="vfo" style="border-color: var(--blue); color: var(--blue);">14118.4</span>
+      <span class="vfo-label">VFO</span>
+      <span class="vfo">14130.0</span>
+    </div>
+
+    <div class="columns">
+      <!-- ============== 80m ============== -->
+      <div class="col">
+        <div class="col-header">
+          <span class="col-band">80m</span>
+          <span class="col-meta">9 spots · <span class="mults">3 mults</span></span>
+        </div>
+        <div class="col-spots">
+          <div class="spot-row mult"><span class="spot-freq">3502.1</span><span class="spot-call">VK6IR</span><span class="spot-tag dx">NEW</span></div>
+          <div class="spot-row spot"><span class="spot-freq">3506.5</span><span class="spot-call">N1UR</span></div>
+          <div class="spot-row mult"><span class="spot-freq">3512.0</span><span class="spot-call">JA1YPA</span></div>
+          <div class="spot-row dupe"><span class="spot-freq">3516.8</span><span class="spot-call">K1AR</span></div>
+          <div class="spot-row spot"><span class="spot-freq">3522.4</span><span class="spot-call">DL3DXX</span></div>
+          <div class="spot-row spot"><span class="spot-freq">3528.0</span><span class="spot-call">G3FNJ</span></div>
+          <div class="spot-row mult"><span class="spot-freq">3532.5</span><span class="spot-call">ZL3X</span><span class="spot-tag dx">NEW</span></div>
+          <div class="spot-row spot"><span class="spot-freq">3540.0</span><span class="spot-call">F8DBF</span></div>
+          <div class="spot-row dupe"><span class="spot-freq">3548.2</span><span class="spot-call">UA9MA</span></div>
+        </div>
+        <div class="col-footer">
+          <span>last spot 14m ago</span>
+          <div class="heat"><div class="bar low"></div><div class="bar med"></div><div class="bar med"></div><div class="bar low"></div><div class="bar low"></div></div>
+        </div>
+      </div>
+
+      <!-- ============== 40m ============== -->
+      <div class="col">
+        <div class="col-header">
+          <span class="col-band">40m</span>
+          <span class="col-meta">14 spots · <span class="mults">5 mults</span></span>
+        </div>
+        <div class="col-spots">
+          <div class="spot-row spot"><span class="spot-freq">7003.2</span><span class="spot-call">W3LPL</span></div>
+          <div class="spot-row mult"><span class="spot-freq">7008.5</span><span class="spot-call">CT9ABV</span><span class="spot-tag dx">NEW</span></div>
+          <div class="spot-row spot"><span class="spot-freq">7012.0</span><span class="spot-call">N4AF</span></div>
+          <div class="spot-row mult"><span class="spot-freq">7015.6</span><span class="spot-call">P29VNX</span><span class="spot-tag dx">NEW</span></div>
+          <div class="spot-row dupe"><span class="spot-freq">7019.0</span><span class="spot-call">EA8RM</span></div>
+          <div class="spot-row spot"><span class="spot-freq">7024.4</span><span class="spot-call">KH6LC</span></div>
+          <div class="spot-row mult"><span class="spot-freq">7028.5</span><span class="spot-call">FK8IK</span><span class="spot-tag dx">NEW</span></div>
+          <div class="spot-row spot"><span class="spot-freq">7034.0</span><span class="spot-call">JR3RIY</span></div>
+          <div class="spot-row bandslot"><span class="spot-freq">7038.5</span><span class="spot-call">OH8X</span><span class="spot-tag bs">BS</span></div>
+          <div class="spot-row spot"><span class="spot-freq">7043.0</span><span class="spot-call">F5VHJ</span></div>
+          <div class="spot-row mult"><span class="spot-freq">7048.0</span><span class="spot-call">VP6R</span><span class="spot-tag dx">NEW</span></div>
+          <div class="spot-row dupe"><span class="spot-freq">7055.5</span><span class="spot-call">DL5RDO</span></div>
+          <div class="spot-row spot"><span class="spot-freq">7062.0</span><span class="spot-call">UA0FZ</span></div>
+          <div class="spot-row mult"><span class="spot-freq">7068.5</span><span class="spot-call">3D2AG</span><span class="spot-tag dx">NEW</span></div>
+        </div>
+        <div class="col-footer">
+          <span>last spot 4m ago</span>
+          <div class="heat"><div class="bar med"></div><div class="bar tall"></div><div class="bar tall"></div><div class="bar tall"></div><div class="bar med"></div></div>
+        </div>
+      </div>
+
+      <!-- ============== 20m (ACTIVE) ============== -->
+      <div class="col active">
+        <div class="col-header">
+          <span class="col-band">20m</span>
+          <span class="col-meta">28 spots · <span class="mults">7 mults</span></span>
+        </div>
+        <div class="col-spots">
+          <div class="spot-row mult"><span class="spot-freq">14005.1</span><span class="spot-call">K3LR</span></div>
+          <div class="spot-row dupe"><span class="spot-freq">14008.6</span><span class="spot-call">W1AW</span></div>
+          <div class="spot-row new"><span class="spot-freq">14012.4</span><span class="spot-call">JA1NUT</span><span class="spot-tag dx">NEW</span></div>
+          <div class="spot-row mult"><span class="spot-freq">14018.2</span><span class="spot-call">VK6IR</span></div>
+          <div class="spot-row spot"><span class="spot-freq">14023.0</span><span class="spot-call">EA1XT</span></div>
+          <div class="spot-row bandslot"><span class="spot-freq">14028.7</span><span class="spot-call">OH8X</span><span class="spot-tag bs">BS</span></div>
+          <div class="spot-row new"><span class="spot-freq">14035.5</span><span class="spot-call">9M2CNC</span><span class="spot-tag dx">NEW</span></div>
+          <div class="spot-row spot"><span class="spot-freq">14042.0</span><span class="spot-call">G4IRN</span></div>
+          <div class="spot-row mult"><span class="spot-freq">14048.0</span><span class="spot-call">ZS6CCY</span></div>
+          <div class="spot-row mult"><span class="spot-freq">14068.0</span><span class="spot-call">PY2NY</span></div>
+          <!-- VFO marker overlay -->
+          <div class="col-vfo" style="top: 168px;">
+            <div class="vfo-mark"></div>
+            <div class="vfo-freq">14130.0</div>
+          </div>
+          <div class="spot-row spot"><span class="spot-freq">14130.0</span><span class="spot-call">N5CR</span></div>
+          <div class="spot-row spot"><span class="spot-freq">14143.5</span><span class="spot-call">LZ9W</span></div>
+          <div class="spot-row mult"><span class="spot-freq">14148.2</span><span class="spot-call">KH6LC</span></div>
+          <div class="spot-row spot"><span class="spot-freq">14152.0</span><span class="spot-call">OK7K</span></div>
+          <div class="spot-row new"><span class="spot-freq">14155.5</span><span class="spot-call">4X6FR</span><span class="spot-tag dx">NEW</span></div>
+        </div>
+        <div class="col-footer">
+          <span>last spot 22s ago</span>
+          <div class="heat"><div class="bar tall"></div><div class="bar tall"></div><div class="bar tall"></div><div class="bar tall"></div><div class="bar tall"></div></div>
+        </div>
+      </div>
+
+      <!-- ============== 15m ============== -->
+      <div class="col">
+        <div class="col-header">
+          <span class="col-band">15m</span>
+          <span class="col-meta">17 spots · <span class="mults">6 mults</span></span>
+        </div>
+        <div class="col-spots">
+          <div class="spot-row mult"><span class="spot-freq">21005.0</span><span class="spot-call">JT5DX</span><span class="spot-tag dx">NEW</span></div>
+          <div class="spot-row mult"><span class="spot-freq">21009.5</span><span class="spot-call">9V1YC</span><span class="spot-tag dx">NEW</span></div>
+          <div class="spot-row spot"><span class="spot-freq">21014.0</span><span class="spot-call">PY5EG</span></div>
+          <div class="spot-row dupe"><span class="spot-freq">21018.6</span><span class="spot-call">VE3EJ</span></div>
+          <div class="spot-row mult"><span class="spot-freq">21025.0</span><span class="spot-call">A45XR</span><span class="spot-tag dx">NEW</span></div>
+          <div class="spot-row spot"><span class="spot-freq">21031.5</span><span class="spot-call">RX9CM</span></div>
+          <div class="spot-row mult"><span class="spot-freq">21038.0</span><span class="spot-call">5R8AL</span><span class="spot-tag dx">NEW</span></div>
+          <div class="spot-row spot"><span class="spot-freq">21044.5</span><span class="spot-call">VK4SN</span></div>
+          <div class="spot-row bandslot"><span class="spot-freq">21052.0</span><span class="spot-call">LU8YE</span><span class="spot-tag bs">BS</span></div>
+          <div class="spot-row spot"><span class="spot-freq">21063.5</span><span class="spot-call">4Z5LA</span></div>
+          <div class="spot-row mult"><span class="spot-freq">21068.0</span><span class="spot-call">YB0AZ</span><span class="spot-tag dx">NEW</span></div>
+          <div class="spot-row dupe"><span class="spot-freq">21075.5</span><span class="spot-call">CN2AA</span></div>
+          <div class="spot-row spot"><span class="spot-freq">21082.0</span><span class="spot-call">UA9CDC</span></div>
+          <div class="spot-row mult"><span class="spot-freq">21088.5</span><span class="spot-call">FO5JV</span><span class="spot-tag dx">NEW</span></div>
+          <div class="spot-row spot"><span class="spot-freq">21092.0</span><span class="spot-call">HZ1HZ</span></div>
+        </div>
+        <div class="col-footer">
+          <span>last spot 1m ago</span>
+          <div class="heat"><div class="bar tall"></div><div class="bar tall"></div><div class="bar med"></div><div class="bar tall"></div><div class="bar tall"></div></div>
+        </div>
+      </div>
+
+      <!-- ============== 10m ============== -->
+      <div class="col">
+        <div class="col-header">
+          <span class="col-band">10m</span>
+          <span class="col-meta">5 spots · <span class="mults">2 mults</span></span>
+        </div>
+        <div class="col-spots">
+          <div class="spot-row mult"><span class="spot-freq">28005.0</span><span class="spot-call">EA8RM</span></div>
+          <div class="spot-row spot"><span class="spot-freq">28012.5</span><span class="spot-call">CT3KN</span></div>
+          <div class="spot-row mult"><span class="spot-freq">28028.0</span><span class="spot-call">FY5KE</span><span class="spot-tag dx">NEW</span></div>
+          <div class="spot-row dupe"><span class="spot-freq">28042.5</span><span class="spot-call">PJ4G</span></div>
+          <div class="spot-row spot"><span class="spot-freq">28055.0</span><span class="spot-call">ZF1A</span></div>
+        </div>
+        <div class="col-footer">
+          <span>last spot 38m ago</span>
+          <div class="heat"><div class="bar low"></div><div class="bar low"></div><div class="bar low"></div><div class="bar low"></div><div class="bar low"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bottom-bar">
+      <span><span class="key">←</span><span class="key">→</span> active column</span>
+      <span><span class="key">↑</span><span class="key">↓</span> spot in column</span>
+      <span><span class="key">⌥</span> + arrows = mults only</span>
+      <span><span class="key">⏎</span> tune selection</span>
+      <span><span class="key">1</span>–<span class="key">5</span> jump column</span>
+      <span><span class="key">m</span> mark</span>
+      <span style="margin-left: auto;">73 spots · 23 mults · 6 bands shown</span>
+    </div>
+  </div>
+
+  <div class="callouts">
+    <span class="marker fix">A</span>
+    <span class="text"><strong>One column per band, fully independent.</strong>
+      The contest operator can scan all five HF bands at a glance and answer "where
+      are the mults?" without changing band. Heat bars at the bottom of each column
+      show the spot rate over the last few minutes — instantly visible "10 m is
+      dead, 15 m is hot."</span>
+
+    <span class="marker fix">B</span>
+    <span class="text"><strong>Active band has a hard green outline.</strong>
+      The 20 m column is the one the radio is tuned to. The VFO red bar in that
+      column shows where in the band you are. The other columns are read-only
+      until you click them.</span>
+
+    <span class="marker fix">C</span>
+    <span class="text"><strong>Mults are visually loud.</strong>
+      Bold green for new entities, red for not-yet-worked, orange for new band slots.
+      <code>NEW</code> and <code>BS</code> tags reinforce the color so you don't
+      have to remember which is which. Dupes fade to gray.</span>
+
+    <span class="marker fix">D</span>
+    <span class="text"><strong>Click any spot in any column to QSY both band and
+      frequency in one action.</strong> The keyboard model uses arrows for
+      navigation, <code>1</code>–<code>5</code> as direct column jumps, and
+      <code>⏎</code> to tune the current selection.</span>
+  </div>
+
+  <div class="callouts" style="margin-top: 12px;">
+    <span class="marker">!</span>
+    <span class="text"><strong>Tradeoffs.</strong>
+      You give up the live spectrum and waterfall to gain cross-band situational
+      awareness. Best on wide monitors. On a 1280 pt laptop, four columns are
+      comfortable; five is tight; six requires hiding bands. Likely a per-role
+      preset (Contester role defaults to stacked, Hunter defaults to single).</span>
+  </div>
+</div>
+</body>
+</html>

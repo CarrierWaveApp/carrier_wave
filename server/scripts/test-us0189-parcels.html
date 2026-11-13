@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>US-0189 — All PAD-US Parcels</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: system-ui, sans-serif; display: flex; height: 100vh; }
+#map { flex: 1; }
+#sidebar {
+  width: 380px; overflow-y: auto; background: #f8f9fa; border-left: 1px solid #dee2e6;
+  padding: 16px; font-size: 13px;
+}
+#sidebar h2 { font-size: 16px; margin-bottom: 8px; }
+#sidebar .summary { margin-bottom: 12px; padding: 8px; background: #fff; border-radius: 6px; border: 1px solid #dee2e6; }
+#sidebar .summary dt { font-weight: 600; display: inline; }
+#sidebar .summary dd { display: inline; margin: 0 12px 0 0; }
+.parcel {
+  margin-bottom: 8px; padding: 8px; background: #fff; border-radius: 6px;
+  border-left: 4px solid #999; cursor: pointer; transition: background 0.15s;
+}
+.parcel:hover { background: #e9ecef; }
+.parcel.highlight { background: #fff3cd; }
+.parcel .idx { font-weight: 700; }
+.parcel .acres { float: right; color: #666; }
+.parcel .props { margin-top: 4px; color: #555; }
+.parcel .props span { display: inline-block; margin-right: 8px; }
+#status { padding: 12px; font-style: italic; color: #666; }
+.legend { margin-top: 12px; margin-bottom: 12px; }
+.legend-item { display: flex; align-items: center; gap: 6px; margin: 2px 0; }
+.legend-swatch { width: 16px; height: 16px; border-radius: 3px; border: 1px solid #0003; }
+.note { margin-top: 12px; padding: 8px; background: #e8f4f8; border-radius: 6px; border: 1px solid #bee5eb; font-size: 12px; }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div id="sidebar">
+  <h2>US-0189 — Don Edwards SF Bay NWR</h2>
+  <div id="status">Loading local GeoJSON…</div>
+  <div id="summary-container"></div>
+  <div id="legend-container"></div>
+  <div id="parcels"></div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// Distinct colors per FeatClass
+const CLASS_COLORS = {
+  'Designation': '#e6194b',
+  'Fee':         '#3cb44b',
+  'Marine':      '#4363d8',
+  'Easement':    '#f58231',
+  'Proclamation':'#911eb4',
+  'Other':       '#42d4f4',
+  'Unknown':     '#a9a9a9',
+};
+
+const map = L.map('map').setView([37.505, -122.085], 11);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '&copy; OpenStreetMap contributors',
+  maxZoom: 19,
+}).addTo(map);
+
+const layers = [];
+let allBounds = null;
+
+async function loadParcels() {
+  const statusEl = document.getElementById('status');
+  const parcelsEl = document.getElementById('parcels');
+  const summaryEl = document.getElementById('summary-container');
+  const legendEl = document.getElementById('legend-container');
+
+  try {
+    // Load the pre-fetched GeoJSON file (same directory)
+    const resp = await fetch('us0189-padus.geojson');
+    if (!resp.ok) throw new Error(`Failed to load us0189-padus.geojson: HTTP ${resp.status}`);
+    const data = await resp.json();
+    const features = data.features || [];
+
+    if (features.length === 0) {
+      statusEl.textContent = 'No features in GeoJSON file.';
+      return;
+    }
+
+    // Group by FeatClass
+    const byClass = {};
+    let totalAcres = 0;
+    features.forEach(f => {
+      const cls = f.properties?.FeatClass || 'Unknown';
+      if (!byClass[cls]) byClass[cls] = { count: 0, acres: 0 };
+      byClass[cls].count++;
+      const a = f.properties?.GIS_Acres || 0;
+      byClass[cls].acres += a;
+      totalAcres += a;
+    });
+
+    statusEl.textContent = `${features.length} parcels, ${totalAcres.toLocaleString()} total acres`;
+
+    // Summary
+    summaryEl.innerHTML = `<div class="summary">
+      <dl>
+        <dt>Features:</dt><dd>${features.length}</dd>
+        <dt>Total acres:</dt><dd>${totalAcres.toLocaleString()}</dd>
+      </dl>
+      <div style="margin-top:4px">
+        ${Object.entries(byClass).map(([cls, d]) =>
+          `<strong>${cls}:</strong> ${d.count} parcels (${d.acres.toLocaleString()} ac)`
+        ).join('<br>')}
+      </div>
+    </div>
+    <div class="note">
+      <strong>Query used:</strong><br>
+      <code>Loc_Nm LIKE '%Don Edwards San Francisco Bay%' AND State_Nm = 'CA'</code><br><br>
+      <strong>What the aggregator does:</strong> Groups by FeatClass, picks best class
+      (Designation &gt; Fee), merges all geometries in that class into a GeometryCollection.
+      Here, Designation has only 1 parcel (2,201 ac) while Fee has 2 parcels (49,959 ac total).
+      The aggregator picks Designation — is that the right choice?
+    </div>`;
+
+    // Legend
+    legendEl.innerHTML = `<div class="legend"><strong>FeatClass colors:</strong>
+      ${Object.entries(byClass).map(([cls]) => `<div class="legend-item">
+        <div class="legend-swatch" style="background:${CLASS_COLORS[cls] || '#999'}"></div>
+        ${cls} (${byClass[cls].count})
+      </div>`).join('')}
+    </div>`;
+
+    // Render each parcel on the map
+    features.forEach((feature, i) => {
+      const props = feature.properties || {};
+      const cls = props.FeatClass || 'Unknown';
+      const color = CLASS_COLORS[cls] || '#999';
+      const acres = (props.GIS_Acres || 0).toLocaleString();
+
+      const layer = L.geoJSON(feature, {
+        style: { color, weight: 2, fillColor: color, fillOpacity: 0.25 },
+      }).addTo(map);
+      layers.push(layer);
+
+      const layerBounds = layer.getBounds();
+      if (!allBounds) allBounds = L.latLngBounds(layerBounds);
+      else allBounds.extend(layerBounds);
+
+      layer.bindPopup(`<strong>#${i + 1}</strong> ${props.Loc_Nm || '?'}<br>
+        Class: <strong>${cls}</strong><br>Acres: ${acres}<br>
+        Manager: ${props.Mang_Name || '?'}<br>
+        Des_Tp: ${props.Des_Tp || '?'}<br>
+        Unit_Nm: ${props.Unit_Nm || '?'}<br>
+        OBJECTID: ${props.OBJECTID || '?'}`);
+
+      // Sidebar card
+      const card = document.createElement('div');
+      card.className = 'parcel';
+      card.style.borderLeftColor = color;
+      card.innerHTML = `
+        <span class="idx">#${i + 1}</span>
+        <span class="acres">${acres} ac</span>
+        <div class="props">
+          <span><strong>${cls}</strong></span>
+          <span>${props.Des_Tp || ''}</span>
+          <span>${props.Mang_Name || ''}</span>
+          <span>OID ${props.OBJECTID || '?'}</span>
+        </div>
+      `;
+      card.addEventListener('click', () => {
+        map.fitBounds(layerBounds, { padding: [40, 40] });
+        layer.openPopup();
+        document.querySelectorAll('.parcel').forEach(c => c.classList.remove('highlight'));
+        card.classList.add('highlight');
+      });
+      card.addEventListener('mouseenter', () => {
+        layer.setStyle({ weight: 4, fillOpacity: 0.5 });
+      });
+      card.addEventListener('mouseleave', () => {
+        layer.setStyle({ weight: 2, fillOpacity: 0.25 });
+      });
+      parcelsEl.appendChild(card);
+    });
+
+    if (allBounds) map.fitBounds(allBounds, { padding: [30, 30] });
+
+  } catch (err) {
+    statusEl.textContent = `Error: ${err.message}`;
+    console.error(err);
+  }
+}
+
+loadParcels();
+</script>
+</body>
+</html>

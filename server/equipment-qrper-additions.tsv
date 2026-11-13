@@ -1,0 +1,44 @@
+id	name	manufacturer	category	bands	modes	max_power_watts	portability	weight_grams	description	aliases	antenna_connector	power_connector	key_jack	mic_jack
+elecraft-k1	K1	Elecraft	radio	80m,40m,30m,20m,17m,15m	CW	5	portable	635	Kit-built CW QRP transceiver with ultra-low current drain and optional plug-in band modules	k-1,k 1	BNC female	5.5x2.1mm barrel	3.5mm TRS
+elecraft-kh1	KH1	Elecraft	radio	40m,30m,20m,17m,15m	CW	5	pocket	360	Ultra-compact hand-held CW transceiver with built-in paddle, ATU, and whip antenna mount	kh-1,kh 1,kh1-f	BNC female	5.5x2.1mm barrel	3.5mm TRS
+elecraft-kx1	KX1	Elecraft	radio	80m,40m,30m,20m	CW	4	pocket	250	Ultra-compact kit-built CW transceiver with optional plug-in band modules (discontinued)	kx-1,kx 1	BNC female	2.1mm barrel	3.5mm TRS
+elecraft-k2	K2	Elecraft	radio	160m,80m,60m,40m,30m,20m,17m,15m,12m,10m	CW,SSB	15	portable	1497	High-performance all-through-hole kit transceiver expandable to 100W SSB	k-2,k 2,k2/100	BNC female	2.1mm barrel	3.5mm TRS	8-pin round
+cft1	CFT1	KM4CFT	radio	40m,30m,20m,17m,15m	CW	8	backpack		Five-band CW field transceiver kit with class-D PA for POTA/SOTA	cft-1	BNC female	5.5x2.1mm barrel	3.5mm TRS
+trusdx	(tr)uSDX	uSDX	radio	80m,60m,40m,30m,20m	CW,SSB,AM,FM	5	pocket	140	Open-source pocket multi-band multi-mode QRP transceiver with Class E PA	trusdx,usdx,tr-usdx	SMA female	1.35mm barrel	3.5mm TRS	3.5mm TRS (shared)
+mission-rgo-one	RGO One	Mission Radio	radio	80m,40m,30m,20m,17m,15m,12m,10m	CW,SSB	50	portable	2670	Hand-crafted superheterodyne HF transceiver from Bulgaria with analog VFO feel	rgo one,rgo-one,mission rgo,argo one	SO-239	Anderson Powerpole	3.5mm TRS	RJ-45 (8-pin modular)
+xiegu-g106	G106	Xiegu	radio	80m,60m,40m,30m,20m,17m,15m,12m,10m	CW,SSB,AM	5	portable	720	Ultra-compact QRP SDR transceiver with general-coverage receiver	g-106,g 106,g-core	BNC female	5.5x2.5mm barrel	3.5mm TRS	RJ-11 (4-pin modular)
+xiegu-x6200	X6200	Xiegu	radio	160m,80m,60m,40m,30m,20m,17m,15m,12m,10m,6m	CW,SSB,AM,FM,DIGITAL	8	backpack	930	Linux-based direct-sampling SDR portable with touchscreen, built-in ATU, and FT8 decoder	x-6200,x 6200	BNC female	5.5x2.5mm barrel	3.5mm TRS	RJ-45 (8-pin modular)
+penntek-tr45l-skinny	TR-45L Skinny	Penntek	radio	80m,40m,30m,20m	CW	5	portable		Slim variant of the TR-45L CW field transceiver (discontinued)	tr45l skinny,tr-45l skinny	BNC female	5.5x2.1mm barrel	3.5mm TRS + 3.5mm TS
+venus-sw3b	SW-3B	Venus	radio	40m,30m,20m	CW	5	pocket	180	Ultra-compact three-band CW QRP transceiver with extremely low current drain	sw3b,sw-3b,sw 3b	BNC female	4.0x1.7mm barrel	3.5mm TRS
+venus-sw6b	SW-6B	Venus	radio	80m,60m,40m,20m,17m,15m	CW	5	backpack	520	Six-band CW QRP transceiver with optional internal battery and broadband SWL receive	sw6b,sw-6b,sw 6b	BNC female	5.5x2.1mm barrel	3.5mm TRS
+lnr-ld11	LD-11	LNR Precision	radio	160m,80m,60m,40m,30m,20m,17m,15m,12m,10m,6m	CW,SSB,AM,FM,DIGITAL	8	portable	540	All-band all-mode QRP SDR transceiver with built-in panadapter	ld11,ld-11,ld 11	BNC female	5.5x2.5mm barrel	3.5mm TRS	3.5mm TRS
+chameleon-mpas-lite	CHA MPAS Lite	Chameleon Antenna	antenna	40m,30m,20m,17m,15m,12m,10m,6m			backpack	900	Lightweight modular portable antenna system with vertical and sloper configurations	mpas lite,chameleon mpas lite	SO-239
+chameleon-tdl	CHA TDL	Chameleon Antenna	antenna	40m,30m,20m,17m,15m,12m,10m			backpack		Tactical delta loop wire antenna for portable HF operations	tdl,tactical delta loop,chameleon tdl	SO-239
+chameleon-lefs	CHA LEFS	Chameleon Antenna	antenna	160m,80m,40m,30m,20m,17m,15m,12m,10m,6m			backpack		Long end-fed sloper wire antenna with broadband transformer	lefs,chameleon lefs	SO-239
+chameleon-lefs-4010	CHA LEFS 4010	Chameleon Antenna	antenna	40m,20m,15m,10m			backpack		End-fed sloper variant optimized for 40m and 10m bands	lefs 4010,chameleon lefs 4010	SO-239
+chameleon-ucm	CHA UCM	Chameleon Antenna	accessory				pocket		Universal counterpoise module for improving ground plane on vertical and end-fed antennas	ucm,chameleon ucm	SO-239
+chelegance-mc750	MC-750	Chelegance	antenna	40m,30m,20m,17m,15m,12m,10m			backpack	600	Telescoping loaded vertical antenna with optional 80m coil and tripod mount	mc750,mc-750,chelegance mc750	BNC female
+elecraft-ax3	AX3	Elecraft	antenna	40m,30m,20m,17m,15m			pocket	150	Multi-band compact loaded whip antenna package for KX2/KX3	ax-3,ax 3	BNC male
+k6ark-efhw	EFHW Antenna Kit	K6ARK	antenna	40m,20m,15m,10m			pocket	60	Ultralight end-fed half-wave wire antenna kit with 49:1 transformer for SOTA/POTA	k6ark efhw,k6ark antenna	BNC female
+packtenna-9to1	9:1 UNUN Random Wire	PackTenna	antenna	80m,40m,30m,20m,17m,15m,12m,10m			pocket	57	Compact 9:1 UNUN random wire antenna requiring ATU for multi-band use	packtenna random wire,packtenna 9:1,packtenna unun	BNC male
+tufteln-efrw	EFRW QRP Long Wire	Tufteln	antenna	80m,40m,30m,20m,17m,15m,12m,10m			pocket	65	End-fed random wire QRP antenna with matching transformer	tufteln efrw,tufteln long wire	BNC female
+tufteln-linked-efhw	Linked 40m EFHW	Tufteln	antenna	40m,20m,15m,10m			pocket		Linked end-fed half-wave antenna with removable links for band selection	tufteln linked efhw	BNC female
+tufteln-efrw-notx	Portable EFRW No Transformer	Tufteln	antenna	40m,30m,20m,17m,15m,12m,10m			pocket		Minimalist end-fed random wire with no matching transformer for use with built-in radio ATU	tufteln no-transformer,tufteln efrw no tx	BNC male
+tufteln-delta-loop	20m Delta Loop	Tufteln	antenna	20m			pocket		Full-wavelength 20 meter delta loop antenna for portable operation	tufteln delta loop,tufteln 20m loop	BNC female
+radioprep-efhw	49:1 EFHW Transformer	RadioPrep	antenna	80m,40m,20m,15m,10m			pocket		49:1 impedance matching transformer for end-fed half-wave wire antennas	radioprep efhw,radioprep transformer	SO-239
+tenntennas-efhw	49:1 EFHW Transformer	TennTennas	antenna	80m,40m,20m,15m,10m			pocket		49:1 impedance matching transformer for end-fed half-wave wire antennas	tenntennas efhw,tenntennas transformer	SO-239
+ad8hk-efrw	End-Fed Random Wire	AD8HK	antenna	40m,30m,20m,17m,15m,12m,10m			pocket		End-fed random wire antenna kit for QRP portable operation	ad8hk efrw	BNC female
+km4cft-efhw	End-Fed Antenna Kit	KM4CFT	antenna	40m,20m,15m,10m			pocket		Lightweight end-fed half-wave antenna kit	km4cft efhw	BNC female
+km4ack-efhw	40M EFHW Kit	KM4ACK	antenna	40m,20m,15m,10m			pocket		End-fed half-wave antenna kit cut for 40m with harmonic coverage	km4ack efhw,km4ack antenna	BNC female
+mm0px-efhw	QRP EFHW	MM0PX	antenna	40m,20m,15m,10m			pocket		QRP end-fed half-wave antenna for lightweight portable operation	mm0px efhw	BNC female
+explorer-pota20-mast	POTA20 Carbon Fiber Mast	Explorer	accessory				backpack	400	20-foot collapsible carbon fiber telescoping mast for portable antenna deployment	pota20 mast,explorer mast,pota20
+umpp1	UMPP-1	GM0EUL	key				pocket		Ultra-miniature precision iambic paddle with CNC construction	umpp1,umpp-1,gm0eul paddle			3.5mm TRS
+cwmorse-pocket-paddle	Pocket Paddle	CW Morse	key				pocket		Ultra-compact iambic paddle for portable CW operation	cw morse pocket paddle			3.5mm TRS
+cwmorse-outdoor-double	Outdoor Double Paddle	CW Morse	key				portable		Double paddle with heavy steel base for outdoor field use	cw morse outdoor,outdoor double paddle			3.5mm TRS
+cwmorse-cnc-aluminum	CNC Machined Aluminum Paddle	CW Morse	key				portable		Premium CNC-machined aluminum iambic paddle	cw morse cnc,cnc aluminum paddle			3.5mm TRS
+cwmorse-tsl1	TSL1 Single Lever	CW Morse	key				portable		Single-lever paddle for cootie/sideswiper-style CW sending	tsl1,tsl-1,cw morse tsl1			3.5mm TRS
+n6ara-tinypaddle	TinyPaddle	N6ARA	key				pocket		Miniature precision iambic paddle	n6ara tinypaddle,tinypaddle,tiny paddle			3.5mm TRS
+vk3il-pressure-paddle	Pressure Paddle V2	VK3IL	key				pocket		Pressure-sensitive iambic paddle with no moving parts	vk3il paddle,pressure paddle v2			3.5mm TRS
+n0sa-rlp-v2	RLP V2	N0SA / CW Morse	key				pocket		Small-production precision portable paddle	n0sa rlp,rlp v2,n0sa rlp v2			3.5mm TRS
+wb9cyy-bug-emulator	Bug Emulator	WB9CYY	key				portable		Electronic bug emulator paddle that simulates semi-automatic bug key feel	wb9cyy bug,bug emulator			3.5mm TRS
+k8ces-zippy	Zippy Paddle	K8CES	key				pocket		Compact portable iambic paddle	zippy,k8ces zippy,zippy paddle			3.5mm TRS

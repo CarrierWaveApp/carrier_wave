@@ -1,0 +1,27 @@
+[package]
+name = "cw-domain"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+description = "Carrier Wave portable domain logic (pure, no I/O)"
+
+[dependencies]
+chrono = { workspace = true }
+regex = "1"
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+# Deterministic CPU rasterizer for the themed share-map PNGs (share_render).
+# `png-format` (default) provides `Pixmap::encode_png` so no separate `png`
+# dep is needed. Rendering is fully deterministic — no time/threads/randomness.
+tiny-skia = "0.12"
+# Pure-Rust SGP4 propagator (validated against the official Vallado test
+# vectors) — the satellite module's orbital engine, replacing the Swift
+# SatelliteKit dependency once both platforms share this core.
+sgp4 = "2"
+# Satellite doppler schedule wire format, shared with the CW Sat Bridge
+# firmware (firmware-sat/) so pack/unpack can never drift across the BLE link.
+cw-sat-core = { path = "../../../firmware-sat/sat-core" }
+unicode-properties = { version = "0.1", features = ["emoji"] }
+unicode-segmentation = "1"

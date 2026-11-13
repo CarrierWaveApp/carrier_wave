@@ -1,0 +1,54 @@
+[package]
+name = "cw-bridge-sat"
+version = "0.1.0"
+edition = "2021"
+description = "CW Sat Bridge: satellite doppler CAT executor firmware for ESP32-P4"
+
+[dependencies]
+esp-idf-svc = { version = "0.52", features = ["alloc", "binstart"] }
+esp-idf-sys = "0.37"
+log = "0.4"
+prost = "0.13"
+cw-sat-core = { path = "sat-core" }
+
+[features]
+# Bring-up only: on radio detection, sweep VFO A up (2m) / VFO B down (70cm)
+# with readback logging to serial. See src/selftest.rs. Not for normal builds.
+freq-selftest = []
+
+# Dual-USB-host spike: bring up the P4's Full-Speed OTG (controller 1, D+/D-
+# on GPIO 27/26) standalone and prove it's alive + can see a device. Runs
+# INSTEAD of the normal bridge (BLE/HS-host disabled). See src/fs_spike.rs.
+fs-spike = []
+
+[build-dependencies]
+embuild = "0.33"
+
+# esp-idf-sys's stock bindings.h skips all BT headers on the ESP32-P4, but
+# host-only NimBLE is a supported configuration — pull the NimBLE host
+# bindings in ourselves. The controller lives on the board's ESP32-C6 behind
+# ESP-Hosted (SDIO); the esp_hosted managed component carries the transport,
+# the CP controller RPC, and the NimBLE HCI glue (gated by
+# CONFIG_ESP_HOSTED_HOST_FEAT_BT). No bindings_module: the symbols merge
+# into the esp_idf_sys crate root, so ble.rs stays close to the S3 firmware.
+[[package.metadata.esp-idf-sys.extra_components]]
+remote_component = { name = "espressif/esp_hosted", version = "3" }
+bindings_header = "src/include/nimble_bindings.h"
+
+# Minimal Full-Speed USB host (dual-host spike) — C component because the DWC
+# HAL port API is static-inline. Rust calls fs_host_bringup() via extern "C".
+[[package.metadata.esp-idf-sys.extra_components]]
+component_dirs = ["components/fs_host"]
+
+[profile.release]
+opt-level = "s"
+lto = true
+
+[profile.dev]
+debug = true
+opt-level = "z"
+
+[workspace]
+# sat-core stays its own workspace so its host-side `cargo test` never
+# inherits this crate's riscv target/build-std configuration.
+exclude = ["sat-core"]

@@ -1,0 +1,22 @@
+{
+  "name": "cw-logbook-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "cw-logbook-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "drive": "node scripts/drive.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "cw-oauth-log-client": "file:../oauth-log-client",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.5.0"
+  }
+}

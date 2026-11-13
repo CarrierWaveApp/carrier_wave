@@ -1,0 +1,399 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/contest-definition/v0.3/schema.json",
+  "title": "Amateur Radio Contest Definition (v0.3)",
+  "description": "JSON Schema for the contest definition format. See docs/features/contest-definitions.md for the canonical reference.",
+  "type": "object",
+  "required": ["version", "contests"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "$id": { "type": "string" },
+    "title": { "type": "string" },
+    "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "contests": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/contest" }
+    }
+  },
+  "additionalProperties": true,
+
+  "$defs": {
+    "mode": {
+      "type": "string",
+      "enum": ["CW", "SSB", "DIGITAL", "RTTY", "BOTH"]
+    },
+    "band": {
+      "type": "string",
+      "enum": [
+        "2200m", "630m", "160m", "80m", "60m", "40m", "30m", "20m", "17m",
+        "15m", "12m", "10m", "6m", "4m", "2m", "1.25m", "70cm", "33cm",
+        "23cm", "13cm", "9cm", "6cm", "3cm", "1.25cm", "6mm", "4mm",
+        "2.5mm", "2mm", "1mm"
+      ]
+    },
+    "day_of_week": {
+      "type": "string",
+      "enum": ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+    },
+    "hh_mm": {
+      "type": "string",
+      "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$"
+    },
+
+    "contest": {
+      "type": "object",
+      "required": ["id", "name", "modes", "bands", "schedule", "exchange", "dupe_rules", "scoring", "categories"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+        "name": { "type": "string" },
+        "short_name": { "type": "string" },
+        "sponsor": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "url": { "type": "string", "format": "uri" }
+          }
+        },
+        "modes": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/mode" }
+        },
+        "bands": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/band" }
+        },
+        "data_dependencies": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/data_dependency" }
+        },
+        "schedule": { "$ref": "#/$defs/schedule" },
+        "exchange": { "$ref": "#/$defs/exchange" },
+        "dupe_rules": { "$ref": "#/$defs/dupe_rules" },
+        "scoring": { "$ref": "#/$defs/scoring" },
+        "operating_constraints": { "$ref": "#/$defs/operating_constraints" },
+        "cabrillo": { "$ref": "#/$defs/cabrillo" },
+        "categories": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/category" }
+        },
+        "overlay_categories": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/overlay_category" }
+        }
+      }
+    },
+
+    "data_dependency": {
+      "type": "object",
+      "required": ["id"],
+      "properties": {
+        "id": { "type": "string" },
+        "url": { "type": "string", "format": "uri" },
+        "file": { "type": "string" },
+        "description": { "type": "string" },
+        "update_frequency": {
+          "type": "string",
+          "enum": ["static", "monthly", "weekly", "before_each_contest"]
+        },
+        "provides": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "options": { "type": "object" }
+      }
+    },
+
+    "schedule": {
+      "oneOf": [
+        { "$ref": "#/$defs/schedule_recurring_weekly" },
+        { "$ref": "#/$defs/schedule_annual" },
+        { "$ref": "#/$defs/schedule_fixed_dates" }
+      ]
+    },
+    "schedule_recurring_weekly": {
+      "type": "object",
+      "required": ["type", "sessions", "session_scoring"],
+      "properties": {
+        "type": { "const": "recurring_weekly" },
+        "sessions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["day", "start_utc", "duration_minutes"],
+            "properties": {
+              "day": { "$ref": "#/$defs/day_of_week" },
+              "start_utc": { "$ref": "#/$defs/hh_mm" },
+              "duration_minutes": { "type": "integer", "minimum": 1 }
+            }
+          }
+        },
+        "session_scoring": { "type": "string", "enum": ["independent", "cumulative"] }
+      }
+    },
+    "schedule_annual": {
+      "type": "object",
+      "required": ["type", "rule", "start_utc", "start_day", "duration_hours"],
+      "properties": {
+        "type": { "const": "annual" },
+        "rule": { "type": "string" },
+        "start_utc": { "$ref": "#/$defs/hh_mm" },
+        "start_day": { "$ref": "#/$defs/day_of_week" },
+        "duration_hours": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+    "schedule_fixed_dates": {
+      "type": "object",
+      "required": ["type", "occurrences"],
+      "properties": {
+        "type": { "const": "fixed_dates" },
+        "occurrences": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["start", "duration_hours"],
+            "properties": {
+              "start": { "type": "string", "format": "date-time" },
+              "duration_hours": { "type": "number", "exclusiveMinimum": 0 }
+            }
+          }
+        }
+      }
+    },
+
+    "exchange": {
+      "type": "object",
+      "required": ["sent", "received"],
+      "properties": {
+        "sent": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/exchange_field" }
+        },
+        "received": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/exchange_field" }
+        }
+      }
+    },
+    "exchange_field": {
+      "type": "object",
+      "required": ["name", "type", "label"],
+      "properties": {
+        "name": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+        "type": {
+          "type": "string",
+          "enum": [
+            "text", "signal_report", "serial_number", "cq_zone", "itu_zone",
+            "grid_square", "state_province", "arrl_section", "section_list",
+            "power", "name", "age", "class"
+          ]
+        },
+        "label": { "type": "string" },
+        "required": { "type": "boolean" },
+        "autofill": { "type": "string" },
+        "auto_increment": { "type": "boolean" },
+        "list": { "type": "string" },
+        "default": {},
+        "pattern": { "type": "string" },
+        "min": { "type": "number" },
+        "max": { "type": "number" }
+      }
+    },
+
+    "dupe_rules": {
+      "type": "object",
+      "required": ["scope", "key"],
+      "properties": {
+        "scope": { "type": "string", "enum": ["session", "contest"] },
+        "key": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" }
+        },
+        "zero_point_qsos_count_for_mults": { "type": "boolean" }
+      }
+    },
+
+    "scoring": {
+      "type": "object",
+      "required": ["phases"],
+      "properties": {
+        "phases": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/phase" }
+        }
+      }
+    },
+    "phase": {
+      "oneOf": [
+        { "$ref": "#/$defs/phase_per_qso" },
+        { "$ref": "#/$defs/phase_multiplier_count" },
+        { "$ref": "#/$defs/phase_aggregate" }
+      ]
+    },
+    "phase_per_qso": {
+      "type": "object",
+      "required": ["id", "type", "rules"],
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "const": "per_qso" },
+        "description": { "type": "string" },
+        "rules": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/rule" }
+        }
+      }
+    },
+    "phase_multiplier_count": {
+      "type": "object",
+      "required": ["id", "type", "source", "scope"],
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "const": "multiplier_count" },
+        "description": { "type": "string" },
+        "source": { "type": "string" },
+        "scope": { "type": "string", "enum": ["per_band", "per_contest"] },
+        "include_zero_point_qsos": { "type": "boolean" }
+      }
+    },
+    "phase_aggregate": {
+      "type": "object",
+      "required": ["id", "type", "operation"],
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "const": "aggregate" },
+        "description": { "type": "string" },
+        "operation": { "$ref": "#/$defs/agg_op" }
+      }
+    },
+    "rule": {
+      "type": "object",
+      "required": ["value"],
+      "properties": {
+        "description": { "type": "string" },
+        "conditions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/condition" }
+        },
+        "value": { "type": "integer" }
+      }
+    },
+    "condition": {
+      "type": "object",
+      "required": ["field", "op"],
+      "properties": {
+        "field": { "type": "string" },
+        "op": {
+          "type": "string",
+          "enum": ["eq", "ne", "in", "not_in", "gt", "gte", "lt", "lte"]
+        },
+        "value": {},
+        "ref": { "type": "string" }
+      }
+    },
+    "agg_op": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["op", "phase"],
+          "properties": {
+            "op": { "const": "ref" },
+            "phase": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["op", "value"],
+          "properties": {
+            "op": { "const": "literal" },
+            "value": { "type": "integer" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["op", "inputs"],
+          "properties": {
+            "op": { "type": "string", "enum": ["add", "multiply", "max"] },
+            "inputs": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "$ref": "#/$defs/agg_op" }
+            }
+          }
+        }
+      ]
+    },
+
+    "operating_constraints": {
+      "type": "object",
+      "properties": {
+        "off_time": {
+          "type": "object",
+          "properties": {
+            "minimum_off_minutes": { "type": "integer", "minimum": 0 },
+            "maximum_on_hours_by_category": {
+              "type": "object",
+              "additionalProperties": { "type": "number" }
+            }
+          }
+        },
+        "band_changes": {
+          "type": "object",
+          "properties": {
+            "applies_to": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "min_minutes_on_band": { "type": "integer", "minimum": 0 },
+            "max_changes_per_clock_hour": { "type": "integer", "minimum": 0 }
+          }
+        }
+      }
+    },
+
+    "cabrillo": {
+      "type": "object",
+      "required": ["contest_name", "version"],
+      "properties": {
+        "contest_name": { "type": "string" },
+        "version": { "type": "string" },
+        "qso_format": { "type": "object" }
+      }
+    },
+
+    "category": {
+      "type": "object",
+      "required": ["id", "label"],
+      "properties": {
+        "id": { "type": "string" },
+        "label": { "type": "string" },
+        "band": { "$ref": "#/$defs/band" },
+        "power_classes": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "assisted": { "type": "boolean" },
+        "op_count": {
+          "type": "string",
+          "enum": ["single", "multi", "multi_two", "multi_multi"]
+        }
+      }
+    },
+    "overlay_category": {
+      "type": "object",
+      "required": ["id", "label"],
+      "properties": {
+        "id": { "type": "string" },
+        "label": { "type": "string" },
+        "max_on_hours": { "type": "integer", "minimum": 0 },
+        "max_license_years": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}

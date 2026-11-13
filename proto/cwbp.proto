@@ -1,0 +1,388 @@
+syntax = "proto3";
+package cwbp;
+
+// One BLE notification = one serialized BridgeMessage.
+message BridgeMessage {
+  oneof msg {
+    HandshakeReq   handshake_req   = 1;
+    HandshakeRsp   handshake_rsp   = 2;
+    CatData        cat_data        = 3;
+    Status         status          = 4;
+    RadioInfo      radio_info      = 5;
+    RequestDetect  request_detect  = 6;
+    SetBaud        set_baud        = 7;
+    SetVerify      set_verify      = 8;
+    SetResult      set_result      = 9;
+
+    // CW keyer messages
+    CwSend         cw_send         = 10;  // Client -> Bridge
+    CwStop         cw_stop         = 11;  // Client -> Bridge
+    CwSpeed        cw_speed        = 12;  // Client -> Bridge
+    CwSlotPlay     cw_slot_play    = 13;  // Client -> Bridge
+    CwSlotSet      cw_slot_set     = 14;  // Client -> Bridge
+    CwStatusReq    cw_status_req   = 15;  // Client -> Bridge
+    CwAck          cw_ack          = 16;  // Bridge -> Client
+    CwProgress     cw_progress     = 17;  // Bridge -> Client
+    CwStatusRsp    cw_status_rsp   = 18;  // Bridge -> Client
+
+    // FT8 messages (firmware-side codec driving the mic/phone TRS jacks)
+    Ft8EncodeReq   ft8_encode_req  = 19;  // Client -> Bridge: text -> tones
+    Ft8EncodeRsp   ft8_encode_rsp  = 20;  // Bridge -> Client: 79-tone sequence
+    Ft8Send        ft8_send        = 21;  // Client -> Bridge: encode + TX to mic
+    Ft8CaptureStart ft8_cap_start  = 22;  // Client -> Bridge: start phone-jack decode
+    Ft8CaptureStop  ft8_cap_stop   = 23;  // Client -> Bridge: stop phone-jack decode
+    Ft8Decode      ft8_decode      = 24;  // Bridge -> Client: a decoded message
+    Ft8Status      ft8_status      = 25;  // Bridge -> Client: capture/TX state
+
+    // Hardware status
+    JackStatus     jack_status     = 26;  // Bridge -> Client: TRS plug detect
+    BatteryStatus  battery_status  = 27;  // Bridge -> Client: VBAT telemetry
+
+    // Bridge state interrogation
+    StatusReq      status_req      = 28;  // Client -> Bridge: re-push current state
+
+    // Satellite doppler schedule (CW Sat Bridge firmware)
+    SatScheduleBegin sat_begin     = 29;  // Client -> Bridge: schedule header
+    SatScheduleChunk sat_chunk     = 30;  // Client -> Bridge: packed steps
+    SatScheduleAck   sat_ack       = 31;  // Bridge -> Client: per-chunk ack
+    SatStart         sat_start     = 32;  // Client -> Bridge: arm/start pass
+    SatAbort         sat_abort     = 33;  // Client -> Bridge: cancel pass
+    SatStatus        sat_status    = 34;  // Bridge -> Client: executor state
+    SatSetActiveVfo  sat_set_vfo   = 35;  // Client -> Bridge: flip downlink/uplink
+  }
+}
+
+// Client -> Bridge: initiate handshake
+message HandshakeReq {
+  uint32 protocol_version = 1;
+}
+
+// Bridge -> Client: handshake response
+message HandshakeRsp {
+  uint32 protocol_version = 1;
+  string firmware_version = 2;
+  uint32 capabilities     = 3;
+}
+
+// Bidirectional: raw CAT bytes
+message CatData {
+  bytes payload = 1;
+}
+
+// Bridge -> Client: status update
+message Status {
+  StatusCode code   = 1;
+  string     detail = 2;
+}
+
+enum StatusCode {
+  STATUS_UNKNOWN           = 0;
+  STATUS_USB_CONNECTED     = 1;
+  STATUS_USB_DISCONNECTED  = 2;
+  STATUS_DETECTING         = 3;
+  STATUS_DETECTION_FAILED  = 4;
+  STATUS_ERROR             = 5;
+  STATUS_READY             = 6;
+}
+
+// Bridge -> Client: detected radio info
+message RadioInfo {
+  RadioProtocol protocol  = 1;
+  uint32        baud_rate = 2;
+  string        id_string = 3;
+}
+
+enum RadioProtocol {
+  PROTO_UNKNOWN  = 0;
+  PROTO_KENWOOD  = 1;
+  PROTO_CIV      = 2;
+}
+
+// Client -> Bridge: request radio re-detection
+message RequestDetect {}
+
+// Client -> Bridge: ask the bridge to re-emit its current state (Status,
+// RadioInfo if detected, JackStatus, BatteryStatus). Used by the apps as a
+// self-heal mechanism — the cached push at handshake time can race with the
+// client's event-stream wiring, and this lets the client interrogate the
+// bridge at any time instead of waiting for the next state-change push.
+message StatusReq {}
+
+// Client -> Bridge: set baud rate
+message SetBaud {
+  uint32 baud_rate = 1;
+}
+
+// Client -> Bridge: set a radio parameter and verify
+message SetVerify {
+  SetVerifyField field = 1;
+  bytes          value = 2;
+}
+
+enum SetVerifyField {
+  FIELD_UNKNOWN        = 0;
+  FIELD_FREQUENCY      = 1;  // u64 LE Hz
+  FIELD_MODE           = 2;  // UniversalMode enum
+  FIELD_PTT            = 3;  // 0=RX, 1=TX
+  FIELD_XIT            = 4;  // 0=off, 1=on
+  FIELD_RIT            = 5;  // 0=off, 1=on
+  FIELD_RIT_XIT_OFFSET = 6;  // i16 LE Hz
+  FIELD_CLEAR_RIT_XIT  = 7;  // empty value
+  FIELD_POWER_LEVEL    = 8;  // u8 watts (1-100)
+}
+
+// Bridge -> Client: result of set-verify
+message SetResult {
+  SetResultCode result = 1;
+}
+
+enum SetResultCode {
+  RESULT_OK          = 0;
+  RESULT_FAIL        = 1;
+  RESULT_UNSUPPORTED = 2;
+}
+
+// ---------------------------------------------------------------
+// CW Keyer Messages
+// ---------------------------------------------------------------
+
+// Client -> Bridge: send CW text (pre-expanded, no templates)
+message CwSend {
+  string text = 1;
+}
+
+// Client -> Bridge: abort CW transmission
+message CwStop {}
+
+// Client -> Bridge: set keyer speed
+message CwSpeed {
+  uint32 wpm = 1;
+}
+
+// Client -> Bridge: play a stored memory slot with template context
+message CwSlotPlay {
+  uint32               slot    = 1;  // 1-8
+  map<string, string>  context = 2;  // template variable substitutions
+}
+
+// Client -> Bridge: store text in a memory slot
+message CwSlotSet {
+  uint32 slot = 1;  // 1-8
+  string text = 2;
+}
+
+// Client -> Bridge: query CW engine state
+message CwStatusReq {}
+
+// Bridge -> Client: CW command acknowledgement
+message CwAck {
+  CwAckResult result    = 1;
+  uint32      buf_depth = 2;
+}
+
+enum CwAckResult {
+  CW_OK          = 0;
+  CW_QUEUED      = 1;
+  CW_FAIL        = 2;
+  CW_UNSUPPORTED = 3;
+  CW_BAD_SLOT    = 4;
+  CW_EMPTY_SLOT  = 5;
+}
+
+// Bridge -> Client: CW buffer progress update
+message CwProgress {
+  uint32 buf_depth = 1;
+  uint32 flags     = 2;  // bitmask: 1=tx_active, 2=draining, 4=complete
+}
+
+// Bridge -> Client: CW engine status snapshot
+message CwStatusRsp {
+  uint32 wpm        = 1;
+  uint32 buf_depth  = 2;
+  uint32 flags      = 3;  // same as CwProgress flags
+  uint32 slot_count = 4;  // number of non-empty slots
+}
+
+// ---------------------------------------------------------------
+// FT8 Messages
+// ---------------------------------------------------------------
+//
+// BLE cannot move 12 kHz / 16-bit audio in real time, so FT8 encode and decode
+// run on the firmware directly wired to two TRS jacks on the bridge:
+//   - Mic jack (output): I2S DAC → radio mic input
+//   - Phone jack (input): ADC → radio speaker tap
+// The app only exchanges text + small metadata over BLE.
+
+// Client -> Bridge: encode text into the 79-symbol tone sequence without
+// transmitting. Useful for preview/diagnostics.
+message Ft8EncodeReq {
+  string text           = 1;  // e.g. "CQ K1ABC FN42"
+  uint32 base_freq_hz   = 2;  // audio tone base frequency (default 1500)
+}
+
+// Bridge -> Client: result of Ft8EncodeReq.
+message Ft8EncodeRsp {
+  bool   ok             = 1;
+  bytes  tones          = 2;  // 79 bytes, values 0..7 (empty if !ok)
+  string error          = 3;  // populated when ok=false
+}
+
+// Client -> Bridge: encode `text` and transmit it through the mic TRS jack.
+// Bridge replies with Ft8Status events (IDLE -> TRANSMITTING -> IDLE).
+message Ft8Send {
+  string text           = 1;
+  uint32 base_freq_hz   = 2;  // default 1500
+}
+
+// Client -> Bridge: start decoding audio from the phone TRS jack.
+// Bridge emits Ft8Decode messages whenever a slot decodes successfully.
+message Ft8CaptureStart {
+  uint32 min_freq_hz    = 1;  // default 100
+  uint32 max_freq_hz    = 2;  // default 3000
+}
+
+// Client -> Bridge: stop decoding and release the ADC.
+message Ft8CaptureStop {}
+
+// Bridge -> Client: one decoded FT8 message.
+message Ft8Decode {
+  string text           = 1;  // e.g. "K1ABC W9XYZ FN42"
+  int32  snr_db         = 2;  // approx SNR from sync score (not calibrated dB)
+  float  frequency_hz   = 3;  // audio frequency of the signal
+  float  delta_time_s   = 4;  // time offset from slot boundary
+}
+
+// Bridge -> Client: FT8 engine state.
+message Ft8Status {
+  Ft8State state        = 1;
+  string   detail       = 2;
+}
+
+enum Ft8State {
+  FT8_IDLE         = 0;
+  FT8_TRANSMITTING = 1;
+  FT8_CAPTURING    = 2;
+  FT8_ERROR        = 3;
+}
+
+// ---------------------------------------------------------------
+// Satellite Doppler Schedule (CW Sat Bridge firmware)
+// ---------------------------------------------------------------
+//
+// The app precomputes a satellite pass as a table of timestamped frequency
+// steps (doppler-corrected downlink + uplink) and uploads it to the bridge,
+// which executes it on its own clock via CAT — phone-optional after arming.
+// Steps are packed 6 bytes each (see firmware-sat/sat-core): dt_ms u16 +
+// downlink/uplink deltas as i16 in 10 Hz units, LE; the first step is
+// relative to the absolute start values in SatScheduleBegin.
+
+// Client -> Bridge: start a schedule upload. Replaces any previous schedule.
+message SatScheduleBegin {
+  uint32           schedule_id       = 1;   // app-chosen, echoed in acks/status
+  string           sat_name          = 2;   // display/logging only
+  SatLinkDirection direction         = 3;
+  uint32           total_steps       = 4;   // packed steps across all chunks
+  uint32           duration_ms       = 5;   // LOS - AOS
+  uint64           downlink_start_hz = 6;   // absolute downlink at AOS
+  uint64           uplink_start_hz   = 7;   // absolute uplink at AOS; 0 = downlink-only
+  uint32           downlink_mode     = 8;   // UniversalMode digit (2=USB, 4=FM, 5=AM)
+  uint32           uplink_mode       = 9;   // UniversalMode digit
+  uint32           uplink_tone_dhz   = 10;  // CTCSS in tenths of Hz (670 = 67.0), 0 = none
+}
+
+enum SatLinkDirection {
+  SAT_DIR_UNKNOWN       = 0;
+  SAT_DIR_U_V           = 1;  // uplink 70cm, downlink 2m
+  SAT_DIR_V_U           = 2;  // uplink 2m, downlink 70cm
+  SAT_DIR_DOWNLINK_ONLY = 3;  // linear-transponder RX, no uplink
+}
+
+// Client -> Bridge: one chunk of packed steps. Stop-and-wait: send the next
+// chunk only after the SatScheduleAck for this seq.
+message SatScheduleChunk {
+  uint32 schedule_id = 1;
+  uint32 seq         = 2;  // 0-based chunk index
+  bytes  steps       = 3;  // packed 6-byte steps
+}
+
+// Bridge -> Client: ack for SatScheduleBegin (seq = 0xFFFFFFFF) or a chunk.
+message SatScheduleAck {
+  uint32       schedule_id  = 1;
+  uint32       seq          = 2;
+  SatAckResult result       = 3;
+  uint32       steps_loaded = 4;  // running total after this chunk
+}
+
+enum SatAckResult {
+  SAT_ACK_OK         = 0;
+  SAT_ACK_BAD_SEQ    = 1;  // out-of-order chunk; client restarts from Begin
+  SAT_ACK_OVERFLOW   = 2;  // more steps than MAX_STEPS / total_steps
+  SAT_ACK_UNKNOWN_ID = 3;  // chunk for a schedule_id we don't hold
+  SAT_ACK_BUSY       = 4;  // a pass is armed/running; abort first
+  SAT_ACK_BAD_DATA   = 5;  // chunk length not a multiple of the step size
+}
+
+// Client -> Bridge: arm the loaded schedule. The bridge configures the radio
+// immediately (modes, tone, initial frequencies) and starts its countdown;
+// BLE may drop afterwards. `elapsed_ms` supports arming mid-pass: when
+// aos_in_ms == 0, execution begins at the step matching elapsed_ms.
+message SatStart {
+  uint32 schedule_id = 1;
+  uint64 aos_in_ms   = 2;
+  uint64 elapsed_ms  = 3;
+}
+
+// Client -> Bridge: cancel the armed/running pass (schedule stays loaded).
+message SatAbort {}
+
+// Client -> Bridge: select the radio's active VFO — 0 = downlink (VFO A),
+// 1 = uplink (VFO B). App-driven replacement for a hardware button on the
+// headless sat bridge.
+message SatSetActiveVfo {
+  uint32 vfo = 1;
+}
+
+// Bridge -> Client: executor state. Sent on change, on each executed step,
+// and in the StatusReq dump.
+message SatStatus {
+  SatRunState state       = 1;
+  uint32      schedule_id = 2;
+  uint32      step_index  = 3;
+  uint64      downlink_hz = 4;
+  uint64      uplink_hz   = 5;
+  sint64      t_ms        = 6;  // negative = ms until AOS; positive = elapsed
+  string      detail      = 7;
+}
+
+enum SatRunState {
+  SAT_IDLE    = 0;
+  SAT_LOADING = 1;  // Begin received, chunks incoming
+  SAT_ARMED   = 2;  // radio configured, counting down to AOS
+  SAT_RUNNING = 3;
+  SAT_DONE    = 4;
+  SAT_ERROR   = 5;
+}
+
+// ---------------------------------------------------------------
+// Hardware Status
+// ---------------------------------------------------------------
+
+// Bridge -> Client: TRS jack plug insertion status.
+// Sent on change and included in handshake state dump.
+message JackStatus {
+  bool mic_plugged   = 1;  // Mic output TRS jack (GPIO8 detect)
+  bool phone_plugged = 2;  // Phone input TRS jack (GPIO9 detect)
+}
+
+// Bridge -> Client: battery state-of-charge telemetry.
+//
+// Sampled every ~10 s by the firmware from the VBAT divider on GPIO1.
+// Sent on change of `percent` (≥ 1 % delta) and included in the handshake
+// state dump. `present = false` when the bridge is running on USB power
+// alone (no LiPo connected) or the ADC reading is implausibly low — the
+// app should hide the indicator in that case rather than show "0 %".
+message BatteryStatus {
+  bool   present  = 1;  // false = no usable reading (USB-only, ADC failure)
+  uint32 mv       = 2;  // millivolts at the cell terminals (post-divider)
+  uint32 percent  = 3;  // estimated state-of-charge, 0..100
+}

@@ -1,0 +1,311 @@
+import CarrierWaveData
+import SwiftData
+import SwiftUI
+
+// MARK: - CallsignAliasesSettingsView
+
+struct CallsignAliasesSettingsView: View {
+    // MARK: Internal
+
+    var body: some View {
+        List {
+            currentCallsignSection
+            previousCallsignsSection
+            addPreviousCallsignSection
+            if !nonPrimaryQSOCounts.isEmpty {
+                nonPrimaryQSOsSection
+            }
+        }
+        .navigationTitle("Callsign Aliases")
+        .task { await loadCallsigns() }
+        .alert("Error", isPresented: $showingError) {
+            Button("OK") {}
+        } message: {
+            Text(errorMessage)
+        }
+        .alert("Delete QSOs?", isPresented: $showingDeleteConfirmation) {
+            Button("Cancel", role: .cancel) {}
+            Button("Delete", role: .destructive) {
+                Task { await deleteQSOsForCallsign(callsignToDelete) }
+            }
+        } message: {
+            let count = nonPrimaryQSOCounts[callsignToDelete] ?? 0
+            Text("Delete \(count) QSOs logged under \(callsignToDelete)? This cannot be undone.")
+        }
+    }
+
+    // MARK: Private
+
+    /// Batch size for computing QSO counts
+    private static let batchSize = 500
+
+    @Environment(\.modelContext) private var modelContext
+
+    @State private var currentCallsign = ""
+    @State private var previousCallsigns: [String] = []
+    @State private var newPreviousCallsign = ""
+    @State private var isLoading = true
+    @State private var showingError = false
+    @State private var errorMessage = ""
+    @State private var showingDeleteConfirmation = false
+    @State private var callsignToDelete = ""
+
+    /// QSO counts grouped by non-primary callsigns (computed in background)
+    @State private var nonPrimaryQSOCounts: [String: Int] = [:]
+    @State private var isComputingCounts = false
+
+    private let aliasService = CallsignAliasService.shared
+
+    // MARK: - Sections
+
+    private var currentCallsignSection: some View {
+        Section {
+            HStack {
+                TextField("Current Callsign", text: $currentCallsign)
+                    .autocapitalization(.allCharacters)
+                    .autocorrectionDisabled()
+
+                if !currentCallsign.isEmpty {
+                    Button("Save") {
+                        Task { await saveCurrentCallsign() }
+                    }
+                    .disabled(isLoading)
+                }
+            }
+        } header: {
+            Text("Current Callsign")
+        } footer: {
+            Text("Your current amateur radio callsign. Auto-populated from QRZ when you connect.")
+        }
+    }
+
+    private var previousCallsignsSection: some View {
+        Section {
+            if previousCallsigns.isEmpty {
+                Text("No previous callsigns")
+                    .foregroundStyle(.secondary)
+            } else {
+                ForEach(previousCallsigns, id: \.self) { callsign in
+                    HStack {
+                        Text(callsign)
+                        Spacer()
+                        Button {
+                            Task { await removePreviousCallsign(callsign) }
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundStyle(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+        } header: {
+            Text("Previous Callsigns")
+        } footer: {
+            Text(
+                """
+                Add your previous callsigns so QSOs logged under old calls are properly matched \
+                during sync. To sync previous callsigns to QRZ, add their API keys in QRZ settings.
+                """
+            )
+        }
+    }
+
+    private var addPreviousCallsignSection: some View {
+        Section {
+            HStack {
+                TextField("Add Previous Callsign", text: $newPreviousCallsign)
+                    .autocapitalization(.allCharacters)
+                    .autocorrectionDisabled()
+
+                Button("Add") {
+                    Task { await addPreviousCallsign() }
+                }
+                .disabled(newPreviousCallsign.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
+        }
+    }
+
+    private var nonPrimaryQSOsSection: some View {
+        Section {
+            ForEach(nonPrimaryQSOCounts.keys.sorted(), id: \.self) { callsign in
+                HStack {
+                    VStack(alignment: .leading) {
+                        Text(callsign)
+                        Text("\(nonPrimaryQSOCounts[callsign] ?? 0) QSOs")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Button("Delete", role: .destructive) {
+                        callsignToDelete = callsign
+                        showingDeleteConfirmation = true
+                    }
+                    .buttonStyle(.bordered)
+                }
+            }
+        } header: {
+            Text("QSOs from Other Callsigns")
+        } footer: {
+            Text(
+                """
+                These QSOs are logged under callsigns that don't match your configured QRZ \
+                accounts. Add an API key in QRZ settings to enable syncing, or delete them.
+                """
+            )
+        }
+    }
+
+    private func loadCallsigns() async {
+        isLoading = true
+        defer { isLoading = false }
+
+        currentCallsign = aliasService.getCurrentCallsign() ?? ""
+        previousCallsigns = aliasService.getPreviousCallsigns()
+
+        // Compute QSO counts in background
+        await computeNonPrimaryQSOCounts()
+    }
+
+    /// Compute QSO counts by callsign in background with batch processing
+    private func computeNonPrimaryQSOCounts() async {
+        guard !currentCallsign.isEmpty else {
+            nonPrimaryQSOCounts = [:]
+            return
+        }
+
+        isComputingCounts = true
+        defer { isComputingCounts = false }
+
+        let primary = currentCallsign.uppercased()
+        var counts: [String: Int] = [:]
+
+        // Get total count first
+        let totalCount = (try? modelContext.boundedCount(
+            QSO.self,
+            predicate: #Predicate { !$0.isHidden }
+        )) ?? 0
+
+        // Process in batches
+        var offset = 0
+        while offset < totalCount {
+            let descriptor = BoundedDescriptor<QSO>(
+                predicate: #Predicate { !$0.isHidden },
+                limit: Self.batchSize,
+                offset: offset
+            )
+
+            guard let batch = try? modelContext.boundedFetch(descriptor),
+                  !batch.isEmpty
+            else {
+                break
+            }
+
+            for qso in batch {
+                let myCall = qso.myCallsign.uppercased()
+                guard !myCall.isEmpty, myCall != primary else {
+                    continue
+                }
+                counts[myCall, default: 0] += 1
+            }
+
+            offset += Self.batchSize
+            await Task.yield()
+        }
+
+        nonPrimaryQSOCounts = counts
+    }
+
+    private func saveCurrentCallsign() async {
+        do {
+            let trimmed = currentCallsign.trimmingCharacters(in: .whitespaces)
+            if trimmed.isEmpty {
+                try aliasService.clearCurrentCallsign()
+            } else {
+                // Route through the canonical store (UserProfile) so the
+                // Keychain/UserDefaults caches can't diverge from it (CAR-287)
+                try UserProfileService.shared.setCallsign(trimmed)
+            }
+            currentCallsign = aliasService.getCurrentCallsign() ?? ""
+        } catch {
+            errorMessage = error.localizedDescription
+            showingError = true
+        }
+    }
+
+    private func addPreviousCallsign() async {
+        let callsign = newPreviousCallsign.trimmingCharacters(in: .whitespaces)
+        guard !callsign.isEmpty else {
+            return
+        }
+
+        do {
+            try aliasService.addPreviousCallsign(callsign)
+            newPreviousCallsign = ""
+            previousCallsigns = aliasService.getPreviousCallsigns()
+        } catch {
+            errorMessage = error.localizedDescription
+            showingError = true
+        }
+    }
+
+    private func removePreviousCallsign(_ callsign: String) async {
+        do {
+            try aliasService.removePreviousCallsign(callsign)
+            previousCallsigns = aliasService.getPreviousCallsigns()
+        } catch {
+            errorMessage = error.localizedDescription
+            showingError = true
+        }
+    }
+
+    private func deleteQSOsForCallsign(_ callsign: String) async {
+        let upperCallsign = callsign.uppercased()
+        var deletedCount = 0
+
+        // Fetch and delete in batches to avoid loading entire table
+        var offset = 0
+        while true {
+            let descriptor = BoundedDescriptor<QSO>(
+                predicate: #Predicate { !$0.isHidden },
+                limit: Self.batchSize,
+                offset: offset
+            )
+
+            guard let batch = try? modelContext.boundedFetch(descriptor),
+                  !batch.isEmpty
+            else {
+                break
+            }
+
+            // Filter and soft-delete matching QSOs
+            let matchingQSOs = batch.filter { $0.myCallsign.uppercased() == upperCallsign }
+            for qso in matchingQSOs {
+                qso.isHidden = true
+                qso.cloudDirtyFlag = true
+                qso.modifiedAt = Date()
+                for presence in qso.servicePresence where presence.needsUpload {
+                    presence.needsUpload = false
+                }
+                deletedCount += 1
+            }
+
+            offset += Self.batchSize
+            await Task.yield()
+        }
+
+        do {
+            try modelContext.save()
+            SyncDebugLog.shared.info(
+                "Hid \(deletedCount) QSOs from callsign \(callsign)",
+                service: nil
+            )
+
+            // Refresh counts after deletion
+            await computeNonPrimaryQSOCounts()
+        } catch {
+            errorMessage = "Failed to delete QSOs: \(error.localizedDescription)"
+            showingError = true
+        }
+    }
+}

@@ -1,0 +1,33 @@
+/* tslint:disable */
+/* eslint-disable */
+export const memory: WebAssembly.Memory;
+export const decrypt_blob: (a: number, b: number, c: number, d: number) => [number, number, number, number];
+export const open_escrow: (a: number, b: number, c: number, d: number, e: number, f: number) => [number, number, number, number];
+export const seal_blob: (a: number, b: number, c: number, d: number) => [number, number, number, number];
+export const __wbg_kiwiaudiodecoder_free: (a: number, b: number) => void;
+export const __wbg_kiwiframeevent_free: (a: number, b: number) => void;
+export const kiwiCheckServerError: (a: number, b: number) => [number, number];
+export const kiwiParseMsgValue: (a: number, b: number, c: number, d: number) => [number, number];
+export const kiwiTuneCommand: (a: number, b: number, c: number, d: number, e: number) => [number, number];
+export const kiwiaudiodecoder_handleFrame: (a: number, b: number, c: number) => number;
+export const kiwiaudiodecoder_new: () => number;
+export const kiwiframeevent_kind: (a: number) => [number, number];
+export const kiwiframeevent_sMeter: (a: number) => number;
+export const kiwiframeevent_samples: (a: number) => [number, number];
+export const kiwiframeevent_text: (a: number) => [number, number];
+export const parseKiwiDirectory: (a: number, b: number) => [number, number];
+export const rankReceiversNear: (a: number, b: number, c: number, d: number, e: number, f: number, g: number, h: number) => [number, number, number, number];
+export const __wbg_logbookindex_free: (a: number, b: number) => void;
+export const logbookindex_filter: (a: number, b: number, c: number) => [number, number, number, number];
+export const logbookindex_is_empty: (a: number) => number;
+export const logbookindex_len: (a: number) => number;
+export const logbookindex_new: (a: number, b: number) => [number, number, number];
+export const logbookindex_validate: (a: number, b: number, c: number) => [number, number];
+export const __wbindgen_exn_store: (a: number) => void;
+export const __externref_table_alloc: () => number;
+export const __wbindgen_externrefs: WebAssembly.Table;
+export const __wbindgen_malloc: (a: number, b: number) => number;
+export const __externref_table_dealloc: (a: number) => void;
+export const __wbindgen_free: (a: number, b: number, c: number) => void;
+export const __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
+export const __wbindgen_start: () => void;

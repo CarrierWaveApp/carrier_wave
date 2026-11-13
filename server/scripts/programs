@@ -1,0 +1,153 @@
+#!/usr/bin/env bash
+# programs — CLI for managing activity programs on the activities server.
+#
+# Configuration (env vars or .env file):
+#   ACTIVITIES_URL   — Server base URL (default: http://localhost:8080)
+#   ADMIN_TOKEN      — Admin bearer token (required)
+#
+# Usage:
+#   programs list                       — List all programs (including inactive)
+#   programs get <slug>                 — Get a single program
+#   programs create <json-file|->       — Create program from JSON file (- for stdin)
+#   programs update <slug> <json-file|->— Update program from JSON file (- for stdin)
+#   programs delete <slug>              — Delete a program
+#   programs deactivate <slug>          — Soft-deactivate (sets isActive=false)
+#   programs activate <slug>            — Re-activate (sets isActive=true)
+#   programs template                   — Print a JSON template for creating a program
+
+set -euo pipefail
+
+# Load .env if present
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ -f "$SCRIPT_DIR/../.env" ]]; then
+    set -a
+    # shellcheck source=/dev/null
+    source "$SCRIPT_DIR/../.env"
+    set +a
+fi
+
+BASE_URL="${ACTIVITIES_URL:-http://localhost:8080}"
+TOKEN="${ADMIN_TOKEN:?ADMIN_TOKEN is required}"
+
+api() {
+    local method="$1" path="$2"
+    shift 2
+    curl -s -X "$method" \
+        -H "Authorization: Bearer $TOKEN" \
+        -H "Content-Type: application/json" \
+        "$@" \
+        "${BASE_URL}/v1${path}"
+}
+
+cmd_list() {
+    api GET /admin/programs | jq .
+}
+
+cmd_get() {
+    local slug="${1:?Usage: programs get <slug>}"
+    api GET "/admin/programs/$slug" | jq .
+}
+
+cmd_create() {
+    local source="${1:?Usage: programs create <json-file|->}"
+    local body
+    if [[ "$source" == "-" ]]; then
+        body="$(cat)"
+    else
+        body="$(cat "$source")"
+    fi
+    api POST /admin/programs -d "$body" | jq .
+}
+
+cmd_update() {
+    local slug="${1:?Usage: programs update <slug> <json-file|->}"
+    local source="${2:?Usage: programs update <slug> <json-file|->}"
+    local body
+    if [[ "$source" == "-" ]]; then
+        body="$(cat)"
+    else
+        body="$(cat "$source")"
+    fi
+    api PUT "/admin/programs/$slug" -d "$body" | jq .
+}
+
+cmd_delete() {
+    local slug="${1:?Usage: programs delete <slug>}"
+    echo -n "Delete program '$slug' permanently? [y/N] "
+    read -r confirm
+    if [[ "$confirm" =~ ^[Yy]$ ]]; then
+        api DELETE "/admin/programs/$slug" -w "\nHTTP %{http_code}\n"
+    else
+        echo "Cancelled."
+    fi
+}
+
+cmd_deactivate() {
+    local slug="${1:?Usage: programs deactivate <slug>}"
+    api PUT "/admin/programs/$slug" -d '{"isActive": false}' | jq .
+}
+
+cmd_activate() {
+    local slug="${1:?Usage: programs activate <slug>}"
+    api PUT "/admin/programs/$slug" -d '{"isActive": true}' | jq .
+}
+
+cmd_template() {
+    cat <<'TEMPLATE'
+{
+  "slug": "my-program",
+  "name": "My Program",
+  "shortName": "MP",
+  "icon": "radio",
+  "website": "https://example.com",
+  "referenceLabel": "Reference",
+  "referenceFormat": "^[A-Z]+-[0-9]{4}$",
+  "referenceExample": "K-0001",
+  "multiRefAllowed": false,
+  "activationThreshold": null,
+  "supportsRove": false,
+  "capabilities": ["referenceField"],
+  "adifMySig": null,
+  "adifMySigInfo": null,
+  "adifSigField": null,
+  "adifSigInfoField": null,
+  "dataEntryLabel": null,
+  "dataEntryPlaceholder": null,
+  "dataEntryFormat": null,
+  "sortOrder": 10
+}
+TEMPLATE
+}
+
+usage() {
+    cat <<'USAGE'
+Usage: programs <command> [args...]
+
+Commands:
+  list                         List all programs (including inactive)
+  get <slug>                   Get a single program
+  create <json-file|->         Create program from JSON (- for stdin)
+  update <slug> <json-file|->  Update program from JSON (- for stdin)
+  delete <slug>                Permanently delete a program
+  deactivate <slug>            Soft-deactivate (set isActive=false)
+  activate <slug>              Re-activate (set isActive=true)
+  template                     Print a JSON template for creating a program
+
+Environment:
+  ACTIVITIES_URL   Server base URL (default: http://localhost:8080)
+  ADMIN_TOKEN      Admin bearer token (required)
+USAGE
+}
+
+case "${1:-}" in
+    list)        shift; cmd_list "$@" ;;
+    get)         shift; cmd_get "$@" ;;
+    create)      shift; cmd_create "$@" ;;
+    update)      shift; cmd_update "$@" ;;
+    delete)      shift; cmd_delete "$@" ;;
+    deactivate)  shift; cmd_deactivate "$@" ;;
+    activate)    shift; cmd_activate "$@" ;;
+    template)    shift; cmd_template "$@" ;;
+    -h|--help|"") usage ;;
+    *) echo "Unknown command: $1" >&2; usage; exit 1 ;;
+esac

@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Carrier Wave for Android — beta</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0e0f11;
+      --bg2:       #131518;
+      --bg3:       #1a1d21;
+      --border:    #1f2328;
+      --border2:   #2a2f38;
+      --text:      #c9cdd6;
+      --text-dim:  #666c7a;
+      --text-xdim: #35393f;
+      --blue:      #4a8cff;
+      --blue2:     #3a7aee;
+      --green:     #3ad98b;
+      --orange:    #e8944a;
+      --white:     #f2f4f8;
+      --mono:      'IBM Plex Mono', monospace;
+      --sans:      'Outfit', sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 16px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* NAV */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2.5rem;
+      height: 60px;
+      background: rgba(14,15,17,0.82);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      text-decoration: none;
+      color: var(--white);
+      font-family: var(--sans);
+      font-weight: 700;
+      font-size: 1rem;
+      letter-spacing: -0.01em;
+    }
+
+    .nav-logo img { width: 28px; height: 28px; border-radius: 7px; }
+
+    .nav-links { display: flex; align-items: center; gap: 2rem; list-style: none; }
+
+    .nav-links a {
+      color: var(--text-dim);
+      text-decoration: none;
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      letter-spacing: 0.04em;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--white); }
+    .nav-links a.active { color: var(--white); }
+
+    .nav-cta {
+      background: var(--blue);
+      color: var(--white) !important;
+      padding: 0.45rem 1.1rem;
+      border-radius: 8px;
+      font-weight: 500;
+    }
+    .nav-cta:hover { background: var(--blue2); }
+
+    /* HERO */
+    .sweep-hero {
+      min-height: calc(100vh - 60px);
+      padding: 120px 2.5rem 4rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .sweep-hero::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 800px; height: 800px;
+      background: radial-gradient(circle, rgba(74,140,255,0.08) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 0.9rem;
+      border: 1px solid var(--border2);
+      border-radius: 999px;
+      background: var(--bg2);
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 1.6rem;
+      position: relative;
+    }
+
+    .badge-dot {
+      width: 6px; height: 6px;
+      background: var(--orange);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--orange);
+    }
+
+    .sweep-hero h1 {
+      font-family: var(--sans);
+      font-weight: 800;
+      font-size: 3.4rem;
+      letter-spacing: -0.03em;
+      line-height: 1.05;
+      color: var(--white);
+      margin-bottom: 1rem;
+      max-width: 880px;
+      position: relative;
+    }
+
+    .sweep-hero h1 .blue { color: var(--blue); }
+
+    .sweep-hero .sub {
+      max-width: 620px;
+      font-size: 1.05rem;
+      color: var(--text);
+      margin-bottom: 2.4rem;
+      position: relative;
+    }
+
+    .download-row {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: center;
+      position: relative;
+    }
+
+    .btn-download {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.7rem;
+      background: var(--blue);
+      color: var(--white);
+      padding: 0.85rem 1.5rem;
+      border-radius: 10px;
+      font-family: var(--sans);
+      font-weight: 600;
+      font-size: 1rem;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+    .btn-download:hover { background: var(--blue2); }
+
+    .btn-download svg { flex-shrink: 0; }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.85rem 1.4rem;
+      border-radius: 10px;
+      border: 1px solid var(--border2);
+      background: var(--bg2);
+      color: var(--text);
+      font-family: var(--sans);
+      font-weight: 500;
+      font-size: 0.95rem;
+      text-decoration: none;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .btn-secondary:hover { border-color: var(--text-dim); color: var(--white); }
+
+    .unlock-form { display: inline-flex; gap: 0.5rem; align-items: stretch; }
+
+    .unlock-input {
+      background: var(--bg2);
+      border: 1px solid var(--border2);
+      border-radius: 10px;
+      color: var(--white);
+      font-family: var(--sans);
+      font-size: 0.95rem;
+      padding: 0.85rem 1rem;
+      min-width: 220px;
+      outline: none;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .unlock-input::placeholder { color: var(--text-dim); }
+    .unlock-input:focus { border-color: var(--blue); }
+    .unlock-input.error {
+      border-color: #d04a4a;
+      animation: unlock-shake 0.35s ease;
+    }
+
+    @keyframes unlock-shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-4px); }
+      75% { transform: translateX(4px); }
+    }
+
+    .btn-unlock {
+      background: var(--blue);
+      color: var(--white);
+      border: 0;
+      padding: 0.85rem 1.4rem;
+      border-radius: 10px;
+      font-family: var(--sans);
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-unlock:hover { background: var(--blue2); }
+
+    .meta-line {
+      margin-top: 1.6rem;
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--text-xdim);
+      letter-spacing: 0.04em;
+      position: relative;
+    }
+
+    .meta-line .v { color: var(--text-dim); }
+
+    /* FEATURES */
+    .features {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 4rem 2.5rem 6rem;
+    }
+
+    .features-heading {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+
+    .features-heading h2 {
+      font-family: var(--sans);
+      font-weight: 800;
+      font-size: 2rem;
+      color: var(--white);
+      letter-spacing: -0.02em;
+      margin-bottom: 0.5rem;
+    }
+
+    .features-heading p {
+      color: var(--text-dim);
+      font-size: 0.95rem;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+    }
+
+    .feature-card {
+      padding: 1.5rem;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      transition: border-color 0.15s, transform 0.15s;
+    }
+    .feature-card:hover { border-color: var(--border2); transform: translateY(-2px); }
+
+    .feature-card .label {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--blue);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 0.6rem;
+    }
+
+    .feature-card h3 {
+      font-family: var(--sans);
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: var(--white);
+      margin-bottom: 0.5rem;
+    }
+
+    .feature-card p {
+      font-size: 0.9rem;
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    /* REQUIREMENTS */
+    .requirements {
+      max-width: 720px;
+      margin: 0 auto 6rem;
+      padding: 0 2.5rem;
+    }
+
+    .requirements h2 {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-dim);
+      margin-bottom: 1rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .requirements ul { list-style: none; padding: 0; }
+
+    .requirements li {
+      position: relative;
+      padding: 0.45rem 0 0.45rem 1.2rem;
+      font-size: 0.95rem;
+    }
+
+    .requirements li::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0.95rem;
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--blue);
+      opacity: 0.55;
+    }
+
+    .requirements li strong { color: var(--white); font-weight: 600; }
+
+    /* FOOTER */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 2rem 2.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .footer-logo {
+      font-family: var(--sans);
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: var(--text-dim);
+      letter-spacing: -0.01em;
+    }
+
+    .footer-links { display: flex; gap: 1.5rem; list-style: none; }
+
+    .footer-links a {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--text-xdim);
+      text-decoration: none;
+      letter-spacing: 0.04em;
+      transition: color 0.2s;
+    }
+    .footer-links a:hover { color: var(--text-dim); }
+
+    .footer-morse { font-family: var(--mono); font-size: 0.7rem; color: var(--text-xdim); letter-spacing: 0.12em; }
+
+    @media (max-width: 640px) {
+      nav { padding: 0 1.2rem; }
+      .nav-links li:not(:last-child):not(.always-show) { display: none; }
+      footer { flex-direction: column; align-items: flex-start; }
+      .sweep-hero { padding: 100px 1.2rem 3rem; }
+      .sweep-hero h1 { font-size: 2.2rem; }
+      .features { padding: 3rem 1.2rem 4rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="/">
+    <img src="/icon.png" alt="" onerror="this.style.display='none'" />
+    Carrier Wave
+  </a>
+  <ul class="nav-links">
+    <li><a href="/#features">Features</a></li>
+    <li><a href="/sweep.html">Sweep</a></li>
+    <li class="always-show"><a href="/android.html" class="active">Android</a></li>
+    <li><a href="/changelog.html">Changelog</a></li>
+    <li><a href="/devlog/">Devlog</a></li>
+    <li><a href="https://apps.apple.com/us/app/carrier-wave/id6758229084" class="nav-cta">iOS App</a></li>
+  </ul>
+</nav>
+
+<section class="sweep-hero">
+  <div class="hero-badge">
+    <span class="badge-dot"></span>
+    Android &middot; beta
+  </div>
+
+  <h1>The field log,<br /><span class="blue">now on Android.</span></h1>
+
+  <p class="sub">
+    Carrier Wave for Android is an early beta &mdash; activation logging, live hunter spots, and cloud sync, all running on the same shared core as the iPhone app. Sideload the signed APK below to get on the air.
+  </p>
+
+  <div class="download-row">
+    <form id="unlock-form" class="unlock-form" autocomplete="off">
+      <input
+        id="unlock-input"
+        class="unlock-input"
+        type="password"
+        name="android-pw"
+        placeholder="Password"
+        autocomplete="off"
+        spellcheck="false"
+        required
+      />
+      <button type="submit" class="btn-unlock">Unlock download</button>
+    </form>
+
+    <a id="apk-link" class="btn-download" hidden>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="M12 16l-5-5h3V4h4v7h3l-5 5zm-7 4v-2h14v2H5z" />
+      </svg>
+      Download APK
+    </a>
+
+    <a href="/changelog.html" class="btn-secondary">Release notes</a>
+  </div>
+
+  <p class="meta-line">
+    Signed APK &mdash; sideload &middot; <span class="v">Android 7.0 (Nougat) or later</span>
+  </p>
+
+  <p class="meta-line">
+    <strong>Upgrading from 0.6.x?</strong> Version 0.7.0 is signed with a new release key, so it can&rsquo;t install over older builds. Sign in to Carrier Wave Sync first so your log comes back, then uninstall the old app and install 0.7.0.
+  </p>
+</section>
+
+<section class="features">
+  <div class="features-heading">
+    <h2>The same log, in your pocket.</h2>
+    <p>Built on the shared Rust core, right alongside iOS.</p>
+  </div>
+
+  <div class="feature-grid">
+    <div class="feature-card">
+      <div class="label">Sessions</div>
+      <h3>Activation logger</h3>
+      <p>Start a session and log QSOs live &mdash; a redesigned start wizard, mode-default RST, Super Check Partial suggestions, and day-scoped dupe detection.</p>
+    </div>
+
+    <div class="feature-card">
+      <div class="label">Spots</div>
+      <h3>Live hunter feed</h3>
+      <p>RBN, POTA, SOTA, WWFF, and cluster spots on the same shared spot engine as iOS, with band / mode / needs filters and an interactive frequency scope.</p>
+    </div>
+
+    <div class="feature-card">
+      <div class="label">Hunter Log</div>
+      <h3>Inline QSO editing</h3>
+      <p>Tap today&rsquo;s logged contacts to edit callsign, band, mode, frequency, RST, location, and notes inline &mdash; saved straight to the shared store.</p>
+    </div>
+
+    <div class="feature-card">
+      <div class="label">Awards</div>
+      <h3>Brag Sheet</h3>
+      <p>Customizable achievement stats across weekly, monthly, and all-time periods, computed by the same engine that powers the iPhone app.</p>
+    </div>
+
+    <div class="feature-card">
+      <div class="label">Sync</div>
+      <h3>Your log, everywhere</h3>
+      <p>End-to-end encrypted server sync keeps the same logbook on your phone and the field &mdash; with magic-link sign-in that opens straight back into the app.</p>
+    </div>
+
+    <div class="feature-card">
+      <div class="label">Beta</div>
+      <h3>Moving fast</h3>
+      <p>This is an active beta &mdash; features land often. Grab the latest APK here whenever you want the newest build.</p>
+    </div>
+  </div>
+</section>
+
+<section class="requirements">
+  <h2>Installing</h2>
+  <ul>
+    <li><strong>Android 7.0 (Nougat)</strong> or later.</li>
+    <li>Tap the APK to install &mdash; your phone will ask you to <strong>allow installs from this source</strong> the first time. This is expected for a sideloaded beta.</li>
+    <li>Updates are manual for now &mdash; download a newer APK from this page and install it over the top; your on-device logbook is preserved.</li>
+    <li><strong>One-time reinstall for 0.7.0.</strong> Starting with 0.7.0 the APK is signed with a new release key. Android won&rsquo;t install it over 0.6.x or earlier, and uninstalling deletes the on-device logbook &mdash; so sign in to Carrier Wave Sync first (without Sync, only POTA activations can be exported, from Activations &rarr; Export ADIF), uninstall, install 0.7.0, then sign back in. Later updates install over the top as usual.</li>
+    <li>The APK is <strong>signed with Carrier Wave&rsquo;s release key</strong>; keep installing builds from here so updates apply cleanly.</li>
+  </ul>
+</section>
+
+<footer>
+  <span class="footer-logo">Carrier Wave</span>
+  <ul class="footer-links">
+    <li><a href="/">Carrier Wave for iOS</a></li>
+    <li><a href="/sweep.html">CW Sweep</a></li>
+    <li><a href="/changelog.html">Changelog</a></li>
+    <li><a href="/privacy.html">Privacy Policy</a></li>
+    <li><a href="https://discord.gg/PqubUxWW62">Discord</a></li>
+  </ul>
+  <span class="footer-morse">-.-. .--</span>
+</footer>
+
+<script>
+  (function () {
+    // sha256 hex of the gate password (shared with the CW Sweep download).
+    // Compute locally with: printf '%s' 'YOUR_PW' | shasum -a 256
+    var PW_HASH = '11b871369884851e875563e858d980cbf124b8f25e3e9b359f805c1385cdab16';
+    var APK_URL = '/android/CarrierWave-latest.apk';
+    var STORAGE_KEY = 'cw-android-unlocked';
+
+    var form = document.getElementById('unlock-form');
+    var input = document.getElementById('unlock-input');
+    var link = document.getElementById('apk-link');
+
+    function reveal() {
+      link.href = APK_URL;
+      link.hidden = false;
+      form.hidden = true;
+    }
+
+    async function sha256Hex(text) {
+      var bytes = new TextEncoder().encode(text);
+      var digest = await crypto.subtle.digest('SHA-256', bytes);
+      return Array.from(new Uint8Array(digest))
+        .map(function (b) { return b.toString(16).padStart(2, '0'); })
+        .join('');
+    }
+
+    try {
+      if (localStorage.getItem(STORAGE_KEY) === '1') {
+        reveal();
+      }
+    } catch (e) { /* storage disabled — just keep the form */ }
+
+    form.addEventListener('submit', async function (event) {
+      event.preventDefault();
+      var hash = await sha256Hex(input.value);
+      if (hash === PW_HASH) {
+        try { localStorage.setItem(STORAGE_KEY, '1'); } catch (e) { /* ignore */ }
+        reveal();
+        return;
+      }
+      input.value = '';
+      input.classList.add('error');
+      input.placeholder = 'Wrong password';
+      setTimeout(function () { input.classList.remove('error'); }, 600);
+    });
+  })();
+</script>
+
+</body>
+</html>

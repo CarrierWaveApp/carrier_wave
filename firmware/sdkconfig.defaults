@@ -1,0 +1,90 @@
+# -----------------------------------------------
+# Target
+# -----------------------------------------------
+CONFIG_IDF_TARGET="esp32s3"
+
+# -----------------------------------------------
+# Bluetooth / NimBLE (native on ESP32-S3)
+# -----------------------------------------------
+CONFIG_BT_ENABLED=y
+CONFIG_BT_NIMBLE_ENABLED=y
+CONFIG_BT_NIMBLE_MAX_CONNECTIONS=1
+CONFIG_BT_NIMBLE_ROLE_CENTRAL=n
+CONFIG_BT_NIMBLE_ROLE_OBSERVER=n
+CONFIG_BT_NIMBLE_ROLE_BROADCASTER=y
+CONFIG_BT_NIMBLE_ROLE_PERIPHERAL=y
+
+# Security manager: require LE Secure Connections + MITM-protected pairing
+# (passkey displayed on OLED, entered on iOS/macOS). Bonds persist in NVS so
+# a paired phone/Mac reconnects silently. Legacy pairing disabled — iOS 9+ and
+# macOS 10.12+ all support SC, and allowing legacy weakens the whole channel.
+CONFIG_BT_NIMBLE_SM_LEGACY=n
+CONFIG_BT_NIMBLE_SM_SC=y
+CONFIG_BT_NIMBLE_NVS_PERSIST=y
+CONFIG_BT_NIMBLE_MAX_BONDS=4
+CONFIG_BT_NIMBLE_MAX_CCCDS=8
+
+# -----------------------------------------------
+# USB Host — native OTG on GPIO19 (D-) / GPIO20 (D+)
+# -----------------------------------------------
+CONFIG_USB_OTG_SUPPORTED=y
+CONFIG_USB_HOST_CONTROL_TRANSFER_MAX_SIZE=1024
+
+# Many modern radios (Yaesu FTX-1, Icom IC-705, etc.) present as an internal
+# USB hub exposing the CAT serial bridge + a data/HRI device. Without hub
+# support, ESP-IDF enumerates the hub but never enumerates downstream — so
+# the CP2105/CDC chip is invisible and no NEW_DEV event fires.
+#
+# Hub support on ESP32-S3 is fragile (the IDF-10044 HCD-channel-recovery
+# TODO in hub.c is still open as of v5.4). The enum-filter callback below
+# is what makes this usable: we reject every device that isn't a hub or a
+# known CAT chip before ESP-IDF spends channels on it, keeping us well
+# under the 8-channel limit even with audio + HRI siblings present.
+CONFIG_USB_HOST_HUBS_SUPPORTED=y
+CONFIG_USB_HOST_HUB_MULTI_LEVEL=y
+CONFIG_USB_HOST_ENABLE_ENUM_FILTER_CALLBACK=y
+
+# -----------------------------------------------
+# FreeRTOS
+# -----------------------------------------------
+CONFIG_FREERTOS_HZ=1000
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=8192
+
+# -----------------------------------------------
+# Logging
+# -----------------------------------------------
+CONFIG_LOG_DEFAULT_LEVEL_INFO=y
+
+# Suppress noisy NimBLE GATT/GAP procedure logs
+CONFIG_BT_NIMBLE_LOG_LEVEL_WARNING=y
+
+# -----------------------------------------------
+# Flash size (Heltec WiFi Kit 32 v3.1 has 8MB SiP)
+# -----------------------------------------------
+CONFIG_ESPTOOLPY_FLASHSIZE_8MB=y
+CONFIG_ESPTOOLPY_FLASHSIZE="8MB"
+
+# -----------------------------------------------
+# FT8 audio path
+# -----------------------------------------------
+# Continuous-mode ADC for the phone TRS jack (FT8 decode).
+CONFIG_ADC_CONTINUOUS_ISR_IRAM_SAFE=y
+# PSRAM: disabled — Heltec WiFi Kit 32 V3 (no-PSRAM variant).
+# FT8 decode waterfall (~120 kB) uses internal SRAM instead.
+# CONFIG_SPIRAM=y
+# CONFIG_SPIRAM_MODE_OCT=y
+# CONFIG_SPIRAM_USE_MALLOC=y
+# CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL=16384
+
+# -----------------------------------------------
+# Console — J11 debug header (rev 2 PCB)
+# -----------------------------------------------
+# UART0's default pins (GPIO43/44) carry I2S_MCLK / EXP_RST on the CW Bridge
+# board, and USB-Serial-JTAG disappears once the app claims the PHY for USB
+# host mode. Route the console to GPIO41 (DEBUG_TX -> J11 pin 1). RX is parked
+# on GPIO4, a no-connect on this board.
+CONFIG_ESP_CONSOLE_UART_CUSTOM=y
+CONFIG_ESP_CONSOLE_UART_NUM=0
+CONFIG_ESP_CONSOLE_UART_TX_GPIO=41
+CONFIG_ESP_CONSOLE_UART_RX_GPIO=4
+CONFIG_ESP_CONSOLE_UART_BAUDRATE=115200

@@ -1,0 +1,21 @@
+{
+  "slug": "power-profile-mobile",
+  "name": "Mobile power profile",
+  "icon": "battery.50",
+  "description": "Drop output to 5 W for mobile/portable work. Use the matching shack-power macro to ramp back up at the desk.",
+  "tags": ["power", "mobile", "battery", "portable"],
+  "appliesTo": ["civ"],
+  "capabilities": {
+    "transmits": false,
+    "changesFrequency": false,
+    "changesMode": false,
+    "changesPower": true,
+    "usesRawBytes": false
+  },
+  "args": [],
+  "steps": [
+    { "kind": "setPowerWatts", "watts": 5 }
+  ],
+  "format": 2,
+  "status": "approved"
+}

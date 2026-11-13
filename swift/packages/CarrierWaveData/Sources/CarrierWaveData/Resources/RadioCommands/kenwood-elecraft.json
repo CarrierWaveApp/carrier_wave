@@ -1,0 +1,185 @@
+{
+  "version": 1,
+  "commands": [
+    {
+      "id": "kw.menu",
+      "label": "Menu Entry (EX)",
+      "protocol": "kenwood",
+      "category": "menu",
+      "supports": ["TS-480", "TS-590", "TS-890", "K3", "KX2", "KX3"],
+      "params": [
+        { "name": "item",  "label": "Menu #", "type": "uint16",
+          "min": 0, "max": 999, "encoding": "dec3" },
+        { "name": "value", "label": "Value",  "type": "uint16",
+          "min": 0, "max": 9999, "encoding": "dec4" }
+      ],
+      "template": "EX{item}{value}",
+      "notes": "Kenwood/Elecraft menu poke. Item numbers vary by model — consult the manual."
+    },
+    {
+      "id": "kw.vox",
+      "label": "VOX",
+      "protocol": "kenwood",
+      "category": "audio",
+      "supports": ["TS-480", "TS-590", "TS-890", "K3", "KX2", "KX3"],
+      "params": [
+        { "name": "enabled", "label": "Enabled", "type": "bool", "default": "false" }
+      ],
+      "template": "VX{enabled}"
+    },
+    {
+      "id": "kw.power",
+      "label": "Power (watts)",
+      "protocol": "kenwood",
+      "category": "power",
+      "supports": ["TS-480", "TS-590", "TS-890", "K3", "KX2", "KX3"],
+      "params": [
+        { "name": "watts", "label": "Watts", "type": "uint8",
+          "min": 1, "max": 200 }
+      ],
+      "template": "PC{watts}",
+      "notes": "Encoded as decimal digits with no zero-padding; some radios require PC###."
+    },
+    {
+      "id": "kw.noiseBlanker",
+      "label": "Noise Blanker",
+      "protocol": "kenwood",
+      "category": "noise",
+      "supports": ["TS-480", "TS-590", "TS-890", "K3", "KX2", "KX3"],
+      "params": [
+        { "name": "enabled", "label": "Enabled", "type": "bool", "default": "false" }
+      ],
+      "template": "NB{enabled}"
+    },
+    {
+      "id": "kw.rit",
+      "label": "RIT On/Off",
+      "protocol": "kenwood",
+      "category": "rit-xit",
+      "supports": ["TS-480", "TS-590", "TS-890", "K3", "KX2", "KX3"],
+      "params": [
+        { "name": "enabled", "label": "Enabled", "type": "bool", "default": "false" }
+      ],
+      "template": "RT{enabled}"
+    },
+    {
+      "id": "kw.xit",
+      "label": "XIT On/Off",
+      "protocol": "kenwood",
+      "category": "rit-xit",
+      "supports": ["TS-480", "TS-590", "TS-890", "K3", "KX2", "KX3"],
+      "params": [
+        { "name": "enabled", "label": "Enabled", "type": "bool", "default": "false" }
+      ],
+      "template": "XT{enabled}"
+    },
+    {
+      "id": "kw.clearRitXit",
+      "label": "Clear RIT/XIT",
+      "protocol": "kenwood",
+      "category": "rit-xit",
+      "supports": ["TS-480", "TS-590", "TS-890", "K3", "KX2", "KX3"],
+      "params": [],
+      "template": "RC",
+      "notes": "Zeroes the RIT/XIT offset. Pair with kw.rit/kw.xit if you also need to flip the enable bit."
+    },
+    {
+      "id": "kw.elecraftDataSubMode",
+      "label": "Data Sub-Mode (Elecraft)",
+      "protocol": "kenwood",
+      "category": "mode",
+      "supports": ["K3", "KX2", "KX3"],
+      "params": [
+        {
+          "name": "sub", "label": "Sub-mode", "type": "enum", "default": "data-a",
+          "values": [
+            { "id": "data-a",  "label": "DATA A", "encoded": "0" },
+            { "id": "afsk-a",  "label": "AFSK A", "encoded": "1" },
+            { "id": "fsk-d",   "label": "FSK D",  "encoded": "2" },
+            { "id": "psk-d",   "label": "PSK D",  "encoded": "3" }
+          ]
+        }
+      ],
+      "template": "DT{sub}",
+      "notes": "Selects the data sub-mode used when MD is DATA. FT8/JT-65/etc. use DATA A; FT4/PSK use PSK D depending on WSJT-X audio path."
+    },
+    {
+      "id": "kw.elecraftBandwidth",
+      "label": "Filter Bandwidth (Elecraft)",
+      "protocol": "kenwood",
+      "category": "filter",
+      "supports": ["K3", "KX2", "KX3"],
+      "params": [
+        {
+          "name": "hz10", "label": "Bandwidth (10-Hz units)", "type": "uint16",
+          "min": 0, "max": 9999, "default": "400", "encoding": "dec4"
+        }
+      ],
+      "template": "BW{hz10}",
+      "notes": "BW is in 10-Hz units (e.g. 400 = 4000 Hz = 4 kHz). Per the K3/KX2 Programmer's Reference, BW is preferred over the legacy FW in switch macros because it is meta-mode-independent."
+    },
+    {
+      "id": "kw.elecraftPreamp",
+      "label": "RX Preamp",
+      "protocol": "kenwood",
+      "category": "rx-front-end",
+      "supports": ["K3", "KX2", "KX3"],
+      "params": [
+        { "name": "enabled", "label": "Enabled", "type": "bool", "default": "false" }
+      ],
+      "template": "PA{enabled}"
+    },
+    {
+      "id": "kw.elecraftMenuSet",
+      "label": "Menu Entry (Elecraft MN/MP)",
+      "protocol": "kenwood",
+      "category": "menu",
+      "supports": ["K3", "KX2", "KX3"],
+      "params": [
+        {
+          "name": "item", "label": "Menu # (000–255)", "type": "uint16",
+          "min": 0, "max": 255, "encoding": "dec3"
+        },
+        {
+          "name": "value", "label": "Parameter value (000–255)", "type": "uint16",
+          "min": 0, "max": 255, "encoding": "dec3"
+        }
+      ],
+      "template": "MN{item};MP{value};MN255",
+      "notes": "Selects a menu entry (MN), sets its 8-bit parameter (MP), then exits the menu (MN255). Some menu entries store bit fields — see the K3/KX2 Programmer's Reference 'MP Command Special Cases' table for which bits to set (e.g. MIC BIAS is bit 4, MIC BTN PTT is bit 0)."
+    },
+    {
+      "id": "kw.elecraftTxVfo",
+      "label": "TX VFO / Split Cancel",
+      "protocol": "kenwood",
+      "category": "split",
+      "supports": ["K3", "KX2", "KX3"],
+      "params": [
+        {
+          "name": "vfo", "label": "TX VFO", "type": "enum", "default": "a",
+          "values": [
+            { "id": "a", "label": "VFO A (cancel split)", "encoded": "0" },
+            { "id": "b", "label": "VFO B (enter split)", "encoded": "1" }
+          ]
+        }
+      ],
+      "template": "FT{vfo}",
+      "notes": "FT0 transmits on VFO A and cancels any existing split. FT1 transmits on VFO B and enters split."
+    },
+    {
+      "id": "kw.elecraftSpeechComp",
+      "label": "Speech Compression",
+      "protocol": "kenwood",
+      "category": "audio",
+      "supports": ["K3", "KX2", "KX3"],
+      "params": [
+        {
+          "name": "level", "label": "Level (0–40)", "type": "uint8",
+          "min": 0, "max": 40, "default": "0", "encoding": "dec3"
+        }
+      ],
+      "template": "CP{level}",
+      "notes": "Set to 0 for data modes — compression distorts FT8/PSK audio and is meaningful only in SSB."
+    }
+  ]
+}

@@ -1,0 +1,319 @@
+import CarrierWaveCore
+import CarrierWaveData
+import Foundation
+import SwiftData
+
+// MARK: - SyncService Repair Methods
+
+extension SyncService {
+    /// Compare local POTA QSOs against what POTA's API returned per-activation.
+    /// Flags missing QSOs as needsUpload=true and recovers dead-state records.
+    func repairPOTAGapsAsync(remoteQSOMap: POTARemoteQSOMap) async {
+        do {
+            let result = try await Self.processingActor.repairPOTAGaps(
+                remoteQSOMap: remoteQSOMap,
+                container: modelContext.container
+            )
+            if result.gapsFound > 0 || result.deadStateRecovered > 0 {
+                SyncDebugLog.shared.warning(
+                    "POTA remote reconciliation: checked \(result.activationsChecked) activations, "
+                        + "found \(result.gapsFound) missing QSOs, "
+                        + "recovered \(result.deadStateRecovered) dead-state record(s)",
+                    service: .pota
+                )
+            } else {
+                SyncDebugLog.shared.debug(
+                    "POTA remote reconciliation: checked \(result.activationsChecked) activations, "
+                        + "no gaps or dead-state records",
+                    service: .pota
+                )
+            }
+        } catch {
+            SyncDebugLog.shared.error("POTA remote reconciliation failed: \(error)", service: .pota)
+        }
+    }
+
+    /// Detect and repair QSOs missing ServicePresence records for a service.
+    func repairOrphanedQSOsAsync(for service: ServiceType) async {
+        let debugLog = SyncDebugLog.shared
+        let aliasService = CallsignAliasService.shared
+        let userCallsigns = aliasService.getAllUserCallsigns()
+
+        do {
+            let result = try await Self.processingActor.repairOrphanedQSOs(
+                for: [service], userCallsigns: userCallsigns, container: modelContext.container
+            )
+            if result.orphanedQSOs.isEmpty {
+                debugLog.debug(
+                    "No orphaned QSOs found for \(service.displayName)", service: service
+                )
+            } else {
+                let msg =
+                    "Found \(result.orphanedQSOs.count) QSOs without \(service.displayName) "
+                        + "presence - created \(result.repairedCount) ServicePresence records:"
+                debugLog.warning(msg, service: service)
+                let dateFmt = ISO8601DateFormatter()
+                dateFmt.formatOptions = [.withInternetDateTime]
+                for (idx, qso) in result.orphanedQSOs.prefix(10).enumerated() {
+                    let ts = dateFmt.string(from: qso.timestamp)
+                    let svcs = qso.missingServices.map(\.displayName).joined(separator: ", ")
+                    let detail =
+                        "  \(idx + 1). \(qso.callsign) \(qso.band) \(qso.mode) @ \(ts) "
+                            + "(my: \(qso.myCallsign)) - missing: \(svcs)"
+                    debugLog.warning(detail, service: service)
+                }
+                if result.orphanedQSOs.count > 10 {
+                    debugLog.warning(
+                        "  ... and \(result.orphanedQSOs.count - 10) more", service: service
+                    )
+                }
+            }
+        } catch {
+            debugLog.error("Failed to repair orphaned QSOs: \(error)", service: service)
+        }
+    }
+
+    /// Clear needsUpload flags on hidden (soft-deleted) QSOs.
+    func clearHiddenQSOUploadFlagsAsync() async {
+        do {
+            let result = try await Self.processingActor.clearHiddenQSOUploadFlags(
+                container: modelContext.container
+            )
+            if result.clearedCount > 0 {
+                let msg =
+                    "Cleared needsUpload on \(result.clearedCount) hidden (soft-deleted) QSO(s)"
+                SyncDebugLog.shared.warning(msg)
+            }
+        } catch {
+            SyncDebugLog.shared.error("Failed to clear hidden QSO upload flags: \(error)")
+        }
+    }
+
+    /// Clear needsUpload flags on PoLo metadata pseudo-modes (`QSOMode.metadataModes`).
+    func clearMetadataUploadFlagsAsync() async {
+        do {
+            let result = try await Self.processingActor.clearMetadataUploadFlags(
+                container: modelContext.container
+            )
+            if result.clearedCount > 0 {
+                let msg =
+                    "Cleared needsUpload on \(result.clearedCount) PoLo metadata row(s) (CAR-278)"
+                SyncDebugLog.shared.info(msg)
+                for (service, count) in result.byService.sorted(by: { $0.value > $1.value }) {
+                    SyncDebugLog.shared.debug("  - \(service.rawValue): \(count)")
+                }
+            }
+        } catch {
+            SyncDebugLog.shared.error("Failed to clear metadata upload flags: \(error)")
+        }
+    }
+
+    /// Clear needsUpload flags on QSOs logged under non-primary callsigns.
+    func clearNonPrimaryCallsignUploadFlagsAsync() async {
+        let primaryCallsign = CallsignAliasService.shared.getCurrentCallsign()
+        do {
+            let result = try await Self.processingActor.clearNonPrimaryCallsignUploadFlags(
+                primaryCallsign: primaryCallsign, container: modelContext.container
+            )
+            if result.clearedCount > 0 {
+                let msg =
+                    "Cleared needsUpload on \(result.clearedCount) QSO(s) from non-primary callsigns"
+                SyncDebugLog.shared.info(msg)
+                for (call, count) in result.byCallsign.sorted(by: { $0.value > $1.value }) {
+                    SyncDebugLog.shared.debug("  - \(call): \(count) QSO(s)")
+                }
+            }
+        } catch {
+            SyncDebugLog.shared.error("Failed to clear non-primary callsign upload flags: \(error)")
+        }
+    }
+
+    /// Clear bogus HAMRS needsUpload flags created when supportsUpload was incorrectly true.
+    func clearBogusHamrsUploadFlagsAsync() async {
+        do {
+            let result = try await Self.processingActor.clearBogusHamrsUploadFlags(
+                container: modelContext.container
+            )
+            if result.clearedCount > 0 {
+                SyncDebugLog.shared.warning(
+                    "Cleared \(result.clearedCount) bogus HAMRS needsUpload flag(s)"
+                )
+            }
+        } catch {
+            SyncDebugLog.shared.error("Failed to clear HAMRS upload flags: \(error)")
+        }
+    }
+
+    /// Clear needsUpload flags for services that aren't configured.
+    func clearUnconfiguredServiceUploadFlagsAsync() async {
+        let configured = CarrierWaveData.ServiceConfiguration.configuredUploadServices()
+        do {
+            let result = try await Self.processingActor.clearUnconfiguredServiceUploadFlags(
+                configuredServices: configured,
+                container: modelContext.container
+            )
+            if result.clearedCount > 0 {
+                SyncDebugLog.shared.info(
+                    "Cleared \(result.clearedCount) needsUpload flag(s) for unconfigured services"
+                )
+                for (service, count) in result.byService.sorted(by: { $0.value > $1.value }) {
+                    SyncDebugLog.shared.debug("  - \(service.displayName): \(count)")
+                }
+            }
+        } catch {
+            SyncDebugLog.shared.error("Failed to clear unconfigured service upload flags: \(error)")
+        }
+    }
+
+    /// Repair QRZ ServicePresence records stuck in dead state
+    /// (isPresent=false, needsUpload=false, not submitted, not rejected).
+    /// Only repairs QSOs matching the primary callsign. Non-primary callsign QSOs
+    /// are permanently marked uploadRejected to prevent an infinite repair/clear cycle (CAR-170).
+    func repairQRZDeadStateAsync() async {
+        let primaryCallsign = CallsignAliasService.shared.getCurrentCallsign()
+        do {
+            let result = try await Self.processingActor.repairQRZDeadStateQSOs(
+                primaryCallsign: primaryCallsign,
+                container: modelContext.container
+            )
+            if result.repairedCount > 0 {
+                SyncDebugLog.shared.info(
+                    "Repaired \(result.repairedCount) QRZ dead-state QSO(s) "
+                        + "(reset to needsUpload=true)"
+                )
+            }
+            if result.rejectedNonPrimaryCount > 0 {
+                SyncDebugLog.shared.info(
+                    "Rejected \(result.rejectedNonPrimaryCount) non-primary callsign "
+                        + "dead-state QSO(s) (will not retry upload)"
+                )
+            }
+        } catch {
+            SyncDebugLog.shared.error("Failed to repair QRZ dead-state QSOs: \(error)")
+        }
+    }
+
+    /// Repair QSOs that have DXCC in rawADIF but not in the dxcc column.
+    /// This backfills DXCC data for QSOs imported before the fix was applied.
+    func repairMissingDXCCAsync() async {
+        do {
+            let result = try await Self.processingActor.repairMissingDXCC(
+                container: modelContext.container
+            )
+            if result.repairedCount > 0 {
+                let msg =
+                    "Repaired DXCC on \(result.repairedCount) QSO(s) from rawADIF "
+                        + "(scanned \(result.scannedCount))"
+                SyncDebugLog.shared.info(msg)
+            }
+        } catch {
+            SyncDebugLog.shared.error("Failed to repair missing DXCC: \(error)")
+        }
+    }
+
+    /// Repair QSOs with leading/trailing whitespace in callsigns.
+    /// Trims whitespace, then merges any resulting duplicates.
+    func repairCallsignWhitespaceAsync() async {
+        do {
+            let result = try await Self.processingActor.repairCallsignWhitespace(
+                container: modelContext.container
+            )
+            if result.trimmedCount > 0 || result.mergedCount > 0 {
+                SyncDebugLog.shared.warning(
+                    "Callsign whitespace repair: trimmed \(result.trimmedCount), "
+                        + "merged \(result.mergedCount), deleted \(result.deletedCount)"
+                )
+            }
+        } catch {
+            SyncDebugLog.shared.error("Failed to repair callsign whitespace: \(error)")
+        }
+    }
+
+    /// Repair QRZ ServicePresence records stuck in isSubmitted=true state.
+    /// QRZ uploads are synchronous -- isSubmitted should have been isPresent.
+    func repairQRZSubmittedStateAsync() async {
+        do {
+            let result = try await Self.processingActor.repairQRZSubmittedState(
+                container: modelContext.container
+            )
+            if result.repairedCount > 0 {
+                SyncDebugLog.shared.warning(
+                    "Repaired \(result.repairedCount) QRZ ServicePresence record(s) "
+                        + "stuck in isSubmitted state (promoted to isPresent)"
+                )
+            }
+        } catch {
+            SyncDebugLog.shared.error("Failed to repair QRZ submitted state: \(error)")
+        }
+    }
+
+    /// Create LoggingSessions from POTA activation metadata snapshots.
+    func createPOTASessionsAsync(snapshots: [POTAActivationSnapshot]) async {
+        do {
+            let result = try await Self.processingActor.createSessionsFromPOTAActivations(
+                snapshots, container: modelContext.container
+            )
+            if result.sessionsCreated > 0 {
+                SyncDebugLog.shared.info(
+                    "Created \(result.sessionsCreated) session(s) from "
+                        + "\(snapshots.count) POTA activation(s) "
+                        + "(\(result.qsosAssigned) QSOs assigned)",
+                    service: .pota
+                )
+            }
+        } catch {
+            SyncDebugLog.shared.error(
+                "Failed to create sessions from POTA activations: \(error)",
+                service: .pota
+            )
+        }
+    }
+
+    /// Group orphan POTA QSOs (downloaded without a session) into LoggingSession records.
+    func groupOrphanPOTAQSOsAsync() async {
+        do {
+            let result = try await Self.processingActor.groupOrphanPOTAQSOsIntoSessions(
+                container: modelContext.container
+            )
+            if result.sessionsCreated > 0 {
+                SyncDebugLog.shared.info(
+                    "Created \(result.sessionsCreated) session(s) for "
+                        + "\(result.qsosAssigned) orphan POTA QSO(s)",
+                    service: .pota
+                )
+            }
+        } catch {
+            SyncDebugLog.shared.error(
+                "Failed to group orphan POTA QSOs into sessions: \(error)"
+            )
+        }
+    }
+
+    /// One-time: merge duplicate QSOs that share the same qrzLogId.
+    /// Caused by FetchedQSO.deduplicationKey not trimming callsign whitespace,
+    /// creating duplicates that inherit the same logId (CAR-179).
+    func repairDuplicateQRZLogIdsAsync() async {
+        let key = "qrzLogIdDedupRepairV1"
+        guard !UserDefaults.standard.bool(forKey: key) else {
+            return
+        }
+        defer { UserDefaults.standard.set(true, forKey: key) }
+
+        do {
+            let result = try await Self.processingActor
+                .repairDuplicateQRZLogIds(
+                    container: modelContext.container
+                )
+            if result.mergedCount > 0 {
+                SyncDebugLog.shared.warning(
+                    "QRZ logId dedup repair: merged "
+                        + "\(result.mergedCount) duplicate QSO(s)"
+                )
+            }
+        } catch {
+            SyncDebugLog.shared.error(
+                "Failed to repair QRZ logId duplicates: \(error)"
+            )
+        }
+    }
+}

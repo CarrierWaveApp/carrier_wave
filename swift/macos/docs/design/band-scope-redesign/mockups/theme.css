@@ -1,0 +1,176 @@
+/*
+ * Carrier Wave / CW Sweep design tokens for the band scope mockups.
+ * Mirrors docs/design-language.md, dark mode (CW Sweep is macOS).
+ */
+
+:root {
+  /* Background hierarchy (dark mode) */
+  --bg-base:        #1c1c1e;  /* systemGroupedBackground */
+  --bg-card:        #2c2c2e;  /* systemGray6 */
+  --bg-field:       #3a3a3c;  /* systemGray5 */
+  --bg-input:       #2c2c2e;  /* tertiarySystemGroupedBackground */
+  --bg-secondary:   #1c1c1e;  /* secondarySystemGroupedBackground */
+  --bg-overlay:     rgba(28, 28, 30, 0.92);
+
+  /* Text */
+  --text-primary:   #f2f2f7;
+  --text-secondary: rgba(235, 235, 245, 0.6);
+  --text-tertiary:  rgba(235, 235, 245, 0.3);
+
+  /* Semantic colors (dark mode systemX equivalents) */
+  --blue:           #0a84ff;
+  --green:          #30d158;
+  --red:            #ff453a;
+  --orange:         #ff9f0a;
+  --yellow:         #ffd60a;
+  --purple:         #bf5af2;
+  --pink:           #ff375f;
+  --teal:           #64d2ff;
+  --indigo:         #5e5ce6;
+  --gray:           #8e8e93;
+
+  /* Spot source colors (mirror SpotColorScheme.sourceColor) */
+  --src-rbn:        var(--blue);
+  --src-pota:       var(--green);
+  --src-sota:       var(--orange);
+  --src-wwff:       var(--teal);
+  --src-dxsummit:   var(--purple);
+  --src-dxheat:     var(--red);
+  --src-dxwatch:    var(--indigo);
+  --src-cluster:    var(--yellow);
+
+  /* Borders / dividers */
+  --divider:        rgba(255, 255, 255, 0.08);
+  --divider-strong: rgba(255, 255, 255, 0.16);
+
+  /* Type */
+  --font-mono: ui-monospace, "SF Mono", Menlo, "Roboto Mono", monospace;
+  --font-system: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+
+  /* Spacing scale (matches design-language.md) */
+  --sp-2: 2px;
+  --sp-4: 4px;
+  --sp-6: 6px;
+  --sp-8: 8px;
+  --sp-12: 12px;
+  --sp-16: 16px;
+  --sp-24: 24px;
+
+  /* Radii */
+  --r-3: 3px;
+  --r-6: 6px;
+  --r-8: 8px;
+  --r-12: 12px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-system);
+  font-size: 13px;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--blue);
+  text-decoration: none;
+}
+a:hover { text-decoration: underline; }
+
+.page {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.page-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--divider);
+  padding-bottom: 12px;
+}
+
+.page-header h1 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.page-header .crumbs {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.lead {
+  color: var(--text-secondary);
+  font-size: 13px;
+  max-width: 780px;
+  line-height: 1.55;
+  margin: 0 0 16px 0;
+}
+
+.scope-frame {
+  width: 1392px;
+  height: 760px;
+  background: var(--bg-card);
+  border: 1px solid var(--divider);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+  position: relative;
+}
+
+.callouts {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  gap: 8px 12px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.callouts .marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 11px;
+  background: var(--red);
+  color: #fff;
+  font-weight: 700;
+  font-size: 11px;
+  font-family: var(--font-mono);
+}
+
+.callouts .marker.fix {
+  background: var(--green);
+}
+
+.callouts .text strong { color: var(--text-primary); }
+.callouts .text { color: var(--text-secondary); }
+
+.legend {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+.legend .swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  vertical-align: middle;
+  margin-right: 4px;
+}

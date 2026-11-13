@@ -1,0 +1,17 @@
+[package]
+name = "cw-sdr"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+description = "Carrier Wave SDR IQ capture + spectrum pipeline (panadapter / waterfall)"
+
+[dependencies]
+thiserror = { workspace = true }
+num-complex = "0.4"
+rustfft = "6"
+
+# SoapySDR is loaded at runtime (dlopen) on macOS only, so the app launches
+# without Homebrew and the iOS XCFramework slices never reference it.
+[target.'cfg(target_os = "macos")'.dependencies]
+libloading = "0.8"

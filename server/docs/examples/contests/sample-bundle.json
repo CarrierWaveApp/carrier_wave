@@ -1,0 +1,477 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/contest-definition/v0.3",
+  "title": "Amateur Radio Contest Definition",
+  "version": "0.3.0",
+
+  "contests": [
+    {
+      "id": "cwops-cwt",
+      "name": "CWops Mini-CWT Test",
+      "short_name": "CWT",
+      "sponsor": {
+        "name": "CW Operators' Club",
+        "url": "https://cwops.org/cwops-tests/"
+      },
+
+      "modes": ["CW"],
+      "bands": ["160m", "80m", "40m", "20m", "15m", "10m"],
+
+      "data_dependencies": {
+        "country_file": {
+          "id": "cty_dat",
+          "url": "https://www.country-files.com/contest/",
+          "file": "cty.dat",
+          "description": "Standard DXCC entity list — prefix to entity/zone/continent mapping",
+          "update_frequency": "before_each_contest",
+          "provides": ["their_country", "their_continent", "their_cq_zone", "their_itu_zone"]
+        }
+      },
+
+      "schedule": {
+        "type": "recurring_weekly",
+        "sessions": [
+          { "day": "wednesday", "start_utc": "13:00", "duration_minutes": 60 },
+          { "day": "wednesday", "start_utc": "19:00", "duration_minutes": 60 },
+          { "day": "thursday", "start_utc": "03:00", "duration_minutes": 60 }
+        ],
+        "session_scoring": "independent"
+      },
+
+      "exchange": {
+        "sent": [
+          { "name": "name", "type": "text", "label": "Name", "required": true },
+          { "name": "identifier", "type": "text", "label": "CWops # or S/P/C", "required": true }
+        ],
+        "received": [
+          { "name": "name", "type": "text", "label": "Name", "required": true },
+          { "name": "identifier", "type": "text", "label": "CWops # or S/P/C", "required": true }
+        ]
+      },
+
+      "dupe_rules": {
+        "scope": "session",
+        "key": ["callsign", "band"]
+      },
+
+      "scoring": {
+        "phases": [
+          {
+            "id": "qso_points",
+            "type": "per_qso",
+            "rules": [
+              { "value": 1 }
+            ]
+          },
+          {
+            "id": "mult_callsigns",
+            "type": "multiplier_count",
+            "description": "Unique callsigns worked across all bands",
+            "source": "their_callsign",
+            "scope": "per_contest",
+            "include_zero_point_qsos": false
+          },
+          {
+            "id": "total",
+            "type": "aggregate",
+            "operation": {
+              "op": "multiply",
+              "inputs": [
+                { "op": "ref", "phase": "qso_points" },
+                { "op": "ref", "phase": "mult_callsigns" }
+              ]
+            }
+          }
+        ]
+      },
+
+      "cabrillo": {
+        "contest_name": "CWT",
+        "version": "3.0"
+      },
+
+      "categories": [
+        { "id": "single_op", "label": "Single Operator", "power_classes": ["HP", "LP", "QRP"] }
+      ],
+      "overlay_categories": [
+        { "id": "SO2R", "label": "SO2R" },
+        { "id": "REMOTE", "label": "Remote" }
+      ]
+    },
+
+    {
+      "id": "k1usn-sst",
+      "name": "K1USN Slow Speed Test",
+      "short_name": "SST",
+      "sponsor": {
+        "name": "K1USN Radio Club",
+        "url": "https://www.k1usn.com/sst.html"
+      },
+
+      "modes": ["CW"],
+      "bands": ["160m", "80m", "40m", "20m", "15m", "10m"],
+
+      "data_dependencies": {
+        "country_file": {
+          "id": "cty_dat",
+          "url": "https://www.country-files.com/contest/",
+          "file": "cty.dat",
+          "description": "Standard DXCC entity list for DX multiplier",
+          "update_frequency": "before_each_contest",
+          "provides": ["their_country", "their_continent"]
+        },
+        "section_list": {
+          "id": "sst_sections",
+          "description": "US states, Canadian provinces, and 'DX' as a single multiplier value for non-US/VE stations"
+        }
+      },
+
+      "schedule": {
+        "type": "recurring_weekly",
+        "sessions": [
+          { "day": "monday", "start_utc": "00:00", "duration_minutes": 60 },
+          { "day": "friday", "start_utc": "20:00", "duration_minutes": 60 }
+        ],
+        "session_scoring": "independent"
+      },
+
+      "exchange": {
+        "sent": [
+          { "name": "name", "type": "text", "label": "Name", "required": true },
+          {
+            "name": "section",
+            "type": "section_list",
+            "label": "State/Province/DX",
+            "required": true,
+            "list": "us_states_ve_provinces_dx"
+          }
+        ],
+        "received": [
+          { "name": "name", "type": "text", "label": "Name", "required": true },
+          {
+            "name": "section",
+            "type": "section_list",
+            "label": "State/Province/DX",
+            "required": true,
+            "list": "us_states_ve_provinces_dx"
+          }
+        ]
+      },
+
+      "dupe_rules": {
+        "scope": "session",
+        "key": ["callsign", "band"]
+      },
+
+      "scoring": {
+        "phases": [
+          {
+            "id": "qso_points",
+            "type": "per_qso",
+            "rules": [
+              { "value": 1 }
+            ]
+          },
+          {
+            "id": "mult_sections",
+            "type": "multiplier_count",
+            "description": "Unique State/Province/DX values across all bands",
+            "source": "received.section",
+            "scope": "per_contest",
+            "include_zero_point_qsos": false
+          },
+          {
+            "id": "total",
+            "type": "aggregate",
+            "operation": {
+              "op": "multiply",
+              "inputs": [
+                { "op": "ref", "phase": "qso_points" },
+                { "op": "ref", "phase": "mult_sections" }
+              ]
+            }
+          }
+        ]
+      },
+
+      "cabrillo": {
+        "contest_name": "K1USN-SST",
+        "version": "3.0"
+      },
+
+      "categories": [
+        { "id": "single_op", "label": "Single Operator", "power_classes": ["HP", "LP", "QRP"] }
+      ]
+    },
+
+    {
+      "id": "icwc-mst",
+      "name": "ICWC Medium Speed Test",
+      "short_name": "MST",
+      "sponsor": {
+        "name": "International CW Council",
+        "url": "https://internationalcwcouncil.org/mst-contest/"
+      },
+
+      "modes": ["CW"],
+      "bands": ["160m", "80m", "40m", "20m", "15m", "10m"],
+
+      "data_dependencies": {
+        "country_file": {
+          "id": "cty_dat",
+          "url": "https://www.country-files.com/contest/",
+          "file": "cty.dat",
+          "description": "Standard DXCC entity list",
+          "update_frequency": "before_each_contest",
+          "provides": ["their_country", "their_continent"]
+        }
+      },
+
+      "schedule": {
+        "type": "recurring_weekly",
+        "sessions": [
+          { "day": "monday", "start_utc": "13:00", "duration_minutes": 60 },
+          { "day": "monday", "start_utc": "19:00", "duration_minutes": 60 },
+          { "day": "tuesday", "start_utc": "03:00", "duration_minutes": 60 }
+        ],
+        "session_scoring": "independent"
+      },
+
+      "exchange": {
+        "sent": [
+          { "name": "name", "type": "text", "label": "Name", "required": true },
+          { "name": "serial", "type": "serial_number", "label": "Serial #", "required": true, "auto_increment": true }
+        ],
+        "received": [
+          { "name": "name", "type": "text", "label": "Name", "required": true },
+          { "name": "serial", "type": "serial_number", "label": "Serial #", "required": true }
+        ]
+      },
+
+      "dupe_rules": {
+        "scope": "session",
+        "key": ["callsign", "band"]
+      },
+
+      "scoring": {
+        "phases": [
+          {
+            "id": "qso_points",
+            "type": "per_qso",
+            "rules": [
+              { "value": 1 }
+            ]
+          },
+          {
+            "id": "mult_callsigns",
+            "type": "multiplier_count",
+            "description": "Unique callsigns worked across all bands",
+            "source": "their_callsign",
+            "scope": "per_contest",
+            "include_zero_point_qsos": false
+          },
+          {
+            "id": "total",
+            "type": "aggregate",
+            "operation": {
+              "op": "multiply",
+              "inputs": [
+                { "op": "ref", "phase": "qso_points" },
+                { "op": "ref", "phase": "mult_callsigns" }
+              ]
+            }
+          }
+        ]
+      },
+
+      "cabrillo": {
+        "contest_name": "ICWC-MST",
+        "version": "3.0"
+      },
+
+      "categories": [
+        { "id": "single_op", "label": "Single Operator", "power_classes": ["HP", "LP", "QRP"] }
+      ]
+    },
+
+    {
+      "id": "cqww-cw",
+      "name": "CQ World Wide DX Contest – CW",
+      "short_name": "CQWW CW",
+      "sponsor": {
+        "name": "CQ Magazine",
+        "url": "https://cqww.com/"
+      },
+
+      "modes": ["CW"],
+      "bands": ["160m", "80m", "40m", "20m", "15m", "10m"],
+
+      "data_dependencies": {
+        "country_file": {
+          "id": "wl_cty_dat",
+          "url": "https://www.country-files.com/contest/",
+          "file": "wl_cty.dat",
+          "description": "Extended country file with CQ zone macros for multi-zone countries (CA, VE, VK, UA, etc). WAE entities (IT9, GM, GD, GU, GJ, etc.) counted as separate entities for multiplier purposes.",
+          "update_frequency": "before_each_contest",
+          "provides": ["their_country", "their_continent", "their_cq_zone", "their_itu_zone"],
+          "options": {
+            "wae_entities": true
+          }
+        },
+        "prefix_map": {
+          "id": "cqwwpre3",
+          "url": "https://www.country-files.com/contest/",
+          "file": "cqwwpre3.txt",
+          "description": "CQWW-specific prefix-to-entity mappings (~26k entries)",
+          "provides": ["callsign_to_entity_lookup"]
+        }
+      },
+
+      "schedule": {
+        "type": "annual",
+        "rule": "last_full_weekend_november",
+        "start_utc": "00:00",
+        "start_day": "saturday",
+        "duration_hours": 48
+      },
+
+      "exchange": {
+        "sent": [
+          { "name": "rst", "type": "signal_report", "label": "RST", "required": true },
+          {
+            "name": "cq_zone",
+            "type": "cq_zone",
+            "label": "CQ Zone",
+            "required": true,
+            "autofill": "station_cq_zone"
+          }
+        ],
+        "received": [
+          { "name": "rst", "type": "signal_report", "label": "RST", "required": true },
+          { "name": "cq_zone", "type": "cq_zone", "label": "CQ Zone", "required": true }
+        ]
+      },
+
+      "dupe_rules": {
+        "scope": "contest",
+        "key": ["callsign", "band"],
+        "zero_point_qsos_count_for_mults": true
+      },
+
+      "scoring": {
+        "phases": [
+          {
+            "id": "qso_points",
+            "type": "per_qso",
+            "description": "Ordered rules, first match wins",
+            "rules": [
+              {
+                "description": "Same country: 0 points",
+                "conditions": [
+                  { "field": "their_country", "op": "eq", "ref": "my_country" }
+                ],
+                "value": 0
+              },
+              {
+                "description": "Same continent, both in NA: 2 points",
+                "conditions": [
+                  { "field": "their_continent", "op": "eq", "ref": "my_continent" },
+                  { "field": "my_continent", "op": "eq", "value": "NA" }
+                ],
+                "value": 2
+              },
+              {
+                "description": "Same continent, not NA: 1 point",
+                "conditions": [
+                  { "field": "their_continent", "op": "eq", "ref": "my_continent" }
+                ],
+                "value": 1
+              },
+              {
+                "description": "Different continent: 3 points (default fallback)",
+                "conditions": [],
+                "value": 3
+              }
+            ]
+          },
+          {
+            "id": "mult_countries",
+            "type": "multiplier_count",
+            "description": "Unique WAE entities per band",
+            "source": "their_country",
+            "scope": "per_band",
+            "include_zero_point_qsos": true
+          },
+          {
+            "id": "mult_zones",
+            "type": "multiplier_count",
+            "description": "Unique CQ zones per band",
+            "source": "received.cq_zone",
+            "scope": "per_band",
+            "include_zero_point_qsos": true
+          },
+          {
+            "id": "total",
+            "type": "aggregate",
+            "operation": {
+              "op": "multiply",
+              "inputs": [
+                { "op": "ref", "phase": "qso_points" },
+                {
+                  "op": "add",
+                  "inputs": [
+                    { "op": "ref", "phase": "mult_countries" },
+                    { "op": "ref", "phase": "mult_zones" }
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      },
+
+      "operating_constraints": {
+        "off_time": {
+          "minimum_off_minutes": 30,
+          "maximum_on_hours_by_category": {
+            "SOAB": 36,
+            "SOSB": 36,
+            "MS": 48,
+            "M2": 48,
+            "MM": 48
+          }
+        },
+        "band_changes": {
+          "applies_to": ["MS"],
+          "min_minutes_on_band": 10,
+          "max_changes_per_clock_hour": 10
+        }
+      },
+
+      "cabrillo": {
+        "contest_name": "CQ-WW-CW",
+        "version": "3.0"
+      },
+
+      "categories": [
+        { "id": "SOAB", "label": "Single Op All Band", "power_classes": ["HIGH", "LOW", "QRP"] },
+        { "id": "SOSB-160", "label": "Single Op 160m", "band": "160m", "power_classes": ["HIGH", "LOW", "QRP"] },
+        { "id": "SOSB-80", "label": "Single Op 80m", "band": "80m", "power_classes": ["HIGH", "LOW", "QRP"] },
+        { "id": "SOSB-40", "label": "Single Op 40m", "band": "40m", "power_classes": ["HIGH", "LOW", "QRP"] },
+        { "id": "SOSB-20", "label": "Single Op 20m", "band": "20m", "power_classes": ["HIGH", "LOW", "QRP"] },
+        { "id": "SOSB-15", "label": "Single Op 15m", "band": "15m", "power_classes": ["HIGH", "LOW", "QRP"] },
+        { "id": "SOSB-10", "label": "Single Op 10m", "band": "10m", "power_classes": ["HIGH", "LOW", "QRP"] },
+        { "id": "MS", "label": "Multi-Single" },
+        { "id": "M2", "label": "Multi-Two" },
+        { "id": "MM", "label": "Multi-Multi" },
+        { "id": "EXPLORER", "label": "Explorer" }
+      ],
+
+      "overlay_categories": [
+        { "id": "CLASSIC", "label": "Classic Overlay", "max_on_hours": 24 },
+        { "id": "ROOKIE", "label": "Rookie Overlay", "max_license_years": 3 },
+        { "id": "TB-WIRES", "label": "Tribander/Wires Overlay" }
+      ]
+    }
+  ]
+}

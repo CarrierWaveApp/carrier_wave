@@ -1,0 +1,4 @@
+node_modules/
+dist/
+# OAuth tokens written by `login` — a credential, never commit.
+.cw-tokens.json

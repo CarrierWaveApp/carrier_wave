@@ -1,0 +1,85 @@
+{{ define "main" }}
+{{- $caps := .Params.capabilities | default dict -}}
+<article class="page-content macro-single">
+  <header class="page-header">
+    <h1>{{ .Title }}</h1>
+    <p class="macro-meta">
+      {{ with .Params.author_callsign }}<span>by <strong>{{ . }}</strong></span>{{ end }}
+      <span>v{{ .Params.version }} · format {{ .Params.format }}</span>
+      {{ with .Params.published_at }}<time datetime="{{ . }}">{{ . | dateFormat "Jan 2, 2006" }}</time>{{ end }}
+    </p>
+    <div class="macro-chips">
+      {{ if $caps.transmits }}<span class="chip chip-tx" title="Keys the transmitter">Transmits</span>{{ end }}
+      {{ if $caps.changesFrequency }}<span class="chip">Changes frequency</span>{{ end }}
+      {{ if $caps.changesMode }}<span class="chip">Changes mode</span>{{ end }}
+      {{ if $caps.changesPower }}<span class="chip">Changes power</span>{{ end }}
+      {{ if $caps.usesRawBytes }}<span class="chip chip-warn" title="Sends raw bytes to the radio">Raw bytes</span>{{ end }}
+    </div>
+  </header>
+
+  <section class="macro-actions">
+    <a class="macro-btn macro-btn-primary" href="cwmacro://import?slug={{ .Params.slug }}" rel="nofollow">Open in Carrier Wave</a>
+    <a class="macro-btn" href="mailto:hello@carrierwave.app?subject=Macro%20report:%20{{ .Params.slug }}">Report a problem</a>
+  </section>
+
+  {{ with .Params.description }}
+  <section class="macro-description">
+    <h2>About</h2>
+    <pre class="macro-plain">{{ . }}</pre>
+  </section>
+  {{ end }}
+
+  {{ with .Params.applies_to }}
+  <section class="macro-applies">
+    <h2>Works with</h2>
+    <ul class="macro-tag-list">
+      {{ range . }}<li class="chip">{{ . }}</li>{{ end }}
+    </ul>
+  </section>
+  {{ end }}
+
+  {{ with .Params.steps }}
+  <section class="macro-steps">
+    <h2>What it does</h2>
+    <ol class="macro-step-list">
+      {{ range $i, $step := . }}
+        {{ partial "macro-step.html" (dict "i" $i "step" $step) }}
+      {{ end }}
+    </ol>
+  </section>
+  {{ end }}
+
+  {{ with .Params.args }}
+  <section class="macro-args">
+    <h2>Arguments</h2>
+    <table class="macro-args-table">
+      <thead><tr><th>Name</th><th>Type</th><th>Min</th><th>Max</th></tr></thead>
+      <tbody>
+        {{ range . }}
+          <tr>
+            <td><code>{{ .name }}</code></td>
+            <td>{{ .type }}</td>
+            <td>{{ with .min }}{{ . }}{{ else }}—{{ end }}</td>
+            <td>{{ with .max }}{{ . }}{{ else }}—{{ end }}</td>
+          </tr>
+        {{ end }}
+      </tbody>
+    </table>
+  </section>
+  {{ end }}
+
+  {{ with .Params.tags }}
+  <section class="macro-tags">
+    <h2>Tags</h2>
+    <ul class="macro-tag-list">
+      {{ range . }}<li class="chip">{{ . }}</li>{{ end }}
+    </ul>
+  </section>
+  {{ end }}
+
+  <footer class="macro-footer">
+    <p>Slug: <code>{{ .Params.slug }}</code></p>
+    <p><a href="/macros/">← Back to all macros</a></p>
+  </footer>
+</article>
+{{ end }}

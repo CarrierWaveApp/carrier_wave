@@ -1,0 +1,154 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/contest-definition/v0.3",
+  "title": "Amateur Radio Contest Definition",
+  "version": "0.3.0",
+  "contests": [
+    {
+      "id": "k1usn-sst",
+      "name": "K1USN Slow Speed Test",
+      "short_name": "SST",
+      "sponsor": {
+        "name": "K1USN Radio Club",
+        "url": "https://www.k1usn.com/sst.html"
+      },
+      "modes": [
+        "CW"
+      ],
+      "bands": [
+        "160m",
+        "80m",
+        "40m",
+        "20m",
+        "15m",
+        "10m"
+      ],
+      "data_dependencies": {
+        "country_file": {
+          "id": "cty_dat",
+          "url": "https://www.country-files.com/contest/",
+          "file": "cty.dat",
+          "description": "Standard DXCC entity list for DX multiplier",
+          "update_frequency": "before_each_contest",
+          "provides": [
+            "their_country",
+            "their_continent"
+          ]
+        },
+        "section_list": {
+          "id": "sst_sections",
+          "description": "US states, Canadian provinces, and 'DX' as a single multiplier value for non-US/VE stations"
+        }
+      },
+      "schedule": {
+        "type": "recurring_weekly",
+        "sessions": [
+          {
+            "day": "monday",
+            "start_utc": "00:00",
+            "duration_minutes": 60
+          },
+          {
+            "day": "friday",
+            "start_utc": "20:00",
+            "duration_minutes": 60
+          }
+        ],
+        "session_scoring": "independent"
+      },
+      "exchange": {
+        "sent": [
+          {
+            "name": "name",
+            "type": "text",
+            "label": "Name",
+            "required": true
+          },
+          {
+            "name": "section",
+            "type": "section_list",
+            "label": "State/Province/DX",
+            "required": true,
+            "list": "us_states_ve_provinces_dx"
+          }
+        ],
+        "received": [
+          {
+            "name": "name",
+            "type": "text",
+            "label": "Name",
+            "required": true
+          },
+          {
+            "name": "section",
+            "type": "section_list",
+            "label": "State/Province/DX",
+            "required": true,
+            "list": "us_states_ve_provinces_dx"
+          }
+        ]
+      },
+      "dupe_rules": {
+        "scope": "session",
+        "key": [
+          "callsign",
+          "band"
+        ]
+      },
+      "scoring": {
+        "phases": [
+          {
+            "id": "qso_points",
+            "type": "per_qso",
+            "rules": [
+              {
+                "value": 1
+              }
+            ]
+          },
+          {
+            "id": "mult_sections",
+            "type": "multiplier_count",
+            "description": "Unique State/Province/DX values across all bands",
+            "source": "received.section",
+            "scope": "per_contest",
+            "include_zero_point_qsos": false
+          },
+          {
+            "id": "total",
+            "type": "aggregate",
+            "operation": {
+              "op": "multiply",
+              "inputs": [
+                {
+                  "op": "ref",
+                  "phase": "qso_points"
+                },
+                {
+                  "op": "ref",
+                  "phase": "mult_sections"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "cabrillo": {
+        "contest_name": "K1USN-SST",
+        "version": "3.0"
+      },
+      "categories": [
+        {
+          "id": "single_op",
+          "label": "Single Operator",
+          "power_classes": [
+            "HP",
+            "LP",
+            "QRP"
+          ]
+        }
+      ],
+      "experimental": true
+    }
+  ]
+}

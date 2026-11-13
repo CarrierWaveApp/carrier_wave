@@ -1,0 +1,23 @@
+{
+  "slug": "ft991a-voice-memory",
+  "name": "FT-991A voice memory 1",
+  "icon": "speaker.wave.2.fill",
+  "description": "Play voice memory P1 on a Yaesu FT-991A. Sends the 'BC' (Recall Memory) Kenwood-protocol-shaped command Yaesu accepts on its CAT port.",
+  "tags": ["ft-991a", "yaesu", "voice-memory"],
+  "appliesTo": ["kenwood"],
+  "capabilities": {
+    "transmits": true,
+    "changesFrequency": false,
+    "changesMode": false,
+    "changesPower": false,
+    "usesRawBytes": true
+  },
+  "args": [],
+  "steps": [
+    { "kind": "rawBytes", "protocol": "kenwood", "bytes": "54 58 3B" },
+    { "kind": "delay", "durationMs": 100 },
+    { "kind": "rawBytes", "protocol": "kenwood", "bytes": "52 58 3B" }
+  ],
+  "format": 2,
+  "status": "approved"
+}

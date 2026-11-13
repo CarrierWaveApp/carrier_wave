@@ -1,0 +1,337 @@
+import CarrierWaveData
+import SwiftData
+import SwiftUI
+
+// MARK: - FriendActivityCard
+
+/// Dashboard card showing recent friend activity feed items.
+struct FriendActivityCard: View {
+    // MARK: Internal
+
+    var onActivityTap: () -> Void = {}
+
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 30)) { _ in
+            VStack(alignment: .leading, spacing: 12) {
+                header
+                if friendActivities.isEmpty {
+                    emptyState
+                } else {
+                    activityRows
+                }
+            }
+            .padding()
+            .background(Color(.systemGray6))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+        }
+        .task {
+            // Refresh friend list (was a `@Query`, which fired body
+            // invalidations on every unrelated container save and tanked
+            // dashboard scroll perf). `.task` re-fires on view re-appear,
+            // which is enough — friendships change rarely.
+            loadAcceptedFriends()
+            guard !hasLoadedActivities
+                || acceptedFriends.count != loadedFriendCount
+            else {
+                return
+            }
+            hasLoadedActivities = true
+            loadedFriendCount = acceptedFriends.count
+            loadActivities()
+        }
+        .onReceive(
+            NotificationCenter.default.publisher(for: .didDetectActivities)
+        ) { _ in
+            loadActivities()
+        }
+        .onReceive(
+            NotificationCenter.default.publisher(for: .didSyncQSOs)
+        ) { _ in
+            loadActivities()
+        }
+    }
+
+    // MARK: Private
+
+    @Environment(\.modelContext) private var modelContext
+
+    /// `@State` + manual fetch instead of `@Query` — `@Query` observes every
+    /// container save and would invalidate this card's body on unrelated
+    /// CloudKit / QSO writes during dashboard scroll.
+    @State private var acceptedFriends: [Friendship] = []
+
+    @State private var friendActivities: [ActivityItem] = []
+    @State private var hasLoadedActivities = false
+    @State private var loadedFriendCount: Int = -1
+
+    private var friendCallsigns: Set<String> {
+        Set(acceptedFriends.map { $0.friendCallsign.uppercased() })
+    }
+
+    private var groupedActivities: [ActivityGroup] {
+        ActivityGrouping.group(friendActivities)
+    }
+
+    private var header: some View {
+        Button {
+            onActivityTap()
+        } label: {
+            HStack {
+                Image(systemName: "person.2.wave.2.fill")
+                    .foregroundStyle(.blue)
+                Text("Friend Activity")
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+                Spacer()
+                if !friendActivities.isEmpty {
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                }
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var emptyState: some View {
+        Text("No recent friend activity")
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+    }
+
+    private var activityRows: some View {
+        VStack(spacing: 8) {
+            ForEach(groupedActivities.prefix(3)) { group in
+                Button {
+                    onActivityTap()
+                } label: {
+                    compactGroupRow(group)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    private func compactGroupRow(_ group: ActivityGroup) -> some View {
+        let details = group.primaryItem.details
+        let single = !group.isConsolidated
+        return HStack(spacing: 8) {
+            Image(systemName: group.activityType.icon)
+                .font(.caption)
+                .foregroundStyle(iconColor(for: group.activityType))
+                .frame(width: 20)
+
+            VStack(alignment: .leading, spacing: 1) {
+                HStack(spacing: 4) {
+                    Text(group.callsign)
+                        .font(.subheadline.weight(.semibold).monospaced())
+                    if single, let band = details?.band {
+                        Text(band)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                    if single, let mode = details?.mode {
+                        Text(mode)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                HStack(spacing: 4) {
+                    Text(compactDescription(for: group))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                    if let count = details?.qsoCount, count > 0, single {
+                        Text("\(count) QSOs")
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+                if single, let subtitle = detailSubtitle(details) {
+                    Text(subtitle)
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                        .lineLimit(1)
+                }
+            }
+
+            Spacer()
+
+            Text(relativeTime(group.latestTimestamp))
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private func detailSubtitle(
+        _ details: ActivityDetails?
+    ) -> String? {
+        guard let details else {
+            return nil
+        }
+        var parts: [String] = []
+
+        // Park reference + name
+        if let park = details.parkReference {
+            parts.append(park)
+        }
+
+        // Personal best detail
+        if let recordType = details.recordType,
+           let recordValue = details.recordValue
+        {
+            parts.append(
+                formatPersonalBest(type: recordType, value: recordValue)
+            )
+        }
+
+        // Equipment summary
+        var equipment: [String] = []
+        if let rig = details.sessionRig, !rig.isEmpty {
+            equipment.append(rig)
+        }
+        if let antenna = details.sessionAntenna, !antenna.isEmpty {
+            equipment.append(antenna)
+        }
+        if !equipment.isEmpty {
+            parts.append(equipment.joined(separator: " · "))
+        }
+
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    }
+
+    private func formatPersonalBest(
+        type: String,
+        value: String
+    ) -> String {
+        switch type {
+        case "distance":
+            "\(value) farthest"
+        case "qsos_in_day":
+            "\(value) QSOs in a day"
+        case "qsos_in_session":
+            "\(value) QSOs in a session"
+        case "dxcc_in_day":
+            "\(value) DXCC in a day"
+        case "bands_in_session":
+            "\(value) bands in a session"
+        default:
+            "\(type): \(value)"
+        }
+    }
+
+    private func compactDescription(for group: ActivityGroup) -> String {
+        if group.isConsolidated {
+            switch group.activityType {
+            case .dxContact:
+                return "Worked \(group.count) DX stations"
+            case .workedFriend:
+                let uniqueFriends = Set(group.items.compactMap { $0.details?.workedCallsign }).count
+                return "Worked \(uniqueFriends) friend\(uniqueFriends == 1 ? "" : "s")"
+            case .newDXCCEntity:
+                return "\(group.count) new DXCC entities"
+            case .newBand:
+                return "\(group.count) new bands"
+            case .newMode:
+                return "\(group.count) new modes"
+            default:
+                return group.activityType.displayName
+            }
+        }
+
+        let item = group.primaryItem
+        let details = item.details
+        switch item.activityType {
+        case .dxContact:
+            return enrichedDXDescription(details)
+        case .workedFriend:
+            return enrichedFriendDescription(details)
+        default:
+            return item.activityType.displayName
+        }
+    }
+
+    private func enrichedDXDescription(
+        _ details: ActivityDetails?
+    ) -> String {
+        var desc = "DX"
+        if let callsign = details?.workedCallsign {
+            desc = callsign
+        }
+        if let entity = details?.workedEntity, !entity.isEmpty {
+            desc += " · \(entity)"
+        }
+        return desc
+    }
+
+    private func enrichedFriendDescription(
+        _ details: ActivityDetails?
+    ) -> String {
+        if let callsign = details?.workedCallsign {
+            if let name = details?.workedName, !name.isEmpty {
+                return "Worked \(callsign) (\(name))"
+            }
+            return "Worked \(callsign)"
+        }
+        return "Worked Friend"
+    }
+
+    private func iconColor(for type: ActivityType) -> Color {
+        switch type {
+        case .newDXCCEntity,
+             .dxContact: .blue
+        case .potaActivation: .green
+        case .sotaActivation: .brown
+        case .dailyStreak,
+             .potaDailyStreak: .orange
+        case .personalBest: .purple
+        case .workedFriend: .pink
+        case .newBand,
+             .newMode: .teal
+        case .sessionCompleted: .green
+        }
+    }
+
+    private func relativeTime(_ date: Date) -> String {
+        let interval = Date().timeIntervalSince(date)
+        if interval < 60 {
+            return "now"
+        } else if interval < 3_600 {
+            let mins = Int(interval / 60)
+            return "\(mins)m"
+        } else if interval < 86_400 {
+            let hours = Int(interval / 3_600)
+            return "\(hours)h"
+        } else {
+            let days = Int(interval / 86_400)
+            return "\(days)d"
+        }
+    }
+
+    // MARK: - Data Loading
+
+    /// One-shot fetch of accepted Friendships. Replaces a `@Query` that
+    /// fired body invalidations on every unrelated container save.
+    private func loadAcceptedFriends() {
+        acceptedFriends = FriendsSyncService.shared.acceptedFriends
+    }
+
+    private func loadActivities() {
+        guard !friendCallsigns.isEmpty else {
+            friendActivities = []
+            return
+        }
+
+        var descriptor = FetchDescriptor<ActivityItem>(
+            predicate: #Predicate { !$0.isOwn },
+            sortBy: [SortDescriptor(\ActivityItem.timestamp, order: .reverse)]
+        )
+        descriptor.fetchLimit = 50
+
+        let all = (try? modelContext.fetch(descriptor)) ?? []
+        friendActivities = Array(
+            all.filter { friendCallsigns.contains($0.callsign.uppercased()) }
+                .prefix(3)
+        )
+    }
+}

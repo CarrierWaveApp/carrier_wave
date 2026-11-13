@@ -1,0 +1,13 @@
+# Build output
+target/
+sat-core/target/
+
+# Generated config (sdkconfig.defaults is the source of truth)
+sdkconfig
+
+# IDE / tool caches
+.cache/
+.claude/
+
+# Local ESP-IDF + toolchain cache (embuild)
+.embuild/

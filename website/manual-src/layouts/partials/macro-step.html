@@ -1,0 +1,34 @@
+{{- /* Renders a single RadioMacroStep as a human-readable list item.
+       Input: dict with keys `i` (zero-based index) and `step` (the step
+       object — see server/src/macros/verifier_generated.rs for kinds). */ -}}
+{{- $s := .step -}}
+<li class="macro-step macro-step-{{ $s.kind }}">
+  <span class="macro-step-num">{{ add .i 1 }}.</span>
+  <span class="macro-step-body">
+  {{- if eq $s.kind "setFrequency" -}}
+    Tune to <strong>{{ printf "%.4f" (div (float $s.hz) 1000000.0) }} MHz</strong>
+  {{- else if eq $s.kind "setMode" -}}
+    Switch to mode <strong>{{ $s.mode }}</strong>
+  {{- else if eq $s.kind "setPowerWatts" -}}
+    Set output power to <strong>{{ $s.watts }} W</strong>
+  {{- else if eq $s.kind "setPTT" -}}
+    {{ if $s.on }}<strong>Press PTT</strong> (transmit){{ else }}<strong>Release PTT</strong>{{ end }}
+  {{- else if eq $s.kind "sendCW" -}}
+    Send CW: <code>{{ $s.text }}</code>
+  {{- else if eq $s.kind "delay" -}}
+    Wait <strong>{{ printf "%.2f" (div (float $s.durationMs) 1000.0) }} s</strong>
+  {{- else if eq $s.kind "vendorCommand" -}}
+    Vendor command: <code>{{ $s.commandId }}</code>
+  {{- else if eq $s.kind "rawBytes" -}}
+    <span class="macro-warn">⚠</span> Raw bytes ({{ $s.protocol }}): <code>{{ $s.bytes }}</code>
+  {{- else if eq $s.kind "readField" -}}
+    Read radio field <code>{{ $s.field }}</code> into variable <code>{{ $s.into }}</code>
+  {{- else if eq $s.kind "waitUntil" -}}
+    Wait until <code>{{ $s.expr }}</code> (timeout {{ $s.timeoutMs }} ms)
+  {{- else if eq $s.kind "assert" -}}
+    Assert <code>{{ $s.expr }}</code> — fail with: <em>{{ $s.message }}</em>
+  {{- else -}}
+    Unknown step: <code>{{ $s.kind }}</code>
+  {{- end -}}
+  </span>
+</li>

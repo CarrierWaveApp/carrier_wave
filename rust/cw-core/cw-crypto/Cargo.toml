@@ -1,0 +1,16 @@
+[package]
+name = "cw-crypto"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+description = "Carrier Wave client-side E2E crypto primitives (Argon2id KDF, ChaCha20Poly1305 AEAD, key wrap, passphrase escrow)"
+
+[dependencies]
+argon2 = "0.5"
+chacha20poly1305 = "0.10"
+rand = "0.8"
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+zeroize = "1"

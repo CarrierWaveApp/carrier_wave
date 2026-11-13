@@ -1,0 +1,5 @@
+[toolchain]
+# The espup "esp" channel is a nightly with rust-src; the ESP32-P4 is RISC-V
+# (riscv32imafc), so no Xtensa fork is required — but the esp channel keeps
+# this crate on the same toolchain as firmware/.
+channel = "esp"

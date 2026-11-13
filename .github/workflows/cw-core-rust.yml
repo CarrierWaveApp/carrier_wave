@@ -1,0 +1,113 @@
+name: cw-core (Rust)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'rust/cw-core/**'
+      - '.github/workflows/cw-core-rust.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'rust/cw-core/**'
+      - '.github/workflows/cw-core-rust.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Build, test, clippy
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: rust/cw-core
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        with:
+          components: clippy, rustfmt
+
+      # Cache OpenSSL + SQLCipher vendored builds — first build is ~90s, cached
+      # subsequent runs drop to seconds.
+      - name: Cache cargo registry + target
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            rust/cw-core/target
+          key: cw-core-${{ runner.os }}-cargo-${{ hashFiles('rust/cw-core/Cargo.lock') }}
+          restore-keys: |
+            cw-core-${{ runner.os }}-cargo-
+
+      # cargo fmt is deferred until a workspace-wide `cargo fmt --all` pass is
+      # done in a separate PR (today's tree has accumulated drift). Add the
+      # check here once that's landed.
+
+      - name: cargo clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: cargo test --workspace
+        run: cargo test --workspace --locked
+
+      - name: cargo clippy (testing feature)
+        run: cargo clippy -p cw-store --features testing --all-targets -- -D warnings
+
+      - name: cargo test (durability suite)
+        run: cargo test -p cw-store --features testing --locked -- --test-threads=1
+
+  xcframework:
+    name: Build CwFfi.xcframework + Swift parity tests
+    runs-on: macos-15
+    needs: test
+    defaults:
+      run:
+        working-directory: rust/cw-core
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain (Apple targets)
+        uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        with:
+          targets: >-
+            aarch64-apple-ios,
+            aarch64-apple-ios-sim,
+            aarch64-apple-darwin,
+            x86_64-apple-darwin
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            rust/cw-core/target
+          key: cw-core-xcframework-${{ runner.os }}-${{ hashFiles('rust/cw-core/Cargo.lock') }}
+          restore-keys: |
+            cw-core-xcframework-${{ runner.os }}-
+
+      - name: Build XCFramework + stage into CarrierWaveCore
+        run: ./scripts/build-xcframework.sh
+
+      - name: Swift parity + durability tests
+        working-directory: swift/packages/CarrierWaveCore
+        run: |
+          swift test --filter QueryAnalyzerRustParityTests
+          swift test --filter MaidenheadRustParityTests
+          swift build --product LogDurabilityCrasher
+          swift test --filter LogDurabilityTests
+
+      - name: Upload XCFramework artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: CwFfi-xcframework
+          path: rust/cw-core/target/xcframework/CwFfi.xcframework
+          if-no-files-found: error
+          retention-days: 14

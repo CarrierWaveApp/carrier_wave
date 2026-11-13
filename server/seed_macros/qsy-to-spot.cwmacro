@@ -1,0 +1,25 @@
+{
+  "slug": "qsy-to-spot",
+  "name": "QSY to spot",
+  "icon": "waveform",
+  "description": "Tune the rig to a freshly-clicked spot's frequency and mode. Default values match a 40m CW QSO; the editor swaps in the spot's actual values at run time.",
+  "tags": ["qsy", "hunter", "cw"],
+  "appliesTo": ["civ"],
+  "capabilities": {
+    "transmits": false,
+    "changesFrequency": true,
+    "changesMode": true,
+    "changesPower": false,
+    "usesRawBytes": false
+  },
+  "args": [
+    { "name": "freq", "type": "frequency", "min": 100000, "max": 250000000000 },
+    { "name": "mode", "type": "mode" }
+  ],
+  "steps": [
+    { "kind": "setFrequency", "hz": 7032000 },
+    { "kind": "setMode", "mode": "CW" }
+  ],
+  "format": 2,
+  "status": "approved"
+}

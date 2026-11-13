@@ -1,0 +1,207 @@
+{
+  "version": 1,
+  "commands": [
+    {
+      "id": "ya.vfoA",
+      "label": "Set VFO-A Frequency",
+      "protocol": "yaesu",
+      "category": "frequency",
+      "supports": ["FT-857", "FT-897", "FT-817", "FT-991", "FT-991A", "FT-710", "FT-DX10", "FT-DX101"],
+      "params": [
+        { "name": "hz", "label": "Frequency (Hz)", "type": "frequency",
+          "min": 30000, "max": 470000000, "encoding": "dec9", "default": "14074000" }
+      ],
+      "template": "FA{hz};",
+      "notes": "VFO-A tune. Encoded as 9 decimal digits with leading zeros."
+    },
+    {
+      "id": "ya.vfoB",
+      "label": "Set VFO-B Frequency",
+      "protocol": "yaesu",
+      "category": "frequency",
+      "supports": ["FT-857", "FT-897", "FT-817", "FT-991", "FT-991A", "FT-710", "FT-DX10", "FT-DX101"],
+      "params": [
+        { "name": "hz", "label": "Frequency (Hz)", "type": "frequency",
+          "min": 30000, "max": 470000000, "encoding": "dec9", "default": "14074000" }
+      ],
+      "template": "FB{hz};",
+      "notes": "VFO-B tune. Same encoding as VFO-A."
+    },
+    {
+      "id": "ya.mode",
+      "label": "Set Operating Mode",
+      "protocol": "yaesu",
+      "category": "mode",
+      "supports": ["FT-857", "FT-897", "FT-817", "FT-991", "FT-991A", "FT-710", "FT-DX10", "FT-DX101"],
+      "params": [
+        { "name": "mode", "label": "Mode", "type": "enum", "default": "USB",
+          "values": [
+            { "id": "LSB", "label": "LSB", "encoded": "1" },
+            { "id": "USB", "label": "USB", "encoded": "2" },
+            { "id": "CW", "label": "CW", "encoded": "3" },
+            { "id": "FM", "label": "FM", "encoded": "4" },
+            { "id": "AM", "label": "AM", "encoded": "5" },
+            { "id": "RTTY-LSB", "label": "RTTY-LSB", "encoded": "6" },
+            { "id": "CW-R", "label": "CW-R", "encoded": "7" },
+            { "id": "DATA-LSB", "label": "DATA-LSB", "encoded": "8" },
+            { "id": "RTTY-USB", "label": "RTTY-USB", "encoded": "9" },
+            { "id": "DATA-FM", "label": "DATA-FM", "encoded": "A" },
+            { "id": "FM-N", "label": "FM-N", "encoded": "B" },
+            { "id": "DATA-USB", "label": "DATA-USB", "encoded": "C" },
+            { "id": "AM-N", "label": "AM-N", "encoded": "D" }
+          ]
+        }
+      ],
+      "template": "MD0{mode};",
+      "notes": "Mode codes vary slightly between Yaesu generations; this set covers FT-991A / FT-DX series."
+    },
+    {
+      "id": "ya.ptt",
+      "label": "PTT (Transmit) On/Off",
+      "protocol": "yaesu",
+      "category": "ptt",
+      "supports": ["FT-857", "FT-897", "FT-817", "FT-991", "FT-991A", "FT-710", "FT-DX10", "FT-DX101"],
+      "params": [
+        { "name": "on", "label": "Transmit", "type": "bool", "default": "false" }
+      ],
+      "template": "TX{on};",
+      "notes": "TX0 = receive, TX1 = transmit. Some older Yaesu radios accept only TX/RX (no argument)."
+    },
+    {
+      "id": "ya.power",
+      "label": "Set Power (watts)",
+      "protocol": "yaesu",
+      "category": "power",
+      "supports": ["FT-991", "FT-991A", "FT-710", "FT-DX10", "FT-DX101"],
+      "params": [
+        { "name": "watts", "label": "Watts", "type": "uint8",
+          "min": 5, "max": 100, "encoding": "dec3", "default": "005" }
+      ],
+      "template": "PC{watts};",
+      "notes": "Power encoded as 3 decimal digits. Range varies by radio (5–100 W typical)."
+    },
+    {
+      "id": "ya.split",
+      "label": "Split On/Off",
+      "protocol": "yaesu",
+      "category": "vfo",
+      "supports": ["FT-857", "FT-897", "FT-991", "FT-991A", "FT-710", "FT-DX10", "FT-DX101"],
+      "params": [
+        { "name": "enabled", "label": "Enabled", "type": "bool", "default": "false" }
+      ],
+      "template": "FT{enabled};",
+      "notes": "FT0 = simplex (TX from VFO-A), FT1 = split (TX from VFO-B)."
+    },
+    {
+      "id": "ya.rit",
+      "label": "RIT (Clarifier) On/Off",
+      "protocol": "yaesu",
+      "category": "rit-xit",
+      "supports": ["FT-991", "FT-991A", "FT-710", "FT-DX10", "FT-DX101"],
+      "params": [
+        { "name": "enabled", "label": "Enabled", "type": "bool", "default": "false" }
+      ],
+      "template": "RT{enabled};",
+      "notes": "Yaesu calls RIT the 'Clarifier'."
+    },
+    {
+      "id": "ya.xit",
+      "label": "XIT On/Off",
+      "protocol": "yaesu",
+      "category": "rit-xit",
+      "supports": ["FT-991", "FT-991A", "FT-710", "FT-DX10", "FT-DX101"],
+      "params": [
+        { "name": "enabled", "label": "Enabled", "type": "bool", "default": "false" }
+      ],
+      "template": "XT{enabled};"
+    },
+    {
+      "id": "ya.clearRit",
+      "label": "Clear RIT/Clarifier",
+      "protocol": "yaesu",
+      "category": "rit-xit",
+      "supports": ["FT-991", "FT-991A", "FT-710", "FT-DX10", "FT-DX101"],
+      "params": [],
+      "template": "RC;",
+      "notes": "Zeroes the clarifier offset."
+    },
+    {
+      "id": "ya.noiseBlanker",
+      "label": "Noise Blanker",
+      "protocol": "yaesu",
+      "category": "noise",
+      "supports": ["FT-991", "FT-991A", "FT-710", "FT-DX10", "FT-DX101"],
+      "params": [
+        { "name": "enabled", "label": "Enabled", "type": "bool", "default": "false" }
+      ],
+      "template": "NB0{enabled};"
+    },
+    {
+      "id": "ya.preamp",
+      "label": "Preamp / IPO",
+      "protocol": "yaesu",
+      "category": "rx",
+      "supports": ["FT-991", "FT-991A", "FT-710", "FT-DX10", "FT-DX101"],
+      "params": [
+        { "name": "state", "label": "State", "type": "enum", "default": "IPO",
+          "values": [
+            { "id": "IPO",  "label": "IPO (off)", "encoded": "0" },
+            { "id": "AMP1", "label": "AMP1",      "encoded": "1" },
+            { "id": "AMP2", "label": "AMP2",      "encoded": "2" }
+          ]
+        }
+      ],
+      "template": "PA0{state};",
+      "notes": "IPO = Intercept Point Optimization (preamp bypassed). AMP1/AMP2 stages vary by model."
+    },
+    {
+      "id": "ya.attenuator",
+      "label": "Attenuator",
+      "protocol": "yaesu",
+      "category": "rx",
+      "supports": ["FT-991", "FT-991A", "FT-710", "FT-DX10", "FT-DX101"],
+      "params": [
+        { "name": "enabled", "label": "Enabled", "type": "bool", "default": "false" }
+      ],
+      "template": "RA0{enabled};"
+    },
+    {
+      "id": "ya.agc",
+      "label": "AGC Speed",
+      "protocol": "yaesu",
+      "category": "rx",
+      "supports": ["FT-991", "FT-991A", "FT-710", "FT-DX10", "FT-DX101"],
+      "params": [
+        { "name": "speed", "label": "Speed", "type": "enum", "default": "AUTO",
+          "values": [
+            { "id": "OFF",  "label": "Off",  "encoded": "0" },
+            { "id": "FAST", "label": "Fast", "encoded": "1" },
+            { "id": "MID",  "label": "Mid",  "encoded": "2" },
+            { "id": "SLOW", "label": "Slow", "encoded": "3" },
+            { "id": "AUTO", "label": "Auto", "encoded": "4" }
+          ]
+        }
+      ],
+      "template": "GT0{speed};"
+    },
+    {
+      "id": "ya.vfoSwap",
+      "label": "Swap VFO A/B",
+      "protocol": "yaesu",
+      "category": "vfo",
+      "supports": ["FT-991", "FT-991A", "FT-710", "FT-DX10", "FT-DX101"],
+      "params": [],
+      "template": "SV;",
+      "notes": "Single-shot — swaps the contents of VFO-A and VFO-B."
+    },
+    {
+      "id": "ya.aToB",
+      "label": "Copy A → B",
+      "protocol": "yaesu",
+      "category": "vfo",
+      "supports": ["FT-991", "FT-991A", "FT-710", "FT-DX10", "FT-DX101"],
+      "params": [],
+      "template": "AB;"
+    }
+  ]
+}

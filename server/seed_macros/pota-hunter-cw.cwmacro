@@ -1,0 +1,25 @@
+{
+  "slug": "pota-hunter-cw",
+  "name": "POTA hunter CW",
+  "icon": "antenna.radiowaves.left.and.right",
+  "description": "QSY to a POTA spot and send a one-shot CQ exchange on CW: TU 73. Caller's callsign is sent from the radio's keyer memory; this macro only ends the QSO politely.",
+  "tags": ["pota", "hunter", "cw"],
+  "appliesTo": ["civ"],
+  "capabilities": {
+    "transmits": true,
+    "changesFrequency": true,
+    "changesMode": true,
+    "changesPower": false,
+    "usesRawBytes": false
+  },
+  "args": [
+    { "name": "freq", "type": "frequency", "min": 100000, "max": 250000000000 }
+  ],
+  "steps": [
+    { "kind": "setFrequency", "hz": 14060000 },
+    { "kind": "setMode", "mode": "CW" },
+    { "kind": "sendCW", "text": "TU 73" }
+  ],
+  "format": 2,
+  "status": "approved"
+}

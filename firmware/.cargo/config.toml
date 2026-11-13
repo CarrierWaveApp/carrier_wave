@@ -1,0 +1,20 @@
+[build]
+target = "xtensa-esp32s3-espidf"
+
+[target.xtensa-esp32s3-espidf]
+linker = "ldproxy"
+runner = "espflash flash --monitor"
+
+[unstable]
+build-std = ["std", "panic_abort"]
+
+[env]
+MCU = "esp32s3"
+ESP_IDF_SDKCONFIG_DEFAULTS = "sdkconfig.defaults"
+# Pin ESP-IDF to v5.4. The previous (unpinned) build resolved to v5.2.3,
+# whose external-hub support is gated under IDF_EXPERIMENTAL_FEATURES and
+# self-described as "Feature is under development" — plugging a hub-class
+# device (Yaesu FTX-1, FT-991A, Icom IC-705) into the bridge wedges the
+# host stack. v5.4 ships stable hub support via CONFIG_USB_HOST_HUBS_SUPPORTED,
+# which is what sdkconfig.defaults already configures.
+ESP_IDF_VERSION = "v5.4"

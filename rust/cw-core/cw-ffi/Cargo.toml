@@ -1,0 +1,53 @@
+[package]
+name = "cw-ffi"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+description = "Carrier Wave UniFFI surface — the single cross-language boundary"
+
+[lib]
+# `cdylib` is what iOS/Android link; `staticlib` is what we bundle into the
+# XCFramework for the Apple platforms; `lib`/`rlib` keeps it usable from
+# Rust tests and downstream Rust crates.
+crate-type = ["cdylib", "staticlib", "lib"]
+
+# Library-mode uniffi-bindgen — see https://mozilla.github.io/uniffi-rs/0.28/tutorial/foreign_language_bindings.html
+# Lets `cargo run --bin uniffi-bindgen` generate bindings without a separately
+# installed CLI, so the toolchain stays pinned to the workspace lockfile.
+[[bin]]
+name = "uniffi-bindgen"
+path = "src/bin/uniffi-bindgen.rs"
+
+[dependencies]
+cw-crypto = { path = "../cw-crypto" }
+cw-domain = { path = "../cw-domain" }
+cw-sat-core = { path = "../../../firmware-sat/sat-core" }
+cw-net = { path = "../cw-net" }
+cw-sdr = { path = "../cw-sdr" }
+cw-store = { path = "../cw-store" }
+cw-sync = { path = "../cw-sync" }
+chrono = { workspace = true }
+uuid = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+base64 = "0.22"
+# FCC amateur-callsign bundle (ReferenceDataApi): gunzip the downloaded
+# SQLite and verify its SHA-256 (sha2 version matches cw-net's).
+flate2 = "1"
+sha2 = "0.10"
+# Spot engine scope DB (in-memory, unencrypted). Same crate + features as
+# cw-store so the workspace links exactly one bundled SQLCipher.
+rusqlite = { version = "0.32", features = ["bundled-sqlcipher-vendored-openssl", "functions"] }
+# Async UniFFI exports (the clubs API) are driven on a tokio runtime; reqwest
+# inside cw-net needs the net + time reactors. `macros` is for the WSJT-X
+# listener's `select!` (receive vs. shutdown) and `#[tokio::test]`.
+tokio = { version = "1", features = ["rt-multi-thread", "sync", "time", "net", "macros"] }
+uniffi = { version = "0.31", features = ["cli", "tokio"] }
+
+[dev-dependencies]
+# On-disk temp store for the offline-recovery decrypt proof.
+tempfile = "3"
+# Mock activities-server for the OAuth poll-resilience tests.
+wiremock = "0.6"

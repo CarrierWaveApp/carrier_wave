@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>US-0348 Huron National Wildlife Refuge — PAD-US Boundaries</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: #0f172a; color: #e2e8f0; }
+  #map { height: 55vh; width: 100%; }
+  .panel { max-width: 1200px; margin: 0 auto; padding: 20px; }
+  h1 { font-size: 1.4rem; margin-bottom: 4px; color: #f8fafc; }
+  .subtitle { color: #94a3b8; font-size: 0.9rem; margin-bottom: 16px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 800px) { .grid { grid-template-columns: 1fr; } }
+  .card { background: #1e293b; border-radius: 10px; padding: 16px; border: 1px solid #334155; }
+  .card h2 { font-size: 1.1rem; margin-bottom: 10px; color: #f1f5f9; }
+  .card h3 { font-size: 0.95rem; margin: 12px 0 6px; color: #cbd5e1; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  th, td { text-align: left; padding: 5px 8px; border-bottom: 1px solid #334155; }
+  th { color: #94a3b8; font-weight: 500; }
+  td { color: #e2e8f0; }
+  .swatch { display: inline-block; width: 14px; height: 14px; border-radius: 3px; vertical-align: middle; margin-right: 6px; border: 1px solid rgba(255,255,255,0.2); }
+  .legend-item { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 0.85rem; }
+  .status { padding: 10px; text-align: center; color: #94a3b8; font-size: 0.9rem; }
+  dl { font-size: 0.85rem; }
+  dt { color: #94a3b8; font-weight: 600; margin-top: 8px; }
+  dd { color: #e2e8f0; margin-left: 0; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<div class="panel">
+  <h1>US-0348 — Huron National Wildlife Refuge</h1>
+  <p class="subtitle">All PAD-US polygons and classifications for this POTA park in Michigan</p>
+
+  <div class="grid">
+    <div class="card" id="features-card">
+      <h2>Polygons from PAD-US</h2>
+      <div class="status" id="status">Loading from PAD-US ArcGIS API…</div>
+      <div id="features-table"></div>
+    </div>
+
+    <div class="card">
+      <h2>Classification Reference</h2>
+
+      <h3>FeatClass (Feature Class)</h3>
+      <p style="font-size:0.83rem; color:#94a3b8; margin-bottom:8px;">
+        How the land is protected. Each parcel in PAD-US is categorized by its protection mechanism:
+      </p>
+      <div id="legend"></div>
+
+      <h3 style="margin-top:16px;">Des_Tp (Designation Type)</h3>
+      <p style="font-size:0.83rem; color:#94a3b8; margin-bottom:8px;">
+        The official land designation — what kind of protected area it is:
+      </p>
+      <table>
+        <tr><th>Code</th><th>Meaning</th></tr>
+        <tr><td>NWR</td><td>National Wildlife Refuge — managed by USFWS for wildlife conservation</td></tr>
+        <tr><td>NP</td><td>National Park — managed by NPS, highest protection level</td></tr>
+        <tr><td>NF</td><td>National Forest — managed by USFS, multiple-use (timber, recreation, conservation)</td></tr>
+        <tr><td>NM</td><td>National Monument — designated by presidential proclamation or Congress</td></tr>
+        <tr><td>NRA</td><td>National Recreation Area — managed primarily for recreation</td></tr>
+        <tr><td>NSBV</td><td>National Scenic/Byway/Vista</td></tr>
+        <tr><td>NLS</td><td>National Lakeshore / National Seashore</td></tr>
+        <tr><td>SP</td><td>State Park — state-managed recreation and conservation</td></tr>
+        <tr><td>SW</td><td>State Wilderness</td></tr>
+        <tr><td>SRMA</td><td>Special Recreation Management Area</td></tr>
+        <tr><td>WA</td><td>Wilderness Area (federal)</td></tr>
+        <tr><td>WSA</td><td>Wilderness Study Area</td></tr>
+        <tr><td>RNA</td><td>Research Natural Area</td></tr>
+        <tr><td>ACEC</td><td>Area of Critical Environmental Concern</td></tr>
+        <tr><td>IRA</td><td>Inventoried Roadless Area</td></tr>
+      </table>
+
+      <h3 style="margin-top:16px;">Match Quality</h3>
+      <p style="font-size:0.83rem; color:#94a3b8;">
+        In the challenges server, <strong>match_quality</strong> indicates how the boundary was matched to the POTA reference:
+      </p>
+      <dl>
+        <dt>exact</dt><dd>Park name matched a PAD-US record by name + state</dd>
+        <dt>spatial</dt><dd>No name match; found via point-in-polygon using the park's lat/lon coordinates</dd>
+        <dt>manual</dt><dd>Manually corrected or linked by an admin</dd>
+        <dt>none</dt><dd>No boundary could be found in PAD-US for this park</dd>
+      </dl>
+    </div>
+  </div>
+</div>
+
+<script>
+const PADUS_URL = 'https://services.arcgis.com/v01gqwM5QqNysAAi/arcgis/rest/services/Manager_Name_PADUS/FeatureServer/0';
+
+// Colors for FeatClass categories
+const FEAT_CLASS_COLORS = {
+  'Designation':  { color: '#22d3ee', fill: '#22d3ee', label: 'Designation — land with a specific legal designation (e.g., Wilderness, NWR). Highest protection.' },
+  'Fee':          { color: '#a78bfa', fill: '#a78bfa', label: 'Fee — land owned outright (fee simple) by a government agency or NGO.' },
+  'Easement':     { color: '#fb923c', fill: '#fb923c', label: 'Easement — private land with conservation easements restricting development.' },
+  'Proclamation': { color: '#f472b6', fill: '#f472b6', label: 'Proclamation — proclaimed boundary (e.g., National Forest boundary), may include private inholdings.' },
+  'Marine':       { color: '#34d399', fill: '#34d399', label: 'Marine — protected marine/aquatic areas.' },
+  'Other':        { color: '#fbbf24', fill: '#fbbf24', label: 'Other / Unknown — does not fit standard categories.' },
+};
+
+const FALLBACK_COLOR = '#94a3b8';
+
+// Initialize map centered on approximate location of Huron NWR (Huron Islands, Lake Superior)
+const map = L.map('map').setView([46.96, -87.85], 11);
+
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a> | Data: <a href="https://www.usgs.gov/programs/gap-analysis-project/science/pad-us-data-overview">PAD-US 4.0</a>',
+  maxZoom: 19
+}).addTo(map);
+
+// Build legend
+const legendEl = document.getElementById('legend');
+for (const [cls, info] of Object.entries(FEAT_CLASS_COLORS)) {
+  const div = document.createElement('div');
+  div.className = 'legend-item';
+  div.innerHTML = `<span class="swatch" style="background:${info.fill}"></span><span><strong>${cls}</strong> — ${info.label.split(' — ')[1] || ''}</span>`;
+  legendEl.appendChild(div);
+}
+
+async function loadFeatures() {
+  const statusEl = document.getElementById('status');
+  const tableEl = document.getElementById('features-table');
+
+  try {
+    // Query PAD-US for "Huron" in Michigan — returns ALL parcels
+    const where = encodeURIComponent("Loc_Nm LIKE '%Huron%' AND State_Nm = 'MI'");
+    const url = `${PADUS_URL}/query?where=${where}&outFields=Loc_Nm,Unit_Nm,Mang_Name,Des_Tp,GIS_Acres,FeatClass&f=geojson&outSR=4326`;
+
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const geojson = await resp.json();
+
+    const features = geojson.features || [];
+    if (features.length === 0) {
+      statusEl.textContent = 'No features returned from PAD-US for this query.';
+      return;
+    }
+
+    // Filter to only NWR features (Huron National Wildlife Refuge)
+    const nwrFeatures = features.filter(f => {
+      const p = f.properties || {};
+      const name = (p.Loc_Nm || p.Unit_Nm || '').toLowerCase();
+      return name.includes('huron') && (
+        (p.Des_Tp || '').toUpperCase() === 'NWR' ||
+        (p.Mang_Name || '').toLowerCase().includes('fish and wildlife') ||
+        name.includes('wildlife') ||
+        name.includes('nwr')
+      );
+    });
+
+    // Use NWR features if found, otherwise show all Huron results
+    const displayFeatures = nwrFeatures.length > 0 ? nwrFeatures : features;
+
+    statusEl.textContent = `${displayFeatures.length} polygon(s) returned` +
+      (nwrFeatures.length > 0 && nwrFeatures.length < features.length
+        ? ` (filtered from ${features.length} total "Huron" results in MI)`
+        : '');
+
+    // Group by FeatClass for summary
+    const groups = {};
+
+    // Add each feature to the map
+    const allBounds = L.latLngBounds();
+
+    displayFeatures.forEach((feature, i) => {
+      const props = feature.properties || {};
+      const featClass = props.FeatClass || 'Other';
+      const colorInfo = FEAT_CLASS_COLORS[featClass] || { color: FALLBACK_COLOR, fill: FALLBACK_COLOR };
+
+      if (!groups[featClass]) groups[featClass] = [];
+      groups[featClass].push(props);
+
+      const layer = L.geoJSON(feature, {
+        style: {
+          color: colorInfo.color,
+          fillColor: colorInfo.fill,
+          fillOpacity: 0.35,
+          weight: 2,
+          opacity: 0.9,
+        }
+      });
+
+      layer.bindPopup(`
+        <div style="font-family:sans-serif;font-size:13px;max-width:300px;">
+          <strong>${props.Loc_Nm || 'Unknown'}</strong><br>
+          <strong>Unit:</strong> ${props.Unit_Nm || '—'}<br>
+          <strong>FeatClass:</strong> <span style="color:${colorInfo.color};font-weight:600">${featClass}</span><br>
+          <strong>Des_Tp:</strong> ${props.Des_Tp || '—'}<br>
+          <strong>Manager:</strong> ${props.Mang_Name || '—'}<br>
+          <strong>Acres:</strong> ${props.GIS_Acres ? props.GIS_Acres.toLocaleString(undefined, {maximumFractionDigits: 1}) : '—'}
+        </div>
+      `);
+
+      layer.addTo(map);
+
+      try {
+        allBounds.extend(layer.getBounds());
+      } catch (e) { /* point geometry */ }
+    });
+
+    if (allBounds.isValid()) {
+      map.fitBounds(allBounds, { padding: [40, 40], maxZoom: 14 });
+    }
+
+    // Build features table grouped by FeatClass
+    let html = '';
+    for (const [cls, items] of Object.entries(groups)) {
+      const colorInfo = FEAT_CLASS_COLORS[cls] || { fill: FALLBACK_COLOR };
+      html += `<h3><span class="swatch" style="background:${colorInfo.fill}"></span>${cls} (${items.length} parcel${items.length > 1 ? 's' : ''})</h3>`;
+      html += '<table><tr><th>Name</th><th>Des_Tp</th><th>Manager</th><th>Acres</th></tr>';
+      for (const p of items) {
+        html += `<tr>
+          <td>${p.Loc_Nm || p.Unit_Nm || '—'}</td>
+          <td>${p.Des_Tp || '—'}</td>
+          <td>${p.Mang_Name || '—'}</td>
+          <td>${p.GIS_Acres ? p.GIS_Acres.toLocaleString(undefined, {maximumFractionDigits: 1}) : '—'}</td>
+        </tr>`;
+      }
+      html += '</table>';
+    }
+
+    // Summary
+    const totalAcres = displayFeatures.reduce((sum, f) => sum + (f.properties?.GIS_Acres || 0), 0);
+    html += `<p style="margin-top:12px;font-size:0.85rem;color:#94a3b8;">
+      Total across all parcels: <strong style="color:#e2e8f0">${totalAcres.toLocaleString(undefined, {maximumFractionDigits: 1})} acres</strong>
+    </p>`;
+
+    tableEl.innerHTML = html;
+
+  } catch (err) {
+    statusEl.textContent = `Error loading data: ${err.message}`;
+    console.error(err);
+  }
+}
+
+loadFeatures();
+</script>
+</body>
+</html>

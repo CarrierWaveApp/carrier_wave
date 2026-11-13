@@ -1,0 +1,111 @@
+{
+  "version": "0.3.0",
+  "contests": [
+    {
+      "id": "nccc-ft4-ns",
+      "name": "NCCC FT4 Sprint",
+      "short_name": "FT4 NS",
+      "sponsor": {
+        "name": "Northern California Contest Club",
+        "url": "https://www.ncccsprint.com/ft4ns.html"
+      },
+      "modes": [
+        "DIGITAL"
+      ],
+      "bands": [
+        "160m",
+        "80m",
+        "40m",
+        "20m",
+        "15m",
+        "10m",
+        "6m"
+      ],
+      "schedule": {
+        "type": "recurring_weekly",
+        "sessions": [
+          {
+            "day": "friday",
+            "start_utc": "01:00",
+            "duration_minutes": 30
+          }
+        ],
+        "session_scoring": "independent"
+      },
+      "exchange": {
+        "sent": [
+          {
+            "name": "grid",
+            "type": "grid_square",
+            "label": "Grid",
+            "required": true
+          }
+        ],
+        "received": [
+          {
+            "name": "grid",
+            "type": "grid_square",
+            "label": "Grid",
+            "required": true
+          }
+        ]
+      },
+      "dupe_rules": {
+        "scope": "session",
+        "key": [
+          "callsign",
+          "band"
+        ]
+      },
+      "scoring": {
+        "phases": [
+          {
+            "id": "qso_points",
+            "type": "per_qso",
+            "rules": [
+              {
+                "value": 1
+              }
+            ]
+          },
+          {
+            "id": "mult_grids",
+            "type": "multiplier_count",
+            "description": "Unique 4-character grid squares per band",
+            "source": "received.grid",
+            "scope": "per_band",
+            "include_zero_point_qsos": false
+          },
+          {
+            "id": "total",
+            "type": "aggregate",
+            "operation": {
+              "op": "multiply",
+              "inputs": [
+                {
+                  "op": "ref",
+                  "phase": "qso_points"
+                },
+                {
+                  "op": "ref",
+                  "phase": "mult_grids"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "cabrillo": {
+        "contest_name": "NCCC-SPRINT-FT4",
+        "version": "3.0"
+      },
+      "categories": [
+        {
+          "id": "single_op",
+          "label": "Single Operator"
+        }
+      ],
+      "experimental": true
+    }
+  ]
+}

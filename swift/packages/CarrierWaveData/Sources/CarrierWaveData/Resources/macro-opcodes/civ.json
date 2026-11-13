@@ -1,0 +1,15 @@
+{
+  "protocol": "civ",
+  "$comment": "Icom CI-V opcode->capability table. ?? = wildcard byte. Matching is substring (window slides across raw-bytes payload). Patterns derived from CI-V Reference Guide for IC-7300/IC-705/IC-7610/IC-9700.",
+  "opcodes": [
+    { "match": "1C 00 01",       "capabilities": { "transmits": true },  "comment": "PTT on" },
+    { "match": "1C 00 00",       "capabilities": { "transmits": false }, "comment": "PTT off (still flagged as usesRawBytes by step kind)" },
+    { "match": "05 ?? ?? ?? ??", "capabilities": { "changesFrequency": true }, "comment": "Set operating frequency (LSB-first 5-byte BCD)" },
+    { "match": "00 ?? ?? ?? ??", "capabilities": { "changesFrequency": true }, "comment": "Set operating frequency (transceive)" },
+    { "match": "06 ??",          "capabilities": { "changesMode": true }, "comment": "Set operating mode" },
+    { "match": "14 0A ?? ??",    "capabilities": { "changesPower": true }, "comment": "RF power level" },
+    { "match": "21 00",          "capabilities": {}, "comment": "RIT frequency offset (no PA key)" },
+    { "match": "21 01",          "capabilities": {}, "comment": "RIT on/off" },
+    { "match": "21 02",          "capabilities": {}, "comment": "XIT on/off" }
+  ]
+}

@@ -1,0 +1,65 @@
+# -----------------------------------------------
+# Target
+# -----------------------------------------------
+CONFIG_IDF_TARGET="esp32p4"
+
+# -----------------------------------------------
+# Bluetooth / NimBLE — HOST ONLY, controller on the onboard ESP32-C6
+# -----------------------------------------------
+# The ESP32-P4 has no BT radio. This board (Waveshare P4 devkit) carries an
+# ESP32-C6 co-processor on SDIO running the ESP-Hosted slave firmware; the
+# esp_hosted component (see Cargo.toml extra_components) provides the
+# transport, brings the C6's BT controller up over RPC, and binds NimBLE to
+# the HCI byte-pipe (ble.rs calls esp_hosted_init / connect_to_slave /
+# esp_hosted_bt_host_stack_setup before nimble_port_init). The board uses
+# ESP-Hosted's default P4 SDIO wiring (CLK=18 CMD=19 D0-D3=14-17 C6-RST=54),
+# so no pin overrides are needed here.
+CONFIG_ESP_HOSTED=y
+CONFIG_ESP_HOSTED_HOST_FEAT_BT=y
+CONFIG_BT_ENABLED=y
+CONFIG_BT_CONTROLLER_DISABLED=y
+CONFIG_BT_NIMBLE_ENABLED=y
+CONFIG_BT_NIMBLE_TRANSPORT_UART=n
+# Mirror the esp_hosted bleprph_minimal example's tested feature set.
+CONFIG_BT_NIMBLE_42_FEATURE_SUPPORT=y
+CONFIG_BT_NIMBLE_50_FEATURE_SUPPORT=n
+CONFIG_BT_NIMBLE_MAX_CONNECTIONS=1
+CONFIG_BT_NIMBLE_ROLE_CENTRAL=n
+CONFIG_BT_NIMBLE_ROLE_OBSERVER=n
+CONFIG_BT_NIMBLE_ROLE_BROADCASTER=y
+CONFIG_BT_NIMBLE_ROLE_PERIPHERAL=y
+
+# Security manager stays disabled — same open-peripheral posture as the S3
+# bridge (see firmware/src/ble.rs init() comment), and a headless board has
+# nowhere to display a passkey.
+CONFIG_BT_NIMBLE_NVS_PERSIST=y
+CONFIG_BT_NIMBLE_MAX_BONDS=4
+CONFIG_BT_NIMBLE_MAX_CCCDS=8
+
+# -----------------------------------------------
+# USB Host — ESP32-P4 native OTG PHY
+# -----------------------------------------------
+CONFIG_USB_OTG_SUPPORTED=y
+CONFIG_USB_HOST_CONTROL_TRANSFER_MAX_SIZE=1024
+CONFIG_USB_HOST_HUBS_SUPPORTED=y
+CONFIG_USB_HOST_HUB_MULTI_LEVEL=y
+CONFIG_USB_HOST_ENABLE_ENUM_FILTER_CALLBACK=y
+
+# -----------------------------------------------
+# FreeRTOS
+# -----------------------------------------------
+CONFIG_FREERTOS_HZ=1000
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=8192
+
+# -----------------------------------------------
+# Logging
+# -----------------------------------------------
+CONFIG_LOG_DEFAULT_LEVEL_INFO=y
+CONFIG_BT_NIMBLE_LOG_LEVEL_WARNING=y
+
+# -----------------------------------------------
+# Flash (16 MB on the connected P4 board) + single large app partition
+# -----------------------------------------------
+CONFIG_ESPTOOLPY_FLASHSIZE_16MB=y
+CONFIG_ESPTOOLPY_FLASHSIZE="16MB"
+CONFIG_PARTITION_TABLE_SINGLE_APP_LARGE=y

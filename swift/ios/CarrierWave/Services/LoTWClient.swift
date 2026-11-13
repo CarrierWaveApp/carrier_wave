@@ -1,0 +1,425 @@
+import CarrierWaveData
+import Foundation
+
+// MARK: - LoTWResponse
+
+struct LoTWResponse {
+    let qsos: [LoTWFetchedQSO]
+    let lastQSL: Date?
+    let lastQSORx: Date?
+    let recordCount: Int
+}
+
+// MARK: - LoTWFetchedQSO
+
+struct LoTWFetchedQSO {
+    let callsign: String
+    let band: String
+    let mode: String
+    let frequency: Double?
+    let timestamp: Date
+    let rstSent: String?
+    let rstReceived: String?
+    let myCallsign: String?
+    let myGrid: String?
+    let theirGrid: String?
+    let state: String?
+    let country: String?
+    let dxcc: Int?
+    let qslReceived: Bool
+    let qslReceivedDate: Date?
+    let rawADIF: String
+}
+
+// MARK: - LoTWClient
+
+@MainActor
+final class LoTWClient {
+    // MARK: Internal
+
+    let keychain = KeychainHelper.shared
+
+    let baseURL = "https://lotw.arrl.org/lotwuser/lotwreport.adi"
+    let userAgent = "CarrierWave/1.0"
+
+    /// URLSession configured with generous timeout for large LoTW queries
+    /// API docs recommend 120+ seconds as large logs can take 30-60+ seconds to generate
+    let session: URLSession = {
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 180 // 3 minutes for request
+        config.timeoutIntervalForResource = 300 // 5 minutes total
+        return URLSession(configuration: config)
+    }()
+
+    /// Maximum retry attempts for transient network errors (SSL cert, connection reset, etc.)
+    let maxTransientRetries = 3
+
+    // MARK: - Configuration
+
+    var isConfigured: Bool {
+        (try? keychain.readString(for: KeychainHelper.Keys.lotwUsername)) != nil
+            && (try? keychain.readString(for: KeychainHelper.Keys.lotwPassword)) != nil
+    }
+
+    /// Perform a URLSession data request with automatic retries for transient errors.
+    /// LoTW's server occasionally returns invalid SSL certificates on the first attempt.
+    func dataWithRetry(for request: URLRequest) async throws -> (Data, URLResponse) {
+        let debugLog = SyncDebugLog.shared
+        var lastError: Error?
+
+        for attempt in 1 ... maxTransientRetries {
+            do {
+                return try await session.data(for: request)
+            } catch let urlError as URLError where urlError.isTransient {
+                lastError = urlError
+                let delay = UInt64(1 << attempt) // 2s, 4s, 8s
+                debugLog.warning(
+                    "Transient error (attempt \(attempt)/\(maxTransientRetries)): "
+                        + "\(urlError.localizedDescription), retrying in \(delay)s",
+                    service: .lotw
+                )
+                try await Task.sleep(nanoseconds: delay * 1_000_000_000)
+            }
+        }
+        throw lastError!
+    }
+
+    // MARK: - Credential Management
+
+    func saveCredentials(username: String, password: String) throws {
+        try keychain.save(username, for: KeychainHelper.Keys.lotwUsername)
+        try keychain.save(password, for: KeychainHelper.Keys.lotwPassword)
+    }
+
+    func getCredentials() throws -> (username: String, password: String) {
+        let username = try keychain.readString(for: KeychainHelper.Keys.lotwUsername)
+        let password = try keychain.readString(for: KeychainHelper.Keys.lotwPassword)
+        return (username, password)
+    }
+
+    func hasCredentials() -> Bool {
+        do {
+            _ = try getCredentials()
+            return true
+        } catch {
+            return false
+        }
+    }
+
+    func clearCredentials() {
+        try? keychain.delete(for: KeychainHelper.Keys.lotwUsername)
+        try? keychain.delete(for: KeychainHelper.Keys.lotwPassword)
+        try? keychain.delete(for: KeychainHelper.Keys.lotwLastQSL)
+        try? keychain.delete(for: KeychainHelper.Keys.lotwLastQSORx)
+    }
+
+    // MARK: - Sync Timestamps
+
+    func getLastQSORxDate() -> Date? {
+        guard let dateString = try? keychain.readString(for: KeychainHelper.Keys.lotwLastQSORx)
+        else {
+            return nil
+        }
+        return ISO8601DateFormatter().date(from: dateString)
+    }
+
+    func saveLastQSORxDate(_ date: Date) throws {
+        let dateString = ISO8601DateFormatter().string(from: date)
+        try keychain.save(dateString, for: KeychainHelper.Keys.lotwLastQSORx)
+    }
+
+    func getLastQSLSinceDate() -> Date? {
+        guard let dateString = try? keychain.readString(for: KeychainHelper.Keys.lotwLastQSL)
+        else {
+            return nil
+        }
+        return ISO8601DateFormatter().date(from: dateString)
+    }
+
+    func saveLastQSLSinceDate(_ date: Date) throws {
+        let dateString = ISO8601DateFormatter().string(from: date)
+        try keychain.save(dateString, for: KeychainHelper.Keys.lotwLastQSL)
+    }
+
+    // MARK: - API Methods
+
+    /// Fetch QSOs for all specified callsigns with adaptive date windowing
+    /// - Parameter callsigns: Callsigns to fetch QSOs for. If empty, fetches all QSOs for the account.
+    /// - Parameter qsoRxSince: Only fetch QSOs uploaded after this date
+    func fetchQSOs(forCallsigns callsigns: [String] = [], qsoRxSince: Date? = nil) async throws
+        -> LoTWResponse
+    {
+        let credentials = try getCredentials()
+
+        // Use provided date or default to 2000-01-01 for first sync
+        let startDate =
+            qsoRxSince ?? DateComponents(
+                calendar: Calendar(identifier: .gregorian),
+                year: 2_000, month: 1, day: 1
+            ).date!
+
+        let endDate = Date()
+
+        // If no callsigns specified, fetch all (original behavior)
+        if callsigns.isEmpty {
+            return try await fetchQSOsForCallsign(
+                nil, credentials: credentials, startDate: startDate, endDate: endDate
+            )
+        }
+
+        // Fetch QSOs for each callsign and combine results
+        return try await fetchQSOsForMultipleCallsigns(
+            callsigns, credentials: credentials, startDate: startDate, endDate: endDate
+        )
+    }
+
+    // Confirmation fetch methods are in LoTWClient+Confirmations.swift
+
+    /// Test credentials by fetching recent QSLs only
+    func testCredentials(username: String, password: String) async throws {
+        var components = URLComponents(string: baseURL)!
+
+        // Use a recent date to minimize data transfer
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        dateFormatter.timeZone = TimeZone(identifier: "UTC")
+        let recentDate = Calendar.current.date(byAdding: .day, value: -7, to: Date())!
+
+        components.queryItems = [
+            URLQueryItem(name: "login", value: username),
+            URLQueryItem(name: "password", value: password),
+            URLQueryItem(name: "qso_query", value: "1"),
+            URLQueryItem(name: "qso_qsl", value: "yes"),
+            URLQueryItem(name: "qso_qslsince", value: dateFormatter.string(from: recentDate)),
+        ]
+
+        var request = URLRequest(url: components.url!)
+        request.setValue(userAgent, forHTTPHeaderField: "User-Agent")
+
+        let (data, response) = try await dataWithRetry(for: request)
+
+        // Check HTTP status code first - LoTW uses 403/503 for rate limiting
+        if let httpResponse = response as? HTTPURLResponse {
+            let statusCode = httpResponse.statusCode
+            if statusCode == 403 || statusCode == 503 {
+                throw LoTWError.serviceError("HTTP \(statusCode) - rate limited")
+            } else if statusCode != 200 {
+                throw LoTWError.serviceError("HTTP \(statusCode)")
+            }
+        }
+
+        guard let responseString = String(data: data, encoding: .utf8) else {
+            throw LoTWError.invalidResponse("Cannot decode response as UTF-8")
+        }
+
+        guard responseString.contains("<EOH>") || responseString.contains("<eoh>") else {
+            if isAuthenticationError(responseString) {
+                throw LoTWError.authenticationFailed
+            }
+            throw LoTWError.serviceError(String(responseString.prefix(200)))
+        }
+    }
+
+    /// Fetch QSOs for a specific date range and optional callsign filter
+    /// Note: Only uses qso_qsorxsince for filtering. The API's qso_enddate filters by QSO date
+    /// (when contact occurred), not by upload/receipt date, so we don't use it for windowing.
+    /// Progress is tracked by advancing qso_qsorxsince based on APP_LoTW_LASTQSORX from responses.
+    /// - Parameter ownCall: If provided, filters to QSOs where the user operated as this callsign
+    func fetchQSOsForDateRange(
+        credentials: (username: String, password: String),
+        startDate: Date,
+        endDate _: Date?,
+        ownCall: String? = nil
+    ) async throws -> LoTWResponse {
+        var components = URLComponents(string: baseURL)!
+
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        dateFormatter.timeZone = TimeZone(identifier: "UTC")
+
+        // Note: We intentionally don't use qso_enddate here. That parameter filters by QSO date
+        // (when the contact occurred), but qso_qsorxsince filters by upload/receipt date (when
+        // LoTW received the QSO). These are different fields and mixing them causes issues.
+        // Instead, we rely solely on qso_qsorxsince and track progress via APP_LoTW_LASTQSORX.
+        var queryItems: [URLQueryItem] = [
+            URLQueryItem(name: "login", value: credentials.username),
+            URLQueryItem(name: "password", value: credentials.password),
+            URLQueryItem(name: "qso_query", value: "1"),
+            URLQueryItem(name: "qso_qsl", value: "no"),
+            URLQueryItem(name: "qso_qsorxsince", value: dateFormatter.string(from: startDate)),
+            URLQueryItem(name: "qso_mydetail", value: "yes"),
+            URLQueryItem(name: "qso_qsldetail", value: "yes"),
+            URLQueryItem(name: "qso_withown", value: "yes"),
+        ]
+
+        // Filter by station callsign if provided (for multi-callsign sync)
+        if let ownCall, !ownCall.isEmpty {
+            queryItems.append(URLQueryItem(name: "qso_owncall", value: ownCall))
+        }
+
+        components.queryItems = queryItems
+
+        var request = URLRequest(url: components.url!)
+        request.setValue(userAgent, forHTTPHeaderField: "User-Agent")
+
+        let (data, response) = try await dataWithRetry(for: request)
+
+        // Check HTTP status code first - LoTW uses 403/503 for rate limiting
+        if let httpResponse = response as? HTTPURLResponse {
+            let statusCode = httpResponse.statusCode
+            if statusCode == 403 || statusCode == 503 {
+                throw LoTWError.serviceError("HTTP \(statusCode) - rate limited")
+            } else if statusCode != 200 {
+                throw LoTWError.serviceError("HTTP \(statusCode)")
+            }
+        }
+
+        guard let responseString = String(data: data, encoding: .utf8) else {
+            throw LoTWError.invalidResponse("Cannot decode response as UTF-8")
+        }
+
+        // Check for EOH tag to verify success
+        guard responseString.contains("<EOH>") || responseString.contains("<eoh>") else {
+            if isAuthenticationError(responseString) {
+                throw LoTWError.authenticationFailed
+            }
+            throw LoTWError.serviceError(String(responseString.prefix(200)))
+        }
+
+        return parseADIFResponse(responseString)
+    }
+
+    /// Check if error message indicates rate limiting
+    /// LoTW uses both 403 (Forbidden) and 503 (Service Unavailable) for rate limiting
+    func isRateLimitError(_ message: String) -> Bool {
+        let lowercased = message.lowercased()
+        return lowercased.contains("page request limit")
+            || lowercased.contains("rate limit")
+            || lowercased.contains("too many requests")
+            || lowercased.contains("503")
+            || lowercased.contains("error 503")
+            || lowercased.contains("403")
+            || lowercased.contains("forbidden")
+    }
+
+    /// Format date for logging
+    func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.timeZone = TimeZone(identifier: "UTC")
+        return formatter.string(from: date)
+    }
+
+    // fetchConfirmationsForCallsign is in LoTWClient+Confirmations.swift
+
+    /// Check if response indicates authentication failure
+    /// LoTW returns HTML error pages, so we check for various auth-related error strings
+    func isAuthenticationError(_ response: String) -> Bool {
+        let lowercased = response.lowercased()
+        return lowercased.contains("password incorrect")
+            || lowercased.contains("username not found")
+            || lowercased.contains("invalid login")
+            || lowercased.contains("login failed")
+            || lowercased.contains("authentication failed")
+            || lowercased.contains("not authorized")
+            || lowercased.contains("access denied")
+    }
+
+    // MARK: Private
+
+    /// Fetch QSOs for multiple callsigns and combine results
+    private func fetchQSOsForMultipleCallsigns(
+        _ callsigns: [String],
+        credentials: (username: String, password: String),
+        startDate: Date,
+        endDate: Date
+    ) async throws -> LoTWResponse {
+        let debugLog = SyncDebugLog.shared
+        var allQSOs: [LoTWFetchedQSO] = []
+        var latestQSL: Date?
+        var latestQSORx: Date?
+
+        debugLog.info(
+            "Fetching LoTW QSOs for \(callsigns.count) callsign(s): \(callsigns.joined(separator: ", "))",
+            service: .lotw
+        )
+
+        for callsign in callsigns {
+            debugLog.info("Fetching QSOs for callsign: \(callsign)", service: .lotw)
+
+            let response = try await fetchQSOsForCallsign(
+                callsign, credentials: credentials, startDate: startDate, endDate: endDate
+            )
+
+            debugLog.info("Fetched \(response.qsos.count) QSOs for \(callsign)", service: .lotw)
+            allQSOs.append(contentsOf: response.qsos)
+
+            // Track the latest timestamps across all callsigns
+            if let qsl = response.lastQSL, latestQSL == nil || qsl > latestQSL! {
+                latestQSL = qsl
+            }
+            if let rx = response.lastQSORx, latestQSORx == nil || rx > latestQSORx! {
+                latestQSORx = rx
+            }
+
+            // Rate limit protection between callsigns
+            if callsign != callsigns.last {
+                try await Task.sleep(nanoseconds: 3_000_000_000)
+            }
+        }
+
+        debugLog.info(
+            "Total: \(allQSOs.count) QSOs across \(callsigns.count) callsign(s)", service: .lotw
+        )
+
+        return LoTWResponse(
+            qsos: allQSOs, lastQSL: latestQSL, lastQSORx: latestQSORx, recordCount: allQSOs.count
+        )
+    }
+
+    /// Fetch QSOs for a single callsign (or all if nil)
+    /// Tries a single request first; falls back to adaptive windowing on rate limit.
+    private func fetchQSOsForCallsign(
+        _ callsign: String?,
+        credentials: (username: String, password: String),
+        startDate: Date,
+        endDate: Date
+    ) async throws -> LoTWResponse {
+        let daysBetween =
+            Calendar.current.dateComponents([.day], from: startDate, to: endDate).day ?? 0
+
+        // Small range — single request is always fine
+        if daysBetween <= 30 {
+            return try await fetchQSOsForDateRange(
+                credentials: credentials, startDate: startDate, endDate: nil, ownCall: callsign
+            )
+        }
+
+        // Larger range — try single request first, most logs fit in one response
+        let debugLog = SyncDebugLog.shared
+        debugLog.info(
+            "Trying single request for \(daysBetween)-day range before adaptive windowing",
+            service: .lotw
+        )
+        do {
+            return try await fetchQSOsForDateRange(
+                credentials: credentials, startDate: startDate, endDate: nil, ownCall: callsign
+            )
+        } catch let error as LoTWError {
+            if case let .serviceError(message) = error, isRateLimitError(message) {
+                debugLog.info(
+                    "Single request rate-limited, falling back to adaptive windowing",
+                    service: .lotw
+                )
+                try await Task.sleep(nanoseconds: 5_000_000_000)
+                return try await fetchQSOsWithAdaptiveWindowing(
+                    credentials: credentials,
+                    startDate: startDate,
+                    endDate: endDate,
+                    ownCall: callsign
+                )
+            }
+            throw error
+        }
+    }
+}

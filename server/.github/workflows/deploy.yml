@@ -1,0 +1,82 @@
+name: Deploy
+
+on:
+  # Called by the release workflow after Ansible config is updated
+  workflow_call:
+    inputs:
+      version:
+        description: "Release tag (e.g. v0.4.40)"
+        required: true
+        type: string
+
+  # Allow manual trigger for rollbacks or re-deploys
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release tag to deploy (e.g. v0.4.39)"
+        required: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Determine version
+        id: version
+        run: echo "tag=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout Ansible repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ vars.ANSIBLE_REPO }}
+          ssh-key: ${{ secrets.ANSIBLE_REPO_DEPLOY_KEY }}
+          path: ansible
+
+      - name: Install Ansible
+        run: pip install ansible
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Run Ansible playbook
+        working-directory: ansible
+        run: |
+          ansible-playbook site.yml \
+            -i inventory/hosts.yml \
+            --tags activities-server
+        env:
+          ANSIBLE_HOST_KEY_CHECKING: "false"
+
+      - name: Smoke test
+        run: |
+          for i in $(seq 1 15); do
+            if curl -sf "${{ vars.PRODUCTION_URL }}/v1/health" > /dev/null 2>&1; then
+              echo "Health check passed"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Health check failed after 30s"
+          exit 1
+
+      - name: Annotate Grafana deploy
+        if: success()
+        run: |
+          curl -sf -X POST "${{ vars.GRAFANA_URL }}/api/annotations" \
+            -H "Authorization: Bearer ${{ secrets.GRAFANA_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"text\": \"Deploy ${{ steps.version.outputs.tag }}\",
+              \"tags\": [\"deploy\", \"challenges-server\"]
+            }"
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "::error::Deployment of ${{ steps.version.outputs.tag }} failed!"
+          # Add Slack/Discord webhook notification here if desired

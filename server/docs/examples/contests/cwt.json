@@ -1,0 +1,165 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/contest-definition/v0.3",
+  "title": "Amateur Radio Contest Definition",
+  "version": "0.3.0",
+  "contests": [
+    {
+      "id": "cwops-cwt",
+      "name": "CWops Mini-CWT Test",
+      "short_name": "CWT",
+      "sponsor": {
+        "name": "CW Operators' Club",
+        "url": "https://cwops.org/cwops-tests/"
+      },
+      "modes": [
+        "CW"
+      ],
+      "bands": [
+        "160m",
+        "80m",
+        "40m",
+        "20m",
+        "15m",
+        "10m"
+      ],
+      "data_dependencies": {
+        "country_file": {
+          "id": "cty_dat",
+          "url": "https://www.country-files.com/contest/",
+          "file": "cty.dat",
+          "description": "Standard DXCC entity list — prefix to entity/zone/continent mapping",
+          "update_frequency": "before_each_contest",
+          "provides": [
+            "their_country",
+            "their_continent",
+            "their_cq_zone",
+            "their_itu_zone"
+          ]
+        }
+      },
+      "schedule": {
+        "type": "recurring_weekly",
+        "sessions": [
+          {
+            "day": "wednesday",
+            "start_utc": "13:00",
+            "duration_minutes": 60
+          },
+          {
+            "day": "wednesday",
+            "start_utc": "19:00",
+            "duration_minutes": 60
+          },
+          {
+            "day": "thursday",
+            "start_utc": "03:00",
+            "duration_minutes": 60
+          }
+        ],
+        "session_scoring": "independent"
+      },
+      "exchange": {
+        "sent": [
+          {
+            "name": "name",
+            "type": "text",
+            "label": "Name",
+            "required": true
+          },
+          {
+            "name": "identifier",
+            "type": "text",
+            "label": "CWops # or S/P/C",
+            "required": true
+          }
+        ],
+        "received": [
+          {
+            "name": "name",
+            "type": "text",
+            "label": "Name",
+            "required": true
+          },
+          {
+            "name": "identifier",
+            "type": "text",
+            "label": "CWops # or S/P/C",
+            "required": true
+          }
+        ]
+      },
+      "dupe_rules": {
+        "scope": "session",
+        "key": [
+          "callsign",
+          "band"
+        ]
+      },
+      "scoring": {
+        "phases": [
+          {
+            "id": "qso_points",
+            "type": "per_qso",
+            "rules": [
+              {
+                "value": 1
+              }
+            ]
+          },
+          {
+            "id": "mult_callsigns",
+            "type": "multiplier_count",
+            "description": "Unique callsigns worked across all bands",
+            "source": "their_callsign",
+            "scope": "per_contest",
+            "include_zero_point_qsos": false
+          },
+          {
+            "id": "total",
+            "type": "aggregate",
+            "operation": {
+              "op": "multiply",
+              "inputs": [
+                {
+                  "op": "ref",
+                  "phase": "qso_points"
+                },
+                {
+                  "op": "ref",
+                  "phase": "mult_callsigns"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "cabrillo": {
+        "contest_name": "CWT",
+        "version": "3.0"
+      },
+      "categories": [
+        {
+          "id": "single_op",
+          "label": "Single Operator",
+          "power_classes": [
+            "HP",
+            "LP",
+            "QRP"
+          ]
+        }
+      ],
+      "overlay_categories": [
+        {
+          "id": "SO2R",
+          "label": "SO2R"
+        },
+        {
+          "id": "REMOTE",
+          "label": "Remote"
+        }
+      ],
+      "experimental": true
+    }
+  ]
+}

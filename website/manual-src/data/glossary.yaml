@@ -1,0 +1,94 @@
+# Carrier Wave Manual - Glossary
+# Format: Term: "Definition"
+
+Activity Log: "A hunter-focused daily QSO tracking mode that doesn't require starting or stopping logging sessions."
+
+ADIF: "Amateur Data Interchange Format - a standard file format for exchanging amateur radio log data between programs."
+
+Band: "A range of radio frequencies allocated for amateur radio use (e.g., 20 meters, 40 meters, 2 meters)."
+
+Brag Sheet: "A shareable image card summarizing a POTA activation with map, stats, equipment, and conditions."
+
+Callsign: "A unique identifier assigned to a licensed amateur radio operator (e.g., W1AW, K6TEST)."
+
+CloudKit: "Apple's framework for syncing data across devices via iCloud."
+
+Club Log: "A popular amateur radio logging service with bidirectional ADIF sync, used especially for DX tracking."
+
+Confirmation: "When both stations in a QSO submit matching log entries, confirming the contact occurred."
+
+Contest: "A competitive event where operators try to make as many contacts as possible in a set time period."
+
+CW: "Continuous Wave - another term for Morse code communication."
+
+DX: "Long-distance communication, typically referring to contacts with stations in other countries."
+
+DXCC: "DX Century Club - an award for confirming contacts with 100 or more DXCC entities (countries)."
+
+Dynamic Island: "An iOS interface element at the top of the screen that displays real-time information from Live Activities."
+
+FT8: "A digital mode designed for weak-signal communication, popular for making contacts with minimal power."
+
+Grid Square: "A location identifier using the Maidenhead Locator System (e.g., FN31 for the Boston area)."
+
+HF: "High Frequency - radio frequencies from 3 to 30 MHz, used for long-distance communication."
+
+KiwiSDR: "A software-defined radio receiver that can be accessed remotely via web browser or WebSocket connection."
+
+Live Activity: "An iOS feature that displays real-time information on the lock screen and Dynamic Island during an active logging session."
+
+LoFi: "Ham2K LoFi - a cloud logging service for amateur radio operators."
+
+LoTW: "Logbook of The World - ARRL's system for confirming contacts electronically."
+
+Mode: "The type of transmission used (e.g., SSB, CW, FM, FT8)."
+
+N-fer: "Activating multiple overlapping parks simultaneously (two-fer for 2, three-fer for 3, etc.), logging each QSO to all parks."
+
+P2P: "Park to Park - a contact between two POTA activators both operating from parks."
+
+POTA: "Parks on the Air - a program encouraging portable operation from parks and public lands."
+
+Professional Statistician Mode: "An optional mode that adds extended charts and statistical analysis to POTA activation details and brag sheets."
+
+QRM: "Man-made interference on a frequency."
+
+QRZ: "\"Who is calling?\" - also the name of a popular callsign lookup and logging website."
+
+QSL: "Confirmation of a contact, traditionally via postcard but now often electronic."
+
+QSO: "A contact or conversation between two amateur radio stations."
+
+QTH: "Your location or station address."
+
+RBN: "Reverse Beacon Network - a network of receiving stations that automatically spot CW and digital signals."
+
+Rove: "A POTA operating style where you activate multiple parks in a single session, moving between stops."
+
+RST: "Readability, Signal Strength, Tone - a system for reporting signal quality during a contact."
+
+Spot: "A report of a station's activity, including their callsign, frequency, and mode."
+
+SSB: "Single Sideband - a voice mode commonly used on HF bands."
+
+Station Profile: "A reusable equipment configuration (radio, antenna, key, microphone) used in the Activity Log."
+
+SwiftData: "Apple's framework for data persistence in iOS/macOS apps."
+
+Sync: "The process of uploading or downloading log data between the app and cloud services."
+
+Two-fer: "Activating two overlapping parks simultaneously, with each QSO counting toward both park activations."
+
+UHF: "Ultra High Frequency - radio frequencies from 300 MHz to 3 GHz."
+
+UTC: "Coordinated Universal Time - the standard time zone used for logging amateur radio contacts."
+
+VHF: "Very High Frequency - radio frequencies from 30 to 300 MHz."
+
+WAS: "Worked All States - an award for confirming contacts with all 50 US states."
+
+WebSDR: "A software-defined radio receiver accessible over the internet, used in Carrier Wave for remote listening and recording."
+
+Widget: "An iOS home screen or lock screen component that displays at-a-glance information from Carrier Wave."
+
+WPM: "Words Per Minute - a measure of Morse code speed."

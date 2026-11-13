@@ -1,0 +1,9 @@
+[package]
+name = "cw-sat-core"
+version = "0.1.0"
+edition = "2021"
+description = "Shared satellite doppler schedule wire format + executor cursor (firmware + app builder)"
+
+[dependencies]
+
+[workspace]

@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CW-SWL — On the Air</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #25252d;
+    --surface: #2f2f3a;
+    --surface-hover: #383844;
+    --border: #3e3e4c;
+    --border-light: #363642;
+    --text-primary: #ededea;
+    --text-secondary: #a5a19a;
+    --text-tertiary: #706c66;
+    --accent: #6fb1f7;
+    --accent-light: rgba(111,177,247,0.14);
+    --live-green: #3ddc97;
+    --live-green-bg: rgba(61,220,151,0.1);
+    --band-160m: #a78bfa;
+    --band-80m: #818cf8;
+    --band-40m: #fbbf24;
+    --band-30m: #a3e635;
+    --band-20m: #38bdf8;
+    --band-17m: #22d3ee;
+    --band-15m: #34d399;
+    --band-12m: #fb923c;
+    --band-10m: #f87171;
+    --radius-sm: 8px;
+    --radius-md: 14px;
+    --radius-lg: 20px;
+    --shadow-card: 0 1px 4px rgba(0,0,0,0.2), 0 0 0 1px rgba(255,255,255,0.05);
+    --shadow-card-hover: 0 6px 24px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.08);
+    --shadow-nav: 0 1px 0 rgba(255,255,255,0.05);
+    --font-sans: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--bg);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+
+  /* ─── Top Navigation ─── */
+  .nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(37, 37, 45, 0.82);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+  }
+  .nav-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    height: 56px;
+    gap: 32px;
+  }
+  .nav-brand {
+    font-weight: 700;
+    font-size: 17px;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .nav-brand .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--live-green);
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(0.85); }
+  }
+  .nav-links {
+    display: flex;
+    gap: 4px;
+    flex: 1;
+  }
+  .nav-link {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-decoration: none;
+    padding: 6px 14px;
+    border-radius: var(--radius-sm);
+    transition: all 0.15s ease;
+    cursor: pointer;
+  }
+  .nav-link:hover { color: var(--text-primary); background: rgba(255,255,255,0.06); }
+  .nav-link.active { color: var(--text-primary); background: rgba(255,255,255,0.08); }
+  .nav-signin {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--accent);
+    text-decoration: none;
+    padding: 6px 16px;
+    border-radius: var(--radius-sm);
+    transition: all 0.15s ease;
+    cursor: pointer;
+  }
+  .nav-signin:hover { background: var(--accent-light); }
+
+  /* ─── Main Content ─── */
+  .main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px;
+  }
+
+  /* ─── Page Header ─── */
+  .page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .page-title {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: var(--text-primary);
+  }
+  .page-subtitle {
+    font-size: 14px;
+    color: var(--text-tertiary);
+    margin-top: 2px;
+  }
+
+  /* ─── View Toggle ─── */
+  .controls-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .view-toggle {
+    display: inline-flex;
+    background: var(--surface);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+  }
+  .view-toggle button {
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 500;
+    padding: 7px 16px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .view-toggle button.active {
+    background: rgba(255,255,255,0.14);
+    color: var(--text-primary);
+  }
+  .view-toggle button:hover:not(.active) {
+    background: rgba(255,255,255,0.06);
+  }
+
+  /* ─── Filter Pills ─── */
+  .filters {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-left: auto;
+  }
+  .filter-pill {
+    font-family: var(--font-sans);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 5px 12px;
+    border-radius: 100px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+  }
+  .filter-pill:hover { border-color: var(--text-tertiary); }
+  .filter-pill.active {
+    background: rgba(255,255,255,0.12);
+    color: var(--text-primary);
+    border-color: rgba(255,255,255,0.18);
+  }
+
+  /* ─── Card Grid ─── */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 12px;
+  }
+
+  /* ─── Activation Card ─── */
+  .card {
+    background: var(--surface);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-card);
+    padding: 18px 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .card:hover {
+    box-shadow: var(--shadow-card-hover);
+    transform: translateY(-1px);
+  }
+  .card.live {
+    border-left: 3px solid var(--live-green);
+  }
+  .card.favorited::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 0 28px 28px 0;
+    border-color: transparent var(--band-40m) transparent transparent;
+    opacity: 0.8;
+  }
+  .card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .card-callsign {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
+  }
+  .card-band {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 100px;
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .band-20m { background: var(--band-20m); }
+  .band-40m { background: var(--band-40m); }
+  .band-30m { background: var(--band-30m); }
+  .band-15m { background: var(--band-15m); }
+  .band-10m { background: var(--band-10m); }
+  .band-80m { background: var(--band-80m); }
+  .band-17m { background: var(--band-17m); }
+
+  .card-freq {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  .card-park {
+    font-size: 13px;
+    color: var(--text-tertiary);
+    margin-bottom: 12px;
+  }
+  .card-park strong {
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+
+  .card-transcript {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text-secondary);
+    background: var(--bg);
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    margin-bottom: 12px;
+    max-height: 42px;
+    overflow: hidden;
+    position: relative;
+  }
+  .card-transcript.empty {
+    color: var(--text-tertiary);
+    font-family: var(--font-sans);
+    font-style: italic;
+    font-size: 13px;
+  }
+
+  .card-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 12px;
+    color: var(--text-tertiary);
+  }
+  .card-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .live-indicator {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--live-green);
+    animation: pulse-dot 1.5s ease-in-out infinite;
+  }
+  .card-meta .wpm { font-variant-numeric: tabular-nums; }
+  .card-fav-btn {
+    margin-left: auto;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    color: var(--text-tertiary);
+    opacity: 0.5;
+    transition: all 0.15s ease;
+    padding: 2px;
+  }
+  .card-fav-btn:hover { opacity: 0.8; color: var(--band-40m); }
+  .card-fav-btn.active { opacity: 1; color: var(--band-40m); }
+
+  /* ─── Map View ─── */
+  .map-container {
+    display: none;
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+    height: 500px;
+    position: relative;
+  }
+  .map-container.visible { display: block; }
+  .map-placeholder {
+    width: 100%;
+    height: 100%;
+    background:
+      radial-gradient(circle at 30% 40%, rgba(56,189,248,0.07) 0%, transparent 50%),
+      radial-gradient(circle at 70% 60%, rgba(251,191,36,0.05) 0%, transparent 40%),
+      linear-gradient(135deg, #282834 0%, #2e2e3a 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-tertiary);
+    font-size: 14px;
+    position: relative;
+  }
+  .map-pin {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.25);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    cursor: pointer;
+    transition: transform 0.15s ease;
+  }
+  .map-pin:hover { transform: scale(1.4); }
+  .map-pin.live { animation: pulse-pin 2s ease-in-out infinite; }
+  @keyframes pulse-pin {
+    0%, 100% { box-shadow: 0 2px 8px rgba(0,0,0,0.2), 0 0 0 0 rgba(34,197,94,0.4); }
+    50% { box-shadow: 0 2px 8px rgba(0,0,0,0.2), 0 0 0 8px rgba(34,197,94,0); }
+  }
+  .map-pin-label {
+    position: absolute;
+    top: -28px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(40,40,52,0.94);
+    color: var(--text-primary);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 6px;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+  .map-pin:hover .map-pin-label { opacity: 1; }
+  .map-legend {
+    position: absolute;
+    bottom: 16px;
+    right: 16px;
+    background: rgba(35,35,46,0.90);
+    backdrop-filter: blur(12px);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    font-size: 11px;
+    color: var(--text-secondary);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .map-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .map-legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* ─── Activation Detail (Overlay/Panel) ─── */
+  .detail-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    background: rgba(0,0,0,0.4);
+    backdrop-filter: blur(8px);
+    animation: fade-in 0.2s ease;
+  }
+  .detail-overlay.visible { display: flex; justify-content: center; align-items: flex-start; padding-top: 60px; }
+  @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+  .detail-panel {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 24px 80px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.07);
+    width: 100%;
+    max-width: 720px;
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
+    animation: slide-up 0.25s ease;
+  }
+  @keyframes slide-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+
+  .detail-header {
+    padding: 24px 28px 0;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+  .detail-close {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: none;
+    background: var(--bg);
+    color: var(--text-secondary);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+  }
+  .detail-close:hover { background: var(--border); }
+  .detail-callsign {
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+  }
+  .detail-subtitle {
+    font-size: 15px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+  }
+  .detail-badges {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .detail-badge {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 100px;
+    background: var(--bg);
+    color: var(--text-secondary);
+  }
+
+  .detail-body { padding: 20px 28px 28px; }
+
+  /* Audio player */
+  .audio-player {
+    background: var(--bg);
+    border-radius: var(--radius-md);
+    padding: 16px 20px;
+    margin-bottom: 20px;
+  }
+  .audio-waveform {
+    height: 48px;
+    background: linear-gradient(90deg,
+      var(--border) 1px, transparent 1px
+    );
+    background-size: 3px 100%;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    position: relative;
+    overflow: hidden;
+  }
+  .audio-waveform-fill {
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(90deg,
+      var(--accent) 0px, var(--accent) 1.5px, transparent 1.5px, transparent 3px
+    );
+    clip-path: polygon(
+      0% 50%, 1% 35%, 2% 45%, 3% 25%, 4% 40%, 5% 20%, 6% 35%, 7% 15%, 8% 30%,
+      9% 45%, 10% 25%, 11% 40%, 12% 10%, 13% 30%, 14% 50%, 15% 20%, 16% 35%,
+      17% 45%, 18% 15%, 19% 30%, 20% 40%, 21% 20%, 22% 45%, 23% 10%, 24% 35%,
+      25% 25%, 26% 50%, 27% 15%, 28% 30%, 29% 45%, 30% 20%, 31% 40%, 32% 10%,
+      33% 35%, 34% 50%, 35% 25%, 36% 40%, 37% 15%, 38% 30%, 39% 45%, 40% 20%,
+      40% 80%, 39% 55%, 38% 70%, 37% 85%, 36% 60%, 35% 75%, 34% 50%, 33% 65%,
+      32% 90%, 31% 60%, 30% 80%, 29% 55%, 28% 70%, 27% 85%, 26% 50%, 25% 75%,
+      24% 65%, 23% 90%, 22% 55%, 21% 80%, 20% 60%, 19% 70%, 18% 85%, 17% 55%,
+      16% 65%, 15% 80%, 14% 50%, 13% 70%, 12% 90%, 11% 60%, 10% 75%, 9% 55%,
+      8% 70%, 7% 85%, 6% 65%, 5% 80%, 4% 60%, 3% 75%, 2% 55%, 1% 65%, 0% 50%
+    );
+  }
+  .audio-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .audio-play {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: var(--accent);
+    color: #1a1a22;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.1s ease;
+    flex-shrink: 0;
+  }
+  .audio-play:active { transform: scale(0.92); }
+  .audio-time {
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-tertiary);
+    font-family: var(--font-mono);
+  }
+  .audio-progress {
+    flex: 1;
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    position: relative;
+    cursor: pointer;
+  }
+  .audio-progress-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 35%;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+
+  /* Transcript section */
+  .detail-section-title {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-tertiary);
+    margin-bottom: 10px;
+  }
+  .detail-transcript {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    line-height: 1.8;
+    color: var(--text-primary);
+    background: var(--bg);
+    padding: 16px 20px;
+    border-radius: var(--radius-md);
+    margin-bottom: 20px;
+    word-break: break-all;
+  }
+  .detail-transcript .word {
+    display: inline;
+    padding: 2px 0;
+    border-radius: 3px;
+    transition: background 0.15s ease;
+  }
+  .detail-transcript .word:hover {
+    background: rgba(91,164,245,0.15);
+  }
+  .detail-transcript .callsign {
+    color: var(--accent);
+    font-weight: 500;
+  }
+  .detail-transcript .prosign {
+    color: var(--band-40m);
+    font-weight: 500;
+  }
+
+  /* Spot context */
+  .spot-context {
+    background: var(--bg);
+    border-radius: var(--radius-md);
+    padding: 14px 18px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .spot-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-sm);
+    background: var(--accent-light);
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .spot-text {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+  }
+  .spot-text strong { color: var(--text-primary); font-weight: 600; }
+
+  /* Source recordings */
+  .source-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .source-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: var(--bg);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+  .source-sdr {
+    font-weight: 500;
+    color: var(--text-primary);
+    min-width: 140px;
+  }
+  .source-quality {
+    margin-left: auto;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 100px;
+    font-weight: 500;
+  }
+  .source-quality.good { background: rgba(52,211,153,0.12); color: #34d399; }
+  .source-quality.fair { background: rgba(251,191,36,0.12); color: #fbbf24; }
+  .source-quality.excluded { background: rgba(248,113,113,0.12); color: #f87171; }
+
+  /* Spectrogram placeholder */
+  .spectrogram {
+    width: 100%;
+    height: 120px;
+    border-radius: var(--radius-md);
+    background: linear-gradient(180deg,
+      #0c0c1a 0%, #1a1040 20%, #2d1060 35%, #401080 45%,
+      #1a1040 55%, #0c0c1a 65%, #1a1040 75%, #2d1060 85%,
+      #0c0c1a 100%
+    );
+    background-size: 100% 100%;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  .spectrogram::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(90deg,
+      rgba(100,60,200,0.15) 0px, rgba(100,60,200,0.15) 1px, transparent 1px, transparent 4px
+    );
+  }
+  .spectrogram-label {
+    position: absolute;
+    bottom: 8px;
+    left: 12px;
+    font-size: 10px;
+    font-family: var(--font-mono);
+    color: rgba(255,255,255,0.4);
+  }
+
+  /* ─── SDRs Page (tab content) ─── */
+  .sdr-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+    display: none;
+  }
+  .sdr-grid.visible { display: grid; }
+
+  .sdr-card {
+    background: var(--surface);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-card);
+    padding: 16px 18px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .sdr-card:hover {
+    box-shadow: var(--shadow-card-hover);
+    transform: translateY(-1px);
+  }
+  .sdr-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .sdr-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  .sdr-status {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .sdr-status.online { background: var(--live-green); }
+  .sdr-status.offline { background: var(--border); }
+  .sdr-status.recording { background: var(--live-green); animation: pulse-dot 1.5s ease-in-out infinite; }
+  .sdr-driver {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    margin-bottom: 4px;
+  }
+  .sdr-location {
+    font-size: 12px;
+    color: var(--text-tertiary);
+  }
+  .sdr-activity {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border-light);
+  }
+  .sdr-slots {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-top: 6px;
+    font-variant-numeric: tabular-nums;
+  }
+  .sdr-slots-used {
+    font-weight: 600;
+    color: var(--text-secondary);
+  }
+  .sdr-slots-na {
+    color: var(--text-tertiary);
+    font-weight: 400;
+  }
+  .sdr-full {
+    opacity: 0.55;
+  }
+
+  /* ─── Mobile Responsive ─── */
+  @media (max-width: 768px) {
+    .nav-inner { padding: 0 4px; gap: 8px; }
+    .nav-links { gap: 0; }
+    .nav-link { padding: 6px 10px; font-size: 13px; }
+    .main { padding: 16px; }
+    .page-title { font-size: 24px; }
+    .card-grid { grid-template-columns: 1fr; }
+    .sdr-grid { grid-template-columns: 1fr; }
+    .controls-row { flex-direction: column; align-items: flex-start; }
+    .filters { margin-left: 0; }
+    .detail-panel { margin: 0 8px; border-radius: var(--radius-md); }
+    .detail-overlay.visible { padding-top: 20px; align-items: flex-start; }
+    .detail-header { padding: 20px 20px 0; }
+    .detail-body { padding: 16px 20px 20px; }
+    .detail-callsign { font-size: 26px; }
+    .map-container { height: 360px; }
+  }
+
+  /* ─── Animations ─── */
+  .card { animation: card-in 0.3s ease both; }
+  .card:nth-child(1) { animation-delay: 0.02s; }
+  .card:nth-child(2) { animation-delay: 0.05s; }
+  .card:nth-child(3) { animation-delay: 0.08s; }
+  .card:nth-child(4) { animation-delay: 0.11s; }
+  .card:nth-child(5) { animation-delay: 0.14s; }
+  .card:nth-child(6) { animation-delay: 0.17s; }
+  @keyframes card-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="nav-brand" href="#">
+      <span class="dot"></span>
+      CW-SWL
+    </a>
+    <div class="nav-links">
+      <a class="nav-link active" onclick="showTab('air')">On the Air</a>
+      <a class="nav-link" onclick="showTab('sdrs')">SDRs</a>
+      <a class="nav-link">Spots</a>
+      <a class="nav-link">Search</a>
+    </div>
+    <a class="nav-signin">Sign In</a>
+  </div>
+</nav>
+
+<!-- Main Content -->
+<main class="main">
+
+  <!-- Page Header -->
+  <div class="page-header" id="header-air">
+    <div>
+      <h1 class="page-title">On the Air</h1>
+      <p class="page-subtitle">6 activations across 5 bands</p>
+    </div>
+  </div>
+  <div class="page-header" id="header-sdrs" style="display:none">
+    <div>
+      <h1 class="page-title">SDRs</h1>
+      <p class="page-subtitle">12 receivers online</p>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls-row" id="controls-air">
+    <div class="view-toggle">
+      <button class="active" onclick="showView('list')">List</button>
+      <button onclick="showView('map')">Map</button>
+    </div>
+    <div class="filters">
+      <button class="filter-pill active">All Bands</button>
+      <button class="filter-pill">20m</button>
+      <button class="filter-pill">40m</button>
+      <button class="filter-pill">30m</button>
+      <button class="filter-pill">15m</button>
+      <button class="filter-pill">CW</button>
+    </div>
+  </div>
+
+  <!-- List View: Card Grid -->
+  <div class="card-grid" id="list-view">
+
+    <!-- Live card -->
+    <div class="card live" onclick="showDetail()">
+      <div class="card-top">
+        <span class="card-callsign">KG5YOV</span>
+        <span class="card-band band-30m">30m</span>
+      </div>
+      <div class="card-freq">10.118 MHz CW</div>
+      <div class="card-park"><strong>K-2340</strong> Big Bend National Park</div>
+      <div class="card-transcript empty">Recording in progress...</div>
+      <div class="card-meta">
+        <span class="card-meta-item"><span class="live-indicator"></span> Live</span>
+        <span class="card-meta-item">45s</span>
+        <span class="card-meta-item">4 SDRs</span>
+        <button class="card-fav-btn" onclick="event.stopPropagation(); this.classList.toggle('active')">&#9733;</button>
+      </div>
+    </div>
+
+    <!-- Favorited card -->
+    <div class="card favorited" onclick="showDetail()">
+      <div class="card-top">
+        <span class="card-callsign">W1AW/P</span>
+        <span class="card-band band-20m">20m</span>
+      </div>
+      <div class="card-freq">14.062 MHz CW</div>
+      <div class="card-park"><strong>K-0001</strong> Acadia National Park</div>
+      <div class="card-transcript">CQ POTA CQ POTA DE W1AW K-0001 K</div>
+      <div class="card-meta">
+        <span class="card-meta-item wpm">22 WPM</span>
+        <span class="card-meta-item">2m ago</span>
+        <span class="card-meta-item">3 SDRs</span>
+        <button class="card-fav-btn active" onclick="event.stopPropagation(); this.classList.toggle('active')">&#9733;</button>
+      </div>
+    </div>
+
+    <div class="card" onclick="showDetail()">
+      <div class="card-top">
+        <span class="card-callsign">N3FJP</span>
+        <span class="card-band band-40m">40m</span>
+      </div>
+      <div class="card-freq">7.030 MHz CW</div>
+      <div class="card-park"><strong>K-4556</strong> Shenandoah National Park</div>
+      <div class="card-transcript">CQ CQ DE N3FJP N3FJP K-4556 BK</div>
+      <div class="card-meta">
+        <span class="card-meta-item wpm">18 WPM</span>
+        <span class="card-meta-item">5m ago</span>
+        <span class="card-meta-item">2 SDRs</span>
+        <button class="card-fav-btn" onclick="event.stopPropagation(); this.classList.toggle('active')">&#9733;</button>
+      </div>
+    </div>
+
+    <div class="card" onclick="showDetail()">
+      <div class="card-top">
+        <span class="card-callsign">VE3XYZ</span>
+        <span class="card-band band-15m">15m</span>
+      </div>
+      <div class="card-freq">21.060 MHz CW</div>
+      <div class="card-park"><strong>VE-0234</strong> Banff National Park</div>
+      <div class="card-transcript">CQ POTA VE3XYZ VE3XYZ K</div>
+      <div class="card-meta">
+        <span class="card-meta-item wpm">25 WPM</span>
+        <span class="card-meta-item">12m ago</span>
+        <span class="card-meta-item">2 SDRs</span>
+        <button class="card-fav-btn" onclick="event.stopPropagation(); this.classList.toggle('active')">&#9733;</button>
+      </div>
+    </div>
+
+    <div class="card" onclick="showDetail()">
+      <div class="card-top">
+        <span class="card-callsign">JA1ABC</span>
+        <span class="card-band band-20m">20m</span>
+      </div>
+      <div class="card-freq">14.058 MHz CW</div>
+      <div class="card-park"><strong>JA-0001</strong> Mount Fuji</div>
+      <div class="card-transcript empty">No transcription available</div>
+      <div class="card-meta">
+        <span class="card-meta-item">8m ago</span>
+        <span class="card-meta-item">1 SDR</span>
+        <button class="card-fav-btn" onclick="event.stopPropagation(); this.classList.toggle('active')">&#9733;</button>
+      </div>
+    </div>
+
+    <div class="card" onclick="showDetail()">
+      <div class="card-top">
+        <span class="card-callsign">G4XYZ</span>
+        <span class="card-band band-40m">40m</span>
+      </div>
+      <div class="card-freq">7.025 MHz CW</div>
+      <div class="card-park"><strong>G-0001</strong> Peak District NP</div>
+      <div class="card-transcript">RST 599 599 TU DE G4XYZ 73</div>
+      <div class="card-meta">
+        <span class="card-meta-item wpm">15 WPM</span>
+        <span class="card-meta-item">20m ago</span>
+        <span class="card-meta-item">3 SDRs</span>
+        <button class="card-fav-btn" onclick="event.stopPropagation(); this.classList.toggle('active')">&#9733;</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Map View -->
+  <div class="map-container" id="map-view">
+    <div class="map-placeholder">
+      <!-- Simulated map pins -->
+      <div class="map-pin live" style="background: var(--band-30m); top: 55%; left: 22%;">
+        <div class="map-pin-label">KG5YOV 30m</div>
+      </div>
+      <div class="map-pin" style="background: var(--band-20m); top: 35%; left: 30%;">
+        <div class="map-pin-label">W1AW/P 20m</div>
+      </div>
+      <div class="map-pin" style="background: var(--band-40m); top: 38%; left: 26%;">
+        <div class="map-pin-label">N3FJP 40m</div>
+      </div>
+      <div class="map-pin" style="background: var(--band-15m); top: 30%; left: 24%;">
+        <div class="map-pin-label">VE3XYZ 15m</div>
+      </div>
+      <div class="map-pin" style="background: var(--band-20m); top: 28%; left: 72%;">
+        <div class="map-pin-label">JA1ABC 20m</div>
+      </div>
+      <div class="map-pin" style="background: var(--band-40m); top: 32%; left: 50%;">
+        <div class="map-pin-label">G4XYZ 40m</div>
+      </div>
+
+      <div class="map-legend">
+        <div class="map-legend-item">
+          <div class="map-legend-dot" style="background: var(--live-green);"></div>
+          <span>Live recording</span>
+        </div>
+        <div class="map-legend-item">
+          <div class="map-legend-dot" style="background: var(--band-20m);"></div>
+          <span>POTA activation</span>
+        </div>
+        <div class="map-legend-item">
+          <div class="map-legend-dot" style="background: var(--text-tertiary);"></div>
+          <span>SDR receiver</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SDR Grid (hidden by default) -->
+  <div class="sdr-grid" id="sdr-grid">
+    <div class="sdr-card">
+      <div class="sdr-card-header">
+        <span class="sdr-name">VK4RZA KiwiSDR</span>
+        <span class="sdr-status recording"></span>
+      </div>
+      <div class="sdr-driver">kiwisdr &middot; Brisbane, AU</div>
+      <div class="sdr-location">QG62lp</div>
+      <div class="sdr-activity">Recording 10.118 MHz &middot; 2 active consumers</div>
+      <div class="sdr-slots"><span class="sdr-slots-used">3</span> / 4 slots</div>
+    </div>
+    <div class="sdr-card">
+      <div class="sdr-card-header">
+        <span class="sdr-name">W3LPL KiwiSDR</span>
+        <span class="sdr-status recording"></span>
+      </div>
+      <div class="sdr-driver">kiwisdr &middot; Glenwood, MD</div>
+      <div class="sdr-location">FM19lk</div>
+      <div class="sdr-activity">Recording 14.062 MHz &middot; 1 active consumer</div>
+      <div class="sdr-slots"><span class="sdr-slots-used">2</span> / 4 slots</div>
+    </div>
+    <div class="sdr-card">
+      <div class="sdr-card-header">
+        <span class="sdr-name">K1RA KiwiSDR</span>
+        <span class="sdr-status online"></span>
+      </div>
+      <div class="sdr-driver">kiwisdr &middot; Poquoson, VA</div>
+      <div class="sdr-location">FM17xw</div>
+      <div class="sdr-activity">Idle &middot; 14 recordings today</div>
+      <div class="sdr-slots"><span class="sdr-slots-used">0</span> / 4 slots</div>
+    </div>
+    <div class="sdr-card">
+      <div class="sdr-card-header">
+        <span class="sdr-name">OE9GHV KiwiSDR</span>
+        <span class="sdr-status online"></span>
+      </div>
+      <div class="sdr-driver">kiwisdr &middot; Feldkirch, AT</div>
+      <div class="sdr-location">JN47rm</div>
+      <div class="sdr-activity">Idle &middot; 8 recordings today</div>
+      <div class="sdr-slots"><span class="sdr-slots-used">1</span> / 4 slots</div>
+    </div>
+    <div class="sdr-card">
+      <div class="sdr-card-header">
+        <span class="sdr-name">JH1NBN KiwiSDR</span>
+        <span class="sdr-status online"></span>
+      </div>
+      <div class="sdr-driver">kiwisdr &middot; Tsukuba, JP</div>
+      <div class="sdr-location">PM96ei</div>
+      <div class="sdr-activity">Idle &middot; 3 recordings today</div>
+      <div class="sdr-slots"><span class="sdr-slots-used">0</span> / 8 slots</div>
+    </div>
+    <div class="sdr-card sdr-full">
+      <div class="sdr-card-header">
+        <span class="sdr-name">ZL1BYZ KiwiSDR</span>
+        <span class="sdr-status offline"></span>
+      </div>
+      <div class="sdr-driver">kiwisdr &middot; Auckland, NZ</div>
+      <div class="sdr-location">RF73fg</div>
+      <div class="sdr-activity">Offline since 14:22 UTC</div>
+      <div class="sdr-slots"><span class="sdr-slots-used sdr-slots-na">—</span> / 4 slots</div>
+    </div>
+  </div>
+
+</main>
+
+<!-- Activation Detail Overlay -->
+<div class="detail-overlay" id="detail-overlay" onclick="if(event.target===this) hideDetail()">
+  <div class="detail-panel">
+    <div class="detail-header">
+      <div>
+        <div class="detail-callsign">W1AW/P</div>
+        <div class="detail-subtitle">14.062 MHz &middot; Acadia National Park</div>
+        <div class="detail-badges">
+          <span class="detail-badge">K-0001</span>
+          <span class="detail-badge" style="background: var(--accent-light); color: var(--accent);">22 WPM</span>
+          <span class="detail-badge">3 SDRs combined</span>
+        </div>
+      </div>
+      <button class="detail-close" onclick="hideDetail()">&times;</button>
+    </div>
+    <div class="detail-body">
+
+      <!-- Spectrogram -->
+      <div class="detail-section-title">Spectrogram</div>
+      <div class="spectrogram">
+        <div class="spectrogram-label">650 Hz &middot; 120s &middot; 12 kHz</div>
+      </div>
+
+      <!-- Audio Player -->
+      <div class="detail-section-title">Combined Audio</div>
+      <div class="audio-player">
+        <div class="audio-waveform">
+          <div class="audio-waveform-fill"></div>
+        </div>
+        <div class="audio-controls">
+          <button class="audio-play">&#9654;</button>
+          <span class="audio-time">0:42</span>
+          <div class="audio-progress">
+            <div class="audio-progress-fill"></div>
+          </div>
+          <span class="audio-time">2:00</span>
+        </div>
+      </div>
+
+      <!-- Transcript -->
+      <div class="detail-section-title">Transcription</div>
+      <div class="detail-transcript">
+        <span class="word">CQ</span> <span class="word">POTA</span> <span class="word">CQ</span> <span class="word">POTA</span> <span class="word">DE</span> <span class="word callsign">W1AW</span> <span class="word callsign">W1AW</span> <span class="word">K-0001</span> <span class="word prosign">K</span><br><br>
+        <span class="word callsign">W1AW</span> <span class="word">DE</span> <span class="word callsign">N3FJP</span> <span class="word callsign">N3FJP</span> <span class="word prosign">BK</span><br><br>
+        <span class="word callsign">N3FJP</span> <span class="word">GM</span> <span class="word">UR</span> <span class="word">RST</span> <span class="word">599</span> <span class="word">599</span> <span class="word">NH</span> <span class="word">NH</span> <span class="word prosign">BK</span>
+      </div>
+
+      <!-- Spot Context -->
+      <div class="detail-section-title">Spot</div>
+      <div class="spot-context">
+        <div class="spot-icon">P</div>
+        <div class="spot-text">
+          <strong>POTA spot</strong> by N3FJP at 14:32 UTC<br>
+          "W1AW activating Acadia NP" &middot; 22 dB SNR
+        </div>
+      </div>
+
+      <!-- Source Recordings -->
+      <div class="detail-section-title">Source Recordings</div>
+      <div class="source-list">
+        <div class="source-item">
+          <span class="source-sdr">W3LPL KiwiSDR</span>
+          <span>FM19lk &middot; 420 km</span>
+          <span class="source-quality good">r=0.87</span>
+        </div>
+        <div class="source-item">
+          <span class="source-sdr">K1RA KiwiSDR</span>
+          <span>FM17xw &middot; 680 km</span>
+          <span class="source-quality good">r=0.72</span>
+        </div>
+        <div class="source-item">
+          <span class="source-sdr">VE3VEN KiwiSDR</span>
+          <span>FN03fu &middot; 1200 km</span>
+          <span class="source-quality fair">r=0.41</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  function showView(view) {
+    const listView = document.getElementById('list-view');
+    const mapView = document.getElementById('map-view');
+    const buttons = document.querySelectorAll('.view-toggle button');
+
+    if (view === 'list') {
+      listView.style.display = 'grid';
+      mapView.classList.remove('visible');
+      buttons[0].classList.add('active');
+      buttons[1].classList.remove('active');
+    } else {
+      listView.style.display = 'none';
+      mapView.classList.add('visible');
+      buttons[0].classList.remove('active');
+      buttons[1].classList.add('active');
+    }
+  }
+
+  function showTab(tab) {
+    const navLinks = document.querySelectorAll('.nav-link');
+    navLinks.forEach(l => l.classList.remove('active'));
+
+    const airHeader = document.getElementById('header-air');
+    const sdrsHeader = document.getElementById('header-sdrs');
+    const controls = document.getElementById('controls-air');
+    const listView = document.getElementById('list-view');
+    const mapView = document.getElementById('map-view');
+    const sdrGrid = document.getElementById('sdr-grid');
+
+    if (tab === 'air') {
+      navLinks[0].classList.add('active');
+      airHeader.style.display = 'flex';
+      sdrsHeader.style.display = 'none';
+      controls.style.display = 'flex';
+      listView.style.display = 'grid';
+      mapView.classList.remove('visible');
+      sdrGrid.classList.remove('visible');
+    } else if (tab === 'sdrs') {
+      navLinks[1].classList.add('active');
+      airHeader.style.display = 'none';
+      sdrsHeader.style.display = 'flex';
+      controls.style.display = 'none';
+      listView.style.display = 'none';
+      mapView.classList.remove('visible');
+      sdrGrid.classList.add('visible');
+    }
+  }
+
+  function showDetail() {
+    document.getElementById('detail-overlay').classList.add('visible');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function hideDetail() {
+    document.getElementById('detail-overlay').classList.remove('visible');
+    document.body.style.overflow = '';
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') hideDetail();
+  });
+
+  // Filter pill toggle
+  document.querySelectorAll('.filter-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      if (pill.textContent === 'All Bands') {
+        document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+      } else {
+        document.querySelector('.filter-pill.active')?.classList.remove('active');
+        pill.classList.toggle('active');
+      }
+    });
+  });
+</script>
+</body>
+</html>

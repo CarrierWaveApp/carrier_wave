@@ -1,0 +1,13 @@
+# Signal Duality
+
+## A Visual Philosophy
+
+Communication exists in the space between transmission and reception—the eternal dance of energy leaving and arriving simultaneously. This philosophy celebrates the paradox of bidirectional flow, where opposing vectors create harmony rather than conflict. The visual language emerges from the physics of radio waves: invisible forces made manifest through geometric precision and chromatic depth.
+
+Purple anchors the palette as the frequency of transformation—the color that exists at the boundary between visible and invisible spectra, between the red of earthbound warmth and the blue of infinite sky. Deep violet gradients suggest the electromagnetic spectrum itself, while lighter lavender accents speak to the ethereal nature of signals passing through atmosphere. Every gradient must be calibrated with painstaking attention, each transition between values the result of countless micro-adjustments by a master colorist who understands that purple's power lies in its subtlety.
+
+Directional elements—arrows, chevrons, wave forms—become the primary vocabulary, but they must exist in perfect tension. Upward and downward motion occupy the same visual field without collision, creating a sense of perpetual exchange. The craftsman's hand shows in the precise spacing between elements, in the exact angle where opposing forces achieve equilibrium. This is not mere symmetry but dynamic balance: the arrows don't mirror, they converse. Each placement represents hours of refinement, moving elements pixel by pixel until the composition breathes with the rhythm of transmitted signals.
+
+Form follows the circle—the universal symbol of broadcast, of waves emanating from a point, of the globe-spanning reach of radio communication. Within this contained universe, linear elements cut through curved space, creating visual interference patterns that reward sustained viewing. The icon must function at any scale, from notification badge to splash screen, which demands the kind of reductive mastery that separates expert work from amateur attempts. Every curve must be mathematically perfect, every intersection deliberate, every negative space as considered as the positive forms it defines.
+
+The final execution should feel like holding a physical artifact—something with weight and presence despite existing only as light on glass. Depth emerges through careful shadow and highlight, through the suggestion of dimensionality without literal three-dimensional rendering. This is the work of someone who has spent years understanding how flat color can imply form, how gradient can suggest both surface and depth. The result: an icon that feels inevitable, as if it could have been designed no other way.

@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "RadioMacroStep Schema",
+  "reservedWordPolicy": "raw-identifiers",
+  "$commentReservedWordPolicy": "Step kind names that collide with Swift/Rust keywords or built-ins (e.g. 'assert', 'if', 'match') must be emitted using raw-identifier escapes: backticks in Swift, r# prefix in Rust.",
+  "format": 2,
+  "stepKinds": [
+    { "name": "delay",        "params": [{"name": "durationMs", "type": "uint", "min": 0, "max": 30000, "required": true}], "capabilities": {} },
+    { "name": "setFrequency", "params": [{"name": "hz", "type": "uint", "required": true}],                                  "capabilities": {"changesFrequency": true} },
+    { "name": "setMode",      "params": [{"name": "mode", "type": "string", "required": true}],                              "capabilities": {"changesMode": true} },
+    { "name": "setPowerWatts","params": [{"name": "watts", "type": "uint", "min": 0, "max": 1500, "required": true}],        "capabilities": {"changesPower": true} },
+    { "name": "setPTT",       "params": [{"name": "on", "type": "bool", "required": true}],                                  "capabilities": {"transmits": "ifOn"} },
+    { "name": "sendCW",       "params": [{"name": "text", "type": "string", "required": true, "ascii": true}],               "capabilities": {"transmits": true} },
+    { "name": "vendorCommand","params": [{"name": "commandId", "type": "string", "required": true},
+                                          {"name": "args", "type": "object", "required": false}],                              "capabilities": {"fromCatalog": true} },
+    { "name": "rawBytes",     "params": [{"name": "protocol", "type": "string", "required": true},
+                                          {"name": "bytes", "type": "hexString", "required": true}],                           "capabilities": {"usesRawBytes": true, "decode": "viaOpcodeTable"} },
+    { "name": "readField",    "params": [{"name": "field", "type": "enum", "values": ["swr", "vfoA", "vfoB", "mode", "power", "ptt"], "required": true},
+                                          {"name": "into", "type": "templateName", "required": true}],                         "capabilities": {} },
+    { "name": "waitUntil",    "params": [{"name": "expr", "type": "templateExpression", "required": true},
+                                          {"name": "timeoutMs", "type": "uint", "min": 1, "max": 30000, "required": true}],     "capabilities": {} },
+    { "name": "assert",       "params": [{"name": "expr", "type": "templateExpression", "required": true},
+                                          {"name": "message", "type": "string", "required": true}],                            "capabilities": {} }
+  ],
+  "capabilityKeys": ["transmits", "changesFrequency", "changesMode", "changesPower", "usesRawBytes"],
+  "capabilitySentinels": ["fromCatalog"],
+  "$comment": "capabilityKeys are static bits the verifier infers from steps. capabilitySentinels are placeholders meaning 'capabilities are resolved elsewhere' (e.g. fromCatalog: look up the vendor command's tagged capabilities in RadioCommandCatalog).",
+  "opcodeTables": ["civ", "kenwood"],
+  "argTypes": {
+    "frequency": { "underlying": "uint", "requiresBounds": true },
+    "uint":      { "underlying": "uint" },
+    "int":       { "underlying": "int" },
+    "bool":      { "underlying": "bool", "coercion": "strict" },
+    "string":    { "underlying": "string" },
+    "enum":      { "underlying": "string" },
+    "hexString":          { "underlying": "string", "validator": "hex" },
+    "templateName":       { "underlying": "string", "validator": "templateName" },
+    "templateExpression": { "underlying": "string", "validator": "templateExpr" }
+  }
+}

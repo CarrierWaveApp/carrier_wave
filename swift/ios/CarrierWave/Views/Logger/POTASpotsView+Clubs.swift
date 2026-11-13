@@ -1,0 +1,185 @@
+import CarrierWaveCore
+import CarrierWaveData
+import SwiftUI
+
+// MARK: - Club Spot Sections
+
+extension POTASpotsView {
+    var clubPOTASpots: [POTASpot] {
+        guard showClubSection else {
+            return []
+        }
+        let allowedClubs = OnAirSpotFilter.decodeSet(from: clubFilterRaw)
+        return filteredSpots
+            .filter { spot in
+                let clubs = ClubsSyncService.shared.clubs(for: spot.activator)
+                guard !clubs.isEmpty else {
+                    return false
+                }
+                if allowedClubs.isEmpty {
+                    return true
+                }
+                return clubs.contains { allowedClubs.contains($0) }
+            }
+            .sorted { $0.activator.uppercased() < $1.activator.uppercased() }
+    }
+
+    var clubSOTASpots: [SOTASpot] {
+        guard showClubSection else {
+            return []
+        }
+        let allowedClubs = OnAirSpotFilter.decodeSet(from: clubFilterRaw)
+        return filteredSOTASpots
+            .filter { spot in
+                let clubs = ClubsSyncService.shared.clubs(
+                    for: spot.activatorCallsign
+                )
+                guard !clubs.isEmpty else {
+                    return false
+                }
+                if allowedClubs.isEmpty {
+                    return true
+                }
+                return clubs.contains { allowedClubs.contains($0) }
+            }
+            .sorted {
+                $0.activatorCallsign.uppercased()
+                    < $1.activatorCallsign.uppercased()
+            }
+    }
+
+    var hasClubSpots: Bool {
+        !clubPOTASpots.isEmpty || !clubSOTASpots.isEmpty
+    }
+
+    var nonClubPOTASpots: [POTASpot] {
+        guard hasClubSpots else {
+            return filteredSpots
+        }
+        let clubCallsigns = Set(
+            clubPOTASpots.map { $0.activator.uppercased() }
+        )
+        return filteredSpots.filter {
+            !clubCallsigns.contains($0.activator.uppercased())
+        }
+    }
+
+    var nonClubSOTASpots: [SOTASpot] {
+        guard hasClubSpots else {
+            return filteredSOTASpots
+        }
+        let clubCallsigns = Set(
+            clubSOTASpots.map { $0.activatorCallsign.uppercased() }
+        )
+        return filteredSOTASpots.filter {
+            !clubCallsigns.contains($0.activatorCallsign.uppercased())
+        }
+    }
+
+    var nonClubSpotsByBand: [(band: String, spots: [POTASpot])] {
+        Self.groupSpotsByBand(nonClubPOTASpots)
+    }
+
+    var nonClubSOTAByBand: [(band: String, spots: [SOTASpot])] {
+        Self.groupSOTASpotsByBand(nonClubSOTASpots)
+    }
+
+    // MARK: - Section Views
+
+    var nonClubPotaSpotsSection: some View {
+        ForEach(nonClubSpotsByBand, id: \.band) { section in
+            Section {
+                ForEach(section.spots) { spot in
+                    let result = workedResults[spot.activator.uppercased()]
+                        ?? .notWorked
+                    POTASpotRow(
+                        spot: spot,
+                        userCallsign: userCallsign,
+                        friendCallsigns: friendCallsigns,
+                        workedResult: result
+                    ) {
+                        onSelectSpot?(spot)
+                    }
+                    .opacity(spot.isAutomatedSpot ? 0.7 : 1.0)
+                    .contextMenu { tuneInContextMenu(for: spot) }
+                    Divider()
+                        .padding(.leading, 92)
+                }
+            } header: {
+                POTASpotsBandHeader(band: section.band)
+            }
+        }
+    }
+
+    @ViewBuilder
+    var nonClubSotaSpotsSection: some View {
+        if !nonClubSOTASpots.isEmpty {
+            ForEach(nonClubSOTAByBand, id: \.band) { section in
+                Section {
+                    ForEach(section.spots) { spot in
+                        let callKey = spot.activatorCallsign.uppercased()
+                        let result = workedResults[callKey] ?? .notWorked
+                        SOTASpotRow(
+                            spot: spot,
+                            friendCallsigns: friendCallsigns,
+                            workedResult: result
+                        ) {
+                            onSelectSOTASpot?(spot)
+                        }
+                        Divider()
+                            .padding(.leading, 92)
+                    }
+                } header: {
+                    SOTASpotsBandHeader(band: section.band)
+                }
+            }
+        }
+    }
+
+    var clubSpotsSection: some View {
+        Section {
+            ForEach(clubPOTASpots) { spot in
+                let result = workedResults[spot.activator.uppercased()]
+                    ?? .notWorked
+                POTASpotRow(
+                    spot: spot,
+                    userCallsign: userCallsign,
+                    friendCallsigns: friendCallsigns,
+                    workedResult: result
+                ) {
+                    onSelectSpot?(spot)
+                }
+                .contextMenu { tuneInContextMenu(for: spot) }
+                Divider()
+                    .padding(.leading, 92)
+            }
+            ForEach(clubSOTASpots) { spot in
+                let callKey = spot.activatorCallsign.uppercased()
+                let result = workedResults[callKey] ?? .notWorked
+                SOTASpotRow(
+                    spot: spot,
+                    friendCallsigns: friendCallsigns,
+                    workedResult: result
+                ) {
+                    onSelectSOTASpot?(spot)
+                }
+                Divider()
+                    .padding(.leading, 92)
+            }
+        } header: {
+            ClubSpotsSectionHeader()
+        }
+    }
+
+    func tuneInContextMenu(for spot: POTASpot) -> some View {
+        Button {
+            let tuneInSpot = TuneInSpot(from: spot)
+            TuneInManager.shared.requestTuneIn(to: tuneInSpot)
+        } label: {
+            Label(
+                "Tune In to \(spot.activator)",
+                systemImage: "radio"
+            )
+        }
+    }
+}

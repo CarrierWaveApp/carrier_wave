@@ -1,0 +1,31 @@
+{{ if or (eq .Section "guide") (eq .Section "reference") (eq .Section "developers") }}
+<aside class="sidebar" id="sidebar">
+  <nav class="sidebar-nav">
+    {{ $currentPage := . }}
+
+    {{ if eq .Section "guide" }}
+    <h3 class="sidebar-title">Beginner's Guide</h3>
+    {{ range where .Site.RegularPages "Section" "guide" }}
+    <a href="{{ .RelPermalink }}" class="sidebar-link {{ if eq . $currentPage }}active{{ end }}">
+      {{ .Title }}
+    </a>
+    {{ end }}
+
+    {{ else if eq .Section "reference" }}
+    <h3 class="sidebar-title">Reference Manual</h3>
+    {{ range where .Site.RegularPages "Section" "reference" }}
+    <a href="{{ .RelPermalink }}" class="sidebar-link {{ if eq . $currentPage }}active{{ end }}">
+      {{ .Title }}
+    </a>
+    {{ end }}
+    {{ else if eq .Section "developers" }}
+    <h3 class="sidebar-title">Developers</h3>
+    {{ range where .Site.RegularPages "Section" "developers" }}
+    <a href="{{ .RelPermalink }}" class="sidebar-link {{ if eq . $currentPage }}active{{ end }}">
+      {{ .Title }}
+    </a>
+    {{ end }}
+    {{ end }}
+  </nav>
+</aside>
+{{ end }}

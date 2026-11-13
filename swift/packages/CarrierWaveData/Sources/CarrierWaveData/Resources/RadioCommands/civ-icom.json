@@ -1,0 +1,262 @@
+{
+  "version": 1,
+  "commands": [
+    {
+      "id": "civ.preamp",
+      "label": "Preamp",
+      "protocol": "civ",
+      "category": "rf-front-end",
+      "supports": ["IC-7300", "IC-7610", "IC-705", "IC-9700"],
+      "params": [
+        {
+          "name": "level",
+          "label": "Level",
+          "type": "enum",
+          "values": [
+            { "id": "off", "label": "Off",      "encoded": "00" },
+            { "id": "one", "label": "Preamp 1", "encoded": "01" },
+            { "id": "two", "label": "Preamp 2", "encoded": "02" }
+          ],
+          "default": "one"
+        }
+      ],
+      "template": "16 02 {level}"
+    },
+    {
+      "id": "civ.attenuator",
+      "label": "Attenuator",
+      "protocol": "civ",
+      "category": "rf-front-end",
+      "supports": ["IC-7300", "IC-7610", "IC-705"],
+      "params": [
+        {
+          "name": "level",
+          "label": "Attenuation",
+          "type": "enum",
+          "values": [
+            { "id": "off",  "label": "Off",   "encoded": "00" },
+            { "id": "db6",  "label": "6 dB",  "encoded": "06" },
+            { "id": "db12", "label": "12 dB", "encoded": "12" },
+            { "id": "db18", "label": "18 dB", "encoded": "18" },
+            { "id": "db20", "label": "20 dB", "encoded": "20" }
+          ],
+          "default": "off"
+        }
+      ],
+      "template": "11 {level}"
+    },
+    {
+      "id": "civ.noiseBlanker",
+      "label": "Noise Blanker",
+      "protocol": "civ",
+      "category": "noise",
+      "supports": ["IC-7300", "IC-7610", "IC-705", "IC-9700"],
+      "params": [
+        { "name": "enabled", "label": "Enabled", "type": "bool", "default": "false" }
+      ],
+      "template": "16 22 {enabled:hex2}"
+    },
+    {
+      "id": "civ.noiseReduction",
+      "label": "Noise Reduction",
+      "protocol": "civ",
+      "category": "noise",
+      "supports": ["IC-7300", "IC-7610", "IC-705", "IC-9700"],
+      "params": [
+        { "name": "enabled", "label": "Enabled", "type": "bool", "default": "false" }
+      ],
+      "template": "16 40 {enabled:hex2}"
+    },
+    {
+      "id": "civ.compressor",
+      "label": "Speech Compressor",
+      "protocol": "civ",
+      "category": "audio",
+      "supports": ["IC-7300", "IC-7610", "IC-705", "IC-9700"],
+      "params": [
+        { "name": "enabled", "label": "Enabled", "type": "bool", "default": "false" }
+      ],
+      "template": "16 44 {enabled:hex2}"
+    },
+    {
+      "id": "civ.monitor",
+      "label": "Monitor",
+      "protocol": "civ",
+      "category": "audio",
+      "supports": ["IC-7300", "IC-7610", "IC-705", "IC-9700"],
+      "params": [
+        { "name": "enabled", "label": "Enabled", "type": "bool", "default": "false" }
+      ],
+      "template": "16 45 {enabled:hex2}"
+    },
+    {
+      "id": "civ.vox",
+      "label": "VOX",
+      "protocol": "civ",
+      "category": "audio",
+      "supports": ["IC-7300", "IC-7610", "IC-705", "IC-9700"],
+      "params": [
+        { "name": "enabled", "label": "Enabled", "type": "bool", "default": "false" }
+      ],
+      "template": "16 46 {enabled:hex2}"
+    },
+    {
+      "id": "civ.agcSpeed",
+      "label": "AGC Speed",
+      "protocol": "civ",
+      "category": "agc",
+      "supports": ["IC-7300", "IC-7610", "IC-705", "IC-9700"],
+      "params": [
+        {
+          "name": "speed",
+          "label": "Speed",
+          "type": "enum",
+          "values": [
+            { "id": "fast", "label": "Fast", "encoded": "01" },
+            { "id": "mid",  "label": "Mid",  "encoded": "02" },
+            { "id": "slow", "label": "Slow", "encoded": "03" }
+          ],
+          "default": "mid"
+        }
+      ],
+      "template": "16 12 {speed}"
+    },
+    {
+      "id": "civ.split",
+      "label": "Split",
+      "protocol": "civ",
+      "category": "vfo",
+      "supports": ["IC-7300", "IC-7610", "IC-705", "IC-9700"],
+      "params": [
+        { "name": "enabled", "label": "Enabled", "type": "bool", "default": "false" }
+      ],
+      "template": "0F {enabled:hex2}"
+    },
+    {
+      "id": "civ.selectVFO",
+      "label": "Select VFO",
+      "protocol": "civ",
+      "category": "vfo",
+      "supports": ["IC-7300", "IC-7610", "IC-705", "IC-9700"],
+      "params": [
+        {
+          "name": "vfo",
+          "label": "VFO",
+          "type": "enum",
+          "values": [
+            { "id": "a", "label": "VFO A", "encoded": "00" },
+            { "id": "b", "label": "VFO B", "encoded": "01" }
+          ],
+          "default": "a"
+        }
+      ],
+      "template": "07 {vfo}"
+    },
+    {
+      "id": "civ.swapVFO",
+      "label": "Swap VFO (A↔B)",
+      "protocol": "civ",
+      "category": "vfo",
+      "supports": ["IC-7300", "IC-7610", "IC-705", "IC-9700"],
+      "params": [],
+      "template": "07 B0"
+    },
+    {
+      "id": "civ.equalizeVFO",
+      "label": "Equalize VFO (A=B)",
+      "protocol": "civ",
+      "category": "vfo",
+      "supports": ["IC-7300", "IC-7610", "IC-705", "IC-9700"],
+      "params": [],
+      "template": "07 A0"
+    },
+    {
+      "id": "civ.selectMemory",
+      "label": "Select Memory Channel",
+      "protocol": "civ",
+      "category": "memory",
+      "supports": ["IC-7300", "IC-7610", "IC-705", "IC-9700"],
+      "params": [
+        { "name": "channel", "label": "Channel", "type": "uint16",
+          "min": 1, "max": 99, "default": "1", "encoding": "bcd2" }
+      ],
+      "template": "08 {channel}"
+    },
+    {
+      "id": "civ.rxFilter",
+      "label": "RX Filter",
+      "protocol": "civ",
+      "category": "filters",
+      "supports": ["IC-7300", "IC-7610", "IC-705", "IC-9700"],
+      "params": [
+        {
+          "name": "filter",
+          "label": "Filter",
+          "type": "enum",
+          "values": [
+            { "id": "fil1", "label": "FIL1", "encoded": "01" },
+            { "id": "fil2", "label": "FIL2", "encoded": "02" },
+            { "id": "fil3", "label": "FIL3", "encoded": "03" }
+          ],
+          "default": "fil1"
+        }
+      ],
+      "template": "1A 06 {filter}"
+    },
+    {
+      "id": "civ.tunerStart",
+      "label": "Antenna Tuner — Start Tune",
+      "protocol": "civ",
+      "category": "tuner",
+      "supports": ["IC-7300", "IC-7610", "IC-705"],
+      "params": [],
+      "template": "1C 01 02",
+      "notes": "Triggers a tune cycle on the built-in ATU. Radio must be on a band the ATU covers."
+    },
+    {
+      "id": "civ.rit",
+      "label": "RIT On/Off",
+      "protocol": "civ",
+      "category": "rit-xit",
+      "supports": ["IC-7300", "IC-7610", "IC-705", "IC-9700"],
+      "params": [
+        { "name": "enabled", "label": "Enabled", "type": "bool", "default": "false" }
+      ],
+      "template": "21 01 {enabled:hex2}"
+    },
+    {
+      "id": "civ.xit",
+      "label": "XIT On/Off",
+      "protocol": "civ",
+      "category": "rit-xit",
+      "supports": ["IC-7300", "IC-7610", "IC-705", "IC-9700"],
+      "params": [
+        { "name": "enabled", "label": "Enabled", "type": "bool", "default": "false" }
+      ],
+      "template": "21 02 {enabled:hex2}"
+    },
+    {
+      "id": "civ.ritOffsetHz",
+      "label": "RIT/XIT Offset (Hz)",
+      "protocol": "civ",
+      "category": "rit-xit",
+      "supports": ["IC-7300", "IC-7610", "IC-705", "IC-9700"],
+      "params": [
+        { "name": "offsetHz", "label": "Offset (Hz)", "type": "uint16",
+          "min": 0, "max": 9999, "encoding": "bcd2" }
+      ],
+      "template": "21 00 {offsetHz}",
+      "notes": "Sets the RIT/XIT offset register. Authors typically combine with civ.rit to enable RIT."
+    },
+    {
+      "id": "civ.clearRitXit",
+      "label": "Clear RIT/XIT",
+      "protocol": "civ",
+      "category": "rit-xit",
+      "supports": ["IC-7300", "IC-7610", "IC-705", "IC-9700"],
+      "params": [],
+      "template": "21 00 00 00 00",
+      "notes": "Zeroes the RIT/XIT offset. Does not flip the enable bit — pair with civ.rit/civ.xit if needed."
+    }
+  ]
+}

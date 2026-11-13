@@ -1,0 +1,35 @@
+# PostGIS for Phase 5 OAuth local testing (Tier 2/3).
+#
+# Only the database is containerized. The server runs on the HOST (via
+# scripts/oauth-dev.sh) because the repo's Dockerfile is stale — the binary now
+# `include_str!`/`include_bytes!`s files outside server/ (static/link/*.js and
+# ../../swift/.../macro-opcodes/*.json, the latter outside the build context),
+# and prod builds from a full checkout via the CI musl workflow, not this image.
+# Running on the host uses the known-good toolchain and gives fast rebuilds.
+#
+# A plain `postgres` image won't work: the full migration set needs
+# `CREATE EXTENSION postgis` (migrations 011/042/043) and `sqlx::migrate!`
+# .expect()s, so the server panics on boot without PostGIS.
+#
+#   ./scripts/oauth-dev.sh          # up DB + run server on host (foreground)
+#   ./scripts/oauth-smoke.sh        # drive the full verify/poll flow
+#   docker compose -f docker-compose.oauth.yml down -v   # tear down + wipe DB
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    environment:
+      POSTGRES_USER: challenges
+      POSTGRES_PASSWORD: challenges
+      POSTGRES_DB: challenges
+    ports:
+      - "5433:5432" # host 5433 to avoid clashing with a local postgres
+    volumes:
+      - oauth_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U challenges"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  oauth_pgdata:

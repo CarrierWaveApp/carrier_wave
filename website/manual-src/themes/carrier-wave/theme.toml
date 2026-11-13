@@ -1,0 +1,9 @@
+name = "Carrier Wave"
+license = "MIT"
+licenselink = "https://github.com/CarrierWaveApp/carrier_wave_manual/blob/main/LICENSE"
+description = "Documentation theme for Carrier Wave iOS app"
+homepage = "https://carrierwave.app"
+min_version = "0.112.0"
+
+[author]
+  name = "Jay Vana"

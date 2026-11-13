@@ -1,0 +1,23 @@
+{
+  "slug": "k3-tuner-cycle",
+  "name": "K3/KX3 tuner cycle",
+  "icon": "tuningfork",
+  "description": "Toggle the K-line ATU: TX briefly into the dummy load, run an SWR sweep, then go back to RX. Designed for the Elecraft K3, K3S, and KX3 — sends Kenwood-protocol-shaped TX/RX commands.",
+  "tags": ["k3", "elecraft", "tuner"],
+  "appliesTo": ["kenwood"],
+  "capabilities": {
+    "transmits": true,
+    "changesFrequency": false,
+    "changesMode": false,
+    "changesPower": false,
+    "usesRawBytes": true
+  },
+  "args": [],
+  "steps": [
+    { "kind": "rawBytes", "protocol": "kenwood", "bytes": "54 58 3B" },
+    { "kind": "delay", "durationMs": 2000 },
+    { "kind": "rawBytes", "protocol": "kenwood", "bytes": "52 58 3B" }
+  ],
+  "format": 2,
+  "status": "approved"
+}

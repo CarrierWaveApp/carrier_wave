@@ -1,0 +1,237 @@
+/* Macros catalog styling — public /manual/macros/ and /manual/m/<slug>/.
+   Variables (--color-*) are defined by the theme's main.css; this file
+   only adds layout primitives (cards, chips, action buttons). */
+
+.macros-index .macros-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  margin: 1.5rem 0;
+  padding: 1rem;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+}
+
+.macros-filters input[type="search"],
+.macros-filters select {
+  padding: 0.45rem 0.7rem;
+  font: inherit;
+  color: var(--color-text);
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 0.35rem;
+}
+
+.macros-filters input[type="search"] {
+  flex: 1 1 14rem;
+  min-width: 12rem;
+}
+
+.macros-filter-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--color-text-secondary);
+}
+
+.macros-empty {
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+.macro-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.macro-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 1rem;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 0.6rem;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.macro-card:hover {
+  border-color: var(--color-primary);
+  transform: translateY(-1px);
+}
+
+.macro-card-head { display: flex; flex-direction: column; gap: 0.15rem; }
+.macro-card-title { margin: 0; font-size: 1.1rem; line-height: 1.3; color: var(--color-text); }
+.macro-card-author { margin: 0; color: var(--color-text-secondary); font-size: 0.85rem; }
+.macro-card-desc { margin: 0; color: var(--color-text-secondary); font-size: 0.95rem; }
+
+.macro-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: auto;
+}
+
+.macro-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.chip {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--color-text-secondary);
+  background-color: var(--color-surface-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+}
+
+.chip-tx {
+  color: #fff;
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.chip-warn {
+  color: #fff;
+  background-color: #b8542a;
+  border-color: #b8542a;
+}
+
+.macro-btn {
+  display: inline-block;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--color-text);
+  background-color: var(--color-surface-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: 0.35rem;
+  text-decoration: none;
+}
+
+.macro-btn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-text);
+}
+
+.macro-btn-primary {
+  color: #fff;
+  background-image: var(--gradient-brand);
+  border-color: transparent;
+}
+
+.macro-btn-primary:hover {
+  color: #fff;
+  opacity: 0.92;
+}
+
+/* ---- single page ---- */
+
+.macro-single .macro-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+  margin: 0.25rem 0 0.75rem;
+}
+
+.macro-single .macro-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 1rem 0 2rem;
+}
+
+.macro-single section {
+  margin-top: 2rem;
+}
+
+.macro-single h2 {
+  font-size: 1.2rem;
+  margin-bottom: 0.6rem;
+}
+
+.macro-plain {
+  white-space: pre-wrap;
+  font-family: inherit;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 0.4rem;
+  padding: 0.75rem 1rem;
+  color: var(--color-text);
+}
+
+.macro-step-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.macro-step {
+  display: flex;
+  gap: 0.6rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.macro-step:last-child { border-bottom: 0; }
+
+.macro-step-num {
+  flex: 0 0 auto;
+  width: 1.75rem;
+  color: var(--color-text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+.macro-step-body { flex: 1 1 auto; color: var(--color-text); }
+
+.macro-step-rawBytes .macro-warn {
+  color: #b8542a;
+  font-weight: 700;
+}
+
+.macro-args-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.4rem;
+}
+
+.macro-args-table th,
+.macro-args-table td {
+  text-align: left;
+  padding: 0.45rem 0.6rem;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 0.95rem;
+}
+
+.macro-args-table th {
+  color: var(--color-text-secondary);
+  font-weight: 600;
+  background-color: var(--color-surface);
+}
+
+.macro-tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.macro-footer {
+  margin-top: 2.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+}

@@ -1,0 +1,139 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+      - "staging-*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: web/package-lock.json
+
+      - name: Build frontend
+        run: |
+          cd web
+          npm ci
+          npm run build
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-linux-musl
+
+      - name: Install musl-tools
+        run: sudo apt-get install -y musl-tools
+
+      - name: Cache cargo registry and build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-musl-${{ hashFiles('Cargo.lock', 'migrations/*.sql') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-musl-
+
+      - name: Clean sqlx macro cache
+        run: |
+          rm -rf target/x86_64-unknown-linux-musl/release/.fingerprint/activities-server-*
+          rm -rf target/x86_64-unknown-linux-musl/release/build/activities-server-*
+          rm -rf target/x86_64-unknown-linux-musl/release/deps/activities_server-*
+          rm -rf target/x86_64-unknown-linux-musl/release/deps/libactivities_server-*
+          rm -f target/x86_64-unknown-linux-musl/release/activities-server
+
+      - name: Build release binary
+        run: cargo build --release --target x86_64-unknown-linux-musl
+
+      - name: Get version from tag
+        id: version
+        run: echo "version=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+
+      - name: Package release
+        run: |
+          ARCHIVE="activities-server-${{ steps.version.outputs.version }}-x86_64-linux.tar.gz"
+          mkdir -p release/web
+          cp target/x86_64-unknown-linux-musl/release/activities-server release/
+          cp -r web/dist release/web/
+          cp -r migrations release/
+          tar -czf "$ARCHIVE" -C release .
+          echo "archive=$ARCHIVE" >> "$GITHUB_ENV"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.archive }}
+          generate_release_notes: true
+          prerelease: ${{ startsWith(github.ref, 'refs/tags/staging-') }}
+
+  update-ansible:
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Get version from tag
+        id: version
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "bare=${TAG#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout Ansible repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ vars.ANSIBLE_REPO }}
+          ssh-key: ${{ secrets.ANSIBLE_REPO_DEPLOY_KEY }}
+          path: ansible
+
+      - name: Download release asset and compute checksum
+        run: |
+          ASSET="activities-server-${{ steps.version.outputs.tag }}-x86_64-linux.tar.gz"
+          gh release download "${{ steps.version.outputs.tag }}" \
+            --repo "${{ github.repository }}" \
+            --pattern "$ASSET"
+          CHECKSUM="sha256:$(sha256sum "$ASSET" | cut -d' ' -f1)"
+          echo "checksum=$CHECKSUM" >> "$GITHUB_ENV"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update Ansible config
+        run: |
+          VERSION="${{ steps.version.outputs.bare }}"
+          CHECKSUM="${{ env.checksum }}"
+
+          for f in ansible/roles/activities_server/defaults/main.yml \
+                   ansible/group_vars/hetzner_servers/main.yml; do
+            sed -i "s|^activities_server_version:.*|activities_server_version: \"$VERSION\"|" "$f"
+            sed -i "s|^activities_server_checksum:.*|activities_server_checksum: \"$CHECKSUM\"|" "$f"
+          done
+
+      - name: Commit and push
+        working-directory: ansible
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && echo "No changes" && exit 0
+          git commit -m "Update activities-server to ${{ steps.version.outputs.tag }}"
+          git push
+
+  deploy:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: update-ansible
+    uses: ./.github/workflows/deploy.yml
+    with:
+      version: ${{ github.ref_name }}
+    secrets: inherit

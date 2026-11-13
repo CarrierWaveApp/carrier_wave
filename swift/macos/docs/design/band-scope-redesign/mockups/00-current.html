@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>00 — Current state, annotated</title>
+<link rel="stylesheet" href="theme.css">
+</head>
+<body>
+<div class="page">
+  <div class="page-header">
+    <h1>00 · Current state, annotated</h1>
+    <div class="crumbs"><a href="index.html">← gallery</a> · <a href="../README.md">research notes</a></div>
+  </div>
+  <p class="lead">
+    The existing <code>ContestBandScopeView</code> drawn to spec from the code in
+    <code>CWSweep/CWSweep/Views/Spots/ContestBandScopeView.swift</code>. Red callouts
+    mark the actual pain points cited in the research notes.
+  </p>
+
+  <div class="legend">
+    <span><span class="swatch" style="background: var(--green);"></span>Mult (new entity)</span>
+    <span><span class="swatch" style="background: var(--red);"></span>New band slot</span>
+    <span><span class="swatch" style="background: var(--blue);"></span>RBN spot</span>
+    <span><span class="swatch" style="background: var(--gray);"></span>Worked / dupe</span>
+    <span><span class="swatch" style="background: var(--yellow);"></span>Cluster</span>
+  </div>
+
+  <div class="scope-frame">
+    <svg width="1392" height="760" viewBox="0 0 1392 760" xmlns="http://www.w3.org/2000/svg">
+      <!-- ========== Header bar ========== -->
+      <rect x="0" y="0" width="1392" height="32" fill="#2c2c2e"/>
+      <!-- Band picker -->
+      <rect x="8" y="6" width="70" height="20" rx="4" fill="#3a3a3c"/>
+      <text x="14" y="20" fill="#f2f2f7" font-size="11" font-family="-apple-system">20m</text>
+      <text x="62" y="20" fill="rgba(235,235,245,0.6)" font-size="9">▼</text>
+      <!-- Mode picker (segmented) -->
+      <rect x="86" y="6" width="160" height="20" rx="4" fill="#3a3a3c"/>
+      <rect x="86" y="6" width="40" height="20" rx="4" fill="#48484a"/>
+      <text x="93" y="20" fill="#f2f2f7" font-size="10">All</text>
+      <text x="135" y="20" fill="rgba(235,235,245,0.6)" font-size="10">CW</text>
+      <text x="171" y="20" fill="rgba(235,235,245,0.6)" font-size="10">SSB</text>
+      <text x="208" y="20" fill="rgba(235,235,245,0.6)" font-size="10">Dig</text>
+      <!-- Zoom indicator and spot count -->
+      <text x="1280" y="20" fill="rgba(235,235,245,0.6)" font-size="11" font-family="ui-monospace">2.0x</text>
+      <text x="1320" y="20" fill="rgba(235,235,245,0.6)" font-size="11" font-family="ui-monospace">28 spots</text>
+      <line x1="0" y1="32" x2="1392" y2="32" stroke="rgba(255,255,255,0.08)"/>
+
+      <!-- ========== Canvas ========== -->
+      <rect x="0" y="32" width="1392" height="678" fill="#1c1c1e"/>
+
+      <!-- Sub-band shading: digital (4% opacity per code) — barely visible -->
+      <rect x="50" y="32" width="1342" height="280" fill="#0a84ff" fill-opacity="0.04"/>
+      <!-- SSB sub-band shading -->
+      <rect x="50" y="370" width="1342" height="340" fill="#ff9f0a" fill-opacity="0.04"/>
+
+      <!-- Frequency axis ticks (every 50 kHz at 2x zoom showing 14100..14250 of 20m) -->
+      <g font-family="ui-monospace" font-size="7" fill="rgba(235,235,245,0.6)">
+        <line x1="47" y1="60" x2="50" y2="60" stroke="rgba(235,235,245,0.4)" stroke-width="0.5"/>
+        <text x="45" y="63" text-anchor="end">14100</text>
+        <line x1="47" y1="156" x2="50" y2="156" stroke="rgba(235,235,245,0.4)" stroke-width="0.5"/>
+        <text x="45" y="159" text-anchor="end">14110</text>
+        <line x1="47" y1="252" x2="50" y2="252" stroke="rgba(235,235,245,0.4)" stroke-width="0.5"/>
+        <text x="45" y="255" text-anchor="end">14120</text>
+        <line x1="47" y1="348" x2="50" y2="348" stroke="rgba(235,235,245,0.4)" stroke-width="0.5"/>
+        <text x="45" y="351" text-anchor="end">14130</text>
+        <line x1="47" y1="444" x2="50" y2="444" stroke="rgba(235,235,245,0.4)" stroke-width="0.5"/>
+        <text x="45" y="447" text-anchor="end">14140</text>
+        <line x1="47" y1="540" x2="50" y2="540" stroke="rgba(235,235,245,0.4)" stroke-width="0.5"/>
+        <text x="45" y="543" text-anchor="end">14150</text>
+        <line x1="47" y1="636" x2="50" y2="636" stroke="rgba(235,235,245,0.4)" stroke-width="0.5"/>
+        <text x="45" y="639" text-anchor="end">14160</text>
+      </g>
+
+      <!-- Waterfall (rotated 90deg) — fake gradient bars from left ~half plot -->
+      <defs>
+        <linearGradient id="wf" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#ff453a" stop-opacity="0.85"/>
+          <stop offset="0.15" stop-color="#ff9f0a" stop-opacity="0.7"/>
+          <stop offset="0.4" stop-color="#30d158" stop-opacity="0.5"/>
+          <stop offset="0.7" stop-color="#0a84ff" stop-opacity="0.35"/>
+          <stop offset="1" stop-color="#1c1c1e" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <g opacity="0.55">
+        <rect x="50" y="148" width="690" height="3" fill="url(#wf)"/>
+        <rect x="50" y="151" width="690" height="3" fill="url(#wf)"/>
+        <rect x="50" y="154" width="690" height="3" fill="url(#wf)"/>
+        <rect x="50" y="252" width="690" height="3" fill="url(#wf)"/>
+        <rect x="50" y="255" width="690" height="3" fill="url(#wf)"/>
+        <rect x="50" y="345" width="690" height="3" fill="url(#wf)"/>
+        <rect x="50" y="348" width="690" height="3" fill="url(#wf)"/>
+        <rect x="50" y="439" width="690" height="3" fill="url(#wf)"/>
+        <rect x="50" y="538" width="690" height="3" fill="url(#wf)"/>
+      </g>
+
+      <!-- Spot tick marks + labels -->
+      <g font-family="ui-monospace">
+        <!-- 14101.2 K3LR mult -->
+        <line x1="50" y1="72" x2="54" y2="72" stroke="#30d158" stroke-width="2"/>
+        <text x="56" y="75" font-size="10" font-weight="700" fill="#30d158">K3LR</text>
+        <!-- 14104.6 W1AW worked -->
+        <line x1="50" y1="104" x2="54" y2="104" stroke="#8e8e93" stroke-width="1"/>
+        <text x="56" y="107" font-size="9" font-weight="500" fill="#8e8e93">W1AW</text>
+        <!-- 14108.0 JA1NUT new entity -->
+        <line x1="50" y1="138" x2="54" y2="138" stroke="#ff453a" stroke-width="2"/>
+        <text x="56" y="141" font-size="10" font-weight="700" fill="#ff453a">JA1NUT</text>
+        <!-- 14112.4 VK6IR -->
+        <line x1="50" y1="180" x2="54" y2="180" stroke="#30d158" stroke-width="2"/>
+        <text x="56" y="183" font-size="10" font-weight="700" fill="#30d158">VK6IR</text>
+        <!-- 14115.0 EA1XT -->
+        <line x1="50" y1="207" x2="54" y2="207" stroke="#0a84ff" stroke-width="1"/>
+        <text x="56" y="210" font-size="9" font-weight="500" fill="#0a84ff">EA1XT</text>
+        <!-- 14118.5 OH8X new band slot -->
+        <line x1="50" y1="241" x2="54" y2="241" stroke="#ff9f0a" stroke-width="2"/>
+        <text x="56" y="244" font-size="10" font-weight="700" fill="#ff9f0a">OH8X</text>
+        <!-- 14122.0 9M2CNC new -->
+        <line x1="50" y1="275" x2="54" y2="275" stroke="#ff453a" stroke-width="2"/>
+        <text x="56" y="278" font-size="10" font-weight="700" fill="#ff453a">9M2CNC</text>
+        <!-- 14127.0 G4IRN -->
+        <line x1="50" y1="324" x2="54" y2="324" stroke="#0a84ff" stroke-width="1"/>
+        <text x="56" y="327" font-size="9" font-weight="500" fill="#0a84ff">G4IRN</text>
+        <!-- 14132.5 ZS6CCY mult -->
+        <line x1="50" y1="372" x2="54" y2="372" stroke="#30d158" stroke-width="2"/>
+        <text x="56" y="375" font-size="10" font-weight="700" fill="#30d158">ZS6CCY</text>
+        <!-- 14136.0 PY2NY mult -->
+        <line x1="50" y1="408" x2="54" y2="408" stroke="#30d158" stroke-width="2"/>
+        <text x="56" y="411" font-size="10" font-weight="700" fill="#30d158">PY2NY</text>
+        <!-- 14140.0 N5CR -->
+        <line x1="50" y1="444" x2="54" y2="444" stroke="#0a84ff" stroke-width="1"/>
+        <text x="56" y="447" font-size="9" font-weight="500" fill="#0a84ff">N5CR</text>
+        <!-- 14143.5 LZ9W -->
+        <line x1="50" y1="478" x2="54" y2="478" stroke="#0a84ff" stroke-width="1"/>
+        <text x="56" y="481" font-size="9" font-weight="500" fill="#0a84ff">LZ9W</text>
+        <!-- 14148.2 KH6LC mult -->
+        <line x1="50" y1="525" x2="54" y2="525" stroke="#30d158" stroke-width="2"/>
+        <text x="56" y="528" font-size="10" font-weight="700" fill="#30d158">KH6LC</text>
+        <!-- 14152.0 OK7K -->
+        <line x1="50" y1="562" x2="54" y2="562" stroke="#0a84ff" stroke-width="1"/>
+        <text x="56" y="565" font-size="9" font-weight="500" fill="#0a84ff">OK7K</text>
+        <!-- 14155.5 4X6FR new entity -->
+        <line x1="50" y1="595" x2="54" y2="595" stroke="#ff453a" stroke-width="2"/>
+        <text x="56" y="598" font-size="10" font-weight="700" fill="#ff453a">4X6FR</text>
+        <!-- 14160.0 DK0WCY -->
+        <line x1="50" y1="636" x2="54" y2="636" stroke="#ffd60a" stroke-width="1"/>
+        <text x="56" y="639" font-size="9" font-weight="500" fill="#ffd60a">DK0WCY</text>
+      </g>
+
+      <!-- VFO cursor (red horizontal line + filter shading) -->
+      <rect x="50" y="338" width="1342" height="20" fill="#0a84ff" fill-opacity="0.08"/>
+      <line x1="50" y1="348" x2="1392" y2="348" stroke="#ff453a" stroke-opacity="0.8" stroke-width="1.5"/>
+      <text x="46" y="351" font-family="ui-monospace" font-size="8" font-weight="700"
+            text-anchor="end" fill="#ff453a">14130.0</text>
+
+      <!-- Hover tooltip (pinned at right edge, 100px from edge per current code) -->
+      <g transform="translate(1180,160)">
+        <rect width="200" height="80" rx="6" fill="#2c2c2e" stroke="#48484a"/>
+        <text x="10" y="18" font-size="11" font-weight="700" fill="#f2f2f7" font-family="ui-monospace">JA1NUT</text>
+        <text x="10" y="33" font-size="10" fill="rgba(235,235,245,0.6)">14108.0 · CW · 5 min ago</text>
+        <text x="10" y="48" font-size="10" fill="#30d158">Japan · NEW ENTITY</text>
+        <text x="10" y="63" font-size="10" fill="rgba(235,235,245,0.6)">RBN · NA→AS · 6112 mi</text>
+      </g>
+
+      <!-- ========== Bottom summary bar ========== -->
+      <line x1="0" y1="710" x2="1392" y2="710" stroke="rgba(255,255,255,0.08)"/>
+      <rect x="0" y="710" width="1392" height="28" fill="#1c1c1e"/>
+      <g font-size="11" font-family="-apple-system">
+        <text x="14" y="728" fill="rgba(235,235,245,0.6)">Spots</text>
+        <text x="48" y="728" font-family="ui-monospace" fill="#f2f2f7" font-weight="500">28</text>
+        <text x="75" y="728" fill="rgba(235,235,245,0.6)">New</text>
+        <text x="105" y="728" font-family="ui-monospace" fill="#0a84ff" font-weight="500">14</text>
+        <text x="130" y="728" fill="rgba(235,235,245,0.6)">Mults</text>
+        <text x="165" y="728" font-family="ui-monospace" fill="#30d158" font-weight="500">7</text>
+      </g>
+      <line x1="194" y1="716" x2="194" y2="734" stroke="rgba(255,255,255,0.16)"/>
+      <!-- Cross-band chips -->
+      <g font-family="-apple-system" font-size="8" font-weight="500">
+        <rect x="206" y="717" width="36" height="14" rx="7" fill="#30d158" fill-opacity="0.1"/>
+        <text x="224" y="727" text-anchor="middle" fill="rgba(235,235,245,0.6)">80m 3</text>
+        <rect x="248" y="717" width="36" height="14" rx="7" fill="#30d158" fill-opacity="0.1"/>
+        <text x="266" y="727" text-anchor="middle" fill="rgba(235,235,245,0.6)">40m 5</text>
+        <rect x="290" y="717" width="36" height="14" rx="7" fill="#30d158" fill-opacity="0.2"/>
+        <text x="308" y="727" text-anchor="middle" fill="#30d158">20m 7</text>
+        <rect x="332" y="717" width="36" height="14" rx="7" fill="#30d158" fill-opacity="0.1"/>
+        <text x="350" y="727" text-anchor="middle" fill="rgba(235,235,245,0.6)">17m 2</text>
+        <rect x="374" y="717" width="36" height="14" rx="7" fill="#30d158" fill-opacity="0.1"/>
+        <text x="392" y="727" text-anchor="middle" fill="rgba(235,235,245,0.6)">15m 6</text>
+        <rect x="416" y="717" width="36" height="14" rx="7" fill="#30d158" fill-opacity="0.1"/>
+        <text x="434" y="727" text-anchor="middle" fill="rgba(235,235,245,0.6)">10m 4</text>
+      </g>
+
+      <!-- ========== Footer hint ========== -->
+      <rect x="0" y="738" width="1392" height="22" fill="#1c1c1e"/>
+      <text x="14" y="752" font-size="9" fill="rgba(235,235,245,0.3)">↑↓ spots   ⌥+arrows = mults</text>
+
+      <!-- ========== ANNOTATIONS ========== -->
+      <g font-family="-apple-system" font-size="11" font-weight="600">
+        <!-- 1: tooltip pinned right -->
+        <line x1="1180" y1="200" x2="900" y2="200" stroke="#ff453a" stroke-width="1.5" stroke-dasharray="3,3"/>
+        <circle cx="900" cy="200" r="11" fill="#ff453a"/>
+        <text x="900" y="204" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">1</text>
+
+        <!-- 2: VFO label overlapping axis -->
+        <line x1="46" y1="351" x2="900" y2="380" stroke="#ff453a" stroke-width="1.5" stroke-dasharray="3,3"/>
+        <circle cx="900" cy="380" r="11" fill="#ff453a"/>
+        <text x="900" y="384" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">2</text>
+
+        <!-- 3: invisible sub-band shading -->
+        <line x1="700" y1="200" x2="900" y2="240" stroke="#ff453a" stroke-width="1.5" stroke-dasharray="3,3"/>
+        <circle cx="900" cy="240" r="11" fill="#ff453a"/>
+        <text x="900" y="244" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">3</text>
+
+        <!-- 4: zoom indicator small -->
+        <line x1="1280" y1="20" x2="900" y2="60" stroke="#ff453a" stroke-width="1.5" stroke-dasharray="3,3"/>
+        <circle cx="900" cy="60" r="11" fill="#ff453a"/>
+        <text x="900" y="64" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">4</text>
+
+        <!-- 5: cross-band chips lost in summary -->
+        <line x1="320" y1="724" x2="900" y2="690" stroke="#ff453a" stroke-width="1.5" stroke-dasharray="3,3"/>
+        <circle cx="900" cy="690" r="11" fill="#ff453a"/>
+        <text x="900" y="694" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">5</text>
+
+        <!-- 6: no minimap when zoomed -->
+        <line x1="50" y1="60" x2="900" y2="120" stroke="#ff453a" stroke-width="1.5" stroke-dasharray="3,3"/>
+        <circle cx="900" cy="120" r="11" fill="#ff453a"/>
+        <text x="900" y="124" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">6</text>
+
+        <!-- 7: footer hint never updated for actual interactions -->
+        <line x1="100" y1="752" x2="900" y2="722" stroke="#ff453a" stroke-width="1.5" stroke-dasharray="3,3"/>
+        <circle cx="900" cy="722" r="11" fill="#ff453a"/>
+        <text x="900" y="726" text-anchor="middle" fill="#fff" font-size="10" font-weight="700">7</text>
+      </g>
+    </svg>
+  </div>
+
+  <div class="callouts">
+    <span class="marker">1</span>
+    <span class="text"><strong>Tooltip pinned to the right edge.</strong>
+      Hover a spot in the middle of the canvas, then jump your eye 800 pt to the right
+      to read it. Should follow the cursor.</span>
+
+    <span class="marker">2</span>
+    <span class="text"><strong>VFO frequency label overlaps the axis ticks.</strong>
+      <code>drawVFOCursor</code> draws the red 14130.0 label trailing-anchored at
+      <code>plotX − 4</code>, directly on top of the gray axis labels at zoomed-out
+      scales.</span>
+
+    <span class="marker">3</span>
+    <span class="text"><strong>Sub-band shading is invisible.</strong>
+      The CW/digital and SSB sub-band hints are drawn at 4% opacity. On a typical
+      macOS display you can't see them at all.</span>
+
+    <span class="marker">4</span>
+    <span class="text"><strong>Zoom indicator is a tiny "2.0x" in the corner.</strong>
+      No mini-map, no overview, no sense of where in the band the visible region is.</span>
+
+    <span class="marker">5</span>
+    <span class="text"><strong>Cross-band activity is buried in capsule chips.</strong>
+      The single most strategic question — "should I QSY?" — is answered by chips
+      ≤ 14 pt tall in a footer the eye filters out.</span>
+
+    <span class="marker">6</span>
+    <span class="text"><strong>No mini-map / overview.</strong>
+      Once you zoom, you lose your sense of where you are in the band. There is no
+      thumbnail strip with a viewport rectangle.</span>
+
+    <span class="marker">7</span>
+    <span class="text"><strong>Footer hint covers only navigation.</strong>
+      Doesn't tell you about pinch zoom, scroll-to-zoom, click-to-tune. New users have
+      no discoverability for the actual interaction model — and that interaction
+      model has the zoom-aware click-to-tune bug described in
+      <a href="../README.md">the research notes</a>.</span>
+  </div>
+</div>
+</body>
+</html>

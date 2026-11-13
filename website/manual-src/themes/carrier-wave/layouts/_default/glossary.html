@@ -1,0 +1,53 @@
+{{ define "main" }}
+<article class="page-content glossary-page">
+  <header class="page-header">
+    <h1>{{ .Title }}</h1>
+    {{ with .Description }}
+    <p class="page-description">{{ . }}</p>
+    {{ end }}
+  </header>
+
+  <div class="content">
+    {{ .Content }}
+
+    <dl class="glossary-list">
+      {{ range $term, $definition := .Site.Data.glossary }}
+      <div class="glossary-entry" id="{{ $term | urlize }}">
+        <dt>{{ $term }}</dt>
+        <dd>{{ $definition }}</dd>
+      </div>
+      {{ end }}
+    </dl>
+  </div>
+</article>
+
+<style>
+  .glossary-list {
+    margin-top: var(--space-xl);
+  }
+
+  .glossary-entry {
+    padding: var(--space-md) 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .glossary-entry:target {
+    background-color: var(--color-surface);
+    margin: 0 calc(-1 * var(--space-md));
+    padding: var(--space-md);
+    border-radius: var(--radius-md);
+  }
+
+  .glossary-entry dt {
+    font-weight: 600;
+    font-size: 1.125rem;
+    color: var(--color-text);
+    margin-bottom: var(--space-xs);
+  }
+
+  .glossary-entry dd {
+    margin: 0;
+    color: var(--color-text-secondary);
+  }
+</style>
+{{ end }}

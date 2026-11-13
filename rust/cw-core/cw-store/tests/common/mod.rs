@@ -1,0 +1,58 @@
+//! Shared test helpers for the durability suite.
+
+use cw_store::Qso;
+
+/// A fully-populated sample QSO with a given id and `qso_date`/`imported_at`.
+/// Mirrors the field set used by `lib.rs`'s internal `sample_qso`.
+pub fn sample_qso(id: &str, when: i64) -> Qso {
+    Qso {
+        id: id.to_string(),
+        callsign: "W1AW".to_string(),
+        band: Some("20m".to_string()),
+        mode: Some("FT8".to_string()),
+        freq_khz: Some(14_074.0),
+        qso_date: when,
+        my_grid: Some("FN31".to_string()),
+        their_grid: Some("EM12".to_string()),
+        rst_sent: Some("-10".to_string()),
+        rst_rcvd: Some("-12".to_string()),
+        my_callsign: Some("W1XYZ".to_string()),
+        park: None,
+        their_park: None,
+        notes: None,
+        notes_user_authored: false,
+        spot_comments_data: None,
+        callsign_change_note: None,
+        original_callsign: None,
+        import_source_raw_value: "logger".to_string(),
+        imported_at: when,
+        modified_at: None,
+        raw_adif: None,
+        name: None,
+        qth: None,
+        state: None,
+        country: None,
+        power: None,
+        my_rig: None,
+        station_profile_name: None,
+        sota_ref: None,
+        wwff_ref: None,
+        aoa_code: None,
+        qrz_log_id: None,
+        qrz_confirmed: false,
+        lotw_confirmed_date: None,
+        lotw_confirmed: false,
+        dxcc: None,
+        their_license_class: None,
+        contest_name: None,
+        contest_serial_sent: None,
+        contest_serial_received: None,
+        contest_exchange_sent: None,
+        contest_exchange_received: None,
+        is_hidden: false,
+        is_activity_log_qso: false,
+        station_callsign: None,
+        logging_session_id: None,
+        dirty: true,
+    }
+}

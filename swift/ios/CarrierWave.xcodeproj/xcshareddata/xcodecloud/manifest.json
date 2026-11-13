@@ -1,0 +1,9 @@
+{
+  "id" : "8ae417ba-fb91-4fa6-8c60-f9eabfb44468",
+  "targets" : [
+    {
+      "id" : "29D2F4A7-40F3-4ECC-8FB7-D35960A07941",
+      "name" : "CarrierWave"
+    }
+  ]
+}

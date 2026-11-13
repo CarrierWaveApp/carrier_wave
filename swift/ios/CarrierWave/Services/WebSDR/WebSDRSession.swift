@@ -1,0 +1,486 @@
+import CarrierWaveData
+import Foundation
+import SwiftData
+import SwiftUI
+
+// MARK: - WebSDRSession
+
+/// Coordinates WebSDR connection, recording, audio playback, and lifecycle.
+///
+/// Recording lifecycle:
+/// - `start()` connects to a WebSDR and begins recording audio.
+/// - `pause()` / `resume()` keep the recording open with silence during pauses.
+/// - `disconnect()` disconnects the WebSDR but keeps the recording alive with
+///   silence so a subsequent `start()` stitches onto the same file.
+/// - `finalize()` fully stops and persists the recording (called on session end).
+@MainActor
+@Observable
+final class WebSDRSession {
+    /// Overall session state
+    enum State: Equatable {
+        case idle
+        case connecting
+        case recording
+        case paused
+        /// WebSDR disconnected mid-session; recording continues with silence
+        case dormant
+        case reconnecting(attempt: Int)
+        case error(String)
+
+        // MARK: Internal
+
+        /// Whether there is an active recording (even if silent)
+        var isActive: Bool {
+            switch self {
+            case .recording,
+                 .paused,
+                 .dormant,
+                 .connecting,
+                 .reconnecting:
+                true
+            case .idle,
+                 .error:
+                false
+            }
+        }
+
+        /// Whether the WebSDR is connected and streaming audio
+        var isStreaming: Bool {
+            self == .recording
+        }
+
+        var statusText: String {
+            switch self {
+            case .idle: "Not connected"
+            case .connecting: "Connecting..."
+            case .recording: "Recording"
+            case .paused: "Paused"
+            case .dormant: "Disconnected"
+            case let .reconnecting(attempt): "Reconnecting (\(attempt))..."
+            case let .error(msg): msg
+            }
+        }
+
+        var statusIcon: String {
+            switch self {
+            case .idle: "antenna.radiowaves.left.and.right.slash"
+            case .connecting,
+                 .reconnecting: "antenna.radiowaves.left.and.right"
+            case .recording: "record.circle.fill"
+            case .paused: "pause.circle.fill"
+            case .dormant: "record.circle"
+            case .error: "exclamationmark.triangle.fill"
+            }
+        }
+    }
+
+    /// Current state
+    var state: State = .idle
+
+    /// Connected receiver info
+    var receiver: KiwiSDRReceiver?
+
+    /// Recording duration in seconds
+    var recordingDuration: TimeInterval = 0
+
+    /// Audio peak level for level meter (0.0 to 1.0)
+    var peakLevel: Float = 0
+
+    /// S-meter reading from the KiwiSDR
+    var sMeter: UInt16 = 0
+
+    /// Whether audio output is muted
+    var isMuted = false
+
+    /// URL of the current recording file (for sharing)
+    var recordingFileURL: URL?
+
+    // MARK: Internal (accessed by WebSDRSession+Internals)
+
+    var client: KiwiSDRClient?
+    var recorder: WebSDRRecorder?
+    var audioEngine: KiwiSDRAudioEngine?
+    var streamTask: Task<Void, Never>?
+    var durationTimer: Timer?
+    var loggingSessionId: UUID?
+    var recordingId: UUID?
+    var modelContext: ModelContext?
+    var reconnectAttempts = 0
+    let maxReconnectAttempts = 5
+    var lastFrequencyMHz: Double = 14.060
+    var lastMode: String = "CW"
+    var lastSampleRate: Double = 12_000
+    var silenceTask: Task<Void, Never>?
+    var effectiveHost: String?
+    var effectivePort: Int?
+    var dormantTimeoutTask: Task<Void, Never>?
+
+    /// Optional callback for audio frames — used by TuneInManager to feed CW decoder
+    var onAudioFrame: (([Int16]) -> Void)?
+
+    /// Callback when all reconnect attempts to the current receiver are exhausted.
+    /// The caller (e.g., TuneInManager) can use this to try a different receiver.
+    var onReconnectsExhausted: (() async -> Void)?
+
+    /// Optional spot metadata for Tune In recordings (set by TuneInManager before start)
+    var tuneInSpotMetadata: TuneInSpotMetadata?
+
+    /// Accumulated parameter change events for the current recording
+    var parameterChanges: [SDRParameterEvent] = []
+
+    /// When the current recording started (for computing offsets)
+    var recordingStartDate: Date?
+
+    /// Maximum time to keep a dormant recording alive (30 minutes)
+    let maxDormantDuration: TimeInterval = 30 * 60
+
+    /// Clip bookmarks collected during this session
+    var clipBookmarks: [ClipBookmark] = []
+
+    /// Replay engine for hearing the last N seconds of captured audio
+    let replayEngine = SDRReplayEngine()
+
+    /// Buffer fill ratio for UI indicator (0.0 to 1.0)
+    var bufferFillRatio: Double {
+        audioEngine?.fillRatio ?? 0
+    }
+
+    /// Current KiwiSDR mode parameters (name, passband, bandwidth) derived
+    /// from session mode and frequency via the Rust core's mode tables.
+    var currentKiwiMode: FfiKiwiModeInfo {
+        kiwiModeInfo(mode: lastMode, frequencyMhz: lastFrequencyMHz)
+    }
+
+    /// URL to open this receiver in a web browser with current tuning
+    var webURL: URL? {
+        guard let receiver else {
+            return nil
+        }
+        let freqKHz = lastFrequencyMHz * 1_000
+        let mode = currentKiwiMode
+        let urlString = "http://\(receiver.host):\(receiver.port)"
+            + "/?f=\(String(format: "%.3f", freqKHz))"
+            + "/\(mode.kiwiName)/\(mode.lowCut),\(mode.highCut)"
+        return URL(string: urlString)
+    }
+
+    // MARK: - Connection Lifecycle
+
+    /// Start recording from a WebSDR.
+    /// If a dormant recording exists for the same session, resumes it
+    /// (filling the gap with silence) instead of creating a new file.
+    func start(
+        receiver: KiwiSDRReceiver,
+        frequencyMHz: Double,
+        mode: String,
+        loggingSessionId: UUID,
+        modelContext: ModelContext
+    ) async {
+        // Resume existing dormant recording for the same session
+        if state == .dormant,
+           recorder != nil,
+           self.loggingSessionId == loggingSessionId
+        {
+            await resumeFromDormant(
+                receiver: receiver,
+                frequencyMHz: frequencyMHz,
+                mode: mode
+            )
+            return
+        }
+
+        // Finalize any stale recording from a different session
+        if recorder != nil {
+            await finalize()
+        }
+
+        self.receiver = receiver
+        self.loggingSessionId = loggingSessionId
+        self.modelContext = modelContext
+        lastFrequencyMHz = frequencyMHz
+        lastMode = mode
+        effectiveHost = nil
+        effectivePort = nil
+        parameterChanges = []
+        recordingStartDate = Date()
+
+        await connectAndRecord(
+            receiver: receiver,
+            frequencyMHz: frequencyMHz,
+            mode: mode,
+            loggingSessionId: loggingSessionId,
+            modelContext: modelContext
+        )
+    }
+
+    /// Disconnect from the WebSDR but keep the recording alive with silence.
+    /// Call `start()` again to reconnect, or `finalize()` to close out.
+    func disconnect() async {
+        guard state == .recording || state == .paused else {
+            return
+        }
+
+        replayEngine.stopReplay()
+        let wasReceiver = receiver?.host ?? ""
+
+        // Stop audio stream
+        streamTask?.cancel()
+        streamTask = nil
+        audioEngine?.stop()
+        audioEngine = nil
+
+        if let client {
+            await client.disconnect()
+        }
+        client = nil
+
+        // Keep recording alive with silence
+        startSilenceWriter()
+        startDormantTimeout()
+
+        recordParameterChange(
+            type: .sdrDisconnected,
+            oldValue: wasReceiver,
+            newValue: ""
+        )
+
+        state = .dormant
+        receiver = nil
+        peakLevel = 0
+        effectiveHost = nil
+        effectivePort = nil
+    }
+
+    /// Fully stop and persist the recording. Called when the logging session ends.
+    func finalize() async {
+        stopSilenceWriter()
+        stopDormantTimeout()
+        durationTimer?.invalidate()
+        durationTimer = nil
+        streamTask?.cancel()
+        streamTask = nil
+
+        audioEngine?.stop()
+        audioEngine = nil
+
+        if let recorder {
+            _ = await recorder.stopRecording()
+        }
+        if let client {
+            await client.disconnect()
+        }
+
+        finalizeRecording()
+
+        client = nil
+        recorder = nil
+        state = .idle
+        receiver = nil
+        recordingDuration = 0
+        recordingFileURL = nil
+        peakLevel = 0
+        isMuted = false
+        effectiveHost = nil
+        effectivePort = nil
+        parameterChanges = []
+        clipBookmarks = []
+        recordingStartDate = nil
+        tuneInSpotMetadata = nil
+        onReconnectsExhausted = nil
+        replayEngine.reset()
+    }
+
+    /// Legacy stop — disconnects but keeps recording for stitching.
+    /// Use `finalize()` for full teardown.
+    func stop() async {
+        await disconnect()
+    }
+
+    // MARK: - Pause / Resume
+
+    /// Pause recording. Writes silence to maintain timeline alignment.
+    func pause() async {
+        guard state == .recording else {
+            return
+        }
+        // Write silence instead of pausing recorder — keeps timeline aligned
+        startSilenceWriter()
+        audioEngine?.setMuted(true)
+
+        recordParameterChange(type: .pause, oldValue: "", newValue: "")
+        state = .paused
+    }
+
+    /// Resume recording from pause.
+    func resume() async {
+        guard state == .paused else {
+            return
+        }
+        stopSilenceWriter()
+        if !isMuted {
+            audioEngine?.setMuted(false)
+        }
+
+        recordParameterChange(type: .resume, oldValue: "", newValue: "")
+        state = .recording
+    }
+
+    /// Toggle mute state
+    func toggleMute() {
+        isMuted.toggle()
+        audioEngine?.setMuted(isMuted)
+    }
+
+    /// Add a clip bookmark to the current recording
+    func addClipBookmark(_ bookmark: ClipBookmark) {
+        clipBookmarks.append(bookmark)
+    }
+
+    // MARK: - Tuning
+
+    /// Retune to a new frequency (follows session frequency changes)
+    func retune(frequencyMHz: Double) async {
+        let oldFreqKHz = lastFrequencyMHz * 1_000
+        let newFreqKHz = frequencyMHz * 1_000
+        lastFrequencyMHz = frequencyMHz
+        try? await client?.retune(frequencyKHz: newFreqKHz)
+
+        recordParameterChange(
+            type: .frequency,
+            oldValue: String(format: "%.3f", oldFreqKHz),
+            newValue: String(format: "%.3f", newFreqKHz)
+        )
+    }
+
+    /// Change mode (follows session mode changes)
+    func changeMode(_ mode: String, frequencyMHz: Double?) async {
+        let oldMode = lastMode
+        lastMode = mode
+
+        if let frequencyMHz, frequencyMHz != lastFrequencyMHz {
+            let oldFreqKHz = lastFrequencyMHz * 1_000
+            lastFrequencyMHz = frequencyMHz
+            recordParameterChange(
+                type: .frequency,
+                oldValue: String(format: "%.3f", oldFreqKHz),
+                newValue: String(format: "%.3f", frequencyMHz * 1_000)
+            )
+        } else if let frequencyMHz {
+            lastFrequencyMHz = frequencyMHz
+        }
+
+        if oldMode != mode {
+            recordParameterChange(
+                type: .mode,
+                oldValue: oldMode,
+                newValue: mode
+            )
+        }
+
+        try? await client?.changeMode(mode, frequencyMHz: frequencyMHz)
+    }
+
+    // MARK: - Parameter Change Tracking
+
+    /// Record a parameter change event with timestamp and offset
+    func recordParameterChange(
+        type: SDRParameterEvent.ChangeType,
+        oldValue: String,
+        newValue: String
+    ) {
+        let now = Date()
+        let offset = recordingStartDate.map {
+            now.timeIntervalSince($0)
+        } ?? 0
+
+        let event = SDRParameterEvent(
+            type: type,
+            timestamp: now,
+            offsetSeconds: offset,
+            oldValue: oldValue,
+            newValue: newValue
+        )
+        parameterChanges.append(event)
+    }
+}
+
+// MARK: - WebSDRSession + Private
+
+extension WebSDRSession {
+    /// Connect to the WebSDR and begin streaming audio into the recorder.
+    func connectAndRecord(
+        receiver: KiwiSDRReceiver,
+        frequencyMHz: Double,
+        mode: String,
+        loggingSessionId: UUID,
+        modelContext: ModelContext
+    ) async {
+        let frequencyKHz = frequencyMHz * 1_000
+
+        state = .connecting
+
+        do {
+            let (newClient, audioStream) = try await makeConnectedClient(
+                host: receiver.host, port: receiver.port,
+                frequencyKHz: frequencyKHz, mode: mode
+            )
+            client = newClient
+
+            try await setupRecording(
+                loggingSessionId: loggingSessionId,
+                receiver: receiver,
+                frequencyKHz: frequencyKHz,
+                mode: mode,
+                modelContext: modelContext
+            )
+
+            reconnectAttempts = 0
+            state = .recording
+
+            // Save last-used receiver for SDR auto-start
+            UserDefaults.standard.set(
+                "\(receiver.host):\(receiver.port)",
+                forKey: "sdrLastReceiverHostPort"
+            )
+            UserDefaults.standard.set(receiver.name, forKey: "sdrLastReceiverName")
+
+            streamTask = Task { [weak self] in
+                await self?.processAudioStream(audioStream)
+            }
+            startDurationTimer()
+        } catch {
+            state = .error(error.localizedDescription)
+            await cleanup()
+        }
+    }
+}
+
+// MARK: - WebSDRSession + Replay
+
+extension WebSDRSession {
+    /// Replay the last N seconds of captured SDR audio.
+    /// Mutes live playback during replay and restores it after.
+    func replayLastAudio(
+        seconds: TimeInterval = SDRReplayEngine.defaultReplayDuration
+    ) {
+        guard state == .recording || state == .paused else {
+            return
+        }
+        let wasMuted = isMuted
+        if !wasMuted {
+            audioEngine?.setMuted(true)
+        }
+        replayEngine.replayLast(seconds)
+
+        // Restore mute state when replay finishes
+        Task { [weak self] in
+            while self?.replayEngine.isReplaying == true {
+                try? await Task.sleep(for: .milliseconds(100))
+            }
+            guard let self, !wasMuted else {
+                return
+            }
+            audioEngine?.setMuted(false)
+        }
+    }
+}

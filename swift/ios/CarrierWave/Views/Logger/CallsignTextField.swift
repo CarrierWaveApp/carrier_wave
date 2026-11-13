@@ -1,0 +1,335 @@
+// Callsign Text Field
+//
+// A UITextField wrapper that properly handles cursor position
+// when entering mixed letters and numbers with auto-capitalization.
+
+import CarrierWaveData
+import SwiftUI
+import UIKit
+
+extension Notification.Name {
+    /// Posted to directly focus the callsign UITextField, bypassing SwiftUI's @FocusState.
+    /// Used after logging to reliably return focus even when another field's keyboard is dismissing.
+    static let focusCallsignField = Notification.Name("focusCallsignField")
+}
+
+// MARK: - CallsignTextField
+
+/// A text field optimized for callsign entry that maintains cursor position
+/// when typing numbers (works around iOS bug with textInputAutocapitalization)
+struct CallsignTextField: UIViewRepresentable {
+    // MARK: Lifecycle
+
+    init(
+        _ placeholder: String,
+        text: Binding<String>,
+        isFocused: FocusState<Bool>.Binding,
+        fontSize: CGFloat = 20,
+        showCommands: Bool = true,
+        allowedCommands: Set<CommandRowItem>? = nil,
+        onSubmit: @escaping () -> Void,
+        onCommand: @escaping (LoggerCommand) -> Void = { _ in }
+    ) {
+        self.placeholder = placeholder
+        _text = text
+        self.isFocused = isFocused
+        self.fontSize = fontSize
+        self.showCommands = showCommands
+        self.allowedCommands = allowedCommands
+        self.onSubmit = onSubmit
+        self.onCommand = onCommand
+    }
+
+    // MARK: Internal
+
+    // MARK: - Coordinator
+
+    class Coordinator: NSObject, UITextFieldDelegate {
+        // MARK: Lifecycle
+
+        init(_ parent: CallsignTextField) {
+            self.parent = parent
+        }
+
+        deinit {
+            // Remove all observers for this object
+            NotificationCenter.default.removeObserver(self)
+        }
+
+        // MARK: Internal
+
+        var parent: CallsignTextField
+
+        /// Track whether we're currently processing a user edit
+        /// to avoid re-entrant updates from SwiftUI.
+        /// Uses a counter instead of a bool to handle rapid typing where
+        /// multiple edits can overlap before the async reset fires.
+        var uiKitEditCounter = 0
+        var lastProcessedEditCounter = 0
+
+        /// Reference to the text field for explicit dismiss
+        weak var textField: UITextField?
+
+        /// Whether a UIKit-originated edit is still being processed by SwiftUI
+        var isUpdatingFromUIKit: Bool {
+            uiKitEditCounter != lastProcessedEditCounter
+        }
+
+        @objc
+        func textFieldDidChange(_ textField: UITextField) {
+            uiKitEditCounter += 1
+            let editId = uiKitEditCounter
+            parent.text = textField.text ?? ""
+            // Delay resetting until after SwiftUI has processed the update
+            DispatchQueue.main.async { [weak self] in
+                self?.lastProcessedEditCounter = editId
+            }
+        }
+
+        func textFieldDidBeginEditing(_ textField: UITextField) {
+            parent.isFocused.wrappedValue = true
+        }
+
+        func textFieldDidEndEditing(_ textField: UITextField) {
+            parent.isFocused.wrappedValue = false
+        }
+
+        func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+            parent.onSubmit()
+            return true
+        }
+
+        // MARK: - Number Row Actions
+
+        @objc
+        func numberButtonTapped(_ sender: UIButton) {
+            guard let char = sender.titleLabel?.text,
+                  let textField
+            else {
+                return
+            }
+
+            // Insert at cursor position instead of appending to end
+            if let selectedRange = textField.selectedTextRange {
+                textField.replace(selectedRange, withText: char)
+            } else {
+                // Fallback: append if no cursor position available
+                parent.text.append(char)
+            }
+        }
+
+        @objc
+        func prefixButtonTapped(_ sender: UIButton) {
+            guard let prefix = sender.accessibilityIdentifier,
+                  let textField
+            else {
+                return
+            }
+            let known = KeyboardAccessoryBuilder.configuredPrefixes()
+            let newText = CallsignPrefixer.apply(
+                prefix,
+                to: textField.text ?? "",
+                knownPrefixes: known
+            )
+            textField.text = newText
+            textField.selectedTextRange = textField.textRange(
+                from: textField.endOfDocument,
+                to: textField.endOfDocument
+            )
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            textFieldDidChange(textField)
+        }
+
+        @objc
+        func commandButtonTapped(_ sender: UIButton) {
+            guard let commandKey = sender.accessibilityIdentifier,
+                  let item = CommandRowItem(rawValue: commandKey)
+            else {
+                return
+            }
+            parent.onCommand(item.command)
+        }
+
+        @objc
+        func submitTapped(_ sender: UIButton) {
+            parent.onSubmit()
+        }
+
+        @objc
+        func dismissKeyboard(_ sender: UIButton) {
+            // Explicitly resign first responder, then update SwiftUI state
+            textField?.resignFirstResponder()
+            parent.isFocused.wrappedValue = false
+        }
+
+        func startObservingConfigurationChanges() {
+            keyboardConfigObserver = NotificationCenter.default.addObserver(
+                forName: .keyboardRowConfigurationChanged,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                Task { @MainActor in
+                    self?.rebuildAccessoryView()
+                }
+            }
+            commandConfigObserver = NotificationCenter.default.addObserver(
+                forName: .commandRowConfigurationChanged,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                Task { @MainActor in
+                    self?.rebuildAccessoryView()
+                }
+            }
+            focusObserver = NotificationCenter.default.addObserver(
+                forName: .focusCallsignField,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                Task { @MainActor in
+                    self?.textField?.becomeFirstResponder()
+                }
+            }
+        }
+
+        func stopObservingConfigurationChanges() {
+            if let observer = keyboardConfigObserver {
+                NotificationCenter.default.removeObserver(observer)
+                keyboardConfigObserver = nil
+            }
+            if let observer = commandConfigObserver {
+                NotificationCenter.default.removeObserver(observer)
+                commandConfigObserver = nil
+            }
+            if let observer = focusObserver {
+                NotificationCenter.default.removeObserver(observer)
+                focusObserver = nil
+            }
+        }
+
+        // MARK: Private
+
+        /// Observer for keyboard row configuration changes
+        private var keyboardConfigObserver: NSObjectProtocol?
+        /// Observer for command row configuration changes
+        private var commandConfigObserver: NSObjectProtocol?
+        /// Observer for direct focus requests (bypasses @FocusState)
+        private var focusObserver: NSObjectProtocol?
+
+        private func rebuildAccessoryView() {
+            guard let textField else {
+                return
+            }
+            textField.inputAccessoryView = parent.createInputAccessoryView(coordinator: self)
+            // Force layout update if keyboard is visible
+            textField.reloadInputViews()
+        }
+    }
+
+    @Binding var text: String
+
+    let placeholder: String
+    var isFocused: FocusState<Bool>.Binding
+    let fontSize: CGFloat
+    let showCommands: Bool
+    /// Command-row items this field's host can run; `nil` = all configured.
+    let allowedCommands: Set<CommandRowItem>?
+    let onSubmit: () -> Void
+    let onCommand: (LoggerCommand) -> Void
+
+    func makeUIView(context: Context) -> UITextField {
+        let textField = UITextField()
+        textField.placeholder = placeholder
+        let baseFont = UIFont.monospacedSystemFont(ofSize: fontSize, weight: .regular)
+        textField.font = UIFontMetrics(forTextStyle: .body).scaledFont(for: baseFont)
+        textField.adjustsFontForContentSizeCategory = true
+        textField.autocapitalizationType = .allCharacters
+        textField.autocorrectionType = .no
+        textField.spellCheckingType = .no
+        textField.returnKeyType = .send
+        textField.enablesReturnKeyAutomatically = true
+        textField.clearButtonMode = .never
+        textField.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        textField.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        textField.delegate = context.coordinator
+        textField.addTarget(
+            context.coordinator,
+            action: #selector(Coordinator.textFieldDidChange(_:)),
+            for: .editingChanged
+        )
+
+        // Store reference for explicit dismiss and start observing config changes
+        context.coordinator.textField = textField
+        context.coordinator.startObservingConfigurationChanges()
+
+        // Add input accessory view with number row
+        textField.inputAccessoryView = createInputAccessoryView(coordinator: context.coordinator)
+
+        return textField
+    }
+
+    func updateUIView(_ uiView: UITextField, context: Context) {
+        // Skip updates that originated from user typing to preserve cursor position
+        // Only update for programmatic changes (e.g., clearing field after logging)
+        if !context.coordinator.isUpdatingFromUIKit, uiView.text != text {
+            // Save cursor position relative to end of text
+            let cursorOffsetFromEnd: Int
+            if let selectedRange = uiView.selectedTextRange {
+                let cursorPosition = uiView.offset(
+                    from: uiView.endOfDocument, to: selectedRange.end
+                )
+                cursorOffsetFromEnd = cursorPosition
+            } else {
+                cursorOffsetFromEnd = 0
+            }
+
+            uiView.text = text
+
+            // Restore cursor position relative to end of text
+            // This handles cases where text length changed
+            if let newPosition = uiView.position(
+                from: uiView.endOfDocument,
+                offset: cursorOffsetFromEnd
+            ) {
+                uiView.selectedTextRange = uiView.textRange(from: newPosition, to: newPosition)
+            }
+        }
+
+        // Handle focus state changes from SwiftUI
+        // Only becomeFirstResponder if SwiftUI wants focus and we don't have it
+        // Only resignFirstResponder if SwiftUI doesn't want focus AND we're not actively editing
+        // The isEditing check prevents focus loss during typing
+        if isFocused.wrappedValue, !uiView.isFirstResponder {
+            uiView.becomeFirstResponder()
+        } else if !isFocused.wrappedValue, uiView.isFirstResponder, !uiView.isEditing {
+            uiView.resignFirstResponder()
+        }
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+
+    // MARK: - Input Accessory View
+
+    func createInputAccessoryView(coordinator: Coordinator) -> UIView {
+        // Keep the position-local prefix suggestions warm; a change posts
+        // keyboardRowConfigurationChanged, which rebuilds this accessory.
+        PrefixRowService.shared.refreshIfNeeded()
+        return KeyboardAccessoryBuilder.createAccessoryView(
+            actions: KeyboardAccessoryActions(
+                numberButton: #selector(Coordinator.numberButtonTapped(_:)),
+                prefixButton: #selector(Coordinator.prefixButtonTapped(_:)),
+                commandButton: #selector(Coordinator.commandButtonTapped(_:)),
+                dismiss: #selector(Coordinator.dismissKeyboard(_:)),
+                submit: #selector(Coordinator.submitTapped(_:)),
+                target: coordinator
+            ),
+            includeCommands: showCommands,
+            allowedCommands: allowedCommands,
+            callsignProvider: { [weak coordinator] in
+                coordinator?.parent.text ?? ""
+            }
+        )
+    }
+}

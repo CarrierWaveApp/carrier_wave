@@ -1,0 +1,38 @@
+[package]
+name = "cw-store"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+description = "Carrier Wave encrypted (SQLCipher) entity store + bounded queries"
+
+[[bin]]
+name = "durability_crasher"
+required-features = ["testing"]
+
+[features]
+testing = ["dep:rand"]
+
+[dependencies]
+chrono = { workspace = true }
+cw-domain = { path = "../cw-domain" }
+serde = { workspace = true }
+thiserror = { workspace = true }
+# WSJT-X import (CAR-280): deterministic UUIDv5 QSO ids from the dedup key.
+uuid = { workspace = true }
+
+[dependencies.rand]
+version = "0.8"
+optional = true
+
+[dependencies.rusqlite]
+version = "0.32"
+# Production target: SQLCipher (encrypted at rest), key supplied at open time.
+# `bundled-sqlcipher-vendored-openssl` builds SQLCipher + OpenSSL from source so
+# the crate is self-contained on every platform (iOS/Android/Linux/Windows).
+features = ["bundled-sqlcipher-vendored-openssl", "functions"]
+
+[dev-dependencies]
+serde_json = "1"
+tempfile = "3"
+rand = "0.8"

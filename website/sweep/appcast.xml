@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <channel>
+        <title>CW Sweep</title>
+        <link>https://carrierwave.app/sweep/appcast.xml</link>
+        <description>Most recent updates to CW Sweep</description>
+        <language>en</language>
+                            <item>
+            <title>Version 0.14.0</title>
+            <pubDate>Mon, 05 Oct 2026 23:10:55 +0000</pubDate>
+            <sparkle:version>17</sparkle:version>
+            <sparkle:shortVersionString>0.14.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <enclosure url="https://carrierwave.app/sweep/CWSweep-0.14.0.dmg" sparkle:edSignature="JJsdkV4N6pf9bJA3ovXQotFFQXo32rKgLh15pJhFB6xIBgJ++0D7mFCd8Cg26kiC0XcEHeW4cJwNHu1JTJ7uAA==" length="46188365" type="application/octet-stream" />
+        </item>
+<item>
+            <title>Version 0.13.0</title>
+            <pubDate>Fri, 29 May 2026 03:57:31 +0000</pubDate>
+            <sparkle:version>16</sparkle:version>
+            <sparkle:shortVersionString>0.13.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <enclosure url="https://carrierwave.app/sweep/CWSweep-0.13.0.dmg" sparkle:edSignature="n5ILILvMizc9MIO2sQf0NlPsRFyMmjl5JUkg0Vxe7od902RQkDQ45JMEqxp6CEfAf/g5WimFqG352ylkBLAcAw==" length="17665000" type="application/octet-stream" />
+        </item>
+<item>
+            <title>Version 0.12.0</title>
+            <pubDate>Tue, 05 May 2026 13:41:20 +0000</pubDate>
+            <sparkle:version>14</sparkle:version>
+            <sparkle:shortVersionString>0.12.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <enclosure url="https://carrierwave.app/sweep/CWSweep-0.12.0.dmg" sparkle:edSignature="dTQZkLFjBhRBjvyuTaqwOsbn7RsrsaFpzCo8eFmeNml8dSrQsmhEIAcIWv61Ib15nv5V2nxLI1FYpvvY3sdCDw==" length="15577044" type="application/octet-stream" />
+        </item>
+</channel>
+</rss>

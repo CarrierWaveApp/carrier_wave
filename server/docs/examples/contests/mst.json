@@ -1,0 +1,154 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/contest-definition/v0.3",
+  "title": "Amateur Radio Contest Definition",
+  "version": "0.3.0",
+  "contests": [
+    {
+      "id": "icwc-mst",
+      "name": "ICWC Medium Speed Test",
+      "short_name": "MST",
+      "sponsor": {
+        "name": "International CW Council",
+        "url": "https://internationalcwcouncil.org/mst-contest/"
+      },
+      "modes": [
+        "CW"
+      ],
+      "bands": [
+        "160m",
+        "80m",
+        "40m",
+        "20m",
+        "15m",
+        "10m"
+      ],
+      "data_dependencies": {
+        "country_file": {
+          "id": "cty_dat",
+          "url": "https://www.country-files.com/contest/",
+          "file": "cty.dat",
+          "description": "Standard DXCC entity list",
+          "update_frequency": "before_each_contest",
+          "provides": [
+            "their_country",
+            "their_continent"
+          ]
+        }
+      },
+      "schedule": {
+        "type": "recurring_weekly",
+        "sessions": [
+          {
+            "day": "monday",
+            "start_utc": "13:00",
+            "duration_minutes": 60
+          },
+          {
+            "day": "monday",
+            "start_utc": "19:00",
+            "duration_minutes": 60
+          },
+          {
+            "day": "tuesday",
+            "start_utc": "03:00",
+            "duration_minutes": 60
+          }
+        ],
+        "session_scoring": "independent"
+      },
+      "exchange": {
+        "sent": [
+          {
+            "name": "name",
+            "type": "text",
+            "label": "Name",
+            "required": true
+          },
+          {
+            "name": "serial",
+            "type": "serial_number",
+            "label": "Serial #",
+            "required": true,
+            "auto_increment": true
+          }
+        ],
+        "received": [
+          {
+            "name": "name",
+            "type": "text",
+            "label": "Name",
+            "required": true
+          },
+          {
+            "name": "serial",
+            "type": "serial_number",
+            "label": "Serial #",
+            "required": true
+          }
+        ]
+      },
+      "dupe_rules": {
+        "scope": "session",
+        "key": [
+          "callsign",
+          "band"
+        ]
+      },
+      "scoring": {
+        "phases": [
+          {
+            "id": "qso_points",
+            "type": "per_qso",
+            "rules": [
+              {
+                "value": 1
+              }
+            ]
+          },
+          {
+            "id": "mult_callsigns",
+            "type": "multiplier_count",
+            "description": "Unique callsigns worked across all bands",
+            "source": "their_callsign",
+            "scope": "per_contest",
+            "include_zero_point_qsos": false
+          },
+          {
+            "id": "total",
+            "type": "aggregate",
+            "operation": {
+              "op": "multiply",
+              "inputs": [
+                {
+                  "op": "ref",
+                  "phase": "qso_points"
+                },
+                {
+                  "op": "ref",
+                  "phase": "mult_callsigns"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "cabrillo": {
+        "contest_name": "ICWC-MST",
+        "version": "3.0"
+      },
+      "categories": [
+        {
+          "id": "single_op",
+          "label": "Single Operator",
+          "power_classes": [
+            "HP",
+            "LP",
+            "QRP"
+          ]
+        }
+      ],
+      "experimental": true
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "slug": "rit-clear-center",
+  "name": "Clear RIT and center",
+  "icon": "scope",
+  "description": "Reset Receive Incremental Tuning offset to zero on a CI-V radio (Icom). One-shot — leaves the rig's main VFO untouched. Pair with the editor to bind to a hardware shortcut.",
+  "tags": ["rit", "icom"],
+  "appliesTo": ["civ"],
+  "capabilities": {
+    "transmits": false,
+    "changesFrequency": false,
+    "changesMode": false,
+    "changesPower": false,
+    "usesRawBytes": true
+  },
+  "args": [],
+  "steps": [
+    { "kind": "rawBytes", "protocol": "civ", "bytes": "FE FE 94 E0 21 00 FD" }
+  ],
+  "format": 2,
+  "status": "approved"
+}

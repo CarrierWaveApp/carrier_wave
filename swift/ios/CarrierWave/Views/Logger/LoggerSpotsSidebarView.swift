@@ -1,0 +1,123 @@
+import CarrierWaveData
+import SwiftUI
+
+// MARK: - LoggerSpotsSidebarView
+
+/// Tabbed sidebar for iPad showing POTA spots, RBN/My Spots, P2P opportunities, and session map.
+/// Lives alongside LoggerView in a horizontal layout.
+struct LoggerSpotsSidebarView: View {
+    // MARK: Internal
+
+    @Binding var selectedTab: SidebarTab
+    @Binding var rbnTargetCallsign: String?
+
+    let userCallsign: String?
+    let userGrid: String?
+    let isPOTAActivation: Bool
+    let currentBand: String?
+    let currentMode: String?
+    let sessionQSOs: [QSO]
+    let roveStops: [RoveStop]
+    let onSelectSpot: (SpotSelection) -> Void
+
+    var body: some View {
+        VStack(spacing: 0) {
+            tabPicker
+            Divider()
+            tabContent
+                .frame(maxHeight: .infinity)
+        }
+        .frame(maxHeight: .infinity)
+        .background(Color(.systemGroupedBackground))
+    }
+
+    // MARK: Private
+
+    private var visibleTabs: [SidebarTab] {
+        if isPOTAActivation {
+            SidebarTab.allCases
+        } else {
+            [.hunt, .mySpots, .map, .azimuthal]
+        }
+    }
+
+    // MARK: - Tab Picker
+
+    private var tabPicker: some View {
+        Picker("Spots", selection: $selectedTab) {
+            ForEach(visibleTabs) { tab in
+                Text(tab.rawValue).tag(tab)
+            }
+        }
+        .pickerStyle(.segmented)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+    }
+
+    // MARK: - Tab Content
+
+    @ViewBuilder
+    private var tabContent: some View {
+        switch selectedTab {
+        case .hunt:
+            POTASpotsView(
+                displayMode: .sidebar,
+                userCallsign: userCallsign,
+                initialBand: currentBand,
+                initialMode: currentMode,
+                onSelectSpot: { spot in
+                    onSelectSpot(.pota(spot))
+                },
+                onSelectSOTASpot: { spot in
+                    onSelectSpot(.sota(spot))
+                }
+            )
+
+        case .mySpots:
+            RBNPanelView(
+                sidebarCallsign: userCallsign
+                    ?? UserDefaults.standard.string(forKey: "loggerDefaultCallsign")
+                    ?? "UNKNOWN",
+                targetCallsign: rbnTargetCallsign,
+                onSelectSpot: { spot in
+                    onSelectSpot(.rbn(spot))
+                }
+            )
+
+        case .p2p:
+            SidebarP2PView(
+                userCallsign: userCallsign,
+                userGrid: userGrid,
+                isPOTAActivation: isPOTAActivation,
+                initialBand: currentBand,
+                initialMode: currentMode,
+                onSelectOpportunity: { opportunity in
+                    onSelectSpot(.p2p(opportunity))
+                }
+            )
+
+        case .map:
+            SidebarMapView(
+                sessionQSOs: sessionQSOs,
+                myGrid: userGrid,
+                roveStops: roveStops
+            )
+
+        case .azimuthal:
+            if let grid = userGrid {
+                AzimuthalContainerView(
+                    myGrid: grid,
+                    spots: [],
+                    sessionQSOs: sessionQSOs,
+                    sessionAntenna: nil
+                )
+            } else {
+                ContentUnavailableView(
+                    "No Grid Square",
+                    systemImage: "location.slash",
+                    description: Text("Set your grid square to use the azimuthal view.")
+                )
+            }
+        }
+    }
+}

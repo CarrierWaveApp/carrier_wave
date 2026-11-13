@@ -1,0 +1,1137 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		048F654563668B1DF925C34D /* CarrierWaveWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 0FCFE1EFC1D72D2A48680420 /* CarrierWaveWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		053992CD787EBD9EC67B69BA /* PropagationCheckTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01D1851A5E4CF6A41283109A /* PropagationCheckTests.swift */; };
+		0E9AB3BE12D3475D6E49F14D /* WatchSessionDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40E17F05E31D95F0EB73D688 /* WatchSessionDelegate.swift */; };
+		15ADFCA1198A049CA4F8FD24 /* StatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C51884768001862EF7D7488B /* StatsView.swift */; };
+		1F24DBB851D4A3AA12AB7EEC /* QuickStartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A92675B1B784ABC0EA3FA356 /* QuickStartView.swift */; };
+		21A2D7EA17772250499A80E1 /* WatchNetworkService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D1541FDC77A51B52706D513 /* WatchNetworkService.swift */; };
+		389F679B1C509511BC5CBBAD /* IdleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA9D2967992927A1A6B0984F /* IdleView.swift */; };
+		3DEF47BAF3D0D285C278DA9F /* CarrierWaveWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07398A1125705ADB8FA99900 /* CarrierWaveWatchApp.swift */; };
+		62AFCBC4FC5E9EB11420DF91 /* SpotsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76B2E7ACAE2F9415FC39E60A /* SpotsListView.swift */; };
+		68988BA40D95E587D42E2D50 /* ActivationProgressRing.swift in Sources */ = {isa = PBXBuildFile; fileRef = C41509B70794FC42EA5ABD9A /* ActivationProgressRing.swift */; };
+		82C5F8D294891E0DD13A1146 /* SolarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F48ACF9024A3C953084B362 /* SolarView.swift */; };
+		863AF8C51390A582D0C6CF23 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4D739778B0E9A372D780C7C /* ContentView.swift */; };
+		916242E85DE2B9874DFE311F /* ActiveSessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55A7305880DD8730DD1B753F /* ActiveSessionView.swift */; };
+		92BEE122BE706E3A87CA97AB /* SharedDataReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = E710C1E17ED46AEC55D07BBA /* SharedDataReader.swift */; };
+		A281DF5350AAB490BC0A0F65 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 518D696504E373AF7A909F81 /* Foundation.framework */; };
+		A4B98C617E82778D27395231 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F164D6AB25C3BDE8E9D06A48 /* Assets.xcassets */; };
+		CF0A3F4C2F99A1BF002A5198 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = CFZIP00022F4B00000021A936 /* ZIPFoundation */; };
+		CF0CLM4C2F99A1BF002A5198 /* ClusterMap in Frameworks */ = {isa = PBXBuildFile; productRef = CFCLM00022F4B00000021A936 /* ClusterMap */; };
+		CF8DE7EC2F344AED007A0358 /* CarrierWaveCore in Frameworks */ = {isa = PBXBuildFile; productRef = CFCORE0022F4B00000021A936 /* CarrierWaveCore */; };
+		CFA0000D2F50000D007A0358 /* CarrierWaveWidgets.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = CFA000012F500001007A0358 /* CarrierWaveWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		CFDATA00E2F344AED007A0358 /* CarrierWaveData in Frameworks */ = {isa = PBXBuildFile; productRef = CFDATA0022F4B00000021A936 /* CarrierWaveData */; };
+		CFDEB0122F5A5001AAAA0002 /* SpotlightDebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFDEB0112F5A5001AAAA0001 /* SpotlightDebugView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		CF8DD1BD2F2098950021A936 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = CF8DD1A52F2098940021A936 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = CF8DD1AC2F2098940021A936;
+			remoteInfo = CarrierWave;
+		};
+		CF8DD1C72F2098950021A936 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = CF8DD1A52F2098940021A936 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = CF8DD1AC2F2098940021A936;
+			remoteInfo = CarrierWave;
+		};
+		CFA0000A2F50000A007A0358 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = CF8DD1A52F2098940021A936 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = CFA000062F500006007A0358;
+			remoteInfo = CarrierWaveWidgets;
+		};
+		D14D998666490ED11FFF7BA1 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = CF8DD1A52F2098940021A936 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4D7D39B157DB6390DB8674B6;
+			remoteInfo = CarrierWaveWatch;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		97840EB2BF539A63A24745A4 /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				048F654563668B1DF925C34D /* CarrierWaveWatch.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CFA0000C2F50000C007A0358 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				CFA0000D2F50000D007A0358 /* CarrierWaveWidgets.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		CA158000000000000000A936 /* Versions.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Versions.xcconfig; path = ../Versions.xcconfig; sourceTree = SOURCE_ROOT; };
+		01D1851A5E4CF6A41283109A /* PropagationCheckTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PropagationCheckTests.swift; sourceTree = "<group>"; };
+		07398A1125705ADB8FA99900 /* CarrierWaveWatchApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CarrierWaveWatchApp.swift; sourceTree = "<group>"; };
+		0FCFE1EFC1D72D2A48680420 /* CarrierWaveWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CarrierWaveWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		1D1541FDC77A51B52706D513 /* WatchNetworkService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WatchNetworkService.swift; path = ../watch/Services/WatchNetworkService.swift; sourceTree = SOURCE_ROOT; };
+		1F48ACF9024A3C953084B362 /* SolarView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SolarView.swift; sourceTree = "<group>"; };
+		40E17F05E31D95F0EB73D688 /* WatchSessionDelegate.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WatchSessionDelegate.swift; sourceTree = "<group>"; };
+		518D696504E373AF7A909F81 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/WatchOS.platform/Developer/SDKs/WatchOS11.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
+		55A7305880DD8730DD1B753F /* ActiveSessionView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ActiveSessionView.swift; sourceTree = "<group>"; };
+		76B2E7ACAE2F9415FC39E60A /* SpotsListView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SpotsListView.swift; sourceTree = "<group>"; };
+		A4D739778B0E9A372D780C7C /* ContentView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		A92675B1B784ABC0EA3FA356 /* QuickStartView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = QuickStartView.swift; sourceTree = "<group>"; };
+		C41509B70794FC42EA5ABD9A /* ActivationProgressRing.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ActivationProgressRing.swift; sourceTree = "<group>"; };
+		C51884768001862EF7D7488B /* StatsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = StatsView.swift; sourceTree = "<group>"; };
+		CF8DD1AD2F2098940021A936 /* CarrierWave.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CarrierWave.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		CF8DD1BC2F2098950021A936 /* CarrierWaveTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CarrierWaveTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		CF8DD1C62F2098950021A936 /* CarrierWaveUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CarrierWaveUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		CFA000012F500001007A0358 /* CarrierWaveWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = CarrierWaveWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		CFDEB0112F5A5001AAAA0001 /* SpotlightDebugView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SpotlightDebugView.swift; path = CarrierWave/Views/Settings/SpotlightDebugView.swift; sourceTree = SOURCE_ROOT; };
+		D1E133306A7B699188A463B1 /* CarrierWaveWatch.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = CarrierWaveWatch.entitlements; sourceTree = "<group>"; };
+		E710C1E17ED46AEC55D07BBA /* SharedDataReader.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SharedDataReader.swift; sourceTree = "<group>"; };
+		F164D6AB25C3BDE8E9D06A48 /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		FA9D2967992927A1A6B0984F /* IdleView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = IdleView.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		CF2284E92F29585A0043E333 /* Exceptions for "CarrierWave" folder in "CarrierWave" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+				Services/FILE_INDEX.md,
+				Views/FILE_INDEX.md,
+				Views/Settings/SpotlightDebugView.swift,
+			);
+			target = CF8DD1AC2F2098940021A936 /* CarrierWave */;
+		};
+		CFA000102F500010007A0358 /* Exceptions for "../widgets" folder in "CarrierWaveWidgets" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = CFA000062F500006007A0358 /* CarrierWaveWidgets */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		CF8DD1AF2F2098940021A936 /* CarrierWave */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				CF2284E92F29585A0043E333 /* Exceptions for "CarrierWave" folder in "CarrierWave" target */,
+			);
+			path = CarrierWave;
+			sourceTree = "<group>";
+		};
+		CF8DD1BF2F2098950021A936 /* CarrierWaveTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = CarrierWaveTests;
+			sourceTree = "<group>";
+		};
+		CF8DD1C92F2098950021A936 /* CarrierWaveUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = CarrierWaveUITests;
+			sourceTree = "<group>";
+		};
+		CFA000022F500002007A0358 /* ../widgets */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				CFA000102F500010007A0358 /* Exceptions for "../widgets" folder in "CarrierWaveWidgets" target */,
+			);
+			path = ../widgets;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		243D1F07A27436E1179FBC06 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A281DF5350AAB490BC0A0F65 /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CF8DD1AA2F2098940021A936 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CF0A3F4C2F99A1BF002A5198 /* ZIPFoundation in Frameworks */,
+				CF0CLM4C2F99A1BF002A5198 /* ClusterMap in Frameworks */,
+				CF8DE7EC2F344AED007A0358 /* CarrierWaveCore in Frameworks */,
+				CFDATA00E2F344AED007A0358 /* CarrierWaveData in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CF8DD1B92F2098950021A936 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CF8DD1C32F2098950021A936 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CFA000032F500003007A0358 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		05EB3E9CA9EDDC33A3E14D25 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				FA9D2967992927A1A6B0984F /* IdleView.swift */,
+				1F48ACF9024A3C953084B362 /* SolarView.swift */,
+				76B2E7ACAE2F9415FC39E60A /* SpotsListView.swift */,
+				C51884768001862EF7D7488B /* StatsView.swift */,
+				55A7305880DD8730DD1B753F /* ActiveSessionView.swift */,
+				C41509B70794FC42EA5ABD9A /* ActivationProgressRing.swift */,
+				A92675B1B784ABC0EA3FA356 /* QuickStartView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		07E7E34B103B1D25348668D5 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				E710C1E17ED46AEC55D07BBA /* SharedDataReader.swift */,
+				40E17F05E31D95F0EB73D688 /* WatchSessionDelegate.swift */,
+				1D1541FDC77A51B52706D513 /* WatchNetworkService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		2240A51208A261700DF329ED /* CarrierWave */ = {
+			isa = PBXGroup;
+			children = (
+				69B8D803B8DA343724C82232 /* Models */,
+			);
+			path = CarrierWave;
+			sourceTree = "<group>";
+		};
+		69B8D803B8DA343724C82232 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		744D52DD9820C8D76460F42C /* CarrierWaveTests */ = {
+			isa = PBXGroup;
+			children = (
+				01D1851A5E4CF6A41283109A /* PropagationCheckTests.swift */,
+			);
+			path = CarrierWaveTests;
+			sourceTree = "<group>";
+		};
+		7FD56C06FF2C6F4EE90CDFD7 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				E83E228B2F489A5EEFCC5667 /* watchOS */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		B02D6B769AAAE17783AD5DBF /* CarrierWaveWatch */ = {
+			isa = PBXGroup;
+			children = (
+				05EB3E9CA9EDDC33A3E14D25 /* Views */,
+				07E7E34B103B1D25348668D5 /* Services */,
+				07398A1125705ADB8FA99900 /* CarrierWaveWatchApp.swift */,
+				A4D739778B0E9A372D780C7C /* ContentView.swift */,
+				F164D6AB25C3BDE8E9D06A48 /* Assets.xcassets */,
+				D1E133306A7B699188A463B1 /* CarrierWaveWatch.entitlements */,
+			);
+			name = CarrierWaveWatch;
+			path = ../watch;
+			sourceTree = "<group>";
+		};
+		CF0A3F4D2F99A1BF002A5198 /* Recovered References */ = {
+			isa = PBXGroup;
+			children = (
+				CFDEB0112F5A5001AAAA0001 /* SpotlightDebugView.swift */,
+			);
+			name = "Recovered References";
+			sourceTree = "<group>";
+		};
+		CF8DD1A42F2098940021A936 = {
+			isa = PBXGroup;
+			children = (
+				CA158000000000000000A936 /* Versions.xcconfig */,
+				CF8DD1AF2F2098940021A936 /* CarrierWave */,
+				CFA000022F500002007A0358 /* ../widgets */,
+				CF8DD1BF2F2098950021A936 /* CarrierWaveTests */,
+				CF8DD1C92F2098950021A936 /* CarrierWaveUITests */,
+				CF8DD1AE2F2098940021A936 /* Products */,
+				7FD56C06FF2C6F4EE90CDFD7 /* Frameworks */,
+				B02D6B769AAAE17783AD5DBF /* CarrierWaveWatch */,
+				CF0A3F4D2F99A1BF002A5198 /* Recovered References */,
+				2240A51208A261700DF329ED /* CarrierWave */,
+				744D52DD9820C8D76460F42C /* CarrierWaveTests */,
+			);
+			sourceTree = "<group>";
+		};
+		CF8DD1AE2F2098940021A936 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				CF8DD1AD2F2098940021A936 /* CarrierWave.app */,
+				CFA000012F500001007A0358 /* CarrierWaveWidgets.appex */,
+				CF8DD1BC2F2098950021A936 /* CarrierWaveTests.xctest */,
+				CF8DD1C62F2098950021A936 /* CarrierWaveUITests.xctest */,
+				0FCFE1EFC1D72D2A48680420 /* CarrierWaveWatch.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		E83E228B2F489A5EEFCC5667 /* watchOS */ = {
+			isa = PBXGroup;
+			children = (
+				518D696504E373AF7A909F81 /* Foundation.framework */,
+			);
+			name = watchOS;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		4D7D39B157DB6390DB8674B6 /* CarrierWaveWatch */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7D3D3FC061538458F9D73993 /* Build configuration list for PBXNativeTarget "CarrierWaveWatch" */;
+			buildPhases = (
+				2E9B246F544CADEC33826BE4 /* Sources */,
+				243D1F07A27436E1179FBC06 /* Frameworks */,
+				54FA00501D05D656E05B10C5 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = CarrierWaveWatch;
+			productName = CarrierWaveWatch;
+			productReference = 0FCFE1EFC1D72D2A48680420 /* CarrierWaveWatch.app */;
+			productType = "com.apple.product-type.application";
+		};
+		CF8DD1AC2F2098940021A936 /* CarrierWave */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CF8DD1D02F2098950021A936 /* Build configuration list for PBXNativeTarget "CarrierWave" */;
+			buildPhases = (
+				CF8DD1A92F2098940021A936 /* Sources */,
+				CF8DD1AA2F2098940021A936 /* Frameworks */,
+				CF8DD1AB2F2098940021A936 /* Resources */,
+				CFA0000C2F50000C007A0358 /* Embed App Extensions */,
+				97840EB2BF539A63A24745A4 /* Embed Watch Content */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				CFA0000B2F50000B007A0358 /* PBXTargetDependency */,
+				CF88F60B939BF7719D8B59B3 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				CF8DD1AF2F2098940021A936 /* CarrierWave */,
+			);
+			name = CarrierWave;
+			packageProductDependencies = (
+				CFCORE0022F4B00000021A936 /* CarrierWaveCore */,
+				CFDATA0022F4B00000021A936 /* CarrierWaveData */,
+				CFZIP00022F4B00000021A936 /* ZIPFoundation */,
+				CFCLM00022F4B00000021A936 /* ClusterMap */,
+			);
+			productName = CarrierWave;
+			productReference = CF8DD1AD2F2098940021A936 /* CarrierWave.app */;
+			productType = "com.apple.product-type.application";
+		};
+		CF8DD1BB2F2098950021A936 /* CarrierWaveTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CF8DD1D32F2098950021A936 /* Build configuration list for PBXNativeTarget "CarrierWaveTests" */;
+			buildPhases = (
+				CF8DD1B82F2098950021A936 /* Sources */,
+				CF8DD1B92F2098950021A936 /* Frameworks */,
+				CF8DD1BA2F2098950021A936 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				CF8DD1BE2F2098950021A936 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				CF8DD1BF2F2098950021A936 /* CarrierWaveTests */,
+			);
+			name = CarrierWaveTests;
+			productName = CarrierWaveTests;
+			productReference = CF8DD1BC2F2098950021A936 /* CarrierWaveTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		CF8DD1C52F2098950021A936 /* CarrierWaveUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CF8DD1D62F2098950021A936 /* Build configuration list for PBXNativeTarget "CarrierWaveUITests" */;
+			buildPhases = (
+				CF8DD1C22F2098950021A936 /* Sources */,
+				CF8DD1C32F2098950021A936 /* Frameworks */,
+				CF8DD1C42F2098950021A936 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				CF8DD1C82F2098950021A936 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				CF8DD1C92F2098950021A936 /* CarrierWaveUITests */,
+			);
+			name = CarrierWaveUITests;
+			productName = CarrierWaveUITests;
+			productReference = CF8DD1C62F2098950021A936 /* CarrierWaveUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		CFA000062F500006007A0358 /* CarrierWaveWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CFA000092F500009007A0358 /* Build configuration list for PBXNativeTarget "CarrierWaveWidgets" */;
+			buildPhases = (
+				CFA000042F500004007A0358 /* Sources */,
+				CFA000032F500003007A0358 /* Frameworks */,
+				CFA000052F500005007A0358 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				CFA000022F500002007A0358 /* ../widgets */,
+			);
+			name = CarrierWaveWidgets;
+			productName = CarrierWaveWidgets;
+			productReference = CFA000012F500001007A0358 /* CarrierWaveWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		CF8DD1A52F2098940021A936 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2620;
+				LastUpgradeCheck = 2630;
+				TargetAttributes = {
+					4D7D39B157DB6390DB8674B6 = {
+						CreatedOnToolsVersion = 16.2;
+					};
+					CF8DD1AC2F2098940021A936 = {
+						CreatedOnToolsVersion = 26.2;
+					};
+					CF8DD1BB2F2098950021A936 = {
+						CreatedOnToolsVersion = 26.2;
+						TestTargetID = CF8DD1AC2F2098940021A936;
+					};
+					CF8DD1C52F2098950021A936 = {
+						CreatedOnToolsVersion = 26.2;
+						TestTargetID = CF8DD1AC2F2098940021A936;
+					};
+					CFA000062F500006007A0358 = {
+						CreatedOnToolsVersion = 26.2;
+					};
+				};
+			};
+			buildConfigurationList = CF8DD1A82F2098940021A936 /* Build configuration list for PBXProject "CarrierWave" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = CF8DD1A42F2098940021A936;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				CFCORE0042F4B00000021A936 /* XCLocalSwiftPackageReference "../packages/CarrierWaveCore" */,
+				CFDATA0042F4B00000021A936 /* XCLocalSwiftPackageReference "../packages/CarrierWaveData" */,
+				CFZIP00042F4B00000021A936 /* XCRemoteSwiftPackageReference "ZIPFoundation" */,
+				CFCLM00042F4B00000021A936 /* XCRemoteSwiftPackageReference "ClusterMap" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = CF8DD1AE2F2098940021A936 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				CF8DD1AC2F2098940021A936 /* CarrierWave */,
+				CFA000062F500006007A0358 /* CarrierWaveWidgets */,
+				CF8DD1BB2F2098950021A936 /* CarrierWaveTests */,
+				CF8DD1C52F2098950021A936 /* CarrierWaveUITests */,
+				4D7D39B157DB6390DB8674B6 /* CarrierWaveWatch */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		54FA00501D05D656E05B10C5 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A4B98C617E82778D27395231 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CF8DD1AB2F2098940021A936 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CF8DD1BA2F2098950021A936 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CF8DD1C42F2098950021A936 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CFA000052F500005007A0358 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		2E9B246F544CADEC33826BE4 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3DEF47BAF3D0D285C278DA9F /* CarrierWaveWatchApp.swift in Sources */,
+				863AF8C51390A582D0C6CF23 /* ContentView.swift in Sources */,
+				389F679B1C509511BC5CBBAD /* IdleView.swift in Sources */,
+				82C5F8D294891E0DD13A1146 /* SolarView.swift in Sources */,
+				62AFCBC4FC5E9EB11420DF91 /* SpotsListView.swift in Sources */,
+				15ADFCA1198A049CA4F8FD24 /* StatsView.swift in Sources */,
+				916242E85DE2B9874DFE311F /* ActiveSessionView.swift in Sources */,
+				68988BA40D95E587D42E2D50 /* ActivationProgressRing.swift in Sources */,
+				1F24DBB851D4A3AA12AB7EEC /* QuickStartView.swift in Sources */,
+				92BEE122BE706E3A87CA97AB /* SharedDataReader.swift in Sources */,
+				0E9AB3BE12D3475D6E49F14D /* WatchSessionDelegate.swift in Sources */,
+				21A2D7EA17772250499A80E1 /* WatchNetworkService.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CF8DD1A92F2098940021A936 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CFDEB0122F5A5001AAAA0002 /* SpotlightDebugView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CF8DD1B82F2098950021A936 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				053992CD787EBD9EC67B69BA /* PropagationCheckTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CF8DD1C22F2098950021A936 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CFA000042F500004007A0358 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		CF88F60B939BF7719D8B59B3 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = CarrierWaveWatch;
+			target = 4D7D39B157DB6390DB8674B6 /* CarrierWaveWatch */;
+			targetProxy = D14D998666490ED11FFF7BA1 /* PBXContainerItemProxy */;
+		};
+		CF8DD1BE2F2098950021A936 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = CF8DD1AC2F2098940021A936 /* CarrierWave */;
+			targetProxy = CF8DD1BD2F2098950021A936 /* PBXContainerItemProxy */;
+		};
+		CF8DD1C82F2098950021A936 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = CF8DD1AC2F2098940021A936 /* CarrierWave */;
+			targetProxy = CF8DD1C72F2098950021A936 /* PBXContainerItemProxy */;
+		};
+		CFA0000B2F50000B007A0358 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = CFA000062F500006007A0358 /* CarrierWaveWidgets */;
+			targetProxy = CFA0000A2F50000A007A0358 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		54A69486ABD776CD80415922 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = ../watch/CarrierWaveWatch.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 7UE4RDLUSX;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Carrier Wave: Field";
+				INFOPLIST_KEY_CFBundleIconName = AppIcon;
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.jsvana.FullDuplex;
+				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = NO;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jsvana.FullDuplex.Watch;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchsimulator watchos";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				VALIDATE_PRODUCT = YES;
+				WATCHOS_DEPLOYMENT_TARGET = 11.0;
+			};
+			name = Release;
+		};
+		CF8DD1CE2F2098950021A936 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = CA158000000000000000A936 /* Versions.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = "$(CARRIER_WAVE_IOS_BUILD_NUMBER)";
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 7UE4RDLUSX;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = "$(CARRIER_WAVE_IOS_MARKETING_VERSION)";
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_TREAT_WARNINGS_AS_ERRORS = YES;
+			};
+			name = Debug;
+		};
+		CF8DD1CF2F2098950021A936 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = CA158000000000000000A936 /* Versions.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = "$(CARRIER_WAVE_IOS_BUILD_NUMBER)";
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 7UE4RDLUSX;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = "$(CARRIER_WAVE_IOS_MARKETING_VERSION)";
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_TREAT_WARNINGS_AS_ERRORS = YES;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		CF8DD1D12F2098950021A936 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = CarrierWave/CarrierWave.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 7UE4RDLUSX;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CarrierWave/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Carrier Wave: Field";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = YES;
+				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "Carrier Wave uses Bluetooth to control your ham radio via a BLE CAT proxy device.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Carrier Wave uses the camera to scan handwritten paper logs for QSO import and to capture your QTH's horizon profile with LIDAR for DX takeoff-angle analysis.";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Carrier Wave connects to personal radio automation servers on your local network for CW transcription and QSO logging.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Carrier Wave uses your location to determine your grid square for QSO logging.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Carrier Wave uses the microphone to decode CW (Morse code) audio from your radio.";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Carrier Wave saves activation share cards to your photo library.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Carrier Wave uses speech recognition to convert spoken phonetic alphabet words into callsigns and QSO data.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.jsvana.FullDuplex;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		CF8DD1D22F2098950021A936 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = CarrierWave/CarrierWave.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 7UE4RDLUSX;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = CarrierWave/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Carrier Wave: Field";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = YES;
+				INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription = "Carrier Wave uses Bluetooth to control your ham radio via a BLE CAT proxy device.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Carrier Wave uses the camera to scan handwritten paper logs for QSO import and to capture your QTH's horizon profile with LIDAR for DX takeoff-angle analysis.";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Carrier Wave connects to personal radio automation servers on your local network for CW transcription and QSO logging.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Carrier Wave uses your location to determine your grid square for QSO logging.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Carrier Wave uses the microphone to decode CW (Morse code) audio from your radio.";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Carrier Wave saves activation share cards to your photo library.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Carrier Wave uses speech recognition to convert spoken phonetic alphabet words into callsigns and QSO data.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.jsvana.FullDuplex;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		CF8DD1D42F2098950021A936 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 7UE4RDLUSX;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jsvana.FullDuplexTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CarrierWave.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/CarrierWave";
+			};
+			name = Debug;
+		};
+		CF8DD1D52F2098950021A936 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 7UE4RDLUSX;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jsvana.FullDuplexTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CarrierWave.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/CarrierWave";
+			};
+			name = Release;
+		};
+		CF8DD1D72F2098950021A936 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 7UE4RDLUSX;
+				GENERATE_INFOPLIST_FILE = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jsvana.FullDuplexUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = CarrierWave;
+			};
+			name = Debug;
+		};
+		CF8DD1D82F2098950021A936 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 7UE4RDLUSX;
+				GENERATE_INFOPLIST_FILE = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jsvana.FullDuplexUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = CarrierWave;
+			};
+			name = Release;
+		};
+		CFA000072F500007007A0358 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = ../widgets/CarrierWaveWidgets.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 7UE4RDLUSX;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ../widgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Carrier Wave: Field Widgets";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.jsvana.FullDuplex.Widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		CFA000082F500008007A0358 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = ../widgets/CarrierWaveWidgets.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 7UE4RDLUSX;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ../widgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Carrier Wave: Field Widgets";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.jsvana.FullDuplex.Widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		E302BE9FB7C681E95ABA69D3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = ../watch/CarrierWaveWatch.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 7UE4RDLUSX;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Carrier Wave: Field";
+				INFOPLIST_KEY_CFBundleIconName = AppIcon;
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.jsvana.FullDuplex;
+				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = NO;
+				PRODUCT_BUNDLE_IDENTIFIER = com.jsvana.FullDuplex.Watch;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchsimulator watchos";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 11.0;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		7D3D3FC061538458F9D73993 /* Build configuration list for PBXNativeTarget "CarrierWaveWatch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				54A69486ABD776CD80415922 /* Release */,
+				E302BE9FB7C681E95ABA69D3 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CF8DD1A82F2098940021A936 /* Build configuration list for PBXProject "CarrierWave" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CF8DD1CE2F2098950021A936 /* Debug */,
+				CF8DD1CF2F2098950021A936 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CF8DD1D02F2098950021A936 /* Build configuration list for PBXNativeTarget "CarrierWave" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CF8DD1D12F2098950021A936 /* Debug */,
+				CF8DD1D22F2098950021A936 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CF8DD1D32F2098950021A936 /* Build configuration list for PBXNativeTarget "CarrierWaveTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CF8DD1D42F2098950021A936 /* Debug */,
+				CF8DD1D52F2098950021A936 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CF8DD1D62F2098950021A936 /* Build configuration list for PBXNativeTarget "CarrierWaveUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CF8DD1D72F2098950021A936 /* Debug */,
+				CF8DD1D82F2098950021A936 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		CFA000092F500009007A0358 /* Build configuration list for PBXNativeTarget "CarrierWaveWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CFA000072F500007007A0358 /* Debug */,
+				CFA000082F500008007A0358 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		CFCORE0042F4B00000021A936 /* XCLocalSwiftPackageReference "../packages/CarrierWaveCore" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../packages/CarrierWaveCore;
+		};
+		CFDATA0042F4B00000021A936 /* XCLocalSwiftPackageReference "../packages/CarrierWaveData" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../packages/CarrierWaveData;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		CFCLM00042F4B00000021A936 /* XCRemoteSwiftPackageReference "ClusterMap" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/vospennikov/ClusterMap.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.1.0;
+			};
+		};
+		CFZIP00042F4B00000021A936 /* XCRemoteSwiftPackageReference "ZIPFoundation" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/weichsel/ZIPFoundation.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.9.19;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		CFCLM00022F4B00000021A936 /* ClusterMap */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = CFCLM00042F4B00000021A936 /* XCRemoteSwiftPackageReference "ClusterMap" */;
+			productName = ClusterMap;
+		};
+		CFCORE0022F4B00000021A936 /* CarrierWaveCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = CFCORE0042F4B00000021A936 /* XCLocalSwiftPackageReference "../packages/CarrierWaveCore" */;
+			productName = CarrierWaveCore;
+		};
+		CFDATA0022F4B00000021A936 /* CarrierWaveData */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = CFDATA0042F4B00000021A936 /* XCLocalSwiftPackageReference "../packages/CarrierWaveData" */;
+			productName = CarrierWaveData;
+		};
+		CFZIP00022F4B00000021A936 /* ZIPFoundation */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = CFZIP00042F4B00000021A936 /* XCRemoteSwiftPackageReference "ZIPFoundation" */;
+			productName = ZIPFoundation;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = CF8DD1A52F2098940021A936 /* Project object */;
+}

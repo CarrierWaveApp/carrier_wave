@@ -1,0 +1,92 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(~/.claude/skills/xcode-build/scripts/xc build:*)",
+      "Bash(~/.claude/skills/xcode-build/scripts/xc test-unit:*)",
+      "Bash(~/.claude/skills/xcode-build/scripts/xc:*)",
+      "Bash(xc build:*)",
+      "Bash(xc test-unit:*)",
+      "Bash(xcodebuild:*)",
+      "Bash(swift test:*)",
+      "Bash(swift build:*)",
+      "Bash(cargo test:*)",
+      "Bash(cargo build:*)",
+      "Bash(cargo clippy:*)",
+      "Bash(cargo check:*)",
+      "Bash(cargo fmt:*)",
+      "Bash(swiftlint:*)",
+      "Bash(/opt/homebrew/bin/swiftlint:*)",
+      "Bash(/Users/jsvana/.local/bin/swiftlint:*)",
+      "Bash(swiftformat:*)",
+      "Bash(adb:*)",
+      "Bash(/opt/homebrew/share/android-commandlinetools/platform-tools/adb:*)",
+      "Bash(export ANDROID_HOME=/opt/homebrew/share/android-commandlinetools)",
+      "Bash(export PATH=$PATH:/opt/homebrew/share/android-commandlinetools/platform-tools)",
+      "Bash(cmake:*)",
+      "Bash(xcrun atos:*)",
+      "Bash(npm run lint:*)",
+      "Bash(npm run test:*)",
+      "Bash(npm run build:*)",
+      "Bash(opencli:*)",
+      "Bash(linear issue list:*)",
+      "Bash(linear issue view:*)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./.claude/hooks/setup-swift-tools.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Edit(*.swift)|Write(*.swift)",
+            "command": "./.claude/hooks/post-swift-edit.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Edit(*.swift)|Write(*.swift)",
+            "command": "./.claude/hooks/check-swift-imports.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Edit(*.swift)|Write(*.swift)",
+            "command": "./.claude/hooks/post-edit-build-check.sh",
+            "timeout": 120
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Edit(*.rs)|Write(*.rs)",
+            "command": "./.claude/hooks/post-rust-edit.sh",
+            "timeout": 300
+          }
+        ]
+      }
+    ]
+  }
+}

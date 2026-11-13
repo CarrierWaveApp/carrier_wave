@@ -1,0 +1,12 @@
+# KiCad per-user state
+*.kicad_prl
+
+# KiCad auto-backups
+*-backups/
+
+# IDE local history
+.history/
+
+# KiCad lock files
+*.lck
+~*.kicad_*

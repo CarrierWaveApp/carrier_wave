@@ -1,0 +1,23 @@
+# Carrier Wave
+
+> Carrier Wave is amateur radio logging software (Field for iOS, CW Sweep for macOS, Carrier Wave for Android) backed by the activities server at https://activities.carrierwave.app. The server exposes a public JSON API for spots, Reverse Beacon Network data, POTA statistics, park boundaries, contest definitions and radio macros, an OAuth 2.0 / OpenID Connect provider for third-party apps, and an end-to-end encrypted sync journal for a user's log.
+
+Base URL for the API: https://activities.carrierwave.app (JSON under /v1). Public data needs no authentication. Acting for a user needs an OAuth token; third-party tokens may call only the sync journal and OIDC userinfo. Rate limit is about 10 requests per second; a 429 is plain text with an x-ratelimit-after header.
+
+## API documentation
+
+- [Using the API from agents and tools](https://carrierwave.app/manual/developers/agents/index.md): short version for agents and CLIs with ready-to-run requests, the device flow, scopes and an error cheat sheet
+- [Activities Server API Reference](https://carrierwave.app/manual/developers/api/index.md): every HTTP endpoint with request and response shapes, authentication model, rate limits, error codes and an endpoint index
+- [OAuth / OpenID Connect discovery](https://activities.carrierwave.app/.well-known/openid-configuration): endpoints, grant types and scopes the provider supports
+- [JWKS](https://activities.carrierwave.app/.well-known/jwks.json): keys for verifying access and ID tokens
+
+## Product documentation (HTML)
+
+- [Manual](https://carrierwave.app/manual/): user documentation for the apps
+- [Changelog](https://carrierwave.app/changelog.html): release notes for every platform
+- [Developers](https://carrierwave.app/manual/developers/): landing page for the pages above
+
+## Optional
+
+- [Privacy policy](https://carrierwave.app/privacy.html)
+- Contact: hello@carrierwave.app

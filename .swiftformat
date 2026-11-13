@@ -1,0 +1,56 @@
+# SwiftFormat configuration for FullDuplex
+
+# File options
+--exclude .build,swift/ios/CarrierWave.xcodeproj,swift/macos/CWSweep.xcodeproj,swift/packages/CarrierWaveCore/Sources/CarrierWaveCwFfi,swift/packages/CarrierWaveCore/Vendored
+
+# Format options
+--allman false
+--binarygrouping 4,8
+--commas always
+--comments indent
+--decimalgrouping 3,4
+--elseposition same-line
+--empty void
+--exponentcase lowercase
+--exponentgrouping disabled
+--fractiongrouping disabled
+--header ignore
+--hexgrouping 4,8
+--hexliteralcase uppercase
+--ifdef indent
+--importgrouping testable-bottom
+--indent 4
+--indentcase false
+--linebreaks lf
+--maxwidth 120
+--octalgrouping 4,8
+--operatorfunc spaced
+--patternlet hoist
+--ranges spaced
+--self remove
+--semicolons inline
+--smarttabs enabled
+--stripunusedargs closure-only
+--swiftversion 5.9
+--modifierorder nonisolated,override,acl,setteracl,dynamic,mutating,lazy,final,required,convenience,typeMethods,owned
+--tabwidth 4
+--trimwhitespace always
+--wraparguments preserve
+--wrapcollections preserve
+--wrapparameters preserve
+--xcodeindentation disabled
+
+# Rules
+--enable blankLinesBetweenImports
+--enable blockComments
+--enable docComments
+--enable isEmpty
+--enable markTypes
+--enable organizeDeclarations
+--enable sortImports
+--enable wrapConditionalBodies
+--enable wrapEnumCases
+--enable wrapSwitchCases
+
+--disable acronyms
+--disable blankLinesBetweenChainedFunctions

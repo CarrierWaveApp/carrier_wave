@@ -1,0 +1,376 @@
+import CarrierWaveData
+import Foundation
+import SwiftData
+
+// MARK: - AsyncQSOStatistics
+
+/// Wrapper for QSOStatistics that computes expensive stats on a background thread.
+/// All fetching and computation happens off the main thread via StatsComputationActor.
+/// Only the final result application runs on the main actor.
+@MainActor
+@Observable
+final class AsyncQSOStatistics {
+    // MARK: Lifecycle
+
+    init() {}
+
+    // MARK: Internal
+
+    // MARK: - Published Stats
+
+    var totalQSOs: Int = 0
+    var uniqueBands: Int = 0
+    var uniqueGrids: Int = 0
+    var confirmedQSLs: Int?
+    var uniqueEntities: Int?
+    var successfulActivations: Int?
+    var activityByDate: [Date: Int]?
+    var activationActivityByDate: [Date: Int]?
+    var activityLogActivityByDate: [Date: Int]?
+    var dailyStreak: StreakInfo?
+    var potaActivationStreak: StreakInfo?
+    var hunterStreak: StreakInfo?
+    var cwStreak: StreakInfo?
+    var phoneStreak: StreakInfo?
+    var digitalStreak: StreakInfo?
+
+    /// Attempted activations (park+date combos with <10 QSOs)
+    var attemptedActivations: Int?
+
+    /// All per-mode streaks (for StreakDetailView)
+    var allModeStreaks: [StreakInfo] = []
+    /// All per-band streaks (for StreakDetailView)
+    var allBandStreaks: [StreakInfo] = []
+
+    // Count metrics
+    var qsosThisWeek: Int = 0
+    var qsosThisMonth: Int = 0
+    var qsosThisYear: Int = 0
+    var activationsThisMonth: Int = 0
+    var activationsThisYear: Int = 0
+    var huntsThisWeek: Int = 0
+    var huntsThisMonth: Int = 0
+    var newDXCCThisYear: Int = 0
+
+    // MARK: - WAS (Worked All States)
+
+    var wasData: [WASFilterKey: WASStateData] = [:]
+    var wasAvailableModes: [String] = []
+
+    // MARK: - Explanation data (for "explain this number" popovers)
+
+    var overallExplanation: StatExplanation?
+
+    // MARK: - Filter pipeline counts (for "What's This?" sheets)
+
+    var metadataExcludedCount: Int = 0
+    var qsosWithDXCC: Int = 0
+    var qsosWithGrid: Int = 0
+    var qsosWithFrequency: Int = 0
+    var qsosWithParkRef: Int = 0
+    var uniqueCallsignCount: Int = 0
+    var uniqueHunterCallsignCount: Int = 0
+    var uniqueFrequencyGroupCount: Int = 0
+    var totalActivationGroups: Int = 0
+
+    // MARK: - Service stats
+
+    var qrzConfirmedCount: Int = 0
+    var lotwConfirmedCount: Int = 0
+    var icloudImportedCount: Int = 0
+    var uniqueMyCallsigns: Set<String> = []
+
+    // MARK: - Favorites (for dashboard card)
+
+    var topFrequency: String?
+    var topFrequencyCount: Int = 0
+    var topFriend: String?
+    var topFriendCount: Int = 0
+    var topHunter: String?
+    var topHunterCount: Int = 0
+
+    // MARK: - Computation state
+
+    var isComputing = false
+    var progress: Double = 0.0
+    var progressPhase: String = ""
+
+    /// Whether stats have been computed at least once
+    var hasComputed = false
+
+    /// Generation counter — incremented externally when QSO data changes.
+    /// The tab-switch handler compares this against the snapshot taken after
+    /// the last computation to skip redundant recomputes.
+    var dataGeneration: Int = 0
+
+    /// Generation at the time stats were last computed.
+    private(set) var computedGeneration: Int = 0
+
+    /// Compute statistics from the model context.
+    /// All fetching and computation happens on a background thread.
+    /// If already computing or already computed, this is a no-op.
+    /// Use `recompute()` to force a fresh computation.
+    func compute(from modelContext: ModelContext) {
+        compute(from: modelContext.container)
+    }
+
+    /// Compute statistics from the model container.
+    /// All fetching and computation happens on a background thread.
+    func compute(from container: ModelContainer) {
+        // Skip if already computing or already have results
+        if isComputing || hasComputed {
+            return
+        }
+
+        startComputation(from: container)
+    }
+
+    /// Force recomputation of statistics (e.g., after sync)
+    func recompute(from modelContext: ModelContext) {
+        recompute(from: modelContext.container)
+    }
+
+    /// Force recomputation of statistics from container
+    func recompute(from container: ModelContainer) {
+        // Cancel any in-flight computation and start fresh
+        computeTask?.cancel()
+        hasComputed = false
+        startComputation(from: container)
+    }
+
+    /// Access underlying QSOStatistics for drill-down views.
+    /// Returns cached stats if available, or nil if not yet computed.
+    func getStats() -> QSOStatistics? {
+        stats
+    }
+
+    /// Get the display value for a dashboard metric type
+    func metricValue(for type: DashboardMetricType) -> MetricDisplayValue {
+        switch type {
+        case .onAir:
+            .streak(dailyStreak)
+        case .activation:
+            .streak(potaActivationStreak)
+        case .hunter:
+            .streak(hunterStreak)
+        case .cw:
+            .streak(cwStreak)
+        case .phone:
+            .streak(phoneStreak)
+        case .digital:
+            .streak(digitalStreak)
+        case .amtPractice:
+            // Read from the AMT service so the card re-renders when its stats
+            // land; `.placeholder` while not connected / not yet fetched.
+            .streak(AMTService.shared.streakInfo)
+        case .qsosWeek:
+            .count(qsosThisWeek)
+        case .qsosMonth:
+            .count(qsosThisMonth)
+        case .qsosYear:
+            .count(qsosThisYear)
+        case .activationsMonth:
+            .count(activationsThisMonth)
+        case .activationsYear:
+            .count(activationsThisYear)
+        case .huntsWeek:
+            .count(huntsThisWeek)
+        case .huntsMonth:
+            .count(huntsThisMonth)
+        case .newDXCCYear:
+            .count(newDXCCThisYear)
+        }
+    }
+
+    /// Wait for the current computation to finish (no-op if not computing).
+    func waitUntilComplete() async {
+        await computeTask?.value
+    }
+
+    /// Cancel any in-flight computation.
+    func cancel() {
+        computeTask?.cancel()
+        cleanup()
+    }
+
+    /// Reset all stats to initial state.
+    /// Call this when data is deleted (e.g., "Clear All QSOs").
+    func reset() {
+        computeTask?.cancel()
+        cleanup()
+
+        resetStatValues()
+        resetStreaksAndMetrics()
+        resetServiceAndFavorites()
+        resetFilterPipeline()
+        stats = nil
+        hasComputed = false
+        dataGeneration = 0
+        computedGeneration = 0
+    }
+
+    // MARK: Private
+
+    /// Throttle interval for progress updates to reduce main thread work.
+    /// Higher values reduce @Observable mutation frequency and resulting view re-evaluations.
+    private static let progressUpdateInterval: TimeInterval = 0.5
+
+    private var stats: QSOStatistics?
+    private var modelContainer: ModelContainer?
+    private var computeTask: Task<Void, Never>?
+    private let computationActor = StatsComputationActor()
+
+    private var lastProgressUpdate: Date = .distantPast
+
+    private func resetStatValues() {
+        totalQSOs = 0
+        uniqueBands = 0
+        uniqueGrids = 0
+        confirmedQSLs = nil
+        uniqueEntities = nil
+        successfulActivations = nil
+        activityByDate = nil
+        activationActivityByDate = nil
+        activityLogActivityByDate = nil
+        attemptedActivations = nil
+    }
+
+    private func resetStreaksAndMetrics() {
+        dailyStreak = nil
+        potaActivationStreak = nil
+        hunterStreak = nil
+        cwStreak = nil
+        phoneStreak = nil
+        digitalStreak = nil
+        allModeStreaks = []
+        allBandStreaks = []
+        qsosThisWeek = 0
+        qsosThisMonth = 0
+        qsosThisYear = 0
+        activationsThisMonth = 0
+        activationsThisYear = 0
+        huntsThisWeek = 0
+        huntsThisMonth = 0
+        newDXCCThisYear = 0
+    }
+
+    private func resetServiceAndFavorites() {
+        qrzConfirmedCount = 0
+        lotwConfirmedCount = 0
+        icloudImportedCount = 0
+        uniqueMyCallsigns = []
+        topFrequency = nil
+        topFrequencyCount = 0
+        topFriend = nil
+        topFriendCount = 0
+        topHunter = nil
+        topHunterCount = 0
+        wasData = [:]
+        wasAvailableModes = []
+    }
+
+    private func resetFilterPipeline() {
+        metadataExcludedCount = 0
+        qsosWithDXCC = 0
+        qsosWithGrid = 0
+        qsosWithFrequency = 0
+        qsosWithParkRef = 0
+        uniqueCallsignCount = 0
+        uniqueHunterCallsignCount = 0
+        uniqueFrequencyGroupCount = 0
+        totalActivationGroups = 0
+    }
+
+    private func startComputation(from container: ModelContainer) {
+        isComputing = true
+        progress = 0.0
+        progressPhase = "Starting..."
+
+        // Store reference to container for lazy QSOStatistics loading
+        modelContainer = container
+
+        computeTask = Task { [self] in
+            do {
+                let result = try await computationActor.computeStats(
+                    container: container,
+                    onProgress: { [weak self] progress, phase in
+                        Task { @MainActor [weak self] in
+                            guard let self else {
+                                return
+                            }
+                            // Throttle progress updates to reduce UI churn
+                            let now = Date()
+                            if now.timeIntervalSince(lastProgressUpdate)
+                                >= Self.progressUpdateInterval
+                            {
+                                self.progress = progress
+                                progressPhase = phase
+                                lastProgressUpdate = now
+                            }
+                        }
+                    }
+                )
+
+                // Apply results in stages with yields between each group
+                // so SwiftUI processes smaller render passes and the main
+                // run loop can handle user input (e.g., tab taps).
+                await applyResultsStaggered(result)
+            } catch is CancellationError {
+                cleanup()
+            } catch {
+                cleanup()
+            }
+        }
+    }
+
+    private func applyResultsStaggered(_ computed: ComputedStats) async {
+        let profiler = StartupProfiler.shared
+
+        // Stage 1: Above-the-fold basic stats
+        applyBasicStats(computed)
+        profiler.record("stats.render.basicStats")
+        await Task.yield()
+
+        // Stage 2: Streaks + count metrics + attempted activations
+        applyStreakStats(computed)
+        applyCountMetrics(computed)
+        applyActivationCounts(computed)
+        applyAllStreaks(computed)
+        profiler.record("stats.render.streaks")
+        await Task.yield()
+
+        // Stage 3: Service stats, favorites, widget data
+        applyServiceStats(computed)
+        applyFilterPipeline(computed)
+        applyFavorites(computed)
+        writeWidgetData(computed)
+        profiler.record("stats.render.final")
+
+        computedGeneration = dataGeneration
+        progress = 1.0
+        progressPhase = ""
+        isComputing = false
+        hasComputed = true
+        profiler.record("dashboard.asyncStatsComplete")
+    }
+
+    private func applyBasicStats(_ computed: ComputedStats) {
+        totalQSOs = computed.totalQSOs
+        uniqueBands = computed.uniqueBands
+        uniqueGrids = computed.uniqueGrids
+        confirmedQSLs = computed.confirmedQSLs
+        uniqueEntities = computed.uniqueEntities
+        successfulActivations = computed.successfulActivations
+        activityByDate = computed.activityByDate
+        activationActivityByDate = computed.activationActivityByDate
+        activityLogActivityByDate = computed.activityLogActivityByDate
+        wasData = computed.wasData
+        wasAvailableModes = computed.wasAvailableModes
+    }
+
+    private func cleanup() {
+        isComputing = false
+        progress = 0.0
+        progressPhase = ""
+    }
+}

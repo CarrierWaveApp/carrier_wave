@@ -1,0 +1,50 @@
+{{ define "main" }}
+<div class="landing-page">
+  <section class="hero">
+    <img src="{{ "images/icon.png" | relURL }}" alt="Carrier Wave" class="hero-icon">
+    <h1 class="hero-title">Carrier Wave Manual</h1>
+    <p class="hero-subtitle">QSO logging for amateur radio operators</p>
+  </section>
+
+  <section class="audience-selector">
+    <h2 class="selector-title">Where would you like to start?</h2>
+
+    <div class="audience-cards">
+      <a href="{{ "quickstart/" | relURL }}" class="audience-card">
+        <div class="card-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+          </svg>
+        </div>
+        <h3 class="card-title">Quick Start</h3>
+        <p class="card-description">I've used loggers before. Get me on the air fast.</p>
+        <span class="card-cta">5 minute read</span>
+      </a>
+
+      <a href="{{ "guide/" | relURL }}" class="audience-card">
+        <div class="card-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+          </svg>
+        </div>
+        <h3 class="card-title">Beginner's Guide</h3>
+        <p class="card-description">I'm new to logging. Teach me the concepts.</p>
+        <span class="card-cta">15 minute read</span>
+      </a>
+
+      <a href="{{ "reference/" | relURL }}" class="audience-card">
+        <div class="card-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+          </svg>
+        </div>
+        <h3 class="card-title">Reference Manual</h3>
+        <p class="card-description">Show me everything. Every feature, every detail.</p>
+        <span class="card-cta">Full documentation</span>
+      </a>
+    </div>
+  </section>
+</div>
+{{ end }}

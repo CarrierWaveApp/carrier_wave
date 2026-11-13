@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>03 — Grid overview (TradingView-inspired)</title>
+<link rel="stylesheet" href="theme.css">
+<style>
+  .grid-frame {
+    width: 1392px;
+    height: 760px;
+    background: var(--bg-card);
+    border: 1px solid var(--divider);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+  }
+  .toolbar {
+    height: 36px;
+    background: #2c2c2e;
+    border-bottom: 1px solid var(--divider);
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    gap: 12px;
+    font-size: 11px;
+  }
+  .toolbar .title { font-weight: 600; font-size: 12px; }
+  .toolbar .filter-chip { padding: 3px 8px; border-radius: 9px; font-size: 10px; font-weight: 500; }
+  .toolbar .spacer { flex: 1; }
+  .toolbar .vfo {
+    font-family: var(--font-mono);
+    background: #1c1c1e;
+    border: 1.5px solid var(--red);
+    color: var(--red);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 11px;
+  }
+
+  .body {
+    display: grid;
+    grid-template-columns: 580px 1fr;
+    flex: 1;
+    background: var(--bg-base);
+  }
+  .grid {
+    padding: 12px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: 8px;
+    border-right: 1px solid var(--divider);
+  }
+
+  .cell {
+    background: var(--bg-card);
+    border: 1px solid var(--divider);
+    border-radius: 8px;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+    position: relative;
+    transition: border-color 0.15s;
+  }
+  .cell:hover { border-color: var(--blue); }
+  .cell.active {
+    background: #18221a;
+    border-color: var(--green);
+    box-shadow: 0 0 0 1px var(--green);
+  }
+  .cell.dead { opacity: 0.5; }
+  .cell-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 4px;
+  }
+  .cell-band {
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--text-primary);
+  }
+  .cell.active .cell-band { color: var(--green); }
+  .cell-age {
+    font-size: 9px;
+    color: var(--text-tertiary);
+    font-family: var(--font-mono);
+  }
+  .cell.hot .cell-age { color: var(--green); }
+  .cell-stats {
+    display: flex;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    margin-bottom: 6px;
+  }
+  .cell-stats .stat-num {
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+  .cell-stats .mults { color: var(--green); }
+  .cell-stats .new { color: var(--red); }
+  .cell-stats label { color: var(--text-secondary); margin-left: 2px; }
+
+  .hist {
+    flex: 1;
+    display: flex;
+    align-items: flex-end;
+    gap: 1px;
+    height: 36px;
+  }
+  .hist .b {
+    flex: 1;
+    background: var(--blue);
+    opacity: 0.55;
+    border-radius: 1px 1px 0 0;
+    min-height: 1px;
+  }
+  .hist .b.mult { background: var(--green); opacity: 0.85; }
+  .hist .b.new { background: var(--red); opacity: 0.85; }
+
+  .heat-strip {
+    margin-top: 4px;
+    display: flex;
+    gap: 1px;
+    height: 4px;
+  }
+  .heat-strip .h {
+    flex: 1;
+    background: var(--green);
+    opacity: 0.6;
+    border-radius: 1px;
+  }
+  .heat-strip .h.cold { opacity: 0.1; }
+  .heat-strip .h.warm { opacity: 0.4; }
+  .heat-strip .h.hot { opacity: 0.85; }
+
+  /* Expanded view (right side) */
+  .expand {
+    position: relative;
+    background: var(--bg-base);
+    overflow: hidden;
+  }
+  .expand-head {
+    height: 32px;
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--divider);
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    gap: 8px;
+    font-size: 11px;
+  }
+  .expand-head .lbl { color: var(--text-secondary); }
+  .expand-head .band { font-weight: 700; color: var(--green); font-size: 13px; }
+  .expand-head .freq { font-family: var(--font-mono); color: var(--text-primary); }
+  .expand-head .pin {
+    margin-left: auto;
+    font-size: 10px;
+    color: var(--text-tertiary);
+  }
+
+  .bottom-bar {
+    height: 32px;
+    border-top: 1px solid var(--divider);
+    background: #1c1c1e;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    gap: 16px;
+    font-size: 10px;
+    color: var(--text-secondary);
+  }
+  .bottom-bar .key {
+    background: #3a3a3c;
+    border-radius: 3px;
+    padding: 1px 5px;
+    font-family: var(--font-mono);
+    color: var(--text-primary);
+    margin: 0 2px;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="page-header">
+    <h1>03 · Grid overview (TradingView-inspired)</h1>
+    <div class="crumbs"><a href="index.html">← gallery</a> · <a href="../README.md">research notes</a></div>
+  </div>
+  <p class="lead">
+    A 4 × 3 grid of small per-band cells covering all 11 HF bands plus 6 m. Each
+    cell shows a tiny spot density histogram, mult / new / total counts, and a
+    "heat" strip for activity over the last 5 minutes. Click a cell to expand it
+    into the main scope (right side). The grid is for <em>scanning</em>, the
+    expanded view is for <em>acting</em>.
+  </p>
+
+  <div class="grid-frame">
+    <div class="toolbar">
+      <span class="title">Band Grid Overview</span>
+      <span class="filter-chip" style="background: rgba(10,132,255,0.2); color: var(--blue);">RBN ⨯ 92</span>
+      <span class="filter-chip" style="background: rgba(255,214,10,0.2); color: var(--yellow);">DX ⨯ 51</span>
+      <span class="filter-chip" style="background: #48484a; color: var(--text-secondary);">+5 hidden</span>
+      <span class="spacer"></span>
+      <span style="color: var(--text-secondary); font-size: 10px;">VFO</span>
+      <span class="vfo">14130.0</span>
+    </div>
+
+    <div class="body">
+      <div class="grid">
+        <!-- Row 1 -->
+        <div class="cell">
+          <div class="cell-head"><span class="cell-band">160m</span><span class="cell-age">38m</span></div>
+          <div class="cell-stats"><span><span class="stat-num">4</span><label>spots</label></span><span class="mults"><span class="stat-num">1</span><label>mult</label></span></div>
+          <div class="hist"><div class="b" style="height:20%"></div><div class="b" style="height:0%"></div><div class="b mult" style="height:60%"></div><div class="b" style="height:15%"></div><div class="b" style="height:25%"></div><div class="b" style="height:0%"></div><div class="b" style="height:0%"></div><div class="b" style="height:30%"></div></div>
+          <div class="heat-strip"><div class="h cold"></div><div class="h cold"></div><div class="h cold"></div><div class="h cold"></div><div class="h warm"></div><div class="h cold"></div></div>
+        </div>
+
+        <div class="cell hot">
+          <div class="cell-head"><span class="cell-band">80m</span><span class="cell-age">14m</span></div>
+          <div class="cell-stats"><span><span class="stat-num">9</span><label>spots</label></span><span class="mults"><span class="stat-num">3</span><label>mults</label></span></div>
+          <div class="hist"><div class="b mult" style="height:65%"></div><div class="b" style="height:30%"></div><div class="b new" style="height:75%"></div><div class="b" style="height:35%"></div><div class="b mult" style="height:55%"></div><div class="b" style="height:25%"></div><div class="b" style="height:40%"></div><div class="b mult" style="height:65%"></div></div>
+          <div class="heat-strip"><div class="h warm"></div><div class="h warm"></div><div class="h hot"></div><div class="h warm"></div><div class="h warm"></div><div class="h cold"></div></div>
+        </div>
+
+        <div class="cell">
+          <div class="cell-head"><span class="cell-band">60m</span><span class="cell-age">2h</span></div>
+          <div class="cell-stats"><span><span class="stat-num">1</span><label>spot</label></span></div>
+          <div class="hist"><div class="b" style="height:0%"></div><div class="b" style="height:0%"></div><div class="b" style="height:25%"></div><div class="b" style="height:0%"></div><div class="b" style="height:0%"></div><div class="b" style="height:0%"></div><div class="b" style="height:0%"></div><div class="b" style="height:0%"></div></div>
+          <div class="heat-strip"><div class="h cold"></div><div class="h cold"></div><div class="h cold"></div><div class="h cold"></div><div class="h cold"></div><div class="h cold"></div></div>
+        </div>
+
+        <!-- Row 2 -->
+        <div class="cell hot">
+          <div class="cell-head"><span class="cell-band">40m</span><span class="cell-age">4m</span></div>
+          <div class="cell-stats"><span><span class="stat-num">14</span><label>spots</label></span><span class="mults"><span class="stat-num">5</span><label>mults</label></span><span class="new"><span class="stat-num">2</span><label>new</label></span></div>
+          <div class="hist"><div class="b" style="height:40%"></div><div class="b mult" style="height:75%"></div><div class="b" style="height:50%"></div><div class="b mult" style="height:80%"></div><div class="b new" style="height:65%"></div><div class="b" style="height:55%"></div><div class="b mult" style="height:85%"></div><div class="b" style="height:45%"></div></div>
+          <div class="heat-strip"><div class="h hot"></div><div class="h hot"></div><div class="h hot"></div><div class="h warm"></div><div class="h hot"></div><div class="h hot"></div></div>
+        </div>
+
+        <div class="cell">
+          <div class="cell-head"><span class="cell-band">30m</span><span class="cell-age">22m</span></div>
+          <div class="cell-stats"><span><span class="stat-num">3</span><label>spots</label></span><span class="mults"><span class="stat-num">1</span><label>mult</label></span></div>
+          <div class="hist"><div class="b" style="height:30%"></div><div class="b" style="height:0%"></div><div class="b mult" style="height:50%"></div><div class="b" style="height:0%"></div><div class="b" style="height:25%"></div><div class="b" style="height:0%"></div><div class="b" style="height:0%"></div><div class="b" style="height:0%"></div></div>
+          <div class="heat-strip"><div class="h cold"></div><div class="h warm"></div><div class="h cold"></div><div class="h cold"></div><div class="h cold"></div><div class="h cold"></div></div>
+        </div>
+
+        <div class="cell active">
+          <div class="cell-head"><span class="cell-band">20m</span><span class="cell-age">22s</span></div>
+          <div class="cell-stats"><span><span class="stat-num">28</span><label>spots</label></span><span class="mults"><span class="stat-num">7</span><label>mults</label></span><span class="new"><span class="stat-num">3</span><label>new</label></span></div>
+          <div class="hist"><div class="b mult" style="height:80%"></div><div class="b" style="height:55%"></div><div class="b new" style="height:90%"></div><div class="b mult" style="height:75%"></div><div class="b" style="height:60%"></div><div class="b mult" style="height:85%"></div><div class="b new" style="height:95%"></div><div class="b" style="height:70%"></div></div>
+          <div class="heat-strip"><div class="h hot"></div><div class="h hot"></div><div class="h hot"></div><div class="h hot"></div><div class="h hot"></div><div class="h hot"></div></div>
+        </div>
+
+        <!-- Row 3 -->
+        <div class="cell">
+          <div class="cell-head"><span class="cell-band">17m</span><span class="cell-age">18m</span></div>
+          <div class="cell-stats"><span><span class="stat-num">5</span><label>spots</label></span><span class="mults"><span class="stat-num">2</span><label>mults</label></span></div>
+          <div class="hist"><div class="b" style="height:25%"></div><div class="b mult" style="height:55%"></div><div class="b" style="height:30%"></div><div class="b" style="height:0%"></div><div class="b mult" style="height:60%"></div><div class="b" style="height:35%"></div><div class="b" style="height:20%"></div><div class="b" style="height:0%"></div></div>
+          <div class="heat-strip"><div class="h warm"></div><div class="h cold"></div><div class="h warm"></div><div class="h cold"></div><div class="h cold"></div><div class="h cold"></div></div>
+        </div>
+
+        <div class="cell hot">
+          <div class="cell-head"><span class="cell-band">15m</span><span class="cell-age">1m</span></div>
+          <div class="cell-stats"><span><span class="stat-num">17</span><label>spots</label></span><span class="mults"><span class="stat-num">6</span><label>mults</label></span><span class="new"><span class="stat-num">4</span><label>new</label></span></div>
+          <div class="hist"><div class="b mult" style="height:75%"></div><div class="b new" style="height:80%"></div><div class="b" style="height:50%"></div><div class="b mult" style="height:70%"></div><div class="b" style="height:45%"></div><div class="b new" style="height:85%"></div><div class="b mult" style="height:75%"></div><div class="b" style="height:55%"></div></div>
+          <div class="heat-strip"><div class="h hot"></div><div class="h hot"></div><div class="h warm"></div><div class="h hot"></div><div class="h hot"></div><div class="h warm"></div></div>
+        </div>
+
+        <div class="cell">
+          <div class="cell-head"><span class="cell-band">12m</span><span class="cell-age">52m</span></div>
+          <div class="cell-stats"><span><span class="stat-num">2</span><label>spots</label></span></div>
+          <div class="hist"><div class="b" style="height:0%"></div><div class="b" style="height:35%"></div><div class="b" style="height:0%"></div><div class="b" style="height:0%"></div><div class="b" style="height:25%"></div><div class="b" style="height:0%"></div><div class="b" style="height:0%"></div><div class="b" style="height:0%"></div></div>
+          <div class="heat-strip"><div class="h cold"></div><div class="h cold"></div><div class="h cold"></div><div class="h cold"></div><div class="h cold"></div><div class="h cold"></div></div>
+        </div>
+
+        <!-- Row 4 -->
+        <div class="cell dead">
+          <div class="cell-head"><span class="cell-band">10m</span><span class="cell-age">38m</span></div>
+          <div class="cell-stats"><span><span class="stat-num">5</span><label>spots</label></span><span class="mults"><span class="stat-num">2</span><label>mults</label></span></div>
+          <div class="hist"><div class="b" style="height:25%"></div><div class="b mult" style="height:50%"></div><div class="b" style="height:0%"></div><div class="b" style="height:0%"></div><div class="b mult" style="height:45%"></div><div class="b" style="height:0%"></div><div class="b" style="height:30%"></div><div class="b" style="height:0%"></div></div>
+          <div class="heat-strip"><div class="h cold"></div><div class="h cold"></div><div class="h cold"></div><div class="h cold"></div><div class="h cold"></div><div class="h cold"></div></div>
+        </div>
+
+        <div class="cell dead">
+          <div class="cell-head"><span class="cell-band">6m</span><span class="cell-age">3h</span></div>
+          <div class="cell-stats"><span><span class="stat-num">0</span><label>spots</label></span></div>
+          <div class="hist"><div class="b" style="height:0%"></div><div class="b" style="height:0%"></div><div class="b" style="height:0%"></div><div class="b" style="height:0%"></div><div class="b" style="height:0%"></div><div class="b" style="height:0%"></div><div class="b" style="height:0%"></div><div class="b" style="height:0%"></div></div>
+          <div class="heat-strip"><div class="h cold"></div><div class="h cold"></div><div class="h cold"></div><div class="h cold"></div><div class="h cold"></div><div class="h cold"></div></div>
+        </div>
+
+        <!-- Filler "All bands" cell -->
+        <div class="cell" style="background: #1c1c1e; border-style: dashed;">
+          <div class="cell-head"><span class="cell-band" style="color: var(--text-secondary);">All HF</span><span class="cell-age">summary</span></div>
+          <div class="cell-stats"><span><span class="stat-num">88</span><label>spots</label></span><span class="mults"><span class="stat-num">27</span><label>mults</label></span><span class="new"><span class="stat-num">9</span><label>new</label></span></div>
+          <div class="hist"><div class="b" style="height:35%"></div><div class="b mult" style="height:75%"></div><div class="b new" style="height:80%"></div><div class="b mult" style="height:70%"></div><div class="b" style="height:50%"></div><div class="b mult" style="height:85%"></div><div class="b new" style="height:90%"></div><div class="b mult" style="height:75%"></div></div>
+          <div class="heat-strip"><div class="h hot"></div><div class="h hot"></div><div class="h hot"></div><div class="h warm"></div><div class="h hot"></div><div class="h warm"></div></div>
+        </div>
+      </div>
+
+      <!-- Expanded view (right side) -->
+      <div class="expand">
+        <div class="expand-head">
+          <span class="lbl">expanded:</span>
+          <span class="band">20m</span>
+          <span class="freq">14130.0</span>
+          <span class="lbl">·</span>
+          <span class="freq">28 spots · 7 mults</span>
+          <span class="pin">click any grid cell to expand it here</span>
+        </div>
+        <svg width="812" height="660" viewBox="0 0 812 660" xmlns="http://www.w3.org/2000/svg">
+          <rect x="0" y="0" width="812" height="660" fill="#1c1c1e"/>
+          <!-- Sub-band shading -->
+          <rect x="50" y="0" width="762" height="270" fill="#0a84ff" fill-opacity="0.10"/>
+          <rect x="50" y="320" width="762" height="340" fill="#ff9f0a" fill-opacity="0.08"/>
+          <line x1="50" y1="295" x2="812" y2="295" stroke="rgba(255,255,255,0.16)" stroke-dasharray="2,3"/>
+          <text x="58" y="14" font-size="9" font-weight="600" font-family="-apple-system" fill="#0a84ff" opacity="0.8">CW / DIGITAL</text>
+          <text x="58" y="338" font-size="9" font-weight="600" font-family="-apple-system" fill="#ff9f0a" opacity="0.8">SSB / PHONE</text>
+          <!-- Axis -->
+          <g font-family="ui-monospace" font-size="8" fill="rgba(235,235,245,0.6)">
+            <text x="46" y="50" text-anchor="end">14005</text>
+            <text x="46" y="100" text-anchor="end">14025</text>
+            <text x="46" y="150" text-anchor="end">14045</text>
+            <text x="46" y="200" text-anchor="end">14065</text>
+            <text x="46" y="250" text-anchor="end">14085</text>
+            <text x="46" y="320" text-anchor="end">14110</text>
+            <text x="46" y="400" text-anchor="end">14140</text>
+            <text x="46" y="480" text-anchor="end">14170</text>
+            <text x="46" y="560" text-anchor="end">14200</text>
+            <text x="46" y="640" text-anchor="end">14250</text>
+          </g>
+          <!-- Sample spots -->
+          <g font-family="ui-monospace">
+            <line x1="50" y1="50" x2="56" y2="50" stroke="#30d158" stroke-width="2"/>
+            <text x="60" y="53" font-size="11" font-weight="700" fill="#30d158">K3LR</text>
+            <line x1="50" y1="68" x2="56" y2="68" stroke="#8e8e93"/>
+            <text x="60" y="71" font-size="10" font-weight="500" fill="#8e8e93">W1AW</text>
+            <line x1="50" y1="92" x2="56" y2="92" stroke="#ff453a" stroke-width="2"/>
+            <text x="60" y="95" font-size="11" font-weight="700" fill="#ff453a">JA1NUT</text>
+            <line x1="50" y1="120" x2="56" y2="120" stroke="#30d158" stroke-width="2"/>
+            <text x="60" y="123" font-size="11" font-weight="700" fill="#30d158">VK6IR</text>
+            <line x1="50" y1="148" x2="56" y2="148" stroke="#0a84ff"/>
+            <text x="60" y="151" font-size="10" fill="#0a84ff">EA1XT</text>
+            <line x1="50" y1="170" x2="56" y2="170" stroke="#ff9f0a" stroke-width="2"/>
+            <text x="60" y="173" font-size="11" font-weight="700" fill="#ff9f0a">OH8X</text>
+            <line x1="50" y1="200" x2="56" y2="200" stroke="#ff453a" stroke-width="2"/>
+            <text x="60" y="203" font-size="11" font-weight="700" fill="#ff453a">9M2CNC</text>
+            <line x1="50" y1="232" x2="56" y2="232" stroke="#0a84ff"/>
+            <text x="60" y="235" font-size="10" fill="#0a84ff">G4IRN</text>
+            <line x1="50" y1="262" x2="56" y2="262" stroke="#30d158" stroke-width="2"/>
+            <text x="60" y="265" font-size="11" font-weight="700" fill="#30d158">ZS6CCY</text>
+            <line x1="50" y1="328" x2="56" y2="328" stroke="#30d158" stroke-width="2"/>
+            <text x="60" y="331" font-size="11" font-weight="700" fill="#30d158">PY2NY</text>
+            <line x1="50" y1="380" x2="56" y2="380" stroke="#0a84ff"/>
+            <text x="60" y="383" font-size="10" fill="#0a84ff">N5CR</text>
+            <line x1="50" y1="430" x2="56" y2="430" stroke="#0a84ff"/>
+            <text x="60" y="433" font-size="10" fill="#0a84ff">LZ9W</text>
+            <line x1="50" y1="478" x2="56" y2="478" stroke="#30d158" stroke-width="2"/>
+            <text x="60" y="481" font-size="11" font-weight="700" fill="#30d158">KH6LC</text>
+            <line x1="50" y1="525" x2="56" y2="525" stroke="#0a84ff"/>
+            <text x="60" y="528" font-size="10" fill="#0a84ff">OK7K</text>
+            <line x1="50" y1="568" x2="56" y2="568" stroke="#ff453a" stroke-width="2"/>
+            <text x="60" y="571" font-size="11" font-weight="700" fill="#ff453a">4X6FR</text>
+          </g>
+          <!-- VFO -->
+          <rect x="50" y="385" width="762" height="22" fill="#0a84ff" fill-opacity="0.12"/>
+          <line x1="50" y1="396" x2="812" y2="396" stroke="#ff453a" stroke-opacity="0.85" stroke-width="1.5"/>
+          <text x="800" y="392" font-family="ui-monospace" font-size="9" font-weight="600" text-anchor="end" fill="#ff453a">CW · 500 Hz</text>
+        </svg>
+      </div>
+    </div>
+
+    <div class="bottom-bar">
+      <span><span class="key">←</span><span class="key">→</span><span class="key">↑</span><span class="key">↓</span> grid cell</span>
+      <span><span class="key">⏎</span> expand into main</span>
+      <span><span class="key">⇧⏎</span> jump radio to band</span>
+      <span style="margin-left: auto;">88 spots · 27 mults · 9 new · 11 bands · last update 22s ago</span>
+    </div>
+  </div>
+
+  <div class="callouts">
+    <span class="marker fix">A</span>
+    <span class="text"><strong>Every HF band visible at once.</strong>
+      The only layout where the operator can answer "is there anything on 6 m?" or
+      "did 80 m wake up?" without changing band. Each cell is a self-contained
+      summary: spot count, mult count, density histogram, recent activity heat
+      strip, age of last spot.</span>
+
+    <span class="marker fix">B</span>
+    <span class="text"><strong>Drill-down via expansion.</strong>
+      Click any cell to expand it into the right-side scope (which is the same
+      single-band layout from variant 01). The grid stays visible. Acting happens
+      in the expanded view, scanning happens in the grid.</span>
+
+    <span class="marker fix">C</span>
+    <span class="text"><strong>Dead bands fade to 50% opacity.</strong>
+      6 m and 10 m at the bottom of the screenshot are visually muted so the eye
+      goes straight to the bands with activity (40 / 20 / 15 m).</span>
+
+    <span class="marker fix">D</span>
+    <span class="text"><strong>"All HF" summary cell.</strong>
+      The 12th grid cell aggregates everything for a glance-level "is the contest
+      hot right now?" check. Useful for the multi-op coordinator.</span>
+  </div>
+
+  <div class="callouts" style="margin-top: 12px;">
+    <span class="marker">!</span>
+    <span class="text"><strong>Tradeoffs.</strong>
+      Lowest interaction density per band — you can't do real S&P from the grid
+      view alone. The grid is only useful if it's paired with the expanded view,
+      which means the layout commits 580 + 812 = 1392 pt to itself. On a
+      laptop screen this leaves no room for the QSO log, the entry field, or any
+      other panel. Best as a full-window mode, not a permanent layout.</span>
+  </div>
+</div>
+</body>
+</html>

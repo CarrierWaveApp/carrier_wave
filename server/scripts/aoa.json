@@ -1,0 +1,22 @@
+{
+  "slug": "aoa",
+  "name": "Agents on Air",
+  "shortName": "AoA",
+  "icon": "eye",
+  "website": null,
+  "referenceLabel": "Mission Reference",
+  "referenceFormat": "^M-[a-z0-9]{4}$",
+  "referenceExample": "M-a01f",
+  "multiRefAllowed": false,
+  "activationThreshold": null,
+  "supportsRove": false,
+  "capabilities": ["referenceField", "hunter", "dataEntry", "dataVerification"],
+  "adifMySig": null,
+  "adifMySigInfo": null,
+  "adifSigField": null,
+  "adifSigInfoField": null,
+  "dataEntryLabel": "Passkey",
+  "dataEntryPlaceholder": "Enter code from other station",
+  "dataEntryFormat": null,
+  "sortOrder": 20
+}

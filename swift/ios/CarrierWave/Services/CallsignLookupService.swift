@@ -1,0 +1,385 @@
+import CarrierWaveData
+import Foundation
+import SwiftData
+
+// MARK: - Notifications
+
+extension Notification.Name {
+    /// Posted when QRZ Callbook credentials are added or removed.
+    /// Observers should re-trigger lookups to get richer data from QRZ.
+    static let qrzCallbookCredentialsChanged = Notification.Name("qrzCallbookCredentialsChanged")
+}
+
+// MARK: - CallsignLookupError
+
+/// Errors that can occur during callsign lookup
+enum CallsignLookupError: LocalizedError, Equatable {
+    /// No QRZ API key configured
+    case noQRZApiKey
+    /// QRZ session authentication failed
+    case qrzAuthFailed
+    /// Network request failed
+    case networkError(String)
+    /// Callsign not found in any source
+    case notFound
+    /// No lookup sources configured (no Polo notes, no QRZ key)
+    case noSourcesConfigured
+
+    // MARK: Internal
+
+    var errorDescription: String? {
+        switch self {
+        case .noQRZApiKey:
+            "QRZ Callsign Lookup not configured"
+        case .qrzAuthFailed:
+            "QRZ authentication failed"
+        case let .networkError(message):
+            "Network error: \(message)"
+        case .notFound:
+            "Callsign not found"
+        case .noSourcesConfigured:
+            "No lookup sources configured"
+        }
+    }
+
+    var recoverySuggestion: String? {
+        switch self {
+        case .noQRZApiKey:
+            "Login to QRZ Callsign Lookup in Settings -> Data & Tools"
+        case .qrzAuthFailed:
+            "Check your QRZ credentials in Settings -> Data"
+        case .networkError:
+            "Check your internet connection"
+        case .notFound:
+            nil
+        case .noSourcesConfigured:
+            "Configure QRZ Callsign Lookup or Polo Notes in Settings"
+        }
+    }
+}
+
+// MARK: - CallsignLookupResult
+
+/// Result of a callsign lookup with detailed status
+struct CallsignLookupResult: Equatable {
+    /// The callsign info if found
+    let info: CallsignInfo?
+    /// Error if lookup failed (nil if found or still searching)
+    let error: CallsignLookupError?
+    /// Whether QRZ lookup was attempted
+    let qrzAttempted: Bool
+    /// Whether Polo notes were checked
+    let poloNotesChecked: Bool
+
+    /// Whether any info was found
+    nonisolated var found: Bool {
+        info != nil
+    }
+
+    /// Create a successful result
+    nonisolated static func success(_ info: CallsignInfo) -> CallsignLookupResult {
+        CallsignLookupResult(info: info, error: nil, qrzAttempted: false, poloNotesChecked: true)
+    }
+
+    /// Create a result from QRZ lookup
+    nonisolated static func fromQRZ(_ info: CallsignInfo) -> CallsignLookupResult {
+        CallsignLookupResult(info: info, error: nil, qrzAttempted: true, poloNotesChecked: true)
+    }
+
+    /// Create a result from HamDB fallback lookup
+    nonisolated static func fromHamDB(_ info: CallsignInfo) -> CallsignLookupResult {
+        CallsignLookupResult(info: info, error: nil, qrzAttempted: false, poloNotesChecked: true)
+    }
+
+    /// Create a not found result
+    nonisolated static func notFound(qrzAttempted: Bool, poloNotesChecked: Bool)
+        -> CallsignLookupResult
+    {
+        CallsignLookupResult(
+            info: nil,
+            error: .notFound,
+            qrzAttempted: qrzAttempted,
+            poloNotesChecked: poloNotesChecked
+        )
+    }
+
+    /// Create an error result
+    nonisolated static func error(
+        _ error: CallsignLookupError,
+        qrzAttempted: Bool = false,
+        poloNotesChecked: Bool = false
+    ) -> CallsignLookupResult {
+        CallsignLookupResult(
+            info: nil,
+            error: error,
+            qrzAttempted: qrzAttempted,
+            poloNotesChecked: poloNotesChecked
+        )
+    }
+}
+
+// MARK: - CallsignLookupService
+
+/// Service for looking up callsign information from multiple sources.
+/// Uses a three-tier lookup strategy:
+/// 1. Polo notes lists (local, fast, offline-capable)
+/// 2. QRZ XML callbook API (remote, comprehensive)
+/// 3. HamDB (free fallback for grid/name when QRZ unavailable)
+@MainActor
+final class CallsignLookupService {
+    // MARK: Lifecycle
+
+    init(modelContext: ModelContext? = nil) {
+        self.modelContext = modelContext
+    }
+
+    // MARK: Internal
+
+    // MARK: - Configuration
+
+    /// Maximum entries to keep in cache
+    let maxCacheSize = 100
+
+    /// Debounce delay for lookups (seconds)
+    let debounceDelay: TimeInterval = 0.5
+
+    /// Maximum age for cached entries before refresh (seconds)
+    let maxCacheAge: TimeInterval = 3_600
+
+    // MARK: - Private State
+
+    /// Cache of recent lookups (QRZ results)
+    var cache: [String: CallsignInfo] = [:]
+
+    /// Order of cache entries for LRU eviction
+    var cacheOrder: [String] = []
+
+    /// Pending lookup tasks (for deduplication) - legacy
+    var pendingLookups: [String: Task<CallsignInfo?, Never>] = [:]
+
+    /// Pending lookup tasks with results (for deduplication)
+    var pendingResultLookups: [String: Task<CallsignLookupResult, Never>] = [:]
+
+    /// ModelContext for accessing Club data (used by CallsignNotesCache)
+    let modelContext: ModelContext?
+
+    // MARK: - Public API
+
+    /// Look up a callsign, checking Polo notes first, then QRZ
+    /// - Parameter callsign: The callsign to look up
+    /// - Returns: CallsignInfo if found, nil otherwise
+    func lookup(_ callsign: String) async -> CallsignInfo? {
+        let result = await lookupWithResult(callsign)
+        return result.info
+    }
+
+    /// Check if QRZ Callbook credentials are configured
+    func hasQRZCallbookCredentials() -> Bool {
+        (try? KeychainHelper.shared.readString(for: KeychainHelper.Keys.qrzCallbookUsername)) != nil
+            && (try? KeychainHelper.shared.readString(
+                for: KeychainHelper.Keys.qrzCallbookPassword
+            )) != nil
+    }
+
+    /// Legacy: Check if QRZ API key is configured (for backward compatibility)
+    func hasQRZApiKey() -> Bool {
+        hasQRZCallbookCredentials()
+    }
+
+    /// Check if any Polo notes sources are configured (based on cached data)
+    func hasPoloNotesSources() -> Bool {
+        guard let context = modelContext else {
+            return false
+        }
+        let clubCount = ClubsSyncService.shared.clubs.count
+        let sourceCount =
+            (try? context.fetchCount(
+                FetchDescriptor<CallsignNotesSource>(
+                    predicate: #Predicate { $0.isEnabled }
+                )
+            )) ?? 0
+        return clubCount > 0 || sourceCount > 0
+    }
+
+    /// Get cached info for a callsign (synchronous, no network).
+    /// Consults the in-process LRU first (current session lookups), then
+    /// falls back to the disk-backed operator-profile snapshot for instant
+    /// hits on callsigns last seen in prior QSOs / previous QRZ enrichment.
+    func cachedInfo(for callsign: String) -> CallsignInfo? {
+        let normalized = callsign.uppercased()
+        if let hit = cache[normalized] {
+            return hit
+        }
+        return OperatorProfileService.shared.cachedInfoSync(for: normalized)
+    }
+
+    /// Preload Polo notes from all sources (clubs and user-configured)
+    func preloadPoloNotes() async {
+        guard let context = modelContext else {
+            return
+        }
+        let sources = NotesSourceInfo.fetchAll(modelContext: context)
+        await CallsignNotesCache.shared.ensureLoaded(sources: sources)
+    }
+
+    /// Preload the server-side callsign enrichment dataset (CWops, etc.).
+    /// Safe to call from app startup alongside `preloadPoloNotes`.
+    func preloadCallsignEnrichment() async {
+        await CallsignEnrichmentCache.shared.ensureLoaded()
+    }
+
+    /// Clear all caches
+    func clearCache() {
+        cache.removeAll()
+        pendingLookups.removeAll()
+    }
+
+    // MARK: - Polo Notes Lookup
+
+    func lookupInPoloNotes(_ callsign: String) async -> CallsignInfo? {
+        await CallsignNotesCache.shared.info(for: callsign)
+    }
+
+    // MARK: - FCC Lookup (offline, US callsigns)
+
+    /// Look up callsign info from the local FCC ULS database.
+    /// Returns instantly for US callsigns when the database is loaded.
+    /// Database must be downloaded from Settings > External Data first.
+    func lookupInFCC(_ callsign: String) async -> CallsignInfo? {
+        let service = FCCLookupService.shared
+        await service.loadIfNeeded()
+        guard let record = await service.lookup(callsign) else {
+            return nil
+        }
+
+        return CallsignInfo(
+            callsign: callsign,
+            name: record.fullName,
+            qth: record.city,
+            state: record.state,
+            country: "US",
+            grid: record.grid,
+            licenseClass: record.operatorClass,
+            source: .fcc
+        )
+    }
+
+    // MARK: - HamDB Name Lookup (for callsign change detection)
+
+    /// Fetch just the name from HamDB for comparison with QRZ
+    func lookupHamDBName(_ callsign: String) async -> String? {
+        let client = HamDBClient()
+        guard let license = try? await client.lookup(callsign: callsign) else {
+            return nil
+        }
+        return license.fullName
+    }
+
+    /// Detect when QRZ and HamDB show different names (callsign recently changed owners)
+    func detectCallsignChange(qrzInfo: CallsignInfo?, hamDBName: String?) -> String? {
+        detectCallsignChange(qrzName: qrzInfo?.name, hamDBName: hamDBName)
+    }
+
+    /// Detect when QRZ and HamDB show different names (callsign recently changed owners)
+    func detectCallsignChange(qrzName: String?, hamDBName: String?) -> String? {
+        guard let qrzName, !qrzName.isEmpty,
+              let hamDBName, !hamDBName.isEmpty
+        else {
+            return nil
+        }
+
+        // Normalize for comparison: lowercase, trimmed
+        let normalizedQRZ = qrzName.lowercased().trimmingCharacters(in: .whitespaces)
+        let normalizedHamDB = hamDBName.lowercased().trimmingCharacters(in: .whitespaces)
+
+        // If names match, no change detected
+        if normalizedQRZ == normalizedHamDB {
+            return nil
+        }
+
+        // Check if last names match (partial name updates are common)
+        let qrzParts = normalizedQRZ.split(separator: " ")
+        let hamDBParts = normalizedHamDB.split(separator: " ")
+        if let qrzLast = qrzParts.last, let hamDBLast = hamDBParts.last,
+           qrzLast == hamDBLast, qrzParts.count > 1, hamDBParts.count > 1
+        {
+            // Same last name — likely just a first name or middle name difference, not a new owner
+            return nil
+        }
+
+        return "HamDB is still updating (shows \(hamDBName.capitalized))"
+    }
+
+    /// Look up just the QRZ name for cross-referencing with HamDB
+    func lookupHamDBComparisonName(callsign: String) async -> String? {
+        let result = await lookupInQRZWithResult(callsign)
+        return result.info?.name
+    }
+
+    // MARK: - HamDB Lookup (free fallback)
+
+    /// Look up callsign info from HamDB as a fallback when QRZ is unavailable.
+    /// Returns grid, name, QTH, state, country, and license class.
+    func lookupInHamDB(_ callsign: String) async -> CallsignInfo? {
+        let client = HamDBClient()
+        guard let license = try? await client.lookup(callsign: callsign) else {
+            return nil
+        }
+
+        let name = license.fullName
+        let grid = license.grid
+        let qth = license.city
+        let state = license.state
+        let country = license.country
+        let licenseClass = license.parsedLicenseClass?.rawValue
+
+        // Only return if we got meaningful data
+        guard name != nil || grid != nil || qth != nil else {
+            return nil
+        }
+
+        return CallsignInfo(
+            callsign: callsign,
+            name: name,
+            qth: qth,
+            state: state,
+            country: country,
+            grid: grid,
+            licenseClass: licenseClass,
+            source: .hamdb
+        )
+    }
+
+    // MARK: - Cache Management
+
+    func updateCache(_ info: CallsignInfo) {
+        let callsign = info.callsign
+
+        // Update cache
+        cache[callsign] = info
+
+        // Update LRU order
+        if let index = cacheOrder.firstIndex(of: callsign) {
+            cacheOrder.remove(at: index)
+        }
+        cacheOrder.append(callsign)
+
+        // Evict old entries if needed
+        while cacheOrder.count > maxCacheSize {
+            if let oldest = cacheOrder.first {
+                cacheOrder.removeFirst()
+                cache.removeValue(forKey: oldest)
+            }
+        }
+    }
+
+    /// Evict a single entry (e.g. an old callsign that QRZ forward-resolved
+    /// to a new one) so the stale identity can't be served for the rest of
+    /// the session.
+    func removeCachedEntry(for callsign: String) {
+        cache.removeValue(forKey: callsign)
+        if let index = cacheOrder.firstIndex(of: callsign) {
+            cacheOrder.remove(at: index)
+        }
+    }
+}

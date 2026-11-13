@@ -1,0 +1,30 @@
+{{- /* Renders a macro summary as a catalog card.
+       Input: a MacroSummary item from /v1/macros (snake_case top level,
+       capability flags camelCase). */ -}}
+<article class="macro-card"
+         data-slug="{{ .slug }}"
+         data-name="{{ lower .name }}"
+         data-applies-to="{{ delimit .applies_to "," }}"
+         data-transmits="{{ if .capabilities.transmits }}1{{ else }}0{{ end }}">
+  <header class="macro-card-head">
+    <h3 class="macro-card-title">{{ .name }}</h3>
+    {{ with .author_callsign }}<p class="macro-card-author">by {{ . }}</p>{{ end }}
+  </header>
+
+  {{ with .description }}<p class="macro-card-desc">{{ . }}</p>{{ end }}
+
+  <div class="macro-chips">
+    {{ if .capabilities.transmits }}<span class="chip chip-tx" title="Keys the transmitter">Transmits</span>{{ end }}
+    {{ if .capabilities.changesFrequency }}<span class="chip">Changes frequency</span>{{ end }}
+    {{ if .capabilities.changesMode }}<span class="chip">Changes mode</span>{{ end }}
+    {{ if .capabilities.changesPower }}<span class="chip">Changes power</span>{{ end }}
+    {{ if .capabilities.usesRawBytes }}<span class="chip chip-warn" title="Sends raw bytes to the radio">Raw bytes</span>{{ end }}
+  </div>
+
+  <footer class="macro-card-actions">
+    <a class="macro-btn" href="/m/{{ .slug }}/">View</a>
+    <a class="macro-btn macro-btn-primary"
+       href="cwmacro://import?slug={{ .slug }}"
+       rel="nofollow">Open in Carrier Wave</a>
+  </footer>
+</article>

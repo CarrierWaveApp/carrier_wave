@@ -1,0 +1,108 @@
+{
+  "$schema": "macro-verifier-fixtures-v1",
+  "$comment": "Shared verifier corpus. Consumed by Swift tests now and Rust tests in Plan D. Each case provides a RadioMacroSpec and an expected set of issues. messageContains is a substring assertion to keep the corpus stable across phrasing tweaks.",
+  "cases": [
+    {
+      "name": "raw-bytes-civ-ptt-on-floors-transmits",
+      "spec": {
+        "id": "00000000-0000-0000-0000-000000000001",
+        "name": "lying",
+        "appliesTo": ["civ"],
+        "capabilities": { "transmits": false, "changesFrequency": false, "changesMode": false, "changesPower": false, "usesRawBytes": true },
+        "args": [],
+        "steps": [{ "kind": "rawBytes", "protocol": "civ", "bytes": "FE FE 94 E0 1C 00 01 FD" }]
+      },
+      "expect": { "issues": [{ "severity": "error", "messageContains": "transmits" }] }
+    },
+    {
+      "name": "raw-bytes-unknown-floors-transmits",
+      "spec": {
+        "id": "00000000-0000-0000-0000-000000000002",
+        "name": "unknown",
+        "appliesTo": ["civ"],
+        "capabilities": { "transmits": false, "changesFrequency": false, "changesMode": false, "changesPower": false, "usesRawBytes": true },
+        "args": [],
+        "steps": [{ "kind": "rawBytes", "protocol": "civ", "bytes": "FE FE 94 E0 AA BB CC FD" }]
+      },
+      "expect": { "issues": [{ "severity": "error", "messageContains": "transmits" }] }
+    },
+    {
+      "name": "frequency-arg-without-bounds-fails",
+      "spec": {
+        "id": "00000000-0000-0000-0000-000000000003",
+        "name": "open freq",
+        "appliesTo": ["civ"],
+        "capabilities": { "transmits": false, "changesFrequency": true, "changesMode": false, "changesPower": false, "usesRawBytes": false },
+        "args": [{ "name": "f", "type": "frequency" }],
+        "steps": [{ "kind": "setFrequency", "hz": 7032000 }]
+      },
+      "expect": { "issues": [{ "severity": "error", "messageContains": "min/max" }] }
+    },
+    {
+      "name": "delay-over-30s-fails",
+      "spec": {
+        "id": "00000000-0000-0000-0000-000000000004",
+        "name": "long",
+        "appliesTo": ["civ"],
+        "capabilities": { "transmits": false, "changesFrequency": false, "changesMode": false, "changesPower": false, "usesRawBytes": false },
+        "args": [],
+        "steps": [{ "kind": "delay", "durationMs": 60000 }]
+      },
+      "expect": { "issues": [{ "severity": "error", "messageContains": "30000" }] }
+    },
+    {
+      "name": "wait-until-over-30s-fails",
+      "spec": {
+        "id": "00000000-0000-0000-0000-000000000005",
+        "name": "patient",
+        "appliesTo": ["civ"],
+        "capabilities": { "transmits": false, "changesFrequency": false, "changesMode": false, "changesPower": false, "usesRawBytes": false },
+        "args": [],
+        "steps": [{ "kind": "waitUntil", "expr": "{ctx.ready}", "timeoutMs": 60000 }]
+      },
+      "expect": { "issues": [{ "severity": "error", "messageContains": "30000" }] }
+    },
+    {
+      "name": "send-cw-non-ascii-fails",
+      "spec": {
+        "id": "00000000-0000-0000-0000-000000000006",
+        "name": "dash",
+        "appliesTo": ["civ"],
+        "capabilities": { "transmits": true, "changesFrequency": false, "changesMode": false, "changesPower": false, "usesRawBytes": false },
+        "args": [],
+        "steps": [{ "kind": "sendCW", "text": "CQ — DE W6JY" }]
+      },
+      "expect": { "issues": [{ "severity": "error", "messageContains": "ASCII" }] }
+    },
+    {
+      "name": "clean-qsy-macro-passes",
+      "spec": {
+        "id": "00000000-0000-0000-0000-000000000007",
+        "name": "qsy",
+        "appliesTo": ["civ"],
+        "capabilities": { "transmits": false, "changesFrequency": true, "changesMode": true, "changesPower": false, "usesRawBytes": false },
+        "args": [
+          { "name": "freq", "type": "frequency", "min": 7000000, "max": 7300000 },
+          { "name": "mode", "type": "string" }
+        ],
+        "steps": [
+          { "kind": "setFrequency", "hz": 7032000 },
+          { "kind": "setMode", "mode": "CW" }
+        ]
+      },
+      "expect": { "issues": [] }
+    },
+    {
+      "name": "ptt-with-transmits-true-passes",
+      "spec": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "name": "ptt-true",
+        "appliesTo": ["civ"],
+        "capabilities": { "transmits": true, "changesFrequency": false, "changesMode": false, "changesPower": false, "usesRawBytes": false },
+        "args": [],
+        "steps": [{ "kind": "setPTT", "on": true }]
+      },
+      "expect": { "issues": [] }
+    }
+  ]
+}

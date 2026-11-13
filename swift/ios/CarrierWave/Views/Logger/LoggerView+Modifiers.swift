@@ -1,0 +1,428 @@
+import CarrierWaveData
+import SwiftData
+import SwiftUI
+
+// MARK: - LoggerView Sheet & Event Modifiers
+
+extension LoggerView {
+    /// Applies all sheet presentations to the main navigation content
+    func applySheetModifiers(_ content: some View) -> some View {
+        applySpaceWeatherSheet(
+            applyQSYLogSheet(
+                applyEndSessionSheets(
+                    applyEquipmentSheets(
+                        applyBandModeSheets(
+                            applySessionSheets(content)
+                        )
+                    )
+                )
+            )
+        )
+    }
+
+    /// Session start, title, park, and rove stop sheets
+    private func applySessionSheets(_ content: some View) -> some View {
+        content
+            .sheet(isPresented: $showSessionSheet) {
+                SessionStartSheet(
+                    sessionManager: sessionManager,
+                    onDismiss: { showSessionSheet = false }
+                )
+            }
+            .sheet(isPresented: $showTitleEditSheet) {
+                SessionTitleEditSheet(
+                    title: $editingTitle,
+                    defaultTitle: sessionManager?.activeSession?.defaultTitle ?? "",
+                    onSave: { newTitle in
+                        sessionManager?.updateTitle(newTitle.isEmpty ? nil : newTitle)
+                        showTitleEditSheet = false
+                    },
+                    onCancel: { showTitleEditSheet = false }
+                )
+                .landscapeAdaptiveDetents(portrait: [.height(200)])
+            }
+            .sheet(isPresented: $showParkEditSheet) {
+                SessionParkEditSheet(
+                    parkReference: $editingParkReference,
+                    userGrid: sessionManager?.activeSession?.myGrid
+                        ?? UserDefaults.standard.string(forKey: "loggerDefaultGrid"),
+                    onSave: { newPark in
+                        sessionManager?.updateParkReference(newPark.isEmpty ? nil : newPark)
+                        showParkEditSheet = false
+                    },
+                    onCancel: { showParkEditSheet = false }
+                )
+                .landscapeAdaptiveDetents(portrait: [.height(340)])
+            }
+            .sheet(isPresented: $showNextStopSheet) {
+                NextRoveStopSheet(
+                    sessionManager: sessionManager,
+                    onDismiss: {
+                        showNextStopSheet = false
+                        refreshSessionQSOs()
+                    }
+                )
+                .landscapeAdaptiveDetents(portrait: [.medium, .large])
+            }
+    }
+
+    /// Band and mode edit sheets with QSY spot handling
+    private func applyBandModeSheets(_ content: some View) -> some View {
+        applyQSYAlert(applyModeSheet(applyBandSheet(content)))
+    }
+
+    private func applyBandSheet(_ content: some View) -> some View {
+        content.sheet(
+            isPresented: $showBandEditSheet,
+            onDismiss: { handleQSYDismiss() },
+            content: {
+                SessionBandEditSheet(
+                    currentFrequency: sessionManager?.activeSession?.frequency,
+                    currentMode: sessionManager?.activeSession?.mode ?? "CW",
+                    onSelectFrequency: { freq in handleBandFrequencySelection(freq) },
+                    onCancel: { showBandEditSheet = false }
+                )
+                .landscapeAdaptiveDetents(portrait: [.medium, .large])
+            }
+        )
+    }
+
+    private func applyModeSheet(_ content: some View) -> some View {
+        content.sheet(
+            isPresented: $showModeEditSheet,
+            onDismiss: { handleQSYDismiss() },
+            content: {
+                SessionModeEditSheet(
+                    currentMode: sessionManager?.activeSession?.mode ?? "CW",
+                    onSelectMode: { newMode in
+                        let shouldPrompt = sessionManager?.updateMode(newMode) ?? false
+                        if shouldPrompt {
+                            pendingQSYFrequency = sessionManager?.activeSession?.frequency
+                        }
+                        showModeEditSheet = false
+                    },
+                    onCancel: { showModeEditSheet = false }
+                )
+                .landscapeAdaptiveDetents(portrait: [.height(280)])
+            }
+        )
+    }
+
+    private func applySpaceWeatherSheet(
+        _ content: some View
+    ) -> some View {
+        content
+            .sheet(isPresented: $showSpaceWeatherSheet) {
+                SpaceWeatherBannerView(
+                    onDismiss: { showSpaceWeatherSheet = false }
+                )
+                .presentationDetents([.medium, .large])
+            }
+            .sheet(isPresented: $showOperatorsSheet) {
+                if let session = sessionManager?.activeSession {
+                    OperatorsSheet(
+                        callsigns: session.allOperatorCallsigns,
+                        onDismiss: { showOperatorsSheet = false }
+                    )
+                    .presentationDetents([.medium, .large])
+                }
+            }
+    }
+
+    private func applyQSYAlert(_ content: some View) -> some View {
+        content.alert("Post QSY Spot?", isPresented: $showQSYSpotConfirmation) {
+            Button("No", role: .cancel) {}
+            Button("Yes") { Task { await sessionManager?.postQSYSpot() } }
+        } message: {
+            if let freq = qsyNewFrequency {
+                Text("Post a QSY spot to POTA at \(FrequencyFormatter.formatWithUnit(freq))?")
+            } else {
+                Text("Post a QSY spot to POTA?")
+            }
+        }
+    }
+
+    private func handleBandFrequencySelection(_ freq: Double) {
+        let result = sessionManager?.updateFrequency(freq)
+        if result?.isFirstFrequencySet == true {
+            let band = LoggingSession.bandForFrequency(freq)
+            ToastManager.shared.success(
+                "Frequency set to \(FrequencyFormatter.formatWithUnit(freq)) (\(band))"
+            )
+        }
+        if autoModeSwitch, let suggestedMode = result?.suggestedMode {
+            _ = sessionManager?.updateMode(suggestedMode)
+        }
+        if result?.shouldPromptForSpot == true {
+            pendingQSYFrequency = freq
+        }
+    }
+
+    /// Equipment, hidden QSOs, help, and SCP alert sheets
+    private func applyEquipmentSheets(_ content: some View) -> some View {
+        applySCPAlert(
+            content
+                .sheet(isPresented: $showRigEditSheet) {
+                    equipmentEditSheet
+                }
+                .sheet(isPresented: $showHiddenQSOsSheet) {
+                    HiddenQSOsSheet(sessionId: sessionManager?.activeSession?.id)
+                }
+                .sheet(isPresented: $showHelpSheet) {
+                    LoggerHelpSheet()
+                }
+                .sheet(isPresented: $showRadioPanel) {
+                    RadioPanel(service: RadioService.shared)
+                }
+        )
+    }
+
+    private var equipmentEditSheet: some View {
+        SessionEquipmentEditSheet(
+            radio: Binding(
+                get: { sessionManager?.activeSession?.myRig },
+                set: { sessionManager?.activeSession?.myRig = $0 }
+            ),
+            antenna: Binding(
+                get: { sessionManager?.activeSession?.myAntenna },
+                set: { sessionManager?.activeSession?.myAntenna = $0 }
+            ),
+            key: Binding(
+                get: { sessionManager?.activeSession?.myKey },
+                set: { sessionManager?.activeSession?.myKey = $0 }
+            ),
+            mic: Binding(
+                get: { sessionManager?.activeSession?.myMic },
+                set: { sessionManager?.activeSession?.myMic = $0 }
+            ),
+            extraEquipment: Binding(
+                get: { sessionManager?.activeSession?.extraEquipment },
+                set: { sessionManager?.activeSession?.extraEquipment = $0 }
+            ),
+            mode: sessionManager?.activeSession?.mode ?? "CW"
+        )
+        .landscapeAdaptiveDetents(portrait: [.medium, .large])
+    }
+
+    private func applySCPAlert(_ content: some View) -> some View {
+        content
+            .alert("Callsign not in SCP", isPresented: $showSCPDidYouMean) {
+                if let first = scpDidYouMeanSuggestions.first {
+                    Button(first.callsign) {
+                        callsignInput = first.callsign
+                    }
+                }
+                Button("Log Anyway") {
+                    logQSOConfirmed()
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                if let first = scpDidYouMeanSuggestions.first {
+                    Text("Did you mean \(first.callsign)?")
+                } else {
+                    Text("This callsign was not found in the SCP database.")
+                }
+            }
+    }
+
+    /// QRQ Crew spot, end session flow, and delete session sheets
+    private func applyEndSessionSheets(_ content: some View) -> some View {
+        content
+            .sheet(isPresented: $showQRQCrewSpotSheet) {
+                if let spotInfo = pendingQRQCrewSpot {
+                    QRQCrewSpotSheet(
+                        spotInfo: spotInfo,
+                        onPost: { wpm in
+                            showQRQCrewSpotSheet = false
+                            Task { await postQRQCrewSpot(spotInfo: spotInfo, wpm: wpm) }
+                        },
+                        onCancel: {
+                            showQRQCrewSpotSheet = false
+                            pendingQRQCrewSpot = nil
+                        }
+                    )
+                }
+            }
+            .sheet(
+                isPresented: $showEndSessionFlow,
+                onDismiss: { completeSessionEnd() },
+                content: { endSessionFlowSheet }
+            )
+            .sheet(isPresented: $showDeleteSessionSheet) {
+                DeleteSessionConfirmationSheet(
+                    qsoCount: sessionQSOs.count,
+                    onConfirm: {
+                        sessionManager?.deleteCurrentSession()
+                        showDeleteSessionSheet = false
+                    },
+                    onCancel: { showDeleteSessionSheet = false }
+                )
+            }
+    }
+
+    /// Build the end session flow sheet with current session data
+    @ViewBuilder
+    private var endSessionFlowSheet: some View {
+        if let session = sessionManager?.activeSession {
+            let bands = Array(Set(sessionQSOs.map(\.band))).sorted()
+            let modes = Array(Set(sessionQSOs.map(\.mode))).sorted()
+
+            EndSessionFlowView(
+                sessionTitle: session.displayTitle,
+                qsoCount: sessionQSOs.count,
+                duration: session.formattedDuration,
+                bands: bands,
+                modes: modes,
+                isPOTA: session.isPOTA,
+                isContest: session.isContest,
+                contestSession: session.isContest ? session : nil,
+                contestQSOs: session.isContest ? sessionQSOs : [],
+                contestScore: contestManager?.score,
+                isTOTA: session.activationType == .tota,
+                totaSession: session.activationType == .tota ? session : nil,
+                totaQSOs: session.activationType == .tota ? sessionQSOs : [],
+                potaParkRef: pendingSessionEndParkRef,
+                potaParkName: pendingSessionEndParkName,
+                potaQSOsNeedingUpload: pendingSessionEndQSOCount,
+                roveStops: pendingSessionEndRoveStops,
+                isInMaintenance: pendingSessionEndInMaintenance,
+                maintenanceTimeRemaining: pendingSessionEndMaintenanceRemaining,
+                hasNoFrequency: session.frequency == nil && !sessionQSOs.isEmpty,
+                onEndSession: {
+                    performSessionEnd()
+                    return endSessionActivityItem
+                },
+                onUpload: { await uploadPendingPOTAQSOs() },
+                onComplete: {
+                    showEndSessionFlow = false
+                }
+            )
+        }
+    }
+
+    /// Handle QSY spot confirmation on band/mode sheet dismiss
+    private func handleQSYDismiss() {
+        if let freq = pendingQSYFrequency {
+            pendingQSYFrequency = nil
+            qsyNewFrequency = freq
+            showQSYSpotConfirmation = true
+        }
+    }
+
+    /// Applies lifecycle and event handlers to the main navigation content
+    func applyEventHandlers(_ content: some View) -> some View {
+        applyChangeHandlers(
+            applyLifecycleHandlers(content)
+        )
+    }
+
+    private func handleOnAppear() {
+        if sessionManager == nil {
+            sessionManager = externalSessionManager
+                ?? LoggingSessionManager(modelContext: modelContext, locationService: locationService)
+        }
+        sessionManager?.friendCallsigns = Set(
+            acceptedFriends.map { $0.friendCallsign.uppercased() }
+        )
+        refreshSessionQSOs()
+        initContestManagerIfNeeded()
+        Task { await refreshPOTASpots() }
+        let container = modelContext.container
+        Task.detached {
+            let counts = CallsignSuggestionProvider.loadContactCounts(
+                container: container
+            )
+            await MainActor.run { suggestionContactCounts = counts }
+        }
+    }
+
+    /// Applies onAppear, task, and notification receivers
+    private func applyLifecycleHandlers(_ content: some View) -> some View {
+        content
+            .onAppear { handleOnAppear() }
+            .task {
+                while !Task.isCancelled {
+                    try? await Task.sleep(for: .seconds(60))
+                    guard !Task.isCancelled else {
+                        break
+                    }
+                    await refreshPOTASpots()
+                }
+            }
+            .onReceive(
+                NotificationCenter.default.publisher(for: .didReceiveQSYSpot)
+            ) { notification in
+                handleQSYSpotNotification(notification)
+            }
+            .onReceive(
+                NotificationCenter.default.publisher(for: .didReceiveQSYTune)
+            ) { notification in
+                handleQSYTuneNotification(notification)
+            }
+            .onReceive(
+                NotificationCenter.default.publisher(for: .didReceiveQSYLog)
+            ) { notification in
+                handleQSYLogNotification(notification)
+            }
+            .onReceive(
+                NotificationCenter.default.publisher(for: .qrzCallbookCredentialsChanged)
+            ) { _ in
+                // Re-trigger lookup to get richer QRZ data (or fall back to HamDB)
+                if !callsignInput.isEmpty {
+                    onCallsignChanged(callsignInput)
+                }
+            }
+    }
+
+    /// Applies onChange handlers for session, network, and spot state
+    private func applyChangeHandlers(_ content: some View) -> some View {
+        content
+            .onChange(of: NetworkHealthMonitor.shared.health) { oldHealth, newHealth in
+                if newHealth == .healthy {
+                    networkHealthDismissed = false
+                } else if oldHealth == .healthy {
+                    networkHealthDismissed = false
+                }
+            }
+            .onChange(of: sessionManager?.activeSession?.frequency) { _, _ in
+                // Dismissals are tracked by stable identity (e.g.
+                // `spot:<activator>:<reference>`) so we deliberately do NOT
+                // clear them here — frequency can change from manual retune,
+                // CAT polling, mode-driven defaults, or session-model
+                // re-emissions, and clearing would cause a dismissed warning
+                // to immediately re-appear (CAR-252). A genuinely different
+                // spot/condition produces a different dismissal key and
+                // shows normally.
+                cachedDuplicateStatus = computeDuplicateStatus()
+                if cachedPOTASpots.isEmpty {
+                    Task { await refreshPOTASpots() }
+                }
+            }
+            .onChange(of: sessionManager?.activeSession?.mode) { _, _ in
+                cachedDuplicateStatus = computeDuplicateStatus()
+            }
+            .onChange(of: sessionManager?.activeSession?.id) { _, _ in
+                // New session = clean slate for warning dismissals.
+                dismissedWarnings.removeAll()
+                refreshSessionQSOs()
+            }
+            .onChange(of: externalSpotSelection) { _, newValue in
+                if let selection = newValue {
+                    handleSpotSelection(selection)
+                    externalSpotSelection = nil
+                }
+            }
+    }
+
+    /// QSY Log confirmation sheet
+    func applyQSYLogSheet(_ content: some View) -> some View {
+        content.sheet(item: $pendingQSYLog) { confirmation in
+            QSYLogConfirmationSheet(
+                confirmation: confirmation,
+                onConfirm: { confirmQSYLog(confirmation) },
+                onCancel: { pendingQSYLog = nil }
+            )
+            .landscapeAdaptiveDetents(portrait: [.medium])
+        }
+    }
+}

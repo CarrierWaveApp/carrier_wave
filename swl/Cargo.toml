@@ -1,0 +1,58 @@
+[workspace]
+members = ["sdr-server", "sdr-core", "sdr-cli"]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+[workspace.dependencies]
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+
+# Web framework
+axum = { version = "0.8", features = ["json", "multipart"] }
+tower = "0.5"
+tower-http = { version = "0.6", features = ["cors", "trace", "fs"] }
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
+
+# Database
+rusqlite = { version = "0.32", features = ["bundled"] }
+
+# SDR
+soapysdr = "0.4"
+
+# DSP
+num-complex = "0.4"
+rustfft = "6"
+
+# Audio
+claxon = "0.4"
+symphonia = { version = "0.5", features = ["caf", "isomp4", "aac", "pcm", "wav", "aiff"] }
+
+# Time
+chrono = { version = "0.4", features = ["serde"] }
+rsntp = "4"
+
+# Networking
+tokio-tungstenite = { version = "0.24", features = ["rustls-tls-native-roots"] }
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
+
+# Error handling
+thiserror = "2"
+anyhow = "1"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+
+# Regex
+regex = "1"
+
+# Misc
+uuid = { version = "1", features = ["v4", "serde"] }

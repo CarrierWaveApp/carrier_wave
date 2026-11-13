@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Band Scope Redesign — Mockups</title>
+<link rel="stylesheet" href="theme.css">
+<style>
+  .gallery {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-top: 16px;
+  }
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--divider);
+    border-radius: 12px;
+    padding: 16px;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    transition: border-color 0.15s;
+  }
+  .card:hover {
+    border-color: var(--blue);
+    text-decoration: none;
+  }
+  .card h2 {
+    margin: 0 0 4px 0;
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .card .num {
+    color: var(--text-tertiary);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    margin-right: 6px;
+  }
+  .card .badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    color: #fff;
+    background: var(--green);
+    padding: 1px 6px;
+    border-radius: 3px;
+    margin-left: 8px;
+    vertical-align: middle;
+    letter-spacing: 0.3px;
+  }
+  .card p {
+    color: var(--text-secondary);
+    margin: 8px 0 0 0;
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .meta {
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid var(--divider);
+    color: var(--text-tertiary);
+    font-size: 11px;
+  }
+</style>
+</head>
+<body>
+  <div class="page">
+    <div class="page-header">
+      <h1>Band Scope Redesign — Mockups</h1>
+      <div class="crumbs">CWSweep · 2026-04-07 · <a href="../README.md">research notes</a></div>
+    </div>
+
+    <p class="lead">
+      Five design directions plus the annotated current state. Each mockup is a static
+      HTML/SVG file at the target laptop size (1392 × 760 pt). Open them standalone in
+      a browser to see the full layout. Read the <a href="../README.md">research notes</a>
+      for the rationale and the recommended build order.
+    </p>
+
+    <div class="gallery">
+      <a class="card" href="00-current.html">
+        <h2><span class="num">00</span>Current state, annotated</h2>
+        <p>The existing <code>ContestBandScopeView</code> drawn to spec from the
+           code, with the actual pain points highlighted in red callouts. Reference for
+           everything that follows.</p>
+      </a>
+
+      <a class="card" href="01-single-band-refined.html">
+        <h2><span class="num">01</span>Single-band, refined</h2>
+        <p>Same layout as today, with every interaction pain point fixed in place:
+           cursor crosshair, mini-map, mode-aware snap, keyboard zoom, sub-band shading
+           you can actually see. Lowest-risk shipping path.</p>
+      </a>
+
+      <a class="card" href="02-stacked-bands.html">
+        <h2><span class="num">02</span>Stacked bands (N1MM-inspired)</h2>
+        <p>Five band columns side by side. Trades the live spectrum for the ability to
+           see five bands at once. The contest situational awareness answer.</p>
+      </a>
+
+      <a class="card" href="03-grid-overview.html">
+        <h2><span class="num">03</span>Grid overview (TradingView-inspired)</h2>
+        <p>4 × 3 grid of small per-band cells with density histograms. Click to expand
+           into the main scope. The scanning answer.</p>
+      </a>
+
+      <a class="card" href="04-hybrid-active-with-rail.html">
+        <h2><span class="num">04</span>Hybrid: active band + rail<span class="badge">RECOMMENDED</span></h2>
+        <p>Big active scope on the left, thin band rail on the right with mults / new /
+           density per band. Smallest delta from today, biggest situational awareness
+           win.</p>
+      </a>
+
+      <a class="card" href="05-multi-vfo-watchlist.html">
+        <h2><span class="num">05</span>Multi-VFO + watchlist</h2>
+        <p>Variant 01 plus a second VFO cursor for sub-receiver radios, watch markers,
+           and a recent-frequency history trail. Forward-looking power-user variant.</p>
+      </a>
+    </div>
+
+    <div class="meta">
+      Mockups built to spec from <code>CWSweep/CWSweep/Views/Spots/ContestBandScopeView.swift</code>
+      and the dark-mode tokens in <code>docs/design-language.md</code>.
+    </div>
+  </div>
+</body>
+</html>

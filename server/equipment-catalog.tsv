@@ -1,0 +1,89 @@
+id	name	manufacturer	category	bands	modes	max_power_watts	portability	weight_grams	description	aliases	antenna_connector	power_connector	key_jack	mic_jack
+elecraft-kx2	KX2	Elecraft	radio	80m,60m,40m,30m,20m,17m,15m,12m,10m	CW,SSB,DIGITAL	10	pocket	370	Ultra-compact HF transceiver with optional built-in ATU and battery	kx-2,kx 2	BNC female	2.1mm barrel	3.5mm TRS	3.5mm TRRS
+elecraft-kx3	KX3	Elecraft	radio	160m,80m,60m,40m,30m,20m,17m,15m,12m,10m,6m	CW,SSB,AM,FM,DIGITAL	10	backpack	680	Full-featured all-band QRP transceiver with SDR architecture	kx-3,kx 3	BNC female	2.1mm barrel	3.5mm TRS	3.5mm TRRS
+elecraft-k4	K4	Elecraft	radio	160m,80m,60m,40m,30m,20m,17m,15m,12m,10m,6m	CW,SSB,AM,FM,DIGITAL	100	base	4536	High-performance direct-sampling SDR with dual receive and built-in ATU	k-4,k4d	SO-239	Anderson Powerpole	3.5mm TRS + 3.5mm TS	6.35mm + 3.5mm
+elecraft-k3s	K3S	Elecraft	radio	160m,80m,60m,40m,30m,20m,17m,15m,12m,10m,6m	CW,SSB,AM,FM,DIGITAL	100	base	5200	High-performance HF/6m transceiver	k3s,k-3s,k3	SO-239	Anderson Powerpole	3.5mm TRS	3.5mm TRRS
+icom-ic705	IC-705	Icom	radio	160m,80m,60m,40m,30m,20m,17m,15m,12m,10m,6m,2m,70cm	CW,SSB,AM,FM,DIGITAL,D-STAR	10	backpack	1100	All-band all-mode portable with touchscreen, D-STAR, GPS, and Bluetooth	ic705,ic 705,705	BNC female	5.5x2.5mm barrel	3.5mm TRS	2.5mm TRRS
+icom-ic7300	IC-7300	Icom	radio	160m,80m,60m,40m,30m,20m,17m,15m,12m,10m,6m	CW,SSB,AM,FM,DIGITAL	100	base	4200	Entry-level direct-sampling SDR with touchscreen and internal ATU	ic7300,ic 7300,7300	SO-239	Anderson Powerpole	6.35mm TRS	RJ-45 (8-pin modular)
+icom-ic7610	IC-7610	Icom	radio	160m,80m,60m,40m,30m,20m,17m,15m,12m,10m,6m	CW,SSB,AM,FM,DIGITAL	100	base	8500	Dual-receiver direct-sampling SDR flagship with 7-inch touchscreen	ic7610,ic 7610,7610	SO-239 x2	DC screw terminal	6.35mm TRS x2	8-pin round
+icom-ic7851	IC-7851	Icom	radio	160m,80m,60m,40m,30m,20m,17m,15m,12m,10m,6m	CW,SSB,AM,FM,DIGITAL	200	base	23500	Flagship competition-grade transceiver with six antenna ports	ic7851,ic 7851,7851	SO-239 x4 + BNC x2	IEC AC mains	6.35mm TRS + 6.35mm TS	8-pin round
+icom-ic7100	IC-7100	Icom	radio	160m,80m,60m,40m,30m,20m,17m,15m,12m,10m,6m,2m,70cm	CW,SSB,AM,FM,DIGITAL,D-STAR	100	mobile	2300	Compact all-band mobile with detachable head and D-STAR	ic7100,ic 7100,7100	SO-239 x2	DC pigtail	3.5mm TRS	8-pin round
+yaesu-ft891	FT-891	Yaesu	radio	160m,80m,60m,40m,30m,20m,17m,15m,12m,10m,6m	CW,SSB,AM,FM,DIGITAL	100	mobile	1900	Compact HF/50MHz mobile transceiver	ft891,ft 891	SO-239	DC blade connectors	3.5mm TRS + 3.5mm TS	8-pin round
+yaesu-ft818	FT-818ND	Yaesu	radio	160m,80m,60m,40m,30m,20m,17m,15m,12m,10m,6m,2m,70cm	CW,SSB,AM,FM,DIGITAL	6	backpack	840	All-band all-mode QRP portable with dual antenna ports	ft818,ft 818,ft-817,ft817,ft 817	BNC female + SO-239	Proprietary barrel (E-DC-6)	3.5mm TRS	RJ-45 (8-pin modular)
+yaesu-ft991a	FT-991A	Yaesu	radio	160m,80m,60m,40m,30m,20m,17m,15m,12m,10m,6m,2m,70cm	CW,SSB,AM,FM,C4FM,DIGITAL	100	base	4400	All-band all-mode transceiver with C4FM and internal ATU	ft991a,ft991,ft 991a,ft 991	SO-239	DC pigtail	3.5mm TRS	RJ-45 (8-pin modular)
+yaesu-ftdx10	FTDX10	Yaesu	radio	160m,80m,60m,40m,30m,20m,17m,15m,12m,10m,6m	CW,SSB,AM,FM,DIGITAL	100	base	5900	Compact hybrid SDR with roofing filters and 3D spectrum scope	ftdx10,ftdx-10,dx10	SO-239	DC pigtail	3.5mm TRS	RJ-45 (8-pin modular)
+yaesu-ftdx101d	FTDX101D	Yaesu	radio	160m,80m,60m,40m,30m,20m,17m,15m,12m,10m,6m	CW,SSB,AM,FM,DIGITAL	100	base	12000	Reference-class hybrid SDR with three roofing filter bandwidths	ftdx101d,ftdx-101d,dx101d,ftdx101	SO-239 x2	DC screw terminal	3.5mm TRS	8-pin round
+yaesu-ft710	FT-710 AESS	Yaesu	radio	160m,80m,60m,40m,30m,20m,17m,15m,12m,10m,6m	CW,SSB,AM,FM,DIGITAL	100	base	4500	Compact hybrid SDR with touchscreen and DVI-D monitor output	ft710,ft 710	SO-239	DC pigtail	3.5mm TRS	RJ-45 (8-pin modular)
+kenwood-ts890s	TS-890S	Kenwood	radio	160m,80m,60m,40m,30m,20m,17m,15m,12m,10m,6m	CW,SSB,AM,FM,DIGITAL	100	base	11200	High-performance HF/6m with zero-IF SDR second receiver	ts890s,ts-890,ts890,ts 890s	SO-239 x2	DC pigtail	6.35mm TRS x2	8-pin round
+kenwood-ts590sg	TS-590SG	Kenwood	radio	160m,80m,60m,40m,30m,20m,17m,15m,12m,10m,6m	CW,SSB,AM,FM,DIGITAL	100	base	7400	Proven HF/6m transceiver with built-in ATU	ts590sg,ts-590,ts590,ts 590sg	SO-239 x2	DC pigtail	6.35mm TRS + 3.5mm TS	8-pin round
+flexradio-6400	FLEX-6400	FlexRadio	radio	160m,80m,60m,40m,30m,20m,17m,15m,12m,10m,6m	CW,SSB,AM,FM,DIGITAL	100	base	6800	Headless direct-sampling SDR controlled via SmartSDR or Maestro	flex6400,flex 6400,6400	SO-239 x2 + BNC x2	Anderson Powerpole	3.5mm TRS	3.5mm TRS
+flexradio-6600	FLEX-6600	FlexRadio	radio	160m,80m,60m,40m,30m,20m,17m,15m,12m,10m,6m	CW,SSB,AM,FM,DIGITAL	100	base	5000	Headless SDR with 4 slice receivers, built-in ATU, and 14 MHz waterfall	flex6600,flex 6600,6600	SO-239 x2 + BNC x2	Anderson Powerpole	3.5mm TRS	3.5mm TRS
+lnr-mtr3b	Mountain Topper MTR-3B	LNR Precision	radio	40m,20m,15m	CW	5	pocket	134	Ultra-compact CW-only tri-bander with color display and message memories	mtr3b,mtr-3b,mountain topper 3b,mtr 3b,currahee	BNC female	4x1.7mm barrel	3.5mm TRS	
+lnr-mtr4b	Mountain Topper MTR-4B	LNR Precision	radio	80m,40m,30m,20m	CW	5	pocket	160	Four-band CW-only ultra-portable with SWR/power meter	mtr4b,mtr-4b,mountain topper 4b,mtr 4bv2	BNC female	5.5x2.5mm barrel	3.5mm TRS	
+lnr-mtr5b	Mountain Topper MTR-5B	LNR Precision	radio	40m,30m,20m,17m,15m	CW	5	pocket	181	Five-band CW-only ultra-compact with dual band-bank switch	mtr5b,mtr-5b,mountain topper 5b	BNC female	5.5x2.5mm barrel	3.5mm TRS	
+qrplabs-qmx	QMX	QRP Labs	radio	80m,60m,40m,30m,20m	CW,SSB,DIGITAL	5	pocket	220	Multi-mode multi-band kit transceiver with embedded SDR and USB sound card	qmx	BNC female	2.1mm barrel	3.5mm TRS	3.5mm TRS (shared)
+qrplabs-qmxplus	QMX+	QRP Labs	radio	160m,80m,60m,40m,30m,20m,17m,15m,12m,10m,6m	CW,SSB,DIGITAL	5	backpack	578	Full 160-6m coverage with SDR architecture and USB-C sound card	qmx+,qmx plus,qmxplus	BNC female	2.1mm barrel	3.5mm TRS	3.5mm TRS (shared)
+qrplabs-qdx	QDX	QRP Labs	radio	80m,60m,40m,30m,20m	DIGITAL	5	pocket	120	Digital-modes-only kit transceiver for FT8/FT4/WSPR	qdx	BNC female	2.1mm barrel		
+xiegu-g90	G90	Xiegu	radio	160m,80m,60m,40m,30m,20m,17m,15m,12m,10m	CW,SSB,AM,FM,DIGITAL	20	portable	1630	20W SDR HF transceiver with detachable display head and built-in ATU	g-90	SO-239	Mini Tamiya	3.5mm TRS	RJ-45 (Xiegu pinout)
+xiegu-x6100	X6100	Xiegu	radio	160m,80m,60m,40m,30m,20m,17m,15m,12m,10m,6m	CW,SSB,AM,FM,DIGITAL	10	backpack	880	Linux-based SDR portable with touchscreen, internal battery, and ATU	x-6100,x 6100	BNC female	5.5x2.5mm barrel	3.5mm TRS	
+xiegu-x5105	X5105	Xiegu	radio	160m,80m,60m,40m,30m,20m,17m,15m,12m,10m,6m	CW,SSB,AM,FM,DIGITAL	5	backpack	940	Full-coverage HF+6m portable with internal ATU and battery	x-5105,x 5105,x5105	BNC female	5.5x2.1mm barrel	3.5mm TRS	RJ-45 (Xiegu pinout)
+lab599-tx500	TX-500	Lab599	radio	160m,80m,60m,40m,30m,20m,17m,15m,12m,10m,6m	CW,SSB,AM,FM,DIGITAL	10	backpack	550	IP67-rated waterproof SDR with GX12 aviation connectors	tx500,tx 500,discovery tx-500	BNC female	GX12-2	GX12-5	GX12-6
+penntek-tr35	TR-35	Penntek	radio	40m,30m,20m,17m	CW	5	backpack	300	Four-band CW-only kit transceiver with separate straight-key and paddle jacks	tr35,tr-35,tr 35	BNC female	5.5x2.1mm barrel	3.5mm TRS + 3.5mm TS	
+penntek-tr45	TR-45L	Penntek	radio	80m,40m,30m,20m,17m	CW	5	portable	1270	Five-band CW-only field transceiver with optional internal battery and ATU	tr45,tr-45,tr 45,tr45l,tr-45l	BNC female	5.5x2.1mm barrel	3.5mm TRS + 3.5mm TS	
+efhw-4010	EFHW 40-10	Various	antenna	40m,20m,15m,10m			backpack	100	End-fed half-wave with 49:1 transformer for 40-10m	efhw,end fed half wave,end-fed,endfed,efhw-4010	SO-239			
+efhw-8010	EFHW 80-10	Various	antenna	80m,40m,20m,15m,10m			backpack	170	End-fed half-wave with 49:1 transformer for 80-10m	efhw 80,end fed 80,efhw-8010	SO-239			
+spooltenna	Spooltenna	Spooltenna	antenna	40m,20m,15m,10m			backpack	354	65ft EFHW wire on integrated spool with built-in 49:1 matchbox	spool antenna,spooled antenna,parks-efhw4010	BNC female			
+elecraft-ax1	AX1	Elecraft	antenna	20m,17m			pocket	90	Ultra-compact telescoping loaded whip with band switch for KX2/KX3	ax-1,ax 1	BNC male			
+elecraft-ax2	AX2	Elecraft	antenna	20m			pocket	45	Miniature single-band 20m telescoping whip with anti-tilt BNC base	ax-2,ax 2	BNC male			
+chameleon-mpas2	MPAS 2.0	Chameleon Antenna	antenna	160m,80m,60m,40m,30m,20m,17m,15m,12m,10m,6m			portable	2300	Modular portable antenna system with whip, wire, and counterpoise	mpas,mpas2,chameleon mpas,mpas 2	SO-239			
+chameleon-emcomm3	EMCOMM III	Chameleon Antenna	antenna	160m,80m,60m,40m,30m,20m,17m,15m,12m,10m,6m			backpack	680	73ft Kevlar-jacketed wire with counterpoise and matching transformer	emcomm,emcomm3,emcomm iii,emcomm iii portable	SO-239			
+buddipole	Buddipole	Buddipole	antenna	40m,30m,20m,17m,15m,12m,10m,6m,2m			portable	1600	Modular portable dipole with adjustable arms and loading coils	buddi pole,buddy pole	BNC (SO-239 adapter incl.)			
+buddistick	Buddistick PRO	Buddipole	antenna	40m,30m,20m,17m,15m,12m,10m,6m			portable	1200	Portable vertical with adjustable loading coil and elevated radials	buddi stick,buddy stick,buddistick pro	BNC			
+sotabeams-band-hopper	Band Hopper III	SOTAbeams	antenna	40m,30m,20m			backpack	390	Lightweight linked dipole with ferrite balun and alligator-clip links	band hopper,bandhopper,sota beams band hopper	BNC male (on RG174)			
+sotabeams-band-springer	Bandspringer Midi	SOTAbeams	antenna	60m,40m,30m,20m,17m,15m,12m,10m			backpack	327	42ft random-length end-fed wire with counterpoise, requires ATU	band springer,bandspringer,springer midi	BNC male (via adapter)			
+packtenna-efhw	EFHW Mini	PackTenna	antenna	20m,10m			backpack	85	Ultralight 49:1 EFHW transformer with pre-cut 20m wire	packtenna,pack tenna,pak-101	BNC male			
+wolf-river-slt	Silver Bullet TIA	Wolf River Coils	antenna	80m,60m,40m,30m,20m,17m,15m,12m,10m			portable	820	Tapped loading coil with 102-inch stainless whip for 80-10m	wolf river,silver bullet,slt,wrc	SO-239			
+superantenna-mp1	MP-1	Super Antenna	antenna	40m,30m,20m,17m,15m,12m,10m,6m			portable	454	Compact loaded quarter-wave vertical with tuned radials	mp1,mp 1,super antenna mp1,mp1c	SO-239			
+linked-dipole	Linked Dipole	Various	antenna	40m,20m,15m,10m			backpack	150	Full-size half-wave dipole with in-line links for band selection	linked dipole antenna	BNC male			
+mfj-1899t	MFJ-1899T	MFJ	antenna	80m,40m,30m,20m,17m,15m,12m,10m,6m			pocket	188	52-inch telescoping whip with base loading coil, 25W	mfj1899,mfj 1899t	BNC male			
+diamond-rh770	RH-770	Diamond	antenna	2m,70cm			pocket	85	Telescoping VHF/UHF whip, 3.0/5.5 dBi, 20W	rh770,rh 770	BNC male			
+comet-chv5	CHV-5X	Comet	antenna	40m,20m,15m,10m,6m			base	2700	Rotatable 5-band 1/2-wave trapped dipole, 13ft span	chv5,chv-5,chv 5,chv-5x,chv5x	SO-239			
+hustler-btv	5-BTV	Hustler	antenna	80m,40m,20m,15m,10m			base	7700	25ft self-supporting trapped vertical, 1kW rated	btv,hustler btv,hustler 5-btv,4-btv,6-btv	Ring terminals (no SO-239)			
+random-wire	Random Wire + 9:1 UnUn	Various	antenna	160m,80m,40m,30m,20m,17m,15m,12m,10m			backpack	150	Non-resonant random-length wire with 9:1 impedance transformer, requires ATU	random wire,long wire,efrw	SO-239			
+yaesu-atas120a	ATAS-120A	Yaesu	antenna	40m,20m,15m,10m,6m,2m,70cm		120	mobile	900	Motorized auto-tuning screwdriver antenna for HF/VHF/UHF	atas120a,atas-120,atas120,atas 120a	SO-239			
+yaesu-atas25	ATAS-25	Yaesu	antenna	40m,20m,15m,10m,6m,2m,70cm		100	portable	930	Manually-tuned compact portable antenna with shorting ring adjustment	atas25,atas-25,atas 25,atas micro	SO-239			
+yaesu-atas100	ATAS-100	Yaesu	antenna	40m,20m,15m,10m,6m,2m,70cm		100	mobile	900	Motorized auto-tuning screwdriver antenna (discontinued, replaced by ATAS-120A)	atas100,atas-100,atas 100	SO-239			
+bamakey-tpiii	TP-III	BaMaKeY	key				pocket	200	Ultra-compact twin-lever iambic paddle with magnetic tension and CNC construction	tp-iii,tp3,tpiii,tp-3,pocket morse tp-iii			3.5mm TRS (attached cable)	
+bamakey-tpi	TP-I	BaMaKeY	key				pocket		Compact twin-lever iambic paddle, earlier generation	tp-i,tp1,tpi,tp-1,pocket morse tp-i			3.5mm TRS (attached cable)	
+begali-traveler	Magnetic Traveler Light	Begali	key				portable	700	Premium iambic paddle with folding protective base and silver contacts	begali traveller,begali travel,traveler light			3.5mm TRS	
+begali-adventure	Adventure	Begali	key				portable	250	Compact dual-lever iambic paddle with gold contacts and QRP rig mount option	begali adv,adventure dl			3.5mm TRS (attached cable)	
+vibroplex-code-mite	Code Mite	Vibroplex	key				pocket	74	Miniature straight key (discontinued)	code mite,codemite			Binding posts (1/4in TS via CP-2 cable)	
+vibroplex-original	Original Bug	Vibroplex	key				base	900	Classic semi-automatic mechanical bug key, gold-plated contacts	vibroplex bug,original bug,original-s			Binding posts (1/4in TS via CP-2 cable)	
+n0sa-sp4	SP4 Pocket Paddle	CW Morse / N0SA	key				pocket	48	Ultra-light SOTA/POTA iambic paddle with carbon-fiber-reinforced frame	n0sa,n0sa paddle,sp4,pocket paddle			3.5mm TRS (attached cable)	
+palm-pico	Pico Paddle	Palm Radio	key				pocket	14	World's smallest production dual-lever paddle with gold contacts	palm paddle,pico,palm pico			2.5mm TRS (cable adapts to 3.5mm TRS)	
+ame-porta-paddle	Porta-Paddle II	American Morse Equipment	key				pocket	71	CNC-machined aluminum iambic mini-paddle with adjustable gap and spring	porta paddle,portapaddle,ame paddle,american morse			Thumb-nut posts (user-supplied 3.5mm TRS cable)	
+bencher-by1	BY-1	Bencher	key				base	1361	Heavy-duty iambic paddle with needle bearings and gold-plated silver contacts	by1,by-1,bencher by1			Spade-lug terminals (3.5mm TRS via EZ-1 cable)	
+bencher-by2	BY-2	Bencher	key				base	1361	Chrome-plated iambic paddle, mechanically identical to BY-1	by2,by-2,bencher by2			Spade-lug terminals (3.5mm TRS via EZ-1 cable)	
+kent-tp1	TP-1	Kent	key				base	1200	Precision brass twin-lever iambic paddle with ball-race bearings	kent tp1,kent paddle,kent twin paddle			Bare cable (no plug, user fits 3.5mm TRS)	
+kent-str	KT-1 Straight Key	Kent	key				base	1400	Professional brass straight key with ball-race bearings and silver contacts	kent straight,kent hand key,kt-1,kt1			Bare cable (no plug, user fits 3.5mm TS)	
+cwmorse-camelback	Camelback Straight Key	CW Morse	key				base	112	Dual-bearing straight key with carbon-fiber pivot arm and brass contacts	camelback,cw morse straight,cw morse camelback			Binding posts (optional 3.5mm or 1/4in TS cable)	
+n3zn-znmkii	ZN-MKII	N3ZN Keys	key				base	1590	Flagship twin-lever iambic paddle with magnetic return, dual sealed bearings, and polished brass base	zn-mkii,znmkii,zn mk2,zn mk ii,mark ii,n3zn mkii,n3zn mk2			Binding posts (user-supplied 3.5mm TRS cable)	
+n3zn-zn9	ZN-9	N3ZN Keys	key				portable	907	Mid-size twin-lever iambic paddle with magnetic return and precision ball bearings	zn-9,zn9,n3zn zn9,n3zn nine			Binding posts (user-supplied 3.5mm TRS cable)	
+n3zn-znqrp	ZN-QRP	N3ZN Keys	key				pocket	85	Ultra-compact twin-lever iambic paddle with magnetic return for SOTA/POTA	zn-qrp,znqrp,n3zn qrp			3.5mm TRS (attached cable)	
+n3zn-znslr	ZN-SLR	N3ZN Keys	key				portable	680	Single-lever (cootie/sideswiper) paddle with magnetic return and precision bearings	zn-slr,znslr,single lever racer,n3zn slr			Binding posts (user-supplied 3.5mm TRS cable)	
+n3zn-znspl	ZN-SPL	N3ZN Keys	key				portable	900	Compact twin-lever iambic paddle with polished brass base and magnetic return	zn-spl,znspl,n3zn spl			Binding posts (user-supplied 3.5mm TRS cable)	
+heil-proset-elite	Pro Set Elite	Heil Sound	microphone				base	391	Dual-sided headset with Phase Reversal and HC-6 dynamic element	proset elite,pro set,heil proset,pse-6				
+heil-hm12	HM-12	Heil Sound	microphone				base	249	Cardioid dynamic desk microphone with internal shock mount	hm12,hm 12,heil hm12				
+heil-traveler	Traveler	Heil Sound	microphone				portable	200	Lightweight single-sided headset for portable/emergency ops	heil traveler,heil traveller,htss,htds				
+heil-proset-plus	Pro Set Plus	Heil Sound	microphone				base	400	Dual-sided headset with stereo SO2R wiring and 40dB noise rejection (discontinued)	proset plus,pro set plus,psp				
+yamaha-cm500	CM500	Yamaha	microphone				base	300	Closed-back circumaural broadcast headset with dynamic boom mic	cm500,yamaha cm5,cm5,cm500-mlc				
+mfj-297	MFJ-297	MFJ	microphone				base	500	Desktop condenser mic on gooseneck with PTT and freq up/down switches	mfj297,mfj 297				
+bioenno-12v-3ah	BLF-1203AS	Bioenno Power	accessory				backpack	360	12V 3Ah LiFePO4 battery	bioenno 3ah,bioenno battery,blf-1203				
+bioenno-12v-6ah	BLF-1206AS	Bioenno Power	accessory				backpack	680	12V 6Ah LiFePO4 battery	bioenno 6ah,blf-1206				
+bioenno-12v-12ah	BLF-1212AS	Bioenno Power	accessory				portable	1200	12V 12Ah LiFePO4 battery	bioenno 12ah,blf-1212				
+elecraft-kxpd3	KXPD3	Elecraft	accessory				pocket	70	Precision iambic paddle for KX2/KX3	kxpd-3,kxpd 3				
+sotabeams-mast-10m	Tactical 10m Mast	SOTAbeams	accessory				backpack	700	10-meter telescoping fiberglass mast	sota mast,sotabeams mast,tactical mast				
+sotabeams-mast-6m	Tactical 6m Mast	SOTAbeams	accessory				backpack	400	6-meter telescoping fiberglass mast	sota mast 6m,6m mast				
+mfj-941e	MFJ-941E	MFJ	accessory				portable	800	Versatile HF antenna tuner	mfj941,mfj 941e				
+elecraft-kxat1	KXAT1	Elecraft	accessory				pocket	60	Automatic ATU for KX line	kxat1,kx at1				
+mfj-939	MFJ-939	MFJ	accessory				portable	900	Automatic antenna tuner	mfj939,mfj 939				

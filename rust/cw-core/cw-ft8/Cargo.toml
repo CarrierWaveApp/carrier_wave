@@ -1,0 +1,15 @@
+[package]
+name = "cw-ft8"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+description = "Carrier Wave FT8: Rust wrappers + bindings around vendored ft8_lib"
+links = "cft8" # avoids double-link if another crate ever vendors ft8_lib too
+
+[dependencies]
+thiserror = { workspace = true }
+
+[build-dependencies]
+cc = "1"
+bindgen = "0.71"

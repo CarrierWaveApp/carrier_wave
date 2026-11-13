@@ -1,0 +1,23 @@
+[package]
+name = "cw-net"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+description = "Carrier Wave spot/API models, parsers, and async HTTP clients (POTA/SOTA/WWFF/PSKReporter/DONKI/HamQSL/LoFi)"
+
+[dependencies]
+cw-domain = { path = "../cw-domain" }
+base64 = "0.22"
+chrono = { workspace = true, features = ["serde"] }
+futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }
+quick-xml = "0.36"
+rand = "0.8"
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+serde = { workspace = true }
+serde_json = { workspace = true }
+sha2 = "0.10"
+thiserror = { workspace = true }
+tokio = { version = "1", features = ["sync", "rt", "macros", "time", "net"] }
+tokio-tungstenite = "0.24"
+url = "2"

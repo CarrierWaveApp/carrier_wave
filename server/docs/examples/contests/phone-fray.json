@@ -1,0 +1,168 @@
+{
+  "version": "0.3.0",
+  "contests": [
+    {
+      "id": "phone-fray",
+      "name": "Phone Weekly Test",
+      "short_name": "Phone Fray",
+      "sponsor": {
+        "name": "Perluma",
+        "url": "http://www.perluma.com/Phone_Fray_Contest_Rules.pdf"
+      },
+      "modes": [
+        "SSB"
+      ],
+      "bands": [
+        "160m",
+        "80m",
+        "40m",
+        "20m",
+        "15m"
+      ],
+      "data_dependencies": {
+        "country_file": {
+          "id": "cty_dat",
+          "url": "https://www.country-files.com/contest/",
+          "file": "cty.dat",
+          "description": "Standard DXCC entity list for continent-based scoring",
+          "provides": [
+            "their_country",
+            "their_continent"
+          ]
+        },
+        "section_list": {
+          "id": "naqp_sections",
+          "description": "US states (including KH6/KL7), VE provinces, NA countries (except W/VE)"
+        }
+      },
+      "schedule": {
+        "type": "recurring_weekly",
+        "sessions": [
+          {
+            "day": "wednesday",
+            "start_utc": "02:30",
+            "duration_minutes": 30
+          }
+        ],
+        "session_scoring": "independent"
+      },
+      "exchange": {
+        "sent": [
+          {
+            "name": "name",
+            "type": "name",
+            "label": "Name",
+            "required": true
+          },
+          {
+            "name": "section",
+            "type": "section_list",
+            "label": "State/Province/Country",
+            "required": true,
+            "list": "naqp_sections"
+          }
+        ],
+        "received": [
+          {
+            "name": "name",
+            "type": "name",
+            "label": "Name",
+            "required": true
+          },
+          {
+            "name": "section",
+            "type": "section_list",
+            "label": "State/Province/Country",
+            "required": false,
+            "list": "naqp_sections"
+          }
+        ]
+      },
+      "dupe_rules": {
+        "scope": "session",
+        "key": [
+          "callsign",
+          "band"
+        ]
+      },
+      "scoring": {
+        "phases": [
+          {
+            "id": "qso_points",
+            "type": "per_qso",
+            "rules": [
+              {
+                "description": "NA station: 1 point per QSO",
+                "conditions": [
+                  {
+                    "field": "my_continent",
+                    "op": "eq",
+                    "value": "NA"
+                  }
+                ],
+                "value": 1
+              },
+              {
+                "description": "Non-NA with NA station: 1 point",
+                "conditions": [
+                  {
+                    "field": "their_continent",
+                    "op": "eq",
+                    "value": "NA"
+                  }
+                ],
+                "value": 1
+              },
+              {
+                "description": "Non-NA with non-NA: 0 points",
+                "conditions": [],
+                "value": 0
+              }
+            ]
+          },
+          {
+            "id": "mult_sections",
+            "type": "multiplier_count",
+            "description": "Unique state/province/country values per band",
+            "source": "received.section",
+            "scope": "per_band",
+            "include_zero_point_qsos": false
+          },
+          {
+            "id": "total",
+            "type": "aggregate",
+            "operation": {
+              "op": "multiply",
+              "inputs": [
+                {
+                  "op": "ref",
+                  "phase": "qso_points"
+                },
+                {
+                  "op": "ref",
+                  "phase": "mult_sections"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "cabrillo": {
+        "contest_name": "PHONE-WEEKLY-TEST",
+        "version": "3.0"
+      },
+      "categories": [
+        {
+          "id": "single_op",
+          "label": "Single Operator",
+          "power_classes": [
+            "HP",
+            "LP",
+            "QRP"
+          ]
+        }
+      ],
+      "experimental": true
+    }
+  ]
+}

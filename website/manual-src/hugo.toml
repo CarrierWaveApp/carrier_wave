@@ -1,0 +1,66 @@
+baseURL = 'https://carrierwave.app/manual/'
+languageCode = 'en-us'
+title = 'Carrier Wave Manual'
+theme = 'carrier-wave'
+
+[params]
+  description = 'Documentation for Carrier Wave - iOS QSO logging for amateur radio'
+  appStoreURL = 'https://apps.apple.com/app/carrier-wave'
+  changelogURL = 'https://github.com/CarrierWaveApp/carrier_wave/blob/main/CHANGELOG.md'
+
+[markup]
+  [markup.highlight]
+    style = 'monokai'
+    lineNos = false
+    noClasses = false
+  [markup.goldmark]
+    [markup.goldmark.renderer]
+      unsafe = true
+
+# Per-macro pages live under /m/<slug>/ relative to baseURL
+# (effectively /manual/m/<slug>/ in production — see content/macros/_index.md).
+[permalinks]
+  macros = "/m/:slug/"
+
+[menu]
+  [[menu.main]]
+    name = 'Quick Start'
+    url = '/quickstart/'
+    weight = 1
+  [[menu.main]]
+    name = 'Guide'
+    url = '/guide/'
+    weight = 2
+  [[menu.main]]
+    name = 'Reference'
+    url = '/reference/'
+    weight = 3
+  [[menu.main]]
+    name = 'Glossary'
+    url = '/glossary/'
+    weight = 4
+  [[menu.main]]
+    name = 'Macros'
+    url = '/macros/'
+    weight = 5
+  [[menu.main]]
+    name = 'Developers'
+    url = '/developers/'
+    weight = 6
+
+[outputs]
+  home = ['HTML', 'JSON']
+  section = ['HTML']
+  page = ['HTML']
+
+# Plain-Markdown rendering of a page, served next to its HTML as index.md.
+# Opt in per page with `outputs: ["html", "markdown"]` in front matter
+# (used by the Developers pages so agents and tools can fetch raw Markdown).
+[mediaTypes."text/markdown"]
+  suffixes = ['md']
+
+[outputFormats.markdown]
+  mediaType = 'text/markdown'
+  baseName = 'index'
+  isPlainText = true
+  notAlternative = false

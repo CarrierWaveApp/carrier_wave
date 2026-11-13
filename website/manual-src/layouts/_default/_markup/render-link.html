@@ -1,0 +1,5 @@
+{{- $href := .Destination -}}
+{{- if strings.HasPrefix .Destination "/" -}}
+  {{- $href = printf "%s%s" (strings.TrimRight "/" .Page.Site.BaseURL | urls.Parse).Path .Destination -}}
+{{- end -}}
+<a href="{{ $href }}"{{ with .Title }} title="{{ . }}"{{ end }}>{{ .Text | safeHTML }}</a>

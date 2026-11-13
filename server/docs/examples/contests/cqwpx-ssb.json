@@ -1,0 +1,376 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/contest-definition/v0.3",
+  "title": "Amateur Radio Contest Definition",
+  "version": "0.3.0",
+  "contests": [
+    {
+      "id": "cqwpx-ssb",
+      "name": "CQ World Wide WPX Contest – SSB",
+      "short_name": "CQ WPX SSB",
+      "sponsor": {
+        "name": "CQ Magazine",
+        "url": "https://cqwpx.com/"
+      },
+      "modes": [
+        "SSB"
+      ],
+      "bands": [
+        "160m",
+        "80m",
+        "40m",
+        "20m",
+        "15m",
+        "10m"
+      ],
+      "data_dependencies": {
+        "country_file": {
+          "id": "cty_dat",
+          "url": "https://www.country-files.com/contest/",
+          "file": "cty.dat",
+          "description": "Standard DXCC entity list, used for QSO-point continent/country comparison. WPX multipliers are call-sign prefixes, not entities, so no prefix map is required.",
+          "update_frequency": "before_each_contest",
+          "provides": [
+            "their_country",
+            "their_continent"
+          ]
+        }
+      },
+      "schedule": {
+        "type": "annual",
+        "rule": "last_full_weekend_march",
+        "start_utc": "00:00",
+        "start_day": "saturday",
+        "duration_hours": 48
+      },
+      "exchange": {
+        "sent": [
+          {
+            "name": "rst",
+            "type": "signal_report",
+            "label": "RS",
+            "required": true,
+            "default": "59"
+          },
+          {
+            "name": "serial",
+            "type": "serial_number",
+            "label": "Serial",
+            "required": true,
+            "auto_increment": true
+          }
+        ],
+        "received": [
+          {
+            "name": "rst",
+            "type": "signal_report",
+            "label": "RS",
+            "required": true,
+            "default": "59"
+          },
+          {
+            "name": "serial",
+            "type": "serial_number",
+            "label": "Serial",
+            "required": true
+          }
+        ]
+      },
+      "dupe_rules": {
+        "scope": "contest",
+        "key": [
+          "callsign",
+          "band"
+        ],
+        "zero_point_qsos_count_for_mults": false
+      },
+      "scoring": {
+        "phases": [
+          {
+            "id": "qso_points",
+            "type": "per_qso",
+            "description": "Ordered rules, first match wins. WPX QSO point values by continent relationship and band.",
+            "rules": [
+              {
+                "description": "Same country: 1 point on any band",
+                "conditions": [
+                  {
+                    "field": "their_country",
+                    "op": "eq",
+                    "ref": "my_country"
+                  }
+                ],
+                "value": 1
+              },
+              {
+                "description": "Within North America, different country, low bands: 4 points",
+                "conditions": [
+                  {
+                    "field": "their_continent",
+                    "op": "eq",
+                    "ref": "my_continent"
+                  },
+                  {
+                    "field": "my_continent",
+                    "op": "eq",
+                    "value": "NA"
+                  },
+                  {
+                    "field": "band",
+                    "op": "in",
+                    "value": [
+                      "160m",
+                      "80m",
+                      "40m"
+                    ]
+                  }
+                ],
+                "value": 4
+              },
+              {
+                "description": "Within North America, different country, high bands: 2 points",
+                "conditions": [
+                  {
+                    "field": "their_continent",
+                    "op": "eq",
+                    "ref": "my_continent"
+                  },
+                  {
+                    "field": "my_continent",
+                    "op": "eq",
+                    "value": "NA"
+                  }
+                ],
+                "value": 2
+              },
+              {
+                "description": "Same continent (non-NA), different country, low bands: 2 points",
+                "conditions": [
+                  {
+                    "field": "their_continent",
+                    "op": "eq",
+                    "ref": "my_continent"
+                  },
+                  {
+                    "field": "band",
+                    "op": "in",
+                    "value": [
+                      "160m",
+                      "80m",
+                      "40m"
+                    ]
+                  }
+                ],
+                "value": 2
+              },
+              {
+                "description": "Same continent (non-NA), different country, high bands: 1 point",
+                "conditions": [
+                  {
+                    "field": "their_continent",
+                    "op": "eq",
+                    "ref": "my_continent"
+                  }
+                ],
+                "value": 1
+              },
+              {
+                "description": "Different continent, low bands: 6 points",
+                "conditions": [
+                  {
+                    "field": "band",
+                    "op": "in",
+                    "value": [
+                      "160m",
+                      "80m",
+                      "40m"
+                    ]
+                  }
+                ],
+                "value": 6
+              },
+              {
+                "description": "Different continent, high bands: 3 points (default fallback)",
+                "conditions": [],
+                "value": 3
+              }
+            ]
+          },
+          {
+            "id": "mult_prefixes",
+            "type": "multiplier_count",
+            "description": "Unique WPX call-sign prefixes, counted once for the whole contest regardless of band.",
+            "source": "their_callsign_wpx",
+            "scope": "per_contest",
+            "include_zero_point_qsos": false
+          },
+          {
+            "id": "total",
+            "type": "aggregate",
+            "operation": {
+              "op": "multiply",
+              "inputs": [
+                {
+                  "op": "ref",
+                  "phase": "qso_points"
+                },
+                {
+                  "op": "ref",
+                  "phase": "mult_prefixes"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "operating_constraints": {
+        "off_time": {
+          "minimum_off_minutes": 60,
+          "maximum_on_hours_by_category": {
+            "SOAB": 36,
+            "SOSB-160": 36,
+            "SOSB-80": 36,
+            "SOSB-40": 36,
+            "SOSB-20": 36,
+            "SOSB-15": 36,
+            "SOSB-10": 36,
+            "MS": 48,
+            "M2": 48,
+            "MM": 48,
+            "MULTI-DISTRIBUTED": 48
+          }
+        },
+        "band_changes": {
+          "applies_to": [
+            "MS"
+          ],
+          "min_minutes_on_band": 10,
+          "max_changes_per_clock_hour": 10
+        }
+      },
+      "cabrillo": {
+        "contest_name": "CQ-WPX-SSB",
+        "version": "3.0"
+      },
+      "categories": [
+        {
+          "id": "SOAB",
+          "label": "Single Op All Band",
+          "op_count": "single",
+          "power_classes": [
+            "HIGH",
+            "LOW",
+            "QRP"
+          ]
+        },
+        {
+          "id": "SOSB-160",
+          "label": "Single Op 160m",
+          "band": "160m",
+          "op_count": "single",
+          "power_classes": [
+            "HIGH",
+            "LOW",
+            "QRP"
+          ]
+        },
+        {
+          "id": "SOSB-80",
+          "label": "Single Op 80m",
+          "band": "80m",
+          "op_count": "single",
+          "power_classes": [
+            "HIGH",
+            "LOW",
+            "QRP"
+          ]
+        },
+        {
+          "id": "SOSB-40",
+          "label": "Single Op 40m",
+          "band": "40m",
+          "op_count": "single",
+          "power_classes": [
+            "HIGH",
+            "LOW",
+            "QRP"
+          ]
+        },
+        {
+          "id": "SOSB-20",
+          "label": "Single Op 20m",
+          "band": "20m",
+          "op_count": "single",
+          "power_classes": [
+            "HIGH",
+            "LOW",
+            "QRP"
+          ]
+        },
+        {
+          "id": "SOSB-15",
+          "label": "Single Op 15m",
+          "band": "15m",
+          "op_count": "single",
+          "power_classes": [
+            "HIGH",
+            "LOW",
+            "QRP"
+          ]
+        },
+        {
+          "id": "SOSB-10",
+          "label": "Single Op 10m",
+          "band": "10m",
+          "op_count": "single",
+          "power_classes": [
+            "HIGH",
+            "LOW",
+            "QRP"
+          ]
+        },
+        {
+          "id": "MS",
+          "label": "Multi-Single",
+          "op_count": "multi"
+        },
+        {
+          "id": "M2",
+          "label": "Multi-Two",
+          "op_count": "multi_two"
+        },
+        {
+          "id": "MM",
+          "label": "Multi-Multi",
+          "op_count": "multi_multi"
+        },
+        {
+          "id": "MULTI-DISTRIBUTED",
+          "label": "Multi-Distributed",
+          "op_count": "multi"
+        }
+      ],
+      "overlay_categories": [
+        {
+          "id": "TB-WIRES",
+          "label": "Tribander/Single Element"
+        },
+        {
+          "id": "ROOKIE",
+          "label": "Rookie Overlay",
+          "max_license_years": 3
+        },
+        {
+          "id": "CLASSIC",
+          "label": "Classic Overlay",
+          "max_on_hours": 24
+        },
+        {
+          "id": "YOUTH",
+          "label": "Youth Overlay"
+        }
+      ],
+      "experimental": true
+    }
+  ]
+}

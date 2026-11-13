@@ -1,0 +1,110 @@
+name: Release activities-server
+
+on:
+  push:
+    tags:
+      - "server-v*"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-server
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build & Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#server-v}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Verify Cargo.toml version matches tag
+        working-directory: server
+        run: |
+          CARGO_VERSION=$(grep '^version' Cargo.toml | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          if [ "$CARGO_VERSION" != "${{ steps.version.outputs.version }}" ]; then
+            echo "::error::Cargo.toml version ($CARGO_VERSION) does not match tag (${{ steps.version.outputs.version }})"
+            exit 1
+          fi
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: server/web/package-lock.json
+
+      - name: Build frontend
+        working-directory: server/web
+        run: |
+          npm ci
+          npm run build
+
+      - name: Build logbook viewer
+        working-directory: server/logbook-web
+        run: |
+          npm ci
+          npm run build
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        with:
+          targets: x86_64-unknown-linux-musl
+
+      - name: Install musl-tools
+        run: sudo apt-get install -y musl-tools
+
+      - name: Cache cargo registry and build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            server/target
+          key: ${{ runner.os }}-cargo-musl-${{ hashFiles('server/Cargo.lock', 'server/migrations/*.sql') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-musl-
+
+      - name: Clean sqlx macro cache
+        working-directory: server
+        run: |
+          rm -rf target/x86_64-unknown-linux-musl/release/.fingerprint/activities-server-*
+          rm -rf target/x86_64-unknown-linux-musl/release/build/activities-server-*
+          rm -rf target/x86_64-unknown-linux-musl/release/deps/activities_server-*
+          rm -rf target/x86_64-unknown-linux-musl/release/deps/libactivities_server-*
+          rm -f target/x86_64-unknown-linux-musl/release/activities-server
+
+      - name: Build release binary
+        working-directory: server
+        env:
+          CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER: x86_64-linux-musl-gcc
+        run: cargo build --release --target x86_64-unknown-linux-musl
+
+      - name: Package release
+        working-directory: server
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          ARCHIVE="activities-server-v${VERSION}-x86_64-linux.tar.gz"
+          mkdir -p staging/web staging/logbook-web
+          cp target/x86_64-unknown-linux-musl/release/activities-server staging/
+          cp -r web/dist staging/web/
+          cp -r logbook-web/dist staging/logbook-web/
+          cp -r migrations staging/
+          cp -r static staging/
+          tar -czf "$ARCHIVE" -C staging .
+          echo "archive=$ARCHIVE" >> "$GITHUB_ENV"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
+        with:
+          files: server/${{ env.archive }}
+          generate_release_notes: true

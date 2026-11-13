@@ -1,0 +1,79 @@
+[package]
+name = "activities-server"
+version = "0.4.105"
+edition = "2021"
+description = "Self-hostable activities server for Carrier Wave ham radio logging"
+license = "MIT"
+
+[dependencies]
+# Web framework
+axum = { version = "0.7", features = ["ws"] }
+axum-extra = { version = "0.9", features = ["multipart"] }
+tokio = { version = "1", features = ["full"] }
+tower-http = { version = "0.5", features = ["cors", "trace", "fs", "limit", "request-id"] }
+tower_governor = "0.4"
+governor = "0.6"
+
+# Database
+sqlx = { version = "0.8", features = ["runtime-tokio", "postgres", "uuid", "chrono", "json"] }
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Types
+uuid = { version = "1", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+
+# Error handling
+thiserror = "1"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+
+# Configuration
+dotenvy = "0.15"
+
+# HTTP client (for spot aggregators)
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+
+# WebSDR stream bridge (upstream KiwiSDR websocket client + stream splitting)
+tokio-tungstenite = "0.21"
+futures-util = "0.3"
+
+# Object storage abstraction (sync server blob store: memory + S3)
+object_store = { version = "0.11", features = ["aws"] }
+bytes = "1"
+async-trait = "0.1"
+
+# PNG decoding (Terrarium DEM tiles for SOTA activation zones)
+png = "0.17"
+
+# CSV parsing (for POTA park catalog)
+csv = "1"
+
+# Geospatial boolean ops (union multi-unit park polygons at boundary ingest)
+geo = "0.33"
+geojson = { version = "0.24", features = ["geo-types"] }
+
+# Metrics
+metrics = "0.24"
+metrics-exporter-prometheus = "0.16"
+
+# Utilities
+rand = "0.8"
+tower = "0.5.3"
+sha2 = "0.10"
+hex = "0.4"
+subtle = "2"
+hmac = "0.12"
+unicode-normalization = "0.1"
+
+# JWT (EdDSA access tokens — Phase 5 OAuth overhaul)
+jsonwebtoken = "9"
+# base64url for the published JWKS public key (already in the tree via jsonwebtoken)
+base64 = "0.22"
+
+[dev-dependencies]
+axum-test = "15"

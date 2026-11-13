@@ -1,0 +1,9 @@
+# Build output
+target/
+
+# Generated config (sdkconfig.defaults is the source of truth)
+sdkconfig
+
+# IDE / tool caches
+.cache/
+.claude/

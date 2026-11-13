@@ -1,0 +1,63 @@
+{
+  "slug": "kx2-ft8-setup",
+  "name": "KX2 FT8 setup",
+  "icon": "waveform.path.ecg",
+  "description": "Configure the Elecraft KX2 for FT8 with WSJT-X on the 20 m calling frequency (14.074 MHz). Walks the radio through every menu and front-panel setting called out in km1ndy.com's KX2 FT8 guide that has a documented CAT equivalent: DATA-A submode, 4 kHz filter, preamp off, NB off, AGC MD off, MIC BIAS / MIC BTN restored for SSB use, VOX on, split / RIT / XIT / speech compression cleared, and 5 W TX power. RF Gain (menu 155) and NR/NTCH have no CAT route on the KX2 — verify those on the radio after the macro runs.",
+  "tags": ["ft8", "digital", "elecraft", "kx2"],
+  "appliesTo": ["kenwood"],
+  "capabilities": {
+    "transmits": false,
+    "changesFrequency": true,
+    "changesMode": true,
+    "changesPower": true,
+    "usesRawBytes": false
+  },
+  "args": [],
+  "steps": [
+    { "kind": "setFrequency", "hz": 14074000 },
+    { "kind": "delay", "durationMs": 600 },
+
+    { "kind": "setMode", "mode": "DATA" },
+    { "kind": "delay", "durationMs": 150 },
+
+    { "kind": "vendorCommand", "commandId": "kw.elecraftDataSubMode", "args": { "sub": "data-a" } },
+    { "kind": "delay", "durationMs": 100 },
+
+    { "kind": "vendorCommand", "commandId": "kw.elecraftBandwidth", "args": { "hz10": "400" } },
+    { "kind": "delay", "durationMs": 100 },
+
+    { "kind": "vendorCommand", "commandId": "kw.elecraftPreamp", "args": { "enabled": "false" } },
+    { "kind": "delay", "durationMs": 100 },
+
+    { "kind": "vendorCommand", "commandId": "kw.noiseBlanker", "args": { "enabled": "false" } },
+    { "kind": "delay", "durationMs": 100 },
+
+    { "kind": "vendorCommand", "commandId": "kw.elecraftTxVfo", "args": { "vfo": "a" } },
+    { "kind": "delay", "durationMs": 100 },
+    { "kind": "vendorCommand", "commandId": "kw.rit", "args": { "enabled": "false" } },
+    { "kind": "delay", "durationMs": 50 },
+    { "kind": "vendorCommand", "commandId": "kw.xit", "args": { "enabled": "false" } },
+    { "kind": "delay", "durationMs": 50 },
+    { "kind": "vendorCommand", "commandId": "kw.clearRitXit" },
+    { "kind": "delay", "durationMs": 100 },
+
+    { "kind": "vendorCommand", "commandId": "kw.elecraftSpeechComp", "args": { "level": "0" } },
+    { "kind": "delay", "durationMs": 100 },
+
+    { "kind": "vendorCommand", "commandId": "kw.elecraftMenuSet", "args": { "item": "128", "value": "0" } },
+    { "kind": "delay", "durationMs": 200 },
+
+    { "kind": "vendorCommand", "commandId": "kw.elecraftMenuSet", "args": { "item": "135", "value": "16" } },
+    { "kind": "delay", "durationMs": 200 },
+
+    { "kind": "vendorCommand", "commandId": "kw.elecraftMenuSet", "args": { "item": "82", "value": "5" } },
+    { "kind": "delay", "durationMs": 200 },
+
+    { "kind": "vendorCommand", "commandId": "kw.vox", "args": { "enabled": "true" } },
+    { "kind": "delay", "durationMs": 100 },
+
+    { "kind": "setPowerWatts", "watts": 5 }
+  ],
+  "format": 2,
+  "status": "approved"
+}

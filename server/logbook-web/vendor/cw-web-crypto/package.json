@@ -1,0 +1,17 @@
+{
+  "name": "cw-web-crypto",
+  "type": "module",
+  "description": "Browser (WASM) bindings over cw-crypto: passphrase escrow open + AEAD blob decrypt for the logbook web viewer",
+  "version": "0.1.0",
+  "license": "MIT",
+  "files": [
+    "cw_web_crypto_bg.wasm",
+    "cw_web_crypto.js",
+    "cw_web_crypto.d.ts"
+  ],
+  "main": "cw_web_crypto.js",
+  "types": "cw_web_crypto.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}

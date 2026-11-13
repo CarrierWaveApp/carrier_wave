@@ -1,0 +1,158 @@
+name: Firmware
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "firmware/**"
+      - "proto/**"
+      - ".github/workflows/firmware.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "firmware/**"
+      - "proto/**"
+      - ".github/workflows/firmware.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: firmware-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  ESP_IDF_VERSION: v5.4
+
+jobs:
+  check:
+    name: Format & Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust (nightly for xtensa)
+        uses: esp-rs/xtensa-toolchain@b989c80ffd4be88d30c09606ee9b449bd0d41958 # v1.5
+        with:
+          default: true
+          buildtargets: esp32s3
+          ldproxy: true
+
+      - name: Cache cargo registry & build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            firmware/target
+          key: firmware-check-${{ hashFiles('firmware/Cargo.lock') }}
+          restore-keys: firmware-check-
+
+      - name: Check formatting
+        working-directory: firmware
+        run: cargo fmt -- --check
+
+      - name: Clippy
+        working-directory: firmware
+        run: cargo clippy -- -D warnings
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: check
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust (nightly for xtensa)
+        uses: esp-rs/xtensa-toolchain@b989c80ffd4be88d30c09606ee9b449bd0d41958 # v1.5
+        with:
+          default: true
+          buildtargets: esp32s3
+          ldproxy: true
+
+      - name: Cache cargo registry & build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            firmware/target
+          key: firmware-build-${{ hashFiles('firmware/Cargo.lock') }}
+          restore-keys: firmware-build-
+
+      - name: Build release
+        working-directory: firmware
+        run: cargo build --release
+
+      - name: Install espflash
+        run: cargo install espflash --locked
+
+      - name: Generate flashable binary
+        working-directory: firmware
+        run: |
+          espflash save-image \
+            --chip esp32s3 \
+            --flash-size 8mb \
+            target/xtensa-esp32s3-espidf/release/cw-bridge \
+            cw-bridge.bin
+
+      - name: Upload firmware artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cw-bridge-firmware
+          path: firmware/cw-bridge.bin
+          retention-days: 90
+
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download firmware artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: cw-bridge-firmware
+
+      - name: Get version from Cargo.toml
+        id: version
+        working-directory: firmware
+        run: |
+          VERSION=$(grep '^version' Cargo.toml | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=firmware-v$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Check if tag already exists
+        id: check_tag
+        run: |
+          if git rev-parse "${{ steps.version.outputs.tag }}" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create release
+        if: steps.check_tag.outputs.exists == 'false'
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: "CW Bridge Firmware ${{ steps.version.outputs.version }}"
+          body: |
+            ## CW Bridge Firmware v${{ steps.version.outputs.version }}
+
+            Flash with:
+            ```
+            espflash flash --monitor cw-bridge.bin
+            ```
+
+            Or use the [ESP Web Flasher](https://espressif.github.io/esptool-js/).
+          files: cw-bridge.bin
+          draft: false
+          prerelease: false

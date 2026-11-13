@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>www.dxsummit.fi</key>
+			<dict>
+				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+				<key>NSIncludesSubdomains</key>
+				<false/>
+			</dict>
+		</dict>
+	</dict>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>CW Sweep uses the microphone to decode CW (Morse code) audio from your radio.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>CW Sweep uses your location to calculate distance and bearing to spotted stations, and to auto-detect your Maidenhead grid square.</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>CW Sweep connects to the Carrier Wave CW Bridge over Bluetooth LE to control your radio and operate the CW keyer.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>CW Sweep advertises a remote-control service so the Carrier Wave Field iOS app can connect over your local network or over a nearby peer-to-peer link.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_cwsweep-remote._tcp</string>
+		<string>_cw-remote._tcp</string>
+		<string>_cw-remote._udp</string>
+	</array>
+	<key>SUFeedURL</key>
+	<string>https://carrierwave.app/sweep/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>rU+EVp+JbrUsohQ4Mx0DHxlnts2z7pncqmiQV7ddZzg=</string>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>SUScheduledCheckInterval</key>
+	<integer>86400</integer>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>Carrier Wave Query</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>cwquery</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>Carrier Wave Macro</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>cwmacro</string>
+			</array>
+		</dict>
+	</array>
+	<key>UTExportedTypeDeclarations</key>
+	<array>
+		<dict>
+			<key>UTTypeIdentifier</key>
+			<string>app.carrierwave.macro</string>
+			<key>UTTypeDescription</key>
+			<string>Carrier Wave Radio Macro</string>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.json</string>
+				<string>public.data</string>
+			</array>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>cwmacro</string>
+				</array>
+				<key>public.mime-type</key>
+				<array>
+					<string>application/vnd.carrierwave.macro+json</string>
+				</array>
+			</dict>
+		</dict>
+	</array>
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>Carrier Wave Radio Macro</string>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>LSHandlerRank</key>
+			<string>Owner</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>app.carrierwave.macro</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>
