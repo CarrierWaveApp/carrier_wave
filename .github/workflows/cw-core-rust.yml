@@ -65,6 +65,10 @@ jobs:
 
   xcframework:
     name: Build CwFfi.xcframework + Swift parity tests
+    # Disabled: the macOS runner build runs for well over 40 minutes. Verify
+    # the XCFramework and Swift parity tests locally instead (see ci.yml).
+    # Set to true, or remove this line, to re-enable.
+    if: false
     runs-on: macos-15
     needs: test
     defaults:
