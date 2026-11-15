@@ -231,8 +231,6 @@ struct LoggerView: View {
     @State var pendingSessionEndQSOCount = 0
     @State var pendingSessionEndQSOs: [QSO] = []
     @State var pendingSessionEndRoveStops: [RoveUploadSummary] = []
-    @State var pendingSessionEndInMaintenance = false
-    @State var pendingSessionEndMaintenanceRemaining: String?
 
     /// User preference to disable POTA upload prompt
     @AppStorage("potaUploadPromptDisabled") var potaUploadPromptDisabled = false

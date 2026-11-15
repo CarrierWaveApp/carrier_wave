@@ -285,8 +285,6 @@ extension LoggerView {
                 potaParkName: pendingSessionEndParkName,
                 potaQSOsNeedingUpload: pendingSessionEndQSOCount,
                 roveStops: pendingSessionEndRoveStops,
-                isInMaintenance: pendingSessionEndInMaintenance,
-                maintenanceTimeRemaining: pendingSessionEndMaintenanceRemaining,
                 hasNoFrequency: session.frequency == nil && !sessionQSOs.isEmpty,
                 onEndSession: {
                     performSessionEnd()

@@ -67,8 +67,6 @@ struct SessionsView: View {
     @State var qrzPendingBySessionId: [UUID: Int] = [:]
     @State var isLoadingJobs = false
     @State var errorMessage: String?
-    @State var maintenanceTimeRemaining: String?
-    @State var maintenanceTimer: Timer?
 
     @State var itemToDelete: ListItem?
     @State var activationToReject: POTAActivation?
@@ -94,9 +92,6 @@ struct SessionsView: View {
     @State var listRebuildTask: Task<Void, Never>?
     @State var listGrouping = SessionsListGroupingActor()
 
-    @AppStorage("debugMode") var debugMode = false
-    @AppStorage("bypassPOTAMaintenance") var bypassMaintenance = false
-
     var isReopenPresented: Binding<Bool> {
         Binding(
             get: { sessionToReopen != nil },
@@ -106,13 +101,6 @@ struct SessionsView: View {
                 }
             }
         )
-    }
-
-    var isInMaintenance: Bool {
-        if debugMode, bypassMaintenance {
-            return false
-        }
-        return POTAClient.isInMaintenanceWindow()
     }
 
     var isAuthenticated: Bool {
@@ -290,8 +278,6 @@ struct SessionsView: View {
                 await refreshJobs()
             }
         }
-        .onAppear { startMaintenanceTimer() }
-        .onDisappear { stopMaintenanceTimer() }
     }
 }
 
@@ -337,10 +323,6 @@ extension SessionsView {
                     POTAAwardsView()
                 } label: {
                     Label("Awards & Certificates", systemImage: "trophy.fill")
-                }
-
-                if isInMaintenance {
-                    maintenanceBanner
                 }
 
                 if let error = errorMessage {
@@ -447,12 +429,12 @@ extension SessionsView {
                 matchingJobs: orphanJobs,
                 potaClient: potaClient,
                 isAuthenticated: isAuthenticated,
-                isInMaintenance: isInMaintenance,
                 onUpload: {
                     await performUploadReturningErrors(for: activation)
                 },
                 onReject: { activationToReject = activation },
-                onForceReupload: { forceReupload(activation) }
+                onForceReupload: { forceReupload(activation) },
+                onReplaceUpload: { await replaceUpload(activation, plan: $0) }
             )
         } label: {
             ActivationRow(
@@ -475,24 +457,5 @@ extension SessionsView {
                 }
             )
         }
-    }
-
-    var maintenanceBanner: some View {
-        HStack {
-            Image(systemName: "wrench.and.screwdriver")
-                .foregroundStyle(.orange)
-            VStack(alignment: .leading, spacing: 2) {
-                Text("POTA Maintenance Window")
-                    .font(.subheadline).fontWeight(.medium)
-                Text(
-                    maintenanceTimeRemaining.map {
-                        "Uploads disabled. Resumes in \($0)"
-                    } ?? "Uploads temporarily disabled (2330-0400 UTC)"
-                )
-                .font(.caption).foregroundStyle(.secondary)
-            }
-            Spacer()
-        }
-        .padding(.vertical, 4)
     }
 }

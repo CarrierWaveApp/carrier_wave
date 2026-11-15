@@ -59,7 +59,6 @@ To change a service's sync mode, go to **Settings → Sync Services** and tap th
 - **Job reconciliation**: Automatically reconciles uploads against POTA job log during sync
 - **Orphan repair**: Resets submitted QSOs back to pending if POTA has dropped the upload
 - **QSO-level gap repair**: Compares local vs POTA remote data and flags missing QSOs for re-upload
-- **Maintenance window**: Skips uploads during POTA maintenance (2330-0400 UTC), shows countdown on Dashboard
 - **Invalid references**: Marks QSOs with invalid park references (e.g., bare "US") as rejected to prevent infinite retry loops
 
 ### Ham2K LoFi

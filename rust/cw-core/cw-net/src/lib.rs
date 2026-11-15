@@ -31,6 +31,7 @@ pub mod http;
 pub mod kiwisdr;
 pub mod lofi;
 pub mod pota;
+pub mod pota_jobs;
 pub mod pskreporter;
 pub mod qrz;
 pub mod rbn;
@@ -94,6 +95,10 @@ pub use lofi::{
     LoFiQsosResponse, LoFiRegistrationRequest, LoFiRegistrationResponse, LoFiSyncFlags,
 };
 pub use pota::{PotaSpot, PotaSpotPost};
+pub use pota_jobs::{
+    plan_log_replace, PotaJob, PotaJobWindow, PotaJobsPage, PotaLogReplaceBlocker,
+    PotaLogReplacePlan,
+};
 pub use pskreporter::PskReporterSpot;
 pub use qrz::{QrzClient, QrzError, QrzLookup};
 pub use rbn::{RbnCallsignSpotsResponse, RbnSpot, RbnSpotsResponse};

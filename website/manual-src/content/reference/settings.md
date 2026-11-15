@@ -467,10 +467,6 @@ View background upload job status for {{< term "POTA" >}} activations.
 
 Trigger a full re-download from QRZ, LoTW, Club Log, eQSL, or Ham2K LoFi.
 
-### Bypass Maintenance Window
-
-Override service maintenance windows (use with caution).
-
 ### One-Time Repairs
 
 Run database repair tasks:

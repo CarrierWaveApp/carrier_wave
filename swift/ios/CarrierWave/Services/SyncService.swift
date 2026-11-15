@@ -105,7 +105,7 @@ class SyncService {
         if qrzClient.hasApiKey() {
             states[.qrz] = .waiting
         }
-        if potaAuthService.isConfigured, !POTAClient.isInMaintenanceWindow() {
+        if potaAuthService.isConfigured {
             states[.pota] = .waiting
         }
         if lofiClient.isConfigured, lofiClient.isLinked {
@@ -133,8 +133,7 @@ class SyncService {
         guard !isSyncing else {
             SyncDebugLog.shared.info("syncAll skipped: already syncing")
             return SyncResult(
-                downloaded: [:], uploaded: [:], errors: [],
-                newQSOs: 0, mergedQSOs: 0, potaMaintenanceSkipped: false
+                downloaded: [:], uploaded: [:], errors: [], newQSOs: 0, mergedQSOs: 0
             )
         }
 
@@ -194,8 +193,7 @@ class SyncService {
         let qrzWasIncremental = await prepareSyncEnvironment()
 
         var result = SyncResult(
-            downloaded: [:], uploaded: [:], errors: [], newQSOs: 0, mergedQSOs: 0,
-            potaMaintenanceSkipped: false
+            downloaded: [:], uploaded: [:], errors: [], newQSOs: 0, mergedQSOs: 0
         )
 
         // PHASE 1: Download from all sources in parallel
@@ -294,7 +292,7 @@ class SyncService {
             forKey: "autoBackupEnabled"
         ) as? Bool ?? true,
             let storeURL = modelContext.container
-            .configurations.first?.url
+                .configurations.first?.url
         else {
             return
         }

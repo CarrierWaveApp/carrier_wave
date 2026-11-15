@@ -128,12 +128,12 @@ extension SessionsView {
             matchingJobs: jobs,
             potaClient: potaClient,
             isAuthenticated: isAuthenticated,
-            isInMaintenance: isInMaintenance,
             onUpload: {
                 await performUploadReturningErrors(for: activation)
             },
             onReject: { rejectActivation(activation) },
             onForceReupload: { forceReupload(activation) },
+            onReplaceUpload: { await replaceUpload(activation, plan: $0) },
             qrzUploadCount: qrzPendingBySessionId[session.id] ?? 0,
             onQRZUpload: buildQRZUploadHandler(qsos: qsos)
         )
@@ -171,7 +171,6 @@ extension SessionsView {
             matchingJobs: jobs,
             potaClient: potaClient,
             isAuthenticated: isAuthenticated,
-            isInMaintenance: isInMaintenance,
             onUpload: primary.map { act in
                 { await performUploadReturningErrors(for: act) }
             },
@@ -181,6 +180,9 @@ extension SessionsView {
             onForceReupload: primary.map { act in
                 { forceReupload(act) }
             },
+            onReplaceUpload: activations.count == 1 ? primary.map { act in
+                { await replaceUpload(act, plan: $0) }
+            } : nil,
             qrzUploadCount: qrzPendingBySessionId[session.id] ?? 0,
             onQRZUpload: buildQRZUploadHandler(
                 qsos: qsosBySessionId[session.id] ?? []
@@ -311,11 +313,7 @@ extension SessionsView {
         let includeEquipment = UserDefaults.standard.object(
             forKey: "shareCardIncludeEquipment"
         ) as? Bool ?? true
-        guard includeEquipment else {
-            return []
-        }
-
-        guard let session = findSession(for: activation) else {
+        guard includeEquipment, let session = findSession(for: activation) else {
             return []
         }
 

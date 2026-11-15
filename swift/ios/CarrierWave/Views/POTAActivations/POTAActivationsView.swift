@@ -29,8 +29,6 @@ struct POTAActivationsContentView: View {
     @State var activationToEdit: POTAActivation?
     @State var isGeneratingShareImage = false
     @State var sharePreviewData: SharePreviewData?
-    @State var maintenanceTimeRemaining: String?
-    @State var maintenanceTimer: Timer?
     @State var cachedParkNames: [String: String] = [:]
     /// Upload errors by activation ID -> (park -> error message) for two-fer error display
     @State var uploadErrorsByActivation: [String: [String: String]] = [:]
@@ -49,13 +47,6 @@ struct POTAActivationsContentView: View {
     @State var bulkExportActivations: [POTAActivation]?
 
     @Environment(\.modelContext) var modelContext
-
-    var isInMaintenance: Bool {
-        if debugMode, bypassMaintenance {
-            return false
-        }
-        return POTAClient.isInMaintenanceWindow()
-    }
 
     var isAuthenticated: Bool {
         // Use isConfigured to show upload buttons even if token expired
@@ -255,7 +246,6 @@ struct POTAActivationsContentView: View {
                     selectedCount: selectedActivationIds.count,
                     hasSelectedPending: selectedActivationsWithPendingCount > 0,
                     isAuthenticated: isAuthenticated,
-                    isInMaintenance: isInMaintenance,
                     onUpload: { Task { await performBulkUpload() } },
                     onReject: { showBulkRejectConfirmation = true },
                     onExport: { performBulkExport() }
@@ -270,8 +260,6 @@ struct POTAActivationsContentView: View {
             }
             await loadCachedParkNames()
         }
-        .onAppear { startMaintenanceTimer() }
-        .onDisappear { stopMaintenanceTimer() }
     }
 
     // MARK: Private
@@ -279,8 +267,6 @@ struct POTAActivationsContentView: View {
     /// Batch size for loading QSOs
     private static let batchSize = 500
 
-    @AppStorage("debugMode") private var debugMode = false
-    @AppStorage("bypassPOTAMaintenance") private var bypassMaintenance = false
     @State private var isLoadingQSOs = false
     @State private var showBulkRejectConfirmation = false
 

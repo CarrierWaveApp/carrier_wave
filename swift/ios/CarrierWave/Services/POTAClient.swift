@@ -15,7 +15,6 @@ enum POTAError: Error, LocalizedError {
     case fetchFailed(String)
     case invalidParkReference
     case networkError(Error)
-    case maintenanceWindow
 
     // MARK: Internal
 
@@ -31,8 +30,6 @@ enum POTAError: Error, LocalizedError {
             "Invalid park reference format"
         case let .networkError(error):
             "Network error: \(error.localizedDescription)"
-        case .maintenanceWindow:
-            "POTA is in maintenance (0000-0400 UTC)"
         }
     }
 }
@@ -202,8 +199,6 @@ final class POTAClient {
 
     let baseURL = "https://api.pota.app"
     let authService: POTAAuthService
-
-    // Maintenance window methods in POTAClient+Maintenance.swift
 
     /// Get all unique park references from QSOs (excludes nil and empty)
     static func groupQSOsByPark(_ qsos: [QSO]) -> [String: [QSO]] {

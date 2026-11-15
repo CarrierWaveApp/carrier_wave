@@ -236,7 +236,6 @@ Reports can be:
 | "Server error" | Service-side issue | Try again later |
 | "Invalid ADIF" | Malformed upload data | Check QSO fields |
 | "Duplicate activation" | POTA already has this activation | Check date/park reference |
-| "Maintenance window" | POTA servers offline | Wait until 0400 UTC |
 | "Connection timeout" | WebSDR receiver unresponsive | Try a different receiver |
 
 ## Data Recovery

@@ -376,6 +376,20 @@ flowchart TD
 
 ---
 
+## Update 2026-11-15 — automatic uploads restored with limits
+
+POTA now lets uploaders delete their own logs for 24 hours, which answers
+offender 7 (no post-submission edit story; see "Replace POTA Upload"). Sync
+uploads POTA activations again, limited by `POTAAutoUploadPolicy`: only
+finished activations (session ended, 30 minutes quiet), nothing older than 14
+days, at most one pass per 10 minutes with exponential back-off on failure,
+and no build-bump retry of rejected POTA QSOs (offenders 1, 2, 4 and 6). POTA
+has also dropped its daily maintenance window, so the hardcoded local window
+(offender 3) and `POTAClient+Maintenance.swift` were removed. Still open: the
+7-day suspect-job window (5) and a remote kill-switch.
+
+---
+
 ## 10. Appendix — cross-references
 
 - Research traces that produced this doc:

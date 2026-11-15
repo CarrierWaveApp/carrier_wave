@@ -3,6 +3,7 @@ import XCTest
 
 /// `/user/jobs` answers with a bare array on the legacy POTA backend and with
 /// `{count, pending, entries}` on the rebuilt site (October 2026).
+@MainActor
 final class POTAJobsPageTests: XCTestCase {
     // MARK: Internal
 

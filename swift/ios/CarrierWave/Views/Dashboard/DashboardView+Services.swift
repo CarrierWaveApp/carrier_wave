@@ -33,13 +33,10 @@ extension DashboardView {
     // MARK: - Build Service Info List
 
     func buildServiceInfoList() -> [ServiceInfo] {
-        let canBypass = debugMode && bypassPOTAMaintenance
-        let potaInMaintenance = POTAClient.isInMaintenanceWindow() && !canBypass
-
         let allServices = [
             lofiServiceInfo,
             qrzServiceInfo,
-            potaServiceInfo(inMaintenance: potaInMaintenance),
+            potaServiceInfo,
             hamrsServiceInfo,
             lotwServiceInfo,
             clublogServiceInfo,
@@ -80,17 +77,17 @@ extension DashboardView {
         )
     }
 
-    private func potaServiceInfo(inMaintenance: Bool) -> ServiceInfo {
+    private var potaServiceInfo: ServiceInfo {
         ServiceInfo(
             id: .service(.pota),
             name: "POTA",
-            status: potaStatus(inMaintenance: inMaintenance),
+            status: potaStatus,
             primaryStat: potaAuth.isConfigured ? "\(uploadedCount(for: .pota)) synced" : nil,
             secondaryStat: pendingCount(for: .pota) > 0
                 ? "\(pendingCount(for: .pota)) pending" : nil,
             tertiaryInfo: potaAuth.isConfigured
                 ? syncService.lastSyncResults[.pota]?.summaryText : "Not configured",
-            showWarning: inMaintenance || potaAuth.currentToken?.isExpiringSoon() == true,
+            showWarning: potaAuth.currentToken?.isExpiringSoon() == true,
             isSyncing: syncService.isSyncing
         )
     }
@@ -190,13 +187,10 @@ extension DashboardView {
         return "Not configured"
     }
 
-    func potaStatus(inMaintenance: Bool) -> ServiceStatus {
-        if inMaintenance {
-            return .maintenance
-        }
+    var potaStatus: ServiceStatus {
         // Use isConfigured (has stored credentials) for status
         // This shows "connected" even if token expired - will re-auth on sync
-        return potaAuth.isConfigured ? .connected : .notConfigured
+        potaAuth.isConfigured ? .connected : .notConfigured
     }
 
     // MARK: - Service Detail Sheet Builder
@@ -239,7 +233,6 @@ extension DashboardView {
             lastSyncReport: syncService.lastSyncResults[.lofi],
             isSyncing: isSyncing,
             debugMode: debugMode,
-            isInMaintenance: false,
             sessionExpiringSoon: false,
             sessionExpiryDate: nil,
             importedCount: nil,
@@ -267,7 +260,6 @@ extension DashboardView {
             lastSyncReport: syncService.lastSyncResults[.qrz],
             isSyncing: isSyncing,
             debugMode: debugMode,
-            isInMaintenance: false,
             sessionExpiringSoon: false,
             sessionExpiryDate: nil,
             importedCount: nil,
@@ -285,10 +277,7 @@ extension DashboardView {
     }
 
     var potaDetailSheet: some View {
-        let canBypass = debugMode && bypassPOTAMaintenance
-        let inMaintenance = POTAClient.isInMaintenanceWindow() && !canBypass
-
-        return ServiceDetailSheet(
+        ServiceDetailSheet(
             serviceId: .service(.pota),
             isConfigured: potaAuth.isConfigured,
             callsign: potaAuth.currentToken?.callsign ?? potaAuth.getStoredUsername(),
@@ -298,7 +287,6 @@ extension DashboardView {
             lastSyncReport: syncService.lastSyncResults[.pota],
             isSyncing: isSyncing,
             debugMode: debugMode,
-            isInMaintenance: inMaintenance,
             sessionExpiringSoon: potaAuth.currentToken?.isExpiringSoon() ?? false,
             sessionExpiryDate: potaAuth.currentToken?.expiresAt,
             importedCount: nil,
@@ -326,7 +314,6 @@ extension DashboardView {
             lastSyncReport: syncService.lastSyncResults[.hamrs],
             isSyncing: isSyncing,
             debugMode: debugMode,
-            isInMaintenance: false,
             sessionExpiringSoon: false,
             sessionExpiryDate: nil,
             importedCount: nil,
@@ -354,7 +341,6 @@ extension DashboardView {
             lastSyncReport: syncService.lastSyncResults[.lotw],
             isSyncing: isSyncing,
             debugMode: debugMode,
-            isInMaintenance: false,
             sessionExpiringSoon: false,
             sessionExpiryDate: nil,
             importedCount: nil,
@@ -382,7 +368,6 @@ extension DashboardView {
             lastSyncReport: syncService.lastSyncResults[.clublog],
             isSyncing: isSyncing,
             debugMode: debugMode,
-            isInMaintenance: false,
             sessionExpiringSoon: false,
             sessionExpiryDate: nil,
             importedCount: nil,
@@ -410,7 +395,6 @@ extension DashboardView {
             lastSyncReport: syncService.lastSyncResults[.eqsl],
             isSyncing: isSyncing,
             debugMode: debugMode,
-            isInMaintenance: false,
             sessionExpiringSoon: false,
             sessionExpiryDate: nil,
             importedCount: nil,
@@ -437,7 +421,6 @@ extension DashboardView {
             lastSyncReport: nil,
             isSyncing: false,
             debugMode: debugMode,
-            isInMaintenance: false,
             sessionExpiringSoon: false,
             sessionExpiryDate: nil,
             importedCount: asyncStats.icloudImportedCount,

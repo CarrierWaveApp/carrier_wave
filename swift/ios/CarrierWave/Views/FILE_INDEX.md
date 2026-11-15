@@ -31,7 +31,7 @@
 | `SessionDialogModifiers.swift` | Finish and delete session confirmation dialog View modifiers |
 | `SessionsView.swift` | Unified sessions list merging POTA activations and all sessions, with rich content |
 | `SessionsView+Actions.swift` | Data loading, POTA actions, session deletion for SessionsView |
-| `SessionsView+Helpers.swift` | Utility functions: findSession, engine lookup, maintenance timer |
+| `SessionsView+Helpers.swift` | Utility functions: findSession, engine lookup |
 | `SessionsView+Share.swift` | Brag sheet generation and equipment list building for share cards |
 | `SessionsView+QRZUpload.swift` | QRZ upload actions and pending count computation for Sessions list |
 | `SessionsListGrouping.swift` | Sendable row snapshot + `SessionsListGroupingActor`: off-main newest-first sort and UTC month bucketing for the cached Sessions list |
@@ -404,6 +404,8 @@
 | `BulkADIFExportSheet+Split.swift` | Bulk split-export helpers: park-split config builder + multi-file share |
 | `POTAActivationLabel.swift` | Shared activation label view (date, park, status, metadata) |
 | `POTAJobViews.swift` | POTA job display components (POTAJobRow, POTAJobDetailSheet) |
+| `POTAReplaceUploadViews.swift` | Replace POTA Upload UI: `POTAJobStatus.tint`, confirmation dialog modifier, POTA Jobs footer |
+| `POTAReplaceUploadActions.swift` | `replaceUpload(_:plan:)` for POTAActivationsContentView and SessionsView: remove jobs, reset presence, re-upload |
 | `QSOTimelineView.swift` | Horizontal timeline bar showing QSO timing during activations (compact + share card variants) |
 | `QSOTimelineLayout.swift` | Timeline layout engine: segments, gap detection, x-position computation, band colors |
 | `POTALogEntryRow.swift` | Individual POTA log entry display (legacy) |

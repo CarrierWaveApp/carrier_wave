@@ -5,9 +5,7 @@ import SwiftData
 // MARK: - SyncService Upload Methods
 
 extension SyncService {
-    func uploadToAllDestinations() async -> (
-        results: [ServiceType: Result<Int, Error>], potaMaintenanceSkipped: Bool
-    ) {
+    func uploadToAllDestinations() async -> [ServiceType: Result<Int, Error>] {
         let qsosNeedingUpload: [QSO]?
         do {
             qsosNeedingUpload = try fetchQSOsNeedingUpload()
@@ -28,7 +26,7 @@ extension SyncService {
 
         // Confirm with user if large upload detected
         if await shouldCancelExport(qsosNeedingUpload: qsosNeedingUpload) {
-            return (results: results, potaMaintenanceSkipped: false)
+            return results
         }
 
         // QRZ upload
@@ -38,8 +36,18 @@ extension SyncService {
             results[.qrz] = qrzResult
         }
 
-        // POTA upload is user-driven via ADIFExportSheet "Upload to POTA"
-        // — automatic uploads were removed to reduce POTA volunteer triage load.
+        // POTA upload: settled activations only, paced (POTAAutoUploadPolicy)
+        switch await autoUploadToPOTA(candidates: qsosNeedingUpload ?? []) {
+        case .idle:
+            break
+        case let .uploaded(count):
+            results[.pota] = .success(count)
+            let downloaded = serviceSyncStates[.pota]?.downloadedCount ?? 0
+            serviceSyncStates[.pota] = .complete(downloaded: downloaded, uploaded: count)
+        case let .failure(error):
+            results[.pota] = .failure(error)
+            serviceSyncStates[.pota] = .error(error.localizedDescription)
+        }
 
         // Club Log: "Coming Soon" — not yet configurable as a sync source
 
@@ -53,7 +61,7 @@ extension SyncService {
         // Record diagnostics for failures, clear for successes
         await recordUploadDiagnostics(results: results, qsosNeedingUpload: qsosNeedingUpload)
 
-        return (results: results, potaMaintenanceSkipped: false)
+        return results
     }
 
     /// Record diagnostics for upload results and clear diagnostics for successful services.
@@ -234,13 +242,16 @@ extension SyncService {
         var pendingPresence = try modelContext.boundedFetch(presenceDescriptor)
 
         // Also include version-gated retries: QSOs rejected by an older build
-        // that should be retried now that a new version is running.
+        // that should be retried now that a new version is running. POTA is
+        // excluded: a rejected log there needs a fix, not another automatic try.
+        let potaRawValue = ServiceType.pota.rawValue
         let currentBuild = ServicePresence.currentAppBuild
         let retryDescriptor = BoundedDescriptor<ServicePresence>(
             predicate: #Predicate<ServicePresence> {
                 $0.uploadRejected == true
                     && $0.rejectedAtBuild != nil
                     && $0.rejectedAtBuild != currentBuild
+                    && $0.serviceTypeRawValue != potaRawValue
             },
             limit: BoundedDescriptor<ServicePresence>.maxLimit
         )

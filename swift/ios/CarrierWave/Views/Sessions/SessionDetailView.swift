@@ -27,10 +27,11 @@ struct SessionDetailView: View {
     var matchingJobs: [POTAJob] = []
     var potaClient: POTAClient?
     var isAuthenticated: Bool = false
-    var isInMaintenance: Bool = false
     var onUpload: (() async -> [String: String])?
     var onReject: (() -> Void)?
     var onForceReupload: (() -> Void)?
+    /// Delete this activation's log from POTA and upload it again (24h window).
+    var onReplaceUpload: ((POTAUploadReplacePlan) async -> [String: String])?
 
     // QRZ upload
     var qrzUploadCount: Int = 0
@@ -71,6 +72,7 @@ struct SessionDetailView: View {
     @State var refreshingT3Spots = false
     @State var showTOTABragSheet = false
     @State var showRejectConfirmation = false
+    @State var showReplaceConfirmation = false
     @State var showReopenConfirmation = false
     @State var showAddQSOSheet = false
 
@@ -260,6 +262,14 @@ struct SessionDetailView: View {
                 activation: activation,
                 onReject: onReject,
                 onReopen: onReopen
+            )
+        )
+        .modifier(
+            POTAReplaceUploadConfirmation(
+                isPresented: $showReplaceConfirmation,
+                activation: activation,
+                plan: replacePlan,
+                onReplace: performReplaceUpload
             )
         )
         .task {

@@ -57,6 +57,7 @@ mod cat;
 /// These join `rbn` as the cross-platform spot decoders so each app presents
 /// spots identically.
 mod pota;
+mod pota_jobs;
 mod sota;
 mod wwff;
 mod pskreporter;

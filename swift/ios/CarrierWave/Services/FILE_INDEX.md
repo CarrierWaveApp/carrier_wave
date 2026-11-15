@@ -39,6 +39,9 @@
 | `POTAClient.swift` | POTA API client (bearer token auth) |
 | `POTAClient+Upload.swift` | POTA multipart ADIF upload |
 | `POTAClient+ADIF.swift` | POTA ADIF formatting |
+| `POTAAutoUploadPolicy.swift` | Rules for automatic POTA upload in sync: settled-activation holds, 14-day cutoff, 10-minute pacing with back-off (`POTAAutoUploadThrottle`) |
+| `SyncService+POTAAutoUpload.swift` | `autoUploadToPOTA(candidates:)` used by full and single-service sync; `settledPOTAQSOs` applies the policy per park + UTC day |
+| `POTAClient+Replace.swift` | POTA 24-hour self-delete: `POTAUploadReplacePlan` (wraps cw-core `potaLogReplacePlan`), `removeJob`/`removeJobs` |
 | `SOTACSVExporter.swift` | SOTA database V2 CSV row generator + `ShareableSOTACSV` transferable for session ADIF export pull-up |
 | `POTAClient+GridLookup.swift` | POTA grid square lookup |
 | `POTAClient+Checkpoint.swift` | POTA resumable download checkpoints and incremental sync state |

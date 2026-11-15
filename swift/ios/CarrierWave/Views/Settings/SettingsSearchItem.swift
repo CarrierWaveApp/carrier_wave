@@ -407,13 +407,6 @@ extension SettingsSearchIndex {
             isDebugOnly: true
         ),
         SettingsSearchItem(
-            title: "Bypass POTA Maintenance",
-            keywords: ["bypass", "maintenance", "pota", "upload", "24/7"],
-            breadcrumb: "Advanced",
-            destination: .syncDebug,
-            isDebugOnly: true
-        ),
-        SettingsSearchItem(
             title: "Sync Debug Log",
             keywords: ["sync", "debug", "log", "troubleshoot"],
             breadcrumb: "Advanced",

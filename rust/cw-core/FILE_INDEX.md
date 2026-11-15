@@ -164,6 +164,7 @@ overview and `../../docs/plans/2026-06-13-rust-core-migration.md` for the plan.
 | `enrichment.rs` | Server callsign-enrichment dataset client (`EnrichmentClient` → ETag-conditional `EnrichmentDataset`; compact `c`/`m`/`s`/`n`/`#`/`e`/`t` keys) — port of the dataset half of `ActivitiesClient+CallsignEnrichment.swift` |
 | `contests.rs` | Contest-definition endpoints (`ContestsClient`: `GET /v1/contests` list + `/:id` envelope with the raw v0.3 body kept opaque) — port of `ActivitiesClient+ContestDefinitions.swift` |
 | `pota.rs` | `PotaSpot` model + parsing helpers, port of `POTASpot.swift` |
+| `pota_jobs.rs` | POTA upload jobs (`/user/jobs`): `PotaJob` + `PotaJobsPage::parse` (paginated object or legacy array, lenient `selfDeleteSecondsRemaining`), the 24-hour self-delete rule `plan_log_replace(&[PotaJobWindow], elapsed) -> PotaLogReplacePlan` (`PotaLogReplaceBlocker::{NothingToRemove, WindowExpired}`), and `remove_job_path`. The authenticated calls are `PotaClient::fetch_jobs_page` / `remove_job` in `clients.rs` |
 | `sota.rs` | `SotaSpot` + `SotaSpotPost` builder + frequency formatter, port of `SOTASpot.swift` + `SOTAClient.swift` (parsing half) |
 | `wwff.rs` | `WwffSpot` + `WwffAgendaItem` + HTML table scraper (`data-label` cells), port of `WWFFClient.swift` parsers |
 | `reference_data.rs` | External-data downloaders: `fetch_reference_csv` (UA + HTML guard + CRLF normalize), `EquipmentCatalogClient` (ETag + bearer), `FccClient` (metadata sidecar + gzip SQLite download), `SotaZonesClient` (chunked `POST /v1/sota/zones`, GeoJSON features) |
@@ -205,6 +206,7 @@ overview and `../../docs/plans/2026-06-13-rust-core-migration.md` for the plan.
 | `rbn.rs` | UniFFI surface for `cw_net::rbn`: `decode_rbn_response` + `FfiRbnSpot` (with derived fields) |
 | `cat.rs` | UniFFI surface for `cw_domain::civ`/`kenwood`/`yaesu`: CI-V/Kenwood/Yaesu command builders + response parsers + mode mappings + frame parsing (`civ_*`/`kenwood_*`/`yaesu_*` fns; `FfiCivFrame`/`FfiYaesuInformation`). Backs the Swift `CIVProtocol`/`KenwoodProtocol`/`YaesuProtocol` facades |
 | `pota.rs` | UniFFI surface for `cw_net::pota`: `decode_pota_response` + `FfiPotaSpot` (with derived fields) |
+| `pota_jobs.rs` | UniFFI surface for `cw_net::pota_jobs`: `decode_pota_jobs_page` → `FfiPotaJobsPage`/`FfiPotaJob`, `pota_log_replace_plan(Vec<FfiPotaJobWindow>, elapsed_seconds)` → `FfiPotaLogReplacePlan`, `pota_remove_job_path` |
 | `sota.rs` | UniFFI surface for `cw_net::sota`: `decode_sota_response` + `FfiSotaSpot` (with derived fields) |
 | `wwff.rs` | UniFFI surface for `cw_net::wwff`: `decode_wwff_spots_html` + `FfiWwffSpot` (with derived fields) |
 | `pskreporter.rs` | UniFFI surface for `cw_net::pskreporter`: `decode_psk_reporter_xml` + `FfiPskReporterSpot` (with derived fields) |

@@ -142,8 +142,6 @@ enum UploadErrorClassifier {
                     + "If you see upload errors, please reach out on the Carrier Wave "
                     + "Discord before contacting POTA directly."
             )
-        case .maintenanceWindow:
-            return (.maintenance, "POTA is in daily maintenance (0000–0400 UTC). Will retry after.")
         case .uploadFailed:
             return (
                 .serverError,

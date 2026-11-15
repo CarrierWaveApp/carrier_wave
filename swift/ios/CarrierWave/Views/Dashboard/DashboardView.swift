@@ -20,7 +20,6 @@ struct DashboardView: View {
     let tourState: TourState
 
     @AppStorage("debugMode") var debugMode = false
-    @AppStorage("bypassPOTAMaintenance") var bypassPOTAMaintenance = false
     @AppStorage(DashboardLayoutPrefs.hiddenCardsKey) var hiddenCards = ""
     @AppStorage(DashboardLayoutPrefs.collapsedSectionsKey) var collapsedSections = ""
 

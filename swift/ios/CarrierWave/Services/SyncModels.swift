@@ -243,7 +243,6 @@ struct SyncResult {
     var errors: [String]
     var newQSOs: Int
     var mergedQSOs: Int
-    var potaMaintenanceSkipped: Bool
 }
 
 // MARK: - ServiceSyncReport

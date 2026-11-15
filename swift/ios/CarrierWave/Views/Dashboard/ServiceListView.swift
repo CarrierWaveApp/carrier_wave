@@ -8,7 +8,6 @@ enum ServiceStatus {
     case connected
     case pending
     case notConfigured
-    case maintenance
 
     // MARK: Internal
 
@@ -20,8 +19,6 @@ enum ServiceStatus {
             .orange
         case .notConfigured:
             Color(.systemGray3)
-        case .maintenance:
-            .orange
         }
     }
 
@@ -33,8 +30,6 @@ enum ServiceStatus {
             "Pending"
         case .notConfigured:
             "Not configured"
-        case .maintenance:
-            "Maintenance"
         }
     }
 }

@@ -36,7 +36,6 @@ struct SettingsMainView: View {
     @State var pendingCallsignChange: PendingCallsignChange?
 
     @AppStorage("debugMode") var debugMode = false
-    @AppStorage("bypassPOTAMaintenance") var bypassPOTAMaintenance = false
     @AppStorage("cwswlServerURL") var cwswlServerURL = "https://swl.carrierwave.app"
     @AppStorage("activitiesServerURLOverride") var activitiesServerURL = ""
     @AppStorage("startupProfilerEnabled") var startupProfilerEnabled = false

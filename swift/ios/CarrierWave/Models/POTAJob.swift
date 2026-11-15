@@ -1,7 +1,8 @@
 // POTA upload job status types
 //
 // Models the job status responses from the POTA API /user/jobs endpoint.
-// Status codes: 0=pending, 1=processing, 2=complete, 3+=various error states.
+// Status codes: 0=pending, 1=processing, 2=complete, 3+=various error states,
+// -1/-10=removed (by the uploader within the self-delete window, or by a log manager).
 
 import CarrierWaveData
 import Foundation
@@ -14,7 +15,17 @@ enum POTAJobStatus: Int, Codable {
     case completed = 2
     case failed = 3
     case duplicate = 7
-    case error = -1
+    /// The log was deleted from POTA; its QSOs no longer count.
+    case removed = -1
+    /// Any status code this build does not know.
+    case error = -99
+
+    // MARK: Lifecycle
+
+    /// Map a raw `/user/jobs` status. POTA reports a removed log as -1 or -10.
+    init(apiValue: Int) {
+        self = apiValue == -10 ? .removed : (Self(rawValue: apiValue) ?? .error)
+    }
 
     // MARK: Internal
 
@@ -25,6 +36,7 @@ enum POTAJobStatus: Int, Codable {
         case .completed: "Completed"
         case .failed: "Failed"
         case .duplicate: "Duplicate"
+        case .removed: "Removed"
         case .error: "Error"
         }
     }
@@ -39,6 +51,7 @@ enum POTAJobStatus: Int, Codable {
              .error:
             "red"
         case .duplicate: "yellow"
+        case .removed: "gray"
         }
     }
 
@@ -61,7 +74,8 @@ struct POTAJob: Identifiable, Codable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         jobId = try container.decode(Int.self, forKey: .jobId)
         let statusInt = try container.decode(Int.self, forKey: .status)
-        status = POTAJobStatus(rawValue: statusInt) ?? .error
+        status = POTAJobStatus(apiValue: statusInt)
+        selfDeleteDeadline = Self.decodeSelfDeleteDeadline(from: container)
         reference = try container.decode(String.self, forKey: .reference)
         parkName = try container.decodeIfPresent(String.self, forKey: .parkName)
         location = try container.decodeIfPresent(String.self, forKey: .location)
@@ -121,7 +135,7 @@ struct POTAJob: Identifiable, Codable {
         jobId: Int, status: POTAJobStatus, submitted: Date, processed: Date?,
         reference: String, parkName: String?, location: String?,
         totalQsos: Int, insertedQsos: Int, callsignUsed: String?, userComment: String?,
-        firstQSO: Date? = nil, lastQSO: Date? = nil
+        firstQSO: Date? = nil, lastQSO: Date? = nil, selfDeleteDeadline: Date? = nil
     ) {
         self.jobId = jobId
         self.status = status
@@ -136,6 +150,7 @@ struct POTAJob: Identifiable, Codable {
         self.userComment = userComment
         self.firstQSO = firstQSO
         self.lastQSO = lastQSO
+        self.selfDeleteDeadline = selfDeleteDeadline
     }
 
     // MARK: Internal
@@ -154,6 +169,7 @@ struct POTAJob: Identifiable, Codable {
         case userComment
         case firstQSO
         case lastQSO
+        case selfDeleteSecondsRemaining
     }
 
     let jobId: Int
@@ -171,6 +187,9 @@ struct POTAJob: Identifiable, Codable {
     let firstQSO: Date?
     /// Timestamp of the last QSO in this job
     let lastQSO: Date?
+    /// When the uploader can no longer delete this log from POTA (24 hours after
+    /// upload). Nil when the window has closed or the server did not report one.
+    let selfDeleteDeadline: Date?
 
     var id: Int {
         jobId
@@ -210,6 +229,31 @@ struct POTAJob: Identifiable, Codable {
         if let lastQSO {
             try container.encode(dateFormatter.string(from: lastQSO), forKey: .lastQSO)
         }
+        let remaining = selfDeleteSecondsRemaining()
+        if remaining > 0 {
+            try container.encode(remaining, forKey: .selfDeleteSecondsRemaining)
+        }
+    }
+
+    /// Seconds left in the self-delete window (0 once it has closed).
+    func selfDeleteSecondsRemaining(at now: Date = Date()) -> TimeInterval {
+        max(0, selfDeleteDeadline?.timeIntervalSince(now) ?? 0)
+    }
+
+    // MARK: Private
+
+    /// `selfDeleteSecondsRemaining` arrives as a number, a numeric string, null,
+    /// or not at all; anything that is not a positive number means no window.
+    private static func decodeSelfDeleteDeadline(
+        from container: KeyedDecodingContainer<CodingKeys>
+    ) -> Date? {
+        let key = CodingKeys.selfDeleteSecondsRemaining
+        let seconds = (try? container.decodeIfPresent(Double.self, forKey: key))
+            ?? (try? container.decodeIfPresent(String.self, forKey: key)).flatMap { Double($0) }
+        guard let seconds, seconds > 0 else {
+            return nil
+        }
+        return Date().addingTimeInterval(seconds)
     }
 }
 

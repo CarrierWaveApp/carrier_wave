@@ -126,7 +126,6 @@ struct BulkActionToolbar: View {
     let selectedCount: Int
     let hasSelectedPending: Bool
     let isAuthenticated: Bool
-    let isInMaintenance: Bool
     let onUpload: () -> Void
     let onReject: () -> Void
     let onExport: () -> Void
@@ -136,7 +135,7 @@ struct BulkActionToolbar: View {
             bulkButton(
                 icon: "arrow.up.circle.fill",
                 label: pendingQSOCount > 0 ? "Upload (\(pendingQSOCount))" : "Upload",
-                enabled: hasSelectedPending && isAuthenticated && !isInMaintenance,
+                enabled: hasSelectedPending && isAuthenticated,
                 action: onUpload
             )
             bulkButton(
@@ -206,11 +205,6 @@ extension POTAActivationsContentView {
         for activation in toUpload {
             // Check cancellation
             if bulkUploadProgress?.isCancelled == true {
-                break
-            }
-            // Check maintenance window before each upload
-            if isInMaintenance {
-                errorMessage = "Maintenance window started. Remaining uploads skipped."
                 break
             }
 

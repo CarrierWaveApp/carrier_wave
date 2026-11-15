@@ -264,10 +264,6 @@ extension SettingsMainView {
 
             if debugMode {
                 Toggle(
-                    "Bypass POTA Maintenance",
-                    isOn: $bypassPOTAMaintenance
-                )
-                Toggle(
                     "Performance Profiler",
                     isOn: $startupProfilerEnabled
                 )
@@ -337,17 +333,10 @@ extension SettingsMainView {
         } header: {
             Text("Advanced")
         } footer: {
-            if debugMode, bypassPOTAMaintenance {
-                Text(
-                    "POTA maintenance window bypass enabled. "
-                        + "Uploads allowed 24/7."
-                )
-            } else {
-                Text(
-                    "Shows individual sync buttons on service cards "
-                        + "and debug tools"
-                )
-            }
+            Text(
+                "Shows individual sync buttons on service cards "
+                    + "and debug tools"
+            )
         }
     }
 

@@ -18,9 +18,6 @@ struct ServiceDetailSheet: View {
     let isSyncing: Bool
     let debugMode: Bool
 
-    /// Maintenance (POTA only)
-    let isInMaintenance: Bool
-
     // Session expiry (POTA only)
     let sessionExpiringSoon: Bool
     let sessionExpiryDate: Date?
@@ -88,24 +85,13 @@ struct ServiceDetailSheet: View {
                 }
 
                 // Warnings section
-                if sessionExpiringSoon || isInMaintenance {
+                if sessionExpiringSoon, let expiry = sessionExpiryDate {
                     Section {
-                        if sessionExpiringSoon, let expiry = sessionExpiryDate {
-                            HStack(spacing: 8) {
-                                Image(systemName: "clock.badge.exclamationmark")
-                                    .foregroundStyle(.orange)
-                                Text("Session expires \(expiry, style: .relative)")
-                                    .foregroundStyle(.orange)
-                            }
-                        }
-
-                        if isInMaintenance {
-                            HStack(spacing: 8) {
-                                Image(systemName: "wrench.and.screwdriver")
-                                    .foregroundStyle(.orange)
-                                Text("POTA maintenance until 0400 UTC")
-                                    .foregroundStyle(.orange)
-                            }
+                        HStack(spacing: 8) {
+                            Image(systemName: "clock.badge.exclamationmark")
+                                .foregroundStyle(.orange)
+                            Text("Session expires \(expiry, style: .relative)")
+                                .foregroundStyle(.orange)
                         }
                     }
                 }
@@ -130,7 +116,7 @@ struct ServiceDetailSheet: View {
                                     }
                                 }
                             }
-                            .disabled(isSyncing || isForceRedownloading || isInMaintenance)
+                            .disabled(isSyncing || isForceRedownloading)
                         }
 
                         if let onForceRedownload {
@@ -155,7 +141,7 @@ struct ServiceDetailSheet: View {
                                     }
                                 }
                             }
-                            .disabled(isSyncing || isForceRedownloading || isInMaintenance)
+                            .disabled(isSyncing || isForceRedownloading)
 
                             if let result = forceRedownloadResult {
                                 Text(result)
@@ -264,7 +250,6 @@ struct ServiceDetailSheet: View {
         ),
         isSyncing: false,
         debugMode: true,
-        isInMaintenance: false,
         sessionExpiringSoon: false,
         sessionExpiryDate: nil,
         importedCount: nil,

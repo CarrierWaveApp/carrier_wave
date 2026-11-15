@@ -14,16 +14,4 @@ extension SessionsView {
             let eng = RecordingPlaybackEngine(); engines[sessionId] = eng; return eng
         }()
     }
-
-    func startMaintenanceTimer() {
-        maintenanceTimeRemaining = POTAClient.formatMaintenanceTimeRemaining()
-        maintenanceTimer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [self] _ in
-            Task { @MainActor in maintenanceTimeRemaining = POTAClient.formatMaintenanceTimeRemaining() }
-        }
-        maintenanceTimer?.tolerance = 6 // 10% of 60s interval
-    }
-
-    func stopMaintenanceTimer() {
-        maintenanceTimer?.invalidate(); maintenanceTimer = nil
-    }
 }

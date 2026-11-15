@@ -130,6 +130,8 @@ The brag-sheet catalog / config / periods / presets / stat-value enums moved to 
 | `ADIFParserTests.swift` | ADIF parsing tests |
 | `ADIFExportServiceSplitTests.swift` | N-fer ADIF split export tests (5-fer = 5 files, 3-fer = 3 files) |
 | `DeduplicationServiceTests.swift` | QSO deduplication logic tests |
+| `POTAAutoUploadPolicyTests.swift` | Automatic POTA upload rules: settled-activation holds, 14-day cutoff, pacing and back-off |
+| `POTAReplaceUploadTests.swift` | POTA 24-hour self-delete window decoding and replace plan |
 | `POTAJobsPageTests.swift` | `/user/jobs` decoding: legacy array vs paginated `{count, entries}` |
 | `ImportServiceTests.swift` | Import service tests |
 | `WsjtxFieldServiceTests.swift` | Field WSJT-X adapter (CAR-282): upload markers from the injected target resolver, active-session attach + POTA hand-off, re-broadcast adds no markers, experiment gate blocks `startIfEnabled` — no socket |

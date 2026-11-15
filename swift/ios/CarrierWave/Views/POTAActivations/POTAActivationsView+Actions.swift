@@ -24,22 +24,6 @@ extension POTAActivationsContentView {
         }
     }
 
-    var maintenanceBanner: some View {
-        HStack {
-            Image(systemName: "wrench.and.screwdriver").foregroundStyle(.orange)
-            VStack(alignment: .leading, spacing: 2) {
-                Text("POTA Maintenance Window").font(.subheadline).fontWeight(.medium)
-                Text(
-                    maintenanceTimeRemaining.map { "Uploads disabled. Resumes in \($0)" }
-                        ?? "Uploads temporarily disabled (2330-0400 UTC)"
-                )
-                .font(.caption).foregroundStyle(.secondary)
-            }
-            Spacer()
-        }
-        .padding(.vertical, 4)
-    }
-
     var activationsList: some View {
         List {
             if let progress = bulkUploadProgress {
@@ -48,12 +32,6 @@ extension POTAActivationsContentView {
                         progress: progress,
                         onCancel: { bulkUploadProgress?.isCancelled = true }
                     )
-                }
-            }
-
-            if isInMaintenance {
-                Section {
-                    maintenanceBanner
                 }
             }
 
@@ -139,24 +117,6 @@ extension POTAActivationsContentView {
         }
     }
 
-    func startMaintenanceTimer() {
-        updateMaintenanceTime()
-        maintenanceTimer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [self] _ in
-            Task { @MainActor in
-                updateMaintenanceTime()
-            }
-        }
-    }
-
-    func stopMaintenanceTimer() {
-        maintenanceTimer?.invalidate()
-        maintenanceTimer = nil
-    }
-
-    func updateMaintenanceTime() {
-        maintenanceTimeRemaining = POTAClient.formatMaintenanceTimeRemaining()
-    }
-
     func parkName(for reference: String) -> String? {
         // First try from fetched jobs (most accurate for user's parks)
         if let name = jobs.first(where: {
@@ -214,10 +174,10 @@ extension POTAActivationsContentView {
             matchingJobs: jobsByActivationId[activation.id] ?? [],
             potaClient: potaClient,
             isAuthenticated: isAuthenticated,
-            isInMaintenance: isInMaintenance,
             onUpload: { await performUploadReturningErrors(for: activation) },
             onReject: { activationToReject = activation },
-            onForceReupload: { forceReupload(activation) }
+            onForceReupload: { forceReupload(activation) },
+            onReplaceUpload: { await replaceUpload(activation, plan: $0) }
         )
     }
 }

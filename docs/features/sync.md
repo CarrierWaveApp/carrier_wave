@@ -42,6 +42,14 @@ The old global "Read-Only Mode" (debug setting) has been replaced by this per-se
 - **Upload**: Multipart ADIF, grouped by park reference
 - **Keychain keys**: `pota_token`
 - **Special handling**: QSOs with `myParkReference` are grouped and uploaded per-park
+- **Replacing an upload**: POTA lets the uploader delete a log for 24 hours after
+  uploading it. `/user/jobs` reports the time left per job as
+  `selfDeleteSecondsRemaining`, and `POST /admin/jobs/remove/{jobId}` deletes it.
+  "Replace POTA Upload" in the session detail menu removes every job still inside
+  the window, resets the activation's QSOs to `needsUpload`, and uploads them
+  again. The rule (which jobs to remove, when the window has closed) lives in
+  cw-core `cw_net::pota_jobs::plan_log_replace`. If POTA refuses a removal,
+  nothing local changes.
 
 ### Ham2K LoFi
 
@@ -114,7 +122,9 @@ records against what the services actually report:
 
   **Job status classification:**
   - `completed` (2), `duplicate` (7) → confirmed (POTA has the QSOs)
-  - `failed` (3), `error` (-1) → failed (reset to retry)
+  - `failed` (3+), unknown codes → failed (reset to retry)
+  - `removed` (-1, -10) → ignored. The uploader deleted the log (see below); the
+    job holds no QSOs, so those QSOs count as having no job.
   - `pending` (0), `processing` (1), submitted <30 min ago → in-progress (wait)
   - `pending` (0), `processing` (1), submitted >=30 min ago → stale (reset to retry)
 
@@ -125,6 +135,24 @@ records against what the services actually report:
 
 Upload QSOs with `needsUpload=true` to QRZ and POTA. Each service checks its
 per-service sync mode — services set to "Download Only" skip uploads.
+
+POTA uploads in sync are held to `POTAAutoUploadPolicy` so they do not create
+work for POTA's volunteers (background:
+[investigation](../investigations/2026-04-22-pota-upload-volunteer-load.md)):
+
+- **Settled activations only.** QSOs are grouped by park and UTC day. A group
+  uploads once it has no QSO in the active logging session and its newest
+  pending QSO is at least 30 minutes old, so one activation is one job.
+- **No unprompted backfill.** Groups older than 14 days are left for the
+  "Upload to POTA" buttons.
+- **Pacing.** At most one pass per 10 minutes; each pass with a failed
+  activation doubles the wait, up to 6 hours (`POTAAutoUploadThrottle`,
+  persisted in UserDefaults). A success resets it.
+- **Rejected stays rejected.** The build-bump retry of `uploadRejected`
+  presence records does not apply to POTA.
+
+The manual upload buttons bypass all of this, and "Replace POTA Upload" covers
+a mistake found after the fact.
 
 ### Invariants
 

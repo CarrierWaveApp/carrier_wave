@@ -25,10 +25,6 @@ extension EndSessionFlowView {
                     potaFailedView
                 }
 
-                if isInMaintenance, uploadState == .idle {
-                    maintenanceWarningView
-                }
-
                 if uploadState == .idle || uploadState == .failed {
                     potaActions
                         .padding(.horizontal)
@@ -139,40 +135,23 @@ extension EndSessionFlowView {
         .transition(.scale.combined(with: .opacity))
     }
 
-    private var maintenanceWarningView: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "wrench.and.screwdriver.fill")
-                .font(.largeTitle)
-                .foregroundStyle(.orange)
-            Text("POTA Maintenance Window")
-                .font(.headline)
-            if let remaining = maintenanceTimeRemaining {
-                Text("Uploads unavailable for ~\(remaining)")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-        }
-    }
-
     private var potaActions: some View {
         VStack(spacing: 12) {
-            if !isInMaintenance {
-                Button {
-                    Task { await performUpload() }
-                } label: {
-                    Text(roveStops.isEmpty ? "Upload Now" : "Upload All Parks")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(.green)
+            Button {
+                Task { await performUpload() }
+            } label: {
+                Text(roveStops.isEmpty ? "Upload Now" : "Upload All Parks")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
             }
+            .buttonStyle(.borderedProminent)
+            .tint(.green)
 
             Button {
                 advanceToBragSheet()
             } label: {
-                Text(isInMaintenance ? "Continue" : "Skip")
+                Text("Skip")
                     .font(.subheadline)
             }
             .buttonStyle(.bordered)

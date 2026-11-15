@@ -27,11 +27,6 @@ extension LoggerView {
                     pendingSessionEndParkName = lookupParkName(parkRef)
                     pendingSessionEndQSOCount = qsosNeedingUpload.count
                 }
-
-                pendingSessionEndInMaintenance = POTAClient.isInMaintenanceWindow()
-                pendingSessionEndMaintenanceRemaining =
-                    pendingSessionEndInMaintenance
-                        ? POTAClient.formatMaintenanceTimeRemaining() : nil
             }
         }
 
@@ -100,8 +95,6 @@ extension LoggerView {
         pendingSessionEndQSOCount = 0
         pendingSessionEndQSOs = []
         pendingSessionEndRoveStops = []
-        pendingSessionEndInMaintenance = false
-        pendingSessionEndMaintenanceRemaining = nil
         endSessionActivityItem = nil
     }
 

@@ -50,16 +50,7 @@ struct POTAJobRow: View {
     @State private var showingDetailSheet = false
 
     private var statusColor: Color {
-        switch job.status {
-        case .pending,
-             .processing:
-            .orange
-        case .completed: .green
-        case .failed,
-             .error:
-            .red
-        case .duplicate: .yellow
-        }
+        job.status.tint
     }
 
     private var submittedString: String {
@@ -105,6 +96,14 @@ struct POTAJobDetailSheet: View {
                     LabeledContent("Submitted", value: formattedDate(job.submitted))
                     if let processed = job.processed {
                         LabeledContent("Processed", value: formattedDate(processed))
+                    }
+                    if job.status != .removed, job.selfDeleteSecondsRemaining() > 0 {
+                        LabeledContent(
+                            "Can Be Deleted For",
+                            value: POTAUploadReplacePlan.timeLeftText(
+                                job.selfDeleteSecondsRemaining()
+                            )
+                        )
                     }
                 }
 
@@ -341,15 +340,8 @@ struct POTAJobDetailSheet: View {
     }
 
     private func relatedStatusBadge(_ job: POTAJob) -> some View {
-        let color: Color = switch job.status {
-        case .completed where job.insertedQsos > 0: .green
-        case .completed: .red
-        case .pending,
-             .processing: .orange
-        case .duplicate: .yellow
-        case .failed,
-             .error: .red
-        }
+        let color: Color = job.status == .completed && job.insertedQsos == 0
+            ? .red : job.status.tint
         let label = if job.status == .completed, job.insertedQsos > 0 {
             "Uploaded"
         } else {

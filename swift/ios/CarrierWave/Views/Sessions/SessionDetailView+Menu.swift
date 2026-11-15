@@ -141,6 +141,12 @@ extension SessionDetailView {
                 Label("Brag Sheet", systemImage: "square.and.arrow.up")
             }
         }
+        if canReplaceUpload {
+            Divider()
+            Button { showReplaceConfirmation = true } label: {
+                Label("Replace POTA Upload", systemImage: "arrow.triangle.2.circlepath")
+            }
+        }
         if shouldShowUpload, onReject != nil {
             Divider()
             Button(role: .destructive) { showRejectConfirmation = true } label: {

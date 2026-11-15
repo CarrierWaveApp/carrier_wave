@@ -5,7 +5,7 @@ import SwiftData
 // MARK: - SyncService POTA Upload Methods
 
 extension SyncService {
-    func uploadToPOTA(qsos: [QSO]) async throws -> Int {
+    func uploadToPOTA(qsos: [QSO]) async -> (uploaded: Int, failed: Int) {
         let uploadStartTime = Date()
 
         // Filter out metadata pseudo-modes before processing
@@ -59,7 +59,7 @@ extension SyncService {
                 service: .pota
             )
         }
-        return totalUploaded
+        return (uploaded: totalUploaded, failed: totalFailed)
     }
 
     /// Group QSOs by (park, UTC date) so each upload matches a single POTA activation.

@@ -345,12 +345,7 @@ extension SyncService {
         into result: inout SyncResult,
         debugLog: SyncDebugLog
     ) async {
-        let (uploadResults, potaSkipped) = await uploadToAllDestinations()
-        result.potaMaintenanceSkipped = potaSkipped
-
-        if potaSkipped {
-            debugLog.info("POTA skipped due to maintenance window (0000-0400 UTC)", service: .pota)
-        }
+        let uploadResults = await uploadToAllDestinations()
 
         for (service, uploadResult) in uploadResults {
             switch uploadResult {

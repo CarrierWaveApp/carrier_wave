@@ -41,8 +41,6 @@ struct EndSessionFlowView: View {
     let potaParkName: String?
     let potaQSOsNeedingUpload: Int
     let roveStops: [RoveUploadSummary]
-    let isInMaintenance: Bool
-    let maintenanceTimeRemaining: String?
     let hasNoFrequency: Bool
     let onEndSession: () -> ActivityItem?
     let onUpload: () async -> Bool

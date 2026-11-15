@@ -28,7 +28,6 @@ final class SettingsSyncServiceTests: XCTestCase {
 
         XCTAssertFalse(allKeys.contains("debugMode"))
         // readOnlyMode removed — replaced by per-service SyncMode
-        XCTAssertFalse(allKeys.contains("bypassPOTAMaintenance"))
         // Callsign syncs via the Keychain-backed UserProfile, not KVS (CAR-287)
         XCTAssertFalse(allKeys.contains("loggerDefaultCallsign"))
     }

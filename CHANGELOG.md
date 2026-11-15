@@ -9,6 +9,32 @@ section at the end of this file.
 
 ## [Unreleased]
 
+### Added
+- **Replace a POTA upload after fixing a QSO (iOS).** POTA now lets you delete a
+  log for 24 hours after uploading it. When an activation's upload is still
+  inside that window, the session detail menu offers Replace POTA Upload: it
+  deletes the uploaded log from POTA and uploads the activation's QSOs again as
+  they are now. The POTA Jobs section says how long is left, and the job detail
+  sheet shows each job's remaining time. Logs deleted on pota.app now show as
+  "Removed" instead of as failed uploads.
+
+### Changed
+- **POTA activations upload automatically again (iOS).** Sync uploads a POTA
+  activation on its own once it is finished: the logging session has ended and
+  no QSO has been logged for 30 minutes. Uploads are attempted at most once
+  every 10 minutes and back off (up to 6 hours) while POTA is returning errors.
+  Activations more than 14 days old are never uploaded unprompted, and QSOs
+  POTA rejected are no longer retried after an app update. The Upload to POTA
+  buttons still upload immediately; set POTA to Download Only under Sync
+  Direction in the Logbook Services settings to keep uploads manual. A mistake
+  found after an automatic upload can be fixed with Replace POTA Upload.
+
+### Removed
+- **POTA maintenance window (iOS).** POTA no longer takes its servers down
+  from 2330 to 0400 UTC, so the app no longer blocks POTA sync and uploads
+  during those hours. The maintenance banners, the end-of-session warning and
+  the Bypass POTA Maintenance debug toggle are gone.
+
 ### Fixed
 - **Brag sheet maps center on your QTH (iOS).** Session, activation and TOTA
   brag-sheet maps now center horizontally on the operator QTH and zoom to the

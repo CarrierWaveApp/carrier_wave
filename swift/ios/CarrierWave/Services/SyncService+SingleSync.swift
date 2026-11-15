@@ -94,10 +94,6 @@ extension SyncService {
             lastSyncDate = Date()
         }
 
-        if POTAClient.isInMaintenanceWindow() {
-            throw POTAError.maintenanceWindow
-        }
-
         // Download — scope raw POTAFetchedQSO so it's released before conversion
         let (fetched, remoteMap) = try await downloadPOTAQSOs()
 
@@ -114,8 +110,8 @@ extension SyncService {
 
         // Reconcile, repair, upload
         let reconcileResult = await reconcileAndRepairPOTA(remoteMap: remoteMap)
-        potaRemoteQSOMap = nil
         let uploaded = try await uploadPOTAPhase(downloadedCount: fetched.count)
+        potaRemoteQSOMap = nil
 
         storeReport(buildReport(
             service: .pota,
@@ -137,7 +133,7 @@ extension SyncService {
             let output = try await withTimeout(
                 seconds: syncTimeoutSeconds, service: .pota
             ) { [self] in
-                try await self.potaClient.fetchAllQSOs { [weak self] processed, total, phase, qsoCount in
+                try await potaClient.fetchAllQSOs { [weak self] processed, total, phase, qsoCount in
                     Task { @MainActor [weak self] in
                         guard let self else {
                             return
@@ -177,7 +173,7 @@ extension SyncService {
         syncPhase = .downloading(service: .lofi)
         serviceSyncStates[.lofi] = .downloading
         let downloadResult = try await withTimeout(seconds: syncTimeoutSeconds, service: .lofi) { [self] in
-            try await self.lofiClient.fetchAllQsosSinceLastSync { [weak self] progress in
+            try await lofiClient.fetchAllQsosSinceLastSync { [weak self] progress in
                 Task { @MainActor [weak self] in
                     guard let self else {
                         return
@@ -407,11 +403,22 @@ extension SyncService {
         return result
     }
 
-    /// POTA upload is user-driven via the ADIFExportSheet "Upload to POTA" button.
-    /// Automatic uploads were removed to reduce POTA volunteer triage load.
+    /// POTA upload phase — settled activations only, paced (POTAAutoUploadPolicy).
+    /// Returns uploaded count.
     private func uploadPOTAPhase(downloadedCount: Int) async throws -> Int {
-        serviceSyncStates[.pota] = .complete(downloaded: downloadedCount, uploaded: 0)
-        return 0
+        var uploaded = 0
+        if isUploadEnabled(for: .pota) {
+            switch try await autoUploadToPOTA(candidates: fetchQSOsNeedingUpload()) {
+            case .idle:
+                break
+            case let .uploaded(count):
+                uploaded = count
+            case let .failure(error):
+                throw error
+            }
+        }
+        serviceSyncStates[.pota] = .complete(downloaded: downloadedCount, uploaded: uploaded)
+        return uploaded
     }
 
     /// Club Log upload phase — returns uploaded count

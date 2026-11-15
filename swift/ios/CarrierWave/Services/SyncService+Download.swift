@@ -28,7 +28,6 @@ extension SyncService {
     private struct ServiceConfiguration {
         let qrzHasMappings: Bool
         let potaIsConfigured: Bool
-        let potaInMaintenance: Bool
         let lofiReady: Bool
         let hamrsReady: Bool
         let lotwHasCreds: Bool
@@ -43,7 +42,6 @@ extension SyncService {
             // Use isConfigured (has stored credentials) instead of isAuthenticated (has valid token)
             // This allows POTA sync to proceed even if token expired - ensureValidToken will re-auth
             potaIsConfigured: potaAuthService.isConfigured,
-            potaInMaintenance: POTAClient.isInMaintenanceWindow(),
             lofiReady: lofiClient.isConfigured && lofiClient.isLinked,
             hamrsReady: hamrsClient.isConfigured,
             lotwHasCreds: lotwClient.hasCredentials(),
@@ -66,8 +64,8 @@ extension SyncService {
         } else {
             debugLog.debug("QRZ download skipped: no callsign mappings configured", service: .qrz)
         }
-        // POTA: skip during maintenance window, uses extended timeout
-        if config.potaIsConfigured, !config.potaInMaintenance, isDownloadEnabled(for: .pota) {
+        // POTA uses extended timeout
+        if config.potaIsConfigured, isDownloadEnabled(for: .pota) {
             group.addTask { await self.downloadFromPOTA(timeout: extendedTimeout) }
         }
         if config.lofiReady, isDownloadEnabled(for: .lofi) {
@@ -221,7 +219,7 @@ extension SyncService {
 
         do {
             let output = try await withTimeout(seconds: timeout, service: .pota) { [self] in
-                try await self.potaClient.fetchAllQSOs { [weak self] processed, total, phase, qsoCount in
+                try await potaClient.fetchAllQSOs { [weak self] processed, total, phase, qsoCount in
                     Task { @MainActor [weak self] in
                         guard let self else {
                             return
@@ -308,7 +306,7 @@ extension SyncService {
 
     private func fetchLoFiQSOs(timeout: TimeInterval) async throws -> LoFiDownloadResult {
         try await withTimeout(seconds: timeout, service: .lofi) { [self] in
-            try await self.lofiClient.fetchAllQsosSinceLastSync { [weak self] progress in
+            try await lofiClient.fetchAllQsosSinceLastSync { [weak self] progress in
                 Task { @MainActor [weak self] in
                     guard let self else {
                         return

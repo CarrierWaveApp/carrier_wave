@@ -30,8 +30,6 @@ struct POTAUploadPromptSheet: View {
     let parkName: String?
     let qsoCount: Int
     let roveStops: [RoveUploadSummary]
-    let isInMaintenance: Bool
-    let maintenanceTimeRemaining: String?
     let onUpload: () async -> Bool
     let onLater: () -> Void
     let onDontAskAgain: () -> Void
@@ -78,11 +76,6 @@ struct POTAUploadPromptSheet: View {
                         } else if uploadState == .failed {
                             failedView
                         }
-
-                        // Maintenance warning
-                        if isInMaintenance, uploadState == .idle {
-                            maintenanceWarning
-                        }
                     }
                     .padding(.horizontal)
                     .padding(.top)
@@ -90,14 +83,8 @@ struct POTAUploadPromptSheet: View {
 
                 // Action buttons pinned at bottom
                 if uploadState == .idle || uploadState == .failed {
-                    Group {
-                        if isInMaintenance {
-                            maintenanceActions
-                        } else {
-                            uploadActions
-                        }
-                    }
-                    .padding()
+                    uploadActions
+                        .padding()
                 }
             }
             .navigationTitle("Upload to POTA?")
@@ -224,45 +211,6 @@ struct POTAUploadPromptSheet: View {
         .transition(.scale.combined(with: .opacity))
     }
 
-    // MARK: - Maintenance
-
-    private var maintenanceWarning: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "wrench.and.screwdriver.fill")
-                .font(.system(size: 48))
-                .foregroundStyle(.orange)
-            Text("POTA Maintenance Window")
-                .font(.headline)
-            if let remaining = maintenanceTimeRemaining {
-                Text("Uploads unavailable for ~\(remaining)")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            } else {
-                Text("Uploads temporarily unavailable")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-            Text("Upload later from the Sessions tab.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-        }
-    }
-
-    private var maintenanceActions: some View {
-        VStack(spacing: 12) {
-            Button {
-                onLater()
-            } label: {
-                Text("OK")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-            }
-            .buttonStyle(.borderedProminent)
-        }
-    }
-
     private var uploadActions: some View {
         VStack(spacing: 12) {
             Button {
@@ -329,8 +277,6 @@ struct POTAUploadPromptSheet: View {
         parkName: "Acadia National Park",
         qsoCount: 15,
         roveStops: [],
-        isInMaintenance: false,
-        maintenanceTimeRemaining: nil,
         onUpload: {
             try? await Task.sleep(for: .seconds(1))
             return true
@@ -362,26 +308,10 @@ struct POTAUploadPromptSheet: View {
                 qsoCount: 7
             ),
         ],
-        isInMaintenance: false,
-        maintenanceTimeRemaining: nil,
         onUpload: {
             try? await Task.sleep(for: .seconds(1))
             return true
         },
-        onLater: {},
-        onDontAskAgain: {}
-    )
-}
-
-#Preview("Maintenance") {
-    POTAUploadPromptSheet(
-        parkReference: "US-0001",
-        parkName: "Acadia National Park",
-        qsoCount: 15,
-        roveStops: [],
-        isInMaintenance: true,
-        maintenanceTimeRemaining: "2h 15m",
-        onUpload: { false },
         onLater: {},
         onDontAskAgain: {}
     )

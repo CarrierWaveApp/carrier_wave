@@ -287,10 +287,6 @@ During sync, Carrier Wave reconciles upload status from the POTA job log:
 
 In Settings -> Advanced -> Debug Mode, a **Force Reupload** button resets all QSOs in the activation to pending and triggers a fresh upload. Use this if upload status is out of sync.
 
-### Maintenance Window Handling
-
-POTA servers are offline from **2330-0400 UTC** for maintenance. If you end a session during this window, Carrier Wave warns you and suggests uploading later.
-
 ## PSK Reporter: Who Heard Me?
 
 After a session using digital modes (FT8, FT4, WSPR), the "Who Heard Me?" section queries PSK Reporter data for your callsign during the session time window:

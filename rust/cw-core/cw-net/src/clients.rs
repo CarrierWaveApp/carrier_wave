@@ -24,6 +24,7 @@ use crate::lofi::{
     LoFiRegistrationRequest, LoFiRegistrationResponse,
 };
 use crate::pota::{PotaSpot, PotaSpotPost};
+use crate::pota_jobs::{remove_job_path, PotaJobsPage};
 use crate::pskreporter::{self, PskReporterSpot};
 use crate::rbn::RbnSpot;
 use crate::sota::{SotaSpot, SotaSpotPost};
@@ -125,6 +126,37 @@ impl PotaClient {
     pub async fn post_spot(&self, body: &PotaSpotPost) -> Result<(), HttpError> {
         let url = format!("{}/spot", self.base_url);
         self.http.post_json_unit(&url, body).await
+    }
+
+    /// Fetch one page of the signed-in user's upload jobs. `id_token` is the
+    /// Cognito id token, sent raw (no `Bearer`). `showAll=1` keeps removed
+    /// jobs in the paginated response, as the legacy array always did.
+    pub async fn fetch_jobs_page(
+        &self,
+        id_token: &str,
+        page: u32,
+        size: u32,
+    ) -> Result<PotaJobsPage, HttpError> {
+        let url = format!("{}/user/jobs?showAll=1&page={page}&size={size}", self.base_url);
+        let request = self.http.inner().get(&url).header("Authorization", id_token);
+        let bytes = self.http.send_bytes(request).await?;
+        let json = String::from_utf8(bytes).map_err(|_| HttpError::NotUtf8)?;
+        PotaJobsPage::parse(&json)
+            .ok_or_else(|| HttpError::Parse("unrecognized POTA jobs response shape".into()))
+    }
+
+    /// Remove an upload job. The server allows this for the uploader while
+    /// the job's `selfDeleteSecondsRemaining` is positive.
+    pub async fn remove_job(&self, id_token: &str, job_id: i64) -> Result<(), HttpError> {
+        let url = format!("{}{}", self.base_url, remove_job_path(job_id));
+        let request = self
+            .http
+            .inner()
+            .post(&url)
+            .header("Authorization", id_token)
+            .json(&serde_json::json!({}));
+        self.http.send_bytes(request).await?;
+        Ok(())
     }
 }
 

@@ -180,7 +180,9 @@ extension SyncService {
         var keys = POTAActivationKeys()
 
         for job in jobs {
-            guard let callsign = job.callsignUsed else {
+            // A removed job (self-deleted within POTA's 24-hour window) holds
+            // no QSOs and says nothing about the upload that replaced it.
+            guard job.status != .removed, let callsign = job.callsignUsed else {
                 continue
             }
             let normalizedCall = POTAClient.normalizeCallsign(callsign)

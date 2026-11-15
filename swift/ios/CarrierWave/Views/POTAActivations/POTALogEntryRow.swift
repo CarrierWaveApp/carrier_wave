@@ -296,13 +296,6 @@ struct POTALogEntryRow: View {
     }
 
     private func jobStatusColor(_ status: POTAJobStatus) -> Color {
-        switch status {
-        case .pending,
-             .processing: .orange
-        case .completed: .green
-        case .failed,
-             .error: .red
-        case .duplicate: .yellow
-        }
+        status.tint
     }
 }

@@ -32,6 +32,32 @@ extension SessionDetailView {
     }
 }
 
+// MARK: - Replace Upload
+
+extension SessionDetailView {
+    /// Whether the uploaded log can still be deleted from POTA and re-uploaded.
+    var replacePlan: POTAUploadReplacePlan {
+        POTAUploadReplacePlan(jobs: matchingJobs)
+    }
+
+    var canReplaceUpload: Bool {
+        onReplaceUpload != nil && isAuthenticated && !isUploading && replacePlan.canReplace
+    }
+
+    func performReplaceUpload() {
+        guard let onReplaceUpload else {
+            return
+        }
+        let plan = replacePlan
+        isUploading = true
+        Task {
+            uploadErrors = await onReplaceUpload(plan)
+            isUploading = false
+            await loadQSOs()
+        }
+    }
+}
+
 // MARK: - Upload Section
 
 extension SessionDetailView {
@@ -150,6 +176,10 @@ extension SessionDetailView {
             }
         } header: {
             Text("POTA Jobs")
+        } footer: {
+            if onReplaceUpload != nil {
+                POTAReplaceUploadFooter(plan: replacePlan)
+            }
         }
     }
 }
@@ -208,10 +238,7 @@ extension SessionDetailView {
     }
 
     func loadActivationSession() {
-        guard let activation else {
-            return
-        }
-        guard let sessionId = activation.qsos
+        guard let activation, let sessionId = activation.qsos
             .compactMap(\.loggingSessionId).first
         else {
             return

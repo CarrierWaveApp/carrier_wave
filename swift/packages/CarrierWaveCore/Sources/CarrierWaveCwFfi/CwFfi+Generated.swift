@@ -27836,6 +27836,344 @@ public func FfiConverterTypeFfiPotaAwards_lower(_ value: FfiPotaAwards) -> RustB
 }
 
 
+/**
+ * One upload job from `/user/jobs`.
+ */
+public struct FfiPotaJob: Equatable, Hashable {
+    public var jobId: Int64
+    /**
+     * 0 pending, 1 processing, 2 completed, 3+ failure states, 7 duplicate,
+     * -1 / -10 removed.
+     */
+    public var status: Int64
+    /**
+     * ISO-8601 without a timezone suffix (UTC).
+     */
+    public var submitted: String?
+    public var processed: String?
+    public var reference: String?
+    public var parkName: String?
+    public var location: String?
+    public var totalQsos: Int64?
+    public var insertedQsos: Int64?
+    public var callsignUsed: String?
+    public var userComment: String?
+    public var firstQso: String?
+    public var lastQso: String?
+    /**
+     * UTC day of the first QSO as `yyyy-MM-dd`, for activation matching.
+     */
+    public var firstQsoUtcDate: String?
+    /**
+     * Seconds left in the self-delete window when the list was fetched.
+     */
+    public var selfDeleteSecondsRemaining: Double
+    public var isRemoved: Bool
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(jobId: Int64, 
+        /**
+         * 0 pending, 1 processing, 2 completed, 3+ failure states, 7 duplicate,
+         * -1 / -10 removed.
+         */status: Int64, 
+        /**
+         * ISO-8601 without a timezone suffix (UTC).
+         */submitted: String?, processed: String?, reference: String?, parkName: String?, location: String?, totalQsos: Int64?, insertedQsos: Int64?, callsignUsed: String?, userComment: String?, firstQso: String?, lastQso: String?, 
+        /**
+         * UTC day of the first QSO as `yyyy-MM-dd`, for activation matching.
+         */firstQsoUtcDate: String?, 
+        /**
+         * Seconds left in the self-delete window when the list was fetched.
+         */selfDeleteSecondsRemaining: Double, isRemoved: Bool) {
+        self.jobId = jobId
+        self.status = status
+        self.submitted = submitted
+        self.processed = processed
+        self.reference = reference
+        self.parkName = parkName
+        self.location = location
+        self.totalQsos = totalQsos
+        self.insertedQsos = insertedQsos
+        self.callsignUsed = callsignUsed
+        self.userComment = userComment
+        self.firstQso = firstQso
+        self.lastQso = lastQso
+        self.firstQsoUtcDate = firstQsoUtcDate
+        self.selfDeleteSecondsRemaining = selfDeleteSecondsRemaining
+        self.isRemoved = isRemoved
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension FfiPotaJob: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeFfiPotaJob: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> FfiPotaJob {
+        return
+            try FfiPotaJob(
+                jobId: FfiConverterInt64.read(from: &buf), 
+                status: FfiConverterInt64.read(from: &buf), 
+                submitted: FfiConverterOptionString.read(from: &buf), 
+                processed: FfiConverterOptionString.read(from: &buf), 
+                reference: FfiConverterOptionString.read(from: &buf), 
+                parkName: FfiConverterOptionString.read(from: &buf), 
+                location: FfiConverterOptionString.read(from: &buf), 
+                totalQsos: FfiConverterOptionInt64.read(from: &buf), 
+                insertedQsos: FfiConverterOptionInt64.read(from: &buf), 
+                callsignUsed: FfiConverterOptionString.read(from: &buf), 
+                userComment: FfiConverterOptionString.read(from: &buf), 
+                firstQso: FfiConverterOptionString.read(from: &buf), 
+                lastQso: FfiConverterOptionString.read(from: &buf), 
+                firstQsoUtcDate: FfiConverterOptionString.read(from: &buf), 
+                selfDeleteSecondsRemaining: FfiConverterDouble.read(from: &buf), 
+                isRemoved: FfiConverterBool.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: FfiPotaJob, into buf: inout [UInt8]) {
+        FfiConverterInt64.write(value.jobId, into: &buf)
+        FfiConverterInt64.write(value.status, into: &buf)
+        FfiConverterOptionString.write(value.submitted, into: &buf)
+        FfiConverterOptionString.write(value.processed, into: &buf)
+        FfiConverterOptionString.write(value.reference, into: &buf)
+        FfiConverterOptionString.write(value.parkName, into: &buf)
+        FfiConverterOptionString.write(value.location, into: &buf)
+        FfiConverterOptionInt64.write(value.totalQsos, into: &buf)
+        FfiConverterOptionInt64.write(value.insertedQsos, into: &buf)
+        FfiConverterOptionString.write(value.callsignUsed, into: &buf)
+        FfiConverterOptionString.write(value.userComment, into: &buf)
+        FfiConverterOptionString.write(value.firstQso, into: &buf)
+        FfiConverterOptionString.write(value.lastQso, into: &buf)
+        FfiConverterOptionString.write(value.firstQsoUtcDate, into: &buf)
+        FfiConverterDouble.write(value.selfDeleteSecondsRemaining, into: &buf)
+        FfiConverterBool.write(value.isRemoved, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeFfiPotaJob_lift(_ buf: RustBuffer) throws -> FfiPotaJob {
+    return try FfiConverterTypeFfiPotaJob.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeFfiPotaJob_lower(_ value: FfiPotaJob) -> RustBuffer {
+    return FfiConverterTypeFfiPotaJob.lower(value)
+}
+
+
+/**
+ * The part of a job the replace rule needs.
+ */
+public struct FfiPotaJobWindow: Equatable, Hashable {
+    public var jobId: Int64
+    public var status: Int64
+    public var selfDeleteSecondsRemaining: Double
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(jobId: Int64, status: Int64, selfDeleteSecondsRemaining: Double) {
+        self.jobId = jobId
+        self.status = status
+        self.selfDeleteSecondsRemaining = selfDeleteSecondsRemaining
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension FfiPotaJobWindow: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeFfiPotaJobWindow: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> FfiPotaJobWindow {
+        return
+            try FfiPotaJobWindow(
+                jobId: FfiConverterInt64.read(from: &buf), 
+                status: FfiConverterInt64.read(from: &buf), 
+                selfDeleteSecondsRemaining: FfiConverterDouble.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: FfiPotaJobWindow, into buf: inout [UInt8]) {
+        FfiConverterInt64.write(value.jobId, into: &buf)
+        FfiConverterInt64.write(value.status, into: &buf)
+        FfiConverterDouble.write(value.selfDeleteSecondsRemaining, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeFfiPotaJobWindow_lift(_ buf: RustBuffer) throws -> FfiPotaJobWindow {
+    return try FfiConverterTypeFfiPotaJobWindow.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeFfiPotaJobWindow_lower(_ value: FfiPotaJobWindow) -> RustBuffer {
+    return FfiConverterTypeFfiPotaJobWindow.lower(value)
+}
+
+
+/**
+ * One page of `/user/jobs` (paginated object or legacy bare array).
+ */
+public struct FfiPotaJobsPage: Equatable, Hashable {
+    public var count: Int64
+    public var pending: Int64
+    public var entries: [FfiPotaJob]
+    public var isLegacyArray: Bool
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(count: Int64, pending: Int64, entries: [FfiPotaJob], isLegacyArray: Bool) {
+        self.count = count
+        self.pending = pending
+        self.entries = entries
+        self.isLegacyArray = isLegacyArray
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension FfiPotaJobsPage: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeFfiPotaJobsPage: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> FfiPotaJobsPage {
+        return
+            try FfiPotaJobsPage(
+                count: FfiConverterInt64.read(from: &buf), 
+                pending: FfiConverterInt64.read(from: &buf), 
+                entries: FfiConverterSequenceTypeFfiPotaJob.read(from: &buf), 
+                isLegacyArray: FfiConverterBool.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: FfiPotaJobsPage, into buf: inout [UInt8]) {
+        FfiConverterInt64.write(value.count, into: &buf)
+        FfiConverterInt64.write(value.pending, into: &buf)
+        FfiConverterSequenceTypeFfiPotaJob.write(value.entries, into: &buf)
+        FfiConverterBool.write(value.isLegacyArray, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeFfiPotaJobsPage_lift(_ buf: RustBuffer) throws -> FfiPotaJobsPage {
+    return try FfiConverterTypeFfiPotaJobsPage.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeFfiPotaJobsPage_lower(_ value: FfiPotaJobsPage) -> RustBuffer {
+    return FfiConverterTypeFfiPotaJobsPage.lower(value)
+}
+
+
+/**
+ * What replacing an activation's upload involves.
+ */
+public struct FfiPotaLogReplacePlan: Equatable, Hashable {
+    /**
+     * Jobs to remove before uploading the corrected log. Empty when blocked.
+     */
+    public var removeJobIds: [Int64]
+    /**
+     * Seconds until the first of those jobs can no longer be removed.
+     */
+    public var secondsLeft: Double
+    public var blocker: FfiPotaLogReplaceBlocker?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * Jobs to remove before uploading the corrected log. Empty when blocked.
+         */removeJobIds: [Int64], 
+        /**
+         * Seconds until the first of those jobs can no longer be removed.
+         */secondsLeft: Double, blocker: FfiPotaLogReplaceBlocker?) {
+        self.removeJobIds = removeJobIds
+        self.secondsLeft = secondsLeft
+        self.blocker = blocker
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension FfiPotaLogReplacePlan: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeFfiPotaLogReplacePlan: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> FfiPotaLogReplacePlan {
+        return
+            try FfiPotaLogReplacePlan(
+                removeJobIds: FfiConverterSequenceInt64.read(from: &buf), 
+                secondsLeft: FfiConverterDouble.read(from: &buf), 
+                blocker: FfiConverterOptionTypeFfiPotaLogReplaceBlocker.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: FfiPotaLogReplacePlan, into buf: inout [UInt8]) {
+        FfiConverterSequenceInt64.write(value.removeJobIds, into: &buf)
+        FfiConverterDouble.write(value.secondsLeft, into: &buf)
+        FfiConverterOptionTypeFfiPotaLogReplaceBlocker.write(value.blocker, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeFfiPotaLogReplacePlan_lift(_ buf: RustBuffer) throws -> FfiPotaLogReplacePlan {
+    return try FfiConverterTypeFfiPotaLogReplacePlan.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeFfiPotaLogReplacePlan_lower(_ value: FfiPotaLogReplacePlan) -> RustBuffer {
+    return FfiConverterTypeFfiPotaLogReplacePlan.lower(value)
+}
+
+
 public struct FfiPotaPark: Equatable, Hashable {
     public var reference: String
     public var name: String
@@ -42663,6 +43001,82 @@ public func FfiConverterTypeFfiPanadapterSource_lower(_ value: FfiPanadapterSour
 // Note that we don't yet support `indirect` for enums.
 // See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
 /**
+ * Why an activation's upload cannot be replaced.
+ */
+
+public enum FfiPotaLogReplaceBlocker: Equatable, Hashable {
+    
+    /**
+     * Nothing was uploaded, or every job is already removed.
+     */
+    case nothingToRemove
+    /**
+     * A job that holds QSOs is past its 24-hour self-delete window.
+     */
+    case windowExpired
+
+
+
+
+
+}
+
+#if compiler(>=6)
+extension FfiPotaLogReplaceBlocker: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeFfiPotaLogReplaceBlocker: FfiConverterRustBuffer {
+    typealias SwiftType = FfiPotaLogReplaceBlocker
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> FfiPotaLogReplaceBlocker {
+        let variant: Int32 = try readInt(&buf)
+        switch variant {
+        
+        case 1: return .nothingToRemove
+        
+        case 2: return .windowExpired
+        
+        default: throw UniffiInternalError.unexpectedEnumCase
+        }
+    }
+
+    public static func write(_ value: FfiPotaLogReplaceBlocker, into buf: inout [UInt8]) {
+        switch value {
+        
+        
+        case .nothingToRemove:
+            writeInt(&buf, Int32(1))
+        
+        
+        case .windowExpired:
+            writeInt(&buf, Int32(2))
+        
+        }
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeFfiPotaLogReplaceBlocker_lift(_ buf: RustBuffer) throws -> FfiPotaLogReplaceBlocker {
+    return try FfiConverterTypeFfiPotaLogReplaceBlocker.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeFfiPotaLogReplaceBlocker_lower(_ value: FfiPotaLogReplaceBlocker) -> RustBuffer {
+    return FfiConverterTypeFfiPotaLogReplaceBlocker.lower(value)
+}
+
+
+// Note that we don't yet support `indirect` for enums.
+// See https://github.com/mozilla/uniffi-rs/issues/396 for further discussion.
+/**
  * Why a session stopped. FFI mirror of the Swift `PropagationStopReason`
  * (`user` / `duration` / `radio-fault`); the codebase prefers `uniffi::Enum`
  * over stringly-typed reasons. The persisted artifact renders it
@@ -45821,6 +46235,30 @@ fileprivate struct FfiConverterOptionTypeFfiPoloNotesEntry: FfiConverterRustBuff
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterOptionTypeFfiPotaJobsPage: FfiConverterRustBuffer {
+    typealias SwiftType = FfiPotaJobsPage?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeFfiPotaJobsPage.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeFfiPotaJobsPage.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterOptionTypeFfiPotaPark: FfiConverterRustBuffer {
     typealias SwiftType = FfiPotaPark?
 
@@ -46629,6 +47067,30 @@ fileprivate struct FfiConverterOptionTypeFfiLoggerCommand: FfiConverterRustBuffe
         switch try readInt(&buf) as Int8 {
         case 0: return nil
         case 1: return try FfiConverterTypeFfiLoggerCommand.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionTypeFfiPotaLogReplaceBlocker: FfiConverterRustBuffer {
+    typealias SwiftType = FfiPotaLogReplaceBlocker?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeFfiPotaLogReplaceBlocker.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeFfiPotaLogReplaceBlocker.read(from: &buf)
         default: throw UniffiInternalError.unexpectedOptionalTag
         }
     }
@@ -48995,6 +49457,56 @@ fileprivate struct FfiConverterSequenceTypeFfiPlannedAlert: FfiConverterRustBuff
         seq.reserveCapacity(Int(len))
         for _ in 0 ..< len {
             seq.append(try FfiConverterTypeFfiPlannedAlert.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeFfiPotaJob: FfiConverterRustBuffer {
+    typealias SwiftType = [FfiPotaJob]
+
+    public static func write(_ value: [FfiPotaJob], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeFfiPotaJob.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [FfiPotaJob] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [FfiPotaJob]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeFfiPotaJob.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeFfiPotaJobWindow: FfiConverterRustBuffer {
+    typealias SwiftType = [FfiPotaJobWindow]
+
+    public static func write(_ value: [FfiPotaJobWindow], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeFfiPotaJobWindow.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [FfiPotaJobWindow] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [FfiPotaJobWindow]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeFfiPotaJobWindow.read(from: &buf))
         }
         return seq
     }
@@ -52481,6 +52993,41 @@ public func decodePotaResponse(json: String) -> [FfiPotaSpot]?  {
 })
 }
 /**
+ * Decode a `/user/jobs` response body. Returns `None` if the body is
+ * neither the paginated object nor the legacy array.
+ */
+public func decodePotaJobsPage(json: String) -> FfiPotaJobsPage?  {
+    return try!  FfiConverterOptionTypeFfiPotaJobsPage.lift(try! rustCall() {
+    uniffi_cw_ffi_fn_func_decode_pota_jobs_page(
+        FfiConverterString.lower(json),$0
+    )
+})
+}
+/**
+ * Decide whether the upload behind one activation can be replaced (removed
+ * and uploaded again). `jobs` are the jobs matched to that activation;
+ * `elapsed_seconds` is how long ago the job list was fetched.
+ */
+public func potaLogReplacePlan(jobs: [FfiPotaJobWindow], elapsedSeconds: Double) -> FfiPotaLogReplacePlan  {
+    return try!  FfiConverterTypeFfiPotaLogReplacePlan_lift(try! rustCall() {
+    uniffi_cw_ffi_fn_func_pota_log_replace_plan(
+        FfiConverterSequenceTypeFfiPotaJobWindow.lower(jobs),
+        FfiConverterDouble.lower(elapsedSeconds),$0
+    )
+})
+}
+/**
+ * Path (relative to `https://api.pota.app`) that removes an upload job.
+ * Send an authenticated `POST` with an empty JSON object body.
+ */
+public func potaRemoveJobPath(jobId: Int64) -> String  {
+    return try!  FfiConverterString.lift(try! rustCall() {
+    uniffi_cw_ffi_fn_func_pota_remove_job_path(
+        FfiConverterInt64.lower(jobId),$0
+    )
+})
+}
+/**
  * Return the ported RBN + PSK Reporter poll cadences.
  */
 public func propagationPollCadence() -> FfiPropagationCadence  {
@@ -53430,6 +53977,15 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_cw_ffi_checksum_func_decode_pota_response() != 33010) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_cw_ffi_checksum_func_decode_pota_jobs_page() != 58837) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_cw_ffi_checksum_func_pota_log_replace_plan() != 63375) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_cw_ffi_checksum_func_pota_remove_job_path() != 25165) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_cw_ffi_checksum_func_propagation_poll_cadence() != 5346) {
