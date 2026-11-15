@@ -83,7 +83,7 @@ enum TOTABragSheetRenderer {
 
         // Azimuthal needs a resolved operator QTH as its projection center;
         // with none, fall through to MapKit rather than a (0,0)-centered map.
-        // MapKit can't show more than 180° of longitude, so QTH-centered
+        // MapKit can't show more than 180° of longitude, so QTH-anchored
         // fits wider than that use the Rust renderer in Midnight.
         let ffiStyle: ShareMapStyle? =
             if style.ffiStyle != nil {
@@ -104,7 +104,7 @@ enum TOTABragSheetRenderer {
             if let image = await ShareMapFFIRenderer.render(
                 pins: pins, myCoordinate: myCoordinate,
                 style: ffiStyle, size: size, scale: 2.0,
-                qthCentered: true
+                qthAnchored: true
             ) {
                 return image
             }
@@ -121,7 +121,7 @@ enum TOTABragSheetRenderer {
         size: CGSize
     ) async -> UIImage? {
         let coords = markers.map(\.coordinate)
-        guard let region = ActivationMapHelpers.qthCenteredRegion(
+        guard let region = ActivationMapHelpers.qthAnchoredRegion(
             qsoCoordinates: coords, myCoordinate: myCoordinate
         ) else {
             return nil

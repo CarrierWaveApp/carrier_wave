@@ -72,15 +72,16 @@ enum ShareMapFFIRenderer {
     /// `myCoordinate` (when present) to every pin, and the operator QTH
     /// center marker is drawn when `myCoordinate` is set. Returns `nil` when
     /// the style is not a custom style or the FFI render fails.
-    /// `qthCentered` frames flat styles on the operator QTH (brag sheets)
-    /// instead of the bounds midpoint; it has no effect without a QTH.
+    /// `qthAnchored` frames flat styles with the brag-sheet fit (longitudes
+    /// measured from the operator QTH, tight box plus a small margin) instead
+    /// of the bounds midpoint; it has no effect without a QTH.
     static func render(
         pins: [Pin],
         myCoordinate: CLLocationCoordinate2D?,
         style: ShareMapStyle,
         size: CGSize,
         scale: CGFloat,
-        qthCentered: Bool = false
+        qthAnchored: Bool = false
     ) async -> UIImage? {
         guard let ffiStyle = style.ffiStyle else {
             return nil
@@ -90,7 +91,7 @@ enum ShareMapFFIRenderer {
             pins: pins, myCoordinate: myCoordinate,
             ffiStyle: ffiStyle,
             pixelSize: CGSize(width: size.width * scale, height: size.height * scale),
-            qthCentered: qthCentered
+            qthAnchored: qthAnchored
         )
 
         let rendered: FfiShareMapImage? = await Task.detached {
@@ -137,7 +138,7 @@ enum ShareMapFFIRenderer {
         myCoordinate: CLLocationCoordinate2D?,
         ffiStyle: FfiShareMapStyle,
         pixelSize: CGSize,
-        qthCentered: Bool
+        qthAnchored: Bool
     ) -> FfiShareMapInput {
         let sharePins = pins.map { pin -> FfiSharePin in
             if let color = pin.color {
@@ -177,7 +178,7 @@ enum ShareMapFFIRenderer {
         let frame = viewportFrame(
             pins: pins, myCoordinate: myCoordinate,
             ffiStyle: ffiStyle, pixels: (width, height),
-            qthCentered: qthCentered
+            qthAnchored: qthAnchored
         )
 
         return FfiShareMapInput(
@@ -205,7 +206,7 @@ enum ShareMapFFIRenderer {
         myCoordinate: CLLocationCoordinate2D?,
         ffiStyle: FfiShareMapStyle,
         pixels: (width: UInt32, height: UInt32),
-        qthCentered: Bool
+        qthAnchored: Bool
     ) -> ViewportFrame {
         guard ffiStyle != .azimuthal else {
             return ViewportFrame(
@@ -213,8 +214,8 @@ enum ShareMapFFIRenderer {
                 latSpan: 0, lonSpan: 0
             )
         }
-        if qthCentered, let origin = myCoordinate,
-           let region = ActivationMapHelpers.qthCenteredFlatViewport(
+        if qthAnchored, let origin = myCoordinate,
+           let region = ActivationMapHelpers.qthAnchoredFlatViewport(
                qsoCoordinates: pins.map(\.coordinate),
                myCoordinate: origin,
                aspect: Double(pixels.width) / Double(pixels.height)

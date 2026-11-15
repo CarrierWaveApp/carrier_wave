@@ -18,9 +18,9 @@ struct ThemedMapImage: View {
     /// Optional per-coordinate pin colors (parallel to `coordinates`).
     /// When `nil`, all pins render in the default blue.
     var pinColors: [UIColor]?
-    /// Frame flat styles on the operator QTH instead of the bounds midpoint
-    /// (brag sheets).
-    var qthCentered = false
+    /// Frame flat styles with the QTH-anchored brag-sheet fit instead of the
+    /// bounds midpoint.
+    var qthAnchored = false
 
     var body: some View {
         GeometryReader { geo in
@@ -80,7 +80,7 @@ struct ThemedMapImage: View {
             style: style,
             size: size,
             scale: displayScale,
-            qthCentered: qthCentered
+            qthAnchored: qthAnchored
         )
     }
 }

@@ -253,7 +253,7 @@ enum ActivationShareRenderer {
         }
 
         guard
-            let region = ActivationMapHelpers.qthCenteredRegion(
+            let region = ActivationMapHelpers.qthAnchoredRegion(
                 qsoCoordinates: coordinates,
                 myCoordinate: myCoordinate
             )
@@ -283,7 +283,7 @@ enum ActivationShareRenderer {
 
     /// Rust-rendered map, framed on the operator QTH. Used for the custom
     /// styles (azimuthal + midnight/warm/ocean/arctic/ember), and in Midnight
-    /// for MapKit styles whose QTH-centered fit is wider than MapKit can show.
+    /// for MapKit styles whose QTH-anchored fit is wider than MapKit can show.
     /// Azimuthal needs a resolved QTH as its projection center; with none,
     /// returns `nil` so the caller falls through to MapKit rather than a
     /// (0,0)-centered map.
@@ -312,7 +312,7 @@ enum ActivationShareRenderer {
             pins: pins, myCoordinate: myCoordinate,
             style: style,
             size: mapSize, scale: mapScale,
-            qthCentered: true
+            qthAnchored: true
         )
     }
 

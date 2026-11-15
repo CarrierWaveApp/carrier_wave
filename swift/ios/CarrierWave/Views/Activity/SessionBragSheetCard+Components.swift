@@ -29,7 +29,7 @@ extension SessionBragSheetCard {
     @ViewBuilder
     var mapSection: some View {
         let style = ShareMapStyle(rawValue: shareMapStyleRaw) ?? .adaptive
-        // MapKit can't show more than 180° of longitude, so QTH-centered
+        // MapKit can't show more than 180° of longitude, so QTH-anchored
         // sessions wider than that use the Rust renderer in Midnight.
         let needsWide = ActivationMapHelpers.needsWideRenderer(
             qsoCoordinates: contactCoordinates.map(\.coord),
@@ -41,7 +41,7 @@ extension SessionBragSheetCard {
                 myCoordinate: myCoordinate,
                 style: style.usesCustomRenderer ? style : .midnight,
                 pinColors: contactCoordinates.map { UIColor(bandColor($0.band)) },
-                qthCentered: true
+                qthAnchored: true
             )
             .allowsHitTesting(false)
             .frame(height: 180)
@@ -380,7 +380,7 @@ extension SessionBragSheetCard {
     }
 
     var mapCameraPosition: MapCameraPosition {
-        ActivationMapHelpers.qthCenteredRegion(
+        ActivationMapHelpers.qthAnchoredRegion(
             qsoCoordinates: contactCoordinates.map(\.coord),
             myCoordinate: myCoordinate
         ).map { .region($0) } ?? .automatic

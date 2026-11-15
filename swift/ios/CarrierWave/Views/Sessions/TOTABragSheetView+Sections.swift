@@ -152,7 +152,7 @@ extension TOTABragSheetView {
                     coordinates: contactCoordinates.map(\.coord),
                     myCoordinate: myCoordinate,
                     style: style.usesCustomRenderer ? style : .midnight,
-                    qthCentered: true
+                    qthAnchored: true
                 )
                 .allowsHitTesting(false)
                 .frame(height: 160)
@@ -160,7 +160,7 @@ extension TOTABragSheetView {
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .padding(.bottom, 8)
             } else if let myCoord = myCoordinate {
-                Map(initialPosition: ActivationMapHelpers.qthCenteredRegion(
+                Map(initialPosition: ActivationMapHelpers.qthAnchoredRegion(
                     qsoCoordinates: contactCoordinates.map(\.coord),
                     myCoordinate: myCoord
                 ).map { .region($0) } ?? .automatic) {

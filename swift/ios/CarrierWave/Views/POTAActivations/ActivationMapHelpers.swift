@@ -62,14 +62,15 @@ enum ActivationMapHelpers {
         ))
     }
 
-    /// Brag-sheet framing: center horizontally on the operator QTH, then zoom
-    /// in as far as possible while every contact and the great-circle arc to
-    /// it still fits, plus a little padding. Keeping the QTH in the middle
-    /// avoids antimeridian wraparound. The returned span may exceed
+    /// Brag-sheet framing: measure every contact and the great-circle arc to
+    /// it as a signed longitude offset from the operator QTH, then fit the
+    /// tightest box around those offsets (QTH included) plus a small margin.
+    /// Anchoring on the QTH avoids antimeridian wraparound without wasting
+    /// the side of the map that has no contacts. The returned span may exceed
     /// ``mapKitMaxLonSpan``; check ``fitsMapKit(_:)`` before handing it to
     /// MapKit. Falls back to ``mapRegion(qsoCoordinates:myCoordinate:)`` when
     /// there is no QTH.
-    static func qthCenteredRegion(
+    static func qthAnchoredRegion(
         qsoCoordinates: [CLLocationCoordinate2D],
         myCoordinate: CLLocationCoordinate2D?
     ) -> MKCoordinateRegion? {
@@ -85,24 +86,28 @@ enum ActivationMapHelpers {
             points.append(contentsOf: geodesicPath(from: qth, to: coord, segments: 24))
         }
 
-        var maxLonDelta = 0.0
+        var minDelta = 0.0
+        var maxDelta = 0.0
         var minLat = qth.latitude
         var maxLat = qth.latitude
         for point in points {
             // Signed longitude offset from the QTH, wrapped into [-180, 180].
             let delta = remainder(point.longitude - qth.longitude, 360)
-            maxLonDelta = max(maxLonDelta, abs(delta))
+            minDelta = min(minDelta, delta)
+            maxDelta = max(maxDelta, delta)
             minLat = min(minLat, point.latitude)
             maxLat = max(maxLat, point.latitude)
         }
 
-        let padding = 1.2
-        let lonSpan = min(max(maxLonDelta * 2 * padding, 5), 360)
+        // ~7% margin on each side.
+        let padding = 1.15
+        let lonSpan = min(max((maxDelta - minDelta) * padding, 5), 360)
         let latSpan = min(max((maxLat - minLat) * padding, 5), 170)
         let centerLat = min(max((minLat + maxLat) / 2, -80), 80)
+        let centerLon = remainder(qth.longitude + (minDelta + maxDelta) / 2, 360)
 
         return MKCoordinateRegion(
-            center: CLLocationCoordinate2D(latitude: centerLat, longitude: qth.longitude),
+            center: CLLocationCoordinate2D(latitude: centerLat, longitude: centerLon),
             span: MKCoordinateSpan(latitudeDelta: latSpan, longitudeDelta: lonSpan)
         )
     }
@@ -112,30 +117,30 @@ enum ActivationMapHelpers {
         region.span.longitudeDelta <= mapKitMaxLonSpan
     }
 
-    /// True when a QTH-centered brag-sheet map is too wide for MapKit and
+    /// True when a brag-sheet map is too wide for MapKit and
     /// must be drawn by the Rust flat renderer instead.
     static func needsWideRenderer(
         qsoCoordinates: [CLLocationCoordinate2D],
         myCoordinate: CLLocationCoordinate2D?
     ) -> Bool {
         guard myCoordinate != nil,
-              let region = qthCenteredRegion(qsoCoordinates: qsoCoordinates, myCoordinate: myCoordinate)
+              let region = qthAnchoredRegion(qsoCoordinates: qsoCoordinates, myCoordinate: myCoordinate)
         else {
             return false
         }
         return !fitsMapKit(region)
     }
 
-    /// ``qthCenteredRegion(qsoCoordinates:myCoordinate:)`` expanded to the
+    /// ``qthAnchoredRegion(qsoCoordinates:myCoordinate:)`` expanded to the
     /// image's aspect ratio for the Rust flat (equirectangular) renderer,
     /// which maps degrees linearly and so needs equal degrees per pixel.
-    static func qthCenteredFlatViewport(
+    static func qthAnchoredFlatViewport(
         qsoCoordinates: [CLLocationCoordinate2D],
         myCoordinate: CLLocationCoordinate2D,
         aspect: Double
     ) -> MKCoordinateRegion? {
         guard aspect > 0,
-              let region = qthCenteredRegion(qsoCoordinates: qsoCoordinates, myCoordinate: myCoordinate)
+              let region = qthAnchoredRegion(qsoCoordinates: qsoCoordinates, myCoordinate: myCoordinate)
         else {
             return nil
         }
@@ -148,11 +153,11 @@ enum ActivationMapHelpers {
         }
         lonSpan = min(lonSpan, 360)
         latSpan = min(latSpan, 170)
-        // Slide the box (not the QTH column) so it stays inside ±85°.
+        // Slide the box vertically so it stays inside ±85°.
         let half = latSpan / 2
         let centerLat = min(max(region.center.latitude, -85 + half), 85 - half)
         return MKCoordinateRegion(
-            center: CLLocationCoordinate2D(latitude: centerLat, longitude: myCoordinate.longitude),
+            center: CLLocationCoordinate2D(latitude: centerLat, longitude: region.center.longitude),
             span: MKCoordinateSpan(latitudeDelta: latSpan, longitudeDelta: lonSpan)
         )
     }
