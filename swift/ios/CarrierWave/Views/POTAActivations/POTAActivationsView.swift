@@ -417,52 +417,6 @@ extension POTAActivationsContentView {
 
     /// Rebuild the job index: exact match first, then fuzzy match nil-date jobs.
     private func rebuildJobIndex() {
-        var index: [String: [POTAJob]] = [:]
-        var matchedJobIds = Set<Int>()
-
-        for activation in activations {
-            let matching = activation.matchingJobs(from: jobs)
-            if !matching.isEmpty {
-                index[activation.id] = matching
-                matchedJobIds.formUnion(matching.map(\.jobId))
-            }
-        }
-
-        fuzzyMatchNilDateJobs(into: &index, excluding: matchedJobIds)
-        jobsByActivationId = index
-    }
-
-    /// Assign nil-date jobs to the closest unmatched activation by submitted date,
-    /// preventing jobs from old activations leaking onto newer ones.
-    private func fuzzyMatchNilDateJobs(
-        into index: inout [String: [POTAJob]], excluding matchedJobIds: Set<Int>
-    ) {
-        let nilDateJobs = jobs.filter { $0.firstQSO == nil && !matchedJobIds.contains($0.jobId) }
-        guard !nilDateJobs.isEmpty else {
-            return
-        }
-
-        let unmatchedActivations = activations.filter { index[$0.id] == nil }
-        guard !unmatchedActivations.isEmpty else {
-            return
-        }
-
-        var fuzzyIndex: [String: [POTAJob]] = [:]
-        for job in nilDateJobs {
-            let candidates = unmatchedActivations.filter {
-                job.matchesParkAndCallsign(
-                    parkReference: $0.parkReference,
-                    callsign: $0.callsign
-                ) && $0.utcDate <= job.submitted
-            }
-            guard let bestMatch = candidates.max(by: { $0.utcDate < $1.utcDate }) else {
-                continue
-            }
-            fuzzyIndex[bestMatch.id, default: []].append(job)
-        }
-
-        for (activationId, matchedJobs) in fuzzyIndex {
-            index[activationId] = matchedJobs.sorted { $0.submitted > $1.submitted }
-        }
+        jobsByActivationId = POTAJob.indexByActivation(jobs: jobs, activations: activations)
     }
 }

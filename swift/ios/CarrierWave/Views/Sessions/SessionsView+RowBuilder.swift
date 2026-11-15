@@ -53,6 +53,7 @@ extension SessionsView {
                 $0.status == .completed
             },
             showUploadButton: isAuthenticated,
+            onPOTAUploadTapped: buildPOTAUploadHandler(activations: activations),
             onRejectTapped: primaryActivation.map { act in
                 { activationToReject = act }
             },
@@ -76,5 +77,56 @@ extension SessionsView {
             onReopenTapped: { sessionToReopen = session },
             onMergeTapped: { sessionToMerge = session }
         )
+    }
+
+    /// Upload every activation in a session that still has pending QSOs,
+    /// returning errors keyed by park.
+    private func buildPOTAUploadHandler(
+        activations: [POTAActivation]
+    ) -> (() async -> [String: String])? {
+        let pending = activations.filter(\.hasQSOsToUpload)
+        guard !pending.isEmpty else {
+            return nil
+        }
+        return {
+            var errors: [String: String] = [:]
+            for activation in pending {
+                let result = await performUploadReturningErrors(for: activation)
+                errors.merge(result) { _, new in new }
+            }
+            await loadSessions()
+            await loadOrphanActivations()
+            return errors
+        }
+    }
+
+    /// Upload an activation that has no logging session, then refresh the list.
+    func uploadOrphanActivation(_ activation: POTAActivation) {
+        Task {
+            let errors = await performUploadReturningErrors(for: activation)
+            if !errors.isEmpty {
+                errorMessage = errors.sorted(by: { $0.key < $1.key })
+                    .map { $0.key.isEmpty ? $0.value : "\($0.key): \($0.value)" }
+                    .joined(separator: "\n")
+            }
+            await loadSessions()
+            await loadOrphanActivations()
+        }
+    }
+
+    /// POTA can take a few seconds to list a new upload under `/user/jobs`.
+    /// When the job is not there yet, look once more so the session's POTA Jobs
+    /// section appears without a manual refresh.
+    func refreshJobsAgainIfUploadNotListed(for activation: POTAActivation) {
+        let recently = Date().addingTimeInterval(-10 * 60)
+        let isListed = (jobsByActivationId[activation.id] ?? [])
+            .contains { $0.submitted > recently }
+        guard !isListed else {
+            return
+        }
+        Task {
+            try? await Task.sleep(for: .seconds(8))
+            await refreshJobs()
+        }
     }
 }

@@ -202,6 +202,9 @@ extension SessionsView {
         }
 
         await refreshJobs()
+        if errors.count < parksToUpload.count {
+            refreshJobsAgainIfUploadNotListed(for: activation)
+        }
         return errors
     }
 
@@ -267,14 +270,9 @@ extension SessionsView {
     }
 
     func rebuildJobIndex() {
-        var index: [String: [POTAJob]] = [:]
-        for activation in allActivations {
-            let matching = activation.matchingJobs(from: jobs)
-            if !matching.isEmpty {
-                index[activation.id] = matching
-            }
-        }
-        jobsByActivationId = index
+        jobsByActivationId = POTAJob.indexByActivation(
+            jobs: jobs, activations: allActivations
+        )
     }
 
     // MARK: - Session Deletion

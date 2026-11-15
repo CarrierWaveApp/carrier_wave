@@ -20,7 +20,7 @@ extension SessionDetailView {
         guard let activation else {
             return false
         }
-        return activation.hasQSOsToUpload && !hasCompletedJob
+        return onUpload != nil && activation.hasQSOsToUpload && !hasCompletedJob
     }
 
     var shouldShowQRZUpload: Bool {
@@ -75,7 +75,7 @@ extension SessionDetailView {
         } else {
             HStack(spacing: 8) {
                 if shouldShowPOTAUpload, let activation {
-                    potaExportButton(count: activation.pendingCount)
+                    potaUploadButton(count: activation.pendingCount)
                 }
                 if shouldShowQRZUpload, let onQRZUpload {
                     qrzDetailUploadButton(
@@ -91,13 +91,21 @@ extension SessionDetailView {
         inlineUploadErrors
     }
 
-    private func potaExportButton(count: Int) -> some View {
+    private func potaUploadButton(count: Int) -> some View {
         Button {
-            onExport?()
+            guard let onUpload else {
+                return
+            }
+            isUploading = true
+            Task {
+                uploadErrors = await onUpload()
+                isUploading = false
+                await loadQSOs()
+            }
         } label: {
             Label(
                 "Upload \(count) to POTA",
-                systemImage: "arrow.up.forward.app.fill"
+                systemImage: "arrow.up.circle.fill"
             )
         }
         .buttonStyle(.bordered)

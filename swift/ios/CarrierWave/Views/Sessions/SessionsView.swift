@@ -441,6 +441,7 @@ extension SessionsView {
                 activation: activation,
                 metadata: meta,
                 showUploadButton: isAuthenticated,
+                onUploadTapped: { uploadOrphanActivation(activation) },
                 onRejectTapped: { activationToReject = activation },
                 onShareTapped: { activationToShare = activation },
                 onExportTapped: {

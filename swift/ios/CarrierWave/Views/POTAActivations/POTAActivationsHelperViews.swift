@@ -14,6 +14,7 @@ struct ActivationRow: View {
     let activation: POTAActivation
     var metadata: ActivationMetadata?
     var showUploadButton: Bool = true
+    let onUploadTapped: () -> Void
     let onRejectTapped: () -> Void
     let onShareTapped: () -> Void
     let onExportTapped: () -> Void
@@ -151,11 +152,11 @@ struct ActivationRow: View {
 
     private var uploadButton: some View {
         Button {
-            onExportTapped()
+            onUploadTapped()
         } label: {
             Label(
                 "Upload \(activation.pendingCount) QSO\(activation.pendingCount == 1 ? "" : "s") to POTA",
-                systemImage: "arrow.up.forward.app.fill"
+                systemImage: "arrow.up.circle.fill"
             )
             .frame(maxWidth: .infinity)
         }

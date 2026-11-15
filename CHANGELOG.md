@@ -36,6 +36,16 @@ section at the end of this file.
   the Bypass POTA Maintenance debug toggle are gone.
 
 ### Fixed
+- **A new POTA upload shows under POTA Jobs right away (iOS).** On the Sessions
+  tab a job only appeared on its session once POTA had processed it, so a log
+  that was still queued had no POTA Jobs section. Queued jobs now show on the
+  session they belong to, and the app checks the job list once more a few
+  seconds after an upload if POTA has not listed it yet.
+- **Upload to POTA buttons upload directly again (iOS).** The Upload to POTA
+  button on a session row, an activation row and in session details sent the
+  log to POTA only by way of the Export ADIF sheet and the pota.app upload page.
+  They now upload through POTA's API and show progress and any errors in place.
+  Export ADIF stays in the menu for manual uploads.
 - **Brag sheet maps center on your QTH (iOS).** Session, activation and TOTA
   brag-sheet maps now center horizontally on the operator QTH and zoom to the
   tightest fit for every contact and its great-circle arc, plus a small margin.

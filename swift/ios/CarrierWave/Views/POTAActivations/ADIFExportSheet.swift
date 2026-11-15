@@ -85,7 +85,7 @@ struct ADIFExportSheet: View {
                             .foregroundStyle(.secondary)
                     } else if let exportResult {
                         uploadToPOTAButton(result: exportResult)
-                        Text("Shares the ADIF and opens the POTA upload page — attach the file there.")
+                        Text("Manual upload: shares the ADIF and opens the POTA upload page — attach the file there.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
@@ -195,7 +195,7 @@ struct ADIFExportSheet: View {
             item: ShareableADIF(content: result.content, filename: result.filename),
             preview: SharePreview(result.filename, image: Image(systemName: "globe"))
         ) {
-            Label("Upload to POTA", systemImage: "arrow.up.forward.app.fill")
+            Label("Open POTA Upload Page", systemImage: "arrow.up.forward.app.fill")
                 .frame(maxWidth: .infinity)
         }
         .buttonStyle(.borderedProminent)
@@ -437,13 +437,13 @@ struct POTAUploadInstructionsCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Label("How to Upload to POTA", systemImage: "info.circle.fill")
+            Label("How to Upload Manually", systemImage: "info.circle.fill")
                 .font(.headline)
                 .foregroundStyle(.green)
 
             VStack(alignment: .leading, spacing: 10) {
                 step(1, "Tap **Save to Files** and save the ADIF somewhere easy to find.")
-                step(2, "Tap **Upload to POTA** to open the POTA logs page.")
+                step(2, "Tap **Open POTA Upload Page** to open the POTA logs page.")
                 step(3, "**Turn your phone to landscape** and **pinch to zoom out**.")
                 step(4, "Tap **Choose File**, find your saved ADIF, and submit.")
             }

@@ -21,6 +21,8 @@ struct SessionRow: View {
 
     /// POTA upload controls
     var showUploadButton: Bool = false
+    /// Uploads the session's pending QSOs to POTA; returns errors keyed by park.
+    var onPOTAUploadTapped: (() async -> [String: String])?
     var onRejectTapped: (() -> Void)?
 
     /// QRZ upload controls
@@ -66,6 +68,8 @@ struct SessionRow: View {
     // MARK: Private
 
     @Environment(\.verticalSizeClass) private var verticalSizeClass
+    @State private var isUploadingPOTA = false
+    @State private var potaUploadErrors: [String: String] = [:]
     @State private var isUploadingQRZ = false
     @State private var qrzUploadError: String?
     @State private var showingConditions = false
@@ -79,7 +83,9 @@ struct SessionRow: View {
     }
 
     private var shouldShowPOTAUpload: Bool {
-        guard !activations.isEmpty, showUploadButton, !hasCompletedJob else {
+        guard !activations.isEmpty, showUploadButton, !hasCompletedJob,
+              onPOTAUploadTapped != nil
+        else {
             return false
         }
         return activations.contains { $0.hasQSOsToUpload }
@@ -341,7 +347,7 @@ struct SessionRow: View {
 extension SessionRow {
     @ViewBuilder
     var uploadSection: some View {
-        if isUploadingQRZ {
+        if isUploadingPOTA || isUploadingQRZ {
             HStack {
                 ProgressView()
                     .controlSize(.small)
@@ -366,11 +372,15 @@ extension SessionRow {
 
     private var potaUploadButton: some View {
         Button {
-            onExportTapped?()
+            isUploadingPOTA = true
+            Task {
+                potaUploadErrors = await onPOTAUploadTapped?() ?? [:]
+                isUploadingPOTA = false
+            }
         } label: {
             Label(
                 "Upload \(totalPendingCount) to POTA",
-                systemImage: "arrow.up.forward.app.fill"
+                systemImage: "arrow.up.circle.fill"
             )
         }
         .buttonStyle(.bordered)
@@ -396,6 +406,9 @@ extension SessionRow {
 
     @ViewBuilder
     private var uploadErrorsList: some View {
+        ForEach(potaUploadErrors.sorted(by: { $0.key < $1.key }), id: \.key) { park, error in
+            uploadErrorRow(park.isEmpty ? error : "\(park): \(error)")
+        }
         if let qrzError = qrzUploadError {
             uploadErrorRow(qrzError)
         }

@@ -85,6 +85,7 @@ extension POTAActivationsContentView {
             activation: activation,
             metadata: metadata(for: activation),
             showUploadButton: isAuthenticated,
+            onUploadTapped: { Task { await performUpload(for: activation) } },
             onRejectTapped: { activationToReject = activation },
             onShareTapped: { activationToShare = activation },
             onExportTapped: { activationToExport = activation },

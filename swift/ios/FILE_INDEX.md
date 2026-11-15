@@ -25,6 +25,7 @@
 | `QSO+POTAPresence.swift` | Per-park POTA presence tracking for two-fer activations |
 | `UploadDestination.swift` | Sync target configuration (enabled flag, last sync timestamp) |
 | `POTAJob.swift` | POTA job tracking, status, details models (POTAJob, POTAJobsPage — legacy array or paginated `/user/jobs`, POTAJobDetails, POTAJobStatus) |
+| `POTAJob+ActivationIndex.swift` | `POTAJob.indexByActivation`: groups jobs by activation (exact park/callsign/UTC date, then unprocessed jobs to the newest unmatched activation) |
 | `POTALogEntry.swift` | Individual POTA log entries |
 | `POTAUploadAttempt.swift` | POTA upload attempt history and status |
 | `ServicePresence.swift` | Service connection status tracking |
