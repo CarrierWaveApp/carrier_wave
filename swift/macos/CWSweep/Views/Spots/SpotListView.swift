@@ -13,6 +13,9 @@ struct SpotListView: View {
     var initialBand: String?
     var initialMode: SpotModeFilter?
     var compact = false
+    /// True when shown as the standalone Spots screen, which has no entry
+    /// field: Tune & Log then switches to the Logger so the entry lands.
+    var opensLoggerOnLog = false
 
     @Environment(SpotAggregator.self) var spotAggregator
     @Environment(RadioManager.self) var radioManager

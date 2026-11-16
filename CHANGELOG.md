@@ -47,6 +47,11 @@ section at the end of this file.
   the Bypass POTA Maintenance debug toggle are gone.
 
 ### Fixed
+- **Tune & Log works from the Spots screen; double-click tunes (CW Sweep, macOS).**
+  On the standalone Spots screen, Tune & Log now switches to the Logger with the
+  spot filled into the entry field; before, that screen had no entry field, so
+  the entry was dropped. Double-clicking a spot now just tunes the radio; Return
+  and the right-click menu still do Tune & Log.
 - **A new POTA upload shows under POTA Jobs right away (iOS).** On the Sessions
   tab a job only appeared on its session once POTA had processed it, so a log
   that was still queued had no POTA Jobs section. Queued jobs now show on the

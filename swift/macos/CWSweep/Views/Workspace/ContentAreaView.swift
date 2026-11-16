@@ -15,7 +15,7 @@ struct ContentAreaView: View {
         case .logger:
             SessionsSidebarRoot(radioManager: radioManager, flexDiscovery: flexDiscovery)
         case .spots:
-            SpotListView()
+            SpotListView(opensLoggerOnLog: true)
         case .map:
             QSOMapView()
         case .cluster:

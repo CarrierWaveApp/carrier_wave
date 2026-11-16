@@ -106,7 +106,13 @@ struct ParsedEntryView: View {
             contestExtras
         }
         .onAppear {
-            if !vimEngine.isEnabled {
+            // A spot sent from the standalone Spots screen sets the entry
+            // before this view exists, so onChange never sees it.
+            if let entry = selectionState.pendingSpotEntry {
+                entryText = entry
+                selectionState.pendingSpotEntry = nil
+                isEntryFocused = true
+            } else if !vimEngine.isEnabled {
                 isEntryFocused = true
             }
         }

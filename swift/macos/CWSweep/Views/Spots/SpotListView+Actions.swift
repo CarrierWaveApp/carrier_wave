@@ -64,13 +64,14 @@ extension SpotListView {
             tuneAndLog(spot)
             return .handled
         }
+        // Double-click only tunes; Return and the context menu do Tune & Log.
         .onTableDoubleClick {
             guard let selectedId = selection.first,
                   let spot = cachedFilteredSpots.first(where: { $0.id == selectedId })
             else {
                 return
             }
-            tuneAndLog(spot)
+            tuneSpot(spot, slot: nil)
         }
         .modifier(VimSpotNavigationModifier(
             selection: $selection,
@@ -388,7 +389,7 @@ extension SpotListView {
         }
     }
 
-    func tuneSpot(_ spot: EnrichedSpot, slot: RadioSlot) {
+    func tuneSpot(_ spot: EnrichedSpot, slot: RadioSlot?) {
         Task {
             await radioManager.tuneToSpot(
                 frequencyMHz: spot.spot.frequencyMHz,
@@ -409,6 +410,9 @@ extension SpotListView {
         SpotEntryBridge.shared.pendingSpot = spot
         selectionState.selectedSpot = spot
         selectionState.selectedQSOId = nil
+        if opensLoggerOnLog {
+            NotificationCenter.default.post(name: .focusEntryField, object: nil)
+        }
         Task {
             await radioManager.tuneToSpot(
                 frequencyMHz: spot.spot.frequencyMHz,
