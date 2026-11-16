@@ -25,6 +25,11 @@ section at the end of this file.
   "Removed" instead of as failed uploads.
 
 ### Changed
+- **Spots filter bar no longer overflows (CW Sweep, macOS).** The source
+  buttons get their own full-width row, and Band, Mode, Continent and Region
+  are labeled dropdowns on a second row with the search field filling the rest.
+  Before, the bar was wider than the pane, so the "All" source button, the
+  Digital mode button and the search field were cut off.
 - **POTA activations upload automatically again (iOS).** Sync uploads a POTA
   activation on its own once it is finished: the logging session has ended and
   no QSO has been logged for 30 minutes. Uploads are attempted at most once

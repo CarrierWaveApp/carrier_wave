@@ -120,9 +120,9 @@ struct SpotListView: View {
 
     // MARK: - Filter Bar
 
-    /// Wide enough to show all 9 source segments without truncation
+    /// Wide enough for all 9 source segments on their own row
     private var useSegmentedSource: Bool {
-        tableWidth >= 750
+        tableWidth >= 520
     }
 
     private var content: some View {
@@ -223,9 +223,12 @@ struct SpotListView: View {
         .padding(.vertical, 8)
     }
 
+    /// Two rows: the source segmented control gets the full width on its
+    /// own, and the remaining filters sit below as labeled dropdowns with
+    /// the search field taking whatever is left. Nothing has a fixed width,
+    /// so the bar never overflows the pane.
     private var filterBar: some View {
-        HStack(spacing: 6) {
-            // Source filter — segmented when wide, menu when narrow
+        VStack(alignment: .leading, spacing: 6) {
             if useSegmentedSource {
                 Picker(selection: $selectedSource) {
                     ForEach(SpotSourceFilter.allCases) { source in
@@ -234,32 +237,39 @@ struct SpotListView: View {
                 } label: {
                     EmptyView()
                 }
+                .labelsHidden()
                 .pickerStyle(.segmented)
-                .frame(maxWidth: 480)
-                .layoutPriority(-1)
-            } else {
-                Picker(selection: $selectedSource) {
-                    ForEach(SpotSourceFilter.allCases) { source in
-                        Text(source.displayName).tag(source)
-                    }
-                } label: {
-                    Label("Source", systemImage: "antenna.radiowaves.left.and.right")
-                }
-                .frame(width: 110)
+                .frame(maxWidth: .infinity)
             }
 
-            BandFilterPicker(selectedBand: $selectedBand)
-            ModeFilterPicker(selectedMode: $selectedMode)
-
-            GeographicFilterDropdowns(
-                selectedContinents: $selectedContinents,
-                selectedRegions: $selectedRegions
-            )
-
-            SpotSearchField(text: $filterText, showClearButton: true)
+            HStack(spacing: 6) {
+                if !useSegmentedSource {
+                    SingleSelectDropdown(
+                        title: "Source",
+                        options: SpotSourceFilter.allCases.map { ($0.displayName, $0) },
+                        selection: $selectedSource
+                    )
+                }
+                SingleSelectDropdown(
+                    title: "Band",
+                    options: [("All", "All")] + SpotFilterConstants.commonBands.map { ($0, $0) },
+                    selection: $selectedBand
+                )
+                SingleSelectDropdown(
+                    title: "Mode",
+                    options: SpotModeFilter.allCases.map { ($0.displayName, $0) },
+                    selection: $selectedMode
+                )
+                GeographicFilterDropdowns(
+                    selectedContinents: $selectedContinents,
+                    selectedRegions: $selectedRegions
+                )
+                SpotSearchField(text: $filterText, showClearButton: true)
+                    .frame(maxWidth: .infinity)
+            }
         }
         .padding(.horizontal)
-        .padding(.vertical, 4)
+        .padding(.vertical, 6)
     }
 
     // MARK: - Compact Filter Bar

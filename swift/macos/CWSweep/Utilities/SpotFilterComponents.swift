@@ -28,22 +28,46 @@ struct BandFilterPicker: View {
     }
 }
 
-// MARK: - ModeFilterPicker
+// MARK: - SingleSelectDropdown
 
-/// Reusable mode filter picker (CW/Phone/Digital/All) as a segmented control
-struct ModeFilterPicker: View {
-    @Binding var selectedMode: SpotModeFilter
+/// Labeled single-select dropdown styled to match `MultiSelectDropdown`,
+/// so the wide and compact spot filter bars share one look.
+struct SingleSelectDropdown<T: Hashable>: View {
+    let title: String
+    let options: [(String, T)]
+
+    @Binding var selection: T
 
     var body: some View {
-        Picker(selection: $selectedMode) {
-            ForEach(SpotModeFilter.allCases) { mode in
-                Text(mode.displayName).tag(mode)
+        Menu {
+            ForEach(options, id: \.1) { name, value in
+                Button {
+                    selection = value
+                } label: {
+                    if selection == value {
+                        Label(name, systemImage: "checkmark")
+                    } else {
+                        Text(name)
+                    }
+                }
             }
         } label: {
-            EmptyView()
+            HStack(spacing: 3) {
+                Text(title)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                Text(options.first(where: { $0.1 == selection })?.0 ?? "")
+                    .font(.caption)
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 8))
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 6)
+            .padding(.vertical, 3)
+            .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 5))
         }
-        .pickerStyle(.segmented)
-        .frame(width: 200)
+        .menuStyle(.borderlessButton)
+        .fixedSize()
     }
 }
 
