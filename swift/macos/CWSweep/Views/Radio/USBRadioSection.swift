@@ -13,6 +13,8 @@ struct USBRadioSection: View {
 
     var body: some View {
         GroupBox("USB Serial") {
+            RadioPowerRow(radioManager: radioManager)
+            Divider()
             if portMonitor.availablePorts.isEmpty {
                 Text("No serial ports detected. Connect a radio via USB.")
                     .foregroundStyle(.secondary)

@@ -49,6 +49,7 @@
 | `SerialRadioTransport.swift` | Actor conforming to RadioTransport; manages read loop + AsyncStream |
 | `SerialPortMonitor.swift` | IOKit-based /dev/cu.* port discovery with USB hot-plug detection |
 | `FrameAssembler.swift` | Actor assembling byte streams into CI-V, Kenwood, or SmartSDR protocol frames |
+| `RadioPowerController.swift` | @MainActor @Observable USB power switch: finds the CH340 (`1a86:7523`, IDs read from the parent USB device), pulses DTR to power the radio on and reconnects the slot-A radio, sends `PS0;` to a connected Elecraft to power it off |
 
 ### Services/Radio/
 
@@ -401,6 +402,7 @@ Satellites workspace (sidebar item in Operating): a desktop pass console on the 
 |------|-------------|
 | `Radio/RadioControlView.swift` | Top-level USB / TCP-IP / CW Bridge segmented picker shell, gear popover, error banner |
 | `Radio/USBRadioSection.swift` | USB port list with autodetect-on-Connect (CI-V then Kenwood `ID;`) |
+| `Radio/RadioPowerRow.swift` | Radio Power row at the top of the USB Serial box: Detect / Power On / Power Off, a picker when several CH340s are present, status line |
 | `Radio/ManualOverrideRow.swift` | Per-port protocol+baud override shown when autodetect fails |
 | `Radio/TCPIPRadioSection.swift` | Network sub-picker (Flex / SCU-LAN10 / Icom WiFi) and section dispatcher |
 | `Radio/FlexRadioSection.swift` | FlexRadio network discovery UI with manual IP entry and connect controls |
@@ -579,6 +581,7 @@ Satellites workspace (sidebar item in Operating): a desktop pass console on the 
 |------|-------------|
 | `CWSweepTests.swift` | Tests for OperatingRole, SidebarSection, RadioModel, FrameAssembler, protocols |
 | `RadioAutoDetectTests.swift` | Tests for host-side autodetect: cable hints, baud candidates, CI-V/Kenwood parsers, profile mapping |
+| `RadioPowerControllerTests.swift` | Power-switch port choice: none / single / remembered / ask when several CH340s |
 | `SpotTypeTests.swift` | Tests for UnifiedSpot, SpotRegion, EnrichedSpot, POTASpot, SpotSource |
 | `SpotListOrderingTests.swift` | Tests for `SpotListOrdering`: self-spot detection, default-sort detection, stable self-spot pinning |
 | `SpotTuneDestinationTests.swift` | Tests for `SpotTuneDestination` resolution, footnotes and status lines |

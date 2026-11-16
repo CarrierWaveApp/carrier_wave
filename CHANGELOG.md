@@ -10,6 +10,12 @@ section at the end of this file.
 ## [Unreleased]
 
 ### Added
+- **Radio power on/off from CW Sweep (macOS).** The USB Serial box in the Radio
+  panel has a Radio Power row. It finds a CH340 USB power switch (a CH340 whose
+  DTR line pulls the radio's POWER ON input low). Power On pulses DTR for
+  500 ms, waits for the radio to boot, and reconnects the last-used radio.
+  Power Off sends `PS0;` to a connected Elecraft and disconnects it. When more
+  than one CH340 is present, you pick the switch once and Sweep remembers it.
 - **Replace a POTA upload after fixing a QSO (iOS).** POTA now lets you delete a
   log for 24 hours after uploading it. When an activation's upload is still
   inside that window, the session detail menu offers Replace POTA Upload: it
