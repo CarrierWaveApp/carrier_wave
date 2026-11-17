@@ -47,6 +47,13 @@ section at the end of this file.
   the Bypass POTA Maintenance debug toggle are gone.
 
 ### Fixed
+- **Two backups in the same second no longer fail (iOS).** Backup names have
+  one-second resolution, so a second snapshot taken within the same second
+  failed on the existing file. It now gets a `_2` suffix.
+- **Contest calendar entries match their templates (iOS).** Titles like "CQ WW
+  DX Contest, CW" didn't match the CQ WW CW template because the matcher
+  compared raw substrings. Punctuation and the word "contest" are now ignored,
+  and "Worldwide" spelled as one word matches too.
 - **WinKeyer speed knob works in CW Sweep (macOS).** On connect Sweep sent
   admin command 0x10, which a WK3 treats as Firmware Update, instead of Set WK3
   Mode (0x14). The keyer then stopped reporting speed knob changes. Sweep now

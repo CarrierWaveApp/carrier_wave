@@ -209,7 +209,7 @@ final class QSOWriteSinkTests: XCTestCase {
     func testMirrorsLoggingSessionUpsertAndDelete() async throws {
         let container = try ModelContainer(
             for: Schema([LoggingSession.self]),
-            configurations: [ModelConfiguration(isStoredInMemoryOnly: true)]
+            configurations: [ModelConfiguration(isStoredInMemoryOnly: true, cloudKitDatabase: .none)]
         )
         let context = container.mainContext
         let store = try FieldStore.openInMemory(key: "mirror-session")
@@ -234,7 +234,7 @@ final class QSOWriteSinkTests: XCTestCase {
     private func makeContainer() throws -> ModelContainer {
         try ModelContainer(
             for: Schema([QSO.self, ServicePresence.self]),
-            configurations: [ModelConfiguration(isStoredInMemoryOnly: true)]
+            configurations: [ModelConfiguration(isStoredInMemoryOnly: true, cloudKitDatabase: .none)]
         )
     }
 }

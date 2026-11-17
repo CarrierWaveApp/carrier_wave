@@ -27,9 +27,7 @@ extension LoggingSessionManager {
         // Resolve the own frequency now — clearActiveSessionId() below drops the
         // record before the task runs, and QRT must not go out on a hunted
         // station's frequency (CAR-296).
-        let sessionForSpot = session
-        let qrtFrequency = spotFrequency(for: session)
-        Task { await postQRTSpotIfNeeded(for: sessionForSpot, frequency: qrtFrequency) }
+        postQRTSpotIfNeeded(for: session, frequency: spotFrequency(for: session))
 
         activeSession = nil
         clearActiveSessionId()
@@ -89,8 +87,9 @@ extension LoggingSessionManager {
         guard autoShare else {
             return
         }
+        let sessionId = session.id
         Task { [weak self] in
-            await self?.reportSessionCompleted(session)
+            await self?.reportSessionCompleted(sessionId: sessionId)
         }
     }
 

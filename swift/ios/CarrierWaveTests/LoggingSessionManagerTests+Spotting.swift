@@ -15,17 +15,16 @@ final class LoggingSessionManagerSpottingTests: XCTestCase {
     var modelContainer: ModelContainer!
     var modelContext: ModelContext!
     var sessionManager: LoggingSessionManager!
+    var restoreDefaults: (() -> Void)?
 
     // MARK: - Setup/Teardown
 
     @MainActor
     override func setUp() async throws {
         clearDefaults()
-        // Keep every spotting path offline: no auto-spot timer, no QRT on end.
-        UserDefaults.standard.set(false, forKey: "potaAutoSpotEnabled")
-        UserDefaults.standard.set(false, forKey: "potaQRTSpotEnabled")
-        // No solar/weather fetch: its late write-back races container teardown.
-        UserDefaults.standard.set(false, forKey: "autoRecordConditions")
+        // Keep every spotting path offline: no auto-spot timer, no QRT on end,
+        // no solar/weather fetch (its late write-back races container teardown).
+        restoreDefaults = SessionTestDefaults.disableNetworkSideEffects()
 
         let (container, context) = try TestModelContainer.createWithContext()
         modelContainer = container
@@ -39,6 +38,7 @@ final class LoggingSessionManagerSpottingTests: XCTestCase {
             sessionManager.endSession()
         }
         clearDefaults()
+        restoreDefaults?()
         sessionManager = nil
         modelContext = nil
         modelContainer = nil
@@ -199,9 +199,6 @@ final class LoggingSessionManagerSpottingTests: XCTestCase {
         defaults.removeObject(forKey: "activeLoggingSessionId")
         defaults.removeObject(forKey: "activeLoggingSessionSelfSpotFrequency")
         defaults.removeObject(forKey: "activeLoggingSessionSelfSpotSessionId")
-        defaults.removeObject(forKey: "potaAutoSpotEnabled")
-        defaults.removeObject(forKey: "potaQRTSpotEnabled")
-        defaults.removeObject(forKey: "autoRecordConditions")
     }
 
     @MainActor

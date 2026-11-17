@@ -83,8 +83,10 @@ nonisolated enum ContestEnrichmentService {
     ]
 
     private static let templateIdAliases: [String: [String]] = [
-        "cq-ww-cw": ["cq ww dx cw", "cq world wide dx cw"],
-        "cq-ww-ssb": ["cq ww dx ssb", "cq ww dx phone", "cq world wide dx ssb"],
+        "cq-ww-cw": ["cq ww dx cw", "cq world wide dx cw", "cq worldwide dx cw"],
+        "cq-ww-ssb": [
+            "cq ww dx ssb", "cq ww dx phone", "cq world wide dx ssb", "cq worldwide dx ssb",
+        ],
         "arrl-dx-dx": ["arrl dx"],
         "arrl-dx-w-ve": ["arrl dx"],
         "arrl-sweepstakes-cw": ["arrl sweepstakes cw", "sweepstakes cw"],
@@ -278,15 +280,24 @@ nonisolated enum ContestEnrichmentService {
             }
         }
         // Fall back to alias table.
+        let normalizedTitle = normalizeForMatch(title)
         for tid in templateIds {
             guard let aliases = templateIdAliases[tid] else {
                 continue
             }
-            for alias in aliases where lowered.contains(alias.lowercased()) {
+            for alias in aliases where normalizedTitle.contains(normalizeForMatch(alias)) {
                 return tid
             }
         }
         return nil
+    }
+
+    /// Lowercase, turn punctuation into spaces, drop the word "contest" and
+    /// collapse whitespace, so "CQ WW DX Contest, CW" matches "cq ww dx cw".
+    private static func normalizeForMatch(_ text: String) -> String {
+        let spaced = String(text.lowercased().map { $0.isLetter || $0.isNumber ? $0 : " " })
+        let words = spaced.split(separator: " ").filter { $0 != "contest" }
+        return " " + words.joined(separator: " ") + " "
     }
 
     // MARK: - Line extraction

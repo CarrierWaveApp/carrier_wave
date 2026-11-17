@@ -17,6 +17,7 @@ final class LoggingSessionManagerTests: XCTestCase {
     var modelContainer: ModelContainer!
     var modelContext: ModelContext!
     var sessionManager: LoggingSessionManager!
+    var restoreDefaults: (() -> Void)?
 
     // MARK: - Setup/Teardown
 
@@ -26,6 +27,7 @@ final class LoggingSessionManagerTests: XCTestCase {
         // from trying to restore a stale session and accessing UIKit/LiveActivity
         UserDefaults.standard.removeObject(forKey: "activeLoggingSessionId")
 
+        restoreDefaults = SessionTestDefaults.disableNetworkSideEffects()
         let (container, context) = try TestModelContainer.createWithContext()
         modelContainer = container
         modelContext = context
@@ -39,6 +41,7 @@ final class LoggingSessionManagerTests: XCTestCase {
             sessionManager.endSession()
         }
         UserDefaults.standard.removeObject(forKey: "activeLoggingSessionId")
+        restoreDefaults?()
         sessionManager = nil
         modelContext = nil
         modelContainer = nil
@@ -108,7 +111,7 @@ final class LoggingSessionManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testStartSession_EndsExistingSession() throws {
+    func testStartSession_PausesExistingSession() throws {
         // Given - first session
         sessionManager.startSession(myCallsign: "N0TEST", mode: "CW")
         let firstSessionId = sessionManager.activeSession?.id
@@ -120,12 +123,12 @@ final class LoggingSessionManagerTests: XCTestCase {
         XCTAssertNotEqual(sessionManager.activeSession?.id, firstSessionId)
         XCTAssertEqual(sessionManager.activeSession?.myCallsign, "W1AW")
 
-        // First session should be marked as completed
+        // First session is paused, not ended, so it can be resumed later
         let targetId = try XCTUnwrap(firstSessionId)
         let predicate = #Predicate<LoggingSession> { $0.id == targetId }
         let descriptor = FetchDescriptor<LoggingSession>(predicate: predicate)
         let oldSession = try modelContext.fetch(descriptor).first
-        XCTAssertEqual(oldSession?.status, .completed)
+        XCTAssertEqual(oldSession?.status, .paused)
     }
 
     @MainActor
@@ -151,20 +154,23 @@ final class LoggingSessionManagerTests: XCTestCase {
     }
 
     @MainActor
-    func testPauseAndResumeSession() {
+    func testPauseAndResumeSession() throws {
         // Given
         sessionManager.startSession(myCallsign: "N0TEST", mode: "CW")
+        let session = try XCTUnwrap(sessionManager.activeSession)
 
-        // When - pause
+        // When - pause (clears the active session so the UI returns to the list)
         sessionManager.pauseSession()
 
         // Then
-        XCTAssertEqual(sessionManager.activeSession?.status, .paused)
+        XCTAssertNil(sessionManager.activeSession)
+        XCTAssertEqual(session.status, .paused)
 
-        // When - resume
-        sessionManager.resumeSession()
+        // When - resume it from the list
+        sessionManager.resumeSession(session)
 
         // Then
+        XCTAssertEqual(sessionManager.activeSession?.id, session.id)
         XCTAssertEqual(sessionManager.activeSession?.status, .active)
     }
 
@@ -193,15 +199,13 @@ final class LoggingSessionManagerTests: XCTestCase {
 
     @MainActor
     func testGetRecentSessions_ReturnsSessionsInOrder() {
-        // Given - create multiple sessions
-        sessionManager.startSession(myCallsign: "N0TEST", mode: "CW")
-        sessionManager.endSession()
-
-        sessionManager.startSession(myCallsign: "W1AW", mode: "SSB")
-        sessionManager.endSession()
-
-        sessionManager.startSession(myCallsign: "K3LR", mode: "FT8")
-        sessionManager.endSession()
+        // Given - sessions started a minute apart (same-instant starts tie on sort)
+        let base = Date().addingTimeInterval(-3_600)
+        for (offset, call) in ["N0TEST", "W1AW", "K3LR"].enumerated() {
+            sessionManager.startSession(myCallsign: call, mode: "CW")
+            sessionManager.activeSession?.startedAt = base.addingTimeInterval(Double(offset) * 60)
+            sessionManager.endSession()
+        }
 
         // When
         let recentSessions = sessionManager.getRecentSessions(limit: 10)

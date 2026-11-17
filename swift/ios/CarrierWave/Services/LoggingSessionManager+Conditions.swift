@@ -72,7 +72,7 @@ extension LoggingSessionManager {
     }
 
     /// The session with `id` if it still exists in this manager's context.
-    private func liveSession(id: UUID) -> LoggingSession? {
+    func liveSession(id: UUID) -> LoggingSession? {
         var descriptor = FetchDescriptor<LoggingSession>(predicate: #Predicate { $0.id == id })
         descriptor.fetchLimit = 1
         guard let session = try? modelContext.fetch(descriptor).first, !session.isDeleted else {

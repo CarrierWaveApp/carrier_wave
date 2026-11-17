@@ -44,7 +44,8 @@ final class ServicePresenceUploadTests: XCTestCase {
 
     @MainActor
     func testDeduplicationKey_DifferentWithin2Minutes() {
-        let baseTime = Date()
+        // Start of a 2-minute bucket, so +60s cannot cross into the next one.
+        let baseTime = Date(timeIntervalSince1970: 1_794_952_920)
         let qso1 = QSO.testQSO(callsign: "W1AW", timestamp: baseTime)
         let qso2 = QSO.testQSO(callsign: "W1AW", timestamp: baseTime.addingTimeInterval(60))
 
@@ -54,12 +55,12 @@ final class ServicePresenceUploadTests: XCTestCase {
 
     @MainActor
     func testDeduplicationKey_DifferentAcross2Minutes() {
-        let baseTime = Date()
-        _ = QSO.testQSO(callsign: "W1AW", timestamp: baseTime)
-        _ = QSO.testQSO(callsign: "W1AW", timestamp: baseTime.addingTimeInterval(180))
+        let baseTime = Date(timeIntervalSince1970: 1_794_952_920)
+        let qso1 = QSO.testQSO(callsign: "W1AW", timestamp: baseTime)
+        let qso2 = QSO.testQSO(callsign: "W1AW", timestamp: baseTime.addingTimeInterval(180))
 
-        // Different 2-minute buckets (may or may not be equal depending on timing)
-        // This is testing the bucketing behavior
+        // 180s from a bucket start always lands in a different 2-minute bucket.
+        XCTAssertNotEqual(qso1.deduplicationKey, qso2.deduplicationKey)
     }
 
     // MARK: - Hidden QSO Upload Flag Tests
@@ -96,12 +97,12 @@ final class ServicePresenceUploadTests: XCTestCase {
         modelContext.insert(qso)
         qso.markNeedsUpload(to: .qrz, context: modelContext)
         qso.markNeedsUpload(to: .pota, context: modelContext)
-        qso.markNeedsUpload(to: .lofi, context: modelContext)
+        qso.markNeedsUpload(to: .eqsl, context: modelContext)
         try modelContext.save()
 
         XCTAssertTrue(qso.needsUpload(to: .qrz))
         XCTAssertTrue(qso.needsUpload(to: .pota))
-        XCTAssertTrue(qso.needsUpload(to: .lofi))
+        XCTAssertTrue(qso.needsUpload(to: .eqsl))
 
         // When - hide the QSO and clear upload flags (mirrors LoggingSessionManager.hideQSO)
         qso.isHidden = true
@@ -114,7 +115,7 @@ final class ServicePresenceUploadTests: XCTestCase {
         XCTAssertTrue(qso.isHidden)
         XCTAssertFalse(qso.needsUpload(to: .qrz))
         XCTAssertFalse(qso.needsUpload(to: .pota))
-        XCTAssertFalse(qso.needsUpload(to: .lofi))
+        XCTAssertFalse(qso.needsUpload(to: .eqsl))
     }
 
     @MainActor

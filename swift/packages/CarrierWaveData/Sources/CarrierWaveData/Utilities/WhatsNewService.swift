@@ -12,12 +12,12 @@ public final class WhatsNewService {
 
     public init(
         platform: WhatsNewPlatform,
-        bundle: Bundle = .main,
         defaults: UserDefaults = .standard,
-        catalog: [WhatsNewEntry] = WhatsNewCatalog.entries
+        catalog: [WhatsNewEntry] = WhatsNewCatalog.entries,
+        installedVersion: @escaping @MainActor () -> String = WhatsNewService.bundleShortVersion
     ) {
         self.platform = platform
-        self.bundle = bundle
+        self.installedVersion = installedVersion
         self.defaults = defaults
         self.catalog = catalog
     }
@@ -40,6 +40,11 @@ public final class WhatsNewService {
         !pendingEntries.isEmpty
     }
 
+    /// `CFBundleShortVersionString` of the running app.
+    public static func bundleShortVersion() -> String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.0.0"
+    }
+
     /// Mark the current version as seen. Called when the user dismisses the
     /// sheet so re-launches don't re-present the same notes.
     public func markCurrentVersionSeen() {
@@ -59,7 +64,7 @@ public final class WhatsNewService {
     // MARK: Internal
 
     var currentVersion: String {
-        bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.0.0"
+        installedVersion()
     }
 
     var lastSeenVersion: String? {
@@ -73,7 +78,7 @@ public final class WhatsNewService {
     // MARK: Private
 
     private let platform: WhatsNewPlatform
-    private let bundle: Bundle
+    private let installedVersion: @MainActor () -> String
     private let defaults: UserDefaults
     private let catalog: [WhatsNewEntry]
 }

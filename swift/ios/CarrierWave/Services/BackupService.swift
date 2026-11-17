@@ -313,12 +313,19 @@ actor BackupService {
         let timestamp = Date()
         let fmt = DateFormatter()
         fmt.dateFormat = "yyyy-MM-dd_HHmmss"
-        let filename =
-            "carrierwave_\(fmt.string(from: timestamp)).cwbackup"
+        let fm = FileManager.default
+        // Names have one-second resolution; suffix a second snapshot in the
+        // same second instead of failing on the existing bundle.
+        let stem = "carrierwave_\(fmt.string(from: timestamp))"
+        var filename = "\(stem).cwbackup"
+        var suffix = 2
+        while fm.fileExists(atPath: localBackupDir.appendingPathComponent(filename).path) {
+            filename = "\(stem)_\(suffix).cwbackup"
+            suffix += 1
+        }
         let bundleURL = localBackupDir
             .appendingPathComponent(filename)
 
-        let fm = FileManager.default
         try fm.createDirectory(
             at: bundleURL, withIntermediateDirectories: true
         )

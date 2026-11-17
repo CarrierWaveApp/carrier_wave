@@ -67,7 +67,55 @@ public enum EquipmentStorage {
         kvs.synchronize()
     }
 
+    /// Test seam: route reads and writes to `store` (e.g. an isolated
+    /// `UserDefaults` suite) instead of iCloud KVS, so tests never touch the
+    /// user's synced lists. Pass `nil` to restore iCloud KVS.
+    public static func overrideStore(_ store: EquipmentKeyValueStore?) {
+        storeOverride.set(store)
+    }
+
     // MARK: Private
 
-    private static let kvs = NSUbiquitousKeyValueStore.default
+    /// NSLock-guarded override (no `nonisolated(unsafe)` on mutable state).
+    private final class OverrideHolder: @unchecked Sendable {
+        // MARK: Internal
+
+        func set(_ value: EquipmentKeyValueStore?) {
+            lock.withLock { self.value = value }
+        }
+
+        func get() -> EquipmentKeyValueStore? {
+            lock.withLock { value }
+        }
+
+        // MARK: Private
+
+        private let lock = NSLock()
+        private var value: EquipmentKeyValueStore?
+    }
+
+    private static let storeOverride = OverrideHolder()
+
+    private static var kvs: EquipmentKeyValueStore {
+        storeOverride.get() ?? NSUbiquitousKeyValueStore.default
+    }
 }
+
+// MARK: - EquipmentKeyValueStore
+
+/// The slice of `NSUbiquitousKeyValueStore` / `UserDefaults` that
+/// `EquipmentStorage` uses.
+public protocol EquipmentKeyValueStore: AnyObject {
+    func array(forKey key: String) -> [Any]?
+    func set(_ value: Any?, forKey key: String)
+    @discardableResult
+    func synchronize() -> Bool
+}
+
+// MARK: - NSUbiquitousKeyValueStore + EquipmentKeyValueStore
+
+extension NSUbiquitousKeyValueStore: EquipmentKeyValueStore {}
+
+// MARK: - UserDefaults + EquipmentKeyValueStore
+
+extension UserDefaults: EquipmentKeyValueStore {}

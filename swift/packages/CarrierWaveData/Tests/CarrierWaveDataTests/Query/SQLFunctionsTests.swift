@@ -125,12 +125,13 @@ struct SQLFunctionsTests {
     @Test("filter spotters within 50km using cw_user_distance_km")
     func filterSpottersWithin50Km() async throws {
         let store = try makeStore(userGrid: "CM87wj")
-        // Seed spotters: one in San Francisco (close), one in NYC (far).
+        // Seed spotters: one inside CM87wj (close), one in NYC (far). San
+        // Francisco itself is ~50.004 km from the CM87wj center, so not "close".
         try await store.upsertSpotter(SpotterRow(
             callsign: "K6NEAR",
             grid: "CM87wj",
-            lat: 37.78,
-            lon: -122.42,
+            lat: 37.40,
+            lon: -122.13,
             dxccEntity: nil,
             continent: nil,
             isSkimmer: false

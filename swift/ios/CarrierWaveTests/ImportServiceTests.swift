@@ -12,7 +12,7 @@ final class ImportServiceTests: XCTestCase {
     @MainActor
     override func setUp() async throws {
         let schema = Schema(CarrierWaveSchema.models)
-        let config = ModelConfiguration(isStoredInMemoryOnly: true)
+        let config = ModelConfiguration(isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         modelContainer = try ModelContainer(for: schema, configurations: [config])
         modelContext = modelContainer.mainContext
         importService = ImportService(modelContext: modelContext)
@@ -61,9 +61,19 @@ final class ImportServiceTests: XCTestCase {
 
         let qsoDesc = BoundedDescriptor<QSO>(limit: 100)
         let qsos = try modelContext.boundedFetch(qsoDesc)
-        // QSOs without park ref get upload markers for QRZ, ClubLog, eQSL (not POTA)
-        let uploadCount = qsos[0].servicePresence.filter(\.needsUpload).count
-        XCTAssertGreaterThanOrEqual(uploadCount, 1, "Should have at least one upload marker")
+        let qso = try XCTUnwrap(qsos.first)
+
+        // Markers go to every configured upload service except POTA (no park ref),
+        // and only when the QSO matches the primary callsign. Which services are
+        // configured depends on the simulator's keychain, so derive the expectation.
+        let primary = CallsignAliasService.shared.getCurrentCallsign()?.uppercased()
+        let matchesPrimary = primary == nil || primary == "N0CALL"
+        let expected: Set<ServiceType> = matchesPrimary
+            ? CarrierWaveData.ServiceConfiguration.configuredUploadServices()
+            .filter { $0.supportsUpload && $0 != .pota }
+            : []
+        let marked = Set(qso.servicePresence.filter(\.needsUpload).map(\.serviceType))
+        XCTAssertEqual(marked, expected)
     }
 
     /// `on` mode: an ADIF import routes its inserts through `QSOWriteSink`, so the

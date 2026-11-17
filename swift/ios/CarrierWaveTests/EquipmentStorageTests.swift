@@ -5,18 +5,18 @@ import XCTest
 /// Tests for EquipmentStorage - UserDefaults-backed equipment list management
 @MainActor
 final class EquipmentStorageTests: XCTestCase {
+    // MARK: Internal
+
     override func setUp() {
         super.setUp()
-        // Clear all equipment types before each test
-        for type in [EquipmentType.antenna, .key, .mic] {
-            UserDefaults.standard.removeObject(forKey: type.rawValue)
-        }
+        // Isolated, empty store per test; never the user's iCloud KVS lists.
+        suiteName = "EquipmentStorageTests.\(UUID().uuidString)"
+        EquipmentStorage.overrideStore(UserDefaults(suiteName: suiteName))
     }
 
     override func tearDown() {
-        for type in [EquipmentType.antenna, .key, .mic] {
-            UserDefaults.standard.removeObject(forKey: type.rawValue)
-        }
+        EquipmentStorage.overrideStore(nil)
+        UserDefaults.standard.removePersistentDomain(forName: suiteName)
         super.tearDown()
     }
 
@@ -112,4 +112,8 @@ final class EquipmentStorageTests: XCTestCase {
         XCTAssertEqual(EquipmentType.key.icon, "pianokeys")
         XCTAssertEqual(EquipmentType.mic.icon, "mic")
     }
+
+    // MARK: Private
+
+    private var suiteName = ""
 }

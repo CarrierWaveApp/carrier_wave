@@ -195,13 +195,13 @@ final class ServicePresenceTests: XCTestCase {
         // When - mark for different services
         qso.markNeedsUpload(to: .qrz, context: modelContext)
         qso.markNeedsUpload(to: .pota, context: modelContext)
-        qso.markNeedsUpload(to: .lofi, context: modelContext)
+        qso.markNeedsUpload(to: .eqsl, context: modelContext)
 
         // Then
         XCTAssertEqual(qso.servicePresence.count, 3)
         XCTAssertTrue(qso.needsUpload(to: .qrz))
         XCTAssertTrue(qso.needsUpload(to: .pota))
-        XCTAssertTrue(qso.needsUpload(to: .lofi))
+        XCTAssertTrue(qso.needsUpload(to: .eqsl))
 
         // When - mark QRZ as present
         qso.markPresent(in: .qrz, context: modelContext)
@@ -210,7 +210,7 @@ final class ServicePresenceTests: XCTestCase {
         XCTAssertTrue(qso.isPresent(in: .qrz))
         XCTAssertFalse(qso.needsUpload(to: .qrz))
         XCTAssertTrue(qso.needsUpload(to: .pota))
-        XCTAssertTrue(qso.needsUpload(to: .lofi))
+        XCTAssertTrue(qso.needsUpload(to: .eqsl))
     }
 
     @MainActor

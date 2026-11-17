@@ -11,7 +11,7 @@ final class CwStoreMirrorTests: XCTestCase {
         // that QSO.servicePresence needs, otherwise SwiftData may not track changes.
         let container = try ModelContainer(
             for: Schema([QSO.self, ServicePresence.self]),
-            configurations: [ModelConfiguration(isStoredInMemoryOnly: true)]
+            configurations: [ModelConfiguration(isStoredInMemoryOnly: true, cloudKitDatabase: .none)]
         )
         let context = container.mainContext
         let store = try FieldStore.openInMemory(key: "test")
@@ -39,7 +39,7 @@ final class CwStoreMirrorTests: XCTestCase {
     func testBackgroundContextSaveMirrorsWithoutAssumingMainActor() async throws {
         let container = try ModelContainer(
             for: Schema([QSO.self, ServicePresence.self]),
-            configurations: [ModelConfiguration(isStoredInMemoryOnly: true)]
+            configurations: [ModelConfiguration(isStoredInMemoryOnly: true, cloudKitDatabase: .none)]
         )
         let store = try FieldStore.openInMemory(key: "test")
         let mirror = CwStoreMirror(store: store)
@@ -69,7 +69,7 @@ final class CwStoreMirrorTests: XCTestCase {
     func testServicePresenceInsertAndDeleteMirrorToRust() async throws {
         let container = try ModelContainer(
             for: Schema([QSO.self, ServicePresence.self]),
-            configurations: [ModelConfiguration(isStoredInMemoryOnly: true)]
+            configurations: [ModelConfiguration(isStoredInMemoryOnly: true, cloudKitDatabase: .none)]
         )
         let context = container.mainContext
         let store = try FieldStore.openInMemory(key: "test-sp-main")
@@ -96,7 +96,7 @@ final class CwStoreMirrorTests: XCTestCase {
     func testBackgroundContextServicePresenceMirrorsWithoutCrash() async throws {
         let container = try ModelContainer(
             for: Schema([QSO.self, ServicePresence.self]),
-            configurations: [ModelConfiguration(isStoredInMemoryOnly: true)]
+            configurations: [ModelConfiguration(isStoredInMemoryOnly: true, cloudKitDatabase: .none)]
         )
         let store = try FieldStore.openInMemory(key: "test-sp-bg")
         let mirror = CwStoreMirror(store: store)

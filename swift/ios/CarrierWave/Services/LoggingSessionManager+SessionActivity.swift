@@ -8,8 +8,13 @@ import SwiftData
 extension LoggingSessionManager {
     /// Report a sessionCompleted activity when a logging session ends.
     /// Computes session stats from QSOs and reports to both local store and server.
-    func reportSessionCompleted(_ session: LoggingSession) async {
-        let sessionId = session.id
+    /// Runs in a task after `endSession` returns, so it re-fetches the session
+    /// by id rather than holding a model that may have been deleted or whose
+    /// container may be gone.
+    func reportSessionCompleted(sessionId: UUID) async {
+        guard let session = liveSession(id: sessionId) else {
+            return
+        }
 
         // Fetch QSOs for this session, excluding metadata pseudo-modes
         let descriptor = BoundedDescriptor<QSO>(

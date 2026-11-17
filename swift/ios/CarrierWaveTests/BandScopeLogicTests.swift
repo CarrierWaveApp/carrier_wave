@@ -162,12 +162,19 @@ final class BandScopeLogicTests: XCTestCase {
     // MARK: - Freshness fade (§7)
 
     func testFreshnessFadeEndpointsAndFloor() {
+        let full = BandScopeTunables.fadeFullSeconds
+        let floorAt = BandScopeTunables.fadeFloorSeconds
+        let floor = BandScopeTunables.fadeFloorOpacity
         XCTAssertEqual(FreshnessFade.opacity(ageSeconds: 0), 1.0)
-        XCTAssertEqual(FreshnessFade.opacity(ageSeconds: 120), 1.0)
-        // Midpoint of the fade window.
-        XCTAssertEqual(FreshnessFade.opacity(ageSeconds: 960), 0.7, accuracy: 0.001)
-        XCTAssertEqual(FreshnessFade.opacity(ageSeconds: 1_800), 0.4)
-        XCTAssertEqual(FreshnessFade.opacity(ageSeconds: 90_000), 0.4)
+        XCTAssertEqual(FreshnessFade.opacity(ageSeconds: full), 1.0)
+        // Midpoint of the fade window is halfway between full and the floor.
+        XCTAssertEqual(
+            FreshnessFade.opacity(ageSeconds: (full + floorAt) / 2),
+            (1.0 + floor) / 2,
+            accuracy: 0.001
+        )
+        XCTAssertEqual(FreshnessFade.opacity(ageSeconds: floorAt), floor)
+        XCTAssertEqual(FreshnessFade.opacity(ageSeconds: 90_000), floor)
     }
 
     // MARK: - Tier assignment (§2)

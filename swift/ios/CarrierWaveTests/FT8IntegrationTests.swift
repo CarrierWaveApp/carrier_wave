@@ -13,6 +13,7 @@ final class FT8IntegrationTests: XCTestCase {
     var modelContainer: ModelContainer!
     var modelContext: ModelContext!
     var sessionManager: LoggingSessionManager!
+    var restoreDefaults: (() -> Void)?
 
     // MARK: - Setup/Teardown
 
@@ -20,6 +21,7 @@ final class FT8IntegrationTests: XCTestCase {
     override func setUp() async throws {
         UserDefaults.standard.removeObject(forKey: "activeLoggingSessionId")
 
+        restoreDefaults = SessionTestDefaults.disableNetworkSideEffects()
         let (container, context) = try TestModelContainer.createWithContext()
         modelContainer = container
         modelContext = context
@@ -32,6 +34,7 @@ final class FT8IntegrationTests: XCTestCase {
             sessionManager.endSession()
         }
         UserDefaults.standard.removeObject(forKey: "activeLoggingSessionId")
+        restoreDefaults?()
         sessionManager = nil
         modelContext = nil
         modelContainer = nil

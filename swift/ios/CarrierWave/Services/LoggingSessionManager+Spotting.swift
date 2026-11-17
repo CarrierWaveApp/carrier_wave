@@ -382,7 +382,11 @@ extension LoggingSessionManager {
     /// Post QRT spots for all parks if enabled and the session had spots.
     /// `frequency` lets the caller pass the own frequency resolved *before* the
     /// session's record was cleared; nil resolves it here.
-    func postQRTSpotIfNeeded(for session: LoggingSession, frequency: Double? = nil) async {
+    ///
+    /// Reads the session synchronously and hands plain values to the network
+    /// task, so the task never touches a SwiftData model that may be gone by
+    /// the time it runs.
+    func postQRTSpotIfNeeded(for session: LoggingSession, frequency: Double? = nil) {
         let endCallsign = session.stationCallsign ?? session.myCallsign
         guard potaQRTSpotEnabled,
               session.isPOTA,
@@ -392,7 +396,15 @@ extension LoggingSessionManager {
         else {
             return
         }
+        let mode = session.mode
+        Task {
+            await postQRTSpot(callsign: endCallsign, parkRef: parkRef, frequency: freq, mode: mode)
+        }
+    }
 
+    private func postQRTSpot(callsign endCallsign: String, parkRef: String, frequency freq: Double,
+                             mode: String) async
+    {
         let parks = ParkReference.split(parkRef)
         let potaClient = POTAClient(authService: potaAuthService ?? POTAAuthService())
 
@@ -419,7 +431,7 @@ extension LoggingSessionManager {
                         callsign: endCallsign,
                         reference: park,
                         frequency: freq * 1_000,
-                        mode: session.mode,
+                        mode: mode,
                         comments: "QRT"
                     )
                     SyncDebugLog.shared.info("QRT spot posted for \(park)", service: .pota)

@@ -15,7 +15,7 @@ final class KIndexRepairServiceTests: XCTestCase {
     override func setUp() async throws {
         try await super.setUp()
         let schema = Schema(CarrierWaveSchema.models)
-        let config = ModelConfiguration(isStoredInMemoryOnly: true)
+        let config = ModelConfiguration(isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         container = try ModelContainer(for: schema, configurations: [config])
         context = container.mainContext
     }

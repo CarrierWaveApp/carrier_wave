@@ -39,7 +39,7 @@ final class QSOStatisticsPerformanceTests: XCTestCase {
     @MainActor
     override func setUp() async throws {
         let schema = Schema(CarrierWaveSchema.models)
-        let config = ModelConfiguration(isStoredInMemoryOnly: true)
+        let config = ModelConfiguration(isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         modelContainer = try ModelContainer(for: schema, configurations: [config])
         modelContext = modelContainer.mainContext
     }
