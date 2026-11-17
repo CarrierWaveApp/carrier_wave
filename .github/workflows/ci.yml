@@ -16,25 +16,27 @@ concurrency:
 jobs:
   lint:
     name: Lint & Format
-    runs-on: ubuntu-latest
+    # macOS, not Linux: the Linux SwiftFormat build times out in its
+    # organizeDeclarations rule on dozens of files that take ~0.1s on macOS.
+    # Standard GitHub-hosted runners are free for public repositories.
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
 
+      # Pinned to the versions the local pre-commit hooks use.
       - name: Install SwiftLint
         run: |
-          curl -sL https://github.com/realm/SwiftLint/releases/download/0.65.1/swiftlint_linux_amd64.zip \
+          curl -sL https://github.com/realm/SwiftLint/releases/download/0.65.1/portable_swiftlint.zip \
             -o /tmp/swiftlint.zip
           unzip -o /tmp/swiftlint.zip -d /tmp/swiftlint_bin
-          sudo cp /tmp/swiftlint_bin/swiftlint-static /usr/local/bin/swiftlint
-          sudo chmod +x /usr/local/bin/swiftlint
+          sudo install -m 755 /tmp/swiftlint_bin/swiftlint /usr/local/bin/swiftlint
 
       - name: Install SwiftFormat
         run: |
-          curl -sL https://github.com/nicklockwood/SwiftFormat/releases/download/0.64.0/swiftformat_linux.zip \
+          curl -sL https://github.com/nicklockwood/SwiftFormat/releases/download/0.64.0/swiftformat.zip \
             -o /tmp/swiftformat.zip
           unzip -o /tmp/swiftformat.zip -d /tmp/swiftformat_bin
-          sudo cp /tmp/swiftformat_bin/swiftformat_linux /usr/local/bin/swiftformat
-          sudo chmod +x /usr/local/bin/swiftformat
+          sudo install -m 755 /tmp/swiftformat_bin/swiftformat /usr/local/bin/swiftformat
 
       - name: Check formatting
         run: swiftformat --lint .
@@ -57,9 +59,9 @@ jobs:
         run: bash scripts/check-versions.sh
 
   # NOTE: macOS-runner jobs (iOS app build, CwFfi.xcframework, and the
-  # CarrierWaveCore / CarrierWaveData swift-test suites) are intentionally NOT
-  # run in CI — macOS runners are too expensive. Those builds and the app-target
-  # seam tests are verified locally instead.
+  # CarrierWaveCore / CarrierWaveData swift-test suites) are NOT run in CI:
+  # they need the prebuilt CwFfi.xcframework, which is not checked in. Those
+  # builds and the app-target seam tests are verified locally instead.
   # See docs/plans/2026-06-19-ci-build-requirements.md.
 
   performance-audit:
