@@ -15,6 +15,15 @@ struct CarrierWaveApp: App {
     // MARK: Lifecycle
 
     init() {
+        // Hosting unit tests: skip every launch side effect (see TestHost).
+        if Self.isHostingUnitTests {
+            (sharedModelContainer, storeURL) = Self.makeTestHostContainer()
+            restoredBackup = nil
+            pendingInitFailure = nil
+            Self.installTestHostStore()
+            return
+        }
+
         // Begin startup profiling if enabled (must be first)
         StartupProfiler.shared.beginIfEnabled()
 
@@ -95,54 +104,9 @@ struct CarrierWaveApp: App {
 
     var sharedModelContainer: ModelContainer
 
-    var body: some Scene {
-        WindowGroup {
-            Group {
-                if let pendingInitFailure {
-                    // Container init failed — present recovery UI instead
-                    // of ContentView. The in-memory fallback container is
-                    // attached so any incidental SwiftData calls don't
-                    // crash, but the user can't reach ContentView until
-                    // they restore or explicitly reset.
-                    RecoveryModeView(
-                        failureRecord: pendingInitFailure,
-                        storeURL: storeURL
-                    )
-                    .modelContainer(sharedModelContainer)
-                } else {
-                    normalRootView
-                }
-            }
-            .whatsNewPresenter()
-        }
-    }
-
-    // MARK: Private
-
-    @State private var showEquipmentMigration = false
-    @Environment(\.scenePhase) private var scenePhase
-    @State private var tourState = TourState()
-    @AppStorage("appearanceMode") private var appearanceMode = "system"
-    /// Default `.on` (Phase 1c) — drives `applyQSOMirrorMode` at launch; must match
-    /// `CwStoreQSOMode.current`'s default so the mirror/import actually spin up.
-    @AppStorage(CwStoreQSOMode.appStorageKey) private var qsoMode = CwStoreQSOMode.on
-
-    private var isSunlightMode: Bool {
-        appearanceMode == "sunlight"
-    }
-
-    private var colorScheme: ColorScheme? {
-        switch appearanceMode {
-        case "light": .light
-        case "dark": .dark
-        case "sunlight": .light // Sunlight mode forces light scheme
-        default: nil
-        }
-    }
-
     /// Steady-state app root. Extracted from the WindowGroup builder
     /// so the App struct's body length stays under the lint cap.
-    private var normalRootView: some View {
+    var normalRootView: some View {
         ContentView(
             tourState: tourState,
             restoredBackup: restoredBackup
@@ -475,6 +439,29 @@ struct CarrierWaveApp: App {
             Task { await reestablishMirrorAfterRebuild(mode: qsoMode) }
         }
         .modelContainer(sharedModelContainer)
+    }
+
+    // MARK: Private
+
+    @State private var showEquipmentMigration = false
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var tourState = TourState()
+    @AppStorage("appearanceMode") private var appearanceMode = "system"
+    /// Default `.on` (Phase 1c) — drives `applyQSOMirrorMode` at launch; must match
+    /// `CwStoreQSOMode.current`'s default so the mirror/import actually spin up.
+    @AppStorage(CwStoreQSOMode.appStorageKey) private var qsoMode = CwStoreQSOMode.on
+
+    private var isSunlightMode: Bool {
+        appearanceMode == "sunlight"
+    }
+
+    private var colorScheme: ColorScheme? {
+        switch appearanceMode {
+        case "light": .light
+        case "dark": .dark
+        case "sunlight": .light // Sunlight mode forces light scheme
+        default: nil
+        }
     }
 }
 

@@ -8,6 +8,7 @@
 | File | Purpose |
 |------|---------|
 | `CarrierWave/CarrierWaveApp.swift` | App entry point, SwiftData container setup |
+| `CarrierWave/CarrierWaveApp+Root.swift` | Scene `body` / root view, plus unit-test host mode (skips all launch work when XCTest hosts the app) |
 | `CarrierWave/AppDelegate.swift` | UIApplicationDelegate: remote notifications, memory-warning cache purge, temporary orientation lock (satellite pointing) |
 | `CarrierWave/AppSchema.swift` | Single deduplicated SwiftData model list (shared + iOS-only) for the app container and tests |
 | `CarrierWave/CarrierWaveApp+ContainerSetup.swift` | ModelContainer creation, ContainerInitFailureRecord persistence, recovery-mode routing |
