@@ -197,9 +197,15 @@ final class WinKeyerManager {
             logger.info("WinKeyer connected, firmware v\(firmwareVersion)")
 
         case .disconnected:
+            // Only reached when the session drops on its own (unplug, read
+            // error) — a user disconnect cancels this consumer first. Drop the
+            // dead session so auto-connect can pick the keyer up again.
             isConnected = false
             connectedPortPath = nil
             status = []
+            firmwareVersion = 0
+            session = nil
+            eventTask = nil
 
         case let .statusChanged(newStatus):
             status = newStatus

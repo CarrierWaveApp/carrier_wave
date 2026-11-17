@@ -52,19 +52,16 @@ actor WinKeyerSession {
         _ = try port.write(hostOpen)
         logger.debug("Sent Host Open")
 
-        // Wait briefly for firmware revision response
-        try await Task.sleep(for: .milliseconds(200))
-
-        let response = try port.read(maxBytes: 64)
-        if let firmwareByte = response.first {
-            logger.info("WinKeyer firmware revision: \(firmwareByte)")
-            isConnected = true
-            eventContinuation.yield(.connected(firmwareVersion: firmwareByte))
-        } else {
-            logger.warning("No firmware revision received — continuing anyway")
-            isConnected = true
-            eventContinuation.yield(.connected(firmwareVersion: 0))
+        let response = try await readHostOpenReply()
+        guard let firmwareByte = WinKeyerProtocolEncoder.firmwareVersion(fromHostOpenReply: response) else {
+            port.close()
+            let hex = response.map { String(format: "%02X", $0) }.joined(separator: " ")
+            logger.error("Not a WinKeyer on \(path): Host Open reply [\(hex)]")
+            throw WinKeyerSessionError.notAWinKeyer(portPath: path, reply: response)
         }
+        logger.info("WinKeyer firmware revision: \(firmwareByte)")
+        isConnected = true
+        eventContinuation.yield(.connected(firmwareVersion: firmwareByte))
 
         // Enable WK3 mode for full feature set
         let wk3Mode = WinKeyerProtocolEncoder.encodeSetWK3Mode()
@@ -150,31 +147,71 @@ actor WinKeyerSession {
     private let eventContinuation: AsyncStream<WinKeyerEvent>.Continuation
     private var receiveTask: Task<Void, Never>?
 
+    /// Poll for the Host Open reply for up to a second. A keyer that was
+    /// just powered by DTR can take a few hundred ms to answer.
+    private func readHostOpenReply() async throws -> Data {
+        var reply = Data()
+        for _ in 0 ..< 10 {
+            try await Task.sleep(for: .milliseconds(100))
+            try reply.append(port.read(maxBytes: 64))
+            if !reply.isEmpty {
+                // Let any trailing bytes (e.g. an echoed second byte) arrive
+                try await Task.sleep(for: .milliseconds(50))
+                try reply.append(port.read(maxBytes: 64))
+                break
+            }
+        }
+        return reply
+    }
+
     private func receiveLoop() async {
         logger.debug("Receive loop started")
+        var idleReads = 0
 
         while !Task.isCancelled {
             do {
                 let data = try port.read(maxBytes: 256)
                 if data.isEmpty {
+                    // An unplugged USB adapter can return EOF instead of an
+                    // error, so check about once a second that the device
+                    // node still exists.
+                    idleReads += 1
+                    if idleReads >= 50 {
+                        idleReads = 0
+                        if !FileManager.default.fileExists(atPath: portPath) {
+                            handleLostPort("WinKeyer was unplugged (\(portPath) is gone)")
+                            break
+                        }
+                    }
                     // No data available — yield to avoid spinning
                     try await Task.sleep(for: .milliseconds(20))
                     continue
                 }
+                idleReads = 0
 
                 for byte in data {
                     classifyByte(byte)
                 }
             } catch {
                 if !Task.isCancelled {
-                    logger.error("Read error: \(error)")
-                    eventContinuation.yield(.error(error.localizedDescription))
+                    handleLostPort("WinKeyer read failed: \(error.localizedDescription)")
                 }
                 break
             }
         }
 
         logger.debug("Receive loop ended")
+    }
+
+    /// The port died under us: tell the manager and close the stream so the
+    /// UI stops showing a connection that no longer exists.
+    private func handleLostPort(_ message: String) {
+        logger.error("\(message)")
+        port.close()
+        isConnected = false
+        eventContinuation.yield(.error(message))
+        eventContinuation.yield(.disconnected)
+        eventContinuation.finish()
     }
 
     private func classifyByte(_ byte: UInt8) {
@@ -187,6 +224,29 @@ actor WinKeyerSession {
         } else {
             // Echo-back of sent character
             eventContinuation.yield(.echoCharacter(byte))
+        }
+    }
+}
+
+// MARK: - WinKeyerSessionError
+
+enum WinKeyerSessionError: LocalizedError {
+    case notAWinKeyer(portPath: String, reply: Data)
+
+    // MARK: Internal
+
+    var errorDescription: String? {
+        switch self {
+        case let .notAWinKeyer(portPath, reply):
+            if reply.isEmpty {
+                return "No WinKeyer answered on \(portPath). Check that it's plugged in and powered."
+            }
+            if reply.starts(with: WinKeyerProtocolEncoder.encodeHostOpen()) {
+                return "\(portPath) echoed the WinKeyer handshake back, so it isn't a WinKeyer. "
+                    + "Pick the WinKeyer's port instead."
+            }
+            let hex = reply.map { String(format: "%02X", $0) }.joined(separator: " ")
+            return "\(portPath) didn't answer like a WinKeyer (got \(hex))."
         }
     }
 }

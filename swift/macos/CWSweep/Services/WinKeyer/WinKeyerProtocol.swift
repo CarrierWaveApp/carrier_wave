@@ -34,7 +34,9 @@ enum WinKeyerCommand: UInt8 {
 
 // MARK: - WinKeyerAdmin
 
-/// Admin sub-commands (prefixed by 0x00).
+/// Admin sub-commands (prefixed by 0x00). Numbers from the K1EL WK3
+/// Datasheet v1.2, "Admin Commands" — note 0x10 is Firmware Update, not
+/// a mode switch, so never send it.
 enum WinKeyerAdmin: UInt8 {
     case calibrate = 0x00
     case reset = 0x01
@@ -50,10 +52,12 @@ enum WinKeyerAdmin: UInt8 {
     case dumpEEPROM = 0x0C
     case loadEEPROM = 0x0D
     case sendMsg = 0x0E
-    case loadMsg = 0x0F
-    case setWK3Mode = 0x10
-    case writeWK3Reg = 0x11
-    case readWK3Reg = 0x12
+    case loadX1Mode = 0x0F
+    case setHighBaud = 0x11
+    case setLowBaud = 0x12
+    case setWK3Mode = 0x14
+    case readBackVcc = 0x15
+    case loadX2Mode = 0x16
 }
 
 // MARK: - WinKeyerStatus
@@ -96,6 +100,12 @@ struct WinKeyerState {
 
 /// Static helpers for encoding/decoding the WK3 binary protocol.
 enum WinKeyerProtocolEncoder {
+    // MARK: - Decode helpers
+
+    /// Firmware revisions a real keyer reports after Host Open:
+    /// WK1 = 10, WK2 = 20–23, WK3 = 30–31. Anything outside 10–99 isn't one.
+    static let plausibleFirmwareRange: ClosedRange<UInt8> = 10 ... 99
+
     // MARK: - Admin commands
 
     static func encodeHostOpen() -> Data {
@@ -172,7 +182,20 @@ enum WinKeyerProtocolEncoder {
         Data([WinKeyerCommand.mergeLetters.rawValue, a, b])
     }
 
-    // MARK: - Decode helpers
+    /// Validate the reply to Host Open and return the firmware revision.
+    ///
+    /// Returns nil for an empty reply, an echo of the Host Open bytes
+    /// (a plain USB-serial chip or loopback that copies back whatever it
+    /// receives), or a first byte outside the plausible firmware range.
+    static func firmwareVersion(fromHostOpenReply reply: Data) -> UInt8? {
+        guard let first = reply.first,
+              !reply.starts(with: encodeHostOpen()),
+              plausibleFirmwareRange.contains(first)
+        else {
+            return nil
+        }
+        return first
+    }
 
     /// Returns true if the byte is a status byte (top 2 bits = 11).
     static func isStatusByte(_ byte: UInt8) -> Bool {

@@ -116,3 +116,41 @@ import Testing
         #expect(str == "KY CQ;")
     }
 }
+
+// MARK: - WinKeyer Handshake Validation
+
+@Test func winKeyerHostOpenAcceptsWK3FirmwareByte() {
+    #expect(WinKeyerProtocolEncoder.firmwareVersion(fromHostOpenReply: Data([31])) == 31)
+}
+
+@Test func winKeyerHostOpenAcceptsFirmwareFollowedByStatus() {
+    #expect(WinKeyerProtocolEncoder.firmwareVersion(fromHostOpenReply: Data([23, 0xC0])) == 23)
+}
+
+@Test func winKeyerHostOpenRejectsEcho() {
+    // A plain USB-serial chip that copies back what it receives
+    let echo = WinKeyerProtocolEncoder.encodeHostOpen()
+    #expect(WinKeyerProtocolEncoder.firmwareVersion(fromHostOpenReply: echo) == nil)
+}
+
+@Test func winKeyerHostOpenRejectsEmptyReply() {
+    #expect(WinKeyerProtocolEncoder.firmwareVersion(fromHostOpenReply: Data()) == nil)
+}
+
+@Test func winKeyerHostOpenRejectsImplausibleByte() {
+    #expect(WinKeyerProtocolEncoder.firmwareVersion(fromHostOpenReply: Data([0xC0])) == nil)
+    #expect(WinKeyerProtocolEncoder.firmwareVersion(fromHostOpenReply: Data([0x02])) == nil)
+}
+
+@Test func winKeyerEchoErrorNamesThePort() {
+    let error = WinKeyerSessionError.notAWinKeyer(
+        portPath: "/dev/cu.usbserial-1",
+        reply: WinKeyerProtocolEncoder.encodeHostOpen()
+    )
+    #expect(error.errorDescription?.contains("echoed") == true)
+}
+
+@Test func winKeyerSetWK3ModeIsAdmin20NotFirmwareUpdate() {
+    // WK3 Datasheet v1.2: admin 16 (0x10) is Firmware Update; 20 (0x14) is Set WK3 Mode
+    #expect(WinKeyerProtocolEncoder.encodeSetWK3Mode() == Data([0x00, 0x14]))
+}

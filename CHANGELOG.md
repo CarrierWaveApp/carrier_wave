@@ -47,6 +47,13 @@ section at the end of this file.
   the Bypass POTA Maintenance debug toggle are gone.
 
 ### Fixed
+- **WinKeyer speed knob works in CW Sweep (macOS).** On connect Sweep sent
+  admin command 0x10, which a WK3 treats as Firmware Update, instead of Set WK3
+  Mode (0x14). The keyer then stopped reporting speed knob changes. Sweep now
+  sends the right command. It also refuses a port that only echoes the
+  handshake back (such as a plain USB-serial chip), so a power switch or other
+  CH340 no longer shows as a connected WinKeyer. An unplugged WinKeyer is now
+  marked disconnected and can auto-connect again.
 - **Tune & Log works from the Spots screen; double-click tunes (CW Sweep, macOS).**
   On the standalone Spots screen, Tune & Log now switches to the Logger with the
   spot filled into the entry field; before, that screen had no entry field, so
