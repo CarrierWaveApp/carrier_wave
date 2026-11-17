@@ -63,12 +63,10 @@ xcconfig_value() {
 # uses the WhatsNewEntry default of [.iOS, .macOS].
 newest_whats_new_version() {
     local platform="$1"
-    cat "$CATALOG_DIR/WhatsNewCatalog+Recent.swift" \
-        "$CATALOG_DIR/WhatsNewCatalog+Archive.swift" \
-        "$CATALOG_DIR/WhatsNewCatalog+ArchiveOlder.swift" \
-        "$CATALOG_DIR/WhatsNewCatalog+ArchiveOldest.swift" \
-        "$CATALOG_DIR/WhatsNewCatalog+ArchiveSweep.swift" \
-    | awk -v want="$platform" '
+    # awk reads the files itself (in this order) rather than through `cat |`:
+    # awk exits at the first match, and under `set -o pipefail` the SIGPIPE
+    # that kills a still-writing `cat` would fail the whole script.
+    awk -v want="$platform" '
         # A new entry starts at `WhatsNewEntry(`; flush the previous one.
         /WhatsNewEntry\(/ {
             if (version != "" && matches(platforms, want)) { print version; found = 1; exit }
@@ -87,7 +85,12 @@ newest_whats_new_version() {
             if (p == "") return 1               # default platforms = both
             return index(p, "." w) > 0
         }
-    '
+    ' \
+        "$CATALOG_DIR/WhatsNewCatalog+Recent.swift" \
+        "$CATALOG_DIR/WhatsNewCatalog+Archive.swift" \
+        "$CATALOG_DIR/WhatsNewCatalog+ArchiveOlder.swift" \
+        "$CATALOG_DIR/WhatsNewCatalog+ArchiveOldest.swift" \
+        "$CATALOG_DIR/WhatsNewCatalog+ArchiveSweep.swift"
 }
 
 # newest_changelog_version TRACK (ios|sweep|android) → x.y.z of the newest

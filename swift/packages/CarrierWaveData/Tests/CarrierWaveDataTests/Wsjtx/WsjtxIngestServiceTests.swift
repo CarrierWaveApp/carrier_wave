@@ -38,7 +38,7 @@ struct WsjtxIngestServiceTests {
         #expect(service.duplicateCount == 1)
         #expect(service.recentEvents.map(\.kind) == [.qsoLogged, .duplicate])
 
-        let stored = try context.fetch(FetchDescriptor<QSO>()).first
+        let stored = try Self.firstQSO(in: context)
         #expect(stored?.callsign == "K1ABC")
         #expect(stored?.importSourceRawValue == ImportSource.wsjtx.rawValue)
         #expect(stored?.importSource == .wsjtx)
@@ -120,7 +120,7 @@ struct WsjtxIngestServiceTests {
         loose.loggingSessionId = nil
         service.ingest([loose])
 
-        let stored = try context.fetch(FetchDescriptor<QSO>()).first
+        let stored = try Self.firstQSO(in: context)
         #expect(stored?.loggingSessionId == session.id)
         #expect(session.qsoCount == 1)
         #expect(service.makeImportContext().loggingSessionId == session.id.uuidString.lowercased())
@@ -237,6 +237,14 @@ struct WsjtxIngestServiceTests {
     }
 
     private static func rowCount(in context: ModelContext) throws -> Int {
-        try context.fetchCount(FetchDescriptor<QSO>())
+        var descriptor = FetchDescriptor<QSO>()
+        descriptor.fetchLimit = 100
+        return try context.fetchCount(descriptor)
+    }
+
+    private static func firstQSO(in context: ModelContext) throws -> QSO? {
+        var descriptor = FetchDescriptor<QSO>()
+        descriptor.fetchLimit = 1
+        return try context.fetch(descriptor).first
     }
 }
