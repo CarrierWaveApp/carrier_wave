@@ -22,12 +22,22 @@ extension RadioAutoDetect {
         )
     }
 
-    /// Send Kenwood `ID;` and wait for `IDxxx;`. Returns nil on timeout.
+    /// Send Kenwood `;ID;` and wait for `IDxxx;`. Returns nil on timeout.
+    ///
+    /// The leading `;` ends any half-received command left in the radio's
+    /// CAT buffer (e.g. bytes from a probe at the wrong baud rate), which
+    /// would otherwise be glued onto `ID;` and make every retry fail. Radios
+    /// may answer the empty command (the K3 replies `;ID017;`, others `?;`),
+    /// so keep reading until a full `IDxxx;` arrives rather than stopping at
+    /// the first `;`.
     static func tryKenwood(port: SerialPort, baudRate: Int, timeoutMs: Int) async throws -> Result? {
-        _ = try? port.write(Data("ID;".utf8))
+        _ = try? port.write(Data(kenwoodIDQuery.utf8))
 
-        guard let response = try await drainUntil(port: port, timeoutMs: timeoutMs, terminator: 0x3B),
-              let identifier = parseKenwoodID(response)
+        guard let response = try await drainUntil(
+            port: port, timeoutMs: timeoutMs,
+            isComplete: { parseKenwoodID($0) != nil }
+        ),
+            let identifier = parseKenwoodID(response)
         else {
             return nil
         }
@@ -42,15 +52,28 @@ extension RadioAutoDetect {
         )
     }
 
+    /// Kenwood/Elecraft identify query, with a leading `;` to flush the
+    /// radio's command buffer.
+    static let kenwoodIDQuery = ";ID;"
+
     /// Read bytes until `terminator` is seen or `timeoutMs` elapses.
     static func drainUntil(port: SerialPort, timeoutMs: Int, terminator: UInt8) async throws -> Data? {
+        try await drainUntil(port: port, timeoutMs: timeoutMs, isComplete: { $0.contains(terminator) })
+    }
+
+    /// Read bytes until `isComplete` accepts the buffer or `timeoutMs` elapses.
+    static func drainUntil(
+        port: SerialPort,
+        timeoutMs: Int,
+        isComplete: (Data) -> Bool
+    ) async throws -> Data? {
         let deadline = Date().addingTimeInterval(Double(timeoutMs) / 1_000)
         var buffer = Data()
         while Date() < deadline {
             let chunk = (try? port.read(maxBytes: 256)) ?? Data()
             if !chunk.isEmpty {
                 buffer.append(chunk)
-                if buffer.contains(terminator) {
+                if isComplete(buffer) {
                     return buffer
                 }
             }

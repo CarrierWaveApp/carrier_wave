@@ -59,6 +59,11 @@ section at the end of this file.
   spot filled into the entry field; before, that screen had no entry field, so
   the entry was dropped. Double-clicking a spot now just tunes the radio; Return
   and the right-click menu still do Tune & Log.
+- **Radio autodetect no longer gets stuck after a failed attempt (macOS).** Probing
+  at the wrong baud rates could leave a half-received command in an Elecraft or
+  Kenwood radio's CAT buffer, so every later Connect failed with "No response
+  from radio" even with the radio on. The ID probe now sends `;ID;` to clear
+  that buffer and reads until a full `IDnnn;` reply arrives.
 - **A new POTA upload shows under POTA Jobs right away (iOS).** On the Sessions
   tab a job only appeared on its session once POTA had processed it, so a log
   that was still queued had no POTA Jobs section. Queued jobs now show on the

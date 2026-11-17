@@ -59,6 +59,28 @@ import Testing
     #expect(RadioAutoDetect.parseKenwoodID(buffer) == nil)
 }
 
+// MARK: - Leading-semicolon ID query
+
+@Test func kenwoodIDQueryFlushesRadioBuffer() {
+    // A leading ";" ends any half-received command left by wrong-baud probes.
+    #expect(RadioAutoDetect.kenwoodIDQuery == ";ID;")
+}
+
+@Test func parseKenwoodIDAcceptsK3LeadingSemicolonReply() {
+    // Real K3 reply to ";ID;" (verified on hardware).
+    #expect(RadioAutoDetect.parseKenwoodID(Data(";ID017;".utf8)) == "ID017")
+}
+
+@Test func parseKenwoodIDAcceptsReplyAfterErrorForEmptyCommand() {
+    #expect(RadioAutoDetect.parseKenwoodID(Data("?;ID020;".utf8)) == "ID020")
+}
+
+@Test func parseKenwoodIDIsIncompleteAfterBareSemicolon() {
+    // The read must not stop at the first ";" of a ";ID017;" reply.
+    #expect(RadioAutoDetect.parseKenwoodID(Data(";".utf8)) == nil)
+    #expect(RadioAutoDetect.parseKenwoodID(Data(";ID0".utf8)) == nil)
+}
+
 // MARK: - Yaesu vs Kenwood
 
 @Test func isYaesuIDDifferentiatesByLength() {
