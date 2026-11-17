@@ -178,10 +178,7 @@ final class UDPSock {
     var localPort: UInt16 = 0
 
     func open() throws {
-        guard let hostent = gethostbyname(host) else {
-            throw DiagError.dns(host)
-        }
-        guard let addrPtr = hostent.pointee.h_addr_list[0] else {
+        guard let hostent = gethostbyname(host), let addrPtr = hostent.pointee.h_addr_list[0] else {
             throw DiagError.dns(host)
         }
         var inAddr = in_addr()
@@ -776,10 +773,7 @@ final class IC705Diag {
             guard remaining > 0 else {
                 break
             }
-            guard let pkt = sock.recv(timeout: min(remaining, 0.5)) else {
-                continue
-            }
-            guard pkt.count >= 16 else {
+            guard let pkt = sock.recv(timeout: min(remaining, 0.5)), pkt.count >= 16 else {
                 continue
             }
 
@@ -824,13 +818,9 @@ final class IC705Diag {
                 }
                 pos += 1
             }
-            guard let frameStart = start else {
-                break
-            }
-            guard frameStart + 5 < data.count else {
-                break
-            }
-            guard let endIdx = data[(frameStart + 4)...].firstIndex(of: CIV_TERMINATOR) else {
+            guard let frameStart = start, frameStart + 5 < data.count,
+                  let endIdx = data[(frameStart + 4)...].firstIndex(of: CIV_TERMINATOR)
+            else {
                 break
             }
             let frameData = Array(data[(frameStart + 5) ..< endIdx])
@@ -1041,10 +1031,8 @@ final class IC705Diag {
             } else if pkt[0] == 0xA8, pkt.count >= 82 {
                 a8ReplyID = Array(pkt[66 ..< 82])
                 logInfo("0xA8 received — a8replyID: \(a8ReplyID.map { String(format: "%02X", $0) }.joined())")
-                if pkt.count > 114 {
-                    if let name = extractString(Array(pkt[82 ..< min(114, pkt.count)])) {
-                        logInfo("Radio: \(name)")
-                    }
+                if pkt.count > 114, let name = extractString(Array(pkt[82 ..< min(114, pkt.count)])) {
+                    logInfo("Radio: \(name)")
                 }
             }
         }
@@ -1119,10 +1107,7 @@ final class IC705Diag {
         let civPkt4Deadline = CFAbsoluteTimeGetCurrent() + 3.0
         var gotCIVPkt4 = false
         while CFAbsoluteTimeGetCurrent() < civPkt4Deadline {
-            guard let resp = civSock.recv(timeout: 0.5) else {
-                continue
-            }
-            guard resp.count >= 16 else {
+            guard let resp = civSock.recv(timeout: 0.5), resp.count >= 16 else {
                 continue
             }
             // Filter pkt7 pings on CIV channel
@@ -1177,10 +1162,8 @@ final class IC705Diag {
         var openResps = 0
         while CFAbsoluteTimeGetCurrent() < openDeadline {
             // Service control pkt7
-            if let ctrlPkt = ctrl?.recv(timeout: 0) {
-                if isPkt7(ctrlPkt) {
-                    handlePkt7(ctrlPkt, sock: ctrl!)
-                }
+            if let ctrlPkt = ctrl?.recv(timeout: 0), isPkt7(ctrlPkt) {
+                handlePkt7(ctrlPkt, sock: ctrl!)
             }
             guard let rx = civSock.recv(timeout: 0.2) else {
                 if openResps > 0 {
@@ -1233,10 +1216,8 @@ final class IC705Diag {
             }
 
             // Service control channel pkt7 non-blockingly
-            if let ctrlPkt = ctrl?.recv(timeout: 0) {
-                if isPkt7(ctrlPkt) {
-                    handlePkt7(ctrlPkt, sock: ctrl!)
-                }
+            if let ctrlPkt = ctrl?.recv(timeout: 0), isPkt7(ctrlPkt) {
+                handlePkt7(ctrlPkt, sock: ctrl!)
             }
 
             guard let pkt = civSock.recv(timeout: min(remaining, 0.1)) else {
@@ -1592,10 +1573,8 @@ final class IC705Diag {
         var totalCount = 0
         while CFAbsoluteTimeGetCurrent() < deadline {
             // Service control channel pkt7
-            if let ctrlPkt = ctrl?.recv(timeout: 0) {
-                if isPkt7(ctrlPkt) {
-                    handlePkt7(ctrlPkt, sock: ctrl!)
-                }
+            if let ctrlPkt = ctrl?.recv(timeout: 0), isPkt7(ctrlPkt) {
+                handlePkt7(ctrlPkt, sock: ctrl!)
             }
 
             guard let pkt = civSock.recv(timeout: 0.3) else {

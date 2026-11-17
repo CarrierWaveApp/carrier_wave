@@ -14,10 +14,8 @@ extension LoggerView {
         let autoFillEnabled = UserDefaults.standard.object(
             forKey: "contestAutoFillExchange"
         ) as? Bool ?? true
-        guard autoFillEnabled else {
-            return
-        }
-        guard isContestSession,
+        guard autoFillEnabled,
+              isContestSession,
               let contestId = sessionManager?.activeSession?.contestId,
               ContestEnrichmentMatcher.sourceSlug(forContestId: contestId) != nil
         else {

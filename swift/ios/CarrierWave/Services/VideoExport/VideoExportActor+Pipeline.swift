@@ -141,11 +141,7 @@ extension VideoExportActor {
             outputURL: outputURL,
             includeAudio: includeAudio,
             sampleRate: audioSampleRate
-        ) else {
-            return nil
-        }
-
-        guard let pool = writer.pixelBufferPool else {
+        ), let pool = writer.pixelBufferPool else {
             return nil
         }
 

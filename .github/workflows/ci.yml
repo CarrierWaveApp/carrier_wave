@@ -22,7 +22,7 @@ jobs:
 
       - name: Install SwiftLint
         run: |
-          curl -sL https://github.com/realm/SwiftLint/releases/download/0.63.2/swiftlint_linux_amd64.zip \
+          curl -sL https://github.com/realm/SwiftLint/releases/download/0.65.1/swiftlint_linux_amd64.zip \
             -o /tmp/swiftlint.zip
           unzip -o /tmp/swiftlint.zip -d /tmp/swiftlint_bin
           sudo cp /tmp/swiftlint_bin/swiftlint-static /usr/local/bin/swiftlint
@@ -30,7 +30,7 @@ jobs:
 
       - name: Install SwiftFormat
         run: |
-          curl -sL https://github.com/nicklockwood/SwiftFormat/releases/download/0.60.1/swiftformat_linux.zip \
+          curl -sL https://github.com/nicklockwood/SwiftFormat/releases/download/0.64.0/swiftformat_linux.zip \
             -o /tmp/swiftformat.zip
           unzip -o /tmp/swiftformat.zip -d /tmp/swiftformat_bin
           sudo cp /tmp/swiftformat_bin/swiftformat_linux /usr/local/bin/swiftformat

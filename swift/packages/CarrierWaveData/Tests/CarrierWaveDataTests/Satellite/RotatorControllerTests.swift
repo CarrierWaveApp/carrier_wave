@@ -14,7 +14,7 @@ private actor FakeRotatorTransport: RotatorTransport {
     func disconnect() async {}
 
     func send(_ data: Data, expectReply _: Bool, timeout _: Duration) async throws -> String? {
-        let command = String(decoding: data, as: UTF8.self)
+        let command = String(bytes: data, encoding: .utf8) ?? ""
         sent.append(command)
         if command == RotatorProtocolCodec.statusQueryToken {
             return "{\"azimuth\":\(azimuth),\"elevation\":\(elevation),\"azTarget\":0,\"elTarget\":0}"

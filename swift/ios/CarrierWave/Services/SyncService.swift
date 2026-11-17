@@ -289,10 +289,10 @@ class SyncService {
 
     private func createPreSyncBackupIfEnabled() async {
         guard UserDefaults.standard.object(
-            forKey: "autoBackupEnabled"
-        ) as? Bool ?? true,
-            let storeURL = modelContext.container
-                .configurations.first?.url
+                  forKey: "autoBackupEnabled"
+              ) as? Bool ?? true,
+              let storeURL = modelContext.container
+                  .configurations.first?.url
         else {
             return
         }

@@ -17,10 +17,7 @@ extension RadioManager {
             try? await bridge.requestStatus()
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(3))
-                guard !Task.isCancelled else {
-                    break
-                }
-                guard let self, bridgeIsFramed else {
+                guard !Task.isCancelled, let self, bridgeIsFramed else {
                     break
                 }
                 try? await bridge.requestStatus()

@@ -90,10 +90,8 @@ struct EQSLSettingsView: View {
 
     private func checkStatus() {
         isAuthenticated = eqslClient.hasCredentials()
-        if isAuthenticated {
-            if let creds = try? eqslClient.getCredentials() {
-                username = creds.username
-            }
+        if isAuthenticated, let creds = try? eqslClient.getCredentials() {
+            username = creds.username
         }
     }
 

@@ -42,7 +42,8 @@ enum JttySidecarInstaller {
             case let .badResponse(code):
                 "Download failed (HTTP \(code))"
             case let .checksumMismatch(expected, actual):
-                "Downloaded helper did not match the pinned checksum (expected \(expected.prefix(12))…, got \(actual.prefix(12))…)"
+                "Downloaded helper did not match the pinned checksum "
+                    + "(expected \(expected.prefix(12))…, got \(actual.prefix(12))…)"
             case let .notExecutable(path):
                 "\(path) is not an executable file"
             case let .unexpectedVersionOutput(output):
@@ -139,7 +140,10 @@ enum JttySidecarInstaller {
             process.standardError = pipe
             process.terminationHandler = { _ in
                 let data = pipe.fileHandleForReading.readDataToEndOfFile()
-                continuation.resume(returning: String(decoding: data, as: UTF8.self))
+                continuation.resume(returning: String(bytes: data, encoding: .utf8) ?? String(
+                    bytes: data,
+                    encoding: .isoLatin1
+                ) ?? "")
             }
             do {
                 try process.run()

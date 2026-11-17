@@ -5,6 +5,16 @@ import OSLog
 
 private let logger = Logger(subsystem: "com.jsvana.CWSweep", category: "RadioManager+Transport")
 
+// MARK: - IcomScopeSession
+
+/// Scope waveform output enabled on a session, plus the frames that restore
+/// the scope state read on connect.
+struct IcomScopeSession {
+    let id: UUID
+    let restorePayloads: [[UInt8]]
+    let restoreFrames: [Data]
+}
+
 // MARK: - RadioManager+Transport
 
 /// Network transport factories. Lifted out of RadioManager.swift so that
@@ -68,7 +78,7 @@ extension RadioManager {
                 try await session.sendRaw(frames([payload])[0])
                 commandLog.append(direction: .tx, text: Self.describeScopeCommand(payload))
             }
-            icomScopeSession = (
+            icomScopeSession = IcomScopeSession(
                 id: sessionId,
                 restorePayloads: plan.disconnectCommands,
                 restoreFrames: frames(plan.disconnectCommands)
@@ -121,7 +131,7 @@ extension RadioManager {
     /// Command-log text for a `27 xx` payload, e.g. "27 10 01 (scope display on)".
     static func describeScopeCommand(_ payload: [UInt8]) -> String {
         let hex = ([CIVScope.command] + payload).map { String(format: "%02X", $0) }.joined(separator: " ")
-        let name: String = switch payload.first {
+        let name = switch payload.first {
         case 0x10: "scope display"
         case 0x11: "scope waveform output"
         default: "scope"

@@ -356,11 +356,7 @@ extension ActivityDetector {
             let callsign = qso.callsign.uppercased()
 
             // Skip self-QSOs
-            guard callsign != ownCallsign else {
-                continue
-            }
-
-            guard friendCallsigns.contains(callsign) else {
+            guard callsign != ownCallsign, friendCallsigns.contains(callsign) else {
                 continue
             }
 

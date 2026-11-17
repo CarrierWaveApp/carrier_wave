@@ -8,6 +8,7 @@ struct LayoutPicker: View {
     // MARK: Internal
 
     let layoutStore: LayoutStore
+
     /// Owned by WorkspaceView: a `.sheet` attached here (inside a toolbar Menu)
     /// never presents on macOS, so the editor sheet lives on the window content.
     @Binding var showEditor: Bool

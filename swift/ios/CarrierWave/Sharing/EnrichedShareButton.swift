@@ -56,7 +56,7 @@ struct EnrichedShareButton: View {
         // dropped into many places.
         guard
             let scene = UIApplication.shared.connectedScenes
-            .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene,
+                .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene,
             let rootVC = scene.windows.first(where: { $0.isKeyWindow })?.rootViewController
         else {
             return

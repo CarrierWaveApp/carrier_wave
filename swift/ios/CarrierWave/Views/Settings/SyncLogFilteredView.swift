@@ -222,14 +222,12 @@ extension SyncLogFilteredView {
                 // Back to "all" state
                 showGeneralEntries = true
             }
+        } else if !hasServiceFilter {
+            // First specific selection: deselect "all" implicitly
+            selectedServices = [service]
+            showGeneralEntries = false
         } else {
-            if !hasServiceFilter {
-                // First specific selection: deselect "all" implicitly
-                selectedServices = [service]
-                showGeneralEntries = false
-            } else {
-                selectedServices.insert(service)
-            }
+            selectedServices.insert(service)
         }
     }
 

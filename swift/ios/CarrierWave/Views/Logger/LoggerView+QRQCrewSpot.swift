@@ -15,11 +15,8 @@ extension LoggerView {
         // QRQ Crew spots only apply on UTC Fridays
         var utcCalendar = Calendar(identifier: .gregorian)
         utcCalendar.timeZone = TimeZone(identifier: "UTC")!
-        guard utcCalendar.component(.weekday, from: Date()) == 6 else {
-            return
-        }
-
-        guard let session = sessionManager?.activeSession,
+        guard utcCalendar.component(.weekday, from: Date()) == 6,
+              let session = sessionManager?.activeSession,
               session.isPOTA,
               let parkRef = session.parkReference
         else {

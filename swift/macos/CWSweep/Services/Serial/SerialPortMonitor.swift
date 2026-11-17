@@ -109,11 +109,7 @@ final class SerialPortMonitor {
     private static func portInfo(from service: io_object_t) -> SerialPortInfo? {
         guard let pathCF = IORegistryEntryCreateCFProperty(
             service, kIOCalloutDeviceKey as CFString, kCFAllocatorDefault, 0
-        )?.takeRetainedValue() as? String else {
-            return nil
-        }
-
-        guard pathCF.hasPrefix("/dev/cu."), !pathCF.contains("Bluetooth") else {
+        )?.takeRetainedValue() as? String, pathCF.hasPrefix("/dev/cu."), !pathCF.contains("Bluetooth") else {
             return nil
         }
 

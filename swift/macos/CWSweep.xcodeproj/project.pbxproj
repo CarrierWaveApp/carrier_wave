@@ -233,6 +233,7 @@
 		8D352A7207B66616266C269E /* StatusBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4BA733155B64B9C03526EB1 /* StatusBarView.swift */; };
 		8D4573D6B434B361306A50A4 /* MacrosLibraryView+Updates.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD0FD8764C2A682B8A661314 /* MacrosLibraryView+Updates.swift */; };
 		8E85C0680CEE4D9E30A358B6 /* SpotListView+Actions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 136CC61AB17A31C60EFCEFE3 /* SpotListView+Actions.swift */; };
+		8F15B5CB5FC48A9DAAC504DF /* RadioManager+ConnectionSetup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81CC327C24EC08FFCE35811C /* RadioManager+ConnectionSetup.swift */; };
 		8F37E6D9BF97F003D5A5060C /* AccountService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00ABA4B20B31C3DC384321D1 /* AccountService.swift */; };
 		8F3AB382E58326AE24CD0617 /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EFD8B616187EB20E1075AD72 /* SidebarView.swift */; };
 		901463B83CF65EBF91E40D4A /* SDRSettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4689B4C5D47D8938263D9C18 /* SDRSettingsTab.swift */; };
@@ -360,6 +361,7 @@
 		D4B3580E9B9225657FF3BFAB /* MacroEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0F27A08759B8927F924B8E0 /* MacroEditorView.swift */; };
 		D4BD24F8D0291F8B13CCB2C9 /* SatellitesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E757A5EFE82C4061E11D670 /* SatellitesView.swift */; };
 		D6F321F8D3029DF554DD5B51 /* SessionsSidebarRoot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A1F3FD64D341A336CAFE46 /* SessionsSidebarRoot.swift */; };
+		D865BD2BB67E3084FC13FC36 /* WaterfallView+Palette.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA05A0B41B882C3F5595D172 /* WaterfallView+Palette.swift */; };
 		D92C57A01176549F452F0261 /* ClusterWorkedBeforeChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 804270A8351BA9262DB98446 /* ClusterWorkedBeforeChecker.swift */; };
 		D931B4C7CC92CA09F86A0E5F /* KeyerSettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0541A571F6C1F92C94D68C06 /* KeyerSettingsTab.swift */; };
 		DA67212D4991B028E7D5BA84 /* StarterQueries.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6A4AA0A2689710003E50387 /* StarterQueries.swift */; };
@@ -417,6 +419,7 @@
 		F448FE5B62FDF87EB7165C5B /* IcomWiFiSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A7C4EAB39B95B53321BA6C0 /* IcomWiFiSection.swift */; };
 		F4B0A1D4E0C7CC8F55A5A3B5 /* SpotHitRects.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A75E13101E43E89F1A76EA8 /* SpotHitRects.swift */; };
 		F55E7A5BA29F730BF191D40E /* RadioPaletteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9ADC020C3B66DA6EF69A4EF /* RadioPaletteView.swift */; };
+		F650ED02E0A5671D3DBB59E8 /* JttyService+Runtime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 556FBCD0571923B37A36A4F1 /* JttyService+Runtime.swift */; };
 		F67B28C3872AC5BABC84FE99 /* CWStepEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFA36E45C379E1E2A6707D29 /* CWStepEditor.swift */; };
 		F6CED0DA970C429EDBF5B938 /* InspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65BDF81C27B30EED035791D6 /* InspectorView.swift */; };
 		F806BC0699EB708320D675FD /* SessionsComposerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBE28D4B54CF8A0E2905EE61 /* SessionsComposerView.swift */; };
@@ -581,6 +584,7 @@
 		54087FB5195F7076108AAFF1 /* FrequencyStepEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrequencyStepEditor.swift; sourceTree = "<group>"; };
 		54C9FE350F581EBF011AD967 /* ContestBandScopeView+HelpOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ContestBandScopeView+HelpOverlay.swift"; sourceTree = "<group>"; };
 		54CBA2EC4C1C497E6F3A2916 /* PlaceholderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceholderView.swift; sourceTree = "<group>"; };
+		556FBCD0571923B37A36A4F1 /* JttyService+Runtime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "JttyService+Runtime.swift"; sourceTree = "<group>"; };
 		575B824FB5331B6BAC493B39 /* IQPanadapterService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IQPanadapterService.swift; sourceTree = "<group>"; };
 		57CCCA1A63EA5E2EBB239EBA /* ActivationMapPane+Overlays.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ActivationMapPane+Overlays.swift"; sourceTree = "<group>"; };
 		5A7B5BE4036006ED56A36E04 /* BridgeProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BridgeProtocol.swift; sourceTree = "<group>"; };
@@ -654,6 +658,7 @@
 		8048A5D660095123E2A66FEB /* MacroDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacroDetailView.swift; sourceTree = "<group>"; };
 		80707B3749DC78FF92EB0A2B /* ContestDefinitionsRefresher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContestDefinitionsRefresher.swift; sourceTree = "<group>"; };
 		8162036A5AAD8B7CA4BBA9DF /* SpotColorScheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotColorScheme.swift; sourceTree = "<group>"; };
+		81CC327C24EC08FFCE35811C /* RadioManager+ConnectionSetup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RadioManager+ConnectionSetup.swift"; sourceTree = "<group>"; };
 		82FF7E81D7305EEA658470DA /* SatelliteDialFollower.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SatelliteDialFollower.swift; sourceTree = "<group>"; };
 		831EAB7B97C796DD9ACB36F9 /* RawBytesStepEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RawBytesStepEditor.swift; sourceTree = "<group>"; };
 		834179CB0E6F1B93FD85044E /* SelectionState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionState.swift; sourceTree = "<group>"; };
@@ -714,6 +719,7 @@
 		A75CEB62FC043C9BEDD5263E /* BandEdges.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BandEdges.swift; sourceTree = "<group>"; };
 		A8A64269319F4B9BD06DAE46 /* SatellitesView+Chrome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SatellitesView+Chrome.swift"; sourceTree = "<group>"; };
 		A9FCE182FD822E8029CC2935 /* BandMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BandMapView.swift; sourceTree = "<group>"; };
+		AA05A0B41B882C3F5595D172 /* WaterfallView+Palette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WaterfallView+Palette.swift"; sourceTree = "<group>"; };
 		AC721D733E354D919D6AB9AC /* JttySidecarClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JttySidecarClient.swift; sourceTree = "<group>"; };
 		AC7D2276A0A6D6524C3FE729 /* ClusterResponseParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClusterResponseParser.swift; sourceTree = "<group>"; };
 		AC95CADADF64DFF3FD6DB3D7 /* ContestMacroBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContestMacroBar.swift; sourceTree = "<group>"; };
@@ -1619,6 +1625,7 @@
 				506DC03302DC2BECF0440618 /* WaterfallPanel.swift */,
 				7561A82857E41BED56933948 /* WaterfallSpotOverlay.swift */,
 				C00296C93EEFF758A57FDA5C /* WaterfallView.swift */,
+				AA05A0B41B882C3F5595D172 /* WaterfallView+Palette.swift */,
 			);
 			path = Spots;
 			sourceTree = "<group>";
@@ -1647,6 +1654,7 @@
 				37733884A8FFCF00054DAE22 /* JttyMacroExpander.swift */,
 				C2D90FF3A48C27CBC7C8EA8E /* JttyModels.swift */,
 				90D454021DE5619E6931D32C /* JttyService.swift */,
+				556FBCD0571923B37A36A4F1 /* JttyService+Runtime.swift */,
 				8AD414216B21D4C4ABFCB95F /* JttyService+Transmit.swift */,
 				1AAE7E0C9D921413A205254C /* JttyShmLayout.swift */,
 				AC721D733E354D919D6AB9AC /* JttySidecarClient.swift */,
@@ -1699,6 +1707,7 @@
 				CC48B18402D1462107489D2D /* RadioManager+Bridge.swift */,
 				B19C0A4EB88E34FE67CBA064 /* RadioManager+BridgeSlots.swift */,
 				EA721DB9ED3D3E47871A1FF3 /* RadioManager+BridgeStatusPoll.swift */,
+				81CC327C24EC08FFCE35811C /* RadioManager+ConnectionSetup.swift */,
 				11B07C210DE9621900CF912A /* RadioManager+CW.swift */,
 				E353E5BCB4E28500CA2EA4F7 /* RadioManager+Duplex.swift */,
 				868FA3ABCDDA8F475977116D /* RadioManager+Persistence.swift */,
@@ -2073,6 +2082,7 @@
 				E45FE054F1B50DEFCECCB534 /* JttyAudioEngine.swift in Sources */,
 				6417964A68E476D458F0AA0B /* JttyMacroExpander.swift in Sources */,
 				2DEE09BC4190E25757D37890 /* JttyModels.swift in Sources */,
+				F650ED02E0A5671D3DBB59E8 /* JttyService+Runtime.swift in Sources */,
 				E3463D7DEEDD7643B916A1E3 /* JttyService+Transmit.swift in Sources */,
 				CDB28061EEFB9C490EE3A41E /* JttyService.swift in Sources */,
 				E2C8E4A69859B2B2E1CC87F3 /* JttySettingsTab.swift in Sources */,
@@ -2170,6 +2180,7 @@
 				40E867486BAE160AF66FA509 /* RadioManager+BridgeSlots.swift in Sources */,
 				852F8CE4DC88F0185F58D9A3 /* RadioManager+BridgeStatusPoll.swift in Sources */,
 				F8F33741A84C7405C8195E6D /* RadioManager+CW.swift in Sources */,
+				8F15B5CB5FC48A9DAAC504DF /* RadioManager+ConnectionSetup.swift in Sources */,
 				86089CE2BB57CEEDC9296038 /* RadioManager+Duplex.swift in Sources */,
 				B0A08B3C24AADCF788AAE2FD /* RadioManager+Persistence.swift in Sources */,
 				69CF58BA46FF8C2EE1CB4741 /* RadioManager+Slots.swift in Sources */,
@@ -2323,6 +2334,7 @@
 				F36B2C56BCEB7AEABFD96922 /* WaterfallPanel.swift in Sources */,
 				A15C7C5EC80D5E87F2CAEDDB /* WaterfallSpotOverlay.swift in Sources */,
 				7F6320C24A120FA4D14237F2 /* WaterfallStore.swift in Sources */,
+				D865BD2BB67E3084FC13FC36 /* WaterfallView+Palette.swift in Sources */,
 				318F721E611897CB373CCCA6 /* WaterfallView.swift in Sources */,
 				EDBC3F4465810D0A31EBA6B8 /* WhatsNewSheet.swift in Sources */,
 				BCE084FF8848C8324C16CDB3 /* WinKeyerManager.swift in Sources */,

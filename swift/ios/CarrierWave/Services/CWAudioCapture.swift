@@ -120,10 +120,7 @@ actor CWAudioCapture {
             bufferSize: bufferSize,
             format: format
         ) { [weak self] buffer, time in
-            guard let self else {
-                return
-            }
-            guard let channelData = buffer.floatChannelData?[0] else {
+            guard let self, let channelData = buffer.floatChannelData?[0] else {
                 return
             }
 

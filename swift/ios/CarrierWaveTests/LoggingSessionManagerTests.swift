@@ -121,7 +121,8 @@ final class LoggingSessionManagerTests: XCTestCase {
         XCTAssertEqual(sessionManager.activeSession?.myCallsign, "W1AW")
 
         // First session should be marked as completed
-        let predicate = #Predicate<LoggingSession> { $0.id == firstSessionId! }
+        let targetId = try XCTUnwrap(firstSessionId)
+        let predicate = #Predicate<LoggingSession> { $0.id == targetId }
         let descriptor = FetchDescriptor<LoggingSession>(predicate: predicate)
         let oldSession = try modelContext.fetch(descriptor).first
         XCTAssertEqual(oldSession?.status, .completed)
@@ -141,7 +142,8 @@ final class LoggingSessionManagerTests: XCTestCase {
         XCTAssertNil(sessionManager.activeSession)
 
         // Verify session is marked completed in database
-        let predicate = #Predicate<LoggingSession> { $0.id == sessionId! }
+        let targetId = try XCTUnwrap(sessionId)
+        let predicate = #Predicate<LoggingSession> { $0.id == targetId }
         let descriptor = FetchDescriptor<LoggingSession>(predicate: predicate)
         let session = try modelContext.fetch(descriptor).first
         XCTAssertEqual(session?.status, .completed)

@@ -47,8 +47,7 @@ struct RecordingSharePreviewSheet: View {
 private extension RecordingSharePreviewSheet {
     var cardPreview: some View {
         Image(uiImage: data.image)
-            .resizable()
-            .aspectRatio(contentMode: .fit)
+            .resizable().scaledToFit()
             .cornerRadius(12)
             .shadow(radius: 4)
     }

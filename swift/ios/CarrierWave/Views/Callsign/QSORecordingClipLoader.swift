@@ -59,12 +59,9 @@ enum QSORecordingClipLoader {
 
         for qso in qsos {
             guard let sessionId = qso.loggingSessionId,
-                  let recording = recordingsBySession[sessionId]?.first
+                  let recording = recordingsBySession[sessionId]?.first,
+                  let transcript = SDRRecordingTranscript.load(sessionId: sessionId)
             else {
-                continue
-            }
-
-            guard let transcript = SDRRecordingTranscript.load(sessionId: sessionId) else {
                 continue
             }
 

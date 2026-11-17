@@ -142,16 +142,13 @@ public final class RotatorController {
         lastError = nil
         var transport = transportFactory(endpoint)
         if requested.kind == .psr100, requested.protocolKind != .psr100HTTP {
-            let http = TrackerEndpoint(kind: .psr100, host: requested.host, protocolKind: .psr100HTTP)
-            let httpTransport = transportFactory(http)
-            let httpOK = await (try? httpTransport.connect()) != nil
-            guard generation == connectGeneration else {
-                await httpTransport.disconnect()
+            switch await attemptPSRHTTP(for: requested, generation: generation) {
+            case .superseded:
                 return
-            }
-            if httpOK {
-                logger.info("PSR-100 at \(requested.host, privacy: .public): using HTTP control")
-                endpoint = http
+            case .unavailable:
+                break
+            case let .linked(httpEndpoint, httpTransport):
+                endpoint = httpEndpoint
                 transport = httpTransport
             }
         }
@@ -162,10 +159,12 @@ public final class RotatorController {
                 guard generation == connectGeneration else {
                     return
                 }
-                logger
-                    .error(
-                        "rotator connect to \(endpoint.host, privacy: .public) failed: \(error.localizedDescription, privacy: .public)"
-                    )
+                logger.error(
+                    """
+                    rotator connect to \(endpoint.host, privacy: .public) failed: \
+                    \(error.localizedDescription, privacy: .public)
+                    """
+                )
                 self.endpoint = endpoint
                 state = .error(error.localizedDescription)
                 lastError = error.localizedDescription
@@ -176,24 +175,7 @@ public final class RotatorController {
             await transport.disconnect()
             return
         }
-        self.endpoint = endpoint
-        savedEndpoint = endpoint
-        if let data = try? JSONEncoder().encode(endpoint) {
-            defaults.set(data, forKey: Keys.endpoint)
-        }
-        self.transport = transport
-        state = .idle
-        lastError = nil
-        consecutivePollFailures = 0
-        pollTask = Task { [weak self] in
-            while !Task.isCancelled {
-                await self?.pollPosition()
-                guard let self else {
-                    return
-                }
-                try? await Task.sleep(for: pollInterval)
-            }
-        }
+        adopt(transport, for: endpoint)
     }
 
     /// Reconnect to the remembered unit, if any.
@@ -317,7 +299,11 @@ public final class RotatorController {
     private var pollTask: Task<Void, Never>?
     private var consecutivePollFailures = 0
     private var connectGeneration: UInt64 = 0
+}
 
+// MARK: - Command and poll plumbing
+
+extension RotatorController {
     private func push(_ requested: RotatorPosition, force: Bool) async {
         guard let transport, let endpoint else {
             return
@@ -343,7 +329,8 @@ public final class RotatorController {
                 command,
                 expectReply: expectsReply,
                 timeout: .seconds(2)
-            ) }
+            )
+            }
             .value
             let trimmedReply = reply?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
             lastReply = trimmedReply.isEmpty ? nil : trimmedReply
@@ -393,14 +380,63 @@ public final class RotatorController {
         } catch {
             consecutivePollFailures += 1
             let failures = consecutivePollFailures
-            logger
-                .error(
-                    "rotator poll \(failures) failed (\(endpoint.protocolKind.rawValue, privacy: .public) \(endpoint.host, privacy: .public)): \(error.localizedDescription, privacy: .public)"
-                )
+            logger.error(
+                """
+                rotator poll \(failures) failed \
+                (\(endpoint.protocolKind.rawValue, privacy: .public) \(endpoint.host, privacy: .public)): \
+                \(error.localizedDescription, privacy: .public)
+                """
+            )
             if consecutivePollFailures >= 5, state.isConnected {
-                lastError = "Rotator stopped answering (\(endpoint.protocolKind.displayName)): \(error.localizedDescription)"
+                let protocolName = endpoint.protocolKind.displayName
+                lastError = "Rotator stopped answering (\(protocolName)): \(error.localizedDescription)"
                 state = .error("no reply")
             }
         }
+    }
+
+    /// Take over a connected transport: persist the endpoint and start polling.
+    private func adopt(_ transport: any RotatorTransport, for endpoint: TrackerEndpoint) {
+        self.endpoint = endpoint
+        savedEndpoint = endpoint
+        if let data = try? JSONEncoder().encode(endpoint) {
+            defaults.set(data, forKey: Keys.endpoint)
+        }
+        self.transport = transport
+        state = .idle
+        lastError = nil
+        consecutivePollFailures = 0
+        pollTask = Task { [weak self] in
+            while !Task.isCancelled {
+                await self?.pollPosition()
+                guard let self else {
+                    return
+                }
+                try? await Task.sleep(for: pollInterval)
+            }
+        }
+    }
+
+    /// Outcome of trying a PSR-100's web server before its requested UDP protocol.
+    private enum HTTPAttempt {
+        /// A newer `connect` started while this one was awaiting.
+        case superseded
+        case unavailable
+        case linked(TrackerEndpoint, any RotatorTransport)
+    }
+
+    private func attemptPSRHTTP(for requested: TrackerEndpoint, generation: UInt64) async -> HTTPAttempt {
+        let http = TrackerEndpoint(kind: .psr100, host: requested.host, protocolKind: .psr100HTTP)
+        let httpTransport = transportFactory(http)
+        let httpOK = await (try? httpTransport.connect()) != nil
+        guard generation == connectGeneration else {
+            await httpTransport.disconnect()
+            return .superseded
+        }
+        guard httpOK else {
+            return .unavailable
+        }
+        logger.info("PSR-100 at \(requested.host, privacy: .public): using HTTP control")
+        return .linked(http, httpTransport)
     }
 }

@@ -6,8 +6,8 @@ import XCTest
 
 // MARK: - Hidden QSO Tests
 
+@MainActor
 extension LoggingSessionManagerTests {
-    @MainActor
     func testHideQSO_SetsIsHiddenFlag() throws {
         // Given
         sessionManager.startSession(myCallsign: "N0TEST", mode: "CW", frequency: 14.060)
@@ -21,7 +21,6 @@ extension LoggingSessionManagerTests {
         XCTAssertTrue(qso.isHidden)
     }
 
-    @MainActor
     func testUnhideQSO_ClearsIsHiddenFlag() throws {
         // Given
         sessionManager.startSession(myCallsign: "N0TEST", mode: "CW", frequency: 14.060)
@@ -36,7 +35,6 @@ extension LoggingSessionManagerTests {
         XCTAssertFalse(qso.isHidden)
     }
 
-    @MainActor
     func testGetSessionQSOs_ExcludesHiddenQSOs() throws {
         // Given
         sessionManager.startSession(myCallsign: "N0TEST", mode: "CW", frequency: 14.060)
@@ -53,7 +51,6 @@ extension LoggingSessionManagerTests {
         XCTAssertEqual(visibleQSOs[0].callsign, "K3LR")
     }
 
-    @MainActor
     func testHideQSO_DecrementsSessionQSOCount() throws {
         // Given
         sessionManager.startSession(myCallsign: "N0TEST", mode: "CW", frequency: 14.060)
@@ -69,7 +66,6 @@ extension LoggingSessionManagerTests {
         XCTAssertEqual(sessionManager.activeSession?.qsoCount, 1)
     }
 
-    @MainActor
     func testHideQSO_DoesNotGoNegative() throws {
         // Given — create session with manual qsoCount of 0 (edge case)
         sessionManager.startSession(myCallsign: "N0TEST", mode: "CW", frequency: 14.060)
@@ -84,7 +80,6 @@ extension LoggingSessionManagerTests {
         XCTAssertEqual(sessionManager.activeSession?.qsoCount, 0)
     }
 
-    @MainActor
     func testHideQSO_IgnoresNonActiveSessionQSOs() throws {
         // Given — QSO from a different session
         sessionManager.startSession(myCallsign: "N0TEST", mode: "CW", frequency: 14.060)

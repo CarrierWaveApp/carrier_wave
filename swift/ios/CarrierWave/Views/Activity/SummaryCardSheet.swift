@@ -163,13 +163,11 @@ struct SummaryCardSheet: View {
             var maxDistance: Int?
             for qso in qsos {
                 if let theirGrid = qso.theirGrid, !theirGrid.isEmpty,
-                   let myGrid = qsos.first?.myGrid, !myGrid.isEmpty
+                   let myGrid = qsos.first?.myGrid, !myGrid.isEmpty,
+                   let distance = calculateDistanceKm(from: myGrid, to: theirGrid),
+                   maxDistance == nil || distance > maxDistance!
                 {
-                    if let distance = calculateDistanceKm(from: myGrid, to: theirGrid) {
-                        if maxDistance == nil || distance > maxDistance! {
-                            maxDistance = distance
-                        }
-                    }
+                    maxDistance = distance
                 }
             }
 

@@ -52,11 +52,9 @@ final class DXCCLookupService {
         // Try bundled file first
         if let bundledURL = Bundle.main.url(
             forResource: "cty", withExtension: "dat"
-        ) {
-            if let content = try? String(contentsOf: bundledURL, encoding: .ascii) {
-                parseAndStore(content)
-                return
-            }
+        ), let content = try? String(contentsOf: bundledURL, encoding: .ascii) {
+            parseAndStore(content)
+            return
         }
 
         // Try cached file (less than 30 days old)
@@ -68,13 +66,11 @@ final class DXCCLookupService {
             let modDate = attrs?[.modificationDate] as? Date ?? .distantPast
             let age = Date().timeIntervalSince(modDate)
 
-            if age < 30 * 86_400 {
-                if let content = try? String(
-                    contentsOf: cachedFile, encoding: .ascii
-                ) {
-                    parseAndStore(content)
-                    return
-                }
+            if age < 30 * 86_400, let content = try? String(
+                contentsOf: cachedFile, encoding: .ascii
+            ) {
+                parseAndStore(content)
+                return
             }
         }
 

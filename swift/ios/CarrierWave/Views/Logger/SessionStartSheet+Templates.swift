@@ -18,7 +18,7 @@ extension SessionStartSheet {
         // write-through so @AppStorage readers see the correction (CAR-287).
         if let canonical = UserProfileService.shared.getProfile()?.callsign
             .uppercased().trimmingCharacters(in: .whitespaces),
-            !canonical.isEmpty, canonical != defaultCallsign
+           !canonical.isEmpty, canonical != defaultCallsign
         {
             defaultCallsign = canonical
         }

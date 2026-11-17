@@ -17,16 +17,15 @@ extension SatelliteTrackerModel {
     /// from the simulated "now". Empty when the observer location or the
     /// satellite is unknown.
     func passForecast(for noradID: Int) async -> SatellitePassForecast {
-        guard let observer = ffiObserver(), let api = try? await SatelliteEngine.api() else {
-            return .empty
-        }
-        guard let forecast = try? await api.passForecast(
-            noradId: UInt32(noradID),
-            observer: observer,
-            startEpoch: simulatedEpoch(),
-            hours: Self.passLookAheadHours,
-            maxPasses: Self.maxForecastPasses
-        ) else {
+        guard let observer = ffiObserver(), let api = try? await SatelliteEngine.api(),
+              let forecast = try? await api.passForecast(
+                  noradId: UInt32(noradID),
+                  observer: observer,
+                  startEpoch: simulatedEpoch(),
+                  hours: Self.passLookAheadHours,
+                  maxPasses: Self.maxForecastPasses
+              )
+        else {
             return .empty
         }
         return SatellitePassForecast(

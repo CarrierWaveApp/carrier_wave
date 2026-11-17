@@ -98,11 +98,10 @@ public struct CIVProtocolHandler: RadioProtocolHandler {
         let frames = CIVProtocol.extractFrames(from: bytes)
         for frame in frames.frames {
             if frame.command == CIVProtocol.cmdReadFreq
-                || frame.command == CIVProtocol.cmdSetFreq
+                || frame.command == CIVProtocol.cmdSetFreq,
+               let hz = CIVProtocol.parseBCDFrequency(frame.data)
             {
-                if let hz = CIVProtocol.parseBCDFrequency(frame.data) {
-                    return CIVProtocol.hzToMHz(hz)
-                }
+                return CIVProtocol.hzToMHz(hz)
             }
         }
         return nil
@@ -114,8 +113,8 @@ public struct CIVProtocolHandler: RadioProtocolHandler {
         for frame in frames.frames {
             if frame.command == CIVProtocol.cmdReadMode
                 || frame.command == CIVProtocol.cmdSetMode,
-                let first = frame.data.first,
-                let mode = CIVMode(rawValue: first)
+               let first = frame.data.first,
+               let mode = CIVMode(rawValue: first)
             {
                 return mode.carrierWaveMode
             }

@@ -211,14 +211,6 @@ final class ClubsSyncService {
 
     private static let membershipRevisionKey = "clubMembershipRevision"
 
-    /// Record that the roster cache changed and tell interested parties.
-    private func bumpMembershipRevision() {
-        membershipRevision += 1
-        UserDefaults.standard.set(membershipRevision, forKey: Self.membershipRevisionKey)
-        Self.logger.info("Club roster cache changed (revision \(self.membershipRevision))")
-        NotificationCenter.default.post(name: .clubMembershipDidChange, object: nil)
-    }
-
     private var clubsApi: ClubsApi?
     private var client: ActivitiesClient?
     private var lastSyncDate: Date?
@@ -278,6 +270,14 @@ final class ClubsSyncService {
             byCallsign: byCallsign.mapValues { Array($0) },
             byClub: byClub
         )
+    }
+
+    /// Record that the roster cache changed and tell interested parties.
+    private func bumpMembershipRevision() {
+        membershipRevision += 1
+        UserDefaults.standard.set(membershipRevision, forKey: Self.membershipRevisionKey)
+        Self.logger.info("Club roster cache changed (revision \(self.membershipRevision))")
+        NotificationCenter.default.post(name: .clubMembershipDidChange, object: nil)
     }
 
     /// Lazily build the `ClubsApi` over the shared store + activities base URL.

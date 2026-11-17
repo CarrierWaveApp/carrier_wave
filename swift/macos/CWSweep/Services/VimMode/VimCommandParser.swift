@@ -128,7 +128,8 @@ enum VimCommandParser {
         case "logger": .navigate(.logger)
         case "spots": .navigate(.spots)
         case "cluster": .navigate(.cluster)
-        case "satellites", "sat": .navigate(.satellites)
+        case "satellites",
+             "sat": .navigate(.satellites)
         case "dashboard": .navigate(.dashboard)
         case "log": .navigate(.qsoLog)
         case "radio": .navigate(.radio)

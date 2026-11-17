@@ -1,8 +1,5 @@
 import CarrierWaveData
 import Foundation
-import OSLog
-
-private let logger = Logger(subsystem: "com.jsvana.CWSweep", category: "JttyService")
 
 // MARK: - JttyService
 
@@ -60,14 +57,14 @@ final class JttyService {
 
     // MARK: Live state
 
-    private(set) var sidecarStatus: JttySidecarStatus
-    private(set) var isRunning = false
-    private(set) var audioError: String?
-    private(set) var inputLevel: Float = 0
-    private(set) var entries: [JttyTerminalEntry] = []
-    private(set) var helperLog: [String] = []
-    private(set) var decoderRestarts: Int32 = 0
-    private(set) var droppedSamples: Int64 = 0
+    var sidecarStatus: JttySidecarStatus
+    var isRunning = false
+    var audioError: String?
+    var inputLevel: Float = 0
+    var entries: [JttyTerminalEntry] = []
+    var helperLog: [String] = []
+    var decoderRestarts: Int32 = 0
+    var droppedSamples: Int64 = 0
     private(set) var isTransmitting = false
     private(set) var pttEngaged = false
     /// Messages queued behind the one on the air.
@@ -100,6 +97,15 @@ final class JttyService {
     var client: JttySidecarClient?
     let audio = JttyAudioEngine()
     var transmitChain: Task<Void, Never>?
+
+    // MARK: Runtime state (used by the runtime extension)
+
+    let defaults: UserDefaults
+    var process: JttySidecarProcess?
+    var pollTask: Task<Void, Never>?
+    var isStarting = false
+    /// Wall-clock time of receive sample 0, for timestamping decodes.
+    var streamEpoch = Date()
 
     // MARK: Persisted settings
 
@@ -327,127 +333,5 @@ final class JttyService {
 
     func setPendingTransmissions(_ count: Int) {
         pendingTransmissions = max(0, count)
-    }
-
-    // MARK: Private
-
-    private let defaults: UserDefaults
-    private var process: JttySidecarProcess?
-    private var pollTask: Task<Void, Never>?
-    private var isStarting = false
-    /// Wall-clock time of receive sample 0, for timestamping decodes.
-    private var streamEpoch = Date()
-
-    private func startAudio() {
-        guard let client else {
-            return
-        }
-        audio.stop()
-        audio.onLevel = { [weak self] level in
-            Task { @MainActor in self?.inputLevel = level }
-        }
-        streamEpoch = Date().addingTimeInterval(
-            -Double(client.totalSamplesWritten) / Double(JttyShmLayout.sampleRate)
-        )
-        do {
-            try audio.start(inputDeviceUID: inputDeviceUID, outputDeviceUID: outputDeviceUID) { samples in
-                client.writeReceiveAudio(samples)
-            }
-            audioError = nil
-        } catch {
-            audioError = error.localizedDescription
-            note(.error, "Audio: \(error.localizedDescription)")
-        }
-    }
-
-    private func startPolling() {
-        pollTask?.cancel()
-        pollTask = Task { [weak self] in
-            var ticks = 0
-            while !Task.isCancelled {
-                try? await Task.sleep(for: .milliseconds(50))
-                guard let self, !Task.isCancelled else {
-                    return
-                }
-                poll()
-                ticks += 1
-                if ticks % 20 == 0 {
-                    checkHealth()
-                }
-            }
-        }
-    }
-
-    private func poll() {
-        guard let client else {
-            return
-        }
-        for result in client.drainResults() {
-            merge(result)
-        }
-    }
-
-    private func merge(_ result: JttyDecodeResult) {
-        let date = streamEpoch.addingTimeInterval(Double(result.startSample) / Double(JttyShmLayout.sampleRate))
-        if let index = entries.lastIndex(where: { $0.kind == .received(messageId: result.messageId) }) {
-            entries[index].text = result.text
-            entries[index].frequency = result.frequency
-            entries[index].isComplete = result.isComplete
-            entries[index].date = date
-        } else {
-            append(JttyTerminalEntry(
-                kind: .received(messageId: result.messageId),
-                date: date,
-                frequency: result.frequency,
-                text: result.text,
-                isComplete: result.isComplete
-            ))
-        }
-    }
-
-    private func checkHealth() {
-        guard let client else {
-            return
-        }
-        decoderRestarts = client.decoderRestarts
-        droppedSamples = client.droppedSamples
-        if client.serverState == .quitting || process?.isRunning == false {
-            helperExited(-1)
-        }
-    }
-
-    private func waitForSegment(named name: String) async -> JttySidecarClient? {
-        for _ in 0 ..< 100 {
-            if let client = try? JttySidecarClient.open(name: name), client.isReady {
-                return client
-            }
-            try? await Task.sleep(for: .milliseconds(50))
-        }
-        return nil
-    }
-
-    private func appendHelperLog(_ line: String) {
-        helperLog.append(line)
-        if helperLog.count > Self.maxHelperLog {
-            helperLog.removeFirst(helperLog.count - Self.maxHelperLog)
-        }
-    }
-
-    private func helperExited(_ status: Int32) {
-        guard isRunning else {
-            return
-        }
-        pollTask?.cancel()
-        pollTask = nil
-        abortTransmit()
-        audio.stop()
-        client?.close()
-        client = nil
-        process = nil
-        isRunning = false
-        inputLevel = 0
-        let tail = helperLog.suffix(3).joined(separator: " · ")
-        sidecarStatus = .failed("Helper exited (\(status))\(tail.isEmpty ? "" : ": \(tail)")")
-        note(.error, "JTTY helper exited unexpectedly")
     }
 }

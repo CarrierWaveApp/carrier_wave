@@ -236,10 +236,8 @@ public actor SmartLinkClient {
             parseRadioList(line)
         } else if line.hasPrefix("radio connect_ready") {
             parseConnectReady(line)
-        } else if line.hasPrefix("application info") {
-            if let ip = extractValue(from: line, key: "public_ip") {
-                publicIP = ip
-            }
+        } else if line.hasPrefix("application info"), let ip = extractValue(from: line, key: "public_ip") {
+            publicIP = ip
         }
     }
 

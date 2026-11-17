@@ -177,17 +177,17 @@ actor ContestCalendarClient {
 
     private func checkRateLimitHeaders(_ response: HTTPURLResponse) {
         if let remaining = response.value(
-            forHTTPHeaderField: "X-RateLimit-Remaining"
-        ),
-            let remainingInt = Int(remaining)
+               forHTTPHeaderField: "X-RateLimit-Remaining"
+           ),
+           let remainingInt = Int(remaining)
         {
             rateLimitRemaining = remainingInt
         }
 
         if let reset = response.value(
-            forHTTPHeaderField: "X-RateLimit-Reset"
-        ),
-            let resetTimestamp = Double(reset)
+               forHTTPHeaderField: "X-RateLimit-Reset"
+           ),
+           let resetTimestamp = Double(reset)
         {
             rateLimitReset = Date(timeIntervalSince1970: resetTimestamp)
         }
@@ -248,11 +248,11 @@ actor ContestCalendarClient {
         // Find each <item>...</item> block
         var searchStart = xml.startIndex
         while let itemStart = xml.range(
-            of: "<item>", range: searchStart ..< xml.endIndex
-        ),
-            let itemEnd = xml.range(
-                of: "</item>", range: itemStart.upperBound ..< xml.endIndex
-            )
+                  of: "<item>", range: searchStart ..< xml.endIndex
+              ),
+              let itemEnd = xml.range(
+                  of: "</item>", range: itemStart.upperBound ..< xml.endIndex
+              )
         {
             let itemXML = String(xml[itemStart.lowerBound ..< itemEnd.upperBound])
 

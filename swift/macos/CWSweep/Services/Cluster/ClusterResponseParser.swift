@@ -139,12 +139,8 @@ enum ClusterResponseParser {
 
     private static func parseWWVLine(_ line: String) -> SolarWeatherEntry? {
         guard let pattern = wwvPattern,
-              let match = line.firstMatch(of: pattern)
-        else {
-            return nil
-        }
-
-        guard let sfi = Int(match.3),
+              let match = line.firstMatch(of: pattern),
+              let sfi = Int(match.3),
               let aIndex = Int(match.4),
               let kIndex = Int(match.5)
         else {

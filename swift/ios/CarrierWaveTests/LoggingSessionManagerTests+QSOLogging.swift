@@ -6,8 +6,8 @@ import XCTest
 
 // MARK: - QSO Logging Tests
 
+@MainActor
 extension LoggingSessionManagerTests {
-    @MainActor
     func testLogQSO_CreatesQSOWithSessionFields() {
         // Given
         sessionManager.startSession(
@@ -41,7 +41,6 @@ extension LoggingSessionManagerTests {
         XCTAssertNotNil(qso?.loggingSessionId)
     }
 
-    @MainActor
     func testLogQSO_UppercasesCallsign() {
         // Given
         sessionManager.startSession(myCallsign: "N0TEST", mode: "CW", frequency: 14.060)
@@ -53,7 +52,6 @@ extension LoggingSessionManagerTests {
         XCTAssertEqual(qso?.callsign, "W1AW")
     }
 
-    @MainActor
     func testLogQSO_IncrementsSessionQSOCount() {
         // Given
         sessionManager.startSession(myCallsign: "N0TEST", mode: "CW", frequency: 14.060)
@@ -67,7 +65,6 @@ extension LoggingSessionManagerTests {
         XCTAssertEqual(sessionManager.activeSession?.qsoCount, 2)
     }
 
-    @MainActor
     func testLogQSO_WithoutActiveSession_ReturnsNil() {
         // Given - no active session
         XCTAssertFalse(sessionManager.hasActiveSession)
@@ -79,7 +76,6 @@ extension LoggingSessionManagerTests {
         XCTAssertNil(qso)
     }
 
-    @MainActor
     func testLogQSO_WithTheirParkReference() {
         // Given - POTA session
         sessionManager.startSession(
@@ -101,7 +97,6 @@ extension LoggingSessionManagerTests {
         XCTAssertEqual(qso?.theirParkReference, "US-0002")
     }
 
-    @MainActor
     func testLogQSO_DoesNotPersistOperatorNameInNotes() {
         // Given
         sessionManager.startSession(myCallsign: "N0TEST", mode: "CW", frequency: 14.060)
@@ -119,7 +114,6 @@ extension LoggingSessionManagerTests {
 
     // MARK: - Frequency and Mode Updates
 
-    @MainActor
     func testUpdateFrequency_UpdatesSessionFrequency() {
         // Given
         sessionManager.startSession(myCallsign: "N0TEST", mode: "CW", frequency: 14.060)
@@ -131,7 +125,6 @@ extension LoggingSessionManagerTests {
         XCTAssertEqual(sessionManager.activeSession?.frequency, 7.030)
     }
 
-    @MainActor
     func testUpdateMode_UpdatesSessionMode() {
         // Given
         sessionManager.startSession(myCallsign: "N0TEST", mode: "CW", frequency: 14.060)
@@ -143,7 +136,6 @@ extension LoggingSessionManagerTests {
         XCTAssertEqual(sessionManager.activeSession?.mode, "SSB")
     }
 
-    @MainActor
     func testUpdateMode_UppercasesMode() {
         // Given
         sessionManager.startSession(myCallsign: "N0TEST", mode: "CW", frequency: 14.060)
@@ -157,7 +149,6 @@ extension LoggingSessionManagerTests {
 
     // MARK: - Park Reference Updates
 
-    @MainActor
     func testUpdateParkReference_POTASession() {
         // Given - POTA session
         sessionManager.startSession(
@@ -174,7 +165,6 @@ extension LoggingSessionManagerTests {
         XCTAssertEqual(sessionManager.activeSession?.parkReference, "US-0002")
     }
 
-    @MainActor
     func testUpdateParkReference_NonPOTASession_NoEffect() {
         // Given - casual session
         sessionManager.startSession(
@@ -192,7 +182,6 @@ extension LoggingSessionManagerTests {
 
     // MARK: - Notes Management
 
-    @MainActor
     func testAppendNote_AddsTimestampedNote() throws {
         // Given
         sessionManager.startSession(myCallsign: "N0TEST", mode: "CW")
@@ -207,7 +196,6 @@ extension LoggingSessionManagerTests {
         XCTAssertTrue(try XCTUnwrap(notes?.contains("["))) // Has timestamp
     }
 
-    @MainActor
     func testAppendNote_MultipleNotes() throws {
         // Given
         sessionManager.startSession(myCallsign: "N0TEST", mode: "CW")
@@ -224,7 +212,6 @@ extension LoggingSessionManagerTests {
         XCTAssertTrue(try XCTUnwrap(notes?.contains("\n")))
     }
 
-    @MainActor
     func testParseSessionNotes_ReturnsEntries() {
         // Given
         sessionManager.startSession(myCallsign: "N0TEST", mode: "CW")

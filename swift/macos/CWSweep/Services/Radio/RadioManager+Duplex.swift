@@ -18,10 +18,9 @@ extension RadioManager {
     /// True when the slot's radio has independent Main/Sub receivers and a
     /// satellite mode we know how to drive (IC-9700 over USB or LAN).
     func supportsSubBandDuplex(slot: RadioSlot) -> Bool {
-        guard let profile = slotStates[slot]?.profile else {
-            return false
-        }
-        guard profile.protocolType == .civ || profile.protocolType == .icomWiFi else {
+        guard let profile = slotStates[slot]?.profile,
+              profile.protocolType == .civ || profile.protocolType == .icomWiFi
+        else {
             return false
         }
         if let modelId = profile.modelId, modelId.hasPrefix("ic9700") {

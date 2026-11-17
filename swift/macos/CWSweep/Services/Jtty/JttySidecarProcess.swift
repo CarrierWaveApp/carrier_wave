@@ -49,7 +49,9 @@ final class JttySidecarProcess: @unchecked Sendable {
                 handle.readabilityHandler = nil
                 return
             }
-            for line in lines.append(String(decoding: data, as: UTF8.self)) {
+            for line in lines
+                .append(String(bytes: data, encoding: .utf8) ?? String(bytes: data, encoding: .isoLatin1) ?? "")
+            {
                 logger.debug("jtty-sidecar: \(line)")
                 onLog?(line)
             }

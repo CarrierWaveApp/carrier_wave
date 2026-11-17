@@ -102,10 +102,7 @@ extension JttyService {
     }
 
     private func finishIfIdle(force: Bool = false) async {
-        guard force || pendingTransmissions == 0 else {
-            return
-        }
-        guard isTransmitting || pttEngaged else {
+        guard force || pendingTransmissions == 0, isTransmitting || pttEngaged else {
             return
         }
         await keyPTT(false)

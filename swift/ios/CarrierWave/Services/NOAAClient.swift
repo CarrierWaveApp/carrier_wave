@@ -392,13 +392,12 @@ actor NOAAClient {
         latitude += 0.5 // Center of square
 
         // Subsquare (optional, chars 5-6)
-        if upper.count >= 6 {
-            if let lon3 = chars[4].asciiValue, let lat3 = chars[5].asciiValue,
-               lon3 >= 65, lon3 <= 88, lat3 >= 65, lat3 <= 88
-            {
-                longitude += Double(lon3 - 65) * (2.0 / 24.0) + (1.0 / 24.0)
-                latitude += Double(lat3 - 65) * (1.0 / 24.0) + (0.5 / 24.0)
-            }
+        if upper.count >= 6,
+           let lon3 = chars[4].asciiValue, let lat3 = chars[5].asciiValue,
+           lon3 >= 65, lon3 <= 88, lat3 >= 65, lat3 <= 88
+        {
+            longitude += Double(lon3 - 65) * (2.0 / 24.0) + (1.0 / 24.0)
+            latitude += Double(lat3 - 65) * (1.0 / 24.0) + (0.5 / 24.0)
         }
 
         return (latitude, longitude)

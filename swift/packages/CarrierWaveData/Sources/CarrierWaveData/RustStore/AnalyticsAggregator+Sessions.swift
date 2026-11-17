@@ -177,10 +177,9 @@ public extension AnalyticsAggregator {
 
     /// A park-to-park QSO: both own and contacted park references are non-empty.
     private static func isParkToPark(_ qso: QSO) -> Bool {
-        guard let park = qso.parkReference, !park.isEmpty else {
-            return false
-        }
-        guard let theirPark = qso.theirParkReference, !theirPark.isEmpty else {
+        guard let park = qso.parkReference, !park.isEmpty, let theirPark = qso.theirParkReference,
+              !theirPark.isEmpty
+        else {
             return false
         }
         return true

@@ -85,6 +85,7 @@
 | `WaterfallStore.swift` | @MainActor @Observable source-agnostic waterfall buffer (magnitudes, geometry, source label, line sequence, exclusive-source gating) |
 | `IcomWaterfallData.swift` | @MainActor producer: reassembles Icom `27 00` scope frames (IC-9700 LAN / IC-705 WiFi) into `WaterfallStore` lines tagged Main/Sub |
 | `RadioManager+Transport.swift` | Network transport factories (Icom WiFi, SCU-LAN10, FlexRadio) split out for file-length budget |
+| `RadioManager+ConnectionSetup.swift` | Transport/handler selection, Flex subscription registration and connection-state bookkeeping split out of `RadioManager.swift` for file-length budget |
 | `MacRadioSessionMacroSink.swift` | Bridges `MacroExecutorSink` to the active `RadioManager`/`RadioSession` for macro execution |
 | `RadioProfileRunner.swift` | @MainActor entry point running a declarative `RadioStateProfile` against the active session (refresh→plan→apply→verify) via the shared `RadioSessionStateGateway`; triggered by the `profile <name>` palette command |
 
@@ -152,6 +153,7 @@ JTTY modem (CAR-351): WSJT-X 3.2's keyboard/contest mode, decoded and encoded by
 | `JttyMacroExpander.swift` | WSJT-X F1–F8 templates (`%M %H %Q %E %N %G`), shipped defaults, profile exchange text, normalisation, missing-field check |
 | `JttyService.swift` | ` ` modem: persisted settings (enable, devices, tone, profile, macros, auto-PTT, helper path, serial, exchange), helper lifecycle (install → spawn → wait for segment → audio → 50 ms result polling → health), terminal entries merged by message id, callsign token extraction |
 | `JttyService+Transmit.swift` | Macro send, free-text send, serialised transmit chain (render → PTT lead → play → PTT release), abort |
+| `JttyService+Runtime.swift` | Audio start, result polling, health checks and helper log/exit handling split out of `JttyService` for type-length budget |
 
 ### Services/Satellite/
 
@@ -322,6 +324,7 @@ Satellites workspace backend. Orbits, passes and transponders come from the shar
 | `SpotDetailPane.swift` | Standalone layout pane wrapper for SpotDetailInspector via SelectionState |
 | `CallsignModifiersView.swift` | Shared view displaying parsed callsign prefix/suffix modifiers with meanings |
 | `WaterfallView.swift` | Canvas-rendered waterfall driven by `WaterfallStore` (works for SCU-LAN10, FlexRadio, future producers) |
+| `WaterfallView+Palette.swift` | `WaterfallRGB` and the waterfall colour ramp / 256-step pixel palette |
 | `WaterfallPanel.swift` | Layout panel wrapper around `WaterfallView` with placeholder when no producer is feeding the store |
 | `WaterfallSpotOverlay.swift` | Spot-overlay strip for the waterfall panel |
 | `ContestBandScopeView+Waterfall.swift` | Rotated 90° waterfall layer on the contest band scope, reads from `WaterfallStore` |

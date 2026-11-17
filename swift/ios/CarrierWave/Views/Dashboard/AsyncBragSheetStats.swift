@@ -302,10 +302,7 @@ final class AsyncBragSheetStats {
                     break
                 }
                 for qso in batch {
-                    guard seenIds.insert(qso.id).inserted else {
-                        continue
-                    }
-                    guard !QSOMode.isMetadata(qso.mode) else {
+                    guard seenIds.insert(qso.id).inserted, !QSOMode.isMetadata(qso.mode) else {
                         continue
                     }
                     snapshots.append(BragSheetQSOSnapshot(from: qso))

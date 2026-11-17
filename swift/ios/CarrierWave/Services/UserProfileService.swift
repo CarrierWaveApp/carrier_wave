@@ -91,10 +91,8 @@ final class UserProfileService {
         let key = "loggerDefaultName"
         let existing = (UserDefaults.standard.string(forKey: key) ?? "")
             .trimmingCharacters(in: .whitespaces)
-        guard existing.isEmpty else {
-            return
-        }
-        guard let firstName = getProfile()?.firstName?.trimmingCharacters(in: .whitespaces),
+        guard existing.isEmpty,
+              let firstName = getProfile()?.firstName?.trimmingCharacters(in: .whitespaces),
               !firstName.isEmpty
         else {
             return

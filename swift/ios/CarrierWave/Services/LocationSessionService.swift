@@ -141,8 +141,8 @@ extension LocationSessionService: CLLocationManagerDelegate {
 
 // MARK: - Grid Processing
 
+@MainActor
 private extension LocationSessionService {
-    @MainActor
     func processGridUpdate(_ grid: String) {
         // Same as current — no update needed
         guard grid != currentGrid else {

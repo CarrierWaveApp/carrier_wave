@@ -155,63 +155,70 @@ import Testing
     #expect(try #require(enriched.distanceKm) - 1.609 < 0.001)
 }
 
-@Test func enrichedSpotFormattedDistanceMetric() {
-    // Force metric for deterministic test
-    UserDefaults.standard.set(true, forKey: "useMetricUnits")
-    defer { UserDefaults.standard.removeObject(forKey: "useMetricUnits") }
+// MARK: - SpotDistanceUnitTests
 
-    let spot = UnifiedSpot(
-        id: "test",
-        callsign: "W1AW",
-        frequencyKHz: 14_030,
-        mode: "CW",
-        timestamp: Date(),
-        source: .rbn,
-        snr: nil,
-        wpm: nil,
-        spotter: nil,
-        spotterGrid: nil,
-        parkRef: nil,
-        parkName: nil,
-        comments: nil,
-        locationDesc: nil
-    )
+/// Both tests flip the global `useMetricUnits` default that UnitFormatter
+/// reads, so they must not run in parallel with each other.
+@Suite(.serialized)
+struct SpotDistanceUnitTests {
+    @Test func enrichedSpotFormattedDistanceMetric() {
+        // Force metric for deterministic test
+        UserDefaults.standard.set(true, forKey: "useMetricUnits")
+        defer { UserDefaults.standard.removeObject(forKey: "useMetricUnits") }
 
-    let nearby = EnrichedSpot(spot: spot, distanceMeters: 50_000, bearingDegrees: nil, region: .neUS)
-    #expect(nearby.formattedDistance() == "50 km")
+        let spot = UnifiedSpot(
+            id: "test",
+            callsign: "W1AW",
+            frequencyKHz: 14_030,
+            mode: "CW",
+            timestamp: Date(),
+            source: .rbn,
+            snr: nil,
+            wpm: nil,
+            spotter: nil,
+            spotterGrid: nil,
+            parkRef: nil,
+            parkName: nil,
+            comments: nil,
+            locationDesc: nil
+        )
 
-    let far = EnrichedSpot(spot: spot, distanceMeters: 5_000_000, bearingDegrees: nil, region: .europe)
-    #expect(far.formattedDistance() == "5k km")
+        let nearby = EnrichedSpot(spot: spot, distanceMeters: 50_000, bearingDegrees: nil, region: .neUS)
+        #expect(nearby.formattedDistance() == "50 km")
 
-    let noDistance = EnrichedSpot(spot: spot, distanceMeters: nil, bearingDegrees: nil, region: .other)
-    #expect(noDistance.formattedDistance() == nil)
-}
+        let far = EnrichedSpot(spot: spot, distanceMeters: 5_000_000, bearingDegrees: nil, region: .europe)
+        #expect(far.formattedDistance() == "5k km")
 
-@Test func enrichedSpotFormattedDistanceImperial() {
-    // Force imperial for deterministic test
-    UserDefaults.standard.set(false, forKey: "useMetricUnits")
-    defer { UserDefaults.standard.removeObject(forKey: "useMetricUnits") }
+        let noDistance = EnrichedSpot(spot: spot, distanceMeters: nil, bearingDegrees: nil, region: .other)
+        #expect(noDistance.formattedDistance() == nil)
+    }
 
-    let spot = UnifiedSpot(
-        id: "test",
-        callsign: "W1AW",
-        frequencyKHz: 14_030,
-        mode: "CW",
-        timestamp: Date(),
-        source: .rbn,
-        snr: nil,
-        wpm: nil,
-        spotter: nil,
-        spotterGrid: nil,
-        parkRef: nil,
-        parkName: nil,
-        comments: nil,
-        locationDesc: nil
-    )
+    @Test func enrichedSpotFormattedDistanceImperial() {
+        // Force imperial for deterministic test
+        UserDefaults.standard.set(false, forKey: "useMetricUnits")
+        defer { UserDefaults.standard.removeObject(forKey: "useMetricUnits") }
 
-    let nearby = EnrichedSpot(spot: spot, distanceMeters: 50_000, bearingDegrees: nil, region: .neUS)
-    #expect(nearby.formattedDistance() == "31 mi")
+        let spot = UnifiedSpot(
+            id: "test",
+            callsign: "W1AW",
+            frequencyKHz: 14_030,
+            mode: "CW",
+            timestamp: Date(),
+            source: .rbn,
+            snr: nil,
+            wpm: nil,
+            spotter: nil,
+            spotterGrid: nil,
+            parkRef: nil,
+            parkName: nil,
+            comments: nil,
+            locationDesc: nil
+        )
 
-    let far = EnrichedSpot(spot: spot, distanceMeters: 5_000_000, bearingDegrees: nil, region: .europe)
-    #expect(far.formattedDistance() == "3k mi")
+        let nearby = EnrichedSpot(spot: spot, distanceMeters: 50_000, bearingDegrees: nil, region: .neUS)
+        #expect(nearby.formattedDistance() == "31 mi")
+
+        let far = EnrichedSpot(spot: spot, distanceMeters: 5_000_000, bearingDegrees: nil, region: .europe)
+        #expect(far.formattedDistance() == "3k mi")
+    }
 }

@@ -95,6 +95,14 @@ final class SatellitePassActivityController {
 
     private var currentActivity: Activity<SatellitePassAttributes>?
 
+    /// Fresh lookup of a running activity. `Activity` isn't `Sendable` and its
+    /// `end` runs off the main actor, so a reference held in (or captured from)
+    /// this MainActor controller can't be handed to it (Xcode 27+). A fresh
+    /// lookup yields a disconnected value that can.
+    nonisolated private static func liveActivity(id: String) -> Activity<SatellitePassAttributes>? {
+        Activity<SatellitePassAttributes>.activities.first { $0.id == id }
+    }
+
     private func endCurrent() {
         guard let current = currentActivity else {
             return
@@ -104,13 +112,5 @@ final class SatellitePassActivityController {
         Task {
             await Self.liveActivity(id: id)?.end(nil, dismissalPolicy: .immediate)
         }
-    }
-
-    /// Fresh lookup of a running activity. `Activity` isn't `Sendable` and its
-    /// `end` runs off the main actor, so a reference held in (or captured from)
-    /// this MainActor controller can't be handed to it (Xcode 27+). A fresh
-    /// lookup yields a disconnected value that can.
-    nonisolated private static func liveActivity(id: String) -> Activity<SatellitePassAttributes>? {
-        Activity<SatellitePassAttributes>.activities.first { $0.id == id }
     }
 }

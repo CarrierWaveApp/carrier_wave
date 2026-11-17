@@ -341,10 +341,10 @@ struct CarrierWaveApp: App {
             try? await Task.sleep(for: .seconds(2))
 
             guard UserDefaults.standard.object(
-                forKey: "autoBackupEnabled"
-            ) as? Bool ?? true,
-                let storeURL = sharedModelContainer
-                .configurations.first?.url
+                      forKey: "autoBackupEnabled"
+                  ) as? Bool ?? true,
+                  let storeURL = sharedModelContainer
+                      .configurations.first?.url
             else {
                 return
             }

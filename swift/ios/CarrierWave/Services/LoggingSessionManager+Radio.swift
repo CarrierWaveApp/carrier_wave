@@ -117,11 +117,7 @@ extension LoggingSessionManager {
 
     /// Handle mode change from the physical radio
     func handleRadioModeChange(_ mode: String) {
-        guard let session = activeSession else {
-            return
-        }
-
-        guard session.mode != mode else {
+        guard let session = activeSession, session.mode != mode else {
             return
         }
         updateMode(mode)

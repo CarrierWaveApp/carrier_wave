@@ -16,10 +16,8 @@ struct MacroAppSafetyEnvironment: MacroSafetyEnvironment {
         get async {
             await MainActor.run {
                 let manager = SharedEnvironment.shared.radioManager
-                guard manager.isConnected else {
-                    return nil
-                }
-                guard let slot = activeSlot(manager: manager),
+                guard manager.isConnected,
+                      let slot = activeSlot(manager: manager),
                       let state = manager.slotStates[slot]
                 else {
                     return nil

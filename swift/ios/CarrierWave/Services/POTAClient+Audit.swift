@@ -251,9 +251,9 @@ struct POTADownloadAudit {
 
 // MARK: - POTADownloadAudit Logging
 
+@MainActor
 extension POTADownloadAudit {
     /// Log audit summary and any discrepancies to the sync debug log.
-    @MainActor
     func logResults(activationsSkipped: Int) {
         let debugLog = SyncDebugLog.shared
         let summary = buildSummary(activationsSkipped: activationsSkipped)
@@ -291,7 +291,6 @@ extension POTADownloadAudit {
         logDiscrepancies(to: debugLog)
     }
 
-    @MainActor
     private func logDiscrepancies(to debugLog: SyncDebugLog) {
         if discrepancies.isEmpty {
             debugLog.info("POTA Audit: No discrepancies found", service: .pota)

@@ -136,8 +136,7 @@ struct PropagationCheckMapCard: View {
                 Color(uiColor: UIColor(red: 0.06, green: 0.06, blue: 0.12, alpha: 1))
                 if let themedImage {
                     Image(uiImage: themedImage)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
+                        .resizable().scaledToFill()
                 }
             }
             .task(id: RenderKey(size: geo.size, style: style, count: pins.count)) {

@@ -200,10 +200,7 @@ extension QSOProcessingActor {
 
             var batchRepaired = 0
             for presence in batch {
-                guard presence.serviceType == .qrz else {
-                    continue
-                }
-                guard let qso = presence.qso, !qso.isHidden else {
+                guard presence.serviceType == .qrz, let qso = presence.qso, !qso.isHidden else {
                     continue
                 }
                 presence.isPresent = true

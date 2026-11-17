@@ -45,12 +45,12 @@ struct SpotConfirmAlertModifier: ViewModifier {
 
 // MARK: - Spot Action (no-log respot from hunter log)
 
+@MainActor
 extension ActivityLogSpotsList {
     /// Called when the user picks "Spot" from a hunter log row's long-press menu.
     /// Always confirms before posting — the alert shows exactly what will be
     /// published (activator, park, frequency, mode, spotter) and folds in the
     /// per-callsign cooldown warning when the activator was spotted recently.
-    @MainActor
     func handleSpot(_ spot: EnrichedSpot) {
         guard spot.spot.source == .pota, let parkRef = spot.spot.parkRef else {
             ToastManager.shared.warning("Only POTA spots can be reposted")
@@ -85,7 +85,6 @@ extension ActivityLogSpotsList {
     /// Fire-and-forget POTA respot used by both the immediate path and the
     /// cooldown bypass. Records the cooldown timestamp so back-to-back taps are
     /// throttled.
-    @MainActor
     func sendSpot(_ spot: EnrichedSpot) {
         guard let parkRef = spot.spot.parkRef,
               let myCallsign = manager.activeLog?.myCallsign

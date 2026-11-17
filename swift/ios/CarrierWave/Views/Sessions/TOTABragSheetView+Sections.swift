@@ -48,8 +48,7 @@ extension TOTABragSheetView {
     var mapBlock: some View {
         if let image = pathMapImage {
             Image(uiImage: image)
-                .resizable()
-                .aspectRatio(contentMode: .fill)
+                .resizable().scaledToFill()
                 .frame(height: 140)
                 .padding(.horizontal, 14)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
@@ -133,8 +132,7 @@ extension TOTABragSheetView {
     var contactMapBlock: some View {
         if let image = contactMapImage {
             Image(uiImage: image)
-                .resizable()
-                .aspectRatio(contentMode: .fill)
+                .resizable().scaledToFill()
                 .frame(height: 160)
                 .padding(.horizontal, 14)
                 .clipShape(RoundedRectangle(cornerRadius: 12))

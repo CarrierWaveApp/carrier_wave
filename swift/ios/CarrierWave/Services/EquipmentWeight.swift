@@ -36,11 +36,11 @@ enum EquipmentWeight {
 
 // MARK: - Backfill
 
+@MainActor
 extension EquipmentWeight {
     /// One-shot pass that fills in `weightOunces` for any inventory item that
     /// matches a catalog entry by `catalogId`. Idempotent — leaves
     /// already-populated weights alone.
-    @MainActor
     static func backfill(
         items: [EquipmentItem],
         catalog: [CatalogEntry]

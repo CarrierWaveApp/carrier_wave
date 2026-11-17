@@ -71,10 +71,9 @@ nonisolated enum VideoAudioMixer {
         }
 
         let byteCount = sampleCount * MemoryLayout<Int16>.size
-        guard let block = makeZeroedBlockBuffer(byteCount: byteCount) else {
-            return nil
-        }
-        guard let format = makeMonoPCMFormat(sampleRate: sampleRate) else {
+        guard let block = makeZeroedBlockBuffer(byteCount: byteCount),
+              let format = makeMonoPCMFormat(sampleRate: sampleRate)
+        else {
             return nil
         }
 

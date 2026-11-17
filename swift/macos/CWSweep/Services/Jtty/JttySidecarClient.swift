@@ -320,8 +320,8 @@ final class JttySidecarClient: @unchecked Sendable {
     private func string(at offset: Int, length: Int) -> String {
         let bytes = UnsafeRawBufferPointer(start: base + offset, count: length)
         let end = bytes.firstIndex(of: 0) ?? length
-        return String(decoding: bytes[..<end], as: UTF8.self)
-            .trimmingCharacters(in: .whitespaces)
+        let text = String(bytes: bytes[..<end], encoding: .utf8) ?? ""
+        return text.trimmingCharacters(in: .whitespaces)
     }
 
     private func readResult(slot: Int) -> JttyDecodeResult {

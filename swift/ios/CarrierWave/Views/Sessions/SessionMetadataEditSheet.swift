@@ -401,7 +401,7 @@ extension SessionMetadataEditSheet {
         let url = SessionPhotoManager.photoURL(filename: filename, sessionID: sessionID)
         return ZStack(alignment: .topTrailing) {
             AsyncImage(url: url) { image in
-                image.resizable().aspectRatio(contentMode: .fill)
+                image.resizable().scaledToFill()
             } placeholder: {
                 Color.gray.opacity(0.3)
             }
@@ -422,8 +422,7 @@ extension SessionMetadataEditSheet {
     func addedPhotoThumbnail(_ index: Int) -> some View {
         ZStack(alignment: .topTrailing) {
             Image(uiImage: addedImages[index])
-                .resizable()
-                .aspectRatio(contentMode: .fill)
+                .resizable().scaledToFill()
                 .frame(width: 80, height: 80)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
 

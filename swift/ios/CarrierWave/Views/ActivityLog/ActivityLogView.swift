@@ -452,10 +452,7 @@ extension ActivityLogView {
     // MARK: - FT8 Session
 
     func startFT8Session() {
-        guard ft8Manager == nil else {
-            return
-        }
-        guard let log = manager.activeLog else {
+        guard ft8Manager == nil, let log = manager.activeLog else {
             return
         }
 

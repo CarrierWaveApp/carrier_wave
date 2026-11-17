@@ -146,7 +146,7 @@ struct WeatherConditionBadge<C: ConditionsData>: View {
         if desc.contains("sunny") || desc.contains("clear") {
             Image(systemName: "sun.max.fill")
                 .foregroundStyle(.yellow)
-        } else if desc.contains("partly") && desc.contains("cloud") {
+        } else if desc.contains("partly"), desc.contains("cloud") {
             Image(systemName: "cloud.sun.fill")
                 .foregroundStyle(.cyan)
         } else if desc.contains("cloud") {

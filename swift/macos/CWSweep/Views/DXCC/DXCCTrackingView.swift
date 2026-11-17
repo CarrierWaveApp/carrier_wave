@@ -254,10 +254,7 @@ struct DXCCTrackingView: View {
                 }
 
                 for qso in batch {
-                    guard seen.insert(qso.id).inserted else {
-                        continue
-                    }
-                    guard let dxcc = qso.dxcc else {
+                    guard seen.insert(qso.id).inserted, let dxcc = qso.dxcc else {
                         continue
                     }
 

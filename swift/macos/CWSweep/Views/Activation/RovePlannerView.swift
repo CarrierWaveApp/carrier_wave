@@ -184,18 +184,16 @@ struct RovePlannerView: View {
             } else {
                 mapCameraPosition = .automatic
             }
+        } else if let grid = primaryParkGrid,
+                  let coord = MaidenheadConverter.coordinate(from: grid)
+        {
+            let center = CLLocationCoordinate2D(latitude: coord.latitude, longitude: coord.longitude)
+            mapCameraPosition = .region(MKCoordinateRegion(
+                center: center,
+                span: MKCoordinateSpan(latitudeDelta: 0.5, longitudeDelta: 0.5)
+            ))
         } else {
-            if let grid = primaryParkGrid,
-               let coord = MaidenheadConverter.coordinate(from: grid)
-            {
-                let center = CLLocationCoordinate2D(latitude: coord.latitude, longitude: coord.longitude)
-                mapCameraPosition = .region(MKCoordinateRegion(
-                    center: center,
-                    span: MKCoordinateSpan(latitudeDelta: 0.5, longitudeDelta: 0.5)
-                ))
-            } else {
-                mapCameraPosition = .automatic
-            }
+            mapCameraPosition = .automatic
         }
     }
 

@@ -113,10 +113,8 @@ struct SpotFilters: Equatable, Codable {
                 }
             }
 
-            if !allSelected {
-                if !selectedContinents.contains(spot.region.continent) {
-                    return false
-                }
+            if !allSelected, !selectedContinents.contains(spot.region.continent) {
+                return false
             }
 
             if needsOnly, !spot.hasNeeds {

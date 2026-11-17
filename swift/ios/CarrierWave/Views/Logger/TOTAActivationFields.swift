@@ -76,10 +76,12 @@ struct TOTAActivationFields: View {
     @AppStorage("useMetricUnits") private var useMetricUnits = false
 
     private var coordinate: CLLocationCoordinate2D? {
-        guard let lat = activationLatitude, let lon = activationLongitude else {
-            return nil
-        }
-        guard CLLocationCoordinate2DIsValid(CLLocationCoordinate2D(latitude: lat, longitude: lon)) else {
+        guard let lat = activationLatitude, let lon = activationLongitude,
+              CLLocationCoordinate2DIsValid(CLLocationCoordinate2D(
+                  latitude: lat,
+                  longitude: lon
+              ))
+        else {
             return nil
         }
         return CLLocationCoordinate2D(latitude: lat, longitude: lon)

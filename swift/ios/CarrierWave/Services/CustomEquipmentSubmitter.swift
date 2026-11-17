@@ -50,10 +50,7 @@ final class CustomEquipmentSubmitter {
         category: CarrierWaveData.EquipmentCategory,
         catalogId: String
     ) {
-        guard catalogId.hasPrefix("custom-") else {
-            return
-        }
-        guard !isSubmitted(catalogId) else {
+        guard catalogId.hasPrefix("custom-"), !isSubmitted(catalogId) else {
             return
         }
 

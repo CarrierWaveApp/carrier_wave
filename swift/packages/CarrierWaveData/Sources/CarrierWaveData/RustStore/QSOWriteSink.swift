@@ -127,11 +127,11 @@ public struct QSOWriteSink {
 
 // MARK: - QSOWriteSink + Routing
 
+@MainActor
 public extension QSOWriteSink {
     /// Route a QSO upsert through the active seam, or fall back to a plain SwiftData
     /// save when no seam is active (`off` mode / experiment disabled). The caller has
     /// already inserted/mutated the QSO in `context`.
-    @MainActor
     static func commitUpsert(_ qso: QSO, in context: ModelContext) throws {
         if let sink = QSOWriteSinkRegistry.current {
             try sink.upsert(qso, in: context)
@@ -141,7 +141,6 @@ public extension QSOWriteSink {
     }
 
     /// Batch upsert through the active seam, or a plain save when no seam is active.
-    @MainActor
     static func commitUpsertBatch(_ qsos: [QSO], in context: ModelContext) throws {
         if let sink = QSOWriteSinkRegistry.current {
             try sink.upsertBatch(qsos, in: context)
@@ -151,7 +150,6 @@ public extension QSOWriteSink {
     }
 
     /// Batch hard-delete through the active seam, or a plain SwiftData delete+save.
-    @MainActor
     static func commitDeleteBatch(_ qsos: [QSO], in context: ModelContext) throws {
         if let sink = QSOWriteSinkRegistry.current {
             try sink.deleteBatch(qsos, in: context)

@@ -199,8 +199,7 @@ struct BragShareImageSheet: View {
         NavigationStack {
             ScrollView {
                 Image(uiImage: image)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
+                    .resizable().scaledToFit()
                     .cornerRadius(12)
                     .shadow(radius: 4)
                     .padding()

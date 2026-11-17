@@ -112,8 +112,7 @@ struct BragSheetShareCardView: View {
     private var mapSection: some View {
         if let mapImage {
             Image(uiImage: mapImage)
-                .resizable()
-                .aspectRatio(contentMode: .fill)
+                .resizable().scaledToFill()
                 .frame(height: 200)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .padding(.horizontal, 16)

@@ -90,14 +90,14 @@ final class RadioPowerController {
                 service = IOIteratorNext(iterator)
             }
             guard let path = IORegistryEntryCreateCFProperty(
-                service, kIOCalloutDeviceKey as CFString, kCFAllocatorDefault, 0
-            )?.takeRetainedValue() as? String,
-                let vendor = IORegistryEntrySearchCFProperty(
-                    service, kIOServicePlane, "idVendor" as CFString, kCFAllocatorDefault, options
-                ) as? Int,
-                let product = IORegistryEntrySearchCFProperty(
-                    service, kIOServicePlane, "idProduct" as CFString, kCFAllocatorDefault, options
-                ) as? Int
+                      service, kIOCalloutDeviceKey as CFString, kCFAllocatorDefault, 0
+                  )?.takeRetainedValue() as? String,
+                  let vendor = IORegistryEntrySearchCFProperty(
+                      service, kIOServicePlane, "idVendor" as CFString, kCFAllocatorDefault, options
+                  ) as? Int,
+                  let product = IORegistryEntrySearchCFProperty(
+                      service, kIOServicePlane, "idProduct" as CFString, kCFAllocatorDefault, options
+                  ) as? Int
             else {
                 continue
             }

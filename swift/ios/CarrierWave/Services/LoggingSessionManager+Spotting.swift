@@ -155,11 +155,9 @@ extension LoggingSessionManager {
             }
 
             // Skip if no comment text
-            guard let commentText = comment.comments, !commentText.isEmpty else {
-                continue
-            }
-
-            guard let commentTimestamp = comment.timestamp else {
+            guard let commentText = comment.comments, !commentText.isEmpty,
+                  let commentTimestamp = comment.timestamp
+            else {
                 continue
             }
 

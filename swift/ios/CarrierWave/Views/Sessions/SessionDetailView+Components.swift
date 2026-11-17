@@ -180,8 +180,7 @@ extension SessionDetailView {
                         selectedPhoto = PhotoItem(filename: filename)
                     } label: {
                         AsyncImage(url: url) { image in
-                            image.resizable()
-                                .aspectRatio(contentMode: .fill)
+                            image.resizable().scaledToFill()
                         } placeholder: {
                             Color.gray.opacity(0.3)
                         }

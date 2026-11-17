@@ -46,10 +46,10 @@ class ImportService {
 
         // Pre-import backup
         if UserDefaults.standard.object(
-            forKey: "autoBackupEnabled"
-        ) as? Bool ?? true,
-            let storeURL = modelContext.container
-            .configurations.first?.url
+               forKey: "autoBackupEnabled"
+           ) as? Bool ?? true,
+           let storeURL = modelContext.container
+               .configurations.first?.url
         {
             let count = BackupService.visibleQSOCount(
                 in: modelContext.container
@@ -405,12 +405,10 @@ private extension ImportService {
     func storeActivationMetadata(
         from lofiQso: LoFiQso, operation: LoFiOperation
     ) -> ActivationMetadata? {
-        guard let mode = lofiQso.mode?.uppercased() else {
-            return nil
-        }
-        guard let parkRef = operation.refs
-            .first(where: { $0.refType == "potaActivation" })?
-            .reference
+        guard let mode = lofiQso.mode?.uppercased(),
+              let parkRef = operation.refs
+                  .first(where: { $0.refType == "potaActivation" })?
+                  .reference
         else {
             return nil
         }

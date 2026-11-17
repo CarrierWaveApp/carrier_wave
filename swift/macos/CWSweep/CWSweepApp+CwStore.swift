@@ -17,10 +17,7 @@ extension CWSweepApp {
     /// since 2026-10-05). A no-op when the hidden `cwStoreQSOMode` default is
     /// `.off` — CW Sweep has no Experiments UI, so that key is the kill switch.
     func applyCwStoreMirrorMode() async {
-        guard CwStoreQSOMode.current != .off else {
-            return
-        }
-        guard cwStoreMirror == nil else {
+        guard CwStoreQSOMode.current != .off, cwStoreMirror == nil else {
             return
         }
         do {

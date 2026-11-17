@@ -136,10 +136,7 @@ final class PropagationAutoCQController {
         Timer.publish(every: intervalSeconds, on: .main, in: .common)
             .autoconnect()
             .sink { [weak self] _ in
-                guard let self else {
-                    return
-                }
-                guard isRunning else {
+                guard let self, isRunning else {
                     return
                 }
                 sendCWFrame(message: message, onRadioFault: onRadioFault)

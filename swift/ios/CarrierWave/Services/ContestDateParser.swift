@@ -14,14 +14,11 @@ nonisolated enum ContestDateParser {
     ) -> (start: Date, end: Date)? {
         // Split on " to " to get start/end halves
         let halves = description.components(separatedBy: " to ")
-        guard halves.count == 2 else {
-            return nil
-        }
-
-        guard let start = parseHalf(halves[0].trimmingCharacters(in: .whitespaces),
+        guard halves.count == 2,
+              let start = parseHalf(halves[0].trimmingCharacters(in: .whitespaces),
                                     referenceYear: referenceYear),
-            let end = parseHalf(halves[1].trimmingCharacters(in: .whitespaces),
-                                referenceYear: referenceYear)
+              let end = parseHalf(halves[1].trimmingCharacters(in: .whitespaces),
+                                  referenceYear: referenceYear)
         else {
             return nil
         }

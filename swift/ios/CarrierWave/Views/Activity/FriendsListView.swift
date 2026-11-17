@@ -291,10 +291,7 @@ private extension FriendsListView {
     }
 
     func declineRequest(_ friendship: Friendship) {
-        guard let service = friendsSyncService else {
-            return
-        }
-        guard !inFlightRequests.contains(friendship.id) else {
+        guard let service = friendsSyncService, !inFlightRequests.contains(friendship.id) else {
             return
         }
         let requestID = friendship.id

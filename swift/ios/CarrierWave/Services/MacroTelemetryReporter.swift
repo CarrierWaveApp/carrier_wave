@@ -14,13 +14,9 @@ enum MacroTelemetryReporter {
     nonisolated static let optInKey = "macrosTelemetryOptIn"
 
     static func reportIfOptedIn(spec: RadioMacroSpec, outcome: MacroExecutionOutcome) async {
-        guard UserDefaults.standard.bool(forKey: optInKey) else {
-            return
-        }
-        guard let slug = spec.registry?.slug else {
-            return
-        }
-        guard let client = MacrosRegistryHolder.shared.client else {
+        guard UserDefaults.standard.bool(forKey: optInKey), let slug = spec.registry?.slug,
+              let client = MacrosRegistryHolder.shared.client
+        else {
             return
         }
         let body = RegistryRunEventBody.from(outcome: outcome)

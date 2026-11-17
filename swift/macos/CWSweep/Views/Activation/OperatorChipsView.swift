@@ -134,13 +134,7 @@ struct OperatorChipsView: View {
     private func commitInput() {
         let trimmed = inputText.trimmingCharacters(in: .whitespaces).uppercased()
         inputText = ""
-        guard !trimmed.isEmpty else {
-            return
-        }
-        guard trimmed != myCallsign else {
-            return
-        }
-        guard !operators.contains(trimmed) else {
+        guard !trimmed.isEmpty, trimmed != myCallsign, !operators.contains(trimmed) else {
             return
         }
         operators.append(trimmed)

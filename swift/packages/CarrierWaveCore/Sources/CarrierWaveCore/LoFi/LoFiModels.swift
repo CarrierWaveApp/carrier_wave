@@ -342,7 +342,9 @@ public struct LoFiOperationRef: Decodable, Sendable {
     public enum CodingKeys: String, CodingKey {
         case refType = "type"
         case reference = "ref"
-        case name, location, label
+        case name
+        case location
+        case label
         case shortLabel = "short_label"
         case program
     }

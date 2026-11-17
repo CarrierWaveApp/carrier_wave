@@ -47,6 +47,19 @@ struct TOTASettingsView: View {
         .onAppear { refreshStatus() }
     }
 
+    func testConnection() async {
+        isWorking = true
+        defer { isWorking = false }
+        do {
+            let spots = try await client.fetchSpots(activeHours: 0.5, limit: 5)
+            statusMessage = "Connected. Last 30 min returned \(spots.count) spot(s)."
+        } catch let error as TOTAError {
+            present(error: error.localizedDescription)
+        } catch {
+            present(error: error.localizedDescription)
+        }
+    }
+
     // MARK: Private
 
     private static let adifTypes: [UTType] = {
@@ -244,19 +257,6 @@ struct TOTASettingsView: View {
         do {
             _ = try await client.fetchSpots(activeHours: 0.1, limit: 1)
             statusMessage = "Saved. Spot fetch with key returned successfully."
-        } catch let error as TOTAError {
-            present(error: error.localizedDescription)
-        } catch {
-            present(error: error.localizedDescription)
-        }
-    }
-
-    private func testConnection() async {
-        isWorking = true
-        defer { isWorking = false }
-        do {
-            let spots = try await client.fetchSpots(activeHours: 0.5, limit: 5)
-            statusMessage = "Connected. Last 30 min returned \(spots.count) spot(s)."
         } catch let error as TOTAError {
             present(error: error.localizedDescription)
         } catch {

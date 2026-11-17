@@ -58,10 +58,7 @@ final class UDPChannel: @unchecked Sendable {
 
     /// Start the channel: resolve hostname, create socket, bind, start receive loop.
     func start() throws {
-        guard let hostent = gethostbyname(remoteHost) else {
-            throw IcomWiFiError.dnsResolutionFailed(remoteHost)
-        }
-        guard let addrPtr = hostent.pointee.h_addr_list[0] else {
+        guard let hostent = gethostbyname(remoteHost), let addrPtr = hostent.pointee.h_addr_list[0] else {
             throw IcomWiFiError.dnsResolutionFailed(remoteHost)
         }
         var inAddr = in_addr()

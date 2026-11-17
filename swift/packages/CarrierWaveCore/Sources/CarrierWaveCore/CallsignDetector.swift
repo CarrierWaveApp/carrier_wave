@@ -309,19 +309,15 @@ public enum CallsignDetector {
 
     /// Check if text is a signal report (RST format)
     private static func isSignalReport(_ text: String) -> Bool {
-        guard text.count == 3 || text.count == 2 else {
-            return false
-        }
-        guard text.allSatisfy(\.isNumber) else {
+        guard text.count == 3 || text.count == 2, text.allSatisfy(\.isNumber) else {
             return false
         }
 
         // RST: R=1-5, S=1-9, T=1-9 (optional)
         let chars = Array(text)
-        guard let readability = chars[0].wholeNumberValue, readability >= 1, readability <= 5 else {
-            return false
-        }
-        guard let strength = chars[1].wholeNumberValue, strength >= 1, strength <= 9 else {
+        guard let readability = chars[0].wholeNumberValue, readability >= 1, readability <= 5,
+              let strength = chars[1].wholeNumberValue, strength >= 1, strength <= 9
+        else {
             return false
         }
         if chars.count == 3 {

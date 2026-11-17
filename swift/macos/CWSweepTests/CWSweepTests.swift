@@ -136,11 +136,11 @@ import Testing
     #expect(frames.first == frame)
 }
 
-@Test func frameAssemblerKenwood() async {
+@Test func frameAssemblerKenwood() async throws {
     let assembler = FrameAssembler(frameType: .kenwood)
 
     // Feed a complete Kenwood response: FA00014074000;
-    let response = "FA00014074000;".data(using: .ascii)!
+    let response = try #require("FA00014074000;".data(using: .ascii))
     let frames = await assembler.feed(response)
     #expect(frames.count == 1)
 }
@@ -159,11 +159,11 @@ import Testing
     #expect(frames2.count == 1, "Complete frame should produce output")
 }
 
-@Test func frameAssemblerKenwoodMultipleResponses() async {
+@Test func frameAssemblerKenwoodMultipleResponses() async throws {
     let assembler = FrameAssembler(frameType: .kenwood)
 
     // Feed two responses concatenated
-    let responses = "FA00014074000;MD2;".data(using: .ascii)!
+    let responses = try #require("FA00014074000;MD2;".data(using: .ascii))
     let frames = await assembler.feed(responses)
     #expect(frames.count == 2)
 }

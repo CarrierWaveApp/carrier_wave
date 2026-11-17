@@ -62,10 +62,7 @@ final class SCULAN10AudioPlayer {
     /// Push one PCM frame into the player. No-op if `start()` hasn't been
     /// called or the byte count isn't aligned to a sample boundary.
     func feed(_ pcmBytes: Data) {
-        guard isPlaying else {
-            return
-        }
-        guard let buffer = Self.makeBuffer(pcmBytes: pcmBytes, format: sourceFormat) else {
+        guard isPlaying, let buffer = Self.makeBuffer(pcmBytes: pcmBytes, format: sourceFormat) else {
             return
         }
         playerNode.scheduleBuffer(buffer, completionHandler: nil)
@@ -97,10 +94,7 @@ final class SCULAN10AudioPlayer {
     ) -> AVAudioPCMBuffer? {
         let bytesPerSample = MemoryLayout<Int16>.size
         let sampleCount = pcmBytes.count / bytesPerSample
-        guard sampleCount > 0 else {
-            return nil
-        }
-        guard let buffer = AVAudioPCMBuffer(
+        guard sampleCount > 0, let buffer = AVAudioPCMBuffer(
             pcmFormat: format,
             frameCapacity: AVAudioFrameCount(sampleCount)
         ) else {

@@ -290,10 +290,7 @@ extension GridBandOverviewView {
 
     private func heatOpacity(index: Int, stats: GridCellStats) -> Double {
         let windowMinutes = [1.0, 2.0, 5.0, 10.0, 20.0, 30.0]
-        guard index < windowMinutes.count else {
-            return 0.1
-        }
-        guard let age = stats.lastSpotAge else {
+        guard index < windowMinutes.count, let age = stats.lastSpotAge else {
             return 0.1
         }
         if age / 60 < windowMinutes[index] {

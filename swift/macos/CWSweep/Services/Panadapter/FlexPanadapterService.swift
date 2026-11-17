@@ -198,10 +198,7 @@ final class FlexPanadapterService {
             store.setReceiving(true, source: .flex)
             logger.info("Panadapter stream \(String(format: "0x%08X", frame.streamID)) acquired")
         }
-        guard frame.streamID == streamHandle else {
-            return
-        }
-        guard let line = decodePanadapterPayload(frame.payload) else {
+        guard frame.streamID == streamHandle, let line = decodePanadapterPayload(frame.payload) else {
             return
         }
         let geometry = geometryProvider?() ?? (

@@ -449,8 +449,8 @@ extension WaterfallView {
 
 // MARK: - Interaction
 
+@MainActor
 extension WaterfallView {
-    @MainActor
     private func handleTap(
         at location: NSPoint, canvasWidth: CGFloat
     ) {
@@ -488,38 +488,5 @@ extension WaterfallView {
 
     private func formatFrequency(_ mhz: Double) -> String {
         String(format: "%.3f MHz", mhz)
-    }
-
-    /// Magnitude (0...1) -> RGB, the waterfall's color ramp.
-    private static func waterfallRGB(for magnitude: Double) -> (Double, Double, Double) {
-        let val = min(1.0, max(0.0, magnitude))
-        if val < 0.05 {
-            return (0, 0, 0.08)
-        } else if val < 0.15 {
-            let frac = (val - 0.05) / 0.1
-            return (0, 0, 0.08 + frac * 0.25)
-        } else if val < 0.35 {
-            let frac = (val - 0.15) / 0.2
-            return (0, frac * 0.4, 0.33 + frac * 0.3)
-        } else if val < 0.55 {
-            let frac = (val - 0.35) / 0.2
-            return (0, 0.4 + frac * 0.6, 0.63 - frac * 0.3)
-        } else if val < 0.75 {
-            let frac = (val - 0.55) / 0.2
-            return (frac * 0.8, 1.0, 0.33 - frac * 0.33)
-        } else if val < 0.9 {
-            let frac = (val - 0.75) / 0.15
-            return (0.8 + frac * 0.2, 1.0 - frac * 0.5, 0)
-        } else {
-            let frac = (val - 0.9) / 0.1
-            return (1.0, 0.5 - frac * 0.3, frac * 0.5)
-        }
-    }
-
-    /// 256-step lookup of the ramp as big-endian RGBX pixels.
-    private static let waterfallPalette: [UInt32] = (0 ... 255).map { step in
-        let (red, green, blue) = waterfallRGB(for: Double(step) / 255)
-        let byte = { (component: Double) in UInt32((component * 255).rounded()) }
-        return (byte(red) << 24 | byte(green) << 16 | byte(blue) << 8 | 0xFF).bigEndian
     }
 }

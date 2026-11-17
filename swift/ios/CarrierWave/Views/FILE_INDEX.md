@@ -290,7 +290,9 @@
 | `DashboardLayout.swift` | Dashboard section/card enums, layout preferences, CollapsibleDashboardSection |
 | `DashboardCustomizeSheet.swift` | Sheet for toggling individual card visibility |
 | `DashboardView+Actions.swift` | Dashboard action handlers (sync, clear data) |
-| `DashboardView+Repairs.swift` | One-time backfill and repair jobs (WPM, conditions, park refs, K-index) |
+| `DashboardView+Repairs.swift` | One-time backfill and repair jobs (WPM, conditions, park refs, club members) |
+| `DashboardView+KIndexRepair.swift` | One-time repair clearing corrupted K-index data (always 0) from before the HamQSL parsing fix |
+| `AddCardsFooter.swift` | "Show more cards" footer under the visible dashboard cards; opens the customize sheet |
 | `DashboardView+Services.swift` | Services list builder and detail sheet builders |
 | `DashboardView+Stats.swift` | Stats grid and streak row components |
 | `DashboardView+Needs.swift` | Smart spots dashboard card data loading and recompute triggers |

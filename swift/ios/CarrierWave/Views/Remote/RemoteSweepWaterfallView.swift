@@ -216,10 +216,7 @@ struct RemoteSweepWaterfallView: View {
         let remaining = Self.liveTuneInterval - elapsed
         trailingTuneTask = Task { @MainActor in
             try? await Task.sleep(for: remaining)
-            guard !Task.isCancelled else {
-                return
-            }
-            guard let trailingTarget = panTarget(
+            guard !Task.isCancelled, let trailingTarget = panTarget(
                 anchorFreqHz: dragAnchorFreqHz,
                 dragPixels: dragOffsetX
             ) else {

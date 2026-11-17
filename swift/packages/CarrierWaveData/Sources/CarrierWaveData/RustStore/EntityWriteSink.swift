@@ -82,16 +82,15 @@ public struct EntityWriteSink<Model: PersistentModel> {
 
 // MARK: - EntityWriteSink + Routing
 
+@MainActor
 public extension EntityWriteSink {
     /// Route an upsert through the active per-type seam, or fall back to a plain
     /// SwiftData save when no seam is active (`off` mode / experiment disabled).
-    @MainActor
     static func commitUpsert(_ model: Model, in context: ModelContext) throws {
         try commitUpsert([model], in: context)
     }
 
     /// Batch upsert through the active seam, or a plain save when none is active.
-    @MainActor
     static func commitUpsert(_ models: [Model], in context: ModelContext) throws {
         if let sink = EntityWriteSinkRegistry.sink(for: Model.self) {
             try sink.upsert(models, in: context)
@@ -101,13 +100,11 @@ public extension EntityWriteSink {
     }
 
     /// Route a hard-delete through the active seam, or a plain SwiftData delete+save.
-    @MainActor
     static func commitDelete(_ model: Model, in context: ModelContext) throws {
         try commitDelete([model], in: context)
     }
 
     /// Batch hard-delete through the active seam, or a plain SwiftData delete+save.
-    @MainActor
     static func commitDelete(_ models: [Model], in context: ModelContext) throws {
         if let sink = EntityWriteSinkRegistry.sink(for: Model.self) {
             try sink.delete(models, in: context)

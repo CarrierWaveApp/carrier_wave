@@ -161,10 +161,8 @@ nonisolated enum VideoLoggerOverlayBuilder {
                 continue
             }
             for event in moment.events.reversed() {
-                if case let .qsoAppeared(qso) = event {
-                    if let phase = VideoLoggerOverlayTiming.phase(for: age) {
-                        return (qso, phase)
-                    }
+                if case let .qsoAppeared(qso) = event, let phase = VideoLoggerOverlayTiming.phase(for: age) {
+                    return (qso, phase)
                 }
             }
         }

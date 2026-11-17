@@ -273,11 +273,11 @@ actor MacroEngine {
 
     private func loadAllSets() {
         guard let data = UserDefaults.standard.data(
-            forKey: Self.storageKey
-        ),
-            let decoded = try? JSONDecoder().decode(
-                [MacroSet].self, from: data
-            )
+                  forKey: Self.storageKey
+              ),
+              let decoded = try? JSONDecoder().decode(
+                  [MacroSet].self, from: data
+              )
         else {
             return
         }

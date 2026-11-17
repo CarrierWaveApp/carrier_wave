@@ -24,12 +24,12 @@ struct MaidenheadConverterTests {
         let coord = MaidenheadConverter.coordinate(from: "FN31PR")
         #expect(coord != nil)
         // Should be within FN31 bounds but more precise
-        #expect(try #require(coord?.latitude) > 41 && coord!.latitude < 42)
-        #expect(try #require(coord?.longitude) > -74 && coord!.longitude < -72)
+        #expect(try #require(coord?.latitude) > 41 && #require(coord?.latitude) < 42)
+        #expect(try #require(coord?.longitude) > -74 && #require(coord?.longitude) < -72)
     }
 
     @Test("Case insensitive")
-    func caseInsensitive() {
+    func caseInsensitive() throws {
         let upper = MaidenheadConverter.coordinate(from: "FN31PR")
         let lower = MaidenheadConverter.coordinate(from: "fn31pr")
         let mixed = MaidenheadConverter.coordinate(from: "Fn31Pr")
@@ -37,9 +37,9 @@ struct MaidenheadConverterTests {
         #expect(upper != nil)
         #expect(lower != nil)
         #expect(mixed != nil)
-        #expect(upper?.latitude == lower!.latitude)
-        #expect(upper?.longitude == lower!.longitude)
-        #expect(upper?.latitude == mixed!.latitude)
+        #expect(try upper?.latitude == #require(lower?.latitude))
+        #expect(try upper?.longitude == #require(lower?.longitude))
+        #expect(try upper?.latitude == #require(mixed?.latitude))
     }
 
     @Test("Invalid grids return nil")
@@ -203,14 +203,14 @@ struct MaidenheadConverterDistanceTests {
     func distanceFN31toFN42() throws {
         let dist = MaidenheadConverter.distanceKm(from: "FN31", to: "FN42")
         #expect(dist != nil)
-        #expect(try #require(dist) > 100 && dist! < 200)
+        #expect(try #require(dist) > 100 && #require(dist) < 200)
     }
 
     @Test("Distance FN31 to PM95 is approximately 10900 km (US to Japan)")
     func distanceFN31toPM95() throws {
         let dist = MaidenheadConverter.distanceKm(from: "FN31", to: "PM95")
         #expect(dist != nil)
-        #expect(try #require(dist) > 10_000 && dist! < 12_000)
+        #expect(try #require(dist) > 10_000 && #require(dist) < 12_000)
     }
 
     @Test("Distance with invalid grid returns nil")
@@ -223,7 +223,7 @@ struct MaidenheadConverterDistanceTests {
     func bearingToJapan() throws {
         let brg = MaidenheadConverter.bearing(from: "FN31", to: "PM95")
         #expect(brg != nil)
-        #expect(try #require(brg) > 280 && brg! < 340)
+        #expect(try #require(brg) > 280 && #require(brg) < 340)
     }
 
     @Test("Distance in miles converts correctly")
@@ -231,7 +231,7 @@ struct MaidenheadConverterDistanceTests {
         let km = MaidenheadConverter.distanceKm(from: "FN31", to: "FN42")
         let mi = MaidenheadConverter.distanceMiles(from: "FN31", to: "FN42")
         #expect(km != nil && mi != nil)
-        let ratio = try #require(mi) / km!
+        let ratio = try #require(mi) / #require(km)
         #expect(ratio > 0.62 && ratio < 0.63)
     }
 }

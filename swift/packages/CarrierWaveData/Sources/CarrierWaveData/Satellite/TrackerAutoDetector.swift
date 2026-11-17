@@ -65,10 +65,7 @@ public final class TrackerAutoDetector {
         saved: TrackerEndpoint?,
         rotatorConnected: Bool
     ) -> TrackerEndpoint? {
-        guard !rotatorConnected, let saved else {
-            return nil
-        }
-        guard let seen = discovered.first(where: { $0.host == saved.host }) else {
+        guard !rotatorConnected, let saved, let seen = discovered.first(where: { $0.host == saved.host }) else {
             return nil
         }
         // What the sweep saw is ground truth for a PSR-100: the web probe
@@ -96,7 +93,7 @@ public final class TrackerAutoDetector {
                     && !ignored.contains(tracker.host)
                     && !dismissed.contains(tracker.host)
             }
-            .sorted { lhs, rhs in
+            .min { lhs, rhs in
                 let lhsRank = rank(lhs.kind)
                 let rhsRank = rank(rhs.kind)
                 if lhsRank != rhsRank {
@@ -104,7 +101,6 @@ public final class TrackerAutoDetector {
                 }
                 return lhs.host < rhs.host
             }
-            .first
     }
 
     /// Begin detecting. Idempotent. Sweeps immediately, then on network

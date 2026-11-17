@@ -36,10 +36,8 @@ enum CwStoreKeyRecovery {
         // key would cache an envelope that "recovers" a key which still can't
         // decrypt the file — a false sense of recoverability. A successful
         // open() proves the current Keychain key is the store's real key.
-        guard await (try? CwStoreProvider.shared.store()) != nil else {
-            return
-        }
-        guard let url = sidecarURL,
+        guard await (try? CwStoreProvider.shared.store()) != nil,
+              let url = sidecarURL,
               let keyString = try? KeychainHelper.shared.readString(
                   for: KeychainHelper.Keys.cwStoreEncryptionKey
               ),
@@ -71,11 +69,9 @@ enum CwStoreKeyRecovery {
     static func recover(passphrase: String) async -> Bool {
         guard let url = sidecarURL,
               let data = try? Data(contentsOf: url),
-              let blob = try? JSONDecoder().decode(Blob.self, from: data)
+              let blob = try? JSONDecoder().decode(Blob.self, from: data),
+              let storePath = storeURL?.path
         else {
-            return false
-        }
-        guard let storePath = storeURL?.path else {
             return false
         }
         return await Task.detached(priority: .userInitiated) {

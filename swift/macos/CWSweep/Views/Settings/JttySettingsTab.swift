@@ -130,7 +130,9 @@ struct JttySettingsTab: View {
             Text("Audio")
         } footer: {
             Text(
-                "Pick the radio's USB audio codec for both directions. Input must be 32-bit float (any sample rate); it is converted to 12 kHz for the decoder."
+                "Pick the radio's USB audio codec for both directions. "
+                    + "Input must be 32-bit float (any sample rate); "
+                    + "it is converted to 12 kHz for the decoder."
             )
             .font(.caption)
             .foregroundStyle(.secondary)
@@ -181,7 +183,10 @@ struct JttySettingsTab: View {
             Text("Function keys")
         } footer: {
             Text(
-                "%M my call · %H his call · %Q queued call · %E exchange (599 nnn, or the exchange field for Field Day / RTTY Roundup) · %N serial · %G grid. The WSJT-X defaults pack into single compact frames; free text costs one frame per five characters."
+                "%M my call · %H his call · %Q queued call · "
+                    + "%E exchange (599 nnn, or the exchange field for Field Day / RTTY Roundup) · "
+                    + "%N serial · %G grid. The WSJT-X defaults pack into single compact frames; "
+                    + "free text costs one frame per five characters."
             )
             .font(.caption)
             .foregroundStyle(.secondary)

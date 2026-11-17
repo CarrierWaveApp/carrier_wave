@@ -12,9 +12,9 @@ extension ActivityLogManager {
     /// UserDefaults read plus a SwiftData fetch by ID.
     func loadActiveLog() {
         guard let idString = UserDefaults.standard.string(
-            forKey: Self.activeLogIdKey
-        ),
-            let logId = UUID(uuidString: idString)
+                  forKey: Self.activeLogIdKey
+              ),
+              let logId = UUID(uuidString: idString)
         else {
             return
         }

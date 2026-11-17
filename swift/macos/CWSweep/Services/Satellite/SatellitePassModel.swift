@@ -147,10 +147,10 @@ final class SatellitePassModel {
         }
         if let current = selectedPass, let refreshed = upcoming.first(where: { $0.id == current.id }) {
             selectedPass = refreshed
-        } else if selectedPass == nil || selectedPass.map({ $0.los < now }) == true {
-            if autoAdvance, let next = upcoming.first {
-                select(next)
-            }
+        } else if selectedPass == nil || selectedPass.map({ $0.los < now }) == true, autoAdvance,
+                  let next = upcoming.first
+        {
+            select(next)
         }
     }
 
@@ -245,10 +245,10 @@ final class SatellitePassModel {
     private func tick(includeAltitude: Bool) async {
         let now = Date()
         // Advance past a finished pass after a short grace period.
-        if autoAdvance, let pass = selectedPass, now.timeIntervalSince(pass.los) > 20 {
-            if let next = upcoming.first(where: { $0.los > now && $0.id != pass.id }) {
-                select(next)
-            }
+        if autoAdvance, let pass = selectedPass, now.timeIntervalSince(pass.los) > 20,
+           let next = upcoming.first(where: { $0.los > now && $0.id != pass.id })
+        {
+            select(next)
         }
         guard let api = try? await SweepSatelliteEngine.api() else {
             return

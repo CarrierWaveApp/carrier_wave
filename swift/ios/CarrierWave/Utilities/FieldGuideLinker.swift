@@ -20,10 +20,9 @@ enum FieldGuideLinker {
 
     /// Open the radio's manual in CW Field Guide
     static func openManual(for radioName: String) {
-        guard let radioID = fieldGuideID(for: radioName) else {
-            return
-        }
-        guard let url = URL(string: "cwfieldguide://radio/\(radioID)") else {
+        guard let radioID = fieldGuideID(for: radioName),
+              let url = URL(string: "cwfieldguide://radio/\(radioID)")
+        else {
             return
         }
         UIApplication.shared.open(url) { success in

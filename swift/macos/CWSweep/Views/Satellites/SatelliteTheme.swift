@@ -7,8 +7,6 @@ import SwiftUI
 /// accents, monospaced callsigns and numbers) with the instrument feel of a
 /// tracker console — labelled fields and tabular monospaced readouts.
 enum SatelliteTheme {
-    // MARK: Internal
-
     /// Canvas and cards (match `Color(.systemBackground)` / `systemGray6` /
     /// `systemGray5` in dark mode, which the rest of the app uses).
     static let background = Color.black
@@ -38,8 +36,12 @@ enum SatelliteTheme {
         (0.66, rx),
         (0.80, satellite),
         (0.91, tx),
-        (1.00, nearWhite)
+        (1.00, nearWhite),
     ]
+
+    /// Pre-sampled lookup table (256 entries) so a 512×200 waterfall doesn't
+    /// interpolate per cell.
+    static let waterfallLUT: [Color] = (0 ..< 256).map { waterfallColor(Double($0) / 255) }
 
     /// Numbers, callsigns, frequencies: monospaced (tabular by nature).
     static func mono(_ size: CGFloat, weight: Font.Weight = .regular) -> Font {
@@ -66,10 +68,6 @@ enum SatelliteTheme {
         let fraction = span > 0 ? (clamped - lower.location) / span : 0
         return lower.color.mixed(with: upper.color, by: fraction)
     }
-
-    /// Pre-sampled lookup table (256 entries) so a 512×200 waterfall doesn't
-    /// interpolate per cell.
-    static let waterfallLUT: [Color] = (0 ..< 256).map { waterfallColor(Double($0) / 255) }
 }
 
 extension Color {

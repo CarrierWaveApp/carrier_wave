@@ -23,6 +23,10 @@ extension LoggingSessionManager {
             return
         }
 
+        // Capture plain values now: the fetch below can take seconds, and the
+        // session may be deleted (or its store torn down) before it returns.
+        // Touching a stale SwiftData model then traps, so re-fetch by id.
+        let sessionId = session.id
         let grid = session.myGrid
         let sessionDate = session.startedAt
         let parkRef = session.parkReference
@@ -36,6 +40,9 @@ extension LoggingSessionManager {
             }
 
             await MainActor.run {
+                guard let session = liveSession(id: sessionId) else {
+                    return
+                }
                 // `.on`: Rust applies the fill-if-empty merge to the session row
                 // and, for POTA, the (park, UTC-day) metadata row; the results are
                 // reflected back. Fallback keeps the Swift fill rules.
@@ -62,6 +69,16 @@ extension LoggingSessionManager {
                 }
             }
         }
+    }
+
+    /// The session with `id` if it still exists in this manager's context.
+    private func liveSession(id: UUID) -> LoggingSession? {
+        var descriptor = FetchDescriptor<LoggingSession>(predicate: #Predicate { $0.id == id })
+        descriptor.fetchLimit = 1
+        guard let session = try? modelContext.fetch(descriptor).first, !session.isDeleted else {
+            return nil
+        }
+        return session
     }
 
     /// Fetch solar and weather conditions from NOAA

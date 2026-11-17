@@ -214,10 +214,7 @@ struct ClubDetailView: View {
     /// Load on-air/active statuses. Skipped for very large clubs
     /// to avoid N+1 spot queries on the server.
     private func loadStatuses() async {
-        guard Int(club.cachedMemberCount) <= statusMemberCap else {
-            return
-        }
-        guard let clubId = UUID(uuidString: club.id) else {
+        guard Int(club.cachedMemberCount) <= statusMemberCap, let clubId = UUID(uuidString: club.id) else {
             return
         }
 

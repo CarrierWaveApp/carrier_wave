@@ -349,10 +349,8 @@ extension LoggingSessionManager {
         if source.startedAt < target.startedAt {
             target.startedAt = source.startedAt
         }
-        if let srcEnd = source.endedAt, let tgtEnd = target.endedAt {
-            if srcEnd > tgtEnd {
-                target.endedAt = srcEnd
-            }
+        if let srcEnd = source.endedAt, let tgtEnd = target.endedAt, srcEnd > tgtEnd {
+            target.endedAt = srcEnd
         }
 
         // Recalculate target QSO count

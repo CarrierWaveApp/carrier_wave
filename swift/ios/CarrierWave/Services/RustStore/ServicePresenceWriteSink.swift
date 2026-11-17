@@ -60,11 +60,11 @@ struct ServicePresenceWriteSink {
 
 // MARK: - ServicePresenceWriteSink + Routing
 
+@MainActor
 extension ServicePresenceWriteSink {
     /// Route a presence upsert through the active seam, or fall back to a plain
     /// SwiftData save when no seam is active (`off` mode / experiment disabled). The
     /// caller has already mutated the presence in `context`.
-    @MainActor
     static func commitUpsert(_ presence: ServicePresence, in context: ModelContext) throws {
         if let sink = ServicePresenceWriteSinkRegistry.current {
             try sink.upsert(presence, in: context)
@@ -74,7 +74,6 @@ extension ServicePresenceWriteSink {
     }
 
     /// Batch upsert through the active seam, or a plain save when no seam is active.
-    @MainActor
     static func commitUpsertBatch(_ presences: [ServicePresence], in context: ModelContext) throws {
         if let sink = ServicePresenceWriteSinkRegistry.current {
             try sink.upsertBatch(presences, in: context)

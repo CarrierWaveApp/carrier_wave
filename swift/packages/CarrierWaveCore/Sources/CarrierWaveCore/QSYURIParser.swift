@@ -97,11 +97,7 @@ public enum QSYURIParser {
 
     /// Parse a URL into a QSYAction. Returns nil if the URL is not a valid qsy:// URI.
     public static func parse(_ url: URL) -> QSYAction? {
-        guard url.scheme?.lowercased() == "qsy" else {
-            return nil
-        }
-
-        guard let action = url.host?.lowercased() else {
+        guard url.scheme?.lowercased() == "qsy", let action = url.host?.lowercased() else {
             return nil
         }
 

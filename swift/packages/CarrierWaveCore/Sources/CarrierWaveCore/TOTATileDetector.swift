@@ -117,10 +117,7 @@ public enum TOTATileDetector: Sendable {
         in sortedTrack: [TilePathSample],
         at timestamp: Date
     ) -> TilePathSample? {
-        guard !sortedTrack.isEmpty else {
-            return nil
-        }
-        guard let first = sortedTrack.first, let last = sortedTrack.last else {
+        guard !sortedTrack.isEmpty, let first = sortedTrack.first, let last = sortedTrack.last else {
             return nil
         }
         if timestamp < first.timestamp || timestamp > last.timestamp {

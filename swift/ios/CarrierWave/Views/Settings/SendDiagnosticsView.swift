@@ -359,7 +359,7 @@ extension SendDiagnosticsView {
 
             guard
                 let scene = UIApplication.shared.connectedScenes
-                .first as? UIWindowScene,
+                    .first as? UIWindowScene,
                 let rootVC = scene.keyWindow?.rootViewController
             else {
                 return

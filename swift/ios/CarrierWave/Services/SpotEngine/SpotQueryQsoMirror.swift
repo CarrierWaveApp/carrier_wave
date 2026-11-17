@@ -27,10 +27,7 @@ final class SpotQueryQsoMirror {
     /// Mirror the newest QSOs into the engine's `qsos` table. Safe to
     /// call repeatedly — subsequent calls while mirrored/running no-op.
     func mirrorIfNeeded(container: ModelContainer) {
-        guard !hasMirrored, !isMirroring else {
-            return
-        }
-        guard let engine = SpotEngineProvider.shared.engineIfBuilt else {
+        guard !hasMirrored, !isMirroring, let engine = SpotEngineProvider.shared.engineIfBuilt else {
             return
         }
         isMirroring = true

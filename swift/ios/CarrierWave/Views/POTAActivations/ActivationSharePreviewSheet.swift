@@ -96,8 +96,7 @@ struct ActivationSharePreviewSheet: View {
 private extension ActivationSharePreviewSheet {
     var cardPreview: some View {
         Image(uiImage: currentImage)
-            .resizable()
-            .aspectRatio(contentMode: .fit)
+            .resizable().scaledToFit()
             .cornerRadius(12)
             .shadow(radius: 4)
     }

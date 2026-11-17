@@ -88,10 +88,7 @@ final class TourState {
     }
 
     func shouldShowUpdatePrompt(currentVersion: String, majorVersions: [String]) -> Bool {
-        guard hasCompletedIntroTour else {
-            return false
-        }
-        guard majorVersions.contains(currentVersion) else {
+        guard hasCompletedIntroTour, majorVersions.contains(currentVersion) else {
             return false
         }
         return lastTourVersion < currentVersion

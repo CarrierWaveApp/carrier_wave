@@ -221,13 +221,11 @@ extension VideoExportActor {
             if let retimed = retimeSampleBuffer(chunk.buffer, to: outTime) {
                 _ = writer.appendAudioSamples(retimed)
             }
-        } else {
-            if let sub = createSubBuffer(
-                from: chunk.buffer, sampleOffset: chunk.offset, sampleCount: chunk.count,
-                presentationTime: outTime, sampleRate: chunk.sampleRate
-            ) {
-                _ = writer.appendAudioSamples(sub)
-            }
+        } else if let sub = createSubBuffer(
+            from: chunk.buffer, sampleOffset: chunk.offset, sampleCount: chunk.count,
+            presentationTime: outTime, sampleRate: chunk.sampleRate
+        ) {
+            _ = writer.appendAudioSamples(sub)
         }
         state.audioTimeWritten += duration
     }
@@ -257,11 +255,7 @@ extension VideoExportActor {
             flags: 0,
             blockBufferOut: &subBlock
         )
-        guard let block = subBlock else {
-            return nil
-        }
-
-        guard let format = CMSampleBufferGetFormatDescription(buffer) else {
+        guard let block = subBlock, let format = CMSampleBufferGetFormatDescription(buffer) else {
             return nil
         }
         var newBuffer: CMSampleBuffer?

@@ -29,8 +29,9 @@ public protocol CloudSyncJournalDelegate: AnyObject, Sendable {
     )
 }
 
+@MainActor
 public extension CloudSyncJournalDelegate {
-    @MainActor func journalEngine(
+    func journalEngine(
         _: CloudSyncJournalEngine,
         didConfirmOperations _: Int
     ) {}

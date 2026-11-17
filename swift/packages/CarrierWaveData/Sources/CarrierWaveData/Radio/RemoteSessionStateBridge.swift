@@ -7,12 +7,12 @@ import Foundation
 // Sweep on the LAN auto-continuity path so receivers can materialize a
 // remote-active session into their local SwiftData store.
 
+@MainActor
 public extension RemoteSessionState {
     /// Build a wire snapshot from a SwiftData `LoggingSession`. Read on
     /// the main actor; do not pass the resulting struct back to a
     /// SwiftData context — it's `Sendable` precisely so it can cross
     /// boundaries safely.
-    @MainActor
     init(session: LoggingSession) {
         let frequencyHz: UInt64? = {
             guard let freqMHz = session.frequency, freqMHz > 0 else {
@@ -41,6 +41,7 @@ public extension RemoteSessionState {
     }
 }
 
+@MainActor
 public extension LoggingSession {
     /// Apply an inbound LAN snapshot to an existing session. Caller is
     /// responsible for fetching the matching record by `id` first;
@@ -53,7 +54,6 @@ public extension LoggingSession {
     /// onto the just-ended local record would resurrect the session and
     /// re-adopt it on the next continuity tick. The user's deliberate
     /// end-session action must always win against remote noise.
-    @MainActor
     func apply(remote: RemoteSessionState) {
         let localIsEnded = endedAt != nil || statusRawValue == "completed"
         let remoteWantsActive = remote.status == "active" && remote.endedAt == nil
@@ -84,7 +84,6 @@ public extension LoggingSession {
 
     /// Build a fresh SwiftData session from a LAN snapshot. Used when
     /// the receiving side has never heard of this session UUID before.
-    @MainActor
     static func makeFromRemote(_ remote: RemoteSessionState) -> LoggingSession {
         let session = LoggingSession(
             id: remote.id,

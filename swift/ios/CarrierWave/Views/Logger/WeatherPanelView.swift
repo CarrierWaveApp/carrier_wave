@@ -257,7 +257,7 @@ struct WeatherPanelView: View {
         if desc.contains("sunny") || desc.contains("clear") {
             iconName = "sun.max.fill"
             color = .yellow
-        } else if desc.contains("partly") && desc.contains("cloud") {
+        } else if desc.contains("partly"), desc.contains("cloud") {
             iconName = "cloud.sun.fill"
             color = .cyan
         } else if desc.contains("cloud") {

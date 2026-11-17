@@ -73,10 +73,8 @@ struct SyncSourcesSettingsView: View {
         qrzLogbookMismatch = qrzClient.logbookMismatch()
 
         lotwIsConfigured = lotwClient.hasCredentials()
-        if lotwIsConfigured {
-            if let creds = try? lotwClient.getCredentials() {
-                lotwUsername = creds.username
-            }
+        if lotwIsConfigured, let creds = try? lotwClient.getCredentials() {
+            lotwUsername = creds.username
         }
     }
 }

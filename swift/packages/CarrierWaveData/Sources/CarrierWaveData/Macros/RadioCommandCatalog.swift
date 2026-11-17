@@ -174,11 +174,11 @@ public extension RadioCommandSpec {
         case "true",
              "1",
              "on",
-             "yes": return "1"
+             "yes": "1"
         case "false",
              "0",
              "off",
-             "no": return "0"
+             "no": "0"
         default:
             throw RadioCommandCatalogError.invalidArgValue(
                 command: id, arg: param.name, value: raw, expected: "Bool"

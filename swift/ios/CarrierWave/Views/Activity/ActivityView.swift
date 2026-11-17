@@ -66,9 +66,9 @@ struct ActivityView: View {
     var currentCallsign: String {
         // Try to get from keychain first
         if let callsign = try? KeychainHelper.shared.readString(
-            for: KeychainHelper.Keys.currentCallsign
-        ),
-            !callsign.isEmpty
+               for: KeychainHelper.Keys.currentCallsign
+           ),
+           !callsign.isEmpty
         {
             return callsign
         }

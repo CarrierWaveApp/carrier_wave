@@ -207,11 +207,9 @@ struct SummitPickerSheet: View {
         }
 
         // If query contains "/", try exact code lookup first
-        if trimmed.contains("/") {
-            if let summit = SOTASummitsCache.shared.lookupSummit(trimmed) {
-                searchResults = [summit]
-                return
-            }
+        if trimmed.contains("/"), let summit = SOTASummitsCache.shared.lookupSummit(trimmed) {
+            searchResults = [summit]
+            return
         }
 
         searchResults = SOTASummitsCache.shared.searchByName(trimmed)

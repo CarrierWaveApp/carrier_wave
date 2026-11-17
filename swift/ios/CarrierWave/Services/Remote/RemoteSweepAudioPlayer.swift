@@ -54,10 +54,10 @@ final class RemoteSweepAudioPlayer {
         }
         if let decoder = opusDecoder {
             do {
-                guard let pcmBytes = try decoder.decode(packet: payload) else {
-                    return
-                }
-                guard let buffer = Self.makeBuffer(pcmBytes: pcmBytes, format: format) else {
+                guard let pcmBytes = try decoder.decode(packet: payload), let buffer = Self.makeBuffer(
+                    pcmBytes: pcmBytes,
+                    format: format
+                ) else {
                     return
                 }
                 playerNode.scheduleBuffer(buffer, completionHandler: nil)
@@ -95,10 +95,7 @@ final class RemoteSweepAudioPlayer {
         let channelCount = Int(format.channelCount)
         let bytesPerFrame = bytesPerSample * channelCount
         let frameCount = pcmBytes.count / bytesPerFrame
-        guard frameCount > 0 else {
-            return nil
-        }
-        guard let buffer = AVAudioPCMBuffer(
+        guard frameCount > 0, let buffer = AVAudioPCMBuffer(
             pcmFormat: format,
             frameCapacity: AVAudioFrameCount(frameCount)
         ) else {

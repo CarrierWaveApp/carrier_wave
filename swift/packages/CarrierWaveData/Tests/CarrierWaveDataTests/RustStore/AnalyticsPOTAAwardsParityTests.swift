@@ -26,7 +26,7 @@ final class AnalyticsPOTAAwardsParityTests: XCTestCase {
             try store.upsertQso(qso: SwiftDataStoreImporter.project(qso))
         }
 
-        /// A valid activation: `count` distinct callsigns at one park/op/day.
+        // A valid activation: `count` distinct callsigns at one park/op/day.
         func activation(_ tag: String, park: String, day: TimeInterval, count: Int, band: String) throws {
             for idx in 0 ..< count {
                 let qso = makeQSO("W\(tag)\(idx)", band: band, mode: "CW", timestamp: day + TimeInterval(idx))

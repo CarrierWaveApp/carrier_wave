@@ -56,12 +56,6 @@ enum PanelRegistry {
         case .waterfall: AnyView(WaterfallPanel(radioManager: context.radioManager))
         case .activationMap: AnyView(ActivationMapPane(sessionId: context.activeSession?.id))
         case .radioControl: radioControlPanel(context: context)
-        case .winKeyer: AnyView(KeyerControlView())
-        case .dxccTracking: AnyView(DXCCTrackingView())
-        case .propagation: AnyView(placeholderPanel(title: "Propagation", icon: "sun.max"))
-        case .spaceWeather: AnyView(placeholderPanel(title: "Space Weather", icon: "sparkles"))
-        case .spotDetail: AnyView(SpotDetailPane())
-        case .jttyTerminal: AnyView(JttyTerminalPanel())
         case .contestScore,
              .contestEntry,
              .contestBandBreakdown,
@@ -75,6 +69,26 @@ enum PanelRegistry {
             // Handled in `bandScopePanel(for:)`; bandScope cases reach
             // here only if the dispatch table is misconfigured.
             AnyView(EmptyView())
+        case .winKeyer,
+             .dxccTracking,
+             .propagation,
+             .spaceWeather,
+             .spotDetail,
+             .jttyTerminal:
+            miscPanel(for: panel)
+        }
+    }
+
+    @MainActor
+    private static func miscPanel(for panel: PanelIdentifier) -> AnyView {
+        switch panel {
+        case .winKeyer: AnyView(KeyerControlView())
+        case .dxccTracking: AnyView(DXCCTrackingView())
+        case .propagation: AnyView(placeholderPanel(title: "Propagation", icon: "sun.max"))
+        case .spaceWeather: AnyView(placeholderPanel(title: "Space Weather", icon: "sparkles"))
+        case .spotDetail: AnyView(SpotDetailPane())
+        case .jttyTerminal: AnyView(JttyTerminalPanel())
+        default: AnyView(EmptyView())
         }
     }
 

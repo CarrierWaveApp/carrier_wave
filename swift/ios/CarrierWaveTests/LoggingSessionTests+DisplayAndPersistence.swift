@@ -6,10 +6,10 @@ import XCTest
 
 // MARK: - Display Title, Activation Reference, Frequency, and Persistence Tests
 
+@MainActor
 extension LoggingSessionTests {
     // MARK: - Display Title Tests
 
-    @MainActor
     func testDisplayTitle_CasualSession() {
         // Given
         let session = LoggingSession(
@@ -22,7 +22,6 @@ extension LoggingSessionTests {
         XCTAssertEqual(session.defaultTitle, "N0TEST Casual")
     }
 
-    @MainActor
     func testDisplayTitle_POTASessionWithPark() {
         // Given
         let session = LoggingSession(
@@ -35,7 +34,6 @@ extension LoggingSessionTests {
         XCTAssertEqual(session.displayTitle, "N0TEST at US-0001")
     }
 
-    @MainActor
     func testDisplayTitle_POTASessionWithoutPark() {
         // Given
         let session = LoggingSession(
@@ -47,7 +45,6 @@ extension LoggingSessionTests {
         XCTAssertEqual(session.displayTitle, "N0TEST POTA")
     }
 
-    @MainActor
     func testDisplayTitle_SOTASessionWithSummit() {
         // Given
         let session = LoggingSession(
@@ -60,7 +57,6 @@ extension LoggingSessionTests {
         XCTAssertEqual(session.displayTitle, "N0TEST at W4C/CM-001")
     }
 
-    @MainActor
     func testDisplayTitle_CustomTitleOverridesDefault() {
         // Given
         let session = LoggingSession(
@@ -77,7 +73,6 @@ extension LoggingSessionTests {
 
     // MARK: - Activation Reference Tests
 
-    @MainActor
     func testActivationReference_POTA() {
         let session = LoggingSession(
             myCallsign: "N0TEST",
@@ -87,7 +82,6 @@ extension LoggingSessionTests {
         XCTAssertEqual(session.activationReference, "US-0001")
     }
 
-    @MainActor
     func testActivationReference_SOTA() {
         let session = LoggingSession(
             myCallsign: "N0TEST",
@@ -97,7 +91,6 @@ extension LoggingSessionTests {
         XCTAssertEqual(session.activationReference, "W4C/CM-001")
     }
 
-    @MainActor
     func testActivationReference_Casual() {
         let session = LoggingSession(
             myCallsign: "N0TEST",
@@ -108,7 +101,6 @@ extension LoggingSessionTests {
 
     // MARK: - QSO Count Tests
 
-    @MainActor
     func testIncrementQSOCount() {
         // Given
         let session = LoggingSession(myCallsign: "N0TEST")
@@ -125,7 +117,6 @@ extension LoggingSessionTests {
 
     // MARK: - Frequency/Mode Update Tests
 
-    @MainActor
     func testUpdateFrequency() {
         // Given
         let session = LoggingSession(myCallsign: "N0TEST", frequency: 14.060)
@@ -138,7 +129,6 @@ extension LoggingSessionTests {
         XCTAssertEqual(session.band, "40m")
     }
 
-    @MainActor
     func testUpdateMode_Uppercases() {
         // Given
         let session = LoggingSession(myCallsign: "N0TEST", mode: "CW")
@@ -152,7 +142,6 @@ extension LoggingSessionTests {
 
     // MARK: - Suggested Frequencies Tests
 
-    @MainActor
     func testSuggestedFrequencies_CW() {
         let frequencies = LoggingSession.suggestedFrequencies(for: "CW")
 
@@ -161,7 +150,6 @@ extension LoggingSessionTests {
         XCTAssertEqual(frequencies["80m"], 3.560)
     }
 
-    @MainActor
     func testSuggestedFrequencies_SSB() {
         let frequencies = LoggingSession.suggestedFrequencies(for: "SSB")
 
@@ -170,7 +158,6 @@ extension LoggingSessionTests {
         XCTAssertEqual(frequencies["80m"], 3.885)
     }
 
-    @MainActor
     func testSuggestedFrequencies_USB() {
         // USB should use SSB frequencies
         let frequencies = LoggingSession.suggestedFrequencies(for: "USB")
@@ -178,7 +165,6 @@ extension LoggingSessionTests {
         XCTAssertEqual(frequencies["20m"], 14.250)
     }
 
-    @MainActor
     func testSuggestedFrequencies_FT8() {
         let frequencies = LoggingSession.suggestedFrequencies(for: "FT8")
 
@@ -190,7 +176,6 @@ extension LoggingSessionTests {
 
     // MARK: - Persistence Tests
 
-    @MainActor
     func testPersistence_RoundTrip() throws {
         // Given
         let session = LoggingSession(

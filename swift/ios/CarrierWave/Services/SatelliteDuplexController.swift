@@ -231,10 +231,9 @@ final class SatelliteDuplexController {
 
     /// Put both radios in FM and program the uplink tone once per satellite.
     private func prepareRadios() async {
-        guard let model = trackerModel, let position = model.selectedPosition else {
-            return
-        }
-        guard preparedForNorad != position.noradID else {
+        guard let model = trackerModel, let position = model.selectedPosition,
+              preparedForNorad != position.noradID
+        else {
             return
         }
         var readyCount = 0

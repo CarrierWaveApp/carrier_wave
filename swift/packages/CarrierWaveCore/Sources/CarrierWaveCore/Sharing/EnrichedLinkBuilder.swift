@@ -73,15 +73,13 @@ public enum EnrichedLinkBuilder {
     /// missing/malformed.
     public static func decode(_ url: URL) -> EnrichedLinkPayload? {
         guard let components = URLComponents(
-            url: url, resolvingAgainstBaseURL: false
-        ),
-            components.host == host,
-            url.pathComponents.count >= 3,
-            url.pathComponents[1] == "link"
+                  url: url, resolvingAgainstBaseURL: false
+              ),
+              components.host == host,
+              url.pathComponents.count >= 3,
+              url.pathComponents[1] == "link",
+              let fragment = components.fragment
         else {
-            return nil
-        }
-        guard let fragment = components.fragment else {
             return nil
         }
         // Strip the "d=" prefix if present.

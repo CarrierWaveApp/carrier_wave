@@ -296,13 +296,12 @@ struct GoertzelThreshold {
             }
 
             let relativeDrop = magnitude / max(activeSignalLevel, 0.0001)
-            if timeSinceChange >= config.minimumStateDuration {
-                if blocksBelowThreshold >= config.confirmationBlocks
-                    || relativeDrop < config.dropThreshold
-                {
-                    isKeyDown = false
-                    blocksBelowThreshold = 0
-                }
+            if timeSinceChange >= config.minimumStateDuration,
+               blocksBelowThreshold >= config.confirmationBlocks
+               || relativeDrop < config.dropThreshold
+            {
+                isKeyDown = false
+                blocksBelowThreshold = 0
             }
         }
 
@@ -574,10 +573,7 @@ class MorseDecoder {
     }
 
     private func updateWPMEstimate(duration: TimeInterval, element: MorseElement) {
-        guard !manualWPMMode else {
-            return
-        }
-        guard element == .dit || element == .dah else {
+        guard !manualWPMMode, element == .dit || element == .dah else {
             return
         }
 

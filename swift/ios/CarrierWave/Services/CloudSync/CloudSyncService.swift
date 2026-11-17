@@ -136,10 +136,7 @@ final class CloudSyncService {
     /// Upload a SQLite snapshot to CloudKit for fast bootstrap on other devices.
     /// Called periodically (every 6 hours) after sync completes.
     func uploadSnapshotIfNeeded() async {
-        guard isEnabled, let container, let journalEngine else {
-            return
-        }
-        guard let storeURL = container.configurations.first?.url else {
+        guard isEnabled, let container, let journalEngine, let storeURL = container.configurations.first?.url else {
             return
         }
         let qsoCount = await Task.detached {

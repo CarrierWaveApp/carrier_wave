@@ -115,10 +115,8 @@ struct LoTWSettingsView: View {
 
     private func checkStatus() {
         isAuthenticated = lotwClient.hasCredentials()
-        if isAuthenticated {
-            if let creds = try? lotwClient.getCredentials() {
-                username = creds.username
-            }
+        if isAuthenticated, let creds = try? lotwClient.getCredentials() {
+            username = creds.username
         }
     }
 

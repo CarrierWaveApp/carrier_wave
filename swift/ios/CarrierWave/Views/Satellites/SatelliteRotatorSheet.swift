@@ -163,7 +163,8 @@ struct SatelliteRotatorSheet: View {
                 Text(
                     "Sweeps every Wi-Fi/Ethernet subnet this device is on for a S.A.T. (rotctld 4533 + web UI), "
                         + "a PSR-100 (web UI :8080, UDP 2390) or a rotctld server. "
-                        + "Add a unit by address (or its network as 192.168.20.0/24) if it lives on another VLAN; it is remembered and swept automatically from then on."
+                        + "Add a unit by address (or its network as 192.168.20.0/24) if it lives on another VLAN; "
+                        + "it is remembered and swept automatically from then on."
                 )
             } else {
                 Text("Swept \(discovery.scannedNetworks.joined(separator: ", "))"

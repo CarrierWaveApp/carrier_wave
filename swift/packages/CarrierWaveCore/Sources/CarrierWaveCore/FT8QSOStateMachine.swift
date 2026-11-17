@@ -292,10 +292,8 @@ public struct FT8QSOStateMachine: Sendable {
 
     /// Handle a CQ response in CQ mode. Returns true if handled.
     private mutating func handleCQResponse(_ message: FT8Message) -> Bool {
-        guard isCQMode, state == .idle else {
-            return false
-        }
-        guard case let .directed(from, to, grid) = message,
+        guard isCQMode, state == .idle,
+              case let .directed(from, to, grid) = message,
               to.uppercased() == myCallsign.uppercased(),
               !workedCallsigns.contains(Self.baseCallsign(from))
         else {

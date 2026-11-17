@@ -143,10 +143,8 @@ struct TabConfigurationView: View {
 
         if inTabBar {
             hidden.insert(tab)
-        } else {
-            if tabBarTabs.count < maxVisibleTabs {
-                hidden.remove(tab)
-            }
+        } else if tabBarTabs.count < maxVisibleTabs {
+            hidden.remove(tab)
         }
 
         TabConfiguration.saveHidden(hidden)

@@ -10,7 +10,7 @@ struct CIVScopeTests {
     func lanSingleFrame() {
         let samples = ramp(475)
         let data = header(band: 0x00, division: 0x01, max: 0x01, mode: 0x00,
-                          first: bcd145900, second: bcd25k) + samples
+                          edges: ScopeEdges(first: bcd145900, second: bcd25k)) + samples
         let parsed = CIVScopeFrame(frame: frame(data: data))
         #expect(parsed?.band == .main)
         #expect(parsed?.division == 1)
@@ -43,14 +43,14 @@ struct CIVScopeTests {
     @Test("Sub band frame carries band = .sub")
     func subBandFrame() {
         let data = header(band: 0x01, division: 0x01, max: 0x01, mode: 0x00,
-                          first: bcd145900, second: bcd25k) + ramp(475)
+                          edges: ScopeEdges(first: bcd145900, second: bcd25k)) + ramp(475)
         #expect(CIVScopeFrame(frame: frame(data: data))?.band == .sub)
     }
 
     @Test("Frames survive the CI-V byte-level extractor")
     func roundTripThroughExtractor() {
         let data = header(band: 0x00, division: 0x01, max: 0x01, mode: 0x00,
-                          first: bcd145900, second: bcd25k) + ramp(475)
+                          edges: ScopeEdges(first: bcd145900, second: bcd25k)) + ramp(475)
         let bytes = CIVProtocol.buildFrame(to: controller, from: radio, command: 0x27, data: data)
         #expect(bytes.count == 490 + 2 + 4 + 1)
         let extracted = CIVProtocol.extractFrames(from: bytes)
@@ -66,7 +66,7 @@ struct CIVScopeTests {
     func centerModeLine() throws {
         var acc = CIVScopeAccumulator()
         let data = header(band: 0x00, division: 0x01, max: 0x01, mode: 0x00,
-                          first: bcd145900, second: bcd25k) + ramp(475)
+                          edges: ScopeEdges(first: bcd145900, second: bcd25k)) + ramp(475)
         let line = try acc.ingest(#require(CIVScopeFrame(frame: frame(data: data))))
         #expect(line?.centerHz == 145_900_000)
         #expect(line?.spanHz == 50_000)
@@ -79,7 +79,7 @@ struct CIVScopeTests {
     func fixedModeLine() throws {
         var acc = CIVScopeAccumulator()
         let data = header(band: 0x00, division: 0x01, max: 0x01, mode: 0x01,
-                          first: bcd144000, second: bcd148000) + ramp(475)
+                          edges: ScopeEdges(first: bcd144000, second: bcd148000)) + ramp(475)
         let line = try acc.ingest(#require(CIVScopeFrame(frame: frame(data: data))))
         #expect(line?.mode == .fixed)
         #expect(line?.centerHz == 146_000_000)
@@ -91,7 +91,7 @@ struct CIVScopeTests {
         var acc = CIVScopeAccumulator()
         let all = ramp(475)
         let head = header(band: 0x00, division: 0x01, max: 0x11, mode: 0x00,
-                          first: bcd145900, second: bcd25k)
+                          edges: ScopeEdges(first: bcd145900, second: bcd25k))
         #expect(try acc.ingest(#require(CIVScopeFrame(frame: frame(data: head)))) == nil)
 
         var offset = 0
@@ -117,9 +117,9 @@ struct CIVScopeTests {
     func interleavedBands() throws {
         var acc = CIVScopeAccumulator()
         let mainHead = header(band: 0x00, division: 0x01, max: 0x02, mode: 0x00,
-                              first: bcd145900, second: bcd25k)
+                              edges: ScopeEdges(first: bcd145900, second: bcd25k))
         let subHead = header(band: 0x01, division: 0x01, max: 0x02, mode: 0x00,
-                             first: bcd144000, second: bcd25k)
+                             edges: ScopeEdges(first: bcd144000, second: bcd25k))
         #expect(try acc.ingest(#require(CIVScopeFrame(frame: frame(data: mainHead)))) == nil)
         #expect(try acc.ingest(#require(CIVScopeFrame(frame: frame(data: subHead)))) == nil)
         let subTail: [UInt8] = [0x00, 0x01, 0x02, 0x02] + [7, 7, 7]
@@ -136,10 +136,10 @@ struct CIVScopeTests {
     func outOfRange() throws {
         var acc = CIVScopeAccumulator()
         let head = header(band: 0x00, division: 0x01, max: 0x11, mode: 0x00,
-                          first: bcd145900, second: bcd25k)
+                          edges: ScopeEdges(first: bcd145900, second: bcd25k))
         #expect(try acc.ingest(#require(CIVScopeFrame(frame: frame(data: head)))) == nil)
         let oor = header(band: 0x00, division: 0x01, max: 0x11, mode: 0x00,
-                         first: bcd145900, second: bcd25k, outOfRange: 0x01)
+                         edges: ScopeEdges(first: bcd145900, second: bcd25k), outOfRange: 0x01)
         #expect(try acc.ingest(#require(CIVScopeFrame(frame: frame(data: oor)))) == nil)
         // A stray continuation without a header is ignored.
         let tail: [UInt8] = [0x00, 0x00, 0x11, 0x11] + ramp(25)
@@ -220,6 +220,12 @@ struct CIVScopeTests {
 
     // MARK: Private
 
+    /// The fixed-edge / center-span frequency pair of a scope header.
+    private struct ScopeEdges {
+        let first: [UInt8]
+        let second: [UInt8]
+    }
+
     // MARK: - Fixtures
 
     private let radio: UInt8 = 0xA2
@@ -235,9 +241,9 @@ struct CIVScopeTests {
 
     private func header(
         band: UInt8, division: UInt8, max: UInt8, mode: UInt8,
-        first: [UInt8], second: [UInt8], outOfRange: UInt8 = 0x00
+        edges: ScopeEdges, outOfRange: UInt8 = 0x00
     ) -> [UInt8] {
-        [0x00, band, division, max, mode] + first + second + [outOfRange]
+        [0x00, band, division, max, mode] + edges.first + edges.second + [outOfRange]
     }
 
     private func frame(data: [UInt8]) -> CIVFrame {

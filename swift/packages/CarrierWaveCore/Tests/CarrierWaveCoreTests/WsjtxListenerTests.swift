@@ -17,6 +17,8 @@ import CarrierWaveCwFfi
 import Foundation
 import Testing
 
+// MARK: - WsjtxListenerTests
+
 struct WsjtxListenerTests {
     // MARK: Internal
 
@@ -67,33 +69,11 @@ struct WsjtxListenerTests {
             Issue.record("expected .qsoLogged, got \(String(describing: received))")
             return
         }
-        #expect(qso.id == "WSJT-X")
-        #expect(qso.dxCall == "K1ABC")
-        #expect(qso.dxGrid == "FN42")
-        #expect(qso.txFrequencyHz == 14_075_245)
-        #expect(qso.mode == "FT8")
-        #expect(qso.reportSent == "-10")
-        #expect(qso.reportReceived == "-05")
-        #expect(qso.txPower == "50")
-        #expect(qso.comments == "Nice QSO")
-        #expect(qso.name == "Bob")
-        #expect(qso.dateTimeOn == Self.timeOn)
-        #expect(qso.dateTimeOff == Self.timeOff)
-        #expect(qso.myCall == "W6JY")
-        #expect(qso.myGrid == "CM87xx")
+        Self.expectSampleQsoLogged(qso)
         #expect(delegate.senders.first?.hasPrefix("127.0.0.1:") == true)
 
         // The event maps straight into a store QSO for CAR-282 to upsert.
-        let mapped = try wsjtxMapQsoLogged(message: qso, context: Self.context)
-        #expect(mapped.callsign == "K1ABC")
-        #expect(mapped.band == "20m")
-        #expect(mapped.mode == "FT8")
-        #expect(mapped.freqKhz == 14_075.245)
-        #expect(mapped.qsoDate == Self.timeOn)
-        #expect(mapped.stationCallsign == "W6JY")
-        #expect(mapped.importSourceRawValue == "wsjtx")
-        #expect(mapped.loggingSessionId == "session-1")
-        #expect(mapped.dirty)
+        try Self.expectMapped(qso)
 
         // stop() ends the loop with exactly one onStopped and is idempotent.
         api.stop()
@@ -112,7 +92,7 @@ struct WsjtxListenerTests {
 
     @Test("decode + store mapping work without a socket")
     func decodeAndMapWithoutSocket() throws {
-        #expect(wsjtxDefaultPort() == 2237)
+        #expect(wsjtxDefaultPort() == 2_237)
 
         let message = try wsjtxDecodeDatagram(datagram: WsjtxWire.sampleQsoLogged())
         guard case let .qsoLogged(qso) = message else {
@@ -166,9 +146,39 @@ struct WsjtxListenerTests {
         + "<call:5>K1ABC <gridsquare:4>FN42 <mode:3>FT8 <rst_sent:3>-10 <rst_rcvd:3>-05 "
         + "<qso_date:8>20260314 <time_on:6>183015 <band:3>20m <freq:9>14.075245 "
         + "<station_callsign:4>W6JY <my_gridsquare:6>CM87xx <tx_pwr:2>50 <eor>"
+
+    private static func expectSampleQsoLogged(_ qso: FfiWsjtxQsoLogged) {
+        #expect(qso.id == "WSJT-X")
+        #expect(qso.dxCall == "K1ABC")
+        #expect(qso.dxGrid == "FN42")
+        #expect(qso.txFrequencyHz == 14_075_245)
+        #expect(qso.mode == "FT8")
+        #expect(qso.reportSent == "-10")
+        #expect(qso.reportReceived == "-05")
+        #expect(qso.txPower == "50")
+        #expect(qso.comments == "Nice QSO")
+        #expect(qso.name == "Bob")
+        #expect(qso.dateTimeOn == timeOn)
+        #expect(qso.dateTimeOff == timeOff)
+        #expect(qso.myCall == "W6JY")
+        #expect(qso.myGrid == "CM87xx")
+    }
+
+    private static func expectMapped(_ qso: FfiWsjtxQsoLogged) throws {
+        let mapped = try wsjtxMapQsoLogged(message: qso, context: Self.context)
+        #expect(mapped.callsign == "K1ABC")
+        #expect(mapped.band == "20m")
+        #expect(mapped.mode == "FT8")
+        #expect(mapped.freqKhz == 14_075.245)
+        #expect(mapped.qsoDate == Self.timeOn)
+        #expect(mapped.stationCallsign == "W6JY")
+        #expect(mapped.importSourceRawValue == "wsjtx")
+        #expect(mapped.loggingSessionId == "session-1")
+        #expect(mapped.dirty)
+    }
 }
 
-// MARK: - Delegate
+// MARK: - StreamingDelegate
 
 /// Collects delegate callbacks onto an `AsyncStream` the test awaits. UniFFI
 /// calls these on a Rust runtime thread.
@@ -183,9 +193,17 @@ private final class StreamingDelegate: WsjtxListenerDelegate, @unchecked Sendabl
 
     let messages: AsyncStream<FfiWsjtxMessage>
 
-    var errors: [String] { lock.withLock { _errors } }
-    var senders: [String] { lock.withLock { _senders } }
-    var stopCount: Int { lock.withLock { _stopCount } }
+    var errors: [String] {
+        lock.withLock { _errors }
+    }
+
+    var senders: [String] {
+        lock.withLock { _senders }
+    }
+
+    var stopCount: Int {
+        lock.withLock { _stopCount }
+    }
 
     func onMessage(message: FfiWsjtxMessage, from: String) {
         lock.withLock { _senders.append(from) }
@@ -216,7 +234,7 @@ private final class StreamingDelegate: WsjtxListenerDelegate, @unchecked Sendabl
     private var _stopCount = 0
 }
 
-// MARK: - Wire encoder
+// MARK: - WsjtxWire
 
 /// Minimal WSJT-X `QDataStream` encoder (big-endian), independent of the
 /// Rust decoder, mirroring cw-net's test helpers.
@@ -280,7 +298,7 @@ private enum WsjtxWire {
     }
 }
 
-// MARK: - Loopback UDP
+// MARK: - LoopbackUdp
 
 private enum LoopbackUdp {
     enum SendError: Error {
@@ -292,7 +310,9 @@ private enum LoopbackUdp {
     /// Send one datagram to `127.0.0.1:port` over a throwaway BSD socket.
     static func send(_ datagram: Data, toPort port: UInt16) throws {
         let fd = socket(AF_INET, SOCK_DGRAM, 0)
-        guard fd >= 0 else { throw SendError.socket(errno) }
+        guard fd >= 0 else {
+            throw SendError.socket(errno)
+        }
         defer { close(fd) }
 
         var address = sockaddr_in()
@@ -308,7 +328,11 @@ private enum LoopbackUdp {
                 }
             }
         }
-        guard sent >= 0 else { throw SendError.sendto(errno) }
-        guard sent == datagram.count else { throw SendError.shortWrite(sent) }
+        guard sent >= 0 else {
+            throw SendError.sendto(errno)
+        }
+        guard sent == datagram.count else {
+            throw SendError.shortWrite(sent)
+        }
     }
 }

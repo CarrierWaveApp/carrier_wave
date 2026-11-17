@@ -139,11 +139,10 @@ public actor WWFFClient {
             }
             let label = String(row[afterQuote ..< labelEnd.lowerBound])
 
-            guard let tagClose = row.range(of: ">", range: labelEnd.upperBound ..< row.endIndex) else {
-                break
-            }
-
-            guard let tdEnd = row.range(of: "</td>", range: tagClose.upperBound ..< row.endIndex) else {
+            guard let tagClose = row.range(of: ">", range: labelEnd.upperBound ..< row.endIndex), let tdEnd = row.range(
+                of: "</td>",
+                range: tagClose.upperBound ..< row.endIndex
+            ) else {
                 break
             }
 

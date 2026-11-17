@@ -124,6 +124,28 @@ struct POTASettingsView: View {
         .miniTour(.potaAccountSetup, tourState: tourState)
     }
 
+    func testLogin() async {
+        isTesting = true
+        defer { isTesting = false }
+
+        do {
+            // Verify credentials without storing a token; success sets credentialsVerified.
+            _ = try await potaAuth.performHeadlessLogin(
+                username: username, password: password, persist: false
+            )
+
+            // Login succeeded - save credentials so sync can sign in automatically.
+            try potaAuth.saveCredentials(username: username, password: password)
+            loadedUsername = username
+            loadedPassword = password
+
+            showSuccess = true
+        } catch {
+            errorMessage = error.localizedDescription
+            showError = true
+        }
+    }
+
     // MARK: Private
 
     @AppStorage("debugMode") private var debugMode = false
@@ -153,28 +175,6 @@ struct POTASettingsView: View {
         if let savedPassword = potaAuth.getStoredPassword() {
             password = savedPassword
             loadedPassword = savedPassword
-        }
-    }
-
-    private func testLogin() async {
-        isTesting = true
-        defer { isTesting = false }
-
-        do {
-            // Verify credentials without storing a token; success sets credentialsVerified.
-            _ = try await potaAuth.performHeadlessLogin(
-                username: username, password: password, persist: false
-            )
-
-            // Login succeeded - save credentials so sync can sign in automatically.
-            try potaAuth.saveCredentials(username: username, password: password)
-            loadedUsername = username
-            loadedPassword = password
-
-            showSuccess = true
-        } catch {
-            errorMessage = error.localizedDescription
-            showError = true
         }
     }
 

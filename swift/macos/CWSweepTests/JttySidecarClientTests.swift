@@ -27,8 +27,12 @@ struct JttySidecarClientTests {
         let client = segment.client()
         #expect(client.drainResults().isEmpty)
 
-        segment.publishResult(slot: 0, id: 7, start: 12_000, frequency: 1_501.2, eom: false, text: "CQ K1")
-        segment.publishResult(slot: 1, id: 7, start: 12_000, frequency: 1_501.2, eom: true, text: "CQ K1JT CQ")
+        segment.publishResult(slot: 0, JttyDecodeResult(
+            messageId: 7, startSample: 12_000, frequency: 1_501.2, isComplete: false, text: "CQ K1"
+        ))
+        segment.publishResult(slot: 1, JttyDecodeResult(
+            messageId: 7, startSample: 12_000, frequency: 1_501.2, isComplete: true, text: "CQ K1JT CQ"
+        ))
         let results = client.drainResults()
         #expect(results.count == 2)
         #expect(results[0] == JttyDecodeResult(
@@ -47,7 +51,9 @@ struct JttySidecarClientTests {
         for index in 0 ..< (JttyShmLayout.resultRing + 10) {
             segment.publishResult(
                 slot: index % JttyShmLayout.resultRing,
-                id: Int64(index), start: 0, frequency: 1_500, eom: true, text: "M\(index)"
+                JttyDecodeResult(
+                    messageId: Int64(index), startSample: 0, frequency: 1_500, isComplete: true, text: "M\(index)"
+                )
             )
         }
         let results = client.drainResults()
@@ -180,13 +186,13 @@ private final class FakeSegment: @unchecked Sendable {
         store(JttyShmLayout.magic, at: JttyShmLayout.magicOffset)
     }
 
-    func publishResult(slot: Int, id: Int64, start: Int64, frequency: Float, eom: Bool, text: String) {
+    func publishResult(slot: Int, _ result: JttyDecodeResult) {
         let offset = JttyShmLayout.resultsOffset + slot * JttyShmLayout.resultStride
-        store(id, at: offset + JttyShmLayout.resultMessageIdOffset)
-        store(start, at: offset + JttyShmLayout.resultStartSampleOffset)
-        store(frequency, at: offset + JttyShmLayout.resultFrequencyOffset)
-        store(Int32(eom ? 1 : 0), at: offset + JttyShmLayout.resultEomOffset)
-        writeText(text, at: offset + JttyShmLayout.resultTextOffset, padding: 0x20)
+        store(result.messageId, at: offset + JttyShmLayout.resultMessageIdOffset)
+        store(result.startSample, at: offset + JttyShmLayout.resultStartSampleOffset)
+        store(result.frequency, at: offset + JttyShmLayout.resultFrequencyOffset)
+        store(Int32(result.isComplete ? 1 : 0), at: offset + JttyShmLayout.resultEomOffset)
+        writeText(result.text, at: offset + JttyShmLayout.resultTextOffset, padding: 0x20)
         let written = load(Int64.self, at: JttyShmLayout.resultsWrittenOffset)
         store(written + 1, at: JttyShmLayout.resultsWrittenOffset)
     }
@@ -202,7 +208,7 @@ private final class FakeSegment: @unchecked Sendable {
     func string(at offset: Int) -> String {
         let bytes = UnsafeRawBufferPointer(start: base + offset, count: JttyShmLayout.textLength)
         let end = bytes.firstIndex(of: 0) ?? JttyShmLayout.textLength
-        return String(decoding: bytes[..<end], as: UTF8.self)
+        return String(bytes: bytes[..<end], encoding: .utf8) ?? ""
     }
 
     func sample(at index: Int) -> Int16 {

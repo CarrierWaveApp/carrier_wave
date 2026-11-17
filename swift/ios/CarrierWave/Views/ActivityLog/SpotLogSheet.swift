@@ -80,16 +80,9 @@ struct SpotLogSheet: View {
     // MARK: - Respot Logic
 
     private var canRespot: Bool {
-        guard respotEnabled else {
-            return false
-        }
-        guard spot.spot.source == .pota else {
-            return false
-        }
-        guard spot.spot.parkRef != nil else {
-            return false
-        }
-        guard let callsign = manager.activeLog?.myCallsign, !callsign.isEmpty else {
+        guard respotEnabled, spot.spot.source == .pota, spot.spot.parkRef != nil,
+              let callsign = manager.activeLog?.myCallsign, !callsign.isEmpty
+        else {
             return false
         }
         return true

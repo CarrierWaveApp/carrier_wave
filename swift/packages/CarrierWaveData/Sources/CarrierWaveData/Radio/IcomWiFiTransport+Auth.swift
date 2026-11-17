@@ -46,10 +46,7 @@ extension IcomWiFiTransport {
                 channel.send(pkt3)
                 lastPkt3 = Date()
             }
-            guard let resp = await channel.receive(timeout: 0.5) else {
-                continue
-            }
-            guard resp.count >= 16 else {
+            guard let resp = await channel.receive(timeout: 0.5), resp.count >= 16 else {
                 continue
             }
             if resp.count == 21, resp[4] == 0x07, resp[16] == 0x00 {
@@ -198,10 +195,7 @@ extension IcomWiFiTransport {
         let pkt4Deadline = Date().addingTimeInterval(3.0)
         var gotCIVPkt4 = false
         while Date() < pkt4Deadline {
-            guard let resp = await civChannel.receive(timeout: 0.5) else {
-                continue
-            }
-            guard resp.count >= 16 else {
+            guard let resp = await civChannel.receive(timeout: 0.5), resp.count >= 16 else {
                 continue
             }
             if resp.count == 21, resp[4] == 0x07, resp[16] == 0x00 {
@@ -249,11 +243,10 @@ extension IcomWiFiTransport {
         while Date() < deadline {
             // Service control channel pkt7 during CIV drain
             if let controlChannel,
-               let ctrlPkt = await controlChannel.receive(timeout: 0)
+               let ctrlPkt = await controlChannel.receive(timeout: 0),
+               ctrlPkt.count == 21, ctrlPkt[4] == 0x07, ctrlPkt[16] == 0x00
             {
-                if ctrlPkt.count == 21, ctrlPkt[4] == 0x07, ctrlPkt[16] == 0x00 {
-                    replyToPkt7(ctrlPkt, channel: controlChannel)
-                }
+                replyToPkt7(ctrlPkt, channel: controlChannel)
             }
 
             guard let resp = await channel.receive(timeout: 0.2) else {
@@ -322,10 +315,7 @@ extension IcomWiFiTransport {
             }
             guard let pkt = await channel.receive(
                 timeout: min(remaining, 0.5)
-            ) else {
-                continue
-            }
-            guard pkt.count >= 16 else {
+            ), pkt.count >= 16 else {
                 continue
             }
 

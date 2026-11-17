@@ -76,10 +76,7 @@ actor POTAPresenceRepairService {
     }
 
     private static func isMismarked(_ presence: ServicePresence) -> Bool {
-        guard presence.serviceType == .pota else {
-            return false
-        }
-        guard let qso = presence.qso else {
+        guard presence.serviceType == .pota, let qso = presence.qso else {
             return false
         }
         return qso.parkReference?.isEmpty ?? true

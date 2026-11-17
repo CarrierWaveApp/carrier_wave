@@ -133,10 +133,8 @@ extension LoggerView {
     /// For POTA sessions, scopes by park (callsign + band + park + UTC day).
     /// For all other sessions, scopes by callsign + band + UTC day.
     func computeDuplicateStatus() -> CallsignDuplicateStatus? {
-        guard editingQSO == nil else {
-            return nil
-        }
-        guard let session = sessionManager?.activeSession,
+        guard editingQSO == nil,
+              let session = sessionManager?.activeSession,
               !callsignInput.isEmpty,
               callsignInput.count >= 3,
               detectedCommand == nil

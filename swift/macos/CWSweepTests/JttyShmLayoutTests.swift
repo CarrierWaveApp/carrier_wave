@@ -27,8 +27,8 @@ struct JttyShmLayoutTests {
         #expect(JttyShmLayout.txPcmOffset == 31_040)
         #expect(JttyShmLayout.rxPcmOffset == 2_934_080)
         // int64 fields stay 8-byte aligned in every ring slot.
-        #expect(JttyShmLayout.resultsOffset % 8 == 0)
-        #expect(JttyShmLayout.resultStride % 8 == 0)
+        #expect(JttyShmLayout.resultsOffset.isMultiple(of: 8))
+        #expect(JttyShmLayout.resultStride.isMultiple(of: 8))
         #expect(JttyShmLayout.magic == 0x3159_5454)
     }
 }

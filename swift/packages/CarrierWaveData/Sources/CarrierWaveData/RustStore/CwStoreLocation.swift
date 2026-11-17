@@ -47,7 +47,7 @@ public enum CwStoreLocation {
                     .appendingPathComponent(storeFileName)
             }
         #else
-            return try appGroupDirectory(appGroupID).appendingPathComponent(storeFileName)
+            try appGroupDirectory(appGroupID).appendingPathComponent(storeFileName)
         #endif
     }
 

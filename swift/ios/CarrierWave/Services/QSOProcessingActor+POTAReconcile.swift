@@ -95,20 +95,11 @@ extension QSOProcessingActor {
         counts: inout ReconcileCounts
     ) {
         // Only reconcile isSubmitted records — job log tracks upload status
-        guard presence.isSubmitted else {
-            return
-        }
-        guard let qso = presence.qso else {
+        guard presence.isSubmitted, let qso = presence.qso else {
             return
         }
         // Skip hidden (soft-deleted) QSOs — they should never be uploaded
-        guard !qso.isHidden else {
-            return
-        }
-        guard qso.importSource != .pota else {
-            return
-        }
-        guard !presence.uploadRejected else {
+        guard !qso.isHidden, qso.importSource != .pota, !presence.uploadRejected else {
             return
         }
 

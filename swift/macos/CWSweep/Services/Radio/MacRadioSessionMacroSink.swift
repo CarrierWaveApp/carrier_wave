@@ -32,10 +32,8 @@ actor MacRadioSessionMacroSink: MacroExecutorSink {
     var connectedProtocol: RadioCommandProtocol? {
         get async {
             await MainActor.run {
-                guard radioManager.isConnected else {
-                    return nil
-                }
-                guard let slot = activeSlot(),
+                guard radioManager.isConnected,
+                      let slot = activeSlot(),
                       let state = radioManager.slotStates[slot]
                 else {
                     return nil

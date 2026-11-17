@@ -427,9 +427,9 @@ extension StartupProfiler {
 
     nonisolated private static func availableDiskSpaceMB() -> Int? {
         guard let attrs = try? FileManager.default.attributesOfFileSystem(
-            forPath: NSHomeDirectory()
-        ),
-            let freeSpace = attrs[.systemFreeSize] as? Int64
+                  forPath: NSHomeDirectory()
+              ),
+              let freeSpace = attrs[.systemFreeSize] as? Int64
         else {
             return nil
         }

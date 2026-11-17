@@ -111,6 +111,13 @@ final class LiveActivityService {
 
     // MARK: Private
 
+    private var currentActivity: Activity<LoggingSessionAttributes>?
+
+    private let logger = Logger(
+        subsystem: Bundle.main.bundleIdentifier ?? "com.jsvana.CarrierWave",
+        category: "LiveActivity"
+    )
+
     /// Fresh lookup of a running activity. `Activity` isn't `Sendable` and its
     /// `update`/`end` run off the main actor, so a reference held in (or captured
     /// from) this MainActor service can't be handed to them (Xcode 27+). A fresh
@@ -118,11 +125,4 @@ final class LiveActivityService {
     nonisolated private static func liveActivity(id: String) -> Activity<LoggingSessionAttributes>? {
         Activity<LoggingSessionAttributes>.activities.first { $0.id == id }
     }
-
-    private var currentActivity: Activity<LoggingSessionAttributes>?
-
-    private let logger = Logger(
-        subsystem: Bundle.main.bundleIdentifier ?? "com.jsvana.CarrierWave",
-        category: "LiveActivity"
-    )
 }

@@ -144,10 +144,8 @@ enum SQLFormatter {
                 emitInline(text)
                 index += 1
             case let .comment(text):
-                if !atLineStart {
-                    if !output.hasSuffix(" ") {
-                        output.append(" ")
-                    }
+                if !atLineStart, !output.hasSuffix(" ") {
+                    output.append(" ")
                 }
                 output.append(text)
                 atLineStart = false
@@ -397,12 +395,10 @@ enum SQLFormatter {
         private mutating func handleCloseParen() {
             let popped = stack.popLast()
             // Subqueries close on a dedented new line for readability.
-            if popped?.mode == .subquery {
-                if let frame = stack.last {
-                    output.append("\n")
-                    output.append(indentString(frame.indent))
-                    atLineStart = true
-                }
+            if popped?.mode == .subquery, let frame = stack.last {
+                output.append("\n")
+                output.append(indentString(frame.indent))
+                atLineStart = true
             }
             if output.hasSuffix(" ") {
                 output.removeLast()

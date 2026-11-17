@@ -173,10 +173,7 @@ extension QSOProcessingActor {
         if presence.lastConfirmedAt != nil {
             return false
         }
-        guard !QSOMode.isMetadata(qso.mode) else {
-            return false
-        }
-        guard qso.importSource != .pota else {
+        guard !QSOMode.isMetadata(qso.mode), qso.importSource != .pota else {
             return false
         }
         let parks = parksForGapRepair(presence, qso: qso)
@@ -187,17 +184,11 @@ extension QSOProcessingActor {
     /// Dead state: isPresent=false, needsUpload=false, isSubmitted=false, uploadRejected=false.
     private func isEligibleForDeadStateRecovery(_ presence: ServicePresence, qso: QSO) -> Bool {
         guard !presence.isPresent, !presence.needsUpload,
-              !presence.isSubmitted, !presence.uploadRejected
+              !presence.isSubmitted, !presence.uploadRejected,
+              !qso.isHidden,
+              !QSOMode.isMetadata(qso.mode),
+              qso.importSource != .pota
         else {
-            return false
-        }
-        guard !qso.isHidden else {
-            return false
-        }
-        guard !QSOMode.isMetadata(qso.mode) else {
-            return false
-        }
-        guard qso.importSource != .pota else {
             return false
         }
         let parks = parksForGapRepair(presence, qso: qso)

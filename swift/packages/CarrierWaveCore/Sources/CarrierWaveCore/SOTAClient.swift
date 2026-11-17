@@ -78,10 +78,7 @@ public actor SOTAClient {
             throw SOTAError.httpError(http.statusCode, String(data: data, encoding: .utf8))
         }
 
-        guard let json = String(data: data, encoding: .utf8) else {
-            throw SOTAError.invalidResponse
-        }
-        guard let spots = SOTASpot.decodeResponse(json) else {
+        guard let json = String(data: data, encoding: .utf8), let spots = SOTASpot.decodeResponse(json) else {
             throw SOTAError.invalidResponse
         }
         return spots

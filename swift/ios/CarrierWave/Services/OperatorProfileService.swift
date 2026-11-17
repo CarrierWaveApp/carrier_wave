@@ -145,10 +145,7 @@ final class OperatorProfileService {
     /// this method — HamDB is excluded by the caller. No-op if the new
     /// info doesn't add or change any meaningful field vs. the cached row.
     func record(_ info: CallsignInfo) async {
-        guard info.source == .qrz else {
-            return
-        }
-        guard let store else {
+        guard info.source == .qrz, let store else {
             return
         }
         let normalized = info.callsign.uppercased()

@@ -34,10 +34,10 @@ extension RadioAutoDetect {
         _ = try? port.write(Data(kenwoodIDQuery.utf8))
 
         guard let response = try await drainUntil(
-            port: port, timeoutMs: timeoutMs,
-            isComplete: { parseKenwoodID($0) != nil }
-        ),
-            let identifier = parseKenwoodID(response)
+                  port: port, timeoutMs: timeoutMs,
+                  isComplete: { parseKenwoodID($0) != nil }
+              ),
+              let identifier = parseKenwoodID(response)
         else {
             return nil
         }

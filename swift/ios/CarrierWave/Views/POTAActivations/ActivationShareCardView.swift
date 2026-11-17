@@ -328,8 +328,7 @@ struct ActivationShareCardForExport: View {
         Group {
             if let mapImage {
                 Image(uiImage: mapImage)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
+                    .resizable().scaledToFill()
             } else {
                 ActivationShareCardEmptyMap(withoutLocationCount: withoutLocationCount)
             }

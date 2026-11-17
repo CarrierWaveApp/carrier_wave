@@ -216,10 +216,8 @@ enum DXWatchResponseDecoder {
     // MARK: Private
 
     private static func decodeSpot(id: String, values: [Any]) -> DXWatchSpot? {
-        guard values.count >= 7 else {
-            return nil
-        }
-        guard let spotter = values[0] as? String,
+        guard values.count >= 7,
+              let spotter = values[0] as? String,
               let dxCall = values[2] as? String
         else {
             return nil

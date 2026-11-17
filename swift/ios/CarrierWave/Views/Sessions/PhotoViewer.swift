@@ -13,8 +13,7 @@ struct PhotoViewer: View {
 
             AsyncImage(url: url) { image in
                 image
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
+                    .resizable().scaledToFit()
                     .scaleEffect(scale)
                     .gesture(
                         MagnifyGesture()

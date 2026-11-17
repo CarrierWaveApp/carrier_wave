@@ -65,20 +65,8 @@ final class JttyAudioEngine: @unchecked Sendable {
         guard inputFormat.commonFormat == .pcmFormatFloat32, !inputFormat.isInterleaved else {
             throw EngineError.unsupportedInputFormat(inputFormat.description)
         }
-        guard let monoFormat = AVAudioFormat(
-            commonFormat: .pcmFormatFloat32, sampleRate: inputFormat.sampleRate, channels: 1, interleaved: false
-        ),
-            let targetFormat = AVAudioFormat(
-                commonFormat: .pcmFormatInt16,
-                sampleRate: Double(JttyShmLayout.sampleRate),
-                channels: 1,
-                interleaved: true
-            ),
-            let converter = AVAudioConverter(from: monoFormat, to: targetFormat)
-        else {
-            throw EngineError.converterUnavailable
-        }
-        self.converter = converter
+        var tap = try makeTapProcessor(inputFormat: inputFormat, sink: sink)
+        converter = tap.converter
 
         if !playerAttached {
             engine.attach(player)
@@ -86,51 +74,8 @@ final class JttyAudioEngine: @unchecked Sendable {
             playerAttached = true
         }
 
-        let ratio = targetFormat.sampleRate / inputFormat.sampleRate
-        let onLevel = onLevel
-        var lastLevel = Date.distantPast
-        input.installTap(onBus: 0, bufferSize: 4_096, format: inputFormat) { [weak self] buffer, _ in
-            guard let self, let channels = buffer.floatChannelData else {
-                return
-            }
-            let frames = Int(buffer.frameLength)
-            guard frames > 0,
-                  let mono = AVAudioPCMBuffer(pcmFormat: monoFormat, frameCapacity: AVAudioFrameCount(frames)),
-                  let monoData = mono.floatChannelData
-            else {
-                return
-            }
-            mono.frameLength = AVAudioFrameCount(frames)
-            monoData[0].update(from: channels[0], count: frames)
-
-            if let onLevel, Date().timeIntervalSince(lastLevel) > 0.1 {
-                lastLevel = Date()
-                var peak: Float = 0
-                for i in 0 ..< frames {
-                    peak = max(peak, abs(channels[0][i]))
-                }
-                onLevel(min(1, peak))
-            }
-
-            let capacity = AVAudioFrameCount(Double(frames) * ratio) + 64
-            guard let out = AVAudioPCMBuffer(pcmFormat: targetFormat, frameCapacity: capacity) else {
-                return
-            }
-            var consumed = false
-            var error: NSError?
-            let status = converter.convert(to: out, error: &error) { _, outStatus in
-                if consumed {
-                    outStatus.pointee = .noDataNow
-                    return nil
-                }
-                consumed = true
-                outStatus.pointee = .haveData
-                return mono
-            }
-            guard status != .error, let int16 = out.int16ChannelData, out.frameLength > 0 else {
-                return
-            }
-            sink(UnsafeBufferPointer(start: int16[0], count: Int(out.frameLength)))
+        input.installTap(onBus: 0, bufferSize: 4_096, format: inputFormat) { buffer, _ in
+            tap.process(buffer)
         }
 
         engine.prepare()
@@ -200,6 +145,60 @@ final class JttyAudioEngine: @unchecked Sendable {
 
     // MARK: Private
 
+    private struct TapProcessor {
+        let monoFormat: AVAudioFormat
+        let targetFormat: AVAudioFormat
+        let converter: AVAudioConverter
+        let ratio: Double
+        let onLevel: (@Sendable (Float) -> Void)?
+        let sink: SampleSink
+        var lastLevel = Date.distantPast
+
+        mutating func process(_ buffer: AVAudioPCMBuffer) {
+            guard let channels = buffer.floatChannelData else {
+                return
+            }
+            let frames = Int(buffer.frameLength)
+            guard frames > 0,
+                  let mono = AVAudioPCMBuffer(pcmFormat: monoFormat, frameCapacity: AVAudioFrameCount(frames)),
+                  let monoData = mono.floatChannelData
+            else {
+                return
+            }
+            mono.frameLength = AVAudioFrameCount(frames)
+            monoData[0].update(from: channels[0], count: frames)
+
+            if let onLevel, Date().timeIntervalSince(lastLevel) > 0.1 {
+                lastLevel = Date()
+                var peak: Float = 0
+                for i in 0 ..< frames {
+                    peak = max(peak, abs(channels[0][i]))
+                }
+                onLevel(min(1, peak))
+            }
+
+            let capacity = AVAudioFrameCount(Double(frames) * ratio) + 64
+            guard let out = AVAudioPCMBuffer(pcmFormat: targetFormat, frameCapacity: capacity) else {
+                return
+            }
+            var consumed = false
+            var error: NSError?
+            let status = converter.convert(to: out, error: &error) { _, outStatus in
+                if consumed {
+                    outStatus.pointee = .noDataNow
+                    return nil
+                }
+                consumed = true
+                outStatus.pointee = .haveData
+                return mono
+            }
+            guard status != .error, let int16 = out.int16ChannelData, out.frameLength > 0 else {
+                return
+            }
+            sink(UnsafeBufferPointer(start: int16[0], count: Int(out.frameLength)))
+        }
+    }
+
     private let engine = AVAudioEngine()
     private let player = AVAudioPlayerNode()
     private let playbackFormat = AVAudioFormat(standardFormatWithSampleRate: playbackSampleRate, channels: 1)!
@@ -207,6 +206,26 @@ final class JttyAudioEngine: @unchecked Sendable {
     private var converter: AVAudioConverter?
     private let playbackLock = NSLock()
     private var pending: [UUID: CheckedContinuation<Bool, Never>] = [:]
+
+    private func makeTapProcessor(inputFormat: AVAudioFormat, sink: @escaping SampleSink) throws -> TapProcessor {
+        guard let monoFormat = AVAudioFormat(
+                  commonFormat: .pcmFormatFloat32, sampleRate: inputFormat.sampleRate, channels: 1, interleaved: false
+              ),
+              let targetFormat = AVAudioFormat(
+                  commonFormat: .pcmFormatInt16,
+                  sampleRate: Double(JttyShmLayout.sampleRate),
+                  channels: 1,
+                  interleaved: true
+              ),
+              let converter = AVAudioConverter(from: monoFormat, to: targetFormat)
+        else {
+            throw EngineError.converterUnavailable
+        }
+        return TapProcessor(
+            monoFormat: monoFormat, targetFormat: targetFormat, converter: converter,
+            ratio: targetFormat.sampleRate / inputFormat.sampleRate, onLevel: onLevel, sink: sink
+        )
+    }
 
     private func resume(_ token: UUID, played: Bool) {
         let continuation = playbackLock.withLock { pending.removeValue(forKey: token) }
