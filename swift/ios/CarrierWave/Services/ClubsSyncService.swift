@@ -276,7 +276,8 @@ final class ClubsSyncService {
     private func bumpMembershipRevision() {
         membershipRevision += 1
         UserDefaults.standard.set(membershipRevision, forKey: Self.membershipRevisionKey)
-        Self.logger.info("Club roster cache changed (revision \(self.membershipRevision))")
+        let revision = membershipRevision
+        Self.logger.info("Club roster cache changed (revision \(revision))")
         NotificationCenter.default.post(name: .clubMembershipDidChange, object: nil)
     }
 
