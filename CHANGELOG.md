@@ -16,6 +16,7 @@ section at the end of this file.
   500 ms, waits for the radio to boot, and reconnects the last-used radio.
   Power Off sends `PS0;` to a connected Elecraft and disconnects it. When more
   than one CH340 is present, you pick the switch once and Sweep remembers it.
+  The switch picker and status line show the port's nickname when it has one.
 - **Replace a POTA upload after fixing a QSO (iOS).** POTA now lets you delete a
   log for 24 hours after uploading it. When an activation's upload is still
   inside that window, the session detail menu offers Replace POTA Upload: it

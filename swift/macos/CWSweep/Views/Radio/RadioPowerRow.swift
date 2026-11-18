@@ -66,7 +66,7 @@ struct RadioPowerRow: View {
         case .idle: "Looking for the power switch…"
         case .notFound: "Power switch not found (CH340 USB adapter)."
         case .chooseDevice: "Several CH340 adapters found. Choose the power switch."
-        case .found: "Power switch found on \(power.powerPortPath ?? "?")."
+        case .found: "Power switch found on \(power.powerPortPath.map(portLabel) ?? "?")."
         case .poweringOn: "Powering on…"
         case .connecting: "Waiting for the radio to boot, then connecting…"
         case let .done(message): message
@@ -105,11 +105,22 @@ struct RadioPowerRow: View {
         )) {
             Text("Choose…").tag("")
             ForEach(power.candidates, id: \.self) { path in
-                Text(path.replacingOccurrences(of: "/dev/cu.", with: "")).tag(path)
+                Text(portLabel(path)).tag(path)
             }
         }
         .labelsHidden()
         .frame(maxWidth: 200)
+    }
+
+    /// The port's nickname when one is set, otherwise its short device name.
+    private func portLabel(_ path: String) -> String {
+        let short = path.replacingOccurrences(of: "/dev/cu.", with: "")
+        guard let port = portMonitor.availablePorts.first(where: { $0.path == path }),
+              let nickname = portMonitor.nickname(for: port)
+        else {
+            return short
+        }
+        return nickname
     }
 
     private func detect() {
