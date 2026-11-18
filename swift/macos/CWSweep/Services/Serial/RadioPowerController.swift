@@ -49,6 +49,15 @@ final class RadioPowerController {
         }
     }
 
+    /// Path of the radio's CAT port, paired with the switch. Keyed by path
+    /// like the switch itself: USB serial paths embed the adapter's serial
+    /// number, so they survive replugging.
+    var radioPortPath: String? = UserDefaults.standard.string(forKey: RadioPowerController.radioPortPathKey) {
+        didSet {
+            UserDefaults.standard.set(radioPortPath, forKey: Self.radioPortPathKey)
+        }
+    }
+
     var isBusy: Bool {
         switch status {
         case .poweringOn,
@@ -141,13 +150,26 @@ final class RadioPowerController {
         }
     }
 
-    /// Pulse the power switch, wait for the radio to boot, then reconnect the
-    /// radio last used in slot A and wait for it to answer.
+    /// Pulse the power switch, wait for the radio to boot, then connect the
+    /// paired radio port. Both the switch and the radio port must be set.
     func powerOn(radioManager: RadioManager, ports: [SerialPortMonitor.SerialPortInfo]) async {
         guard let path = powerPortPath else {
             status = .notFound
             return
         }
+        guard radioPortPath != nil else {
+            status = .error("Choose the radio's USB port before powering on.")
+            return
+        }
+        guard let radio = radioPort(in: ports) else {
+            status = .error("The radio's USB port isn't plugged in.")
+            return
+        }
+        if radioManager.slotForPortPath(radio.path) != nil {
+            status = .done("The radio is already on and connected.")
+            return
+        }
+
         status = .poweringOn
         radioManager.appendConnectionLog("Power: DTR pulse on \(path)")
         do {
@@ -157,24 +179,11 @@ final class RadioPowerController {
             return
         }
 
-        guard let fingerprint = radioManager.lastFingerprint(for: .a),
-              let port = ports.first(where: { $0.deviceFingerprint == fingerprint }),
-              port.path != path,
-              var profile = radioManager.loadProfile(for: fingerprint)
-        else {
-            status = .done("Power pulse sent. Click Connect on the radio's port.")
-            return
-        }
-        if radioManager.slotForPortPath(port.path) != nil {
-            status = .done("Power pulse sent. \(profile.name) is already connected.")
-            return
-        }
-
         status = .connecting
         try? await Task.sleep(for: Self.bootDelay)
-        profile.serialPortPath = port.path
+        let name: String
         do {
-            _ = try await radioManager.connect(profile: profile, port: port)
+            name = try await connectPairedRadio(port: radio, radioManager: radioManager)
         } catch {
             status = .error("Radio powered on, but connecting failed: \(error.localizedDescription)")
             return
@@ -185,9 +194,9 @@ final class RadioPowerController {
             try? await Task.sleep(for: .milliseconds(250))
         }
         status = if radioManager.frequency > 0 {
-            .done(String(format: "%@ is on (%.3f MHz)", profile.name, radioManager.frequency))
+            .done(String(format: "%@ is on (%.3f MHz)", name, radioManager.frequency))
         } else {
-            .done("Connected to \(profile.name), but it hasn't answered yet")
+            .done("Connected to \(name), but it hasn't answered yet")
         }
     }
 

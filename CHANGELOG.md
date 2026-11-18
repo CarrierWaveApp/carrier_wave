@@ -16,7 +16,9 @@ section at the end of this file.
   500 ms, waits for the radio to boot, and reconnects the last-used radio.
   Power Off sends `PS0;` to a connected Elecraft and disconnects it. When more
   than one CH340 is present, you pick the switch once and Sweep remembers it.
-  The switch picker and status line show the port's nickname when it has one.
+  The switch is paired with the radio's USB port: Power On is available once
+  both are chosen, and it connects to that port after the radio boots. The
+  pickers and status line show port nicknames.
 - **Replace a POTA upload after fixing a QSO (iOS).** POTA now lets you delete a
   log for 24 hours after uploading it. When an activation's upload is still
   inside that window, the session detail menu offers Replace POTA Upload: it
@@ -48,6 +50,12 @@ section at the end of this file.
   the Bypass POTA Maintenance debug toggle are gone.
 
 ### Fixed
+- **CW Sweep tells USB serial devices apart (macOS).** Every USB serial port
+  was identified as the same device, so the saved radio profile, the radio to
+  auto-connect, and the WinKeyer to auto-connect could point at the wrong port.
+  Ports are now told apart by serial number, or by USB socket for adapters
+  without one. The saved radio carries over; connect the WinKeyer once to
+  re-enable its auto-connect.
 - **Two backups in the same second no longer fail (iOS).** Backup names have
   one-second resolution, so a second snapshot taken within the same second
   failed on the existing file. It now gets a `_2` suffix.

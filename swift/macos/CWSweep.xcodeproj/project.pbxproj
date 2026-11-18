@@ -308,9 +308,11 @@
 		B6E12F5070567CDBA6E687EC /* CustomLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0451A75EEA850790D884D1F /* CustomLayout.swift */; };
 		B7D9F8A7688D45A84486CC6F /* CustomLayoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A11294E319E26DF7E768926F /* CustomLayoutView.swift */; };
 		B8FC98A09DA36561B159F051 /* MacroDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8048A5D660095123E2A66FEB /* MacroDetailView.swift */; };
+		B96C485BD0C9205982914A0F /* RadioPowerController+Pairing.swift in Sources */ = {isa = PBXBuildFile; fileRef = F14D79C6B9D2E710FAAFE566 /* RadioPowerController+Pairing.swift */; };
 		B9F5756C93DD4EF183FF3625 /* MacRadioSessionMacroSink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14D85F6CB5279437923434AA /* MacRadioSessionMacroSink.swift */; };
 		BACEA7342F6F00F3674358A6 /* SatLogListenerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1B4F43EA18F39EC3A20B605 /* SatLogListenerTests.swift */; };
 		BC462A5BF1375C039874972B /* BandEdges.swift in Sources */ = {isa = PBXBuildFile; fileRef = A75CEB62FC043C9BEDD5263E /* BandEdges.swift */; };
+		BC8226C032B587650E90F454 /* LegacyFingerprintMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 354305ABF28DB67AA9D7E97C /* LegacyFingerprintMigration.swift */; };
 		BCA7F622511A060786EE0474 /* FinderDropTarget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 187B65CD3CA9188E23694F34 /* FinderDropTarget.swift */; };
 		BCDAEA5565D36A544BD4ACBB /* VimMotion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7058EF3E250537790B835BEC /* VimMotion.swift */; };
 		BCDD1A7705782AAE41FD4166 /* SatelliteTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85BE47546CAD9E2CF114AC59 /* SatelliteTheme.swift */; };
@@ -429,6 +431,7 @@
 		F903A7D89BF7DCE2AF6B465C /* VimEngine+Marks.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2B8A9B161C1D0427FFA2081 /* VimEngine+Marks.swift */; };
 		F97F5DB8A257E3ED1723181F /* BridgeProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A7B5BE4036006ED56A36E04 /* BridgeProtocol.swift */; };
 		F9910979E4E33425C02461F8 /* SessionToolbarControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9DE8932C03D13DAE5C752FC /* SessionToolbarControl.swift */; };
+		F9F1732A4FC732F7684D642E /* SerialPortFingerprintTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 533D7066FD8E535A30026F35 /* SerialPortFingerprintTests.swift */; };
 		FA91795685F7A72BE7F880DC /* VimEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EBBB9DE0BF927E80E62C2B5 /* VimEngineTests.swift */; };
 		FD485904C69D216A2D418F32 /* RemoteOpConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 748CC8DC1F72F3F38C7E4072 /* RemoteOpConnection.swift */; };
 		FD678754D1C6B33C3B904CCB /* SatellitePassFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = B033E06A4DA62E778CF1E29E /* SatellitePassFormatting.swift */; };
@@ -530,6 +533,7 @@
 		34B591CBF12F313C711016F4 /* SpotAggregator+Enrichment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SpotAggregator+Enrichment.swift"; sourceTree = "<group>"; };
 		34EA6DB37D01418ABF6A2984 /* SatLogListenerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SatLogListenerService.swift; sourceTree = "<group>"; };
 		350CE44780836874AEC0E630 /* MacroEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacroEngine.swift; sourceTree = "<group>"; };
+		354305ABF28DB67AA9D7E97C /* LegacyFingerprintMigration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegacyFingerprintMigration.swift; sourceTree = "<group>"; };
 		37733884A8FFCF00054DAE22 /* JttyMacroExpander.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JttyMacroExpander.swift; sourceTree = "<group>"; };
 		37D082E4BB9E404CFD3121C2 /* QueryColumnFormatters.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QueryColumnFormatters.swift; sourceTree = "<group>"; };
 		381FCEAB0BD6283E4E06744C /* DataSettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataSettingsTab.swift; sourceTree = "<group>"; };
@@ -581,6 +585,7 @@
 		506DC03302DC2BECF0440618 /* WaterfallPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaterfallPanel.swift; sourceTree = "<group>"; };
 		52065943CAC49832357EEA8B /* SpaceWeatherView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpaceWeatherView.swift; sourceTree = "<group>"; };
 		52EA74D59D842191037A681F /* LayoutEditorView+TreeMutation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LayoutEditorView+TreeMutation.swift"; sourceTree = "<group>"; };
+		533D7066FD8E535A30026F35 /* SerialPortFingerprintTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SerialPortFingerprintTests.swift; sourceTree = "<group>"; };
 		54087FB5195F7076108AAFF1 /* FrequencyStepEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrequencyStepEditor.swift; sourceTree = "<group>"; };
 		54C9FE350F581EBF011AD967 /* ContestBandScopeView+HelpOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ContestBandScopeView+HelpOverlay.swift"; sourceTree = "<group>"; };
 		54CBA2EC4C1C497E6F3A2916 /* PlaceholderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceholderView.swift; sourceTree = "<group>"; };
@@ -846,6 +851,7 @@
 		F08C4497F5ECD174B21D4F5D /* MacroEditorView+StepsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MacroEditorView+StepsSection.swift"; sourceTree = "<group>"; };
 		F0CFEB9881052B01D3C873F7 /* KeyerControlView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyerControlView.swift; sourceTree = "<group>"; };
 		F14599BE09F78A27A65EA8F6 /* JttySidecarInstaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JttySidecarInstaller.swift; sourceTree = "<group>"; };
+		F14D79C6B9D2E710FAAFE566 /* RadioPowerController+Pairing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RadioPowerController+Pairing.swift"; sourceTree = "<group>"; };
 		F19CADD4B3925B383196E50A /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		F1B4F43EA18F39EC3A20B605 /* SatLogListenerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SatLogListenerTests.swift; sourceTree = "<group>"; };
 		F1CC0ED5B05E4DABD4F2B5E6 /* SchemaBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SchemaBrowserView.swift; sourceTree = "<group>"; };
@@ -1082,7 +1088,9 @@
 		2CA3EDC14161A630D9EC2467 /* Serial */ = {
 			isa = PBXGroup;
 			children = (
+				354305ABF28DB67AA9D7E97C /* LegacyFingerprintMigration.swift */,
 				75C0393B57B17EC6B37162B1 /* RadioPowerController.swift */,
+				F14D79C6B9D2E710FAAFE566 /* RadioPowerController+Pairing.swift */,
 				5AD4A65FBB4015397306AF17 /* SerialPort.swift */,
 				B89A2DB3FF01EEAA5CC01E1D /* SerialPortMonitor.swift */,
 				C150CCF02A9BB60FB45C0D13 /* SerialRadioTransport.swift */,
@@ -1289,6 +1297,7 @@
 				3BABD86330C22D1042BC490E /* SatellitePassTests.swift */,
 				F1B4F43EA18F39EC3A20B605 /* SatLogListenerTests.swift */,
 				2ADD515CCE6DF86497B5B21F /* SDRPanadapterTests.swift */,
+				533D7066FD8E535A30026F35 /* SerialPortFingerprintTests.swift */,
 				C9916A4BD5E2F0677F9F2968 /* SpotListOrderingTests.swift */,
 				FF73C0A137803977F0F82BF0 /* SpotTuneDestinationTests.swift */,
 				CDF04E7F71320C1DB29C9419 /* SpotTypeTests.swift */,
@@ -1929,6 +1938,7 @@
 				BACEA7342F6F00F3674358A6 /* SatLogListenerTests.swift in Sources */,
 				4726930E70C7236F70031CE7 /* SatelliteDuplexTests.swift in Sources */,
 				A48FADCA48A03C0622A8512E /* SatellitePassTests.swift in Sources */,
+				F9F1732A4FC732F7684D642E /* SerialPortFingerprintTests.swift in Sources */,
 				631D94DC843D4F96A969B527 /* SpotListOrderingTests.swift in Sources */,
 				1A6BBE9254B51067EBB88A00 /* SpotTuneDestinationTests.swift in Sources */,
 				88F679228A39202A255BAE05 /* SpotTypeTests.swift in Sources */,
@@ -2102,6 +2112,7 @@
 				34B246E750881750455CC921 /* LayoutRenderer.swift in Sources */,
 				136EF3191F0EF995CF4EED82 /* LayoutStore.swift in Sources */,
 				3D4B8F55183D9FA204F222FC /* LayoutTree.swift in Sources */,
+				BC8226C032B587650E90F454 /* LegacyFingerprintMigration.swift in Sources */,
 				8C727A8687886F17F59F1678 /* LocationGridResolver.swift in Sources */,
 				BEE56536761C611A1C0D45D6 /* MacAudioDevices.swift in Sources */,
 				B9F5756C93DD4EF183FF3625 /* MacRadioSessionMacroSink.swift in Sources */,
@@ -2191,6 +2202,7 @@
 				5B0869F6FA0084C8EA412BA8 /* RadioPaletteHelpers.swift in Sources */,
 				643B466A14E1A3A61E9704F4 /* RadioPaletteSummary.swift in Sources */,
 				F55E7A5BA29F730BF191D40E /* RadioPaletteView.swift in Sources */,
+				B96C485BD0C9205982914A0F /* RadioPowerController+Pairing.swift in Sources */,
 				47BDFA56CDA374214EAA09E4 /* RadioPowerController.swift in Sources */,
 				1467956999142B53DDD6C530 /* RadioPowerRow.swift in Sources */,
 				28138A3576E88EF04106457D /* RadioPreferencesPopover.swift in Sources */,

@@ -11,41 +11,28 @@ struct RadioPowerRow: View {
     let radioManager: RadioManager
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Image(systemName: "power")
-                    .foregroundStyle(iconColor)
-                Text("Radio Power")
-                    .font(.headline)
-                if power.status == .chooseDevice || power.candidates.count > 1 {
-                    devicePicker
-                }
-                Spacer()
-                if power.isBusy {
-                    ProgressView()
-                        .controlSize(.small)
-                }
-                Button("Detect") {
-                    detect()
-                }
-                .disabled(power.isBusy)
-                Button("Power On") {
-                    Task {
-                        await power.powerOn(radioManager: radioManager, ports: portMonitor.availablePorts)
+        VStack(alignment: .leading, spacing: 8) {
+            header
+            if power.status != .notFound {
+                Grid(alignment: .leading, horizontalSpacing: 10, verticalSpacing: 6) {
+                    GridRow {
+                        fieldLabel("Power switch")
+                        devicePicker
+                    }
+                    GridRow {
+                        fieldLabel("Radio port")
+                        radioPicker
                     }
                 }
-                .disabled(power.isBusy || power.powerPortPath == nil || !hasCandidate)
-                Button("Power Off") {
-                    Task { await power.powerOff(radioManager: radioManager) }
-                }
-                .disabled(power.isBusy || power.elecraftSessionId(radioManager: radioManager) == nil)
+                .padding(.leading, 24)
             }
             Text(statusText)
                 .font(.caption)
                 .foregroundStyle(statusColor)
+                .padding(.leading, 24)
         }
         .padding(.horizontal, 8)
-        .padding(.vertical, 6)
+        .padding(.vertical, 8)
         .task { detect() }
     }
 
@@ -61,12 +48,28 @@ struct RadioPowerRow: View {
         return power.candidates.contains(path)
     }
 
+    /// Power is usable only when the switch and the radio's port are both set
+    /// and present.
+    private var isPaired: Bool {
+        hasCandidate && power.radioPort(in: portMonitor.availablePorts) != nil
+    }
+
+    private var pairingText: String {
+        guard power.radioPortPath != nil else {
+            return " Choose the radio's USB port to enable Power On."
+        }
+        guard let radio = power.radioPort(in: portMonitor.availablePorts) else {
+            return " The radio's USB port isn't plugged in."
+        }
+        return " Paired with \(portLabel(radio.path))."
+    }
+
     private var statusText: String {
         switch power.status {
         case .idle: "Looking for the power switch…"
         case .notFound: "Power switch not found (CH340 USB adapter)."
         case .chooseDevice: "Several CH340 adapters found. Choose the power switch."
-        case .found: "Power switch found on \(power.powerPortPath.map(portLabel) ?? "?")."
+        case .found: "Power switch found on \(power.powerPortPath.map(portLabel) ?? "?")." + pairingText
         case .poweringOn: "Powering on…"
         case .connecting: "Waiting for the radio to boot, then connecting…"
         case let .done(message): message
@@ -95,6 +98,35 @@ struct RadioPowerRow: View {
         }
     }
 
+    private var header: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "power")
+                .foregroundStyle(iconColor)
+                .frame(width: 16)
+            Text("Radio Power")
+                .font(.headline)
+            Spacer()
+            if power.isBusy {
+                ProgressView()
+                    .controlSize(.small)
+            }
+            Button("Detect") {
+                detect()
+            }
+            .disabled(power.isBusy)
+            Button("Power On") {
+                Task {
+                    await power.powerOn(radioManager: radioManager, ports: portMonitor.availablePorts)
+                }
+            }
+            .disabled(power.isBusy || !isPaired)
+            Button("Power Off") {
+                Task { await power.powerOff(radioManager: radioManager) }
+            }
+            .disabled(power.isBusy || power.elecraftSessionId(radioManager: radioManager) == nil)
+        }
+    }
+
     private var devicePicker: some View {
         Picker("Switch", selection: Binding(
             get: { power.powerPortPath ?? "" },
@@ -109,7 +141,34 @@ struct RadioPowerRow: View {
             }
         }
         .labelsHidden()
-        .frame(maxWidth: 200)
+        .frame(width: 180)
+    }
+
+    private var radioPicker: some View {
+        let choices = power.radioPortChoices(in: portMonitor.availablePorts)
+        let selected = power.radioPortPath ?? ""
+        let missing = !selected.isEmpty && !choices.contains { $0.path == selected }
+        return Picker("Radio port", selection: Binding(
+            get: { selected },
+            set: { power.radioPortPath = $0.isEmpty ? nil : $0 }
+        )) {
+            Text("Choose…").tag("")
+            ForEach(choices) { port in
+                Text(portLabel(port.path)).tag(port.path)
+            }
+            if missing {
+                Text("Not plugged in").tag(selected)
+            }
+        }
+        .labelsHidden()
+        .frame(width: 180)
+    }
+
+    private func fieldLabel(_ text: String) -> some View {
+        Text(text)
+            .font(.callout)
+            .foregroundStyle(.secondary)
+            .gridColumnAlignment(.leading)
     }
 
     /// The port's nickname when one is set, otherwise its short device name.

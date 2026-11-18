@@ -15,10 +15,24 @@ final class SerialPortMonitor {
         let vendorId: Int?
         let productId: Int?
         let serialNumber: String?
+        var locationId: Int?
 
-        /// Stable identifier for a physical USB device (survives unplug/replug).
+        /// Stable identifier for a physical device. Uses the USB serial number
+        /// when the adapter has a real one, so it survives replugging into any
+        /// socket. Adapters without one (CH340s report all zeros) fall back to
+        /// the USB location, which is stable while they stay in the same
+        /// socket. Non-USB ports use their path.
         var deviceFingerprint: String {
-            "\(vendorId ?? 0)-\(productId ?? 0)-\(serialNumber ?? "")"
+            guard let vendorId, let productId else {
+                return path
+            }
+            if let serialNumber, serialNumber.contains(where: { $0 != "0" }) {
+                return "\(vendorId)-\(productId)-\(serialNumber)"
+            }
+            if let locationId {
+                return "\(vendorId)-\(productId)-loc\(String(locationId, radix: 16))"
+            }
+            return path
         }
     }
 
@@ -98,6 +112,7 @@ final class SerialPortMonitor {
 
     func refreshPorts() {
         availablePorts = Self.discoverSerialPorts()
+        LegacyFingerprintMigration.run(ports: availablePorts)
     }
 
     // MARK: Private
@@ -117,21 +132,18 @@ final class SerialPortMonitor {
             service, "USB Product Name" as CFString, kCFAllocatorDefault, 0
         )?.takeRetainedValue() as? String) ?? pathCF.replacingOccurrences(of: "/dev/cu.", with: "")
 
-        let vendorId = IORegistryEntryCreateCFProperty(
-            service, "idVendor" as CFString, kCFAllocatorDefault, 0
-        )?.takeRetainedValue() as? Int
-
-        let productId = IORegistryEntryCreateCFProperty(
-            service, "idProduct" as CFString, kCFAllocatorDefault, 0
-        )?.takeRetainedValue() as? Int
-
-        let serialNumber = IORegistryEntryCreateCFProperty(
-            service, "USB Serial Number" as CFString, kCFAllocatorDefault, 0
-        )?.takeRetainedValue() as? String
+        // The USB IDs live on the parent USB device, not the serial node.
+        let options = IOOptionBits(kIORegistryIterateRecursively | kIORegistryIterateParents)
+        func usbProperty(_ key: String) -> Any? {
+            IORegistryEntrySearchCFProperty(service, kIOServicePlane, key as CFString, kCFAllocatorDefault, options)
+        }
 
         return SerialPortInfo(
             id: pathCF, path: pathCF, name: name,
-            vendorId: vendorId, productId: productId, serialNumber: serialNumber
+            vendorId: usbProperty("idVendor") as? Int,
+            productId: usbProperty("idProduct") as? Int,
+            serialNumber: usbProperty("USB Serial Number") as? String,
+            locationId: usbProperty("locationID") as? Int
         )
     }
 }
