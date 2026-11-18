@@ -202,6 +202,7 @@
 		7BEB193309BD7C3B812BE16A /* TCPIPRadioSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BD94413871E0B813C9F4EA2 /* TCPIPRadioSection.swift */; };
 		7C1D2ED88BAD10A8C2ED8426 /* OperatorChipsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEC2C79AE3292E8F007DFEF4 /* OperatorChipsView.swift */; };
 		7C779E207F869C27CCC5F167 /* RadioControlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D54D7862949CF1053D8B17F /* RadioControlView.swift */; };
+		7C8923E770155939364D8D19 /* USBFoundBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AAE3EF887816FA7F141E509 /* USBFoundBanner.swift */; };
 		7D0915486766A1D266151F39 /* PlaceholderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54CBA2EC4C1C497E6F3A2916 /* PlaceholderView.swift */; };
 		7D8F6086E42B3FA8251FB20C /* CarrierWaveCore in Frameworks */ = {isa = PBXBuildFile; productRef = B9F7CD6646A6472927743AB9 /* CarrierWaveCore */; };
 		7DB67D9EB114940758BF1AF3 /* MacrosLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4DF77AE6E1EB4CFA8AF2B3D /* MacrosLibraryView.swift */; };
@@ -375,6 +376,7 @@
 		DA8FD8A67480B94844A70518 /* BandScopeContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE1589C476CD27EFFB6B31EA /* BandScopeContainerView.swift */; };
 		DB26F42E4733CBF7F67263BF /* AchievementBadgeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5FC72501D7E32D12F15AFF9 /* AchievementBadgeView.swift */; };
 		DB584AF34B1794BE8ED69255 /* QSOLogTableView+Hide.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5AA09243177C09584C14AC2 /* QSOLogTableView+Hide.swift */; };
+		DBEE6EA06555502F9F7FBDE1 /* USBRadioDiscovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A4704ADF5A5C344093DB50C /* USBRadioDiscovery.swift */; };
 		DD1C9CB6C687BEA8F5E3E410 /* TelnetClusterClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E6EF685B2A2D4BE3C502E66 /* TelnetClusterClient.swift */; };
 		DD3A0B45AC152AD20EFA186B /* ADIFImportSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AB8D3786FB1ECC5D9D8E7A0 /* ADIFImportSheet.swift */; };
 		DDE4DD14C20BC2C869B9E376 /* VimActionExecutor+Command.swift in Sources */ = {isa = PBXBuildFile; fileRef = 767FEADB4DC248A9EB1DC2A2 /* VimActionExecutor+Command.swift */; };
@@ -551,6 +553,7 @@
 		3908B052547451B920E6BFBB /* CWSweepTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CWSweepTests.swift; sourceTree = "<group>"; };
 		3929C2FF72CC56029E75269C /* CarrierWaveData */ = {isa = PBXFileReference; lastKnownFileType = folder; name = CarrierWaveData; path = ../packages/CarrierWaveData; sourceTree = SOURCE_ROOT; };
 		3AA84128E49009C0273D54F4 /* ScrollWheelModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScrollWheelModifier.swift; sourceTree = "<group>"; };
+		3AAE3EF887816FA7F141E509 /* USBFoundBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = USBFoundBanner.swift; sourceTree = "<group>"; };
 		3B72A45A71968F7D377F4E51 /* MacrosLibrarySettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacrosLibrarySettingsTab.swift; sourceTree = "<group>"; };
 		3BABD86330C22D1042BC490E /* SatellitePassTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SatellitePassTests.swift; sourceTree = "<group>"; };
 		3BEF3547163ABBC52810172D /* SessionsComposerPanels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionsComposerPanels.swift; sourceTree = "<group>"; };
@@ -631,6 +634,7 @@
 		698A2CA5DAD40209C93D1517 /* ContestCalendarTimeline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContestCalendarTimeline.swift; sourceTree = "<group>"; };
 		69C04C69E463CB50A6D732EA /* ContestDetailMacView+Sections.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ContestDetailMacView+Sections.swift"; sourceTree = "<group>"; };
 		69DE6791AFD4E8D43E13CF84 /* SpotSourceFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotSourceFilter.swift; sourceTree = "<group>"; };
+		6A4704ADF5A5C344093DB50C /* USBRadioDiscovery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = USBRadioDiscovery.swift; sourceTree = "<group>"; };
 		6A4D250A07AEB86985C1587C /* QSOEntryPopupView+Logic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "QSOEntryPopupView+Logic.swift"; sourceTree = "<group>"; };
 		6A7209D7825757EC399D07D3 /* ParsedEntryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParsedEntryView.swift; sourceTree = "<group>"; };
 		6AAE308E2027AE320D80D213 /* CarrierWaveAccountSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarrierWaveAccountSection.swift; sourceTree = "<group>"; };
@@ -1419,6 +1423,7 @@
 				D2AF9600FF050B23409D4B98 /* SCULAN10DebugView.swift */,
 				E6C0BFD25E22E2B417023248 /* SCULAN10Section.swift */,
 				4BD94413871E0B813C9F4EA2 /* TCPIPRadioSection.swift */,
+				3AAE3EF887816FA7F141E509 /* USBFoundBanner.swift */,
 				8BA9736B24AE4553FDA7D4E6 /* USBRadioSection.swift */,
 			);
 			path = Radio;
@@ -1745,6 +1750,7 @@
 				0245B65BDA95B65F179D5F5C /* RadioSlotState.swift */,
 				BFA4193F8D26CD190279C4EA /* SCULAN10AudioPlayer.swift */,
 				123174C816BE981DFBDF7892 /* SCULAN10WaterfallData.swift */,
+				6A4704ADF5A5C344093DB50C /* USBRadioDiscovery.swift */,
 				97712989EFE454A79C466A79 /* WaterfallStore.swift */,
 			);
 			path = Radio;
@@ -2339,6 +2345,8 @@
 				DD1C9CB6C687BEA8F5E3E410 /* TelnetClusterClient.swift in Sources */,
 				A0EA01E70A50F7AA3C0C5A85 /* TrackerDetectedAlert.swift in Sources */,
 				98EFFAF4609B0DA9FAE8078C /* TrackersSettingsTab.swift in Sources */,
+				7C8923E770155939364D8D19 /* USBFoundBanner.swift in Sources */,
+				DBEE6EA06555502F9F7FBDE1 /* USBRadioDiscovery.swift in Sources */,
 				4CC4419C03593E9014D9EE59 /* USBRadioSection.swift in Sources */,
 				B66734B0C6255295E395B251 /* UnifiedSpot.swift in Sources */,
 				671225936B84DE929C937A9D /* VendorCommandPickerView.swift in Sources */,

@@ -137,6 +137,8 @@ final class RadioManager {
 
     /// Finds Icom LAN/WiFi radios; see `RadioManager+IcomLAN`.
     let icomDiscovery = IcomDiscoveryService()
+    /// Reconnects known USB radios and probes new USB serial ports.
+    let usbDiscovery = USBRadioDiscovery()
     /// Hosts auto-connect already tried this launch, so a radio with stale
     /// saved credentials is attempted once rather than every sweep.
     var icomAutoConnectTried: Set<String> = []
@@ -250,10 +252,10 @@ final class RadioManager {
         return try await connect(profile: profile)
     }
 
-    /// Auto-connect to the last-used USB radio when the device + saved profile are present.
-    /// Calls the multi-slot variant under the hood.
+    /// USB ports changed (launch or hot-plug): reconnect radios seen on these
+    /// ports before and probe new ones. See `USBRadioDiscovery`.
     func autoConnect(ports: [SerialPortMonitor.SerialPortInfo]) async {
-        await autoConnectAllSlots(ports: ports)
+        await usbDiscovery.portsChanged(ports, manager: self)
     }
 
     /// Connect to a radio with the given profile. `prebuilt` hands over a

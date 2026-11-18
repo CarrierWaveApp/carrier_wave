@@ -124,8 +124,10 @@ import Testing
 }
 
 @Test func civAddressNameRecognisesIcom() {
-    #expect(RadioAutoDetect.civAddressName(0xA4) == "Icom IC-7300")
-    #expect(RadioAutoDetect.civAddressName(0x94) == "Icom IC-705")
+    // Icom defaults: IC-7300 94h, IC-705 A4h, IC-9700 A2h (matches knownModels).
+    #expect(RadioAutoDetect.civAddressName(0x94) == "Icom IC-7300")
+    #expect(RadioAutoDetect.civAddressName(0xA4) == "Icom IC-705")
+    #expect(RadioAutoDetect.civAddressName(0xA2) == "Icom IC-9700")
     #expect(RadioAutoDetect.civAddressName(0x12) == nil)
 }
 
@@ -157,4 +159,16 @@ import Testing
     let profile = result.toProfile(portPath: "/dev/cu.test")
     #expect(profile.dtrSignal == false)
     #expect(profile.rtsSignal == false)
+}
+
+@Test func detectedCIVRadioMapsToKnownModel() {
+    func profile(_ address: UInt8) -> RadioProfile {
+        RadioAutoDetect.Result(
+            protocolType: .civ, baudRate: 115_200, civAddress: address,
+            rawID: String(format: "%02X", address), radioName: nil
+        ).toProfile(portPath: "/dev/cu.test")
+    }
+    #expect(profile(0xA2).modelId == "ic9700")
+    #expect(profile(0x94).modelId == "ic7300")
+    #expect(profile(0x70).modelId == nil) // X6100 and G90 share 70h
 }

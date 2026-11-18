@@ -76,8 +76,25 @@ final class SerialPortMonitor {
     func startMonitoring() {
         nicknames = (UserDefaults.standard.dictionary(forKey: "serial.portNicknames") as? [String: String]) ?? [:]
         refreshPorts()
-        // IOKit notification setup would go here for hot-plug detection
-        // For now, we poll on demand
+        // Hot-plug: re-enumerate every 2 s (an IOKit registry walk, cheap)
+        // and publish only when the set of ports changes, so USB radio
+        // discovery sees plug-ins and radios powering on.
+        guard hotPlugTask == nil else {
+            return
+        }
+        hotPlugTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(2))
+                guard let self else {
+                    return
+                }
+                let current = Self.discoverSerialPorts()
+                if current.map(\.id) != availablePorts.map(\.id) {
+                    availablePorts = current
+                    LegacyFingerprintMigration.run(ports: current)
+                }
+            }
+        }
     }
 
     /// Returns the nickname for a port, or nil if not set.
@@ -104,6 +121,8 @@ final class SerialPortMonitor {
     }
 
     func stopMonitoring() {
+        hotPlugTask?.cancel()
+        hotPlugTask = nil
         if let port = notificationPort {
             IONotificationPortDestroy(port)
             notificationPort = nil
@@ -117,6 +136,7 @@ final class SerialPortMonitor {
 
     // MARK: Private
 
+    private var hotPlugTask: Task<Void, Never>?
     private var notificationPort: IONotificationPortRef?
     private var addedIterator: io_iterator_t = 0
     private var removedIterator: io_iterator_t = 0

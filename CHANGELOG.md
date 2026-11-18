@@ -17,6 +17,12 @@ section at the end of this file.
   picker. The radio's Network User ID and password are asked for once and kept
   in the Keychain; after that Sweep reconnects to the radio on launch. The
   manual address form is still there, collapsed, for radios on another subnet.
+- **USB radios are found automatically in CW Sweep (macOS).** At launch and
+  whenever a USB serial device is plugged in, Sweep checks each new port for a
+  radio. A radio you've connected on that port before reconnects by itself; a
+  new one shows "Found Icom IC-7300 on USB. Connect?" in the Radio panel. The
+  radio power switch and WinKeyer ports are left alone. The "Auto-connect on
+  launch" setting is gone: radios you've used before always reconnect.
 - **2m and up in CW Sweep (macOS).** The band map, band scopes, waterfall band
   picker and spot filters now cover 2m, 1.25m, 70cm, 33cm and 23cm, with CW,
   SSB and FM band-plan shading and deeper zoom on the wide bands. Band Up/Down
@@ -43,6 +49,9 @@ section at the end of this file.
 ### Changed
 - CW Sweep logs out of network radios when it quits, so the radio frees the
   session for the next launch.
+- CW Sweep reconnects to an IC-9700 on LAN as soon as the radio answers again
+  after a session ends (the radio goes quiet for about a minute).
+
 - **Spots filter bar no longer overflows (CW Sweep, macOS).** The source
   buttons get their own full-width row, and Band, Mode, Continent and Region
   are labeled dropdowns on a second row with the search field filling the rest.
@@ -65,6 +74,8 @@ section at the end of this file.
   the Bypass POTA Maintenance debug toggle are gone.
 
 ### Fixed
+- CW Sweep's USB autodetect named an IC-7300 "IC-705" and vice versa, and
+  didn't recognise the IC-9700.
 - **CW Sweep tells USB serial devices apart (macOS).** Every USB serial port
   was identified as the same device, so the saved radio profile, the radio to
   auto-connect, and the WinKeyer to auto-connect could point at the wrong port.

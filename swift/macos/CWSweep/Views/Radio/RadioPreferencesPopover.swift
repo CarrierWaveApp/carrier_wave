@@ -3,8 +3,9 @@ import SwiftUI
 // MARK: - RadioPreferencesPopover
 
 /// Compact preferences shown from the Radio Control gear button. Holds the
-/// settings that used to live in Settings → Radio (auto-connect, poll
-/// interval, Auto-XIT). Connection-specific creds live inline in their
+/// settings that used to live in Settings → Radio (poll interval,
+/// Auto-XIT). Radios you've used before always reconnect (USB and LAN
+/// discovery). Connection-specific creds live inline in their
 /// respective network sub-sections.
 struct RadioPreferencesPopover: View {
     // MARK: Internal
@@ -12,7 +13,6 @@ struct RadioPreferencesPopover: View {
     var body: some View {
         Form {
             Section("Connection") {
-                Toggle("Auto-connect on launch", isOn: $autoConnect)
                 Stepper("Poll interval: \(pollIntervalMs) ms",
                         value: $pollIntervalMs, in: 50 ... 1_000, step: 50)
             }
@@ -45,7 +45,6 @@ struct RadioPreferencesPopover: View {
 
     // MARK: Private
 
-    @AppStorage("autoConnect") private var autoConnect = false
     @AppStorage("pollIntervalMs") private var pollIntervalMs = 100
     @AppStorage("autoXITEnabled") private var autoXITEnabled = false
     @AppStorage("autoXITOffsetHz") private var autoXITOffsetHz = 0

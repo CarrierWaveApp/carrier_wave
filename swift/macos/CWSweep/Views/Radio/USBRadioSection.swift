@@ -184,7 +184,7 @@ extension RadioAutoDetect.Result {
     func toProfile(portPath: String) -> RadioProfile {
         RadioProfile(
             name: radioName ?? "Detected \(protocolType.rawValue)",
-            modelId: nil,
+            modelId: matchingModelId,
             protocolType: protocolType,
             serialPortPath: portPath,
             baudRate: baudRate,
@@ -192,5 +192,16 @@ extension RadioAutoDetect.Result {
             dtrSignal: protocolType != .elecraft,
             rtsSignal: protocolType != .elecraft
         )
+    }
+
+    /// Known USB model with this CI-V address, when exactly one matches
+    /// (0x70 is both the X6100 and the G90, so that stays nil). Lets per-model
+    /// behavior (IC-9700 band stepping, duplex) work for autodetected radios.
+    private var matchingModelId: String? {
+        guard protocolType == .civ, let civAddress else {
+            return nil
+        }
+        let matches = RadioModel.knownModels.filter { $0.protocolType == .civ && $0.civAddress == civAddress }
+        return matches.count == 1 ? matches[0].id : nil
     }
 }

@@ -128,9 +128,10 @@ enum RadioAutoDetect {
         switch address {
         case 0x70: "Xiegu G90"
         case 0x76: "Xiegu G106"
-        case 0x94: "Icom IC-705"
+        case 0x94: "Icom IC-7300"
         case 0x98: "Icom IC-7610"
-        case 0xA4: "Icom IC-7300"
+        case 0xA2: "Icom IC-9700"
+        case 0xA4: "Icom IC-705"
         default: nil
         }
     }

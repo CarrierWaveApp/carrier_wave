@@ -88,37 +88,4 @@ extension RadioManager {
         UserDefaults.standard.set(role.rawValue, forKey: contestRoleKey(for: slot))
         slotStates[slot]?.contestRole = role
     }
-
-    /// Try to auto-connect every slot that has a saved fingerprint matching
-    /// a currently-attached USB port. Failures on one slot do not block the
-    /// others.
-    func autoConnectAllSlots(ports: [SerialPortMonitor.SerialPortInfo]) async {
-        guard UserDefaults.standard.bool(forKey: "autoConnect") else {
-            return
-        }
-        for slot in RadioSlot.allCases {
-            // Skip if the slot already has a session (e.g. user reconnected
-            // manually before auto-connect ran).
-            if slots[slot] != nil {
-                continue
-            }
-            guard let fingerprint = lastFingerprint(for: slot),
-                  let match = ports.first(where: { $0.deviceFingerprint == fingerprint }),
-                  var profile = loadProfile(for: fingerprint),
-                  slotForPortPath(match.path) == nil
-            else {
-                continue
-            }
-            profile.serialPortPath = match.path
-            do {
-                _ = try await connect(profile: profile, port: match, slot: slot)
-            } catch {
-                // Best-effort; surface failure via the command log only.
-                commandLog.append(
-                    direction: .status,
-                    text: "Auto-connect \(slot.label) failed: \(error.localizedDescription)"
-                )
-            }
-        }
-    }
 }

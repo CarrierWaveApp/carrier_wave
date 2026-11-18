@@ -67,9 +67,9 @@ struct WorkspaceView: View {
 
                 // Auto-reconnect to last-used devices by fingerprint
                 let ports = portMonitor.availablePorts
-                await radioManager.autoConnect(ports: ports)
                 await winKeyerManager.autoConnect(ports: ports)
             }
+            .discoversUSBRadios()
             .onChange(of: myCallsign) { _, newValue in
                 spotAggregator.userCallsign = newValue
             }
