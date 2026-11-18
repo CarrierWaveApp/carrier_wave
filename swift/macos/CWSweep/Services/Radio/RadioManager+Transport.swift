@@ -40,12 +40,7 @@ extension RadioManager {
     func makeIcomWiFiTransport(host: String, username: String, password: String) -> IcomWiFiTransport {
         let log = commandLog
         let transport = IcomWiFiTransport(
-            config: IcomWiFiConfig(
-                ipAddress: host,
-                username: username,
-                password: password,
-                ephemeralControlPort: true
-            )
+            config: IcomWiFiConfig(ipAddress: host, username: username, password: password)
         ) { msg, _ in
             // Mirror the handshake to the unified log: the in-app command log
             // is gone once the window closes, and login failures need it.

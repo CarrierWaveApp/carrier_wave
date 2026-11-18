@@ -10,13 +10,11 @@ public struct IcomWiFiConfig: Sendable {
     public init(
         ipAddress: String = "192.168.59.1",
         username: String,
-        password: String,
-        ephemeralControlPort: Bool = false
+        password: String
     ) {
         self.ipAddress = ipAddress
         self.username = username
         self.password = password
-        self.ephemeralControlPort = ephemeralControlPort
     }
 
     // MARK: Public
@@ -24,11 +22,6 @@ public struct IcomWiFiConfig: Sendable {
     public let ipAddress: String
     public let username: String
     public let password: String
-    /// Bind the control channel to a fresh local port (so a fresh session
-    /// ID) on every connect. The IC-9700 ignores logins for ~50 s from the
-    /// IP:port/SID of a session that just ended; a new port avoids that.
-    /// The CI-V channel keeps the matching port either way.
-    public let ephemeralControlPort: Bool
 
     /// Preset for IC-705 WiFi access point mode (default IP).
     public static func accessPoint(
@@ -100,11 +93,7 @@ public actor IcomWiFiTransport: RadioTransport {
         guard !connected else {
             return
         }
-        let control = UDPChannel(
-            host: config.ipAddress,
-            port: RSBA1Ports.control,
-            matchLocalPort: !config.ephemeralControlPort
-        )
+        let control = UDPChannel(host: config.ipAddress, port: RSBA1Ports.control)
         let civ = UDPChannel(host: config.ipAddress, port: RSBA1Ports.serial)
         try control.start()
         try civ.start()

@@ -89,8 +89,12 @@ extension RadioManager {
 
     /// Discovery callback: reconnect a radio we've logged into before, once
     /// per launch, if there's a free slot and it isn't already connected.
-    /// Retries for ~3 minutes: after Sweep dies without logging out, the
-    /// radio keeps that session and ignores logins for a minute or two.
+    ///
+    /// After any remote session ends (ours on quit, or a crash) the IC-9700
+    /// goes nearly silent on the network for ~50–90 s, answering only the
+    /// odd packet. Each attempt re-sends pkt3 every second for 5 s, so
+    /// retrying back-to-back for up to 3 minutes catches the first moment it
+    /// answers instead of sleeping through it.
     func autoConnectKnownIcom(host: String) async {
         guard let credentials = IcomKnownRadios.credentials(for: host),
               !icomAutoConnectTried.contains(host)
@@ -98,12 +102,14 @@ extension RadioManager {
             return
         }
         icomAutoConnectTried.insert(host)
-        for (attempt, delay) in [0, 5, 10, 20, 30, 30, 30, 30, 30].enumerated() {
-            try? await Task.sleep(for: .seconds(delay))
+        let deadline = Date().addingTimeInterval(180)
+        var attempt = 0
+        while Date() < deadline {
             guard !isConnectedToIcom(host: host), nextAvailableSlot() != nil else {
                 return
             }
-            logger.info("Auto-connecting known Icom radio at \(host, privacy: .public) (try \(attempt + 1))")
+            attempt += 1
+            logger.info("Auto-connecting known Icom radio at \(host, privacy: .public) (try \(attempt))")
             do {
                 try await connectIcomLAN(host: host, credentials: credentials)
                 return
@@ -111,11 +117,16 @@ extension RadioManager {
                 commandLog.append(direction: .status, text: "Auto-connect to \(host): saved login rejected")
                 return
             } catch {
-                commandLog.append(
-                    direction: .status,
-                    text: "Auto-connect to \(host) failed (try \(attempt + 1)): \(error.localizedDescription)"
-                )
+                if attempt == 1 {
+                    commandLog.append(
+                        direction: .status,
+                        text: "\(host) isn't answering yet (radios pause for about a minute after a "
+                            + "session ends); retrying for up to 3 minutes"
+                    )
+                }
+                try? await Task.sleep(for: .seconds(1))
             }
         }
+        commandLog.append(direction: .status, text: "Auto-connect to \(host) gave up after 3 minutes")
     }
 }

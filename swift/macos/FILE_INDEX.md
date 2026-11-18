@@ -86,7 +86,7 @@
 | `IcomDiscoveryService.swift` | @MainActor @Observable: one-socket `IcomLANProber`: full /24 sweep at launch + every 5 min, remembered/found radios rechecked (3 tries) at 5 s, 15 s, then every 60 s; never probes connected hosts; fires `onRadioFound` |
 | `IcomKnownRadios.swift` | Remembered Icom LAN radios: `IcomRadioInfo` per host (UserDefaults) + `IcomLANCredentials` (Keychain); `RadioModel.icomLAN(_:)` maps CI-V address → model |
 | `RadioManager+BandStep.swift` | Band Up/Down: `bandStepFrequencies` (160m–23cm), `tunableBands` per focused radio model (IC-9700: 2m/70cm/23cm; HF rigs: through 6m), `nextBandFrequency(from:up:)` |
-| `RadioManager+IcomLAN.swift` | `connectIcomLAN` (log in, read model from 0xA8, start session with prebuilt transport), `disconnectIcom(host:)`, `autoConnectKnownIcom` (once per launch, retries ~3 min) |
+| `RadioManager+IcomLAN.swift` | `connectIcomLAN` (log in, read model from 0xA8, start session with prebuilt transport), `disconnectIcom(host:)`, `autoConnectKnownIcom` (once per launch; back-to-back retries for 3 min because the 9700 goes quiet ~50–90 s after any session ends) |
 | `IcomWaterfallData.swift` | @MainActor producer: reassembles Icom `27 00` scope frames (IC-9700 LAN / IC-705 WiFi) into `WaterfallStore` lines tagged Main/Sub |
 | `RadioManager+Transport.swift` | Network transport factories (Icom WiFi, SCU-LAN10, FlexRadio) split out for file-length budget |
 | `RadioManager+ConnectionSetup.swift` | Transport/handler selection, Flex subscription registration and connection-state bookkeeping split out of `RadioManager.swift` for file-length budget |
