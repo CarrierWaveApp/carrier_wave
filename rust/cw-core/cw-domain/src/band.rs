@@ -5,9 +5,9 @@ pub struct BandUtilities;
 
 impl BandUtilities {
     /// Band order for sorting (frequency order low to high).
-    pub const BAND_ORDER: [&'static str; 14] = [
-        "160m", "80m", "60m", "40m", "30m", "20m", "17m", "15m", "12m", "10m", "6m", "2m", "70cm",
-        "Other",
+    pub const BAND_ORDER: [&'static str; 17] = [
+        "160m", "80m", "60m", "40m", "30m", "20m", "17m", "15m", "12m", "10m", "6m", "2m", "1.25m",
+        "70cm", "33cm", "23cm", "Other",
     ];
 
     /// Bands the user is most likely to operate, in display order.
@@ -63,7 +63,10 @@ impl BandUtilities {
             "10m" => (28.0, 29.7),
             "6m" => (50.0, 54.0),
             "2m" => (144.0, 148.0),
+            "1.25m" => (222.0, 225.0),
             "70cm" => (420.0, 450.0),
+            "33cm" => (902.0, 928.0),
+            "23cm" => (1240.0, 1300.0),
             _ => return None,
         })
     }
@@ -85,7 +88,10 @@ impl BandUtilities {
             m if (28.0..29.7).contains(&m) => "10m",
             m if (50.0..54.0).contains(&m) => "6m",
             m if (144.0..148.0).contains(&m) => "2m",
+            m if (222.0..225.0).contains(&m) => "1.25m",
             m if (420.0..450.0).contains(&m) => "70cm",
+            m if (902.0..928.0).contains(&m) => "33cm",
+            m if (1240.0..1300.0).contains(&m) => "23cm",
             _ => return None,
         })
     }
@@ -108,6 +114,17 @@ mod tests {
         assert_eq!(BandUtilities::derive_band(Some(2_000.0)), None);
         // 1.8 MHz is the inclusive lower edge of 160m.
         assert_eq!(BandUtilities::derive_band(Some(1_800.0)), Some("160m"));
+    }
+
+    #[test]
+    fn derive_band_vhf_uhf() {
+        assert_eq!(BandUtilities::derive_band(Some(146_520.0)), Some("2m"));
+        assert_eq!(BandUtilities::derive_band(Some(223_500.0)), Some("1.25m"));
+        assert_eq!(BandUtilities::derive_band(Some(446_000.0)), Some("70cm"));
+        assert_eq!(BandUtilities::derive_band(Some(903_100.0)), Some("33cm"));
+        assert_eq!(BandUtilities::derive_band(Some(1_296_100.0)), Some("23cm"));
+        assert_eq!(BandUtilities::derive_band(Some(1_300_000.0)), None);
+        assert_eq!(BandUtilities::range("23cm"), Some((1240.0, 1300.0)));
     }
 
     #[test]

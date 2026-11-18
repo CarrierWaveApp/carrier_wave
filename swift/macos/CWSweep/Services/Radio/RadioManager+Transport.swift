@@ -32,16 +32,30 @@ extension RadioManager {
             throw IcomWiFiError.notConnected
         }
         logger.info("Connecting: \(profile.name) via WiFi (RS-BA1) \(host)")
+        let transport = makeIcomWiFiTransport(host: host, username: username, password: password)
+        return (transport, CIVProtocolHandler(civAddress: profile.civAddress ?? 0xA4))
+    }
+
+    /// RS-BA1 transport wired to the command log and the Icom waterfall.
+    func makeIcomWiFiTransport(host: String, username: String, password: String) -> IcomWiFiTransport {
         let log = commandLog
         let transport = IcomWiFiTransport(
-            config: IcomWiFiConfig(ipAddress: host, username: username, password: password)
+            config: IcomWiFiConfig(
+                ipAddress: host,
+                username: username,
+                password: password,
+                ephemeralControlPort: true
+            )
         ) { msg, _ in
+            // Mirror the handshake to the unified log: the in-app command log
+            // is gone once the window closes, and login failures need it.
+            logger.debug("RS-BA1 \(host, privacy: .public): \(msg, privacy: .public)")
             Task { @MainActor in
                 log.append(direction: msg.hasPrefix("TX") ? .tx : .rx, text: msg)
             }
         }
         icomWaterfall.startConsuming(from: transport.scopeFrames)
-        return (transport, CIVProtocolHandler(civAddress: profile.civAddress ?? 0xA4))
+        return transport
     }
 
     /// Ask an Icom LAN/WiFi radio to stream scope waveform data (`27 11 01`).

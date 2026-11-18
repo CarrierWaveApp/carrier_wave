@@ -18,8 +18,9 @@ use rusqlite::params;
 /// Display order for the band filter list. Mirrors the Swift `Band.allCases`
 /// ordering used by `MapDataLoadingActor`'s filter sheet. Bands not in this list
 /// sort after, alphabetically.
-const BAND_ORDER: [&str; 13] = [
-    "160M", "80M", "60M", "40M", "30M", "20M", "17M", "15M", "12M", "10M", "6M", "2M", "70CM",
+const BAND_ORDER: [&str; 16] = [
+    "160M", "80M", "60M", "40M", "30M", "20M", "17M", "15M", "12M", "10M", "6M", "2M", "1.25M",
+    "70CM", "33CM", "23CM",
 ];
 
 /// A single mappable QSO: a visible contact with a non-empty `their_grid`.

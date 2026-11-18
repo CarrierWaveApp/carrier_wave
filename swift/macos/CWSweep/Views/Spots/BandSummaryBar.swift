@@ -63,7 +63,7 @@ struct BandSummaryBar: View {
 
     private var crossBandPills: some View {
         HStack(spacing: 4) {
-            ForEach(BandEdges.hfBands) { band in
+            ForEach(BandEdges.bands) { band in
                 let bandStats = computeStats(for: band.id)
                 if bandStats.multCount > 0 {
                     crossBandChip(band: band, multCount: bandStats.multCount)
@@ -104,7 +104,7 @@ struct BandSummaryBar: View {
     }
 
     private func computeStats(for bandId: String) -> BandStats {
-        guard let band = BandEdges.hfBands.first(where: { $0.id == bandId }) else {
+        guard let band = BandEdges.bands.first(where: { $0.id == bandId }) else {
             return BandStats(totalCount: 0, newCount: 0, multCount: 0)
         }
 

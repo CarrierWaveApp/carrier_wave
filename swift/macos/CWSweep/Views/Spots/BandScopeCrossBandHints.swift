@@ -52,7 +52,7 @@ struct BandScopeCrossBandHints: View {
             return []
         }
         let allowed = spots.filter { allowedSpotIDs.contains($0.spot.id) }
-        return BandEdges.hfBands.map { band in
+        return BandEdges.bands.map { band in
             let count = allowed.lazy
                 .filter {
                     $0.spot.frequencyKHz >= band.lowerKHz

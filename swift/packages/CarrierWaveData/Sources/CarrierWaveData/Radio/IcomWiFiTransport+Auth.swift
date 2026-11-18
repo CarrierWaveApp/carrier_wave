@@ -50,7 +50,12 @@ extension IcomWiFiTransport {
                 continue
             }
             if resp.count == 21, resp[4] == 0x07, resp[16] == 0x00 {
-                replyToPkt7(resp, channel: channel)
+                // A ping before pkt4 belongs to a session the radio still
+                // holds for this IP:port from a previous run (we bind the
+                // same local port and derive the same SID every time).
+                // Answering it keeps that stale session alive and the radio
+                // ignores our pkt3 indefinitely; tell it to drop the session.
+                closeStaleSession(radioSID: readUInt32BE(resp, offset: 8), channel: channel)
                 continue
             }
             if resp[4] == 0x04 {
@@ -132,8 +137,11 @@ extension IcomWiFiTransport {
                 log("auth confirmed", nil)
             } else if pkt[0] == 0xA8, pkt.count >= 82 {
                 a8ReplyID = pkt.subdata(in: 66 ..< 82)
+                radioInfo = IcomRadioInfo.parse(capabilitiesPacket: pkt)
                 gotA8 = true
-                log("0xA8 received", nil)
+                let ident = radioInfo.map { "\($0.name) CI-V \(String(format: "%02X", $0.civAddress))" }
+                let hex = pkt.map { String(format: "%02X", $0) }.joined()
+                log("0xA8 received: \(ident ?? "unparsed") [\(hex)]", pkt)
             }
         }
 
@@ -348,6 +356,19 @@ extension IcomWiFiTransport {
             }
         }
         return nil
+    }
+
+    /// Send pkt5 (disconnect) to a stale radio session, at most once per second.
+    private func closeStaleSession(radioSID: UInt32, channel: UDPChannel) {
+        guard Date().timeIntervalSince(lastStaleClose) >= 1.0 else {
+            return
+        }
+        lastStaleClose = Date()
+        var pkt5 = buildPkt5()
+        writeUInt32BE(&pkt5, offset: 12, value: radioSID)
+        log("RX ping for stale session \(String(format: "%08X", radioSID)) — TX pkt5 x2", nil)
+        channel.send(pkt5)
+        channel.send(pkt5)
     }
 
     func replyToPkt7(

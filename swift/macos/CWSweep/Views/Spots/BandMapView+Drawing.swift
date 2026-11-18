@@ -9,6 +9,19 @@ extension BandMapView {
     func drawSubBandShading(context: GraphicsContext, size: CGSize, band: BandEdge) {
         let drawableHeight = size.height - axisHeight
 
+        // VHF/UHF: shade each band-plan segment (CW blue, SSB orange, FM green).
+        for segment in band.modeSegments {
+            let xStart = zoomedXPosition(frequencyKHz: segment.lowerKHz, band: band, width: size.width)
+            let xEnd = zoomedXPosition(frequencyKHz: segment.upperKHz, band: band, width: size.width)
+            let color: Color = switch segment.mode {
+            case "CW": .blue
+            case "SSB": .orange
+            default: .green
+            }
+            let rect = CGRect(x: xStart, y: 0, width: max(xEnd - xStart, 1), height: drawableHeight)
+            context.fill(Path(rect), with: .color(color.opacity(0.05)))
+        }
+
         if let digitalBoundary = band.digitalBoundaryKHz {
             let cwEnd = zoomedXPosition(frequencyKHz: digitalBoundary, band: band, width: size.width)
             let cwRect = CGRect(x: 0, y: 0, width: cwEnd, height: drawableHeight)

@@ -21,7 +21,7 @@ struct RegulatedBandMapView: View {
     let pillHeight: CGFloat = 28
 
     var selectedBand: BandEdge? {
-        BandEdges.hfBands.first { $0.id == selectedBandId }
+        BandEdges.bands.first { $0.id == selectedBandId }
     }
 
     var spotsOnBand: [EnrichedSpot] {
@@ -148,7 +148,7 @@ struct RegulatedBandMapView: View {
     private var bandPills: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 6) {
-                ForEach(BandEdges.hfBands) { band in
+                ForEach(BandEdges.bands) { band in
                     bandPill(for: band)
                 }
             }

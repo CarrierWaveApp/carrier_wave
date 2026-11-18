@@ -62,6 +62,9 @@ struct DXClusterSpot: Identifiable {
     /// Guess mode from frequency position within band
     private func guessMode() -> String {
         if let edge = BandEdges.band(for: frequencyKHz) {
+            if let mode = edge.segmentMode(frequencyKHz: frequencyKHz) {
+                return mode
+            }
             if let digitalBound = edge.digitalBoundaryKHz, frequencyKHz < digitalBound {
                 return "CW"
             }

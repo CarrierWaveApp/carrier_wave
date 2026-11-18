@@ -58,8 +58,12 @@ struct ContestBandScopeView: View {
     @State var showHelp = false
     @State var contextMenuSpot: EnrichedSpot?
 
+    var maxZoom: CGFloat {
+        selectedBand?.maxZoomScale ?? 16
+    }
+
     var selectedBand: BandEdge? {
-        BandEdges.hfBands.first { $0.id == selectedBandId }
+        BandEdges.bands.first { $0.id == selectedBandId }
     }
 
     /// Spots sorted by frequency (low at top)
@@ -277,7 +281,7 @@ extension ContestBandScopeView {
             // range the canvas renders. Mode is widget-only and
             // hides in SQL mode (the saved query has subsumed it).
             Picker("Band", selection: $selectedBandId) {
-                ForEach(BandEdges.hfBands) { band in
+                ForEach(BandEdges.bands) { band in
                     Text(band.label).tag(band.id)
                 }
             }

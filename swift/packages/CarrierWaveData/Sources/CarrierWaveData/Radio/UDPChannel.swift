@@ -39,9 +39,12 @@ public enum IcomWiFiError: LocalizedError {
 final class UDPChannel: @unchecked Sendable {
     // MARK: Lifecycle
 
-    init(host: String, port: UInt16) {
+    /// - Parameter matchLocalPort: bind the local port to `port` (RS-BA1
+    ///   convention) when free; false always binds an ephemeral port.
+    init(host: String, port: UInt16, matchLocalPort: Bool = true) {
         remoteHost = host
         remotePort = port
+        self.matchLocalPort = matchLocalPort
 
         let (strm, cont) = AsyncStream<Data>.makeStream()
         stream = strm
@@ -198,6 +201,7 @@ final class UDPChannel: @unchecked Sendable {
     private var waitingContinuation: UnsafeContinuation<Data?, Never>?
     private let stream: AsyncStream<Data>
     private let streamContinuation: AsyncStream<Data>.Continuation
+    private let matchLocalPort: Bool
 
     /// Bind to matching remote port (RS-BA1 convention), falling back to random.
     /// Records the assigned local port for session ID derivation.
@@ -208,7 +212,7 @@ final class UDPChannel: @unchecked Sendable {
 
         // kappanhang: bind local port = remote port for RS-BA1 compatibility.
         // The IC-705 routes CI-V data only to connections from matching ports.
-        localAddr.sin_port = remotePort.bigEndian
+        localAddr.sin_port = matchLocalPort ? remotePort.bigEndian : 0
         var bindResult = withUnsafePointer(to: &localAddr) { ptr in
             ptr.withMemoryRebound(to: sockaddr.self, capacity: 1) { sockPtr in
                 bind(fd, sockPtr, socklen_t(MemoryLayout<sockaddr_in>.size))

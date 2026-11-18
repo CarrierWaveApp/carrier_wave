@@ -34,6 +34,17 @@ final class RadioManager {
             }
         )
         iqPanadapter.startIfEnabled()
+        icomDiscovery.connectedHosts = { [weak self] in
+            guard let self else {
+                return []
+            }
+            return Set(slotStates.values.compactMap {
+                $0.profile.protocolType == .icomWiFi ? $0.profile.networkHost : nil
+            })
+        }
+        icomDiscovery.onRadioFound = { [weak self] host in
+            Task { await self?.autoConnectKnownIcom(host: host) }
+        }
     }
 
     // MARK: Internal
@@ -123,6 +134,12 @@ final class RadioManager {
 
     /// In-app command log for radio TX/RX visibility
     let commandLog = RadioCommandLog()
+
+    /// Finds Icom LAN/WiFi radios; see `RadioManager+IcomLAN`.
+    let icomDiscovery = IcomDiscoveryService()
+    /// Hosts auto-connect already tried this launch, so a radio with stale
+    /// saved credentials is attempted once rather than every sweep.
+    var icomAutoConnectTried: Set<String> = []
 
     /// Source-agnostic waterfall store. Producers (SCU-LAN10 scope, FlexRadio
     /// VITA-49 panadapter) push lines into this store; the layout panel and
@@ -239,13 +256,18 @@ final class RadioManager {
         await autoConnectAllSlots(ports: ports)
     }
 
-    /// Connect to a radio with the given profile
-    func connect(profile: RadioProfile) async throws -> UUID {
+    /// Connect to a radio with the given profile. `prebuilt` hands over a
+    /// transport the caller already logged in with (Icom LAN discovery reads
+    /// the model from the login before the handler can be built).
+    func connect(
+        profile: RadioProfile,
+        prebuilt: (transport: any RadioTransport, handler: any RadioProtocolHandler)? = nil
+    ) async throws -> UUID {
         if profile.protocolType == .cwBridge {
             return try await startBridgeConnection(profile: profile)
         }
 
-        let (transport, handler) = try createTransportAndHandler(for: profile)
+        let (transport, handler) = try prebuilt ?? createTransportAndHandler(for: profile)
 
         let frameType: FrameAssembler.FrameType =
             if handler is CIVProtocolHandler {

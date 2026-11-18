@@ -18,7 +18,7 @@ enum TCPIPRadioKind: String, CaseIterable, Identifiable {
         switch self {
         case .flex: "FlexRadio"
         case .sculan10: "Yaesu SCU-LAN10"
-        case .icomWiFi: "Icom WiFi (RS-BA1)"
+        case .icomWiFi: "Icom LAN/WiFi"
         }
     }
 }

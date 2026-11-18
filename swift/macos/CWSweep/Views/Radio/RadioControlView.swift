@@ -41,6 +41,7 @@ struct RadioControlView: View {
             header
             slotTabStrip
             errorBanner
+            IcomFoundBanner(radioManager: radioManager, connectionError: $connectionError)
 
             switch family {
             case .usb:

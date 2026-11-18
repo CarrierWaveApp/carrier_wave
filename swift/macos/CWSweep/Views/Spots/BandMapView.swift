@@ -75,8 +75,12 @@ struct BandMapView: View {
         spotsOnBand.sorted { spotPriority($0) > spotPriority($1) }
     }
 
+    var maxZoom: CGFloat {
+        selectedBand?.maxZoomScale ?? 16
+    }
+
     var selectedBand: BandEdge? {
-        BandEdges.hfBands.first { $0.id == selectedBandId }
+        BandEdges.bands.first { $0.id == selectedBandId }
     }
 
     var body: some View {
@@ -180,7 +184,7 @@ extension BandMapView {
             Divider().frame(height: 16)
 
             Picker("Band", selection: $selectedBandId) {
-                ForEach(BandEdges.hfBands) { band in
+                ForEach(BandEdges.bands) { band in
                     Text(band.label).tag(band.id)
                 }
             }
@@ -353,7 +357,7 @@ extension BandMapView {
     private func scrollZoomGesture(canvasWidth: CGFloat) -> some Gesture {
         MagnifyGesture()
             .onChanged { value in
-                zoomScale = max(1.0, min(16.0, zoomBaseScale * value.magnification))
+                zoomScale = max(1.0, min(maxZoom, zoomBaseScale * value.magnification))
             }
             .onEnded { _ in
                 zoomBaseScale = zoomScale

@@ -233,7 +233,7 @@ extension StackedBandScopeView {
     }
 
     private func spotsForBand(_ bandId: String) -> [EnrichedSpot] {
-        guard let band = BandEdges.hfBands.first(where: { $0.id == bandId }) else {
+        guard let band = BandEdges.bands.first(where: { $0.id == bandId }) else {
             return []
         }
         // SQL filter mode: trust the active query's allow-list and

@@ -119,7 +119,10 @@ pub const SEGMENTS: &[BandSegment] = &[
     BandSegment { band: "6m", start_mhz: 50.100, end_mhz: 54.000, modes: &["ALL"], minimum_license: LicenseClass::Technician, notes: None },
     BandSegment { band: "2m", start_mhz: 144.000, end_mhz: 144.100, modes: &["CW"], minimum_license: LicenseClass::Technician, notes: Some("CW only") },
     BandSegment { band: "2m", start_mhz: 144.100, end_mhz: 148.000, modes: &["ALL"], minimum_license: LicenseClass::Technician, notes: None },
+    BandSegment { band: "1.25m", start_mhz: 222.000, end_mhz: 225.000, modes: &["ALL"], minimum_license: LicenseClass::Technician, notes: None },
     BandSegment { band: "70cm", start_mhz: 420.000, end_mhz: 450.000, modes: &["ALL"], minimum_license: LicenseClass::Technician, notes: None },
+    BandSegment { band: "33cm", start_mhz: 902.000, end_mhz: 928.000, modes: &["ALL"], minimum_license: LicenseClass::Technician, notes: None },
+    BandSegment { band: "23cm", start_mhz: 1240.000, end_mhz: 1300.000, modes: &["ALL"], minimum_license: LicenseClass::Technician, notes: None },
 ];
 
 /// Find the first segment containing `frequency_mhz`, if any.

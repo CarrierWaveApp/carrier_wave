@@ -89,7 +89,7 @@ extension ContestBandScopeView {
     func zoomGesture() -> some Gesture {
         MagnifyGesture()
             .onChanged { value in
-                zoomScale = max(1.0, min(16.0, zoomBaseScale * value.magnification))
+                zoomScale = max(1.0, min(maxZoom, zoomBaseScale * value.magnification))
             }
             .onEnded { _ in
                 zoomBaseScale = zoomScale

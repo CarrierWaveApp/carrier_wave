@@ -326,7 +326,7 @@ extension ContestBandScopeView {
             panBaseOffset = panOffset
         } else {
             let zoomDelta = 1.0 + event.deltaY * 0.05
-            let newZoom = max(1.0, min(16.0, zoomScale * zoomDelta))
+            let newZoom = max(1.0, min(maxZoom, zoomScale * zoomDelta))
             zoomScale = newZoom
             zoomBaseScale = newZoom
             panOffset = clampPan(panOffset)
@@ -336,7 +336,7 @@ extension ContestBandScopeView {
     }
 
     func adjustZoom(by delta: CGFloat) {
-        let newZoom = max(1.0, min(16.0, zoomScale + delta))
+        let newZoom = max(1.0, min(maxZoom, zoomScale + delta))
         zoomScale = newZoom
         zoomBaseScale = newZoom
         panOffset = clampPan(panOffset)
@@ -368,7 +368,7 @@ extension ContestBandScopeView {
         let centerKHz = (lowestKHz + highestKHz) / 2
         let newZoom = band.widthKHz / paddedSpan
         let centerFrac = (centerKHz - band.lowerKHz) / band.widthKHz
-        zoomScale = max(1.0, min(16.0, newZoom))
+        zoomScale = max(1.0, min(maxZoom, newZoom))
         zoomBaseScale = zoomScale
         panOffset = clampPan(centerFrac)
         panBaseOffset = panOffset
@@ -383,7 +383,7 @@ extension ContestBandScopeView {
         let newZoom = band.widthKHz / regionWidth
         let centerFrac = ((preset.lowerKHz + preset.upperKHz) / 2 - band.lowerKHz) / band.widthKHz
 
-        zoomScale = max(1.0, min(16.0, newZoom))
+        zoomScale = max(1.0, min(maxZoom, newZoom))
         zoomBaseScale = zoomScale
         panOffset = clampPan(centerFrac)
         panBaseOffset = panOffset

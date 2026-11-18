@@ -10,11 +10,13 @@ public struct IcomWiFiConfig: Sendable {
     public init(
         ipAddress: String = "192.168.59.1",
         username: String,
-        password: String
+        password: String,
+        ephemeralControlPort: Bool = false
     ) {
         self.ipAddress = ipAddress
         self.username = username
         self.password = password
+        self.ephemeralControlPort = ephemeralControlPort
     }
 
     // MARK: Public
@@ -22,6 +24,11 @@ public struct IcomWiFiConfig: Sendable {
     public let ipAddress: String
     public let username: String
     public let password: String
+    /// Bind the control channel to a fresh local port (so a fresh session
+    /// ID) on every connect. The IC-9700 ignores logins for ~50 s from the
+    /// IP:port/SID of a session that just ended; a new port avoids that.
+    /// The CI-V channel keeps the matching port either way.
+    public let ephemeralControlPort: Bool
 
     /// Preset for IC-705 WiFi access point mode (default IP).
     public static func accessPoint(
@@ -74,6 +81,11 @@ public actor IcomWiFiTransport: RadioTransport {
         connected
     }
 
+    /// Radio identity from the post-login `0xA8` packet; nil until connected.
+    public var connectedRadioInfo: IcomRadioInfo? {
+        radioInfo
+    }
+
     public func send(_ data: Data) async throws {
         guard connected, let civChannel else {
             throw IcomWiFiError.notConnected
@@ -82,8 +94,17 @@ public actor IcomWiFiTransport: RadioTransport {
         sendTracked(&packet, channel: civChannel, isCIV: true)
     }
 
+    /// No-op when already connected, so a caller can log in first (to learn
+    /// the model) and then hand the live transport to a `RadioSession`.
     public func connect() async throws {
-        let control = UDPChannel(host: config.ipAddress, port: RSBA1Ports.control)
+        guard !connected else {
+            return
+        }
+        let control = UDPChannel(
+            host: config.ipAddress,
+            port: RSBA1Ports.control,
+            matchLocalPort: !config.ephemeralControlPort
+        )
         let civ = UDPChannel(host: config.ipAddress, port: RSBA1Ports.serial)
         try control.start()
         try civ.start()
@@ -167,6 +188,8 @@ public actor IcomWiFiTransport: RadioTransport {
     var civDataSeq: UInt16 = 0
     var pingSeq: UInt16 = 2
     var a8ReplyID = Data(count: 16)
+    var radioInfo: IcomRadioInfo?
+    var lastStaleClose = Date.distantPast
     var txBuffer: [UInt16: Data] = [:]
     let maxTxBufferSize = 64
 

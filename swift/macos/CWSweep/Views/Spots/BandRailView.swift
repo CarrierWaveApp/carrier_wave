@@ -31,7 +31,7 @@ struct BandRailView: View {
             Divider()
             ScrollView {
                 LazyVStack(spacing: 0) {
-                    ForEach(BandEdges.hfBands) { band in
+                    ForEach(BandEdges.bands) { band in
                         railRow(for: band)
                         Divider().opacity(0.3)
                     }

@@ -178,8 +178,9 @@ mod tests {
             (50_313_000, Some(50_313.0), Some("6m")),
             (144_174_000, Some(144_174.0), Some("2m")),
             (432_065_000, Some(432_065.0), Some("70cm")),
+            (222_065_000, Some(222_065.0), Some("1.25m")),
             // Outside the band table: kHz still known, band not.
-            (222_065_000, Some(222_065.0), None),
+            (300_000_000, Some(300_000.0), None),
             // No rig → unknown, not 0 kHz.
             (0, None, None),
         ];

@@ -82,7 +82,7 @@ struct GridBandOverviewView: View {
 
         return ScrollView {
             LazyVGrid(columns: columns, spacing: 8) {
-                ForEach(BandEdges.hfBands) { band in
+                ForEach(BandEdges.bands) { band in
                     gridCell(for: band)
                 }
                 // "All HF" summary cell
@@ -146,7 +146,7 @@ struct GridBandOverviewView: View {
             let mults = visibleSpots.filter {
                 $0.neededStatus == .newEntity || $0.neededStatus == .newBandSlot
             }.count
-            Text("\(total) spots · \(mults) mults · \(BandEdges.hfBands.count) bands")
+            Text("\(total) spots · \(mults) mults · \(BandEdges.bands.count) bands")
                 .font(.caption2).foregroundStyle(.secondary)
         }
         .padding(.horizontal, 12)

@@ -141,7 +141,7 @@ extension WaterfallView {
     private var bandSelector: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 2) {
-                ForEach(BandEdges.hfBands) { band in
+                ForEach(BandEdges.bands) { band in
                     bandButton(band)
                 }
             }

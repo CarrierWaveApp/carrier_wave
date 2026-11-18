@@ -41,8 +41,17 @@ struct BandUtilitiesTests {
     func bandOrderIsCorrect() {
         let expected = [
             "160m", "80m", "60m", "40m", "30m", "20m", "17m", "15m", "12m", "10m", "6m", "2m",
-            "70cm", "Other",
+            "1.25m", "70cm", "33cm", "23cm", "Other",
         ]
         #expect(BandUtilities.bandOrder == expected)
+    }
+
+    @Test("VHF/UHF bands derive from frequency")
+    func vhfUHFBands() {
+        #expect(BandUtilities.deriveBand(from: 146_520) == "2m")
+        #expect(BandUtilities.deriveBand(from: 223_500) == "1.25m")
+        #expect(BandUtilities.deriveBand(from: 446_000) == "70cm")
+        #expect(BandUtilities.deriveBand(from: 927_500) == "33cm")
+        #expect(BandUtilities.deriveBand(from: 1_296_100) == "23cm")
     }
 }

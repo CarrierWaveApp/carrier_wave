@@ -10,6 +10,19 @@ section at the end of this file.
 ## [Unreleased]
 
 ### Added
+- **Icom LAN radios are found automatically in CW Sweep (macOS).** Sweep looks
+  for Icom radios with Network Control on (IC-9700, IC-705, IC-7610) on the
+  local network and shows "Found IC-9700 on the network. Connect?" in the Radio
+  panel. The model is read from the radio when it logs in, so there is no model
+  picker. The radio's Network User ID and password are asked for once and kept
+  in the Keychain; after that Sweep reconnects to the radio on launch. The
+  manual address form is still there, collapsed, for radios on another subnet.
+- **2m and up in CW Sweep (macOS).** The band map, band scopes, waterfall band
+  picker and spot filters now cover 2m, 1.25m, 70cm, 33cm and 23cm, with CW,
+  SSB and FM band-plan shading and deeper zoom on the wide bands. Band Up/Down
+  steps through the bands the connected radio covers (an IC-9700 goes 2m →
+  70cm → 23cm). The activation frequency picker has VHF/UHF calling
+  frequencies and an FM mode. QSOs on 1.25m, 33cm and 23cm now get a band.
 - **Radio power on/off from CW Sweep (macOS).** The USB Serial box in the Radio
   panel has a Radio Power row. It finds a CH340 USB power switch (a CH340 whose
   DTR line pulls the radio's POWER ON input low). Power On pulses DTR for
@@ -28,6 +41,8 @@ section at the end of this file.
   "Removed" instead of as failed uploads.
 
 ### Changed
+- CW Sweep logs out of network radios when it quits, so the radio frees the
+  session for the next launch.
 - **Spots filter bar no longer overflows (CW Sweep, macOS).** The source
   buttons get their own full-width row, and Band, Mode, Continent and Region
   are labeled dropdowns on a second row with the search field filling the rest.

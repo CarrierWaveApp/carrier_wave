@@ -14,6 +14,7 @@ struct WorkspaceView: View {
             .onAppear {
                 portMonitor.startMonitoring()
                 flexDiscovery.startListening()
+                radioManager.icomDiscovery.start()
             }
             .task {
                 if sessionManager == nil {

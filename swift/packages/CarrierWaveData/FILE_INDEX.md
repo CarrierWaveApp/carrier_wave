@@ -206,6 +206,7 @@ Reusable seams for one-time data repairs. See `CONTEXT.md` for vocabulary.
 | `FlexRadioTransport.swift` | TCP transport for FlexRadio SmartSDR API (NWConnection, port 4992) |
 | `SmartLinkAuth.swift` | Auth0 OAuth authentication for FlexRadio SmartLink (login, token refresh) |
 | `SmartLinkClient.swift` | TLS client for SmartLink WAN server (radio discovery, connection brokering) |
+| `IcomRadioInfo.swift` | `IcomRadioInfo` (name / CI-V / MAC parsed from the post-login `0xA8` packet) + `IcomLANProbe` (unauthenticated "are you there" / "I am here" for LAN discovery) |
 | `IcomWiFiTransport.swift` | Icom WiFi/LAN (RS-BA1 UDP) transport: config, auth flow, keepalive, CI-V demux (scope frames → `scopeFrames`) |
 | `IcomWiFiTransport+Packets.swift` | RS-BA1 packet builders and binary helpers |
 | `UDPChannel.swift` | POSIX UDP socket wrapper |

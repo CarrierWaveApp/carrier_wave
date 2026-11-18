@@ -25,6 +25,7 @@
 		089576D2A20AA089669D902A /* VimUndoStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5EC28959D1828E690B9E88F /* VimUndoStack.swift */; };
 		08B6E9D3911C2FA3E5668190 /* ReadFieldStepEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6933432646EF7FA92B456014 /* ReadFieldStepEditor.swift */; };
 		09204221F9F985EB9EE8B48E /* ContestCalendarTimeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 698A2CA5DAD40209C93D1517 /* ContestCalendarTimeline.swift */; };
+		09788D366CCADFE0B9295644 /* RadioBandStepTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F38252F867C9AB347276BA7 /* RadioBandStepTests.swift */; };
 		0ADF88B3864BC1CDFDAAD8AD /* SatelliteCATController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70C93B41B7E4150D3C7A2032 /* SatelliteCATController.swift */; };
 		0BBF643EF9CE8B343791CEC7 /* FrequencyModePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0E5BF16CE45DC440E3CB1B3 /* FrequencyModePicker.swift */; };
 		0BC4FCA09C38F8A36C1B8A6D /* MacroBrowseDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5A584799E67277AC28456F2 /* MacroBrowseDetailView.swift */; };
@@ -166,6 +167,7 @@
 		66FF5763F9001253FF789560 /* JttyShmLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AAE7E0C9D921413A205254C /* JttyShmLayout.swift */; };
 		671225936B84DE929C937A9D /* VendorCommandPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6BE0A80043FEA6DB99845E8 /* VendorCommandPickerView.swift */; };
 		6731CD34A672A222E8ACB0FA /* ContestDetailMacView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF9AAC71C11CA5BDD49452A /* ContestDetailMacView.swift */; };
+		675884FD6A723A7BAC61B351 /* RadioManager+IcomLAN.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DF675833D02D376F0BE406B /* RadioManager+IcomLAN.swift */; };
 		69CF58BA46FF8C2EE1CB4741 /* RadioManager+Slots.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AA29545EB97EFED89126726 /* RadioManager+Slots.swift */; };
 		6A10F0021A897FDBB49F5F22 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F19CADD4B3925B383196E50A /* SettingsView.swift */; };
 		6A97BA64D1476C5208C50A9E /* DelayStepEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98DBA0758924FD32DCF77587 /* DelayStepEditor.swift */; };
@@ -212,6 +214,7 @@
 		821CC5FAF43C27F6B69B52E1 /* RadioPowerControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2B0815B6BE541F1B2BE3BA5 /* RadioPowerControllerTests.swift */; };
 		834734BEDE2FE4943F908B8C /* ContestMacroBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC95CADADF64DFF3FD6DB3D7 /* ContestMacroBar.swift */; };
 		842A6AD1C0CF4E405911A93B /* ContestBandScopeView+HelpOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54C9FE350F581EBF011AD967 /* ContestBandScopeView+HelpOverlay.swift */; };
+		84616D71BC446C5E47FB5319 /* IcomDiscoveryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DF703DA6A8AE8954CD59A09 /* IcomDiscoveryService.swift */; };
 		8517B16D4499211D058D4EB4 /* BLEDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9B03DAB1A31B34B64450055 /* BLEDelegate.swift */; };
 		852F8CE4DC88F0185F58D9A3 /* RadioManager+BridgeStatusPoll.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA721DB9ED3D3E47871A1FF3 /* RadioManager+BridgeStatusPoll.swift */; };
 		859E8ED803B96FC53FA6ECDC /* RadioSlotState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0245B65BDA95B65F179D5F5C /* RadioSlotState.swift */; };
@@ -344,6 +347,7 @@
 		C8228BF0A2D022063DAE4AEC /* Vita49Frame.swift in Sources */ = {isa = PBXBuildFile; fileRef = F95001D50E616BF3BB7C841A /* Vita49Frame.swift */; };
 		C82E6D5C1AAB0F342E5FBE19 /* IcomWaterfallData.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF62CC9AE40099ED6E3849FF /* IcomWaterfallData.swift */; };
 		C8529878C53E2D827ED85A3C /* BridgeFrame.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5A4CCC552949870AC945779 /* BridgeFrame.swift */; };
+		C8EB50EB47200CFD766CB643 /* IcomConnectControls.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D0561910B36AED6E024EA19 /* IcomConnectControls.swift */; };
 		C93D4F9D0C67A3F53946BC14 /* PropagationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFFC573D9DFF77AF8723973F /* PropagationService.swift */; };
 		CAD272F8EF28FCF6BC030771 /* VimEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFA5546FDAD7EB1C7E5DCCE2 /* VimEngine.swift */; };
 		CB8AF74D8609B51DAE9B1742 /* TableDoubleClick.swift in Sources */ = {isa = PBXBuildFile; fileRef = C18B43FBDB4ADA8D4506D977 /* TableDoubleClick.swift */; };
@@ -362,6 +366,7 @@
 		D3ADBC0DCAA5562FB018F42B /* QSOEntryPopupView+CallsignLookup.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8E4B6FCD61B7F522EE14D2A /* QSOEntryPopupView+CallsignLookup.swift */; };
 		D4B3580E9B9225657FF3BFAB /* MacroEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0F27A08759B8927F924B8E0 /* MacroEditorView.swift */; };
 		D4BD24F8D0291F8B13CCB2C9 /* SatellitesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E757A5EFE82C4061E11D670 /* SatellitesView.swift */; };
+		D5ABD6DFD12F03FF94E8D182 /* IcomKnownRadios.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CEAC298A50677A6DF989020 /* IcomKnownRadios.swift */; };
 		D6F321F8D3029DF554DD5B51 /* SessionsSidebarRoot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29A1F3FD64D341A336CAFE46 /* SessionsSidebarRoot.swift */; };
 		D865BD2BB67E3084FC13FC36 /* WaterfallView+Palette.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA05A0B41B882C3F5595D172 /* WaterfallView+Palette.swift */; };
 		D92C57A01176549F452F0261 /* ClusterWorkedBeforeChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 804270A8351BA9262DB98446 /* ClusterWorkedBeforeChecker.swift */; };
@@ -389,6 +394,7 @@
 		E4EFE95E6547AFA639BD2308 /* MacroStepKindPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = E41563F1E2665CF140CB6A93 /* MacroStepKindPicker.swift */; };
 		E4FFDE657B48084EF28C7BDC /* LayoutPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B9CA9F158C1B955E9C62BC2 /* LayoutPicker.swift */; };
 		E522B7C63742F45C76B38590 /* MacroRunSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 896EEEA90B7F7B3DF1C51FE9 /* MacroRunSheetView.swift */; };
+		E5383F2C78B93C32077DA0BB /* RadioManager+BandStep.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B8DB04F9641C5203E81FBC /* RadioManager+BandStep.swift */; };
 		E5FC3FBF0777A5C71C015EE8 /* VimMarkStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E279510D5AF4779E559AFB3 /* VimMarkStoreTests.swift */; };
 		E81B9850BDB86A332745F72E /* MacSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14FCDF15946B2444A337970F /* MacSessionManager.swift */; };
 		E90C72EAC71DDAF7DE055D00 /* SDRInputSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BD219B9CCF9477D9AFAB7C9 /* SDRInputSettings.swift */; };
@@ -472,6 +478,7 @@
 		0D722575A52B61A2B131FA60 /* CWSweepApp+Snapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CWSweepApp+Snapshot.swift"; sourceTree = "<group>"; };
 		0DE1BA74C1F025D23219CEB5 /* POTASpotService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = POTASpotService.swift; sourceTree = "<group>"; };
 		0EBBB9DE0BF927E80E62C2B5 /* VimEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VimEngineTests.swift; sourceTree = "<group>"; };
+		0F38252F867C9AB347276BA7 /* RadioBandStepTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadioBandStepTests.swift; sourceTree = "<group>"; };
 		0F442113AD42F2901BAC0173 /* VimMarkStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VimMarkStore.swift; sourceTree = "<group>"; };
 		108A7D7DB59E936E2102FFE3 /* SweepMembershipChip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SweepMembershipChip.swift; sourceTree = "<group>"; };
 		10A1C0AA6214D6FFBB54BD4A /* RadioAutoDetectTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadioAutoDetectTests.swift; sourceTree = "<group>"; };
@@ -498,7 +505,9 @@
 		1B3EAA69314DD77E83C0A677 /* VimEngine+NormalMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "VimEngine+NormalMode.swift"; sourceTree = "<group>"; };
 		1BD219B9CCF9477D9AFAB7C9 /* SDRInputSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SDRInputSettings.swift; sourceTree = "<group>"; };
 		1CD6375182D147C9D8C26788 /* WindowCloseGuard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowCloseGuard.swift; sourceTree = "<group>"; };
+		1CEAC298A50677A6DF989020 /* IcomKnownRadios.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IcomKnownRadios.swift; sourceTree = "<group>"; };
 		1CF89EF95309CE141B6AED4F /* VimCommandParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VimCommandParser.swift; sourceTree = "<group>"; };
+		1D0561910B36AED6E024EA19 /* IcomConnectControls.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IcomConnectControls.swift; sourceTree = "<group>"; };
 		1D2D61BA29BD427E9003968F /* CWSweepApp+Wsjtx.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CWSweepApp+Wsjtx.swift"; sourceTree = "<group>"; };
 		1E279510D5AF4779E559AFB3 /* VimMarkStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VimMarkStoreTests.swift; sourceTree = "<group>"; };
 		1F8FD97354981EB9A65017C2 /* CommandLogSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandLogSection.swift; sourceTree = "<group>"; };
@@ -632,6 +641,7 @@
 		6CB941CD13BAA2072C989654 /* DXWebSpot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DXWebSpot.swift; sourceTree = "<group>"; };
 		6D274BC479807B7422C1E802 /* RemoteOpService+Session.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RemoteOpService+Session.swift"; sourceTree = "<group>"; };
 		6D871BED1E7CA842B4C99E80 /* ContestBandBreakdown.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContestBandBreakdown.swift; sourceTree = "<group>"; };
+		6DF675833D02D376F0BE406B /* RadioManager+IcomLAN.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RadioManager+IcomLAN.swift"; sourceTree = "<group>"; };
 		6EB62AAB03EA7D64C138DD63 /* SpotDetailInspector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotDetailInspector.swift; sourceTree = "<group>"; };
 		6EE62A449F36337EE2B212AD /* DXSummitClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DXSummitClient.swift; sourceTree = "<group>"; };
 		6FC038827D824E47B321ECA5 /* PastActivationsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PastActivationsListView.swift; sourceTree = "<group>"; };
@@ -687,6 +697,7 @@
 		8BA9736B24AE4553FDA7D4E6 /* USBRadioSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = USBRadioSection.swift; sourceTree = "<group>"; };
 		8C23308E3117741CB9FB2AFC /* BandSummaryBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BandSummaryBar.swift; sourceTree = "<group>"; };
 		8C7533C41F2270E5526D878E /* SpotListOrdering.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpotListOrdering.swift; sourceTree = "<group>"; };
+		8DF703DA6A8AE8954CD59A09 /* IcomDiscoveryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IcomDiscoveryService.swift; sourceTree = "<group>"; };
 		90D454021DE5619E6931D32C /* JttyService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JttyService.swift; sourceTree = "<group>"; };
 		916E8EB816B17EC874BD6B97 /* Versions.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Versions.xcconfig; sourceTree = "<group>"; };
 		9176EC55857F8695CEEB19A8 /* VimMacroRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VimMacroRecorder.swift; sourceTree = "<group>"; };
@@ -713,6 +724,7 @@
 		A0451A75EEA850790D884D1F /* CustomLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomLayout.swift; sourceTree = "<group>"; };
 		A11294E319E26DF7E768926F /* CustomLayoutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomLayoutView.swift; sourceTree = "<group>"; };
 		A123A04FDF9C648F20842286 /* PTTStepEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PTTStepEditor.swift; sourceTree = "<group>"; };
+		A1B8DB04F9641C5203E81FBC /* RadioManager+BandStep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RadioManager+BandStep.swift"; sourceTree = "<group>"; };
 		A1C1A54B881B1CC640BED439 /* DXSpotParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DXSpotParser.swift; sourceTree = "<group>"; };
 		A25FDFA8572AAB172D0ADA9C /* SessionHistoryPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionHistoryPopover.swift; sourceTree = "<group>"; };
 		A2760D600D298978529D2B3A /* SQLTextEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLTextEditor.swift; sourceTree = "<group>"; };
@@ -1292,6 +1304,7 @@
 				2D66472D043D744CF90E5B16 /* JttyShmLayoutTests.swift */,
 				DF7C50638294A68A6E83264A /* JttySidecarClientTests.swift */,
 				10A1C0AA6214D6FFBB54BD4A /* RadioAutoDetectTests.swift */,
+				0F38252F867C9AB347276BA7 /* RadioBandStepTests.swift */,
 				C2B0815B6BE541F1B2BE3BA5 /* RadioPowerControllerTests.swift */,
 				1903093A3A15B92BFCDC813A /* SatelliteDuplexTests.swift */,
 				3BABD86330C22D1042BC490E /* SatellitePassTests.swift */,
@@ -1397,6 +1410,7 @@
 				1F8FD97354981EB9A65017C2 /* CommandLogSection.swift */,
 				9E4B7D32C2D759D456AB5D56 /* CWBridgeSection.swift */,
 				24C6500F1845A72C8B0A3D66 /* FlexRadioSection.swift */,
+				1D0561910B36AED6E024EA19 /* IcomConnectControls.swift */,
 				8A7C4EAB39B95B53321BA6C0 /* IcomWiFiSection.swift */,
 				41660702E6DD3A86985F737A /* ManualOverrideRow.swift */,
 				3D54D7862949CF1053D8B17F /* RadioControlView.swift */,
@@ -1705,6 +1719,8 @@
 				CE99EFD82BA6E2720540B7CA /* FlexDiscoveryService.swift */,
 				2B07ED5CE0CAF4883DFE5AC2 /* FlexProtocolHandler.swift */,
 				D44BDC0AB05F6A6BC1DC1582 /* FlexRadioTransport.swift */,
+				8DF703DA6A8AE8954CD59A09 /* IcomDiscoveryService.swift */,
+				1CEAC298A50677A6DF989020 /* IcomKnownRadios.swift */,
 				FF62CC9AE40099ED6E3849FF /* IcomWaterfallData.swift */,
 				14D85F6CB5279437923434AA /* MacRadioSessionMacroSink.swift */,
 				A298476186375CE965F880A9 /* RadioAudioBroadcaster.swift */,
@@ -1713,12 +1729,14 @@
 				C7CCEF8E17B15DAE87F76162 /* RadioCommandLog.swift */,
 				1A4D9263FE96FED9F51C34E8 /* RadioManager.swift */,
 				3235B8D39CAB061E03C3980C /* RadioManager+Audio.swift */,
+				A1B8DB04F9641C5203E81FBC /* RadioManager+BandStep.swift */,
 				CC48B18402D1462107489D2D /* RadioManager+Bridge.swift */,
 				B19C0A4EB88E34FE67CBA064 /* RadioManager+BridgeSlots.swift */,
 				EA721DB9ED3D3E47871A1FF3 /* RadioManager+BridgeStatusPoll.swift */,
 				81CC327C24EC08FFCE35811C /* RadioManager+ConnectionSetup.swift */,
 				11B07C210DE9621900CF912A /* RadioManager+CW.swift */,
 				E353E5BCB4E28500CA2EA4F7 /* RadioManager+Duplex.swift */,
+				6DF675833D02D376F0BE406B /* RadioManager+IcomLAN.swift */,
 				868FA3ABCDDA8F475977116D /* RadioManager+Persistence.swift */,
 				5AA29545EB97EFED89126726 /* RadioManager+Slots.swift */,
 				D4F7D956FAAE4F64E1704EDE /* RadioManager+Transport.swift */,
@@ -1933,6 +1951,7 @@
 				E2F13478CB9E1C87ABD5DAF9 /* JttyShmLayoutTests.swift in Sources */,
 				BD23E4D1D57C9E987BAC72C7 /* JttySidecarClientTests.swift in Sources */,
 				62CD78E0B670DA70CF892618 /* RadioAutoDetectTests.swift in Sources */,
+				09788D366CCADFE0B9295644 /* RadioBandStepTests.swift in Sources */,
 				821CC5FAF43C27F6B69B52E1 /* RadioPowerControllerTests.swift in Sources */,
 				3F9569903499FC741F87DEE1 /* SDRPanadapterTests.swift in Sources */,
 				BACEA7342F6F00F3674358A6 /* SatLogListenerTests.swift in Sources */,
@@ -2086,6 +2105,9 @@
 				9145D3402A7581FFD78871B6 /* HamDBClient.swift in Sources */,
 				740DEF8ED9B24C95A9AA11F9 /* HunterLayout.swift in Sources */,
 				1385973EC041C479ABE1261C /* IQPanadapterService.swift in Sources */,
+				C8EB50EB47200CFD766CB643 /* IcomConnectControls.swift in Sources */,
+				84616D71BC446C5E47FB5319 /* IcomDiscoveryService.swift in Sources */,
+				D5ABD6DFD12F03FF94E8D182 /* IcomKnownRadios.swift in Sources */,
 				C82E6D5C1AAB0F342E5FBE19 /* IcomWaterfallData.swift in Sources */,
 				F448FE5B62FDF87EB7165C5B /* IcomWiFiSection.swift in Sources */,
 				F6CED0DA970C429EDBF5B938 /* InspectorView.swift in Sources */,
@@ -2187,12 +2209,14 @@
 				2902AABE1E10E0849C36D122 /* RadioCommandLog.swift in Sources */,
 				7C779E207F869C27CCC5F167 /* RadioControlView.swift in Sources */,
 				C37609CACB7422A9FE474310 /* RadioManager+Audio.swift in Sources */,
+				E5383F2C78B93C32077DA0BB /* RadioManager+BandStep.swift in Sources */,
 				A08A1A2F73FEF502141E7946 /* RadioManager+Bridge.swift in Sources */,
 				40E867486BAE160AF66FA509 /* RadioManager+BridgeSlots.swift in Sources */,
 				852F8CE4DC88F0185F58D9A3 /* RadioManager+BridgeStatusPoll.swift in Sources */,
 				F8F33741A84C7405C8195E6D /* RadioManager+CW.swift in Sources */,
 				8F15B5CB5FC48A9DAAC504DF /* RadioManager+ConnectionSetup.swift in Sources */,
 				86089CE2BB57CEEDC9296038 /* RadioManager+Duplex.swift in Sources */,
+				675884FD6A723A7BAC61B351 /* RadioManager+IcomLAN.swift in Sources */,
 				B0A08B3C24AADCF788AAE2FD /* RadioManager+Persistence.swift in Sources */,
 				69CF58BA46FF8C2EE1CB4741 /* RadioManager+Slots.swift in Sources */,
 				C5B48A4C1E6E0332D3E03497 /* RadioManager+Transport.swift in Sources */,

@@ -49,7 +49,7 @@ struct CWSweepCommands: Commands {
             Button("Band Up") {
                 Task {
                     if let rm = radioManager {
-                        let newFreq = nextBandUp(from: rm.frequency)
+                        let newFreq = rm.nextBandFrequency(from: rm.frequency, up: true)
                         await rm.tuneToFrequency(newFreq)
                     }
                 }
@@ -60,7 +60,7 @@ struct CWSweepCommands: Commands {
             Button("Band Down") {
                 Task {
                     if let rm = radioManager {
-                        let newFreq = nextBandDown(from: rm.frequency)
+                        let newFreq = rm.nextBandFrequency(from: rm.frequency, up: false)
                         await rm.tuneToFrequency(newFreq)
                     }
                 }
@@ -211,12 +211,6 @@ struct CWSweepCommands: Commands {
 
     // MARK: - Band Navigation Helpers
 
-    /// Standard HF band center frequencies in MHz
-    private static let bandFrequencies: [Double] = [
-        1.840, 3.530, 5.332, 7.030, 10.110, 14.030,
-        18.080, 21.030, 24.900, 28.030, 50.030,
-    ]
-
     @Environment(\.openWindow) private var openWindow
 
     @FocusedValue(\.openQSOEntry) private var openQSOEntry
@@ -238,18 +232,4 @@ struct CWSweepCommands: Commands {
     @FocusedValue(\.activationFrequency) private var activationFrequency
 
     private let updater: SPUUpdater
-
-    private func nextBandUp(from currentMHz: Double) -> Double {
-        for freq in Self.bandFrequencies where freq > currentMHz + 0.5 {
-            return freq
-        }
-        return Self.bandFrequencies.first ?? 14.030
-    }
-
-    private func nextBandDown(from currentMHz: Double) -> Double {
-        for freq in Self.bandFrequencies.reversed() where freq < currentMHz - 0.5 {
-            return freq
-        }
-        return Self.bandFrequencies.last ?? 28.030
-    }
 }

@@ -19,12 +19,24 @@ struct FrequencyModePicker: View {
 
     // MARK: Private
 
-    private static let modes = ["CW", "SSB", "FT8", "FT4"]
+    private static let modes = ["CW", "SSB", "FM", "FT8", "FT4"]
 
     /// Band ordering for display
     private static let bandOrder = [
         "160m", "80m", "60m", "40m", "30m", "20m",
         "17m", "15m", "12m", "10m", "6m",
+        "2m", "1.25m", "70cm", "33cm", "23cm",
+    ]
+
+    /// US (ARRL) VHF/UHF calling frequencies, merged over `BandPlan`'s HF
+    /// tables. Kept here rather than in `BandPlan` so iOS suggestions don't
+    /// change.
+    private static let vhfFrequencies: [String: [String: Double]] = [
+        "CW": ["2m": 144.050, "1.25m": 222.100, "70cm": 432.100, "33cm": 902.100, "23cm": 1_296.100],
+        "SSB": ["2m": 144.200, "1.25m": 222.100, "70cm": 432.100, "33cm": 903.100, "23cm": 1_296.100],
+        "FM": ["1.25m": 223.500, "33cm": 927.500, "23cm": 1_294.500],
+        "FT8": ["2m": 144.174, "70cm": 432.174, "23cm": 1_296.174],
+        "FT4": ["2m": 144.170],
     ]
 
     @State private var selectedMode = "CW"
@@ -87,18 +99,19 @@ struct FrequencyModePicker: View {
     }
 
     private func frequencyDict(for mode: String) -> [String: Double] {
-        switch mode {
-        case "CW": BandPlan.cwCallingFrequencies
+        let base = switch mode {
         case "SSB": BandPlan.ssbCallingFrequencies
+        case "FM": BandPlan.fmFrequencies
         case "FT8": BandPlan.ft8Frequencies
         case "FT4": BandPlan.ft4Frequencies
         default: BandPlan.cwCallingFrequencies
         }
+        return base.merging(Self.vhfFrequencies[mode] ?? [:]) { hf, _ in hf }
     }
 
     private func normalizeMode(_ mode: String) -> String {
         let upper = mode.uppercased()
-        if ["USB", "LSB", "AM", "FM"].contains(upper) {
+        if ["USB", "LSB", "AM"].contains(upper) {
             return "SSB"
         }
         if Self.modes.contains(upper) {

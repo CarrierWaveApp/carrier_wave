@@ -8,7 +8,28 @@ import SwiftUI
 
 /// Kept for `@NSApplicationDelegateAdaptor`; CloudKit push handling left with
 /// the iCloud sync engine (Carrier Wave Sync polls instead).
-class AppDelegate: NSObject, NSApplicationDelegate {}
+class AppDelegate: NSObject, NSApplicationDelegate {
+    /// Disconnect radios before quitting so network rigs (Icom LAN) release
+    /// their session and get their scope state restored; otherwise the next
+    /// launch's login times out while the radio holds the stale session.
+    /// Capped at 3 s so a wedged transport can't block quit.
+    func applicationShouldTerminate(_: NSApplication) -> NSApplication.TerminateReply {
+        let radioManager = SharedEnvironment.shared.radioManager
+        guard !radioManager.sessions.isEmpty else {
+            return .terminateNow
+        }
+        Task { @MainActor in
+            await withTaskGroup(of: Void.self) { group in
+                group.addTask { await radioManager.disconnectAll() }
+                group.addTask { try? await Task.sleep(for: .seconds(3)) }
+                await group.next()
+                group.cancelAll()
+            }
+            NSApp.reply(toApplicationShouldTerminate: true)
+        }
+        return .terminateLater
+    }
+}
 
 // MARK: - CWSweepApp
 

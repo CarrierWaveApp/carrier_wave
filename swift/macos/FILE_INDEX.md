@@ -36,7 +36,7 @@
 | `UnifiedSpot.swift` | Unified spot format with factory methods from each source type (incl. DX web APIs) |
 | `DXWebSpot.swift` | Response models for DX Summit, DXHeat, DXWatch APIs + SplitInfoParser for comment parsing |
 | `SpotRegion.swift` | SpotRegion (14 regions), SpotRegionGroup, EnrichedSpot, SpotSummary |
-| `BandEdges.swift` | Band edge frequency definitions for band map canvas rendering |
+| `BandEdges.swift` | Band edges 160m–23cm for band map canvases; HF CW/SSB boundaries, VHF/UHF `modeSegments` (CW/SSB/FM), `maxZoomScale` scaled to band width |
 | `ClusterNode.swift` | DX cluster node presets (W3LPL, VE7CC, etc.) and custom node support |
 | `DXClusterSpot.swift` | Parsed DX cluster spot struct with mode guessing |
 | `BandScopeFilterConfig.swift` | SpotStatusFilter enum, BandScopeFilterConfig defaults per operating role |
@@ -83,6 +83,10 @@
 | `BridgeRigDetector.swift` | Maps bridge-reported radio IDs to CW Sweep RadioProtocolType + radio name |
 | `BridgeDiscoveryService.swift` | @MainActor @Observable BLE scanner for CW Bridge discovery and pairing |
 | `WaterfallStore.swift` | @MainActor @Observable source-agnostic waterfall buffer (magnitudes, geometry, source label, line sequence, exclusive-source gating) |
+| `IcomDiscoveryService.swift` | @MainActor @Observable: one-socket `IcomLANProber`: full /24 sweep at launch + every 5 min, remembered/found radios rechecked (3 tries) at 5 s, 15 s, then every 60 s; never probes connected hosts; fires `onRadioFound` |
+| `IcomKnownRadios.swift` | Remembered Icom LAN radios: `IcomRadioInfo` per host (UserDefaults) + `IcomLANCredentials` (Keychain); `RadioModel.icomLAN(_:)` maps CI-V address → model |
+| `RadioManager+BandStep.swift` | Band Up/Down: `bandStepFrequencies` (160m–23cm), `tunableBands` per focused radio model (IC-9700: 2m/70cm/23cm; HF rigs: through 6m), `nextBandFrequency(from:up:)` |
+| `RadioManager+IcomLAN.swift` | `connectIcomLAN` (log in, read model from 0xA8, start session with prebuilt transport), `disconnectIcom(host:)`, `autoConnectKnownIcom` (once per launch, retries ~3 min) |
 | `IcomWaterfallData.swift` | @MainActor producer: reassembles Icom `27 00` scope frames (IC-9700 LAN / IC-705 WiFi) into `WaterfallStore` lines tagged Main/Sub |
 | `RadioManager+Transport.swift` | Network transport factories (Icom WiFi, SCU-LAN10, FlexRadio) split out for file-length budget |
 | `RadioManager+ConnectionSetup.swift` | Transport/handler selection, Flex subscription registration and connection-state bookkeeping split out of `RadioManager.swift` for file-length budget |
@@ -410,7 +414,8 @@ Satellites workspace (sidebar item in Operating): a desktop pass console on the 
 | `Radio/TCPIPRadioSection.swift` | Network sub-picker (Flex / SCU-LAN10 / Icom WiFi) and section dispatcher |
 | `Radio/FlexRadioSection.swift` | FlexRadio network discovery UI with manual IP entry and connect controls |
 | `Radio/SCULAN10Section.swift` | SCU-LAN10 host/port/credentials inline + connect with retry |
-| `Radio/IcomWiFiSection.swift` | Icom RS-BA1 host/credentials inline + radio model picker |
+| `Radio/IcomWiFiSection.swift` | Icom LAN/WiFi: discovered-radio list (model from login, no picker) + collapsed manual-address form |
+| `Radio/IcomConnectControls.swift` | `IcomConnectButton` (Keychain creds or one-time login sheet), `IcomCredentialsSheet`, `IcomFoundBanner` ("Found IC-9700 on the network. Connect?" atop the Radio panel) |
 | `Radio/CWBridgeSection.swift` | CW Bridge BLE discovery, pairing, connect, and status/diagnostics panel |
 | `Radio/CommandLogSection.swift` | Live TX/RX command log with copy/clear |
 | `Radio/RadioPreferencesPopover.swift` | Auto-connect / poll interval / Auto-XIT settings (gear-icon popover) |
