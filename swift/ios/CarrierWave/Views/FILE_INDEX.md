@@ -116,6 +116,7 @@
 | `LoggerView.swift` | Main logger struct definition with stored properties and body |
 | `LoggerView+Layout.swift` | Portrait layout, panel overlays, callsign lookup display, WebSDR badge |
 | `LoggerView+BKG.swift` | BKG log type in the logger: `BKGFormState` (grid switches, satellite, 4-grid corner), `isBKGSession`, `bkgDraft` (Rust `bkgBuildQso`), `bkgExchangeCard` shown under the callsign card |
+| `SessionStartSheet+BKG.swift` | Session wizard BKG lock: `isBKGSelected`, `applyBKGLock()` holds the wizard at CW on 2 m while BKG is selected |
 | `BKGExportSheet.swift` | BKG pre-upload check + ADIF share sheet over Rust `BkgApi.exportSession` (flagged contacts with reasons) |
 | `LoggerView+SessionHeader.swift` | Session header views, controls bar, band/mode/equipment capsules |
 | `LoggerView+SessionBadges.swift` | Session control bar badges: space weather chip, SDR, WebSDR, radio, equipment helpers |

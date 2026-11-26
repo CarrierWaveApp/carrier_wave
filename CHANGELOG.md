@@ -9,6 +9,8 @@ section at the end of this file.
 
 ## [Unreleased]
 
+## [1.107.0] - 2026-11-26
+
 ### Added
 - **BKG log type, first cut (iOS).** Pick BKG when starting a session and the
   log is locked to CW on 2m. The logger shows a BKG card: your grid, their

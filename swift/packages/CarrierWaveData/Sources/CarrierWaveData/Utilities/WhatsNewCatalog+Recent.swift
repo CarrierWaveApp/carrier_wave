@@ -7,6 +7,36 @@ import Foundation
 /// `+Archive.swift` pattern; the catalog's `entries` concatenates both.
 extension WhatsNewCatalog {
     static let recentEntries: [WhatsNewEntry] = [
+        // MARK: iOS — 1.107.0
+
+        WhatsNewEntry(
+            version: "1.107.0",
+            date: recentDate(2_026, 11, 26),
+            headline: "BKG log type, POTA log replace",
+            platforms: [.iOS],
+            items: [
+                WhatsNewItem(
+                    kind: .feature,
+                    title: "BKG log type",
+                    detail: "Pick BKG at session start for 2m CW grid "
+                        + "exchanges, with satellite and 4-grid corner "
+                        + "switches and a checked ADIF export."
+                ),
+                WhatsNewItem(
+                    kind: .feature,
+                    title: "Replace a POTA upload",
+                    detail: "After fixing a QSO, delete the uploaded POTA "
+                        + "log and send the corrected one."
+                ),
+                WhatsNewItem(
+                    kind: .fix,
+                    title: "POTA uploads are automatic again",
+                    detail: "Sync and the Upload to POTA buttons send "
+                        + "activations directly once more."
+                ),
+            ]
+        ),
+
         // MARK: iOS — 1.106.0
 
         WhatsNewEntry(

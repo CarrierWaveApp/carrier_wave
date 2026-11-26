@@ -19,8 +19,8 @@
 // is the local/dev build number.
 
 // Carrier Wave: Field (iOS app + watch + widgets)
-CARRIER_WAVE_IOS_MARKETING_VERSION = 1.106.0
-CARRIER_WAVE_IOS_BUILD_NUMBER = 32
+CARRIER_WAVE_IOS_MARKETING_VERSION = 1.107.0
+CARRIER_WAVE_IOS_BUILD_NUMBER = 33
 
 // Carrier Wave: Sweep (macOS)
 CW_SWEEP_MARKETING_VERSION = 0.14.0
