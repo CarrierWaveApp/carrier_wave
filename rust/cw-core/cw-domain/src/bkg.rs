@@ -18,8 +18,14 @@
 
 use crate::maidenhead;
 
-/// Program slug stored in `LoggingSession.programs_raw_value`.
+/// Program slug stored in `LoggingSession.programs_raw_value`. Kept as
+/// `"bkg"` so sessions logged before the rename still match.
 pub const PROGRAM_SLUG: &str = "bkg";
+/// What the app calls the log type on screen.
+pub const DISPLAY_NAME: &str = "BKG Turf Wars";
+/// A station within this many metres of the point where four 4-character
+/// grids meet counts as operating from that corner.
+pub const CORNER_RADIUS_M: f64 = 500.0;
 /// The only mode a BKG session logs.
 pub const MODE: &str = "CW";
 /// The only (transmit) band a BKG session logs.
@@ -238,6 +244,62 @@ pub fn vucc_grids_field(grids: &[String]) -> Option<String> {
     normalize_corner_grids(grids).map(|grids| grids.join(","))
 }
 
+// ---------- GPS position ----------
+
+/// Where a GPS fix puts the station for BKG Turf Wars.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Position {
+    /// The 6-character grid of the fix, upper case.
+    pub grid: String,
+    /// The four 4-character grids meeting at the nearest corner, sorted.
+    /// Empty only near a pole, where no four grids meet.
+    pub nearest_corner_grids: Vec<String>,
+    /// Great-circle distance from the fix to that corner, in metres.
+    pub corner_distance_m: f64,
+    /// `true` when the fix is within [`CORNER_RADIUS_M`] of the corner.
+    pub at_corner: bool,
+}
+
+/// Grid and nearest 4-grid corner for a GPS fix. Squares are 2° of
+/// longitude by 1° of latitude, so corners sit on even longitudes and whole
+/// latitudes. `None` for a coordinate off the globe.
+pub fn position_from_coordinate(latitude: f64, longitude: f64) -> Option<Position> {
+    if !(-90.0..=90.0).contains(&latitude) || !(-180.0..=180.0).contains(&longitude) {
+        return None;
+    }
+    let coord = maidenhead::Coordinate::new(latitude, longitude);
+    let grid = maidenhead::grid_from_coordinate(coord, maidenhead::Precision::Six).to_uppercase();
+
+    let corner_lat = latitude.round();
+    let corner_lon = (longitude / 2.0).round() * 2.0;
+    // Square indexes of the squares north-east of the corner.
+    let lat_index = (corner_lat + 90.0) as i64;
+    let lon_index = ((corner_lon + 180.0) / 2.0) as i64;
+    if lat_index <= 0 || lat_index >= SQUARES_PER_AXIS {
+        return Some(Position {
+            grid,
+            nearest_corner_grids: Vec::new(),
+            corner_distance_m: f64::INFINITY,
+            at_corner: false,
+        });
+    }
+    let mut grids = vec![
+        square_name(lon_index, lat_index),
+        square_name(lon_index - 1, lat_index),
+        square_name(lon_index, lat_index - 1),
+        square_name(lon_index - 1, lat_index - 1),
+    ];
+    grids.sort();
+    let distance_m =
+        maidenhead::distance_km_between(coord, maidenhead::Coordinate::new(corner_lat, corner_lon)) * 1000.0;
+    Some(Position {
+        grid,
+        nearest_corner_grids: grids,
+        corner_distance_m: distance_m,
+        at_corner: distance_m <= CORNER_RADIUS_M,
+    })
+}
+
 // ---------- pre-upload check ----------
 
 /// One thing about a stored QSO that the BKG rules would not accept. Hosts map
@@ -450,6 +512,40 @@ mod tests {
             vucc_grids_field(&["CM87", "CM88", "CM97", "CM98"].map(String::from)).as_deref(),
             Some("CM87,CM88,CM97,CM98")
         );
+    }
+
+    #[test]
+    fn gps_fix_near_a_corner_is_at_the_corner() {
+        // 34°N 86°W is the EM63/EM64/EM73/EM74 corner (Gadsden area).
+        let at = position_from_coordinate(34.002, -86.003).unwrap();
+        assert_eq!(at.nearest_corner_grids.join(","), "EM63,EM64,EM73,EM74");
+        assert!(at.corner_distance_m < 500.0, "{}", at.corner_distance_m);
+        assert!(at.at_corner);
+        assert_eq!(at.grid, "EM64XA"); // just west of 86°W
+
+        // ~1.1 km north of it: same corner, out of range.
+        let away = position_from_coordinate(34.01, -86.0).unwrap();
+        assert_eq!(away.nearest_corner_grids.join(","), "EM63,EM64,EM73,EM74");
+        assert!(away.corner_distance_m > 1_000.0);
+        assert!(!away.at_corner);
+    }
+
+    #[test]
+    fn gps_corner_matches_the_grid_corner_helper() {
+        let fix = position_from_coordinate(37.4, -122.1).unwrap();
+        assert_eq!(fix.grid, "CM87WJ");
+        assert_eq!(fix.nearest_corner_grids, corner_grids_near(&fix.grid).unwrap());
+    }
+
+    #[test]
+    fn gps_corner_wraps_and_stops_at_the_poles() {
+        let fix = position_from_coordinate(10.0, 179.9).unwrap();
+        assert_eq!(fix.nearest_corner_grids.join(","), "AJ09,AK00,RJ99,RK90");
+        let polar = position_from_coordinate(89.9, 10.0).unwrap();
+        assert!(polar.nearest_corner_grids.is_empty());
+        assert!(!polar.at_corner);
+        assert_eq!(position_from_coordinate(91.0, 0.0), None);
+        assert_eq!(position_from_coordinate(f64::NAN, 0.0), None);
     }
 
     #[test]

@@ -57,7 +57,7 @@ fun BkgCard(
     Card(modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp)) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text("BKG", fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(end = 8.dp))
+                Text(rules.displayName, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(end = 8.dp))
                 Text(
                     "${rules.mode} · ${rules.band}" +
                         if (form.viaSatellite) " ↑ ${rules.satBandRx} ↓" else "",
@@ -99,10 +99,10 @@ fun BkgCard(
                 ExportSummary(export) {
                     val send = Intent(Intent.ACTION_SEND).apply {
                         type = "text/plain"
-                        putExtra(Intent.EXTRA_SUBJECT, "${session.myCallsign} BKG log")
+                        putExtra(Intent.EXTRA_SUBJECT, "${session.myCallsign} ${rules.displayName} log")
                         putExtra(Intent.EXTRA_TEXT, export.adif)
                     }
-                    context.startActivity(Intent.createChooser(send, "Share BKG ADIF"))
+                    context.startActivity(Intent.createChooser(send, "Share ${rules.displayName} ADIF"))
                 }
             }
         }

@@ -27,7 +27,7 @@ struct BKGExportSheet: View {
                     ProgressView()
                 }
             }
-            .navigationTitle("BKG Log")
+            .navigationTitle(BKGLog.displayName)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -93,7 +93,7 @@ struct BKGExportSheet: View {
             } header: {
                 Text("Needs attention")
             } footer: {
-                Text("These contacts are in the file but break a BKG rule.")
+                Text("These contacts are in the file but break a \(BKGLog.displayName) rule.")
             }
         }
     }
@@ -118,7 +118,7 @@ struct BKGExportSheet: View {
             fileURL = url
             export = result
         } catch {
-            errorMessage = "Couldn't build the BKG log: \(error.localizedDescription)"
+            errorMessage = "Couldn't build the \(BKGLog.displayName) log: \(error.localizedDescription)"
         }
     }
 }

@@ -1,5 +1,6 @@
 import CarrierWaveCore
 import CarrierWaveData
+import SwiftData
 import SwiftUI
 
 // MARK: - LoggerView Derived State & Action Button Properties
@@ -147,5 +148,22 @@ extension LoggerView {
             return .clear
         }
         return known ? .green.opacity(0.6) : .orange.opacity(0.5)
+    }
+
+    /// S2S summit ref + contest scoring both need the live QSO. logQSO returns a
+    /// value snapshot, so re-fetch via the id-bridge (this view is already
+    /// SwiftData-coupled) only on the branches that need it.
+    func applyLiveQSOFields(_ logged: LoggedQSO?, exchangeReceived: String?) {
+        guard let logged, theirSummit.nonEmpty != nil || isContestSession,
+              let qso = LogbookIDBridge.fetchQSO(id: logged.id, in: modelContext)
+        else {
+            return
+        }
+        if let summit = theirSummit.nonEmpty {
+            qso.sotaRef = summit.uppercased()
+        }
+        if isContestSession {
+            registerContestQSO(qso, exchangeReceived: exchangeReceived ?? "")
+        }
     }
 }

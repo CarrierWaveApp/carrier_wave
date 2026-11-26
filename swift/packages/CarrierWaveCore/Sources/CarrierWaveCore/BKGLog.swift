@@ -10,4 +10,6 @@ import Foundation
 public enum BKGLog {
     /// Slug stored in `LoggingSession.programs`. Matches `bkgRules().programSlug`.
     public static let programSlug = "bkg"
+    /// On-screen name of the log type. Matches `bkgRules().displayName`.
+    public static let displayName = "BKG Turf Wars"
 }

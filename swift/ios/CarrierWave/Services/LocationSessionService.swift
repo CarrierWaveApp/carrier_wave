@@ -26,6 +26,11 @@ final class LocationSessionService: NSObject {
     /// Only updates when the grid actually changes (with debounce).
     private(set) var currentGrid: String?
 
+    /// The latest GPS fix, published only after the station moves about
+    /// 25 m, so observers (BKG Turf Wars corner detection) aren't woken on
+    /// every update.
+    private(set) var currentFix: GPSFix?
+
     /// Current authorization status for UI fallback display
     private(set) var locationAuthorized: Bool = false
 
@@ -103,7 +108,13 @@ extension LocationSessionService: CLLocationManagerDelegate {
             from: location.coordinate,
             precision: GridPrecisionPreference.current
         )
+        let fix = GPSFix(
+            latitude: location.coordinate.latitude,
+            longitude: location.coordinate.longitude,
+            horizontalAccuracy: location.horizontalAccuracy
+        )
         Task { @MainActor in
+            self.processFix(fix)
             self.processGridUpdate(grid)
         }
     }
@@ -143,6 +154,16 @@ extension LocationSessionService: CLLocationManagerDelegate {
 
 @MainActor
 private extension LocationSessionService {
+    func processFix(_ fix: GPSFix) {
+        guard fix.horizontalAccuracy >= 0 else {
+            return
+        }
+        if let last = currentFix, last.distanceMeters(to: fix) < 25 {
+            return
+        }
+        currentFix = fix
+    }
+
     func processGridUpdate(_ grid: String) {
         // Same as current — no update needed
         guard grid != currentGrid else {
@@ -165,5 +186,20 @@ private extension LocationSessionService {
             pendingGrid = nil
             pendingGridCount = 0
         }
+    }
+}
+
+// MARK: - GPSFix
+
+/// A GPS position, `Equatable` so SwiftUI can observe it.
+struct GPSFix: Equatable {
+    let latitude: Double
+    let longitude: Double
+    /// Metres; negative means invalid (CoreLocation's convention).
+    let horizontalAccuracy: Double
+
+    func distanceMeters(to other: GPSFix) -> Double {
+        CLLocation(latitude: latitude, longitude: longitude)
+            .distance(from: CLLocation(latitude: other.latitude, longitude: other.longitude))
     }
 }

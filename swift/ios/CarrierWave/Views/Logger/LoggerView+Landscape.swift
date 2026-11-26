@@ -122,6 +122,9 @@ extension LoggerView {
                 activeShiftPill(session)
                 freqBandCapsule(session)
                 modeCapsule(session)
+                if isBKGSession {
+                    bkgGridChip(session)
+                }
                 equipmentCapsule(session)
                 if session.isMultiOp {
                     multiOpPill(session)

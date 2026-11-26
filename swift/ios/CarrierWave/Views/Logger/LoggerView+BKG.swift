@@ -19,6 +19,14 @@ struct BKGFormState: Equatable {
     /// Session grid being typed when the session's own grid is too short.
     var myGridDraft = ""
     var showExport = false
+    /// Follow GPS live (a rove): grid and corner move with the station.
+    /// Off keeps the grid and corner the session started with.
+    var liveGPS = false
+    /// The latest GPS fix as Rust sees it: grid and nearest 4-grid corner.
+    var position: FfiBkgPosition?
+    /// Session whose first GPS fix has been applied (static mode applies
+    /// one fix per session; live mode applies every fix).
+    var gpsAppliedSession: UUID?
 
     /// The two switches are per-contact; satellite and corner stay put.
     mutating func resetAfterLog() {
@@ -30,6 +38,11 @@ struct BKGFormState: Equatable {
 // MARK: - LoggerView BKG
 
 extension LoggerView {
+    /// On-screen name of the log type ("BKG Turf Wars").
+    var bkgDisplayName: String {
+        bkgRules().displayName
+    }
+
     /// Whether the active session is a BKG log.
     var isBKGSession: Bool {
         sessionManager?.activeSession?.programs.contains(BKGLog.programSlug) == true
@@ -51,16 +64,16 @@ extension LoggerView {
         ))
     }
 
-    /// Grids, the two "sent in CW" switches, the satellite toggle and the
+    /// Grids, the two "sent in CW" switches, the satellite toggle, GPS and the
     /// 4-grid corner toggle. Shown under the callsign card in a BKG session.
+    /// Session lifecycle (loading the corner, applying GPS fixes) hangs off
+    /// the header chip (`bkgGridChip`), which both layouts always show.
     var bkgExchangeCard: some View {
         let rules = bkgRules()
         let myGridCheck = bkgCheckGrid(grid: bkgMyGrid)
-        let sessionId = sessionManager?.activeSession?.id
-
         return VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
-                Label("BKG", systemImage: "square.grid.2x2")
+                Label(bkgDisplayName, systemImage: "square.grid.2x2")
                     .font(.subheadline.weight(.semibold))
                 Text("\(rules.mode) · \(rules.band)" + (bkgForm.viaSatellite ? " ↑ \(rules.satBandRx) ↓" : ""))
                     .font(.caption.monospaced())
@@ -114,6 +127,10 @@ extension LoggerView {
                 }
             }
 
+            Divider()
+
+            bkgGPSSection
+
             Toggle("At a 4-grid corner", isOn: bkgCornerBinding)
                 .disabled(myGridCheck.grid == nil)
             if !bkgForm.cornerGrids.isEmpty {
@@ -132,7 +149,6 @@ extension LoggerView {
         .padding(12)
         .background(Color(.secondarySystemGroupedBackground))
         .clipShape(RoundedRectangle(cornerRadius: 12))
-        .task(id: sessionId) { await loadBKGCorner() }
         .sheet(isPresented: $bkgForm.showExport) {
             if let session = sessionManager?.activeSession {
                 BKGExportSheet(
@@ -173,7 +189,8 @@ extension LoggerView {
                     .disabled(bkgCheckGrid(grid: bkgForm.myGridDraft).grid == nil)
             }
             Label(
-                "This session's grid is \(bkgMyGrid.isEmpty ? "not set" : bkgMyGrid). BKG needs 6 characters.",
+                "This session's grid is \(bkgMyGrid.isEmpty ? "not set" : bkgMyGrid). "
+                    + "\(bkgDisplayName) needs 6 characters.",
                 systemImage: "exclamationmark.triangle.fill"
             )
             .font(.caption)
@@ -206,11 +223,11 @@ extension LoggerView {
         )
     }
 
-    private func bkgSessionKey() -> String? {
+    func bkgSessionKey() -> String? {
         sessionManager?.activeSession.map { SwiftDataStoreImporter.uuid($0.id) }
     }
 
-    private func loadBKGCorner() async {
+    func loadBKGCorner() async {
         guard let key = bkgSessionKey(), let store = try? await CwStoreProvider.shared.store() else {
             bkgForm.cornerGrids = []
             return
@@ -218,7 +235,7 @@ extension LoggerView {
         bkgForm.cornerGrids = (try? BkgApi(store: store).cornerGrids(sessionId: key)) ?? []
     }
 
-    private func saveBKGCorner(_ grids: [String]) async {
+    func saveBKGCorner(_ grids: [String]) async {
         guard let key = bkgSessionKey(), let store = try? await CwStoreProvider.shared.store() else {
             ToastManager.shared.error("Couldn't save the corner — the log store is unavailable")
             return
