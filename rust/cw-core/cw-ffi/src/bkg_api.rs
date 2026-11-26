@@ -26,6 +26,8 @@ use cw_domain::is_metadata_mode;
 use cw_store::{LoggingSession, Qso, MAX_FETCH_LIMIT};
 
 use crate::adif_api::{format_utc, non_blank, row_to_write_record};
+use crate::entities::logging_session::FfiLoggingSession;
+use crate::observation::{FfiChangeKind, FfiStoreChange, FfiStoreTable};
 use crate::{CwError, FieldStore};
 
 /// `kv` key prefix for a session's 4-grid corner (value: `"CM87,CM88,…"`).
@@ -268,6 +270,33 @@ impl BkgApi {
     pub fn corner_grids(&self, session_id: String) -> Result<Vec<String>, CwError> {
         let store = self.store.inner.lock().expect("store mutex poisoned");
         Ok(read_corner(store.kv_get(&corner_key(&session_id))?))
+    }
+
+    /// Set the session's own grid (from GPS or typed). It must be a valid
+    /// 6-character grid; it is stored upper case. `None` when no session has
+    /// that id. Hosts with their own session model (iOS SwiftData) write it
+    /// there instead.
+    pub fn set_session_grid(
+        &self,
+        session_id: String,
+        grid: String,
+    ) -> Result<Option<FfiLoggingSession>, CwError> {
+        let grid = bkg::normalize_grid6(&grid)
+            .map_err(|error| CwError::Store { reason: grid_problem("The", error) })?;
+        let session = {
+            let store = self.store.inner.lock().expect("store mutex poisoned");
+            let Some(mut session) = store.fetch_logging_session(&session_id)? else {
+                return Ok(None);
+            };
+            if session.my_grid.as_deref() != Some(grid.as_str()) {
+                session.my_grid = Some(grid);
+                session.cloud_dirty_flag = true;
+                store.upsert_logging_session(&session)?;
+            }
+            session
+        };
+        self.store.notify(FfiStoreChange { table: FfiStoreTable::LoggingSession, kind: FfiChangeKind::Upsert });
+        Ok(Some(FfiLoggingSession::from(session)))
     }
 
     /// Turn "follow GPS live" on or off for a session (a rove). Off — the
@@ -534,6 +563,17 @@ mod tests {
         assert_eq!(at.nearest_corner_grids, vec!["EM63", "EM64", "EM73", "EM74"]);
         assert_eq!(bkg_position(89.9, 0.0).unwrap().corner_distance_m, -1.0);
         assert_eq!(bkg_position(100.0, 0.0), None);
+    }
+
+    #[test]
+    fn session_grid_must_be_six_characters() {
+        let store = store();
+        let id = start_session(&store, "EM64");
+        let api = BkgApi::new(store);
+        assert!(api.set_session_grid(id.clone(), "EM64".to_string()).is_err());
+        let session = api.set_session_grid(id.clone(), " em64xa ".to_string()).unwrap().unwrap();
+        assert_eq!(session.my_grid.as_deref(), Some("EM64XA"));
+        assert!(api.set_session_grid("nope".to_string(), "EM64XA".to_string()).unwrap().is_none());
     }
 
     #[test]

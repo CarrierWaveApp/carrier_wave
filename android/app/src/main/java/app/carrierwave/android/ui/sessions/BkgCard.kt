@@ -13,7 +13,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -29,8 +28,9 @@ import uniffi.cw_ffi.bkgRules
 /**
  * BKG log type controls, shown above the command bar in a BKG session: the two
  * "sent in CW" switches, the linear V/U satellite toggle, the 4-grid corner
- * toggle, and the check-and-export action. Grids are typed in the command bar
- * like any other contact ("K6ABC CM97AB"). Every rule and field mapping comes
+ * toggle, GPS (live toggle, nearest-corner distance, "Use GPS"), and the
+ * check-and-export action. Grids are typed in the command bar like any other
+ * contact ("K6ABC CM97AB"); a grid typed alone is held as their grid. Every rule and field mapping comes
  * from the shared Rust core (`bkgRules`, `bkgBuildQso`, `BkgApi`) — the same
  * kernel iOS uses.
  */
@@ -44,7 +44,8 @@ fun BkgCard(
     onSatellite: (Boolean) -> Unit,
     onSatName: (String) -> Unit,
     onCorner: (Boolean) -> Unit,
-    onLoadCorner: () -> Unit,
+    onUseGps: () -> Unit,
+    onLiveGps: (Boolean) -> Unit,
     onCheck: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -52,7 +53,6 @@ fun BkgCard(
     val myGrid = bkgCheckGrid(session.myGrid.orEmpty())
     val theirCheck = theirGrid?.takeIf { it.isNotBlank() }?.let { bkgCheckGrid(it) }
     val context = LocalContext.current
-    LaunchedEffect(session.id) { onLoadCorner() }
 
     Card(modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp)) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -70,7 +70,7 @@ fun BkgCard(
             }
 
             GridLine("My grid", myGrid.grid ?: session.myGrid.orEmpty().ifBlank { "not set" }, myGrid.problem)
-            GridLine("Their grid", theirCheck?.grid ?: theirGrid.orEmpty().ifBlank { "type it with the callsign" }, theirCheck?.problem)
+            GridLine("Their grid", theirCheck?.grid ?: theirGrid.orEmpty().ifBlank { "type it in the command bar" }, theirCheck?.problem)
 
             SwitchLine("I sent my grid in CW", form.sentMyGrid, onSent)
             SwitchLine("They sent theirs", form.receivedTheirGrid, onReceived)
@@ -84,6 +84,17 @@ fun BkgCard(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
+            }
+            SwitchLine("Follow GPS (rove)", form.liveGps, onLiveGps)
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    bkgGpsSummary(form.position),
+                    style = MaterialTheme.typography.labelMedium,
+                    fontFamily = FontFamily.Monospace,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f),
+                )
+                OutlinedButton(onClick = onUseGps, enabled = form.position != null) { Text("Use GPS") }
             }
             SwitchLine("At a 4-grid corner", form.cornerGrids.isNotEmpty(), onCorner, enabled = myGrid.grid != null)
             if (form.cornerGrids.isNotEmpty()) {

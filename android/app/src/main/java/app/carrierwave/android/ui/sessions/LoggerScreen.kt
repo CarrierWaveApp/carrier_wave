@@ -102,11 +102,19 @@ fun LoggerScreen(
     var spotSeed by rememberSaveable { mutableStateOf<String?>(null) }
 
     Column(modifier.fillMaxSize()) {
+        if (ui.isBkg) {
+            BkgGpsEffect(vm, session.id)
+        }
         SessionHeader(
             session = session,
             config = ui.config,
             onPause = { vm.pauseSession(onLeaveLogger) },
             onEnd = { vm.endSession(onLeaveLogger) },
+            bkgChip = if (ui.isBkg) {
+                { BkgGridPill(session, ui.bkg, onUseGps = vm::useBkgGps, onLiveGps = { vm.setBkgLiveGps(it) }) }
+            } else {
+                null
+            },
         )
         HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
 
@@ -151,13 +159,14 @@ fun LoggerScreen(
             BkgCard(
                 session = session,
                 form = ui.bkg,
-                theirGrid = ui.parsed?.theirGrid,
+                theirGrid = ui.bkg.theirGrid(ui.parsed),
                 onSent = vm::setBkgSent,
                 onReceived = vm::setBkgReceived,
                 onSatellite = vm::setBkgSatellite,
                 onSatName = vm::setBkgSatName,
                 onCorner = vm::setBkgCorner,
-                onLoadCorner = vm::loadBkgCorner,
+                onUseGps = vm::useBkgGps,
+                onLiveGps = { vm.setBkgLiveGps(it) },
                 onCheck = vm::checkBkgLog,
             )
         }
@@ -168,7 +177,7 @@ fun LoggerScreen(
             callsign = ui.callsign,
             dupeStatus = ui.dupeStatus,
             suggestions = ui.suggestions,
-            canLog = ui.parsed != null || ui.command != null,
+            canLog = ui.parsed != null || ui.command != null || ui.bkg.loneGrid != null,
             isLogging = ui.isLogging,
             error = ui.error,
             sessionMeta = ui.sessionMeta,
@@ -237,6 +246,7 @@ private fun SessionHeader(
     config: FfiLoggerFormConfig?,
     onPause: () -> Unit,
     onEnd: () -> Unit,
+    bkgChip: (@Composable () -> Unit)? = null,
 ) {
     Card(
         Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
@@ -273,6 +283,7 @@ private fun SessionHeader(
                 session.reference()?.takeIf { session.parkReference != null }?.let { Pill(it, PotaGreen, mono = true) }
                 config?.band?.let { Pill(it, ChipBlue) }
                 Pill(config?.mode ?: session.mode, ChipBlue)
+                bkgChip?.invoke()
                 config?.frequencyMhz?.let { Pill("%.3f".format(it), ChipBlue, mono = true) }
             }
         }
