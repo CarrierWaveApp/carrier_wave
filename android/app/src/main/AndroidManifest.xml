@@ -5,6 +5,9 @@
          and osmdroid map tiles. -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Session wizard: fill the operator grid from GPS. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
     <!-- Satellite pass alerts: exact AOS-lead alarms (user-revocable on 31+;
          the scheduler degrades to setWindow), notification posting (runtime

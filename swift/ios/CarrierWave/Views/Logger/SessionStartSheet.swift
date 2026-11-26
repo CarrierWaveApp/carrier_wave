@@ -260,6 +260,13 @@ struct SessionStartSheet: View {
                     autoFilledFrequency = nil
                 }
                 Task { await refreshSuggestedFrequency() }
+                applyBKGLock()
+            }
+            .onChange(of: isBKGSelected, initial: true) { _, _ in
+                applyBKGLock()
+            }
+            .onChange(of: frequency) { _, _ in
+                applyBKGLock()
             }
             .overlay(alignment: .bottom) {
                 // Pinned primary action. An overlay (not `.safeAreaInset`) so

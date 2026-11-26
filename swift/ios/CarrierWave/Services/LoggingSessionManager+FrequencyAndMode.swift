@@ -1,3 +1,4 @@
+import CarrierWaveCore
 import CarrierWaveData
 import Foundation
 import SwiftData
@@ -12,7 +13,7 @@ extension LoggingSessionManager {
         _ frequency: Double,
         isTuningToSpot: Bool = false
     ) -> FrequencyUpdateResult {
-        guard let session = activeSession else {
+        guard let session = activeSession, bkgAllowsFrequency(frequency, in: session) else {
             return FrequencyUpdateResult(
                 shouldPromptForSpot: false, suggestedMode: nil, isFirstFrequencySet: false
             )
@@ -91,6 +92,12 @@ extension LoggingSessionManager {
             return false
         }
 
+        // A BKG log is CW only (the Rust MODE command refuses the same way).
+        if session.programs.contains(BKGLog.programSlug), mode.uppercased() != bkgRules().mode {
+            ToastManager.shared.error("A BKG log is CW only")
+            return false
+        }
+
         let oldMode = session.mode
         session.updateMode(mode)
         try? modelContext.save()
@@ -109,6 +116,20 @@ extension LoggingSessionManager {
         return potaQSYSpotEnabled
             && session.isPOTA
             && oldMode != mode
+    }
+
+    /// A BKG log stays on 2 m (the Rust FREQ command refuses the same way).
+    /// Shows a toast and returns `false` for an out-of-band frequency.
+    private func bkgAllowsFrequency(_ frequency: Double, in session: LoggingSession) -> Bool {
+        guard session.programs.contains(BKGLog.programSlug) else {
+            return true
+        }
+        let rules = bkgRules()
+        if frequency < rules.bandLowMhz || frequency > rules.bandHighMhz {
+            ToastManager.shared.error("A BKG log stays on \(rules.band)")
+            return false
+        }
+        return true
     }
 
     /// Update the operator grid for the current session (applies to future QSOs)

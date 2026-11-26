@@ -63,6 +63,10 @@ class SessionWizardViewModel(
         val operationType: OperationType = OperationType.ACTIVATION,
         val callsign: String = "",
         val grid: String = "",
+        /** True once the operator has typed a grid, so GPS leaves it alone. */
+        val gridManuallyEdited: Boolean = false,
+        /** True while a GPS grid lookup is in flight. */
+        val locatingGrid: Boolean = false,
         val mode: String = "CW",
         val frequency: String = "",
         val power: String = "",
@@ -201,7 +205,21 @@ class SessionWizardViewModel(
     // --- Field setters ------------------------------------------------------
 
     fun setCallsign(value: String) = _ui.update { it.copy(callsign = value) }
-    fun setGrid(value: String) = _ui.update { it.copy(grid = value) }
+    /** The operator typed a grid: GPS no longer replaces it (matches iOS). */
+    fun setGrid(value: String) = _ui.update { it.copy(grid = value, gridManuallyEdited = true, locatingGrid = false) }
+
+    /** A GPS lookup started or ended (drives the field's spinner). */
+    fun setLocatingGrid(locating: Boolean) = _ui.update { it.copy(locatingGrid = locating) }
+
+    /** Fill the grid from a GPS fix. An automatic lookup never replaces a typed
+     * grid; tapping the locate button ([force]) does. */
+    fun applyGpsGrid(grid: String?, force: Boolean) = _ui.update {
+        when {
+            grid == null -> it.copy(locatingGrid = false, error = if (force) "No GPS fix" else it.error)
+            it.gridManuallyEdited && !force -> it.copy(locatingGrid = false)
+            else -> it.copy(grid = grid, gridManuallyEdited = false, locatingGrid = false)
+        }
+    }
     fun setFrequency(value: String) = _ui.update {
         // A value the operator typed retires the auto-suggestion so we stop
         // re-picking; clearing the field re-arms it.

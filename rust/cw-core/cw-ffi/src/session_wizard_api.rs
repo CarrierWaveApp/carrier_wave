@@ -553,6 +553,12 @@ fn assemble(input: FfiCreateSessionInput) -> LoggingSession {
         input.frequency_mhz
     };
 
+    // The BKG exchange is the 6-character grid: an 8-character GPS grid is cut
+    // to its first six (the same subsquare) instead of being rejected later.
+    let my_grid = normalize_grid(input.my_grid.as_deref()).map(|grid| {
+        if is_bkg && grid.chars().count() > 6 { grid.chars().take(6).collect() } else { grid }
+    });
+
     let my_key = if mode == "CW" { input.selected_key.clone() } else { None };
     let my_mic = if is_phone_mode(&mode) { input.selected_mic.clone() } else { None };
 
@@ -581,7 +587,7 @@ fn assemble(input: FfiCreateSessionInput) -> LoggingSession {
         sota_reference,
         mission_reference,
         wwff_reference,
-        my_grid: normalize_grid(input.my_grid.as_deref()),
+        my_grid,
         power: input.power,
         my_rig: input.my_rig,
         notes: None,
@@ -886,6 +892,15 @@ mod tests {
         assert!(session.my_mic.is_none());
         assert_eq!(session.programs_raw_value, r#"["bkg"]"#);
         assert_eq!(session.activation_type_raw_value, "casual"); // a program, not an activation type
+
+        // An 8-character grid is cut to the 6-character exchange; others keep it.
+        let mut input = base_input();
+        input.programs = vec!["bkg".to_string()];
+        input.my_grid = Some("cm87xk12".to_string());
+        assert_eq!(assemble(input).my_grid.as_deref(), Some("CM87XK"));
+        let mut input = base_input();
+        input.my_grid = Some("cm87xk12".to_string());
+        assert_eq!(assemble(input).my_grid.as_deref(), Some("CM87XK12"));
 
         let mut input = base_input();
         input.programs = vec!["bkg".to_string()];

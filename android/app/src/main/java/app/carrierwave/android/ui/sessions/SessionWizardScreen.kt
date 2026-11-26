@@ -1,5 +1,7 @@
 package app.carrierwave.android.ui.sessions
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -10,6 +12,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -30,6 +33,7 @@ import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Park
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Piano
@@ -68,11 +72,13 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -84,6 +90,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import java.time.Instant
 import java.time.ZoneId
+import kotlinx.coroutines.launch
 import uniffi.cw_ffi.FfiActiveStation
 import uniffi.cw_ffi.FfiEquipmentItem
 import uniffi.cw_ffi.FfiParkRollup
@@ -307,16 +314,59 @@ private fun OperatorSection(ui: SessionWizardViewModel.UiState, vm: SessionWizar
                 ),
                 modifier = Modifier.weight(1f),
             )
-            OutlinedTextField(
-                value = ui.grid,
-                onValueChange = vm::setGrid,
-                label = { Text("Grid") },
-                singleLine = true,
-                textStyle = TextStyle(fontFamily = FontFamily.Monospace),
-                modifier = Modifier.width(120.dp),
-            )
+            GpsGridField(ui, vm)
         }
     }
+}
+
+/**
+ * The operator grid, filled from GPS like the iOS wizard: looked up once when
+ * the wizard opens if location is already allowed, and on demand from the
+ * locate button (which asks for permission the first time). A typed grid is
+ * never replaced by the automatic lookup.
+ */
+@Composable
+private fun GpsGridField(ui: SessionWizardViewModel.UiState, vm: SessionWizardViewModel) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    fun locate(force: Boolean) {
+        vm.setLocatingGrid(true)
+        scope.launch { vm.applyGpsGrid(currentGpsGrid(context.applicationContext), force) }
+    }
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions(),
+    ) { granted ->
+        if (granted.values.any { it }) locate(force = true)
+    }
+    LaunchedEffect(Unit) {
+        if (hasLocationPermission(context)) locate(force = false)
+    }
+
+    OutlinedTextField(
+        value = ui.grid,
+        onValueChange = vm::setGrid,
+        label = { Text("Grid") },
+        singleLine = true,
+        textStyle = TextStyle(fontFamily = FontFamily.Monospace),
+        trailingIcon = {
+            if (ui.locatingGrid) {
+                CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+            } else {
+                IconButton(
+                    onClick = {
+                        if (hasLocationPermission(context)) {
+                            locate(force = true)
+                        } else {
+                            permissionLauncher.launch(GPS_GRID_PERMISSIONS)
+                        }
+                    },
+                ) {
+                    Icon(Icons.Filled.MyLocation, contentDescription = "Use GPS grid")
+                }
+            }
+        },
+        modifier = Modifier.width(150.dp),
+    )
 }
 
 // --- Radio -----------------------------------------------------------------
@@ -958,12 +1008,12 @@ private fun NotesSection(ui: SessionWizardViewModel.UiState, vm: SessionWizardVi
 
 private val PROGRAMS: List<Triple<String, String, ImageVector>> = listOf(
     Triple("pota", "POTA", Icons.Filled.Park),
+    // 2 m CW grid exchange; the shared wizard assembler locks mode and band.
+    Triple("bkg", "BKG", Icons.Filled.GridOn),
     Triple("sota", "SOTA", Icons.Filled.Terrain),
     Triple("wwff", "WWFF", Icons.Filled.Forest),
     Triple("aoa", "AoA", Icons.Filled.Visibility),
     Triple("tota", "TOTA", Icons.Filled.GridView),
-    // 2 m CW grid exchange; the shared wizard assembler locks mode and band.
-    Triple("bkg", "BKG", Icons.Filled.GridOn),
 )
 
 /** Connector chip options: (value, label). */

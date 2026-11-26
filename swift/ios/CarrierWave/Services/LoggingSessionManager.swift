@@ -1,3 +1,4 @@
+import CarrierWaveCore
 import CarrierWaveData
 import Foundation
 import SwiftData
@@ -302,7 +303,11 @@ final class LoggingSessionManager {
                 guard let self, let session = activeSession else {
                     return
                 }
-                if let newGrid = locationService.currentGrid,
+                // A BKG session keeps the grid it started with: that grid is
+                // the exchange sent on the key, so GPS drift into the next
+                // subsquare must not rewrite it mid-session.
+                let gridPinned = session.programs.contains(BKGLog.programSlug)
+                if !gridPinned, let newGrid = locationService.currentGrid,
                    newGrid != session.myGrid
                 {
                     session.myGrid = newGrid

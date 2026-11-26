@@ -19,7 +19,9 @@ section at the end of this file.
   `BAND_RX` and `SAT_MODE` on satellite contacts and `MY_VUCC_GRIDS` at a
   corner. Upload to the BKG server and the Jump In form are not built yet. The
   rules and the export live in the shared Rust core, so Android has the same
-  log type; CW Sweep does not have the controls yet.
+  log type; CW Sweep does not have the controls yet. A BKG session keeps
+  the grid it started with (GPS does not move it mid-session), and an
+  8-character grid is cut to 6.
 - **Icom LAN radios are found automatically in CW Sweep (macOS).** Sweep looks
   for Icom radios with Network Control on (IC-9700, IC-705, IC-7610) on the
   local network and shows "Found IC-9700 on the network. Connect?" in the Radio
@@ -61,7 +63,6 @@ section at the end of this file.
   session for the next launch.
 - CW Sweep reconnects to an IC-9700 on LAN as soon as the radio answers again
   after a session ends (the radio goes quiet for about a minute).
-
 - **Spots filter bar no longer overflows (CW Sweep, macOS).** The source
   buttons get their own full-width row, and Band, Mode, Continent and Region
   are labeled dropdowns on a second row with the search field filling the rest.
@@ -5283,6 +5284,9 @@ The Android app has its own version line (Rust core is shared with iOS/macOS).
   switches, a linear V/U satellite switch, a 4-grid corner switch, and Check &
   Export, which lists contacts that break a rule and shares the ADIF. Type the
   other station's 6-character grid on the entry line with the callsign.
+- **Grid from GPS in the session wizard.** The grid field fills from GPS when
+  the wizard opens (if location is allowed) and from the locate button beside
+  it. A grid you type is kept.
 
 ## [0.7.1] - 2026-10-23
 
