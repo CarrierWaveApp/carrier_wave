@@ -94,7 +94,7 @@ extension LoggingSessionManager {
 
         // A BKG log is CW only (the Rust MODE command refuses the same way).
         if session.programs.contains(BKGLog.programSlug), mode.uppercased() != bkgRules().mode {
-            ToastManager.shared.error("A BKG log is CW only")
+            ToastManager.shared.error("A \(BKGLog.displayName) log is CW only")
             return false
         }
 
@@ -126,7 +126,7 @@ extension LoggingSessionManager {
         }
         let rules = bkgRules()
         if frequency < rules.bandLowMhz || frequency > rules.bandHighMhz {
-            ToastManager.shared.error("A BKG log stays on \(rules.band)")
+            ToastManager.shared.error("A \(BKGLog.displayName) log stays on \(rules.band)")
             return false
         }
         return true

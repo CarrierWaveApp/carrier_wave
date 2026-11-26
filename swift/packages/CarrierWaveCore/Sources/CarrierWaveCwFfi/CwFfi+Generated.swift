@@ -2161,11 +2161,22 @@ public protocol BkgApiProtocol: AnyObject, Sendable {
     func exportSession(sessionId: String, programVersion: String) throws  -> FfiBkgExport?
     
     /**
+     * Whether the session follows GPS live.
+     */
+    func liveGps(sessionId: String) throws  -> Bool
+    
+    /**
      * Mark a session as operated from a 4-grid corner. `grids` must be four
      * 4-character grids forming a 2×2 block (any order, any case); an empty
      * list clears the corner. Returns the stored, sorted grids.
      */
     func setCornerGrids(sessionId: String, grids: [String]) throws  -> [String]
+    
+    /**
+     * Turn "follow GPS live" on or off for a session (a rove). Off — the
+     * default — keeps the grid and corner the session started with.
+     */
+    func setLiveGps(sessionId: String, on: Bool) throws 
     
 }
 /**
@@ -2276,6 +2287,18 @@ open func exportSession(sessionId: String, programVersion: String)throws  -> Ffi
 }
     
     /**
+     * Whether the session follows GPS live.
+     */
+open func liveGps(sessionId: String)throws  -> Bool  {
+    return try  FfiConverterBool.lift(try rustCallWithError(FfiConverterTypeCwError_lift) {
+    uniffi_cw_ffi_fn_method_bkgapi_live_gps(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(sessionId),$0
+    )
+})
+}
+    
+    /**
      * Mark a session as operated from a 4-grid corner. `grids` must be four
      * 4-character grids forming a 2×2 block (any order, any case); an empty
      * list clears the corner. Returns the stored, sorted grids.
@@ -2288,6 +2311,19 @@ open func setCornerGrids(sessionId: String, grids: [String])throws  -> [String] 
         FfiConverterSequenceString.lower(grids),$0
     )
 })
+}
+    
+    /**
+     * Turn "follow GPS live" on or off for a session (a rove). Off — the
+     * default — keeps the grid and corner the session started with.
+     */
+open func setLiveGps(sessionId: String, on: Bool)throws   {try rustCallWithError(FfiConverterTypeCwError_lift) {
+    uniffi_cw_ffi_fn_method_bkgapi_set_live_gps(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(sessionId),
+        FfiConverterBool.lower(on),$0
+    )
+}
 }
     
 
@@ -16825,6 +16861,84 @@ public func FfiConverterTypeFfiBkgGridCheck_lower(_ value: FfiBkgGridCheck) -> R
 
 
 /**
+ * Where a GPS fix puts the station: its 6-character grid and the nearest
+ * 4-grid corner.
+ */
+public struct FfiBkgPosition: Equatable, Hashable {
+    public var grid: String
+    /**
+     * The four grids at the nearest corner, sorted; empty near a pole.
+     */
+    public var nearestCornerGrids: [String]
+    public var cornerDistanceM: Double
+    /**
+     * Within `FfiBkgRules::corner_radius_m` of that corner.
+     */
+    public var atCorner: Bool
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(grid: String, 
+        /**
+         * The four grids at the nearest corner, sorted; empty near a pole.
+         */nearestCornerGrids: [String], cornerDistanceM: Double, 
+        /**
+         * Within `FfiBkgRules::corner_radius_m` of that corner.
+         */atCorner: Bool) {
+        self.grid = grid
+        self.nearestCornerGrids = nearestCornerGrids
+        self.cornerDistanceM = cornerDistanceM
+        self.atCorner = atCorner
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension FfiBkgPosition: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeFfiBkgPosition: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> FfiBkgPosition {
+        return
+            try FfiBkgPosition(
+                grid: FfiConverterString.read(from: &buf), 
+                nearestCornerGrids: FfiConverterSequenceString.read(from: &buf), 
+                cornerDistanceM: FfiConverterDouble.read(from: &buf), 
+                atCorner: FfiConverterBool.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: FfiBkgPosition, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.grid, into: &buf)
+        FfiConverterSequenceString.write(value.nearestCornerGrids, into: &buf)
+        FfiConverterDouble.write(value.cornerDistanceM, into: &buf)
+        FfiConverterBool.write(value.atCorner, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeFfiBkgPosition_lift(_ buf: RustBuffer) throws -> FfiBkgPosition {
+    return try FfiConverterTypeFfiBkgPosition.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeFfiBkgPosition_lower(_ value: FfiBkgPosition) -> RustBuffer {
+    return FfiConverterTypeFfiBkgPosition.lower(value)
+}
+
+
+/**
  * One stored QSO the BKG rules would not accept, with the reasons.
  */
 public struct FfiBkgQsoCheck: Equatable, Hashable {
@@ -17140,6 +17254,14 @@ public func FfiConverterTypeFfiBkgQsoInput_lower(_ value: FfiBkgQsoInput) -> Rus
  */
 public struct FfiBkgRules: Equatable, Hashable {
     public var programSlug: String
+    /**
+     * On-screen name of the log type ("BKG Turf Wars").
+     */
+    public var displayName: String
+    /**
+     * How close (metres) a GPS fix must be to a 4-grid corner to count.
+     */
+    public var cornerRadiusM: Double
     public var mode: String
     public var band: String
     public var bandLowMhz: Double
@@ -17151,8 +17273,16 @@ public struct FfiBkgRules: Equatable, Hashable {
 
     // Default memberwise initializers are never public by default, so we
     // declare one manually.
-    public init(programSlug: String, mode: String, band: String, bandLowMhz: Double, bandHighMhz: Double, defaultFrequencyMhz: Double, satPropMode: String, satBandRx: String, satMode: String) {
+    public init(programSlug: String, 
+        /**
+         * On-screen name of the log type ("BKG Turf Wars").
+         */displayName: String, 
+        /**
+         * How close (metres) a GPS fix must be to a 4-grid corner to count.
+         */cornerRadiusM: Double, mode: String, band: String, bandLowMhz: Double, bandHighMhz: Double, defaultFrequencyMhz: Double, satPropMode: String, satBandRx: String, satMode: String) {
         self.programSlug = programSlug
+        self.displayName = displayName
+        self.cornerRadiusM = cornerRadiusM
         self.mode = mode
         self.band = band
         self.bandLowMhz = bandLowMhz
@@ -17180,6 +17310,8 @@ public struct FfiConverterTypeFfiBkgRules: FfiConverterRustBuffer {
         return
             try FfiBkgRules(
                 programSlug: FfiConverterString.read(from: &buf), 
+                displayName: FfiConverterString.read(from: &buf), 
+                cornerRadiusM: FfiConverterDouble.read(from: &buf), 
                 mode: FfiConverterString.read(from: &buf), 
                 band: FfiConverterString.read(from: &buf), 
                 bandLowMhz: FfiConverterDouble.read(from: &buf), 
@@ -17193,6 +17325,8 @@ public struct FfiConverterTypeFfiBkgRules: FfiConverterRustBuffer {
 
     public static func write(_ value: FfiBkgRules, into buf: inout [UInt8]) {
         FfiConverterString.write(value.programSlug, into: &buf)
+        FfiConverterString.write(value.displayName, into: &buf)
+        FfiConverterDouble.write(value.cornerRadiusM, into: &buf)
         FfiConverterString.write(value.mode, into: &buf)
         FfiConverterString.write(value.band, into: &buf)
         FfiConverterDouble.write(value.bandLowMhz, into: &buf)
@@ -46275,6 +46409,30 @@ fileprivate struct FfiConverterOptionTypeFfiBkgExport: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterOptionTypeFfiBkgPosition: FfiConverterRustBuffer {
+    typealias SwiftType = FfiBkgPosition?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeFfiBkgPosition.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeFfiBkgPosition.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterOptionTypeFfiBkgQsoFields: FfiConverterRustBuffer {
     typealias SwiftType = FfiBkgQsoFields?
 
@@ -52894,6 +53052,18 @@ public func bkgCornerGrids(grid: String) -> [String]  {
 })
 }
 /**
+ * Grid and nearest 4-grid corner for a GPS fix. `None` for a coordinate
+ * off the globe.
+ */
+public func bkgPosition(latitude: Double, longitude: Double) -> FfiBkgPosition?  {
+    return try!  FfiConverterOptionTypeFfiBkgPosition.lift(try! rustCall() {
+    uniffi_cw_ffi_fn_func_bkg_position(
+        FfiConverterDouble.lower(latitude),
+        FfiConverterDouble.lower(longitude),$0
+    )
+})
+}
+/**
  * The fixed BKG rules.
  */
 public func bkgRules() -> FfiBkgRules  {
@@ -54558,6 +54728,9 @@ private let initializationResult: InitializationResult = {
     if (uniffi_cw_ffi_checksum_func_bkg_corner_grids() != 8433) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_cw_ffi_checksum_func_bkg_position() != 48851) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_cw_ffi_checksum_func_bkg_rules() != 4258) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -55548,7 +55721,13 @@ private let initializationResult: InitializationResult = {
     if (uniffi_cw_ffi_checksum_method_bkgapi_export_session() != 35497) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_cw_ffi_checksum_method_bkgapi_live_gps() != 17929) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_cw_ffi_checksum_method_bkgapi_set_corner_grids() != 14640) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_cw_ffi_checksum_method_bkgapi_set_live_gps() != 44129) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_cw_ffi_checksum_method_bragsheetapi_apply_preset() != 62197) {

@@ -1009,7 +1009,7 @@ private fun NotesSection(ui: SessionWizardViewModel.UiState, vm: SessionWizardVi
 private val PROGRAMS: List<Triple<String, String, ImageVector>> = listOf(
     Triple("pota", "POTA", Icons.Filled.Park),
     // 2 m CW grid exchange; the shared wizard assembler locks mode and band.
-    Triple("bkg", "BKG", Icons.Filled.GridOn),
+    Triple("bkg", "BKG Turf Wars", Icons.Filled.GridOn),
     Triple("sota", "SOTA", Icons.Filled.Terrain),
     Triple("wwff", "WWFF", Icons.Filled.Forest),
     Triple("aoa", "AoA", Icons.Filled.Visibility),

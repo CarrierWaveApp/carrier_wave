@@ -207,7 +207,7 @@ struct ActivationSectionView: View {
                     onToggle: { toggleProgram("pota") }
                 )
                 ProgramChip(
-                    label: "BKG",
+                    label: BKGLog.displayName,
                     icon: "square.grid.2x2",
                     isSelected: selectedPrograms.contains(BKGLog.programSlug),
                     onToggle: { toggleProgram(BKGLog.programSlug) }

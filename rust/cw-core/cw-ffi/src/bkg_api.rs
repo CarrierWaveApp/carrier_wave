@@ -30,6 +30,8 @@ use crate::{CwError, FieldStore};
 
 /// `kv` key prefix for a session's 4-grid corner (value: `"CM87,CM88,…"`).
 const KV_CORNER_PREFIX: &str = "bkg.cornerGrids.";
+/// `kv` key prefix for a session's "follow GPS live" flag (value: `"1"`).
+const KV_LIVE_GPS_PREFIX: &str = "bkg.liveGps.";
 
 // ---------- DTOs ----------
 
@@ -37,6 +39,10 @@ const KV_CORNER_PREFIX: &str = "bkg.cornerGrids.";
 #[derive(uniffi::Record, Debug, Clone, PartialEq)]
 pub struct FfiBkgRules {
     pub program_slug: String,
+    /// On-screen name of the log type ("BKG Turf Wars").
+    pub display_name: String,
+    /// How close (metres) a GPS fix must be to a 4-grid corner to count.
+    pub corner_radius_m: f64,
     pub mode: String,
     pub band: String,
     pub band_low_mhz: f64,
@@ -45,6 +51,18 @@ pub struct FfiBkgRules {
     pub sat_prop_mode: String,
     pub sat_band_rx: String,
     pub sat_mode: String,
+}
+
+/// Where a GPS fix puts the station: its 6-character grid and the nearest
+/// 4-grid corner.
+#[derive(uniffi::Record, Debug, Clone, PartialEq)]
+pub struct FfiBkgPosition {
+    pub grid: String,
+    /// The four grids at the nearest corner, sorted; empty near a pole.
+    pub nearest_corner_grids: Vec<String>,
+    pub corner_distance_m: f64,
+    /// Within `FfiBkgRules::corner_radius_m` of that corner.
+    pub at_corner: bool,
 }
 
 /// Result of checking one grid field.
@@ -136,6 +154,8 @@ fn grid_problem(label: &str, error: GridError) -> String {
 pub fn bkg_rules() -> FfiBkgRules {
     FfiBkgRules {
         program_slug: bkg::PROGRAM_SLUG.to_string(),
+        display_name: bkg::DISPLAY_NAME.to_string(),
+        corner_radius_m: bkg::CORNER_RADIUS_M,
         mode: bkg::MODE.to_string(),
         band: bkg::BAND.to_string(),
         band_low_mhz: bkg::BAND_LOW_MHZ,
@@ -199,6 +219,18 @@ pub fn bkg_corner_grids(grid: String) -> Vec<String> {
     bkg::corner_grids_near(&grid).unwrap_or_default()
 }
 
+/// Grid and nearest 4-grid corner for a GPS fix. `None` for a coordinate
+/// off the globe.
+#[uniffi::export]
+pub fn bkg_position(latitude: f64, longitude: f64) -> Option<FfiBkgPosition> {
+    bkg::position_from_coordinate(latitude, longitude).map(|position| FfiBkgPosition {
+        grid: position.grid,
+        nearest_corner_grids: position.nearest_corner_grids,
+        corner_distance_m: if position.corner_distance_m.is_finite() { position.corner_distance_m } else { -1.0 },
+        at_corner: position.at_corner,
+    })
+}
+
 // ---------- store-backed API ----------
 
 /// Store-backed BKG session operations. Stateless — every call reads the
@@ -236,6 +268,25 @@ impl BkgApi {
     pub fn corner_grids(&self, session_id: String) -> Result<Vec<String>, CwError> {
         let store = self.store.inner.lock().expect("store mutex poisoned");
         Ok(read_corner(store.kv_get(&corner_key(&session_id))?))
+    }
+
+    /// Turn "follow GPS live" on or off for a session (a rove). Off — the
+    /// default — keeps the grid and corner the session started with.
+    pub fn set_live_gps(&self, session_id: String, on: bool) -> Result<(), CwError> {
+        let key = live_gps_key(&session_id);
+        let store = self.store.inner.lock().expect("store mutex poisoned");
+        if on {
+            store.kv_set(&key, "1")?;
+        } else {
+            store.kv_delete(&key)?;
+        }
+        Ok(())
+    }
+
+    /// Whether the session follows GPS live.
+    pub fn live_gps(&self, session_id: String) -> Result<bool, CwError> {
+        let store = self.store.inner.lock().expect("store mutex poisoned");
+        Ok(store.kv_get(&live_gps_key(&session_id))?.as_deref() == Some("1"))
     }
 
     /// Pre-upload check: the session's QSOs that break a BKG rule, oldest
@@ -327,6 +378,10 @@ pub(crate) fn is_bkg_session(session: &LoggingSession) -> bool {
 
 fn corner_key(session_id: &str) -> String {
     format!("{KV_CORNER_PREFIX}{session_id}")
+}
+
+fn live_gps_key(session_id: &str) -> String {
+    format!("{KV_LIVE_GPS_PREFIX}{session_id}")
 }
 
 fn read_corner(raw: Option<String>) -> Vec<String> {
@@ -467,6 +522,30 @@ mod tests {
         assert_eq!(rules.band, "2m");
         assert_eq!(rules.sat_band_rx, "70cm");
         assert_eq!(rules.sat_mode, "VU");
+        assert_eq!(rules.display_name, "BKG Turf Wars");
+        assert_eq!(rules.corner_radius_m, 500.0);
+    }
+
+    #[test]
+    fn position_reports_grid_and_corner() {
+        let at = bkg_position(34.002, -86.003).unwrap();
+        assert_eq!(at.grid, "EM64XA");
+        assert!(at.at_corner);
+        assert_eq!(at.nearest_corner_grids, vec!["EM63", "EM64", "EM73", "EM74"]);
+        assert_eq!(bkg_position(89.9, 0.0).unwrap().corner_distance_m, -1.0);
+        assert_eq!(bkg_position(100.0, 0.0), None);
+    }
+
+    #[test]
+    fn live_gps_is_off_until_turned_on() {
+        let store = store();
+        let id = start_session(&store, "EM64XA");
+        let api = BkgApi::new(store);
+        assert!(!api.live_gps(id.clone()).unwrap());
+        api.set_live_gps(id.clone(), true).unwrap();
+        assert!(api.live_gps(id.clone()).unwrap());
+        api.set_live_gps(id.clone(), false).unwrap();
+        assert!(!api.live_gps(id).unwrap());
     }
 
     #[test]

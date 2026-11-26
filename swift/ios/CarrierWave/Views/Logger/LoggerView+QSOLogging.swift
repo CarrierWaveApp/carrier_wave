@@ -9,6 +9,10 @@ extension LoggerView {
     // MARK: - Input Handling
 
     func handleInputSubmit() {
+        if handleBKGGridInput(callsignInput) {
+            return
+        }
+
         // Check if it's a command — routed through the shared Rust handler.
         if let command = LoggerCommand.parse(callsignInput) {
             runLoggerCommand(callsignInput, fallback: command)
@@ -130,23 +134,6 @@ extension LoggerView {
         finalizeAfterLog(theirCallsign: loggedCallsign, theirQRZInfo: loggedLookup)
     }
 
-    /// S2S summit ref + contest scoring both need the live QSO. logQSO returns a
-    /// value snapshot, so re-fetch via the id-bridge (this view is already
-    /// SwiftData-coupled) only on the branches that need it.
-    private func applyLiveQSOFields(_ logged: LoggedQSO?, exchangeReceived: String?) {
-        guard let logged, theirSummit.nonEmpty != nil || isContestSession,
-              let qso = LogbookIDBridge.fetchQSO(id: logged.id, in: modelContext)
-        else {
-            return
-        }
-        if let summit = theirSummit.nonEmpty {
-            qso.sotaRef = summit.uppercased()
-        }
-        if isContestSession {
-            registerContestQSO(qso, exchangeReceived: exchangeReceived ?? "")
-        }
-    }
-
     /// Common post-log cleanup: haptics, refresh, form reset, QRQ Crew check
     private func finalizeAfterLog(theirCallsign: String, theirQRZInfo: CallsignInfo?) {
         UINotificationFeedbackGenerator().notificationOccurred(.success)
@@ -157,7 +144,6 @@ extension LoggerView {
         if isContestSession {
             resetContestFields()
         }
-        bkgForm.resetAfterLog()
         checkQRQCrewSpot(theirCallsign: theirCallsign, theirQRZInfo: theirQRZInfo)
     }
 
@@ -299,6 +285,7 @@ extension LoggerView {
 
         // Build field values with fallback chain: quick entry > form > lookup
         let gridToUse = qeResult.theirGrid.nonEmpty ?? theirGrid.nonEmpty ?? lookupResult?.grid
+        let bkgFields = bkgLogFields // BKG Turf Wars grids → STX_STRING / SRX_STRING
         let stateToUse = qeResult.state.nonEmpty ?? theirState.nonEmpty ?? lookupResult?.state
         let parkToUse = qeResult.theirPark.nonEmpty ?? theirPark.nonEmpty
         let notesToUse = qeResult.notes.nonEmpty ?? notes.nonEmpty
@@ -312,7 +299,7 @@ extension LoggerView {
             callsign: loggedCallsign,
             rstSent: qeResult.rstSent ?? rstSent.nonEmpty ?? defaultRST,
             rstReceived: qeResult.rstReceived ?? rstReceived.nonEmpty ?? defaultRST,
-            theirGrid: gridToUse,
+            theirGrid: bkgFields?.theirGrid ?? gridToUse,
             theirParkReference: parkToUse,
             notes: notesToUse,
             name: lookupResult?.name,
@@ -323,9 +310,13 @@ extension LoggerView {
             theirLicenseClass: lookupResult?.licenseClass,
             aoaCode: aoaCode.nonEmpty,
             callsignChangeNote: changeNote,
+            contestExchangeSent: bkgFields?.exchangeSent,
+            contestExchangeReceived: bkgFields?.exchangeReceived,
             frequencyOverride: qeResult.frequency,
             modeOverride: qeResult.mode,
-            timestampOverride: qeResult.zuluTime?.dateToday()
+            timestampOverride: qeResult.zuluTime?.dateToday(),
+            satName: bkgFields?.satName,
+            propMode: bkgFields?.propMode
         )
 
         refreshSessionQSOs()
@@ -482,6 +473,7 @@ extension LoggerView {
             rstSent = ""
             rstReceived = ""
             aoaCode = ""
+            bkgForm.resetAfterLog()
             editingQSO = nil
         }
         // Explicitly defocus compact fields so they don't steal focus when their

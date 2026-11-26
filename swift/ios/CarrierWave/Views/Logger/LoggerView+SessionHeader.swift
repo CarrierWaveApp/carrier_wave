@@ -206,6 +206,9 @@ extension LoggerView {
                 }
                 freqBandCapsule(session)
                 modeCapsule(session)
+                if isBKGSession {
+                    bkgGridChip(session)
+                }
                 if session.isMultiOp {
                     multiOpPill(session)
                 }

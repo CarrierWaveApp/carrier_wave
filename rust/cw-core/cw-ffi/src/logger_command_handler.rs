@@ -182,7 +182,7 @@ impl LoggerCommandApi {
         if crate::bkg_api::is_bkg_session(&session) && !cw_domain::bkg::is_in_band(mhz) {
             return Ok(FfiCommandOutcome::Message {
                 level: FfiMessageLevel::Warning,
-                text: "A BKG log stays on 2m".to_string(),
+                text: format!("A {} log stays on 2m", cw_domain::bkg::DISPLAY_NAME),
             });
         }
         let old = session.frequency;
@@ -220,7 +220,7 @@ impl LoggerCommandApi {
         if crate::bkg_api::is_bkg_session(&session) && !mode.eq_ignore_ascii_case(cw_domain::bkg::MODE) {
             return Ok(FfiCommandOutcome::Message {
                 level: FfiMessageLevel::Warning,
-                text: "A BKG log is CW only".to_string(),
+                text: format!("A {} log is CW only", cw_domain::bkg::DISPLAY_NAME),
             });
         }
         let old = session.mode.clone();
