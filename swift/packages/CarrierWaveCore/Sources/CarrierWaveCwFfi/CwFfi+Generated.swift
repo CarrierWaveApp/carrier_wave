@@ -2178,6 +2178,14 @@ public protocol BkgApiProtocol: AnyObject, Sendable {
      */
     func setLiveGps(sessionId: String, on: Bool) throws 
     
+    /**
+     * Set the session's own grid (from GPS or typed). It must be a valid
+     * 6-character grid; it is stored upper case. `None` when no session has
+     * that id. Hosts with their own session model (iOS SwiftData) write it
+     * there instead.
+     */
+    func setSessionGrid(sessionId: String, grid: String) throws  -> FfiLoggingSession?
+    
 }
 /**
  * Store-backed BKG session operations. Stateless — every call reads the
@@ -2324,6 +2332,22 @@ open func setLiveGps(sessionId: String, on: Bool)throws   {try rustCallWithError
         FfiConverterBool.lower(on),$0
     )
 }
+}
+    
+    /**
+     * Set the session's own grid (from GPS or typed). It must be a valid
+     * 6-character grid; it is stored upper case. `None` when no session has
+     * that id. Hosts with their own session model (iOS SwiftData) write it
+     * there instead.
+     */
+open func setSessionGrid(sessionId: String, grid: String)throws  -> FfiLoggingSession?  {
+    return try  FfiConverterOptionTypeFfiLoggingSession.lift(try rustCallWithError(FfiConverterTypeCwError_lift) {
+    uniffi_cw_ffi_fn_method_bkgapi_set_session_grid(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(sessionId),
+        FfiConverterString.lower(grid),$0
+    )
+})
 }
     
 
@@ -55728,6 +55752,9 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_cw_ffi_checksum_method_bkgapi_set_live_gps() != 44129) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_cw_ffi_checksum_method_bkgapi_set_session_grid() != 12049) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_cw_ffi_checksum_method_bragsheetapi_apply_preset() != 62197) {

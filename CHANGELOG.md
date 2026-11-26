@@ -10,7 +10,7 @@ section at the end of this file.
 ## [Unreleased]
 
 ### Changed
-- **BKG is now "BKG Turf Wars" on screen** (iOS, Android). The stored program
+- **BKG is now "BKG Turf Wars" on screen** (iOS). The stored program
   slug stays `bkg`, so existing sessions and exports are unchanged.
 
 ### Added
@@ -19,7 +19,8 @@ section at the end of this file.
   missing grid and turns the corner on when you are within 500 m of the point
   where four grids meet; "Use GPS" in the header or the BKG card re-reads it.
   "Follow GPS (rove)" makes the grid and corner move with you. The grid math
-  and the 500 m rule live in the Rust core (`bkg_position`).
+  and the 500 m rule live in the Rust core (`bkg_position`), shared with
+  Android.
 
 ### Fixed
 - **The command bar recognizes the other station's grid in a BKG Turf Wars
@@ -5307,6 +5308,14 @@ The Android app has its own version line (Rust core is shared with iOS/macOS).
 - **Grid from GPS in the session wizard.** The grid field fills from GPS when
   the wizard opens (if location is allowed) and from the locate button beside
   it. A grid you type is kept.
+- **BKG Turf Wars grid and corner from GPS.** The session header shows your
+  grid, or your 4-grid corner. The first fix fills a missing grid and turns the
+  corner on within 500 m of where four grids meet; "Use GPS" re-reads it, and
+  "Follow GPS (rove)" makes grid and corner follow you. A grid typed alone on
+  the entry line is held as the other station's grid for the next contact.
+
+### Changed
+- **BKG is now "BKG Turf Wars" on screen.** Stored sessions keep the `bkg` slug.
 
 ## [0.7.1] - 2026-10-23
 

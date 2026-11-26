@@ -41,10 +41,13 @@ import uniffi.cw_ffi.ScpApi
 import uniffi.cw_ffi.SessionApi
 import uniffi.cw_ffi.BkgApi
 import uniffi.cw_ffi.FfiBkgExport
+import uniffi.cw_ffi.FfiBkgPosition
 import uniffi.cw_ffi.FfiBkgQsoFields
 import uniffi.cw_ffi.FfiBkgQsoInput
 import uniffi.cw_ffi.bandDerive
 import uniffi.cw_ffi.bkgBuildQso
+import uniffi.cw_ffi.bkgCheckGrid
+import uniffi.cw_ffi.bkgPosition
 import uniffi.cw_ffi.bkgCornerGrids
 import uniffi.cw_ffi.bkgRules
 import uniffi.cw_ffi.hunterExtractPrimary
@@ -69,7 +72,24 @@ data class BkgFormState(
     val cornerGrids: List<String> = emptyList(),
     /** Result of the last check-and-export, shown in the card. */
     val export: FfiBkgExport? = null,
-)
+    /** Follow GPS live (a rove): grid and corner move with the station. Off
+     * keeps the grid and corner the session started with. */
+    val liveGps: Boolean = false,
+    /** The latest GPS fix as Rust sees it: grid and nearest 4-grid corner. */
+    val position: FfiBkgPosition? = null,
+    /** Session whose first GPS fix has been applied (static mode applies one
+     * fix per session; live mode applies every fix). */
+    val gpsAppliedSession: String? = null,
+    /** A grid typed on its own in the command bar, held as the other
+     * station's grid for the next contact. */
+    val heldTheirGrid: String? = null,
+    /** The command bar holds only a 6-character grid (send stores it as
+     * [heldTheirGrid] instead of running it as a session-grid command). */
+    val loneGrid: String? = null,
+) {
+    /** Their grid for the contact being entered: typed with the callsign, else held. */
+    fun theirGrid(parsed: FfiQuickEntry?): String? = parsed?.theirGrid?.ifBlank { null } ?: heldTheirGrid
+}
 
 /** UI state for the activation logger — the live QSO-entry surface shown while a
  * session is active. Entry is the shared quick-entry command bar (parsed by the
@@ -190,6 +210,26 @@ class LoggerViewModel(
 
     // ── Quick-entry command bar ─────────────────────────────────
     fun onCommandChange(text: String) {
+        // BKG Turf Wars: a grid on its own is the other station's grid, not a
+        // session-grid command. Held on send.
+        val loneGrid = if (_ui.value.isBkg) text.trim().takeIf { ' ' !in it }?.let { bkgCheckGrid(it).grid } else null
+        if (loneGrid != null) {
+            _ui.update {
+                it.copy(
+                    command = null,
+                    tokens = listOf(FfiQuickToken(0u, loneGrid, FfiQuickTokenType.GRID)),
+                    parsed = null,
+                    callsign = null,
+                    dupeStatus = null,
+                    suggestions = emptyList(),
+                    sessionMeta = null,
+                    error = null,
+                    bkg = it.bkg.copy(loneGrid = loneGrid),
+                )
+            }
+            return
+        }
+        if (_ui.value.bkg.loneGrid != null) _ui.update { it.copy(bkg = it.bkg.copy(loneGrid = null)) }
         // A command (FREQ/MODE/SPOT/RBN/NOTE/… + the callsign-less field line)
         // short-circuits the QSO parse — the shared Rust grammar decides, and the
         // shared handler runs it on send. iOS parity.
@@ -279,6 +319,13 @@ class LoggerViewModel(
     /** Log the parsed contact — or, when the input is a command, run it through
      * the shared Rust handler. */
     fun onLog(onSuccess: () -> Unit) = viewModelScope.launch {
+        _ui.value.bkg.loneGrid?.let { grid ->
+            _ui.update {
+                it.copy(tokens = emptyList(), notice = "Their grid $grid", bkg = it.bkg.copy(heldTheirGrid = grid, loneGrid = null))
+            }
+            onSuccess()
+            return@launch
+        }
         _ui.value.command?.let { command ->
             handleCommand(command, onSuccess)
             return@launch
@@ -291,7 +338,7 @@ class LoggerViewModel(
             val draft = bkgBuildQso(
                 FfiBkgQsoInput(
                     myGrid = session.myGrid.orEmpty(),
-                    theirGrid = parsed.theirGrid.orEmpty(),
+                    theirGrid = form.theirGrid(parsed).orEmpty(),
                     sentMyGrid = form.sentMyGrid,
                     receivedTheirGrid = form.receivedTheirGrid,
                     viaSatellite = form.viaSatellite,
@@ -324,7 +371,12 @@ class LoggerViewModel(
                         dupeStatus = null,
                         suggestions = emptyList(),
                         // The two switches are per-contact; satellite and corner stay.
-                        bkg = it.bkg.copy(sentMyGrid = false, receivedTheirGrid = false, export = null),
+                        bkg = it.bkg.copy(
+                            sentMyGrid = false,
+                            receivedTheirGrid = false,
+                            export = null,
+                            heldTheirGrid = null,
+                        ),
                     )
                 }
                 onSuccess()
@@ -493,13 +545,89 @@ class LoggerViewModel(
 
     fun setBkgSatName(name: String) = _ui.update { it.copy(bkg = it.bkg.copy(satName = name.uppercase())) }
 
-    /** Load the session's stored 4-grid corner (called when the card appears). */
-    fun loadBkgCorner() = viewModelScope.launch {
+    /** The latest GPS fix (lat, lon), kept for "Use GPS". */
+    private var lastFix: Pair<Double, Double>? = null
+
+    /** Load the session's stored 4-grid corner and live-GPS flag (called when
+     * the BKG header chip appears), then apply the latest fix. */
+    fun loadBkgSession() = viewModelScope.launch {
         val session = _ui.value.session ?: return@launch
-        val grids = withContext(Dispatchers.IO) {
-            runCatching { bkgApi.cornerGrids(session.id) }.getOrDefault(emptyList())
+        val (grids, live) = withContext(Dispatchers.IO) {
+            val grids = runCatching { bkgApi.cornerGrids(session.id) }.getOrDefault(emptyList())
+            val live = runCatching { bkgApi.liveGps(session.id) }.getOrDefault(false)
+            grids to live
         }
-        _ui.update { it.copy(bkg = it.bkg.copy(cornerGrids = grids)) }
+        _ui.update { it.copy(bkg = it.bkg.copy(cornerGrids = grids, liveGps = live)) }
+        lastFix?.let { (lat, lon) -> applyBkgFix(lat, lon, force = false) }
+    }
+
+    /** A GPS fix arrived (the screen collects [gpsFixes] in a BKG session). */
+    fun onBkgFix(latitude: Double, longitude: Double) {
+        lastFix = latitude to longitude
+        applyBkgFix(latitude, longitude, force = false)
+    }
+
+    /** "Use GPS": take the latest fix as the session grid and corner. */
+    fun useBkgGps() {
+        val (lat, lon) = lastFix ?: run {
+            _ui.update { it.copy(error = "No GPS fix yet") }
+            return
+        }
+        applyBkgFix(lat, lon, force = true)
+    }
+
+    /** "Follow GPS (rove)": on, grid and corner follow every fix. */
+    fun setBkgLiveGps(on: Boolean) = viewModelScope.launch {
+        val session = _ui.value.session ?: return@launch
+        _ui.update { it.copy(bkg = it.bkg.copy(liveGps = on)) }
+        withContext(Dispatchers.IO) { runCatching { bkgApi.setLiveGps(session.id, on) } }
+        if (on) lastFix?.let { (lat, lon) -> applyBkgFix(lat, lon, force = true) }
+    }
+
+    /**
+     * Turn a GPS fix into the session grid and corner — the iOS `applyBKGFix`
+     * rules. Static (default): the first fix of a session fills a missing or
+     * short grid and turns the corner on when the station is at one (Rust's
+     * 500 m rule); after that only [useBkgGps] changes them. Live: every fix.
+     */
+    private fun applyBkgFix(latitude: Double, longitude: Double, force: Boolean) = viewModelScope.launch {
+        val state = _ui.value
+        val session = state.session?.takeIf { state.isBkg } ?: return@launch
+        val position = bkgPosition(latitude, longitude) ?: return@launch
+        val form = state.bkg
+        val firstFix = form.gpsAppliedSession != session.id
+        val apply = force || form.liveGps || firstFix
+        _ui.update {
+            it.copy(bkg = it.bkg.copy(position = position, gpsAppliedSession = if (apply) session.id else it.bkg.gpsAppliedSession))
+        }
+        if (!apply) return@launch
+
+        val gridValid = bkgCheckGrid(session.myGrid.orEmpty()).grid != null
+        val setGrid = (force || form.liveGps || !gridValid) && !session.myGrid.equals(position.grid, ignoreCase = true)
+        val corner = if (position.atCorner) position.nearestCornerGrids else emptyList()
+        val setCorner = if (force || form.liveGps) {
+            corner != form.cornerGrids
+        } else {
+            corner.isNotEmpty() && form.cornerGrids.isEmpty()
+        }
+        val (updated, stored) = withContext(Dispatchers.IO) {
+            val updated = if (setGrid) runCatching { bkgApi.setSessionGrid(session.id, position.grid) }.getOrNull() else null
+            val stored = if (setCorner) runCatching { bkgApi.setCornerGrids(session.id, corner) }.getOrNull() else null
+            updated to stored
+        }
+        val notice = when {
+            stored == null -> null
+            stored.isNotEmpty() -> "At the ${stored.joinToString(" · ")} corner"
+            form.cornerGrids.isNotEmpty() -> "Left the 4-grid corner"
+            else -> null
+        }
+        _ui.update {
+            it.copy(
+                session = updated ?: it.session,
+                notice = notice ?: it.notice,
+                bkg = if (stored != null) it.bkg.copy(cornerGrids = stored, export = null) else it.bkg,
+            )
+        }
     }
 
     /** On: store the four grids around the corner nearest the session grid. Off: clear. */
