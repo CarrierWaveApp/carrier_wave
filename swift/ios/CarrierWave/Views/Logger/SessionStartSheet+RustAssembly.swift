@@ -72,10 +72,13 @@ extension SessionStartSheet {
             from: Data(session.operatorCallsignsRawValue.utf8)
         )) ?? additionalOperators
 
+        // A BKG session is CW on 2 m; Rust already locked both.
+        let isBKG = selectedPrograms.contains(BKGLog.programSlug)
+
         sessionManager?.startSession(
             myCallsign: session.myCallsign,
-            mode: selectedMode,
-            frequency: parsedFrequency,
+            mode: isBKG ? session.mode : selectedMode,
+            frequency: isBKG ? session.frequency : parsedFrequency,
             programs: selectedPrograms,
             activationType: activation,
             parkReference: session.parkReference,

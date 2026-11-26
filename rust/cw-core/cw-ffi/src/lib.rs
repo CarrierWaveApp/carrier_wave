@@ -197,6 +197,12 @@ mod share_render_api;
 /// (park, callsign, UTC date) activation (map port phase D).
 mod adif_api;
 
+/// BKG log type (`cw_domain::bkg`): the fixed CW/2 m rules, 6-character grid
+/// checks, form → QSO field mapping (`STX_STRING`/`SRX_STRING`, satellite
+/// V/U), the session's 4-grid corner, and the BKG ADIF export
+/// (`BAND_RX`/`SAT_MODE`/`MY_VUCC_GRIDS`). Greenfield, shared by every host.
+mod bkg_api;
+
 /// Reference-map API (`ParkMapApi`) — the shared core behind the iOS
 /// `ParkSearchMapView` / Android park-map screen: viewport pins
 /// (POTA/SOTA/WWFF), unified reference search, cache-through GIS boundary

@@ -32,6 +32,11 @@ extension LoggerView {
             return false
         }
 
+        // A BKG contact needs both 6-character grids.
+        if isBKGSession, editingQSO == nil, bkgDraft.fields == nil {
+            return false
+        }
+
         return true
     }
 

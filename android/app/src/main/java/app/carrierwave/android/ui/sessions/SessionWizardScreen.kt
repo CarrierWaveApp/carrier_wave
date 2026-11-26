@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Forest
+import androidx.compose.material.icons.filled.GridOn
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Info
@@ -961,6 +962,8 @@ private val PROGRAMS: List<Triple<String, String, ImageVector>> = listOf(
     Triple("wwff", "WWFF", Icons.Filled.Forest),
     Triple("aoa", "AoA", Icons.Filled.Visibility),
     Triple("tota", "TOTA", Icons.Filled.GridView),
+    // 2 m CW grid exchange; the shared wizard assembler locks mode and band.
+    Triple("bkg", "BKG", Icons.Filled.GridOn),
 )
 
 /** Connector chip options: (value, label). */

@@ -159,6 +159,9 @@ struct LoggerView: View {
     @State var theirState = ""
     @State var aoaCode = ""
 
+    /// BKG log type form (grid switches, satellite, 4-grid corner).
+    @State var bkgForm = BKGFormState()
+
     // Contest
     @State var contestManager: ContestManager?
     @State var contestExchangeValues: [String: String] = [:]

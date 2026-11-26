@@ -96,15 +96,18 @@ extension LoggerView {
             loggedCallsign: typedCallsign
         )
 
-        // Contest exchange fields
-        let exchReceived = isContestSession ? buildContestExchange() : nil
+        // Contest exchange fields. A BKG session uses the same two columns for
+        // the grids exchanged in CW (STX_STRING / SRX_STRING).
+        let bkgFields = isBKGSession ? bkgDraft.fields : nil
+        let exchReceived = isContestSession ? buildContestExchange() : bkgFields?.exchangeReceived
+        let exchSent = isContestSession ? buildSentExchange() : bkgFields?.exchangeSent
         let serialSent = isContestSession ? contestManager?.currentSerial : nil
 
         let logged = sessionManager?.logQSO(
             callsign: loggedCallsign,
             rstSent: rstSent.nonEmpty ?? defaultRST,
             rstReceived: rstReceived.nonEmpty ?? defaultRST,
-            theirGrid: gridToUse,
+            theirGrid: bkgFields?.theirGrid ?? gridToUse,
             theirParkReference: theirPark.nonEmpty,
             notes: notes.nonEmpty,
             name: lookupResult?.name,
@@ -115,27 +118,33 @@ extension LoggerView {
             theirLicenseClass: lookupResult?.licenseClass,
             aoaCode: aoaCode.nonEmpty,
             callsignChangeNote: changeNote,
-            contestExchangeSent: isContestSession ? buildSentExchange() : nil,
+            contestExchangeSent: exchSent,
             contestExchangeReceived: exchReceived,
             contestSerialSent: serialSent,
-            contestSerialReceived: nil
+            contestSerialReceived: nil,
+            satName: bkgFields?.satName,
+            propMode: bkgFields?.propMode
         )
 
-        // S2S summit ref + contest scoring both need the live QSO. logQSO returns a
-        // value snapshot, so re-fetch via the id-bridge (this view is already
-        // SwiftData-coupled) only on the branches that need it.
-        if let logged, theirSummit.nonEmpty != nil || isContestSession,
-           let qso = LogbookIDBridge.fetchQSO(id: logged.id, in: modelContext)
-        {
-            if let summit = theirSummit.nonEmpty {
-                qso.sotaRef = summit.uppercased()
-            }
-            if isContestSession {
-                registerContestQSO(qso, exchangeReceived: exchReceived ?? "")
-            }
-        }
-
+        applyLiveQSOFields(logged, exchangeReceived: exchReceived)
         finalizeAfterLog(theirCallsign: loggedCallsign, theirQRZInfo: loggedLookup)
+    }
+
+    /// S2S summit ref + contest scoring both need the live QSO. logQSO returns a
+    /// value snapshot, so re-fetch via the id-bridge (this view is already
+    /// SwiftData-coupled) only on the branches that need it.
+    private func applyLiveQSOFields(_ logged: LoggedQSO?, exchangeReceived: String?) {
+        guard let logged, theirSummit.nonEmpty != nil || isContestSession,
+              let qso = LogbookIDBridge.fetchQSO(id: logged.id, in: modelContext)
+        else {
+            return
+        }
+        if let summit = theirSummit.nonEmpty {
+            qso.sotaRef = summit.uppercased()
+        }
+        if isContestSession {
+            registerContestQSO(qso, exchangeReceived: exchangeReceived ?? "")
+        }
     }
 
     /// Common post-log cleanup: haptics, refresh, form reset, QRQ Crew check
@@ -148,6 +157,7 @@ extension LoggerView {
         if isContestSession {
             resetContestFields()
         }
+        bkgForm.resetAfterLog()
         checkQRQCrewSpot(theirCallsign: theirCallsign, theirQRZInfo: theirQRZInfo)
     }
 

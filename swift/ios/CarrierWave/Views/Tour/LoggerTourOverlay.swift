@@ -36,9 +36,18 @@ struct LoggerTourOverlay: View {
                 }
             }
         }
-        .sheet(isPresented: tourSessionSheetBinding) {
-            TourSessionStartSheet(tourManager: tourManager)
+        // The mock start form slides up inside the overlay instead of being a
+        // real sheet. The tour is itself a full-screen cover, and for a hunter
+        // it is opened from the Sessions sheet; a third presentation on top of
+        // that stack was dismissed and re-presented in a loop on the iPhone
+        // Duo.
+        .overlay {
+            if tourManager.showSessionSheet {
+                TourSessionStartSheet(tourManager: tourManager)
+                    .transition(.move(edge: .bottom))
+            }
         }
+        .animation(reduceMotion ? .none : .easeInOut(duration: 0.3), value: tourManager.showSessionSheet)
     }
 
     // MARK: Private
@@ -46,25 +55,6 @@ struct LoggerTourOverlay: View {
     @ScaledMetric(relativeTo: .largeTitle) private var largeIconSize: CGFloat = 48
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    // MARK: - Session Sheet Binding
-
-    private var tourSessionSheetBinding: Binding<Bool> {
-        Binding(
-            get: { tourManager.showSessionSheet },
-            set: { newValue in
-                // If the user dismisses the sheet, advance past the sheet steps
-                if !newValue, tourManager.showSessionSheet {
-                    withAnimation(reduceMotion ? .none : .easeInOut(duration: 0.3)) {
-                        // Skip to activeSession step
-                        while tourManager.showSessionSheet {
-                            tourManager.advance()
-                        }
-                    }
-                }
-            }
-        )
-    }
 
     // MARK: - Mock Logger Content
 

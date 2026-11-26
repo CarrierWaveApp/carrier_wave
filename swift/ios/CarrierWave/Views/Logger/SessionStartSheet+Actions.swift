@@ -1,3 +1,4 @@
+import CarrierWaveCore
 import CarrierWaveData
 import SwiftUI
 
@@ -36,10 +37,16 @@ extension SessionStartSheet {
         let trimmedMission = missionReference.trimmingCharacters(in: .whitespaces)
         let trimmedWwff = wwffReference.trimmingCharacters(in: .whitespaces)
 
+        // Same lock the Rust assembler applies: a BKG session is CW on 2 m.
+        let rules = bkgRules()
+        let isBKG = selectedPrograms.contains(BKGLog.programSlug)
+        let inBand = parsedFrequency.map { $0 >= rules.bandLowMhz && $0 <= rules.bandHighMhz } ?? false
+        let bkgFrequency = inBand ? parsedFrequency : rules.defaultFrequencyMhz
+
         sessionManager?.startSession(
             myCallsign: fullCallsign,
-            mode: selectedMode,
-            frequency: parsedFrequency,
+            mode: isBKG ? rules.mode : selectedMode,
+            frequency: isBKG ? bkgFrequency : parsedFrequency,
             programs: selectedPrograms,
             activationType: ActivationType.from(programs: selectedPrograms),
             parkReference: selectedPrograms.contains("pota") ? parkReference.uppercased() : nil,

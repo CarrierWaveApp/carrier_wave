@@ -8,6 +8,7 @@ Pure logic library that can be tested without iOS Simulator. Run tests with `mak
 | `Sources/CarrierWaveCore/ADIFFieldValidator.swift` | ADIF 3.1.7 per-field validator (length, format, allowed enums) for export sanitization |
 | `Sources/CarrierWaveCore/AzimuthalProjection.swift` | Azimuthal equidistant projection math and great circle paths |
 | `Sources/CarrierWaveCore/BandUtilities.swift` | Band derivation from frequency |
+| `Sources/CarrierWaveCore/BKGLog.swift` | BKG log type program slug (`BKGLog.programSlug`); rules live in Rust `cw_domain::bkg` |
 | `Sources/CarrierWaveCore/CallsignDetector.swift` | Callsign regex detection, RST/grid/power parsing |
 | `Sources/CarrierWaveCore/CIVProtocol.swift` | CI-V protocol: frame building/parsing, BCD frequency encoding, mode mapping |
 | `Sources/CarrierWaveCore/CIVScope.swift` | Icom `0x27` spectrum scope: `27 00` waveform frame parser, Main/Sub accumulator (USB 11-division + LAN single-frame), command encoders |

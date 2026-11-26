@@ -19,6 +19,7 @@ pub mod adif_writer;
 pub mod antenna;
 pub mod azimuthal;
 pub mod band;
+pub mod bkg;
 pub mod band_plan;
 pub mod brag_sheet;
 pub mod frequency_planner;

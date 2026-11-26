@@ -56,7 +56,9 @@ extension LoggingSessionManager {
         contestSerialReceived: Int?,
         frequencyOverride: Double?,
         modeOverride: String?,
-        timestampOverride: Date?
+        timestampOverride: Date?,
+        satName: String? = nil,
+        propMode: String? = nil
     ) -> LoggedQSO? {
         guard let api = sessionApi, let mirror = rustLogMirror,
               let session = activeSession
@@ -64,6 +66,9 @@ extension LoggingSessionManager {
             return nil
         }
         let isContest = session.isContest
+        // A BKG session carries the exchanged grids in STX_STRING/SRX_STRING
+        // without being a contest.
+        let carriesExchange = isContest || session.programs.contains(BKGLog.programSlug)
         let input = FfiSessionLogInput(
             // cw-store ids are lowercase (SwiftDataStoreImporter.uuid); `uuidString`
             // is uppercase and would miss the row (Rust matches exactly).
@@ -87,8 +92,10 @@ extension LoggingSessionManager {
             contestName: isContest ? session.contestId : nil,
             contestSerialSent: isContest ? contestSerialSent.map(Int64.init) : nil,
             contestSerialReceived: isContest ? contestSerialReceived.map(Int64.init) : nil,
-            contestExchangeSent: isContest ? contestExchangeSent : nil,
-            contestExchangeReceived: isContest ? contestExchangeReceived : nil,
+            contestExchangeSent: carriesExchange ? contestExchangeSent : nil,
+            contestExchangeReceived: carriesExchange ? contestExchangeReceived : nil,
+            satName: satName,
+            propMode: propMode,
             // Upload routing + presence rows stay Swift (`markForUpload`).
             uploadQrz: false,
             uploadPota: false,

@@ -34,7 +34,9 @@ extension LoggingSessionManager {
         contestSerialReceived: Int? = nil,
         frequencyOverride: Double? = nil,
         modeOverride: String? = nil,
-        timestampOverride: Date? = nil
+        timestampOverride: Date? = nil,
+        satName: String? = nil,
+        propMode: String? = nil
     ) -> LoggedQSO? {
         guard activeSession != nil else {
             return nil
@@ -51,7 +53,8 @@ extension LoggingSessionManager {
             contestSerialSent: contestSerialSent,
             contestSerialReceived: contestSerialReceived,
             frequencyOverride: frequencyOverride,
-            modeOverride: modeOverride, timestampOverride: timestampOverride
+            modeOverride: modeOverride, timestampOverride: timestampOverride,
+            satName: satName, propMode: propMode
         ) else {
             CwStoreWriteLog.shared.record("logQSO: Rust session path unavailable — QSO not logged")
             ToastManager.shared.error("Couldn't log QSO — the log store is unavailable")

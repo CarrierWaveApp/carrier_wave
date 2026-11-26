@@ -433,7 +433,7 @@ fn mark_import_for_upload(
     Ok(wrote)
 }
 
-fn non_blank(s: &str) -> Option<String> {
+pub(crate) fn non_blank(s: &str) -> Option<String> {
     let trimmed = s.trim();
     if trimmed.is_empty() {
         None
@@ -447,7 +447,7 @@ fn non_blank(s: &str) -> Option<String> {
 /// for every date/time field (`ADIFExportService.swift:241-246,296-309`, plus
 /// `buildHeader` and `generateBulkADIF`). Callers pass the exact format
 /// `write_adif` documents for each field.
-fn format_utc(unix_seconds: i64, fmt: &str) -> String {
+pub(crate) fn format_utc(unix_seconds: i64, fmt: &str) -> String {
     DateTime::<Utc>::from_timestamp(unix_seconds, 0)
         .unwrap_or_else(Utc::now)
         .format(fmt)
@@ -485,7 +485,7 @@ fn utc_day_window(date: &str) -> Option<(i64, i64)> {
 ///   numbers, contest serials) are always far below `i32::MAX`.
 /// - `park` (the operator's own POTA ref) is the header/`MY_SIG_INFO` park, so
 ///   it is NOT copied onto the record; `their_park` → `their_park_reference`.
-fn row_to_write_record(qso: &Qso) -> AdifWriteRecord {
+pub(crate) fn row_to_write_record(qso: &Qso) -> AdifWriteRecord {
     AdifWriteRecord {
         callsign: qso.callsign.clone(),
         band: qso.band.clone().unwrap_or_default(),
@@ -519,6 +519,10 @@ fn row_to_write_record(qso: &Qso) -> AdifWriteRecord {
         contest_exchange_received: qso.contest_exchange_received.clone(),
         sat_name: qso.sat_name.clone(),
         prop_mode: qso.prop_mode.clone(),
+        // Not stored on the row; the BKG export derives these (`bkg_api`).
+        band_rx: None,
+        sat_mode: None,
+        my_vucc_grids: None,
     }
 }
 

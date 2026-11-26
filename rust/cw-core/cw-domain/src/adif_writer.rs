@@ -66,6 +66,15 @@ pub struct AdifWriteRecord {
     pub sat_name: Option<String>,
     /// ADIF PROP_MODE — "SAT" for satellite QSOs.
     pub prop_mode: Option<String>,
+    /// ADIF BAND_RX — the receive band of a split-band QSO (the downlink of a
+    /// satellite contact, e.g. "70cm" on a V/U bird).
+    pub band_rx: Option<String>,
+    /// ADIF SAT_MODE — uplink/downlink band letters (e.g. "VU").
+    pub sat_mode: Option<String>,
+    /// ADIF MY_VUCC_GRIDS — the two or four adjacent 4-character grids of a
+    /// grid-line or grid-corner station, comma-separated (e.g.
+    /// "CM87,CM88,CM97,CM98").
+    pub my_vucc_grids: Option<String>,
 }
 
 /// Header metadata for a single-activation export. Mirrors the parameters to
@@ -153,7 +162,7 @@ fn append_core_fields(fields: &mut Vec<String>, record: &AdifWriteRecord) {
 }
 
 /// Station fields: [STATION_CALLSIGN], [OPERATOR], [GRIDSQUARE],
-/// [MY_GRIDSQUARE]. Port of `appendStationFields` (:256-270).
+/// [MY_GRIDSQUARE], [MY_VUCC_GRIDS] (the last is Rust-first, not in Swift). Port of `appendStationFields` (:256-270).
 fn append_station_fields(fields: &mut Vec<String>, record: &AdifWriteRecord) {
     let station_call = record.station_callsign.clone().unwrap_or_else(|| record.my_callsign.clone());
     if !station_call.is_empty() {
@@ -170,6 +179,11 @@ fn append_station_fields(fields: &mut Vec<String>, record: &AdifWriteRecord) {
     if let Some(my_grid) = &record.my_grid {
         if !my_grid.is_empty() {
             fields.push(format_field("MY_GRIDSQUARE", &my_grid.to_uppercase()));
+        }
+    }
+    if let Some(vucc_grids) = &record.my_vucc_grids {
+        if !vucc_grids.is_empty() {
+            fields.push(format_field("MY_VUCC_GRIDS", &vucc_grids.to_uppercase()));
         }
     }
 }
@@ -288,7 +302,7 @@ fn append_contest_fields(fields: &mut Vec<String>, record: &AdifWriteRecord) {
     }
 }
 
-/// Satellite fields: [SAT_NAME], [PROP_MODE]. Not part of the Swift port —
+/// Satellite fields: [SAT_NAME], [PROP_MODE], [BAND_RX], [SAT_MODE]. Not part of the Swift port —
 /// added Rust-first for the satellite quick-log flow (LoTW requires both for
 /// satellite credit; a wrong/missing PROP_MODE means no match).
 fn append_satellite_fields(fields: &mut Vec<String>, record: &AdifWriteRecord) {
@@ -300,6 +314,16 @@ fn append_satellite_fields(fields: &mut Vec<String>, record: &AdifWriteRecord) {
     if let Some(prop_mode) = &record.prop_mode {
         if !prop_mode.is_empty() {
             fields.push(format_field("PROP_MODE", prop_mode));
+        }
+    }
+    if let Some(band_rx) = &record.band_rx {
+        if !band_rx.is_empty() {
+            fields.push(format_field("BAND_RX", band_rx));
+        }
+    }
+    if let Some(sat_mode) = &record.sat_mode {
+        if !sat_mode.is_empty() {
+            fields.push(format_field("SAT_MODE", sat_mode));
         }
     }
 }
@@ -664,6 +688,9 @@ mod tests {
             contest_exchange_received: None,
             sat_name: None,
             prop_mode: None,
+            band_rx: None,
+            sat_mode: None,
+            my_vucc_grids: None,
         };
         let header = AdifHeaderOpts {
             park_reference: "US-0001".to_string(),
@@ -910,6 +937,9 @@ mod tests {
                 contest_exchange_received: None,
                 sat_name: None,
                 prop_mode: None,
+                band_rx: None,
+                sat_mode: None,
+                my_vucc_grids: None,
             },
             park_reference: park.map(str::to_string),
         }
@@ -984,5 +1014,29 @@ mod tests {
             write_session_adif(&records, &session_header(Some("US-0001"), None)),
             write_adif(&plain, &activation_header)
         );
+    }
+
+    // ---- BAND_RX / SAT_MODE / MY_VUCC_GRIDS ----
+
+    #[test]
+    fn satellite_split_band_and_vucc_grids_are_written_when_set() {
+        let mut record = minimal_record();
+        record.my_grid = Some("cm87xx".to_string());
+        record.my_vucc_grids = Some("CM87,CM88,CM97,CM98".to_string());
+        record.sat_name = Some("RS-44".to_string());
+        record.prop_mode = Some("SAT".to_string());
+        record.band_rx = Some("70cm".to_string());
+        record.sat_mode = Some("VU".to_string());
+        let out = build_qso_record_with(&record, None, None);
+        assert!(out.contains("<MY_GRIDSQUARE:6>CM87XX<MY_VUCC_GRIDS:19>CM87,CM88,CM97,CM98"));
+        assert!(out.contains("<SAT_NAME:5>RS-44<PROP_MODE:3>SAT<BAND_RX:4>70cm<SAT_MODE:2>VU"));
+    }
+
+    #[test]
+    fn satellite_split_band_and_vucc_grids_are_omitted_when_unset() {
+        let out = build_qso_record_with(&minimal_record(), None, None);
+        assert!(!out.contains("BAND_RX"));
+        assert!(!out.contains("SAT_MODE"));
+        assert!(!out.contains("MY_VUCC_GRIDS"));
     }
 }

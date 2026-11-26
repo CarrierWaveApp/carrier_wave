@@ -147,6 +147,21 @@ fun LoggerScreen(
             }
         }
 
+        if (ui.isBkg) {
+            BkgCard(
+                session = session,
+                form = ui.bkg,
+                theirGrid = ui.parsed?.theirGrid,
+                onSent = vm::setBkgSent,
+                onReceived = vm::setBkgReceived,
+                onSatellite = vm::setBkgSatellite,
+                onSatName = vm::setBkgSatName,
+                onCorner = vm::setBkgCorner,
+                onLoadCorner = vm::loadBkgCorner,
+                onCheck = vm::checkBkgLog,
+            )
+        }
+
         // The one and only entry surface.
         QuickEntryCommandBar(
             tokens = ui.tokens,

@@ -782,13 +782,22 @@ fn concat_photo_filenames(target: &str, source: &str) -> String {
 fn build_session_qso(session: &LoggingSession, input: &FfiSessionLogInput) -> Qso {
     let now = now_ts();
     // effectiveFrequency = override ?? session.frequency (MHz); band derived from it.
-    let effective_freq_mhz = input.frequency_override_mhz.or(session.frequency);
+    // A BKG session stays CW on 2 m: an out-of-band frequency override and any
+    // mode override are ignored, whatever the host's entry line parsed.
+    let is_bkg = crate::bkg_api::is_bkg_session(session);
+    let frequency_override =
+        input.frequency_override_mhz.filter(|mhz| !is_bkg || cw_domain::bkg::is_in_band(*mhz));
+    let effective_freq_mhz = frequency_override.or(session.frequency);
     let freq_khz = effective_freq_mhz.map(|mhz| mhz * 1000.0);
     let band = freq_khz
         .and_then(|khz| BandUtilities::derive_band(Some(khz)))
         .map(str::to_string)
         .unwrap_or_else(|| "Unknown".to_string());
-    let effective_mode = input.mode_override.clone().unwrap_or_else(|| session.mode.clone());
+    let effective_mode = if is_bkg {
+        cw_domain::bkg::MODE.to_string()
+    } else {
+        input.mode_override.clone().unwrap_or_else(|| session.mode.clone())
+    };
     let notes = combine_notes(session.qso_comment.as_deref(), input.notes.as_deref());
     // RST defaults are owned here (port of `rstSent.nonEmpty ?? defaultRST`): a
     // blank field falls back to the mode's default report so both platforms —

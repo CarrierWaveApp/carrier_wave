@@ -3,7 +3,9 @@ import SwiftUI
 // MARK: - TourSessionStartSheet
 
 /// Wrapper around SessionStartSheet for the tour.
-/// Pre-fills mock data and intercepts the Start button.
+/// Pre-fills mock data and intercepts the Start button. `LoggerTourOverlay`
+/// shows this inline while `tourManager.showSessionSheet` is true, so nothing
+/// here dismisses a presentation; advancing or skipping the tour hides it.
 struct TourSessionStartSheet: View {
     // MARK: Internal
 
@@ -26,7 +28,6 @@ struct TourSessionStartSheet: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
                         tourManager.skip()
-                        dismiss()
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) {
@@ -38,7 +39,6 @@ struct TourSessionStartSheet: View {
                                 tourManager.advance()
                             }
                         }
-                        dismiss()
                     }
                 }
             }
@@ -50,7 +50,6 @@ struct TourSessionStartSheet: View {
 
     // MARK: Private
 
-    @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     // MARK: - Form Sections (pre-filled mock data)
@@ -71,15 +70,10 @@ struct TourSessionStartSheet: View {
                 onNext: {
                     withAnimation(reduceMotion ? .none : .easeInOut(duration: 0.3)) {
                         tourManager.advance()
-                        // Dismiss sheet when advancing past sheet steps
-                        if !tourManager.showSessionSheet {
-                            dismiss()
-                        }
                     }
                 },
                 onSkip: {
                     tourManager.skip()
-                    dismiss()
                 }
             )
         }

@@ -153,6 +153,10 @@ extension LoggerView {
                                     callsignLookupDisplay
                                 }
 
+                                if isBKGSession {
+                                    bkgExchangeCard
+                                }
+
                                 // Compact fields: RSTs, QTH, with More
                                 // expansion. CWT exchanges are nearly
                                 // always 599/599 so this row is rarely

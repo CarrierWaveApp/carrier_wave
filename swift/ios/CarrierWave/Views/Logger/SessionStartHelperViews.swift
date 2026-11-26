@@ -1,3 +1,4 @@
+import CarrierWaveCore
 import CarrierWaveData
 import SwiftUI
 
@@ -228,6 +229,12 @@ struct ActivationSectionView: View {
                     icon: "eye",
                     isSelected: selectedPrograms.contains("aoa"),
                     onToggle: { toggleProgram("aoa") }
+                )
+                ProgramChip(
+                    label: "BKG",
+                    icon: "square.grid.2x2",
+                    isSelected: selectedPrograms.contains(BKGLog.programSlug),
+                    onToggle: { toggleProgram(BKGLog.programSlug) }
                 )
             }
             .padding(.horizontal, 16)

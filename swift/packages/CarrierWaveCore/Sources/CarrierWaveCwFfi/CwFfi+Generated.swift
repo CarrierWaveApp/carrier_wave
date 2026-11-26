@@ -2135,6 +2135,212 @@ public func FfiConverterTypeAuthApi_lower(_ value: AuthApi) -> UInt64 {
 
 
 /**
+ * Store-backed BKG session operations. Stateless — every call reads the
+ * store, like [`crate::adif_api::AdifApi`].
+ */
+public protocol BkgApiProtocol: AnyObject, Sendable {
+    
+    /**
+     * Pre-upload check: the session's QSOs that break a BKG rule, oldest
+     * first. Empty ⇒ every contact is ready.
+     */
+    func checkSession(sessionId: String) throws  -> [FfiBkgQsoCheck]
+    
+    /**
+     * The session's 4-grid corner, empty when it has none.
+     */
+    func cornerGrids(sessionId: String) throws  -> [String]
+    
+    /**
+     * Export a BKG session to ADIF. On top of the standard session export
+     * every satellite contact (`PROP_MODE` = `SAT`) carries `BAND_RX` 70cm and
+     * `SAT_MODE` VU, and a corner session carries `MY_VUCC_GRIDS` on every
+     * record. `STX_STRING`/`SRX_STRING` come from the stored exchange. No
+     * POTA block is written. `None` when no session has that id.
+     */
+    func exportSession(sessionId: String, programVersion: String) throws  -> FfiBkgExport?
+    
+    /**
+     * Mark a session as operated from a 4-grid corner. `grids` must be four
+     * 4-character grids forming a 2×2 block (any order, any case); an empty
+     * list clears the corner. Returns the stored, sorted grids.
+     */
+    func setCornerGrids(sessionId: String, grids: [String]) throws  -> [String]
+    
+}
+/**
+ * Store-backed BKG session operations. Stateless — every call reads the
+ * store, like [`crate::adif_api::AdifApi`].
+ */
+open class BkgApi: BkgApiProtocol, @unchecked Sendable {
+    fileprivate let handle: UInt64
+
+    /// Used to instantiate a [FFIObject] without an actual handle, for fakes in tests, mostly.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public struct NoHandle {
+        public init() {}
+    }
+
+    // TODO: We'd like this to be `private` but for Swifty reasons,
+    // we can't implement `FfiConverter` without making this `required` and we can't
+    // make it `required` without making it `public`.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    required public init(unsafeFromHandle handle: UInt64) {
+        self.handle = handle
+    }
+
+    // This constructor can be used to instantiate a fake object.
+    // - Parameter noHandle: Placeholder value so we can have a constructor separate from the default empty one that may be implemented for classes extending [FFIObject].
+    //
+    // - Warning:
+    //     Any object instantiated with this constructor cannot be passed to an actual Rust-backed object. Since there isn't a backing handle the FFI lower functions will crash.
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public init(noHandle: NoHandle) {
+        self.handle = 0
+    }
+
+#if swift(>=5.8)
+    @_documentation(visibility: private)
+#endif
+    public func uniffiCloneHandle() -> UInt64 {
+        return try! rustCall { uniffi_cw_ffi_fn_clone_bkgapi(self.handle, $0) }
+    }
+public convenience init(store: FieldStore) {
+    let handle =
+        try! rustCall() {
+    uniffi_cw_ffi_fn_constructor_bkgapi_new(
+        FfiConverterTypeFieldStore_lower(store),$0
+    )
+}
+    self.init(unsafeFromHandle: handle)
+}
+
+    deinit {
+        if handle == 0 {
+            // Mock objects have handle=0 don't try to free them
+            return
+        }
+
+        try! rustCall { uniffi_cw_ffi_fn_free_bkgapi(handle, $0) }
+    }
+
+    
+
+    
+    /**
+     * Pre-upload check: the session's QSOs that break a BKG rule, oldest
+     * first. Empty ⇒ every contact is ready.
+     */
+open func checkSession(sessionId: String)throws  -> [FfiBkgQsoCheck]  {
+    return try  FfiConverterSequenceTypeFfiBkgQsoCheck.lift(try rustCallWithError(FfiConverterTypeCwError_lift) {
+    uniffi_cw_ffi_fn_method_bkgapi_check_session(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(sessionId),$0
+    )
+})
+}
+    
+    /**
+     * The session's 4-grid corner, empty when it has none.
+     */
+open func cornerGrids(sessionId: String)throws  -> [String]  {
+    return try  FfiConverterSequenceString.lift(try rustCallWithError(FfiConverterTypeCwError_lift) {
+    uniffi_cw_ffi_fn_method_bkgapi_corner_grids(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(sessionId),$0
+    )
+})
+}
+    
+    /**
+     * Export a BKG session to ADIF. On top of the standard session export
+     * every satellite contact (`PROP_MODE` = `SAT`) carries `BAND_RX` 70cm and
+     * `SAT_MODE` VU, and a corner session carries `MY_VUCC_GRIDS` on every
+     * record. `STX_STRING`/`SRX_STRING` come from the stored exchange. No
+     * POTA block is written. `None` when no session has that id.
+     */
+open func exportSession(sessionId: String, programVersion: String)throws  -> FfiBkgExport?  {
+    return try  FfiConverterOptionTypeFfiBkgExport.lift(try rustCallWithError(FfiConverterTypeCwError_lift) {
+    uniffi_cw_ffi_fn_method_bkgapi_export_session(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(sessionId),
+        FfiConverterString.lower(programVersion),$0
+    )
+})
+}
+    
+    /**
+     * Mark a session as operated from a 4-grid corner. `grids` must be four
+     * 4-character grids forming a 2×2 block (any order, any case); an empty
+     * list clears the corner. Returns the stored, sorted grids.
+     */
+open func setCornerGrids(sessionId: String, grids: [String])throws  -> [String]  {
+    return try  FfiConverterSequenceString.lift(try rustCallWithError(FfiConverterTypeCwError_lift) {
+    uniffi_cw_ffi_fn_method_bkgapi_set_corner_grids(
+            self.uniffiCloneHandle(),
+        FfiConverterString.lower(sessionId),
+        FfiConverterSequenceString.lower(grids),$0
+    )
+})
+}
+    
+
+    
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeBkgApi: FfiConverter {
+    typealias FfiType = UInt64
+    typealias SwiftType = BkgApi
+
+    public static func lift(_ handle: UInt64) throws -> BkgApi {
+        return BkgApi(unsafeFromHandle: handle)
+    }
+
+    public static func lower(_ value: BkgApi) -> UInt64 {
+        return value.uniffiCloneHandle()
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> BkgApi {
+        let handle: UInt64 = try readInt(&buf)
+        return try lift(handle)
+    }
+
+    public static func write(_ value: BkgApi, into buf: inout [UInt8]) {
+        writeInt(&buf, lower(value))
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeBkgApi_lift(_ handle: UInt64) throws -> BkgApi {
+    return try FfiConverterTypeBkgApi.lift(handle)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeBkgApi_lower(_ value: BkgApi) -> UInt64 {
+    return FfiConverterTypeBkgApi.lower(value)
+}
+
+
+
+
+
+
+/**
  * Brag Sheet API bound to a [`FieldStore`]. Stateless beyond the store
  * handle — catalog/category/preset metadata is pure; config is persisted to
  * the store's synced `synced_config` table; `compute_brag` reads QSOs (+ the club roster for the two
@@ -16457,6 +16663,560 @@ public func FfiConverterTypeFfiBandTableEntry_lift(_ buf: RustBuffer) throws -> 
 #endif
 public func FfiConverterTypeFfiBandTableEntry_lower(_ value: FfiBandTableEntry) -> RustBuffer {
     return FfiConverterTypeFfiBandTableEntry.lower(value)
+}
+
+
+/**
+ * A BKG session rendered to ADIF.
+ */
+public struct FfiBkgExport: Equatable, Hashable {
+    public var adif: String
+    public var qsoCount: UInt32
+    /**
+     * Unix seconds (UTC) of the earliest exported QSO; `None` when empty.
+     */
+    public var firstQsoDate: Int64?
+    /**
+     * The session's 4-grid corner, empty when it has none.
+     */
+    public var cornerGrids: [String]
+    /**
+     * Exported QSOs that fail the app's own rule check. They are still in the
+     * file; the BKG server decides.
+     */
+    public var flagged: [FfiBkgQsoCheck]
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(adif: String, qsoCount: UInt32, 
+        /**
+         * Unix seconds (UTC) of the earliest exported QSO; `None` when empty.
+         */firstQsoDate: Int64?, 
+        /**
+         * The session's 4-grid corner, empty when it has none.
+         */cornerGrids: [String], 
+        /**
+         * Exported QSOs that fail the app's own rule check. They are still in the
+         * file; the BKG server decides.
+         */flagged: [FfiBkgQsoCheck]) {
+        self.adif = adif
+        self.qsoCount = qsoCount
+        self.firstQsoDate = firstQsoDate
+        self.cornerGrids = cornerGrids
+        self.flagged = flagged
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension FfiBkgExport: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeFfiBkgExport: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> FfiBkgExport {
+        return
+            try FfiBkgExport(
+                adif: FfiConverterString.read(from: &buf), 
+                qsoCount: FfiConverterUInt32.read(from: &buf), 
+                firstQsoDate: FfiConverterOptionInt64.read(from: &buf), 
+                cornerGrids: FfiConverterSequenceString.read(from: &buf), 
+                flagged: FfiConverterSequenceTypeFfiBkgQsoCheck.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: FfiBkgExport, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.adif, into: &buf)
+        FfiConverterUInt32.write(value.qsoCount, into: &buf)
+        FfiConverterOptionInt64.write(value.firstQsoDate, into: &buf)
+        FfiConverterSequenceString.write(value.cornerGrids, into: &buf)
+        FfiConverterSequenceTypeFfiBkgQsoCheck.write(value.flagged, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeFfiBkgExport_lift(_ buf: RustBuffer) throws -> FfiBkgExport {
+    return try FfiConverterTypeFfiBkgExport.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeFfiBkgExport_lower(_ value: FfiBkgExport) -> RustBuffer {
+    return FfiConverterTypeFfiBkgExport.lower(value)
+}
+
+
+/**
+ * Result of checking one grid field.
+ */
+public struct FfiBkgGridCheck: Equatable, Hashable {
+    /**
+     * Canonical upper-case grid when valid.
+     */
+    public var grid: String?
+    /**
+     * What is wrong, when it is not.
+     */
+    public var problem: String?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(
+        /**
+         * Canonical upper-case grid when valid.
+         */grid: String?, 
+        /**
+         * What is wrong, when it is not.
+         */problem: String?) {
+        self.grid = grid
+        self.problem = problem
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension FfiBkgGridCheck: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeFfiBkgGridCheck: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> FfiBkgGridCheck {
+        return
+            try FfiBkgGridCheck(
+                grid: FfiConverterOptionString.read(from: &buf), 
+                problem: FfiConverterOptionString.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: FfiBkgGridCheck, into buf: inout [UInt8]) {
+        FfiConverterOptionString.write(value.grid, into: &buf)
+        FfiConverterOptionString.write(value.problem, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeFfiBkgGridCheck_lift(_ buf: RustBuffer) throws -> FfiBkgGridCheck {
+    return try FfiConverterTypeFfiBkgGridCheck.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeFfiBkgGridCheck_lower(_ value: FfiBkgGridCheck) -> RustBuffer {
+    return FfiConverterTypeFfiBkgGridCheck.lower(value)
+}
+
+
+/**
+ * One stored QSO the BKG rules would not accept, with the reasons.
+ */
+public struct FfiBkgQsoCheck: Equatable, Hashable {
+    public var qsoId: String
+    public var callsign: String
+    /**
+     * Unix seconds, UTC.
+     */
+    public var qsoDate: Int64
+    public var issues: [String]
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(qsoId: String, callsign: String, 
+        /**
+         * Unix seconds, UTC.
+         */qsoDate: Int64, issues: [String]) {
+        self.qsoId = qsoId
+        self.callsign = callsign
+        self.qsoDate = qsoDate
+        self.issues = issues
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension FfiBkgQsoCheck: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeFfiBkgQsoCheck: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> FfiBkgQsoCheck {
+        return
+            try FfiBkgQsoCheck(
+                qsoId: FfiConverterString.read(from: &buf), 
+                callsign: FfiConverterString.read(from: &buf), 
+                qsoDate: FfiConverterInt64.read(from: &buf), 
+                issues: FfiConverterSequenceString.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: FfiBkgQsoCheck, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.qsoId, into: &buf)
+        FfiConverterString.write(value.callsign, into: &buf)
+        FfiConverterInt64.write(value.qsoDate, into: &buf)
+        FfiConverterSequenceString.write(value.issues, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeFfiBkgQsoCheck_lift(_ buf: RustBuffer) throws -> FfiBkgQsoCheck {
+    return try FfiConverterTypeFfiBkgQsoCheck.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeFfiBkgQsoCheck_lower(_ value: FfiBkgQsoCheck) -> RustBuffer {
+    return FfiConverterTypeFfiBkgQsoCheck.lower(value)
+}
+
+
+/**
+ * [`bkg_build_qso`] outcome: the fields, or why the contact can't be logged.
+ */
+public struct FfiBkgQsoDraft: Equatable, Hashable {
+    public var fields: FfiBkgQsoFields?
+    public var problem: String?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(fields: FfiBkgQsoFields?, problem: String?) {
+        self.fields = fields
+        self.problem = problem
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension FfiBkgQsoDraft: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeFfiBkgQsoDraft: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> FfiBkgQsoDraft {
+        return
+            try FfiBkgQsoDraft(
+                fields: FfiConverterOptionTypeFfiBkgQsoFields.read(from: &buf), 
+                problem: FfiConverterOptionString.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: FfiBkgQsoDraft, into buf: inout [UInt8]) {
+        FfiConverterOptionTypeFfiBkgQsoFields.write(value.fields, into: &buf)
+        FfiConverterOptionString.write(value.problem, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeFfiBkgQsoDraft_lift(_ buf: RustBuffer) throws -> FfiBkgQsoDraft {
+    return try FfiConverterTypeFfiBkgQsoDraft.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeFfiBkgQsoDraft_lower(_ value: FfiBkgQsoDraft) -> RustBuffer {
+    return FfiConverterTypeFfiBkgQsoDraft.lower(value)
+}
+
+
+/**
+ * QSO field values for a BKG contact. `exchange_sent`/`exchange_received`,
+ * `sat_name` and `prop_mode` go straight into the matching
+ * `FfiSessionLogInput` fields; `band_rx`/`sat_mode` are shown for
+ * confirmation and re-derived at export.
+ */
+public struct FfiBkgQsoFields: Equatable, Hashable {
+    public var mode: String
+    public var band: String
+    public var myGrid: String
+    public var theirGrid: String
+    public var exchangeSent: String?
+    public var exchangeReceived: String?
+    public var propMode: String?
+    public var satName: String?
+    public var bandRx: String?
+    public var satMode: String?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(mode: String, band: String, myGrid: String, theirGrid: String, exchangeSent: String?, exchangeReceived: String?, propMode: String?, satName: String?, bandRx: String?, satMode: String?) {
+        self.mode = mode
+        self.band = band
+        self.myGrid = myGrid
+        self.theirGrid = theirGrid
+        self.exchangeSent = exchangeSent
+        self.exchangeReceived = exchangeReceived
+        self.propMode = propMode
+        self.satName = satName
+        self.bandRx = bandRx
+        self.satMode = satMode
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension FfiBkgQsoFields: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeFfiBkgQsoFields: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> FfiBkgQsoFields {
+        return
+            try FfiBkgQsoFields(
+                mode: FfiConverterString.read(from: &buf), 
+                band: FfiConverterString.read(from: &buf), 
+                myGrid: FfiConverterString.read(from: &buf), 
+                theirGrid: FfiConverterString.read(from: &buf), 
+                exchangeSent: FfiConverterOptionString.read(from: &buf), 
+                exchangeReceived: FfiConverterOptionString.read(from: &buf), 
+                propMode: FfiConverterOptionString.read(from: &buf), 
+                satName: FfiConverterOptionString.read(from: &buf), 
+                bandRx: FfiConverterOptionString.read(from: &buf), 
+                satMode: FfiConverterOptionString.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: FfiBkgQsoFields, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.mode, into: &buf)
+        FfiConverterString.write(value.band, into: &buf)
+        FfiConverterString.write(value.myGrid, into: &buf)
+        FfiConverterString.write(value.theirGrid, into: &buf)
+        FfiConverterOptionString.write(value.exchangeSent, into: &buf)
+        FfiConverterOptionString.write(value.exchangeReceived, into: &buf)
+        FfiConverterOptionString.write(value.propMode, into: &buf)
+        FfiConverterOptionString.write(value.satName, into: &buf)
+        FfiConverterOptionString.write(value.bandRx, into: &buf)
+        FfiConverterOptionString.write(value.satMode, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeFfiBkgQsoFields_lift(_ buf: RustBuffer) throws -> FfiBkgQsoFields {
+    return try FfiConverterTypeFfiBkgQsoFields.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeFfiBkgQsoFields_lower(_ value: FfiBkgQsoFields) -> RustBuffer {
+    return FfiConverterTypeFfiBkgQsoFields.lower(value)
+}
+
+
+/**
+ * The logger's BKG form state for one contact.
+ */
+public struct FfiBkgQsoInput: Equatable, Hashable {
+    public var myGrid: String
+    public var theirGrid: String
+    /**
+     * "I sent my grid in CW".
+     */
+    public var sentMyGrid: Bool
+    /**
+     * "They sent theirs".
+     */
+    public var receivedTheirGrid: Bool
+    /**
+     * Worked through a linear V/U satellite.
+     */
+    public var viaSatellite: Bool
+    public var satName: String?
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(myGrid: String, theirGrid: String, 
+        /**
+         * "I sent my grid in CW".
+         */sentMyGrid: Bool, 
+        /**
+         * "They sent theirs".
+         */receivedTheirGrid: Bool, 
+        /**
+         * Worked through a linear V/U satellite.
+         */viaSatellite: Bool = false, satName: String? = nil) {
+        self.myGrid = myGrid
+        self.theirGrid = theirGrid
+        self.sentMyGrid = sentMyGrid
+        self.receivedTheirGrid = receivedTheirGrid
+        self.viaSatellite = viaSatellite
+        self.satName = satName
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension FfiBkgQsoInput: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeFfiBkgQsoInput: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> FfiBkgQsoInput {
+        return
+            try FfiBkgQsoInput(
+                myGrid: FfiConverterString.read(from: &buf), 
+                theirGrid: FfiConverterString.read(from: &buf), 
+                sentMyGrid: FfiConverterBool.read(from: &buf), 
+                receivedTheirGrid: FfiConverterBool.read(from: &buf), 
+                viaSatellite: FfiConverterBool.read(from: &buf), 
+                satName: FfiConverterOptionString.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: FfiBkgQsoInput, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.myGrid, into: &buf)
+        FfiConverterString.write(value.theirGrid, into: &buf)
+        FfiConverterBool.write(value.sentMyGrid, into: &buf)
+        FfiConverterBool.write(value.receivedTheirGrid, into: &buf)
+        FfiConverterBool.write(value.viaSatellite, into: &buf)
+        FfiConverterOptionString.write(value.satName, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeFfiBkgQsoInput_lift(_ buf: RustBuffer) throws -> FfiBkgQsoInput {
+    return try FfiConverterTypeFfiBkgQsoInput.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeFfiBkgQsoInput_lower(_ value: FfiBkgQsoInput) -> RustBuffer {
+    return FfiConverterTypeFfiBkgQsoInput.lower(value)
+}
+
+
+/**
+ * The fixed BKG rules, so hosts label and lock their controls from one place.
+ */
+public struct FfiBkgRules: Equatable, Hashable {
+    public var programSlug: String
+    public var mode: String
+    public var band: String
+    public var bandLowMhz: Double
+    public var bandHighMhz: Double
+    public var defaultFrequencyMhz: Double
+    public var satPropMode: String
+    public var satBandRx: String
+    public var satMode: String
+
+    // Default memberwise initializers are never public by default, so we
+    // declare one manually.
+    public init(programSlug: String, mode: String, band: String, bandLowMhz: Double, bandHighMhz: Double, defaultFrequencyMhz: Double, satPropMode: String, satBandRx: String, satMode: String) {
+        self.programSlug = programSlug
+        self.mode = mode
+        self.band = band
+        self.bandLowMhz = bandLowMhz
+        self.bandHighMhz = bandHighMhz
+        self.defaultFrequencyMhz = defaultFrequencyMhz
+        self.satPropMode = satPropMode
+        self.satBandRx = satBandRx
+        self.satMode = satMode
+    }
+
+    
+
+    
+}
+
+#if compiler(>=6)
+extension FfiBkgRules: Sendable {}
+#endif
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public struct FfiConverterTypeFfiBkgRules: FfiConverterRustBuffer {
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> FfiBkgRules {
+        return
+            try FfiBkgRules(
+                programSlug: FfiConverterString.read(from: &buf), 
+                mode: FfiConverterString.read(from: &buf), 
+                band: FfiConverterString.read(from: &buf), 
+                bandLowMhz: FfiConverterDouble.read(from: &buf), 
+                bandHighMhz: FfiConverterDouble.read(from: &buf), 
+                defaultFrequencyMhz: FfiConverterDouble.read(from: &buf), 
+                satPropMode: FfiConverterString.read(from: &buf), 
+                satBandRx: FfiConverterString.read(from: &buf), 
+                satMode: FfiConverterString.read(from: &buf)
+        )
+    }
+
+    public static func write(_ value: FfiBkgRules, into buf: inout [UInt8]) {
+        FfiConverterString.write(value.programSlug, into: &buf)
+        FfiConverterString.write(value.mode, into: &buf)
+        FfiConverterString.write(value.band, into: &buf)
+        FfiConverterDouble.write(value.bandLowMhz, into: &buf)
+        FfiConverterDouble.write(value.bandHighMhz, into: &buf)
+        FfiConverterDouble.write(value.defaultFrequencyMhz, into: &buf)
+        FfiConverterString.write(value.satPropMode, into: &buf)
+        FfiConverterString.write(value.satBandRx, into: &buf)
+        FfiConverterString.write(value.satMode, into: &buf)
+    }
+}
+
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeFfiBkgRules_lift(_ buf: RustBuffer) throws -> FfiBkgRules {
+    return try FfiConverterTypeFfiBkgRules.lift(buf)
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+public func FfiConverterTypeFfiBkgRules_lower(_ value: FfiBkgRules) -> RustBuffer {
+    return FfiConverterTypeFfiBkgRules.lower(value)
 }
 
 
@@ -45491,6 +46251,54 @@ fileprivate struct FfiConverterOptionTypeFfiBandRange: FfiConverterRustBuffer {
 #if swift(>=5.8)
 @_documentation(visibility: private)
 #endif
+fileprivate struct FfiConverterOptionTypeFfiBkgExport: FfiConverterRustBuffer {
+    typealias SwiftType = FfiBkgExport?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeFfiBkgExport.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeFfiBkgExport.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterOptionTypeFfiBkgQsoFields: FfiConverterRustBuffer {
+    typealias SwiftType = FfiBkgQsoFields?
+
+    public static func write(_ value: SwiftType, into buf: inout [UInt8]) {
+        guard let value = value else {
+            writeInt(&buf, Int8(0))
+            return
+        }
+        writeInt(&buf, Int8(1))
+        FfiConverterTypeFfiBkgQsoFields.write(value, into: &buf)
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> SwiftType {
+        switch try readInt(&buf) as Int8 {
+        case 0: return nil
+        case 1: return try FfiConverterTypeFfiBkgQsoFields.read(from: &buf)
+        default: throw UniffiInternalError.unexpectedOptionalTag
+        }
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
 fileprivate struct FfiConverterOptionTypeFfiBragBestActivation: FfiConverterRustBuffer {
     typealias SwiftType = FfiBragBestActivation?
 
@@ -47882,6 +48690,31 @@ fileprivate struct FfiConverterSequenceTypeFfiBandTableEntry: FfiConverterRustBu
         seq.reserveCapacity(Int(len))
         for _ in 0 ..< len {
             seq.append(try FfiConverterTypeFfiBandTableEntry.read(from: &buf))
+        }
+        return seq
+    }
+}
+
+#if swift(>=5.8)
+@_documentation(visibility: private)
+#endif
+fileprivate struct FfiConverterSequenceTypeFfiBkgQsoCheck: FfiConverterRustBuffer {
+    typealias SwiftType = [FfiBkgQsoCheck]
+
+    public static func write(_ value: [FfiBkgQsoCheck], into buf: inout [UInt8]) {
+        let len = Int32(value.count)
+        writeInt(&buf, len)
+        for item in value {
+            FfiConverterTypeFfiBkgQsoCheck.write(item, into: &buf)
+        }
+    }
+
+    public static func read(from buf: inout (data: Data, offset: Data.Index)) throws -> [FfiBkgQsoCheck] {
+        let len: Int32 = try readInt(&buf)
+        var seq = [FfiBkgQsoCheck]()
+        seq.reserveCapacity(Int(len))
+        for _ in 0 ..< len {
+            seq.append(try FfiConverterTypeFfiBkgQsoCheck.read(from: &buf))
         }
         return seq
     }
@@ -52030,6 +52863,46 @@ public func standardBandsList() -> [String]  {
 })
 }
 /**
+ * Turn the form state into QSO field values, or say why it can't be logged.
+ */
+public func bkgBuildQso(input: FfiBkgQsoInput) -> FfiBkgQsoDraft  {
+    return try!  FfiConverterTypeFfiBkgQsoDraft_lift(try! rustCall() {
+    uniffi_cw_ffi_fn_func_bkg_build_qso(
+        FfiConverterTypeFfiBkgQsoInput_lower(input),$0
+    )
+})
+}
+/**
+ * Check one grid field (a BKG exchange needs all six characters).
+ */
+public func bkgCheckGrid(grid: String) -> FfiBkgGridCheck  {
+    return try!  FfiConverterTypeFfiBkgGridCheck_lift(try! rustCall() {
+    uniffi_cw_ffi_fn_func_bkg_check_grid(
+        FfiConverterString.lower(grid),$0
+    )
+})
+}
+/**
+ * The four grids meeting at the corner nearest a 6-character grid, sorted.
+ * Empty when the grid is invalid or has no four-grid corner.
+ */
+public func bkgCornerGrids(grid: String) -> [String]  {
+    return try!  FfiConverterSequenceString.lift(try! rustCall() {
+    uniffi_cw_ffi_fn_func_bkg_corner_grids(
+        FfiConverterString.lower(grid),$0
+    )
+})
+}
+/**
+ * The fixed BKG rules.
+ */
+public func bkgRules() -> FfiBkgRules  {
+    return try!  FfiConverterTypeFfiBkgRules_lift(try! rustCall() {
+    uniffi_cw_ffi_fn_func_bkg_rules($0
+    )
+})
+}
+/**
  * Most likely "other station" callsign from a CW transcript, using
  * surrounding-word context (`de` > `cq` > `response` > `unknown`; last wins
  * within a tier). `None` if no valid callsign is present.
@@ -53676,6 +54549,18 @@ private let initializationResult: InitializationResult = {
     if (uniffi_cw_ffi_checksum_func_standard_bands_list() != 18764) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_cw_ffi_checksum_func_bkg_build_qso() != 56363) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_cw_ffi_checksum_func_bkg_check_grid() != 28532) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_cw_ffi_checksum_func_bkg_corner_grids() != 8433) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_cw_ffi_checksum_func_bkg_rules() != 4258) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_cw_ffi_checksum_func_callsign_detect_primary() != 22866) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -54654,6 +55539,18 @@ private let initializationResult: InitializationResult = {
     if (uniffi_cw_ffi_checksum_method_securestore_delete() != 57425) {
         return InitializationResult.apiChecksumMismatch
     }
+    if (uniffi_cw_ffi_checksum_method_bkgapi_check_session() != 22135) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_cw_ffi_checksum_method_bkgapi_corner_grids() != 41046) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_cw_ffi_checksum_method_bkgapi_export_session() != 35497) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_cw_ffi_checksum_method_bkgapi_set_corner_grids() != 14640) {
+        return InitializationResult.apiChecksumMismatch
+    }
     if (uniffi_cw_ffi_checksum_method_bragsheetapi_apply_preset() != 62197) {
         return InitializationResult.apiChecksumMismatch
     }
@@ -55339,6 +56236,9 @@ private let initializationResult: InitializationResult = {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_cw_ffi_checksum_constructor_authapi_new() != 12381) {
+        return InitializationResult.apiChecksumMismatch
+    }
+    if (uniffi_cw_ffi_checksum_constructor_bkgapi_new() != 17834) {
         return InitializationResult.apiChecksumMismatch
     }
     if (uniffi_cw_ffi_checksum_constructor_bragsheetapi_new() != 39875) {

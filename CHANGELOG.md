@@ -10,6 +10,16 @@ section at the end of this file.
 ## [Unreleased]
 
 ### Added
+- **BKG log type, first cut (iOS).** Pick BKG when starting a session and the
+  log is locked to CW on 2m. The logger shows a BKG card: your grid, their
+  grid (both must be 6 characters), "I sent my grid in CW" and "They sent
+  theirs" switches that write the grids to `STX_STRING` and `SRX_STRING`, a
+  linear V/U satellite switch, and an "At a 4-grid corner" switch. Check &
+  Export lists contacts that break a rule and shares an ADIF file with
+  `BAND_RX` and `SAT_MODE` on satellite contacts and `MY_VUCC_GRIDS` at a
+  corner. Upload to the BKG server and the Jump In form are not built yet. The
+  rules and the export live in the shared Rust core, so Android has the same
+  log type; CW Sweep does not have the controls yet.
 - **Icom LAN radios are found automatically in CW Sweep (macOS).** Sweep looks
   for Icom radios with Network Control on (IC-9700, IC-705, IC-7610) on the
   local network and shows "Found IC-9700 on the network. Connect?" in the Radio
@@ -74,6 +84,10 @@ section at the end of this file.
   the Bypass POTA Maintenance debug toggle are gone.
 
 ### Fixed
+- **The Logger tour's Start Session step no longer flickers (iOS).** When the
+  tour was opened from the Sessions sheet on the Hunter Log, its Start Session
+  form opened and closed in a loop on the iPhone Duo. The form now slides up
+  inside the tour instead of opening as another sheet.
 - CW Sweep's USB autodetect named an IC-7300 "IC-705" and vice versa, and
   didn't recognise the IC-9700.
 - **CW Sweep tells USB serial devices apart (macOS).** Every USB serial port
@@ -5262,6 +5276,13 @@ section at the end of this file.
 The Android app has its own version line (Rust core is shared with iOS/macOS).
 
 ## [Unreleased]
+
+### Added
+- **BKG log type, first cut.** BKG is a program in the session wizard; it locks
+  the log to CW on 2m. The logger shows a BKG card with the two "sent in CW"
+  switches, a linear V/U satellite switch, a 4-grid corner switch, and Check &
+  Export, which lists contacts that break a rule and shares the ADIF. Type the
+  other station's 6-character grid on the entry line with the callsign.
 
 ## [0.7.1] - 2026-10-23
 

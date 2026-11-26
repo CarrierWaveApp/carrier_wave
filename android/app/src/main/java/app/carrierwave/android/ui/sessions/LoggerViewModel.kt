@@ -39,7 +39,14 @@ import uniffi.cw_ffi.FieldStore
 import uniffi.cw_ffi.LoggerCommandApi
 import uniffi.cw_ffi.ScpApi
 import uniffi.cw_ffi.SessionApi
+import uniffi.cw_ffi.BkgApi
+import uniffi.cw_ffi.FfiBkgExport
+import uniffi.cw_ffi.FfiBkgQsoFields
+import uniffi.cw_ffi.FfiBkgQsoInput
 import uniffi.cw_ffi.bandDerive
+import uniffi.cw_ffi.bkgBuildQso
+import uniffi.cw_ffi.bkgCornerGrids
+import uniffi.cw_ffi.bkgRules
 import uniffi.cw_ffi.hunterExtractPrimary
 import uniffi.cw_ffi.parseLoggerCommand
 import uniffi.cw_ffi.parseQuickEntry
@@ -47,6 +54,22 @@ import uniffi.cw_ffi.parseQuickEntryTokens
 import uniffi.cw_ffi.quickEntryIsCallsign
 import java.time.LocalDate
 import java.time.ZoneOffset
+
+/** BKG log type form: what the operator toggled. The rules and the field
+ * mapping are Rust's (`bkgBuildQso`), identical to iOS. */
+data class BkgFormState(
+    /** "I sent my grid in CW". */
+    val sentMyGrid: Boolean = false,
+    /** "They sent theirs". */
+    val receivedTheirGrid: Boolean = false,
+    /** Worked through a linear V/U satellite. Sticky for the pass. */
+    val viaSatellite: Boolean = false,
+    val satName: String = "",
+    /** The session's 4-grid corner, empty when it has none. */
+    val cornerGrids: List<String> = emptyList(),
+    /** Result of the last check-and-export, shown in the card. */
+    val export: FfiBkgExport? = null,
+)
 
 /** UI state for the activation logger — the live QSO-entry surface shown while a
  * session is active. Entry is the shared quick-entry command bar (parsed by the
@@ -89,7 +112,12 @@ data class LoggerUiState(
     val repeatingSpot: Boolean = false,
     /** Flipped true once the session ends, so the container can leave the logger. */
     val ended: Boolean = false,
-)
+    val bkg: BkgFormState = BkgFormState(),
+) {
+    /** Whether the active session is a BKG log (program slug in the stored JSON list). */
+    val isBkg: Boolean
+        get() = session?.programsRawValue?.contains("\"${bkgRules().programSlug}\"") == true
+}
 
 /**
  * Drives the activation logger through the shared Rust [SessionApi] — the same
@@ -257,10 +285,30 @@ class LoggerViewModel(
         }
         val parsed = _ui.value.parsed ?: return@launch
         val session = _ui.value.session ?: return@launch
+        // A BKG contact needs both 6-character grids; Rust says which is wrong.
+        val bkgFields = if (_ui.value.isBkg) {
+            val form = _ui.value.bkg
+            val draft = bkgBuildQso(
+                FfiBkgQsoInput(
+                    myGrid = session.myGrid.orEmpty(),
+                    theirGrid = parsed.theirGrid.orEmpty(),
+                    sentMyGrid = form.sentMyGrid,
+                    receivedTheirGrid = form.receivedTheirGrid,
+                    viaSatellite = form.viaSatellite,
+                    satName = form.satName.ifBlank { null },
+                ),
+            )
+            draft.fields ?: run {
+                _ui.update { it.copy(error = draft.problem) }
+                return@launch
+            }
+        } else {
+            null
+        }
         _ui.update { it.copy(isLogging = true, error = null) }
         val result = withContext(Dispatchers.IO) {
             try {
-                Result.success(api.logQso(inputFor(parsed, session.id)))
+                Result.success(api.logQso(inputFor(parsed, session.id, bkgFields)))
             } catch (e: CwException) {
                 Result.failure(e)
             }
@@ -275,6 +323,8 @@ class LoggerViewModel(
                         callsign = null,
                         dupeStatus = null,
                         suggestions = emptyList(),
+                        // The two switches are per-contact; satellite and corner stay.
+                        bkg = it.bkg.copy(sentMyGrid = false, receivedTheirGrid = false, export = null),
                     )
                 }
                 onSuccess()
@@ -431,13 +481,61 @@ class LoggerViewModel(
         onDone()
     }
 
-    private fun inputFor(entry: FfiQuickEntry, sessionId: String) = FfiSessionLogInput(
+    // --- BKG log type ------------------------------------------------------
+
+    private val bkgApi by lazy { BkgApi(store) }
+
+    fun setBkgSent(on: Boolean) = _ui.update { it.copy(bkg = it.bkg.copy(sentMyGrid = on)) }
+
+    fun setBkgReceived(on: Boolean) = _ui.update { it.copy(bkg = it.bkg.copy(receivedTheirGrid = on)) }
+
+    fun setBkgSatellite(on: Boolean) = _ui.update { it.copy(bkg = it.bkg.copy(viaSatellite = on)) }
+
+    fun setBkgSatName(name: String) = _ui.update { it.copy(bkg = it.bkg.copy(satName = name.uppercase())) }
+
+    /** Load the session's stored 4-grid corner (called when the card appears). */
+    fun loadBkgCorner() = viewModelScope.launch {
+        val session = _ui.value.session ?: return@launch
+        val grids = withContext(Dispatchers.IO) {
+            runCatching { bkgApi.cornerGrids(session.id) }.getOrDefault(emptyList())
+        }
+        _ui.update { it.copy(bkg = it.bkg.copy(cornerGrids = grids)) }
+    }
+
+    /** On: store the four grids around the corner nearest the session grid. Off: clear. */
+    fun setBkgCorner(on: Boolean) = viewModelScope.launch {
+        val session = _ui.value.session ?: return@launch
+        val grids = if (on) bkgCornerGrids(session.myGrid.orEmpty()) else emptyList()
+        if (on && grids.isEmpty()) {
+            _ui.update { it.copy(error = "No 4-grid corner near this session's grid") }
+            return@launch
+        }
+        val stored = withContext(Dispatchers.IO) {
+            runCatching { bkgApi.setCornerGrids(session.id, grids) }.getOrDefault(emptyList())
+        }
+        _ui.update { it.copy(bkg = it.bkg.copy(cornerGrids = stored, export = null)) }
+    }
+
+    /** Build the BKG ADIF + rule check for the active session. */
+    fun checkBkgLog(programVersion: String) = viewModelScope.launch {
+        val session = _ui.value.session ?: return@launch
+        val export = withContext(Dispatchers.IO) {
+            runCatching { bkgApi.exportSession(session.id, programVersion) }.getOrNull()
+        }
+        _ui.update { it.copy(bkg = it.bkg.copy(export = export)) }
+    }
+
+    private fun inputFor(
+        entry: FfiQuickEntry,
+        sessionId: String,
+        bkg: FfiBkgQsoFields? = null,
+    ) = FfiSessionLogInput(
         sessionId = sessionId,
         callsign = entry.callsign,
         // Blank -> Rust fills the mode default (default_rst).
         rstSent = entry.rstSent ?: "",
         rstReceived = entry.rstReceived ?: "",
-        theirGrid = entry.theirGrid,
+        theirGrid = bkg?.theirGrid ?: entry.theirGrid,
         theirPark = entry.theirPark,
         notes = entry.notes,
         name = null,
@@ -453,8 +551,11 @@ class LoggerViewModel(
         contestName = null,
         contestSerialSent = null,
         contestSerialReceived = null,
-        contestExchangeSent = null,
-        contestExchangeReceived = null,
+        // BKG: the grids exchanged in CW ride in STX_STRING / SRX_STRING.
+        contestExchangeSent = bkg?.exchangeSent,
+        contestExchangeReceived = bkg?.exchangeReceived,
+        satName = bkg?.satName,
+        propMode = bkg?.propMode,
         // Android has no upload pipeline wired yet; the QSO still logs + enriches.
         uploadQrz = false,
         uploadPota = false,

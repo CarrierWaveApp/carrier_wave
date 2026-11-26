@@ -40,6 +40,7 @@ use std::sync::Arc;
 use chrono::Utc;
 use chrono::TimeZone;
 use cw_domain::band_plan::LicenseClass;
+use cw_domain::bkg;
 use cw_domain::frequency_planner::{self, ActiveStation};
 use cw_domain::gear_reminders::{self, ConnectorType};
 use cw_domain::kiwisdr::haversine_km;
@@ -542,8 +543,18 @@ fn assemble(input: FfiCreateSessionInput) -> LoggingSession {
     let wwff_reference =
         if has("wwff") { normalize_upper(input.wwff_reference.as_deref()) } else { None };
 
-    let my_key = if input.mode == "CW" { input.selected_key.clone() } else { None };
-    let my_mic = if is_phone_mode(&input.mode) { input.selected_mic.clone() } else { None };
+    // A BKG session is CW on 2 m whatever the wizard held: the mode is forced
+    // and a missing or out-of-band frequency snaps to the 2 m default.
+    let is_bkg = has(bkg::PROGRAM_SLUG);
+    let mode = if is_bkg { bkg::MODE.to_string() } else { input.mode.clone() };
+    let frequency = if is_bkg {
+        Some(input.frequency_mhz.filter(|mhz| bkg::is_in_band(*mhz)).unwrap_or(bkg::DEFAULT_FREQUENCY_MHZ))
+    } else {
+        input.frequency_mhz
+    };
+
+    let my_key = if mode == "CW" { input.selected_key.clone() } else { None };
+    let my_mic = if is_phone_mode(&mode) { input.selected_mic.clone() } else { None };
 
     let started_at = input.started_at_override.unwrap_or_else(|| Utc::now().timestamp());
     let id = input.id_override.clone().unwrap_or_else(|| Uuid::new_v4().to_string());
@@ -561,8 +572,8 @@ fn assemble(input: FfiCreateSessionInput) -> LoggingSession {
         my_callsign,
         started_at,
         ended_at: None,
-        frequency: input.frequency_mhz,
-        mode: input.mode.clone(),
+        frequency,
+        mode,
         activation_type_raw_value: activation,
         programs_raw_value: encode_programs(&programs),
         status_raw_value: "active".to_string(),
@@ -860,6 +871,26 @@ mod tests {
         let session = assemble(input);
         assert!(session.my_key.is_none()); // non-CW drops key
         assert_eq!(session.my_mic.as_deref(), Some("SM58")); // phone keeps mic
+    }
+
+    #[test]
+    fn bkg_program_locks_cw_and_two_meters() {
+        let mut input = base_input();
+        input.programs = vec!["bkg".to_string()];
+        input.mode = "SSB".to_string();
+        input.frequency_mhz = Some(14.062);
+        let session = assemble(input);
+        assert_eq!(session.mode, "CW");
+        assert_eq!(session.frequency, Some(144.1));
+        assert_eq!(session.my_key.as_deref(), Some("Palm")); // CW keeps the key
+        assert!(session.my_mic.is_none());
+        assert_eq!(session.programs_raw_value, r#"["bkg"]"#);
+        assert_eq!(session.activation_type_raw_value, "casual"); // a program, not an activation type
+
+        let mut input = base_input();
+        input.programs = vec!["bkg".to_string()];
+        input.frequency_mhz = Some(145.95); // an in-band frequency is kept
+        assert_eq!(assemble(input).frequency, Some(145.95));
     }
 
     #[test]
