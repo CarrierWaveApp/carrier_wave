@@ -101,7 +101,7 @@ extension LoggerView {
     }
 
     static func formatBKGDistance(_ meters: Double) -> String {
-        meters < 1000 ? "\(Int(meters.rounded())) m" : String(format: "%.1f km", meters / 1000)
+        meters < 1_000 ? "\(Int(meters.rounded())) m" : String(format: "%.1f km", meters / 1_000)
     }
 
     // MARK: Live toggle

@@ -96,7 +96,11 @@ fun BkgCard(
                 )
                 OutlinedButton(onClick = onUseGps, enabled = form.position != null) { Text("Use GPS") }
             }
-            SwitchLine("At a 4-grid corner", form.cornerGrids.isNotEmpty(), onCorner, enabled = myGrid.grid != null)
+            // With a GPS fix the corner comes from the fix (first fix, Use GPS
+            // or rove); the switch is only for working without GPS.
+            if (form.position == null) {
+                SwitchLine("At a 4-grid corner", form.cornerGrids.isNotEmpty(), onCorner, enabled = myGrid.grid != null)
+            }
             if (form.cornerGrids.isNotEmpty()) {
                 Text(
                     form.cornerGrids.joinToString(" · "),

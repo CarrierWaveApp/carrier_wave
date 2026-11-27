@@ -131,12 +131,20 @@ extension LoggerView {
 
             bkgGPSSection
 
-            Toggle("At a 4-grid corner", isOn: bkgCornerBinding)
-                .disabled(myGridCheck.grid == nil)
+            // With a GPS fix the corner is a fact (Rust: within the corner
+            // radius), set by the first fix, "Use GPS" or rove mode, so there
+            // is nothing to switch. The switch is only for working without GPS.
+            if bkgForm.position == nil {
+                Toggle("At a 4-grid corner", isOn: bkgCornerBinding)
+                    .disabled(myGridCheck.grid == nil)
+            }
             if !bkgForm.cornerGrids.isEmpty {
-                Text(bkgForm.cornerGrids.joined(separator: " · "))
-                    .font(.caption.monospaced())
-                    .foregroundStyle(.secondary)
+                Label(
+                    "4-grid corner: " + bkgForm.cornerGrids.joined(separator: " · "),
+                    systemImage: "square.grid.2x2.fill"
+                )
+                .font(.caption.monospaced())
+                .foregroundStyle(.secondary)
             }
 
             if myGridCheck.grid != nil, !theirGrid.isEmpty, let problem = bkgDraft.problem {
