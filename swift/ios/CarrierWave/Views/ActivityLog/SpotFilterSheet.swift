@@ -235,7 +235,9 @@ struct SpotFilterSheet: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
+                        .buttonStyle(.cwToolbarProminent)
                 }
+                .sharedBackgroundVisibility(.hidden)
                 ToolbarItem(placement: .cancellationAction) {
                     if filters != SpotFilters()
                         || selectedContinents != SpotContinent.allSet
@@ -244,8 +246,10 @@ struct SpotFilterSheet: View {
                             filters = SpotFilters()
                             selectedContinents = SpotContinent.allSet
                         }
+                        .buttonStyle(.cwToolbarTinted)
                     }
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
         }
         .landscapeAdaptiveDetents(portrait: [.medium, .large])

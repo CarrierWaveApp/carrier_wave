@@ -37,11 +37,15 @@ struct PropagationCheckMetadataEditSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
+                        .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save", action: save)
+                        .buttonStyle(.cwToolbarProminent)
                         .fontWeight(.semibold)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
             .sheet(item: $activePicker) { picker in
                 switch picker {

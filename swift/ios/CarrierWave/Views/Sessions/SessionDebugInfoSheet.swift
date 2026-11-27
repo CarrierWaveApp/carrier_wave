@@ -36,7 +36,9 @@ struct SessionDebugInfoSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Done") { dismiss() }
+                        .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
             .task {
                 await generate()
@@ -165,7 +167,7 @@ struct SessionDebugInfoSheet: View {
             Label("Share Debug Info", systemImage: "square.and.arrow.up")
                 .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.borderedProminent)
+        .buttonStyle(.cwProminent)
         .controlSize(.large)
     }
 
@@ -179,7 +181,7 @@ struct SessionDebugInfoSheet: View {
             )
             .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.bordered)
+        .buttonStyle(.cwTinted)
         .controlSize(.large)
     }
 
@@ -197,7 +199,7 @@ struct SessionDebugInfoSheet: View {
             )
             .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.bordered)
+        .buttonStyle(.cwTinted)
         .controlSize(.large)
     }
 

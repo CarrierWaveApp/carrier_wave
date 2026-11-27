@@ -41,7 +41,9 @@ struct InventoryPickerSheet: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
+                        .buttonStyle(.cwToolbarProminent)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
             .task { loadInventory() }
             .onChange(of: searchText) { _, newValue in

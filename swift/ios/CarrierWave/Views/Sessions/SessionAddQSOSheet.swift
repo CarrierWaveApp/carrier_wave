@@ -44,11 +44,15 @@ struct SessionAddQSOSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
+                        .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
                 ToolbarItem(placement: .confirmationAction) {
                     Button(entries.count > 1 ? "Log \(entries.count)" : "Log") { logEntries() }
+                        .buttonStyle(.cwToolbarProminent)
                         .disabled(entries.isEmpty || isLogging)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
             .onChange(of: input) { _, newValue in
                 scheduleLookup(for: newValue)

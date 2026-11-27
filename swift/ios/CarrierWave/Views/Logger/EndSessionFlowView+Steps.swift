@@ -145,7 +145,7 @@ extension EndSessionFlowView {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.cwProminent)
             .tint(.green)
 
             Button {
@@ -154,7 +154,7 @@ extension EndSessionFlowView {
                 Text("Skip")
                     .font(.subheadline)
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.cwTinted)
         }
     }
 }
@@ -201,7 +201,7 @@ extension EndSessionFlowView {
                         Label("Share", systemImage: "square.and.arrow.up")
                             .font(.subheadline)
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.cwTinted)
                 } else if let item = activityItem {
                     SessionBragSheetCard(item: item)
                         .padding(.horizontal)
@@ -217,7 +217,7 @@ extension EndSessionFlowView {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.cwProminent)
                 .padding(.horizontal)
                 .padding(.bottom)
             }

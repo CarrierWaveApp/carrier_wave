@@ -124,13 +124,17 @@ struct AddEditProfileSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
+                        .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { save() }
+                        .buttonStyle(.cwToolbarProminent)
                         .disabled(
                             name.trimmingCharacters(in: .whitespaces).isEmpty
                         )
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
             .task {
                 if useCurrentLocation {

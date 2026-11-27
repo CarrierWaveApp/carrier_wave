@@ -35,7 +35,9 @@ struct GoalProfileSheet: View {
                     Button("Done") {
                         dismiss()
                     }
+                    .buttonStyle(.cwToolbarProminent)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
         }
         .presentationDetents([.medium, .large])
@@ -145,7 +147,9 @@ struct GoalProfileEditor: View {
                     Button("Cancel") {
                         dismiss()
                     }
+                    .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         model.profileStore.saveUserProfile(draft)
@@ -153,8 +157,10 @@ struct GoalProfileEditor: View {
                         model.applyProfile()
                         dismiss()
                     }
+                    .buttonStyle(.cwToolbarProminent)
                     .disabled(draft.name.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
         }
     }

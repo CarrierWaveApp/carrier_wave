@@ -29,7 +29,7 @@ struct FT8StartupErrorBanner: View {
             Spacer()
 
             Button("Retry", action: onRetry)
-                .buttonStyle(.bordered)
+                .buttonStyle(.cwTinted)
                 .controlSize(.small)
         }
         .padding(10)

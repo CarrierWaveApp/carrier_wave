@@ -112,7 +112,7 @@ struct PropagationCheckRootView: View {
             } label: {
                 Label("Start a Check", systemImage: "plus")
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.cwProminent)
         }
     }
 

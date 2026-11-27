@@ -46,13 +46,17 @@ struct VideoExportSheet: View {
                                 dismiss()
                             }
                         }
+                        .buttonStyle(.cwToolbarTinted)
                     }
                 }
+                .sharedBackgroundVisibility(.hidden)
                 ToolbarItem(placement: .confirmationAction) {
                     if exportedFileURL != nil {
                         Button("Done") { dismiss() }
+                            .buttonStyle(.cwToolbarProminent)
                     }
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
             .alert("Export Failed", isPresented: $showError) {
                 Button("OK") { dismiss() }
@@ -207,7 +211,7 @@ struct VideoExportSheet: View {
                 Label("Export Video", systemImage: "film")
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.cwProminent)
         }
     }
 

@@ -28,8 +28,10 @@ struct WhatsNewSheet: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { onDismiss() }
+                        .buttonStyle(.cwToolbarProminent)
                         .fontWeight(.semibold)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
         }
     }

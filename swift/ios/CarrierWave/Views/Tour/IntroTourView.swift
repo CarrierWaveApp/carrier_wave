@@ -160,12 +160,12 @@ struct IntroTourView: View {
         Button("Next") {
             withAnimation { advanceStep() }
         }
-        .buttonStyle(.borderedProminent)
+        .buttonStyle(.cwProminent)
     }
 
     private var getStartedButton: some View {
         Button("Get Started") { completeTour() }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.cwProminent)
     }
 
     @ViewBuilder
@@ -176,7 +176,7 @@ struct IntroTourView: View {
             Button("Skip") {
                 withAnimation { advanceStep() }
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.cwProminent)
         } else {
             Button {
                 Task { await validateAndConnect() }
@@ -187,7 +187,7 @@ struct IntroTourView: View {
                     Text("Connect")
                 }
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.cwProminent)
             .disabled(isValidating)
         }
     }

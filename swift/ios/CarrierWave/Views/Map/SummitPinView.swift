@@ -164,7 +164,7 @@ struct SummitCalloutView: View {
                     .font(.subheadline.weight(.medium))
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.cwProminent)
             .tint(.orange)
         }
     }

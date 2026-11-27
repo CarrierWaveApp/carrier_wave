@@ -27,7 +27,9 @@ struct SatelliteAlertSettingsSheet: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
+                        .buttonStyle(.cwToolbarProminent)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
             .task {
                 await refreshAuthorizationStatus()

@@ -74,7 +74,7 @@ struct AzimuthalStandaloneView: View {
             Button("Get Location") {
                 gridService.requestGrid()
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.cwProminent)
         }
     }
 

@@ -33,7 +33,9 @@ struct PeekSheet: View {
                     Button("Done") {
                         dismiss()
                     }
+                    .buttonStyle(.cwToolbarProminent)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
         }
         .presentationDetents([.medium, .large])
@@ -180,7 +182,7 @@ struct PeekSheet: View {
                 )
                 .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.cwTinted)
 
             Button {
                 showLogSheet = true
@@ -188,7 +190,7 @@ struct PeekSheet: View {
                 Label("Log QSO", systemImage: "square.and.pencil")
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.cwProminent)
             .tint(.green)
         }
     }

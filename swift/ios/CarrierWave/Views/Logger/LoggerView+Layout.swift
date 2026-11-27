@@ -174,7 +174,7 @@ extension LoggerView {
                                         Text("Cancel Edit")
                                             .font(.subheadline)
                                     }
-                                    .buttonStyle(.bordered)
+                                    .buttonStyle(.cwTinted)
                                     .accessibilityLabel("Cancel editing callsign")
                                 }
                             }
@@ -241,7 +241,9 @@ extension LoggerView {
                                         cwSlotEditorID = nil
                                         showCWSlotEditor = false
                                     }
+                                    .buttonStyle(.cwToolbarTinted)
                                 }
+                                .sharedBackgroundVisibility(.hidden)
                             }
                         }
                     }

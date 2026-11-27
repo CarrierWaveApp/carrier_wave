@@ -80,7 +80,9 @@ struct EndSessionFlowView: View {
                     Button("Close") {
                         onComplete()
                     }
+                    .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
         }
         .interactiveDismissDisabled(uploadState == .uploading)
@@ -193,7 +195,7 @@ struct EndSessionFlowView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.cwProminent)
                 .tint(.red)
                 .padding(.horizontal)
             }

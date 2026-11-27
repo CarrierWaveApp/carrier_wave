@@ -434,7 +434,7 @@ extension FT8SessionView {
                 startCQWithCurrentChannel()
             }
             .font(.subheadline.bold())
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.cwProminent)
             .tint(.green)
         }
         .padding(.horizontal)

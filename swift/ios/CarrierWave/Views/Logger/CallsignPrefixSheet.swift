@@ -48,7 +48,9 @@ struct CallsignPrefixSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
+                        .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
         }
     }
@@ -150,7 +152,7 @@ struct CallsignPrefixSheet: View {
                         onSelect(customPrefix.trimmingCharacters(in: .whitespaces).uppercased())
                         dismiss()
                     }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(.cwProminent)
                     .controlSize(.small)
                 }
             }

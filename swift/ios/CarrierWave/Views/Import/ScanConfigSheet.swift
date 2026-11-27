@@ -69,11 +69,15 @@ struct ScanConfigSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { onCancel() }
+                        .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Process") { onProcess() }
+                        .buttonStyle(.cwToolbarProminent)
                         .disabled(myCallsign.isEmpty || images.isEmpty)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
             .sheet(item: $editingIndex) { item in
                 PageEditSheet(

@@ -156,7 +156,7 @@ struct CallsignNotesSettingsView: View {
                 addSource(title: rec.notesTitle, url: rec.notesURL)
                 recommendedClubs.removeAll { $0.id == rec.id }
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.cwTinted)
         }
     }
 
@@ -346,7 +346,9 @@ struct AddCallsignNotesSourceSheet: View {
                     Button("Cancel") {
                         dismiss()
                     }
+                    .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Add") {
                         onAdd(
@@ -355,8 +357,10 @@ struct AddCallsignNotesSourceSheet: View {
                         )
                         dismiss()
                     }
+                    .buttonStyle(.cwToolbarProminent)
                     .disabled(!isValid)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
         }
         .landscapeAdaptiveDetents(portrait: [.medium])

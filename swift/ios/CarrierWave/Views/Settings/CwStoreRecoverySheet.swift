@@ -59,8 +59,10 @@ struct CwStoreRecoverySheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { onFinished(false) }
+                        .buttonStyle(.cwToolbarTinted)
                         .disabled(isRecovering)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
         }
         .interactiveDismissDisabled(isRecovering)

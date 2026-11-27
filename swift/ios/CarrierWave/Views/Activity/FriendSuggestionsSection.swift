@@ -53,7 +53,7 @@ private struct SuggestionRow: View {
             Button("Add") {
                 onAdd()
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.cwProminent)
             .controlSize(.small)
 
             Button {
@@ -62,7 +62,7 @@ private struct SuggestionRow: View {
                 Image(systemName: "xmark")
                     .font(.caption)
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.cwTinted)
             .controlSize(.small)
             .tint(.secondary)
         }

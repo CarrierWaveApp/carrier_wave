@@ -38,7 +38,7 @@ struct SCPCacheSection: View {
                                 Label("Refresh Now", systemImage: "arrow.clockwise")
                             }
                         }
-                        .buttonStyle(.bordered)
+                        .buttonStyle(.cwTinted)
                         .disabled(isRefreshing)
 
                         Spacer()

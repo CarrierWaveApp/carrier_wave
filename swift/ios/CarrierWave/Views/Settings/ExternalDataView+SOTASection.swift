@@ -38,7 +38,7 @@ struct SOTACacheSection: View {
                                 Label("Refresh Now", systemImage: "arrow.clockwise")
                             }
                         }
-                        .buttonStyle(.bordered)
+                        .buttonStyle(.cwTinted)
                         .disabled(isRefreshing)
 
                         Spacer()
@@ -138,7 +138,7 @@ struct SOTACacheSection: View {
                 Button("Retry") {
                     Task { await refreshSummits() }
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.cwTinted)
                 .controlSize(.small)
                 .padding(.top, 4)
             }

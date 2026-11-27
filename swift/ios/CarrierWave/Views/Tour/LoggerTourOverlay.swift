@@ -97,7 +97,7 @@ struct LoggerTourOverlay: View {
                 Label("Start Session", systemImage: "play.fill")
                     .font(.headline)
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.cwProminent)
             .disabled(true)
 
             Spacer()

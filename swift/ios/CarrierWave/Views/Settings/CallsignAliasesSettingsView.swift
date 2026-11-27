@@ -141,7 +141,7 @@ struct CallsignAliasesSettingsView: View {
                         callsignToDelete = callsign
                         showingDeleteConfirmation = true
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.cwTinted)
                 }
             }
         } header: {

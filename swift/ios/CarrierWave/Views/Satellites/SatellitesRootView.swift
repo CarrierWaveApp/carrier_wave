@@ -294,7 +294,7 @@ private extension SatellitesRootView {
                 Button("Retry") {
                     Task { await model.load(forceRefresh: true) }
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.cwProminent)
             }
         case .loaded:
             mapContent

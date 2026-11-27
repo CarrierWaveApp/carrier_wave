@@ -130,7 +130,7 @@ extension RecordingPlayerView {
                 transcriptionError = nil
                 Task { await startTranscription() }
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.cwTinted)
         }
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity)

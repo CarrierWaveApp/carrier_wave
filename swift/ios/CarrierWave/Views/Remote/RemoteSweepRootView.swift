@@ -20,7 +20,9 @@ struct RemoteSweepRootView: View {
                             Button("Disconnect") {
                                 Task { await coordinator.disconnect() }
                             }
+                            .buttonStyle(.cwToolbarTinted)
                         }
+                        .sharedBackgroundVisibility(.hidden)
                     }
                 }
         }
@@ -61,7 +63,7 @@ struct RemoteSweepRootView: View {
                 Button("Try again") {
                     Task { await coordinator.disconnect() }
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.cwProminent)
             }
             .padding()
             .frame(maxHeight: .infinity)

@@ -79,7 +79,9 @@ struct QSODetailView: View {
                 Button("Edit") {
                     showEditSheet = true
                 }
+                .buttonStyle(.cwToolbarTinted)
             }
+            .sharedBackgroundVisibility(.hidden)
             ToolbarItem(placement: .topBarTrailing) {
                 EnrichedShareButton(
                     payload: EnrichedLinkPayload.from(

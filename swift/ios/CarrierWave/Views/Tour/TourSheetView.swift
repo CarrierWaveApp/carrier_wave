@@ -90,7 +90,7 @@ struct TourSheetView: View {
                         Text("Next")
                             .fontWeight(.medium)
                     }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(.cwProminent)
                 } else {
                     Button {
                         onComplete()
@@ -99,7 +99,7 @@ struct TourSheetView: View {
                         Text("Done")
                             .fontWeight(.medium)
                     }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(.cwProminent)
                 }
             }
             .padding(.horizontal, 24)

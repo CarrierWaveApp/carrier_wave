@@ -42,7 +42,9 @@ struct WeatherPanelView: View {
                     .toolbar {
                         ToolbarItem(placement: .topBarLeading) {
                             Button("Done") { showingRadar = false }
+                                .buttonStyle(.cwToolbarTinted)
                         }
+                        .sharedBackgroundVisibility(.hidden)
                     }
             }
         }
@@ -131,7 +133,7 @@ struct WeatherPanelView: View {
                 Task { await loadData() }
             }
             .font(.caption)
-            .buttonStyle(.bordered)
+            .buttonStyle(.cwTinted)
         }
         .padding()
         .frame(maxWidth: .infinity, minHeight: 120)

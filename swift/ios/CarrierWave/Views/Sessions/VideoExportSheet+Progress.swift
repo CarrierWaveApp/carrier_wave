@@ -103,7 +103,7 @@ extension VideoExportSheet {
                     Label("Share Video", systemImage: "square.and.arrow.up")
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.cwProminent)
                 .padding(.horizontal, 32)
             }
 

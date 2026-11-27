@@ -131,7 +131,8 @@ struct CWKeyerRow: View {
             .padding(.vertical, 6)
             .background(isYaesu ? Color.gray.opacity(0.1) : Color.red.opacity(0.15))
             .foregroundStyle(isYaesu ? Color.secondary : Color.red)
-            .clipShape(Capsule())
+            .textCase(.uppercase)
+            .clipShape(RoundedRectangle(cornerRadius: 8))
         }
         .disabled(isYaesu)
         .help(isYaesu ? "Stop not supported on Yaesu radios via CAT" : "Stop CW")
@@ -150,7 +151,8 @@ struct CWKeyerRow: View {
             .padding(.vertical, 6)
             .background(Color.blue.opacity(0.15))
             .foregroundStyle(.blue)
-            .clipShape(Capsule())
+            .textCase(.uppercase)
+            .clipShape(RoundedRectangle(cornerRadius: 8))
         }
     }
 
@@ -164,7 +166,8 @@ struct CWKeyerRow: View {
                 .padding(.vertical, 6)
                 .background(Color.orange.opacity(0.15))
                 .foregroundStyle(.orange)
-                .clipShape(Capsule())
+                .textCase(.uppercase)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
         }
         .opacity(radioService.cwSendingSlot == slot.id ? 0.5 : 1.0)
         .simultaneousGesture(

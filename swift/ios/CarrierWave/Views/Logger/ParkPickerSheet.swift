@@ -51,7 +51,9 @@ struct ParkPickerSheet: View {
                     Button("Done") {
                         onDismiss()
                     }
+                    .buttonStyle(.cwToolbarProminent)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
         }
         .landscapeAdaptiveDetents(portrait: [.medium, .large])

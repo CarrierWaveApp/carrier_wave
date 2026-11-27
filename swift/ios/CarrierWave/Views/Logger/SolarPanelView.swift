@@ -115,7 +115,7 @@ struct SolarPanelView: View {
                 Task { await loadData() }
             }
             .font(.caption)
-            .buttonStyle(.bordered)
+            .buttonStyle(.cwTinted)
         }
         .padding()
         .frame(maxWidth: .infinity, minHeight: 120)

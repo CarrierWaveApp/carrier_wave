@@ -34,7 +34,9 @@ struct SummitPickerSheet: View {
                     Button("Cancel") {
                         onDismiss()
                     }
+                    .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
         }
         .landscapeAdaptiveDetents(portrait: [.medium, .large])

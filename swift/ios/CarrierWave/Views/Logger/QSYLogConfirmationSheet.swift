@@ -73,11 +73,15 @@ struct QSYLogConfirmationSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel", action: onCancel)
+                        .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Log QSO", action: onConfirm)
+                        .buttonStyle(.cwToolbarProminent)
                         .bold()
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
         }
     }

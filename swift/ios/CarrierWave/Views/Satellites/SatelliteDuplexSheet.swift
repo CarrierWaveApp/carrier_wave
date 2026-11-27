@@ -25,7 +25,9 @@ struct SatelliteDuplexSheet: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
+                        .buttonStyle(.cwToolbarProminent)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
         }
         .onAppear {
@@ -87,7 +89,7 @@ struct SatelliteDuplexSheet: View {
                 )
                 .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.cwProminent)
             .tint(controller.isTuning ? .red : .orange)
             .disabled(model.selectedNoradID == nil || !controller.hasBothRadios)
         } header: {

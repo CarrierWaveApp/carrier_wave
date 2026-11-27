@@ -39,7 +39,9 @@ struct HiddenQSOsSheet: View {
                     Button("Done") {
                         dismiss()
                     }
+                    .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
             .task {
                 fetchHiddenQSOs()
@@ -128,7 +130,7 @@ struct HiddenQSORow: View {
                 Label("Restore", systemImage: "arrow.uturn.backward")
                     .font(.subheadline)
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.cwTinted)
         }
         .padding(.vertical, 4)
     }
@@ -195,7 +197,7 @@ struct DeleteSessionConfirmationSheet: View {
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
                     }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(.cwProminent)
                     .tint(.red)
                     .disabled(!isConfirmationValid)
 
@@ -259,10 +261,14 @@ struct SessionBandEditSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { onCancel() }
+                        .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { onCancel() }
+                        .buttonStyle(.cwToolbarProminent)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
             .sheet(item: $bandDetail) { band in
                 BandActivitySheet(
@@ -339,7 +345,9 @@ struct SessionModeEditSheet: View {
                     Button("Cancel") {
                         onCancel()
                     }
+                    .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
         }
     }

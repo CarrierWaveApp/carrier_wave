@@ -42,7 +42,7 @@ struct CrossReferenceSuggestionView: View {
 
             Button("Add", action: onAdd)
                 .font(.subheadline.weight(.semibold))
-                .buttonStyle(.bordered)
+                .buttonStyle(.cwTinted)
                 .controlSize(.small)
                 .tint(Color.accentColor)
 

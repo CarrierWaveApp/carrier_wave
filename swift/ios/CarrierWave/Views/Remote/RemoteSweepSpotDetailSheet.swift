@@ -43,7 +43,9 @@ struct RemoteSweepSpotDetailSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Done") { dismiss() }
+                        .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
             .task(id: spot.callsign) {
                 loadClubs()
@@ -201,7 +203,7 @@ struct RemoteSweepSpotDetailSheet: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 14)
         }
-        .buttonStyle(.borderedProminent)
+        .buttonStyle(.cwProminent)
         .tint(.green)
         .padding(.top, 4)
     }

@@ -76,7 +76,9 @@ struct ActivationSharePreviewSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Done") { onDismiss() }
+                        .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
         }
         .landscapeAdaptiveDetents(portrait: [.medium, .large])
@@ -161,7 +163,7 @@ private extension ActivationSharePreviewSheet {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 8)
         }
-        .buttonStyle(.borderedProminent)
+        .buttonStyle(.cwProminent)
     }
 
     var saveToPhotosButton: some View {
@@ -183,7 +185,7 @@ private extension ActivationSharePreviewSheet {
             .frame(maxWidth: .infinity)
             .padding(.vertical, 8)
         }
-        .buttonStyle(.bordered)
+        .buttonStyle(.cwTinted)
         .disabled(saveResult != nil)
     }
 

@@ -25,13 +25,17 @@ struct HuntFilterSheet: View {
                     Button("Done") {
                         isPresented = false
                     }
+                    .buttonStyle(.cwToolbarProminent)
                 }
+                .sharedBackgroundVisibility(.hidden)
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Reset") {
                         selectedBands = []
                         selectedModes = []
                     }
+                    .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
         }
         .landscapeAdaptiveDetents(portrait: [.medium])
@@ -147,7 +151,7 @@ struct POTASpotsEmptyView: View {
                 .foregroundStyle(.secondary)
             if hasFilters {
                 Button("Clear Filters", action: onClearFilters)
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.cwTinted)
             }
         }
         .padding()
@@ -171,7 +175,7 @@ struct POTASpotsErrorView: View {
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
             Button("Retry", action: onRetry)
-                .buttonStyle(.bordered)
+                .buttonStyle(.cwTinted)
         }
         .padding()
         .frame(maxWidth: .infinity, minHeight: 200)

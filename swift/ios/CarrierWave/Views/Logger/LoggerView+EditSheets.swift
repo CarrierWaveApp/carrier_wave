@@ -230,13 +230,17 @@ struct LoggerQSOEditSheet: View {
                     Button("Cancel") {
                         dismiss()
                     }
+                    .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         saveChanges()
                         dismiss()
                     }
+                    .buttonStyle(.cwToolbarProminent)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
             .onAppear {
                 loadQSOData()
@@ -403,12 +407,16 @@ struct SessionTitleEditSheet: View {
                     Button("Cancel") {
                         onCancel()
                     }
+                    .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         onSave(title)
                     }
+                    .buttonStyle(.cwToolbarProminent)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
             .onAppear {
                 isFocused = true
@@ -453,13 +461,17 @@ struct SessionParkEditSheet: View {
                     Button("Cancel") {
                         onCancel()
                     }
+                    .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         onSave(parkReference)
                     }
+                    .buttonStyle(.cwToolbarProminent)
                     .disabled(parkReference.isEmpty)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
         }
     }

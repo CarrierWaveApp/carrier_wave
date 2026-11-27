@@ -32,13 +32,17 @@ struct PropagationCheckStartSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
+                        .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Start") {
                         startCheck()
                     }
+                    .buttonStyle(.cwToolbarProminent)
                     .disabled(!canStart)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
             .onChange(of: gridService.currentGrid) { _, newValue in
                 if let grid = newValue {
@@ -139,7 +143,7 @@ struct PropagationCheckStartSheet: View {
                         Image(systemName: "location.fill")
                     }
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.cwTinted)
                 .disabled(gridService.isLocating)
             }
             if !userGrid.isEmpty, !MaidenheadConverter.isValid(userGrid) {

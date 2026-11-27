@@ -49,14 +49,18 @@ struct PropagationCheckLabelSheet: View {
                         onSave("")
                         dismiss()
                     }
+                    .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         onSave(label.trimmingCharacters(in: .whitespacesAndNewlines))
                         dismiss()
                     }
+                    .buttonStyle(.cwToolbarProminent)
                     .disabled(label.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
         }
     }

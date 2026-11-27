@@ -294,7 +294,7 @@ struct RecordingPlayerView: View {
         }
         .lineLimit(1)
         .controlSize(.small)
-        .buttonStyle(.bordered)
+        .buttonStyle(.cwTinted)
         .padding()
         .background(.bar)
     }

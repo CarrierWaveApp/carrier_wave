@@ -26,7 +26,9 @@ struct StationProfilePicker: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
+                        .buttonStyle(.cwToolbarProminent)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
             .onAppear { profiles = StationProfileStorage.load() }
             .sheet(isPresented: $showingAddProfile) {

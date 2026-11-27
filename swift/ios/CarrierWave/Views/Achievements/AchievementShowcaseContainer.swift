@@ -101,7 +101,7 @@ struct AchievementShowcaseContainer: View {
             Button("Retry") {
                 Task { await load() }
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.cwTinted)
         }
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity)

@@ -38,7 +38,7 @@ extension AboutMeView {
             Button("Set Up Profile") {
                 onRequestOnboarding?()
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.cwProminent)
         }
         .frame(maxWidth: .infinity)
         .padding(24)

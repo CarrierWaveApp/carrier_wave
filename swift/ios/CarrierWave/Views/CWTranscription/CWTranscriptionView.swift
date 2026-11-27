@@ -130,7 +130,9 @@ struct CWTranscriptionView: View {
                         service.stopListening()
                         dismiss()
                     }
+                    .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
 
             ToolbarItem(placement: .topBarTrailing) {
@@ -293,7 +295,7 @@ struct CWTranscriptionView: View {
                 } label: {
                     Label("Copy", systemImage: "doc.on.doc")
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.cwTinted)
                 .disabled(service.transcript.isEmpty && service.currentLine.isEmpty)
 
                 // Clear button
@@ -302,7 +304,7 @@ struct CWTranscriptionView: View {
                 } label: {
                     Label("Clear", systemImage: "trash")
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.cwTinted)
                 .disabled(service.transcript.isEmpty && service.currentLine.isEmpty)
 
                 Spacer()
@@ -324,7 +326,7 @@ struct CWTranscriptionView: View {
                     .font(.headline)
                     .frame(minWidth: 100)
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.cwProminent)
                 .tint(service.isListening ? .red : .green)
             }
         }

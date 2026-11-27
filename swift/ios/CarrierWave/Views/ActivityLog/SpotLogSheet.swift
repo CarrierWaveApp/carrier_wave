@@ -33,7 +33,9 @@ struct SpotLogSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(showingRespotPhase ? "Skip" : "Cancel") { dismiss() }
+                        .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
         }
         .landscapeAdaptiveDetents(portrait: [.medium])
@@ -187,7 +189,7 @@ struct SpotLogSheet: View {
                     .font(.headline)
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.cwProminent)
             .tint(.green)
             .listRowInsets(EdgeInsets())
             .listRowBackground(Color.clear)
@@ -241,7 +243,7 @@ extension SpotLogSheet {
                     .font(.headline)
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.cwProminent)
             .tint(.green)
             .listRowInsets(EdgeInsets())
             .listRowBackground(Color.clear)

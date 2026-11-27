@@ -150,7 +150,7 @@ struct SpotQueryEditorView: View {
                 Label("Run", systemImage: "play.fill")
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.cwProminent)
 
             Button {
                 Task { await model.profileQuery() }
@@ -158,7 +158,7 @@ struct SpotQueryEditorView: View {
                 Label("Profile", systemImage: "speedometer")
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.cwTinted)
 
             Button {
                 model.formatSQL()
@@ -166,7 +166,7 @@ struct SpotQueryEditorView: View {
                 Label("Format", systemImage: "wand.and.stars")
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.cwTinted)
         }
         .disabled(model.isRunning || model.engineUnavailableReason != nil)
         .overlay(alignment: .trailing) {

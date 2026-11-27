@@ -39,7 +39,7 @@ struct FCCCacheSection: View {
                             )
                         }
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.cwTinted)
                     .disabled(isDownloading)
 
                     Spacer()

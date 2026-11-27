@@ -98,7 +98,7 @@ struct OnboardingView: View {
             Button("Get Started") {
                 saveAndFinish()
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.cwProminent)
         } else if profile == nil {
             Button {
                 lookupCallsign()
@@ -109,7 +109,7 @@ struct OnboardingView: View {
                     Text("Look Up")
                 }
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.cwProminent)
             .disabled(callsign.isEmpty || isLookingUp)
         } else {
             Button("Continue") {
@@ -117,7 +117,7 @@ struct OnboardingView: View {
                     showingRoleStep = true
                 }
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.cwProminent)
         }
     }
 }

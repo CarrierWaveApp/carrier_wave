@@ -349,7 +349,7 @@ extension ActivityLogFT8View {
                 startCQWithCurrentChannel()
             }
             .font(.subheadline.bold())
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.cwProminent)
             .tint(.green)
         }
         .padding(.horizontal)

@@ -89,7 +89,9 @@ struct POTAActivationsContentView: View {
                         isSelecting = false
                         selectedActivationIds.removeAll()
                     }
+                    .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(
                         selectedActivationIds.count == activations.count
@@ -101,7 +103,9 @@ struct POTAActivationsContentView: View {
                             selectedActivationIds = Set(activations.map(\.id))
                         }
                     }
+                    .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
             } else {
                 ToolbarItem(placement: .primaryAction) {
                     HStack(spacing: 16) {
@@ -110,6 +114,7 @@ struct POTAActivationsContentView: View {
                                 isSelecting = true
                                 selectedActivationIds.removeAll()
                             }
+                            .buttonStyle(.cwToolbarProminent)
                         }
                         if isAuthenticated, potaClient != nil {
                             Button {
@@ -182,7 +187,9 @@ struct POTAActivationsContentView: View {
                         Button("Done") {
                             activationToMap = nil
                         }
+                        .buttonStyle(.cwToolbarTinted)
                     }
+                    .sharedBackgroundVisibility(.hidden)
                 }
             }
         }

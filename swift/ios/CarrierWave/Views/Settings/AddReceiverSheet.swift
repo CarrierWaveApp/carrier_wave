@@ -68,7 +68,9 @@ struct AddReceiverSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
+                        .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Add") {
                         let hp = "\(hostInput):\(portInput)"
@@ -80,8 +82,10 @@ struct AddReceiverSheet: View {
                         )
                         dismiss()
                     }
+                    .buttonStyle(.cwToolbarProminent)
                     .disabled(fetchedName == nil)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
         }
     }

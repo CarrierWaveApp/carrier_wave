@@ -45,7 +45,9 @@ struct SatelliteCommunityActivitySheet: View {
                         Button("Done") {
                             dismiss()
                         }
+                        .buttonStyle(.cwToolbarTinted)
                     }
+                    .sharedBackgroundVisibility(.hidden)
                 }
         }
         .task(id: cellSeconds) {
@@ -131,7 +133,7 @@ struct SatelliteCommunityActivitySheet: View {
                         Label(zoomLabel(viewport), systemImage: "arrow.down.left.and.arrow.up.right")
                             .font(.caption2.weight(.medium))
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.cwTinted)
                     .controlSize(.mini)
                     .accessibilityLabel("Reset zoom")
                 }

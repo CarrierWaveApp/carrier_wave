@@ -421,7 +421,7 @@ extension LoggerView {
                 Text("Back to Current")
                     .font(.caption.weight(.medium))
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.cwTinted)
             .tint(.blue)
             .controlSize(.mini)
         }

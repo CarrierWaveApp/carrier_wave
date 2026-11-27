@@ -106,7 +106,9 @@ struct ADIFExportSheet: View {
                     Button("Done") {
                         dismiss()
                     }
+                    .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
                 if !showInstructions {
                     ToolbarItem(placement: .primaryAction) {
                         Button {
@@ -186,7 +188,7 @@ struct ADIFExportSheet: View {
             Label("Save to Files", systemImage: "folder")
                 .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.bordered)
+        .buttonStyle(.cwTinted)
         .controlSize(.large)
     }
 
@@ -198,7 +200,7 @@ struct ADIFExportSheet: View {
             Label("Open POTA Upload Page", systemImage: "arrow.up.forward.app.fill")
                 .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.borderedProminent)
+        .buttonStyle(.cwProminent)
         .controlSize(.large)
         .simultaneousGesture(TapGesture().onEnded {
             if let url = URL(string: Self.potaUploadPageURL) {
@@ -215,7 +217,7 @@ struct ADIFExportSheet: View {
             Label("Share ADIF", systemImage: "square.and.arrow.up")
                 .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.bordered)
+        .buttonStyle(.cwTinted)
         .controlSize(.large)
     }
 
@@ -233,7 +235,7 @@ struct ADIFExportSheet: View {
             )
             .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.bordered)
+        .buttonStyle(.cwTinted)
         .controlSize(.large)
     }
 
@@ -252,7 +254,7 @@ struct ADIFExportSheet: View {
                     await generateADIF()
                 }
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.cwTinted)
         }
     }
 
@@ -456,7 +458,7 @@ struct POTAUploadInstructionsCard: View {
                         .font(.subheadline.weight(.medium))
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.cwProminent)
                 .tint(.green)
 
                 Button {
@@ -466,7 +468,7 @@ struct POTAUploadInstructionsCard: View {
                         .font(.subheadline.weight(.medium))
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.cwTinted)
             }
         }
         .padding()

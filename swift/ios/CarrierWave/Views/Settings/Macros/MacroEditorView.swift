@@ -90,13 +90,17 @@ struct MacroEditorView: View {
                     dismiss()
                 }
             }
+            .buttonStyle(.cwToolbarTinted)
         }
+        .sharedBackgroundVisibility(.hidden)
         ToolbarItem(placement: .confirmationAction) {
             Button("Save") {
                 save()
             }
+            .buttonStyle(.cwToolbarProminent)
             .disabled(!model.canSave || !model.dirty && !isNewlyCreated)
         }
+        .sharedBackgroundVisibility(.hidden)
     }
 
     private func save() {

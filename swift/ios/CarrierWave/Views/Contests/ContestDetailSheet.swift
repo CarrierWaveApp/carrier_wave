@@ -43,7 +43,9 @@ struct ContestDetailSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Done") { dismiss() }
+                        .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
             .alert(alertTitle, isPresented: $showAlert) {
                 Button("OK") {}

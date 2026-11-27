@@ -27,7 +27,9 @@ struct SatBridgePassSheet: View {
                     Button("Done") {
                         dismiss()
                     }
+                    .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
         }
         .presentationDetents([.medium])

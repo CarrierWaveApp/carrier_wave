@@ -109,7 +109,9 @@ struct ContestCalendarView: View {
         if isPickerMode {
             ToolbarItem(placement: .cancellationAction) {
                 Button("Cancel") { dismiss() }
+                    .buttonStyle(.cwToolbarTinted)
             }
+            .sharedBackgroundVisibility(.hidden)
         }
         ToolbarItem(placement: .topBarTrailing) {
             HStack(spacing: 12) {
@@ -119,6 +121,7 @@ struct ContestCalendarView: View {
                     } label: {
                         Text("Today").font(.caption.weight(.semibold))
                     }
+                    .buttonStyle(.cwToolbarTinted)
                 }
                 if refresher.isRefreshing {
                     ProgressView().controlSize(.small)

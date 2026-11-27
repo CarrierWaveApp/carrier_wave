@@ -249,7 +249,7 @@ struct SidebarP2PView: View {
                     selectedBands = []
                     selectedModes = []
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.cwTinted)
             }
         }
         .padding()
@@ -288,7 +288,7 @@ struct SidebarP2PView: View {
             Button("Retry") {
                 Task { await loadOpportunities() }
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.cwTinted)
         }
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity)

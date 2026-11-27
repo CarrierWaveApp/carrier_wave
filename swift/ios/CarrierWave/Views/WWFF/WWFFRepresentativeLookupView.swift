@@ -75,7 +75,7 @@ struct WWFFRepresentativeLookupView: View {
                 Button("Look Up") {
                     lookupByReference()
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.cwTinted)
                 .disabled(referenceInput.isEmpty)
             }
         }
@@ -253,7 +253,7 @@ struct WWFFRepresentativeLookupView: View {
                 Label("Open in Mail", systemImage: "envelope")
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.cwProminent)
             .disabled(!canSubmit)
         } else {
             Text(

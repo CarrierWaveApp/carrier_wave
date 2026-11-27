@@ -161,7 +161,7 @@ struct TOTAActivationFields: View {
                         .font(.caption.weight(.medium))
                 }
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.cwTinted)
             .controlSize(.small)
             .disabled(gridLocationService.isLocating)
         }

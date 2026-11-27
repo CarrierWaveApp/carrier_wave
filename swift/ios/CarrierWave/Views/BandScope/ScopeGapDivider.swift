@@ -99,7 +99,7 @@ struct QSYSheet: View {
                     )
                     .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.cwTinted)
                 .disabled(!RadioService.shared.isConnected)
 
                 if !RadioService.shared.isConnected {
@@ -125,7 +125,9 @@ struct QSYSheet: View {
                     Button("Done") {
                         dismiss()
                     }
+                    .buttonStyle(.cwToolbarProminent)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
         }
         .presentationDetents([.medium])

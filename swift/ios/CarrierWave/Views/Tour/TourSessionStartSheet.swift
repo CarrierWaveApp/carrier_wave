@@ -29,7 +29,9 @@ struct TourSessionStartSheet: View {
                     Button("Cancel") {
                         tourManager.skip()
                     }
+                    .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Start") {
                         // Intercepted — advance tour instead of creating real session
@@ -40,7 +42,9 @@ struct TourSessionStartSheet: View {
                             }
                         }
                     }
+                    .buttonStyle(.cwToolbarProminent)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
             .safeAreaInset(edge: .bottom) {
                 tourSheetGuideBubble

@@ -60,7 +60,9 @@ struct MigrationCatalogSearchSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
+                        .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
             .onChange(of: searchText) { _, newValue in
                 updateResults(query: newValue)

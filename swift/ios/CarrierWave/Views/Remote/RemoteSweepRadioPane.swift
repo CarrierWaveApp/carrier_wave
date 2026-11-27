@@ -39,7 +39,9 @@ struct RemoteSweepRadioPane: View {
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
                 Button("Done") { freqFieldFocused = false }
+                    .buttonStyle(.cwToolbarTinted)
             }
+            .sharedBackgroundVisibility(.hidden)
         }
         .contentShape(Rectangle())
         .onTapGesture { freqFieldFocused = false }
@@ -243,7 +245,7 @@ struct RemoteSweepRadioPane: View {
                     Task { await sendTune() }
                 }
                 .disabled(sending || parsedFreqHz == nil)
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.cwProminent)
                 .tint(.blue)
                 .controlSize(.large)
             }

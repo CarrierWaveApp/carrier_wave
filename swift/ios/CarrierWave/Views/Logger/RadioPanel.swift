@@ -29,7 +29,9 @@ struct RadioPanel: View {
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") { dismiss() }
+                        .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
         }
         .presentationDetents([.medium, .large])
@@ -91,7 +93,7 @@ struct RadioPanel: View {
                 } label: {
                     Label("Read Radio", systemImage: "arrow.down.circle")
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.cwTinted)
             }
 
             if let name = service.savedDeviceName {
@@ -121,7 +123,7 @@ struct RadioPanel: View {
                 Button("Connect") {
                     service.connectToSavedDevice()
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.cwTinted)
             } else {
                 Text("No Radio Configured")
                     .font(.headline)

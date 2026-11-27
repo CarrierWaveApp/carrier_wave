@@ -63,7 +63,7 @@ struct FT8AudioOverloadBanner: View {
                 }
                 .font(.caption.bold())
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.cwProminent)
             .tint(.white.opacity(0.25))
             .foregroundStyle(.white)
             .controlSize(.mini)

@@ -113,7 +113,9 @@ struct SessionsTabView: View {
                         .toolbar {
                             ToolbarItem(placement: .cancellationAction) {
                                 Button("Done") { showHunterLogCover = false }
+                                    .buttonStyle(.cwToolbarTinted)
                             }
+                            .sharedBackgroundVisibility(.hidden)
                         }
                 }
             }
@@ -139,7 +141,9 @@ struct SessionsTabView: View {
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
                         Button("Done") { showSessionsIntentSheet = false }
+                            .buttonStyle(.cwToolbarTinted)
                     }
+                    .sharedBackgroundVisibility(.hidden)
                 }
             }
         }

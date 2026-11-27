@@ -47,7 +47,7 @@ extension WebSDRPanelView {
                     Label("Open in Browser", systemImage: "safari")
                         .font(.caption)
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.cwTinted)
                 .controlSize(.small)
             }
         }
@@ -131,7 +131,7 @@ extension WebSDRPanelView {
                         Image(systemName: "stop.fill")
                             .font(.caption)
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.cwTinted)
                     .controlSize(.small)
                     .tint(.red)
                 }
@@ -145,7 +145,7 @@ extension WebSDRPanelView {
                     )
                     .font(.caption)
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.cwTinted)
                 .controlSize(.small)
                 .tint(.blue)
             }
@@ -181,7 +181,7 @@ extension WebSDRPanelView {
             } label: {
                 Label("Disconnect", systemImage: "stop.fill")
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.cwTinted)
         }
         .frame(maxWidth: .infinity, minHeight: 120)
     }
@@ -202,7 +202,7 @@ extension WebSDRPanelView {
             } label: {
                 Label("Try Again", systemImage: "arrow.clockwise")
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.cwTinted)
         }
         .padding()
         .frame(maxWidth: .infinity, minHeight: 120)

@@ -228,7 +228,7 @@ struct P2PPanelView: View {
                     selectedBands = []
                     selectedModes = []
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.cwTinted)
             }
         }
         .padding()
@@ -268,7 +268,7 @@ struct P2PPanelView: View {
             Button("Retry") {
                 Task { await loadOpportunities() }
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.cwTinted)
         }
         .padding()
         .frame(maxWidth: .infinity, minHeight: 200)

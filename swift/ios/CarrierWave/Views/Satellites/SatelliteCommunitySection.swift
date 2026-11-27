@@ -37,7 +37,7 @@ struct SatelliteCommunitySection: View {
                         Label("Report", systemImage: "square.and.pencil")
                             .font(.caption2.weight(.medium))
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.cwTinted)
                     .controlSize(.mini)
                     .accessibilityLabel("Report this satellite's status to AMSAT")
                 }

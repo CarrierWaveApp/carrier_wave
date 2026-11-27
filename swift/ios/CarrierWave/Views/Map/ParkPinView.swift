@@ -215,7 +215,7 @@ extension ParkCalloutView {
                 .font(.subheadline.weight(.medium))
                 .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.borderedProminent)
+        .buttonStyle(.cwProminent)
         .tint(.green)
     }
 

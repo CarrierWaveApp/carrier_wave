@@ -205,7 +205,7 @@ extension AboutMeView {
                             .font(.subheadline.weight(.medium))
                     }
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.cwProminent)
                 .disabled(
                     newCallsign.trimmingCharacters(in: .whitespaces).count < 3
                         || isLookingUpNewCallsign

@@ -49,7 +49,9 @@ struct SessionADIFExportSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Done") { dismiss() }
+                        .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
             .fileExporter(
                 isPresented: $showFileSaver,
@@ -81,7 +83,7 @@ struct SessionADIFExportSheet: View {
             Label("Save to Files", systemImage: "folder")
                 .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.bordered)
+        .buttonStyle(.cwTinted)
         .controlSize(.large)
     }
 
@@ -99,7 +101,7 @@ struct SessionADIFExportSheet: View {
             )
             .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.bordered)
+        .buttonStyle(.cwTinted)
         .controlSize(.large)
     }
 
@@ -241,7 +243,7 @@ struct SessionADIFExportSheet: View {
             Button("Try Again") {
                 Task { await generateADIF() }
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.cwTinted)
         }
     }
 }

@@ -156,7 +156,7 @@ struct RecoveryModeView: View {
             }
             .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.borderedProminent)
+        .buttonStyle(.cwProminent)
         .controlSize(.large)
         .disabled(mostRecentBackup == nil || isBusy)
     }
@@ -170,7 +170,7 @@ struct RecoveryModeView: View {
             )
             .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.bordered)
+        .buttonStyle(.cwTinted)
         .controlSize(.large)
         .disabled(isBusy)
     }
@@ -185,7 +185,7 @@ struct RecoveryModeView: View {
             )
             .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.bordered)
+        .buttonStyle(.cwTinted)
         .controlSize(.large)
         .disabled(isBusy)
         .alert(

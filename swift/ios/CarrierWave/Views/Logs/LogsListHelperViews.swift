@@ -35,7 +35,7 @@ struct QueryWarningBanner: View {
                     Button("Search Anyway") {
                         onProceed()
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.cwTinted)
                     .controlSize(.small)
 
                     if let suggestion = analysis.warnings.first?.suggestion,
@@ -44,7 +44,7 @@ struct QueryWarningBanner: View {
                         Button("Add Date Filter") {
                             onAddFilter("after:30d")
                         }
-                        .buttonStyle(.borderedProminent)
+                        .buttonStyle(.cwProminent)
                         .controlSize(.small)
                     }
                 }
@@ -121,7 +121,9 @@ struct QueryHelpSheet: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
+                        .buttonStyle(.cwToolbarProminent)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
         }
     }

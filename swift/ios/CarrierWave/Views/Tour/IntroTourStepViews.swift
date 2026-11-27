@@ -358,13 +358,13 @@ struct IntroTourFeedbackStep: View {
                     Label("Join our Discord", systemImage: "bubble.left.and.bubble.right.fill")
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.cwTinted)
 
                 Link(destination: URL(string: "mailto:feedback@carrierwave.app")!) {
                     Label("Send Feedback", systemImage: "envelope.fill")
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.cwTinted)
             }
             .padding(.top, 8)
         }
@@ -403,7 +403,9 @@ struct IntroTourOtherServicesSheet: View {
                     Button("Done") {
                         isPresented = false
                     }
+                    .buttonStyle(.cwToolbarProminent)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
         }
     }

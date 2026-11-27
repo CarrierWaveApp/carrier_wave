@@ -80,7 +80,7 @@ struct TOTABragSheetSheet: View {
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 12)
                     }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(.cwProminent)
                     .padding(.horizontal)
                 }
                 .padding(.bottom, 16)
@@ -91,7 +91,9 @@ struct TOTABragSheetSheet: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { onDismiss() }
+                        .buttonStyle(.cwToolbarProminent)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
         }
     }

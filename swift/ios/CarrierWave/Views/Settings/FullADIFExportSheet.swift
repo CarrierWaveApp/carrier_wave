@@ -43,7 +43,9 @@ struct FullADIFExportSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Done") { dismiss() }
+                        .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
             .fileExporter(
                 isPresented: $showFileSaver,
@@ -158,7 +160,7 @@ struct FullADIFExportSheet: View {
             Label("Share ADIF", systemImage: "square.and.arrow.up")
                 .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.borderedProminent)
+        .buttonStyle(.cwProminent)
         .controlSize(.large)
 
         Button {
@@ -167,7 +169,7 @@ struct FullADIFExportSheet: View {
             Label("Save to Files", systemImage: "folder")
                 .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.bordered)
+        .buttonStyle(.cwTinted)
         .controlSize(.large)
 
         if result.fileSizeBytes <= Self.clipboardMaxBytes {
@@ -180,7 +182,7 @@ struct FullADIFExportSheet: View {
                 )
                 .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.cwTinted)
             .controlSize(.large)
         }
     }
@@ -198,7 +200,7 @@ struct FullADIFExportSheet: View {
             Button("Try Again") {
                 Task { await runExport() }
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.cwTinted)
         }
     }
 

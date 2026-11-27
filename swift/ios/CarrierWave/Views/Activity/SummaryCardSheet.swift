@@ -71,7 +71,9 @@ struct SummaryCardSheet: View {
                     Button("Cancel") {
                         dismiss()
                     }
+                    .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
             .onChange(of: selectedPeriod) { _, _ in
                 recomputeStats()

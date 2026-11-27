@@ -69,7 +69,7 @@ struct SpotQueryResultsView: View {
                 .font(.subheadline.weight(.medium))
                 .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.bordered)
+        .buttonStyle(.cwTinted)
         .disabled(isRunning)
     }
 
@@ -122,11 +122,15 @@ struct SpotQuerySaveSheet: View {
                         )
                         dismiss()
                     }
+                    .buttonStyle(.cwToolbarProminent)
                     .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
+                .sharedBackgroundVisibility(.hidden)
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
+                        .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
             .onAppear {
                 if name.isEmpty {

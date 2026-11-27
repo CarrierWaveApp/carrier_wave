@@ -42,7 +42,9 @@ struct FullQSONExportSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Done") { dismiss() }
+                        .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
             .fileExporter(
                 isPresented: $showFileSaver,
@@ -156,7 +158,7 @@ struct FullQSONExportSheet: View {
             Label("Share QSON", systemImage: "square.and.arrow.up")
                 .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.borderedProminent)
+        .buttonStyle(.cwProminent)
         .controlSize(.large)
 
         Button {
@@ -165,7 +167,7 @@ struct FullQSONExportSheet: View {
             Label("Save to Files", systemImage: "folder")
                 .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.bordered)
+        .buttonStyle(.cwTinted)
         .controlSize(.large)
 
         if result.fileSizeBytes <= Self.clipboardMaxBytes {
@@ -178,7 +180,7 @@ struct FullQSONExportSheet: View {
                 )
                 .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.cwTinted)
             .controlSize(.large)
         }
     }
@@ -196,7 +198,7 @@ struct FullQSONExportSheet: View {
             Button("Try Again") {
                 Task { await runExport() }
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.cwTinted)
         }
     }
 

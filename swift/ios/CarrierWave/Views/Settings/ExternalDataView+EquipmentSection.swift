@@ -40,7 +40,7 @@ struct EquipmentCatalogCacheSection: View {
                                 Label("Download", systemImage: "arrow.down.circle")
                             }
                         }
-                        .buttonStyle(.bordered)
+                        .buttonStyle(.cwTinted)
                         .disabled(isRefreshing)
 
                         Spacer()

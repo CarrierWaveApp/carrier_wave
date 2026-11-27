@@ -12,6 +12,9 @@ section at the end of this file.
 ### Changed
 - **BKG is now "BKG Turf Wars" on screen** (iOS). The stored program
   slug stays `bkg`, so existing sessions and exports are unchanged.
+- **Buttons share one look (iOS).** Action buttons across the app now match
+  the logger's LOG button: a rectangle with slightly rounded corners and an
+  all-caps label. Primary actions are solid; secondary ones are lightly tinted.
 
 ### Added
 - **BKG Turf Wars grid and corner from GPS (iOS).** Your grid — or your 4-grid

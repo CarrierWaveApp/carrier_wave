@@ -78,7 +78,7 @@ extension LoggerView {
                     .foregroundStyle(.secondary)
                 Spacer()
                 Button("Use GPS") { applyBKGFix(force: true) }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.cwTinted)
                     .font(.caption)
                     .disabled(bkgForm.position == nil)
             }

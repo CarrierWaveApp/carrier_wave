@@ -347,7 +347,7 @@ struct RBNPanelView: View {
                 Task { await loadData() }
             }
             .font(.caption)
-            .buttonStyle(.bordered)
+            .buttonStyle(.cwTinted)
         }
         .padding()
         .frame(maxWidth: .infinity, minHeight: panelMinHeight, maxHeight: isPanel ? nil : .infinity)

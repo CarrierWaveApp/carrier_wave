@@ -114,11 +114,15 @@ struct ActivityLogSetupSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
+                        .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Create") { createLog() }
+                        .buttonStyle(.cwToolbarProminent)
                         .disabled(!isValid)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
             .onChange(of: useCurrentLocation) { _, isOn in
                 if isOn {

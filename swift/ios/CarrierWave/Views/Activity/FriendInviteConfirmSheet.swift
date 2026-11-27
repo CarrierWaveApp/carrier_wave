@@ -45,7 +45,7 @@ struct FriendInviteConfirmSheet: View {
                                 .frame(maxWidth: .infinity)
                         }
                     }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(.cwProminent)
                     .controlSize(.large)
                     .disabled(isProcessing)
 
@@ -61,8 +61,10 @@ struct FriendInviteConfirmSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { onDismiss() }
+                        .buttonStyle(.cwToolbarTinted)
                         .disabled(isProcessing)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
         }
         .landscapeAdaptiveDetents(portrait: [.medium])

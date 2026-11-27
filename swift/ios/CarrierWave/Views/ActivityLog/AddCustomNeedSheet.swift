@@ -42,14 +42,18 @@ struct AddCustomNeedSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
+                        .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Add") {
                         saveNeed()
                         dismiss()
                     }
+                    .buttonStyle(.cwToolbarProminent)
                     .disabled(pattern.isEmpty || label.isEmpty)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
         }
         .landscapeAdaptiveDetents(portrait: [.medium])

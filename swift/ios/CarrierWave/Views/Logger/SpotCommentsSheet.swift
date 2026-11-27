@@ -66,7 +66,9 @@ struct SpotCommentsSheet: View {
                         onMarkRead()
                         onDismiss()
                     }
+                    .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
         }
         .landscapeAdaptiveDetents(portrait: [.medium, .large])

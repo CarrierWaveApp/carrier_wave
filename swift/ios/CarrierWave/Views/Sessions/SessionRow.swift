@@ -383,7 +383,7 @@ extension SessionRow {
                 systemImage: "arrow.up.circle.fill"
             )
         }
-        .buttonStyle(.bordered)
+        .buttonStyle(.cwTinted)
     }
 
     private var qrzUploadButton: some View {
@@ -400,7 +400,7 @@ extension SessionRow {
                 systemImage: "arrow.up.circle.fill"
             )
         }
-        .buttonStyle(.bordered)
+        .buttonStyle(.cwTinted)
         .tint(.orange)
     }
 

@@ -305,7 +305,7 @@ struct AllHiddenQSORow: View {
                 )
                 .font(.subheadline)
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.cwTinted)
         }
         .padding(.vertical, 4)
     }

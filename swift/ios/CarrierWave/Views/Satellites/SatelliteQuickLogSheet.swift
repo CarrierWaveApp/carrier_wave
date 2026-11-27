@@ -46,11 +46,15 @@ struct SatelliteQuickLogSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
+                        .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
                 ToolbarItem(placement: .confirmationAction) {
                     Button(saveTitle) { save() }
+                        .buttonStyle(.cwToolbarProminent)
                         .disabled(filledRowCount == 0)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
             .onAppear { prefill() }
         }

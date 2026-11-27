@@ -38,7 +38,9 @@ struct BragSheetView: View {
                 } label: {
                     Text("Customize")
                 }
+                .buttonStyle(.cwToolbarProminent)
             }
+            .sharedBackgroundVisibility(.hidden)
             ToolbarItem(placement: .primaryAction) {
                 if isGeneratingShareImage {
                     ProgressView()
@@ -215,7 +217,7 @@ struct BragShareImageSheet: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 8)
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.cwProminent)
                 .padding()
                 .background(.bar)
             }
@@ -224,7 +226,9 @@ struct BragShareImageSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
+                        .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
         }
     }

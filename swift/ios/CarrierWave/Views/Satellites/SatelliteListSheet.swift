@@ -39,7 +39,9 @@ struct SatelliteListSheet: View {
                         Button("Done") {
                             dismiss()
                         }
+                        .buttonStyle(.cwToolbarTinted)
                     }
+                    .sharedBackgroundVisibility(.hidden)
                 }
         }
         .task {

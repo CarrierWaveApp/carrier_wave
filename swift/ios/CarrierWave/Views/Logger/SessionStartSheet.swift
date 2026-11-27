@@ -325,12 +325,16 @@ struct SessionStartSheet: View {
                     Button("Cancel") {
                         onDismiss()
                     }
+                    .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
                 ToolbarItemGroup(placement: .keyboard) {
                     Spacer()
                     Button("Done") { dismissKeyboard() }
+                        .buttonStyle(.cwToolbarTinted)
                         .fontWeight(.semibold)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
         }
     }
@@ -356,7 +360,7 @@ extension SessionStartSheet {
                     .font(.headline)
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.cwProminent)
             .controlSize(.large)
             .disabled(!canStart)
         }

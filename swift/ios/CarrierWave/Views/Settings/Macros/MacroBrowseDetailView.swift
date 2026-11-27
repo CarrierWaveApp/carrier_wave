@@ -104,7 +104,7 @@ struct MacroBrowseDetailView: View {
                 Button("Retry") {
                     Task { await loadIfNeeded(force: true) }
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.cwProminent)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 12)
@@ -175,7 +175,7 @@ struct MacroBrowseDetailView: View {
             .frame(maxWidth: .infinity)
         }
         .controlSize(.large)
-        .buttonStyle(.borderedProminent)
+        .buttonStyle(.cwProminent)
         .disabled(installing || currentlyInstalled)
     }
 

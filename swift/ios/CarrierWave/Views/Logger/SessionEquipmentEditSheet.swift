@@ -48,7 +48,9 @@ struct SessionEquipmentEditSheet: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
+                        .buttonStyle(.cwToolbarProminent)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
             .sheet(item: $activePickerCategory) { category in
                 InventoryPickerSheet(

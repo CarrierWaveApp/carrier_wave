@@ -209,7 +209,9 @@ struct MacroAddArgSheet: View {
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
                 Button("Cancel") { dismiss() }
+                    .buttonStyle(.cwToolbarTinted)
             }
+            .sharedBackgroundVisibility(.hidden)
             ToolbarItem(placement: .confirmationAction) {
                 Button("Add") {
                     if let arg = draft.toArg() {
@@ -217,8 +219,10 @@ struct MacroAddArgSheet: View {
                         dismiss()
                     }
                 }
+                .buttonStyle(.cwToolbarProminent)
                 .disabled(draft.toArg() == nil)
             }
+            .sharedBackgroundVisibility(.hidden)
         }
     }
 

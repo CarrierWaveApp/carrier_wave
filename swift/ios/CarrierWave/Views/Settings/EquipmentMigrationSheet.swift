@@ -63,14 +63,18 @@ struct EquipmentMigrationSheet: View {
                         markMigrated()
                         onComplete()
                     }
+                    .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Migrate") {
                         performMigration()
                     }
+                    .buttonStyle(.cwToolbarProminent)
                     .fontWeight(.semibold)
                     .disabled(candidates.isEmpty)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
             .task { buildCandidates() }
             .sheet(isPresented: Binding(

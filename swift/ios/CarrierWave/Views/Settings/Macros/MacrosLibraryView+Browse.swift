@@ -106,7 +106,7 @@ struct MacrosLibraryBrowseTab: View {
             Button("Try Again") {
                 Task { await refresh() }
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.cwProminent)
             Spacer()
         }
         .frame(maxWidth: .infinity)

@@ -168,8 +168,7 @@ struct NewSpotsPill: View {
             Label("\(count) new spot\(count == 1 ? "" : "s")", systemImage: "arrowtriangle.up.fill")
                 .font(.caption.weight(.semibold))
         }
-        .buttonStyle(.borderedProminent)
-        .buttonBorderShape(.capsule)
+        .buttonStyle(.cwProminent)
         .shadow(color: .black.opacity(0.15), radius: 6, y: 2)
         .accessibilityLabel("Show \(count) new spots")
     }

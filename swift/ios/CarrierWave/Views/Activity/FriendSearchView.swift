@@ -166,7 +166,7 @@ struct SearchResultRow: View {
                 Button("Add") {
                     onSend()
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.cwProminent)
                 .controlSize(.small)
             }
         }

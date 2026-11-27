@@ -120,7 +120,7 @@ struct DXpeditionsView: View {
                 } label: {
                     Image(systemName: "chevron.left")
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.cwTinted)
 
                 Spacer()
 
@@ -134,7 +134,7 @@ struct DXpeditionsView: View {
                 } label: {
                     Image(systemName: "chevron.right")
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.cwTinted)
             }
             .padding(.vertical, 4)
         }
@@ -240,7 +240,7 @@ struct DXpeditionsView: View {
                 Button("Retry") {
                     Task { await loadExpeditions() }
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.cwTinted)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 12)

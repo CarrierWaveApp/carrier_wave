@@ -219,7 +219,9 @@ struct SessionsView: View {
                             activationToMap = nil
                             roveStopsForMap = []
                         }
+                        .buttonStyle(.cwToolbarTinted)
                     }
+                    .sharedBackgroundVisibility(.hidden)
                 }
             }
         }

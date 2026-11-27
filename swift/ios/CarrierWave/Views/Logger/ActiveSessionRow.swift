@@ -41,13 +41,10 @@ struct ActiveSessionRow: View {
                 } label: {
                     Text("Continue")
                         .font(.caption.weight(.semibold))
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 4)
-                        .background(Color.blue)
-                        .foregroundStyle(.white)
-                        .clipShape(Capsule())
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.cwProminent)
+                .controlSize(.mini)
+                .tint(.blue)
 
                 sessionMenu
             }

@@ -68,8 +68,10 @@ struct CommunityFeaturesPromptSheet: View {
                     Button("Done") {
                         confirmAndRegister()
                     }
+                    .buttonStyle(.cwToolbarProminent)
                     .disabled(isRegistering)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
         }
         .landscapeAdaptiveDetents(portrait: [.medium, .large])

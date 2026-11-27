@@ -296,6 +296,7 @@ struct FrequencyScopeField: View {
 
             Button(action: findClear) {
                 Text("Find clear")
+                    .textCase(.uppercase)
                     .font(.subheadline.weight(.semibold))
                     .padding(.horizontal, 12).padding(.vertical, 9)
                     .background(Color.blue.opacity(0.12), in: RoundedRectangle(cornerRadius: 9))

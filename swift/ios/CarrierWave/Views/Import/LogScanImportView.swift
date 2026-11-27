@@ -118,8 +118,10 @@ struct LogScanImportView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
+                        .buttonStyle(.cwToolbarTinted)
                         .disabled(isLoadingPhotos)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
             .overlay {
                 if isLoadingPhotos {

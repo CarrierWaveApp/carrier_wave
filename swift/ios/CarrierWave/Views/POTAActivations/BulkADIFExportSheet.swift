@@ -62,7 +62,9 @@ struct BulkADIFExportSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Done") { dismiss() }
+                        .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
             .fileExporter(
                 isPresented: $showFileSaver,
@@ -211,7 +213,7 @@ struct BulkADIFExportSheet: View {
                 Label("Share All (\(splitFiles.count) files)", systemImage: "square.and.arrow.up")
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.cwProminent)
             .controlSize(.large)
         } else if let errorMessage {
             Text(errorMessage)
@@ -250,7 +252,7 @@ struct BulkADIFExportSheet: View {
             Label("Share ADIF", systemImage: "square.and.arrow.up")
                 .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.borderedProminent)
+        .buttonStyle(.cwProminent)
         .controlSize(.large)
 
         Button {
@@ -259,7 +261,7 @@ struct BulkADIFExportSheet: View {
             Label("Save to Files", systemImage: "folder")
                 .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.bordered)
+        .buttonStyle(.cwTinted)
         .controlSize(.large)
 
         Button {
@@ -275,7 +277,7 @@ struct BulkADIFExportSheet: View {
             )
             .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.bordered)
+        .buttonStyle(.cwTinted)
         .controlSize(.large)
     }
 

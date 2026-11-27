@@ -107,7 +107,7 @@ extension ShareClipSheet {
                 systemImage: isPreviewing ? "stop.fill" : "play.fill"
             )
         }
-        .buttonStyle(.bordered)
+        .buttonStyle(.cwTinted)
     }
 
     // MARK: - Export Actions
@@ -129,7 +129,7 @@ extension ShareClipSheet {
                         .frame(maxWidth: .infinity)
                 }
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.cwTinted)
             .disabled(isRenderingCard || isExporting)
         }
     }
@@ -148,7 +148,7 @@ extension ShareClipSheet {
                 Label("Share Audio", systemImage: "square.and.arrow.up")
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.cwProminent)
         } else {
             Button {
                 Task { await exportClip() }
@@ -161,7 +161,7 @@ extension ShareClipSheet {
                         .frame(maxWidth: .infinity)
                 }
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.cwProminent)
             .disabled(isExporting)
         }
     }

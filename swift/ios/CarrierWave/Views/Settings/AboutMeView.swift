@@ -72,9 +72,11 @@ struct AboutMeView: View {
                     Button("Edit") {
                         showEditSheet = true
                     }
+                    .buttonStyle(.cwToolbarTinted)
                     .accessibilityLabel("Edit profile")
                 }
             }
+            .sharedBackgroundVisibility(.hidden)
         }
         .onAppear {
             loadProfile()

@@ -60,7 +60,9 @@ struct QRZApiKeySheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
+                        .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
             .alert("Error", isPresented: $showingError) {
                 Button("OK") {}

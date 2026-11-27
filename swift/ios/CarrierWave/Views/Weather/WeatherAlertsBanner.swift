@@ -109,8 +109,10 @@ struct WeatherAlertsSheet: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     if let onDismiss {
                         Button("Done", action: onDismiss)
+                            .buttonStyle(.cwToolbarTinted)
                     }
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
         }
     }

@@ -160,7 +160,7 @@ struct ActivationRow: View {
             )
             .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.borderedProminent)
+        .buttonStyle(.cwProminent)
     }
 }
 
@@ -390,7 +390,10 @@ struct UploadErrorSheet: View {
             .navigationTitle("Upload Errors")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() }
+                    .buttonStyle(.cwToolbarProminent)
+                }
+                .sharedBackgroundVisibility(.hidden)
             }
         }
         .landscapeAdaptiveDetents(portrait: [.medium])

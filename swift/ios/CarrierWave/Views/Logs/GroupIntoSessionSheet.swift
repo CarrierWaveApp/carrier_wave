@@ -88,11 +88,15 @@ struct GroupIntoSessionSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { onCancel() }
+                        .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Create") { submit() }
+                        .buttonStyle(.cwToolbarProminent)
                         .disabled(!canSubmit)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
         }
     }

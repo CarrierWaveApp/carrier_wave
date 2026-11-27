@@ -39,7 +39,7 @@ struct ActivityLogCard: View {
                     .font(.subheadline.weight(.medium))
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.cwProminent)
         }
         .padding()
         .background(Color(.systemGray6))

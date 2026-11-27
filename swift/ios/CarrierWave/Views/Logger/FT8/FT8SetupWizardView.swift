@@ -45,7 +45,9 @@ struct FT8SetupWizardView: View {
                     Button("Skip") {
                         isPresented = false
                     }
+                    .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
                 ToolbarItem(placement: .principal) {
                     HStack(spacing: 6) {
                         Text("FT8 Setup")
@@ -84,7 +86,7 @@ struct FT8SetupWizardView: View {
                     Label("Back", systemImage: "chevron.left")
                         .font(.subheadline.weight(.medium))
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.cwTinted)
             }
 
             Spacer()
@@ -97,7 +99,7 @@ struct FT8SetupWizardView: View {
                         .font(.subheadline.weight(.medium))
                         .labelStyle(TrailingIconLabelStyle())
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.cwProminent)
             } else {
                 Button {
                     ft8SetupComplete = true
@@ -106,7 +108,7 @@ struct FT8SetupWizardView: View {
                     Text("Get Started")
                         .font(.headline)
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.cwProminent)
                 .tint(.green)
             }
         }

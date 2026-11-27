@@ -47,7 +47,9 @@ struct MacroUpdateReviewView: View {
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
                 Button("Done") { dismiss() }
+                    .buttonStyle(.cwToolbarTinted)
             }
+            .sharedBackgroundVisibility(.hidden)
         }
         .task { await load() }
         .alert("Update failed", isPresented: $showFailure) {
@@ -115,7 +117,7 @@ struct MacroUpdateReviewView: View {
                 }
             }
             .frame(maxWidth: .infinity)
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.cwProminent)
             .disabled(applying)
 
             Button("Keep My Version") {
@@ -150,7 +152,7 @@ struct MacroUpdateReviewView: View {
                 Button("Retry") {
                     Task { await load(force: true) }
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.cwProminent)
             }
             .frame(maxWidth: .infinity)
         }

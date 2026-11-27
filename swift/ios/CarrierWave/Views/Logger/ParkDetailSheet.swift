@@ -35,7 +35,9 @@ struct ParkDetailSheet: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
+                        .buttonStyle(.cwToolbarProminent)
                 }
+                .sharedBackgroundVisibility(.hidden)
                 ToolbarItem(placement: .topBarLeading) {
                     EnrichedShareButton(
                         payload: EnrichedLinkPayload.park(

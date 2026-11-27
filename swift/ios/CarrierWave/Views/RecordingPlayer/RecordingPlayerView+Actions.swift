@@ -66,7 +66,9 @@ struct ShareClipSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
+                        .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
             .onAppear { setDefaultRange() }
             .sheet(item: $shareCardData) { data in

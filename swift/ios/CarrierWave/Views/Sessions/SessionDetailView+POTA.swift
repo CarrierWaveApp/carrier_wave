@@ -108,7 +108,7 @@ extension SessionDetailView {
                 systemImage: "arrow.up.circle.fill"
             )
         }
-        .buttonStyle(.bordered)
+        .buttonStyle(.cwTinted)
     }
 
     private func qrzDetailUploadButton(
@@ -126,7 +126,7 @@ extension SessionDetailView {
                 systemImage: "arrow.up.circle.fill"
             )
         }
-        .buttonStyle(.bordered)
+        .buttonStyle(.cwTinted)
         .tint(.orange)
     }
 

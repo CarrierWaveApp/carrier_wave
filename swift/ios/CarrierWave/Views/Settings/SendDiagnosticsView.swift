@@ -34,13 +34,16 @@ struct SendDiagnosticsView: View {
                         Button("Done") {
                             showingSendDiagnostics = false
                         }
+                        .buttonStyle(.cwToolbarTinted)
                     case .collecting:
                         Button("Cancel") {
                             collectionTask?.cancel()
                             phase = .confirm
                         }
+                        .buttonStyle(.cwToolbarTinted)
                     }
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
             .interactiveDismissDisabled(phase == .collecting)
         }
@@ -138,7 +141,7 @@ extension SendDiagnosticsView {
                         Spacer()
                     }
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.cwProminent)
                 .listRowInsets(EdgeInsets())
                 .listRowBackground(Color.clear)
             }
@@ -232,7 +235,7 @@ extension SendDiagnosticsView {
                     }
                     .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.cwProminent)
                 .controlSize(.large)
                 .accessibilityHint(
                     "Opens the iOS share sheet with your "
@@ -273,7 +276,7 @@ extension SendDiagnosticsView {
                 Text("Try Again")
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.cwProminent)
             .controlSize(.large)
             .padding(.horizontal)
             .padding(.bottom, 32)

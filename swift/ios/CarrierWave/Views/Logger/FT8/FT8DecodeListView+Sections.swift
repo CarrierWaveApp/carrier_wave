@@ -149,7 +149,7 @@ extension FT8DecodeListView {
                 watchedCallsign = nil
             }
             .font(.caption.bold())
-            .buttonStyle(.bordered)
+            .buttonStyle(.cwTinted)
             .tint(.accentColor)
 
             Spacer()

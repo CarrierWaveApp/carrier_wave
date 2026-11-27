@@ -36,7 +36,9 @@ struct SatelliteRotatorSheet: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
+                        .buttonStyle(.cwToolbarProminent)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
         }
     }
@@ -110,7 +112,7 @@ struct SatelliteRotatorSheet: View {
                 ProgressView()
             } else {
                 Button("Add", action: addManual)
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.cwTinted)
                     .disabled(trimmedManualHost.isEmpty)
             }
         }
@@ -125,7 +127,7 @@ struct SatelliteRotatorSheet: View {
                             discovery.addManual(host: failed, kind: kind)
                             identifyFailedHost = nil
                         }
-                        .buttonStyle(.bordered)
+                        .buttonStyle(.cwTinted)
                         .controlSize(.small)
                     }
                 }
@@ -194,7 +196,7 @@ struct SatelliteRotatorSheet: View {
                 Button("Connect") {
                     Task { await service.connect(to: tracker.endpoint, model: model) }
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.cwTinted)
                 .disabled(service.rotator.state == .connecting)
             }
         }

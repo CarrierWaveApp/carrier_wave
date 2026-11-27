@@ -61,7 +61,7 @@ struct CWDetectedCallsignBar: View {
                     Text("Use")
                         .font(.subheadline.weight(.semibold))
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.cwProminent)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)

@@ -216,11 +216,15 @@ struct QSOEditSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
+                        .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { save() }
+                        .buttonStyle(.cwToolbarProminent)
                         .disabled(!isValid)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
         }
         .sheet(item: $activePickerCategory) { category in

@@ -90,6 +90,7 @@
 |------|---------|
 | `BadgePillModifier.swift` | Reusable `.badgePill()` view modifier for capsule-shaped badges |
 | `BrandWordmark.swift` | Quiet leading-toolbar logotype (radio-waves glyph + "Carrier Wave") — Home title that never competes with the hero |
+| `CWButtonStyle.swift` | App-wide action-button style from the logger's LOG button (rounded rectangle, all caps): `.cwProminent` solid, `.cwTinted` faint tint; follows tint, control size, disabled, destructive role |
 | `CountedPill.swift` | Capsule pill pairing a label with a parenthesised count (`20m (12)`) — used by session/day hero pills |
 | `SessionStatStrip.swift` | Tier 1 hero stat strip (value/label/percentile cells) shared by `SessionDetailView` and `DaySummaryView` |
 | `IdentityCard.swift` | Canonical operator identity hero (callsign, flag, license, metadata, club pills) — used by AboutMeView and CallsignHistoryView |

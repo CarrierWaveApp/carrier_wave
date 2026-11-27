@@ -54,7 +54,9 @@ struct MacroRunSheetView: View {
                     }
                     dismiss()
                 }
+                .buttonStyle(.cwToolbarTinted)
             }
+            .sharedBackgroundVisibility(.hidden)
         }
         .task {
             model.seedDefaults(args: spec.args)

@@ -49,7 +49,7 @@ extension SessionADIFExportSheet {
             Label("Share ADIF", systemImage: "square.and.arrow.up")
                 .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.borderedProminent)
+        .buttonStyle(.cwProminent)
         .controlSize(.large)
     }
 
@@ -85,7 +85,7 @@ extension SessionADIFExportSheet {
             )
             .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.borderedProminent)
+        .buttonStyle(.cwProminent)
         .controlSize(.large)
     }
 
@@ -109,7 +109,7 @@ extension SessionADIFExportSheet {
             )
             .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.borderedProminent)
+        .buttonStyle(.cwProminent)
         .controlSize(.large)
     }
 
@@ -127,7 +127,7 @@ extension SessionADIFExportSheet {
             Label("Combined archive", systemImage: "archivebox")
                 .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.bordered)
+        .buttonStyle(.cwTinted)
         .controlSize(.large)
     }
 }

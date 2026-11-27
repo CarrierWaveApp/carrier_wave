@@ -223,7 +223,7 @@ struct POTAUploadPromptSheet: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.cwProminent)
             .tint(.green)
 
             Button {
@@ -232,7 +232,7 @@ struct POTAUploadPromptSheet: View {
                 Text("Later")
                     .font(.subheadline)
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.cwTinted)
 
             Button {
                 onDontAskAgain()

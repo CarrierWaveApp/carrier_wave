@@ -39,7 +39,7 @@ extension TuneInExpandedPlayerView {
                         }
                     }
                     .font(.caption.weight(.semibold))
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(.cwProminent)
                     .tint(.orange)
                     .controlSize(.small)
 
@@ -82,7 +82,7 @@ extension TuneInExpandedPlayerView {
                         switchReceiver(suggestion.suggestedReceiver)
                     }
                     .font(.caption.weight(.semibold))
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(.cwProminent)
                     .controlSize(.small)
 
                     Button("Keep") {

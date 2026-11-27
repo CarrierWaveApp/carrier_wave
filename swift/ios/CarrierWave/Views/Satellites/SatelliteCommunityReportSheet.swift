@@ -44,13 +44,17 @@ struct SatelliteCommunityReportSheet: View {
                     Button("Cancel") {
                         dismiss()
                     }
+                    .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Submit") {
                         Task { await submit() }
                     }
+                    .buttonStyle(.cwToolbarProminent)
                     .disabled(!canSubmit)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
             .interactiveDismissDisabled(isSubmitting)
             .alert("Couldn't File Report", isPresented: errorPresented) {

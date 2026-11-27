@@ -307,25 +307,29 @@ var statsGridColumns: [GridItem] {
 
 ### Buttons
 
-**Primary action (Log QSO, Save):**
+Action buttons share one look, taken from the logger's LOG button: a rectangle
+with slightly rounded corners and an all-caps semibold label. Use
+`CWButtonStyle` (`Views/Components/CWButtonStyle.swift`); do not use
+`.borderedProminent` / `.bordered` in the iOS app. Write labels in normal
+case — the style uppercases them. Both variants follow `.tint(_:)`,
+`.controlSize(_:)`, the disabled state and `Button(role: .destructive)`.
+
+**Primary action (Log QSO, Save, Start):** solid fill, white label.
 ```swift
 Button { ... } label: {
     Text("Log QSO")
-        .font(.headline)
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 14)
 }
-.buttonStyle(.borderedProminent)
+.buttonStyle(.cwProminent)
 .tint(.green)
 ```
 
-**Secondary action (Start session):**
+**Secondary action (Cancel, Restore, Skip):** faint tint fill, tinted label.
 ```swift
 Button { ... } label: {
-    Label("Start", systemImage: "play.fill")
-        .font(.subheadline.weight(.medium))
+    Label("Restore", systemImage: "arrow.uturn.backward")
 }
-.buttonStyle(.borderedProminent)
+.buttonStyle(.cwTinted)
 ```
 
 **Destructive action:**
@@ -333,25 +337,20 @@ Button { ... } label: {
 Button(role: .destructive) { ... } label: {
     Text("Delete")
 }
-.buttonStyle(.borderedProminent)
-.tint(.red)
+.buttonStyle(.cwProminent)
 ```
 
-**Toolbar button:**
+**Toolbar button:** text buttons in a bar (Done, Cancel, Save) use the
+bar-sized variants, and the item hides the system glass capsule so only the
+rectangle shows. `.cwToolbarProminent` for confirmation actions,
+`.cwToolbarTinted` for everything else. Icon-only bar buttons keep the system
+look.
 ```swift
-Button { ... } label: {
-    Image(systemName: "arrow.triangle.2.circlepath")
+ToolbarItem(placement: .confirmationAction) {
+    Button("Save") { save() }
+        .buttonStyle(.cwToolbarProminent)
 }
-// No explicit style needed in toolbar
-```
-
-**Plain button (inline actions):**
-```swift
-Button { ... } label: {
-    Label("Restore", systemImage: "arrow.uturn.backward")
-        .font(.subheadline)
-}
-.buttonStyle(.bordered)
+.sharedBackgroundVisibility(.hidden)
 ```
 
 **Session END button:**

@@ -31,7 +31,9 @@ struct BragSheetCustomizeView: View {
                     Button("Done") {
                         dismiss()
                     }
+                    .buttonStyle(.cwToolbarProminent)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
             .onDisappear {
                 bragStats.saveAndRecompute(from: modelContext.container)

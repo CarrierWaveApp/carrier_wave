@@ -38,7 +38,7 @@ struct POTACacheSection: View {
                                 Label("Refresh Now", systemImage: "arrow.clockwise")
                             }
                         }
-                        .buttonStyle(.bordered)
+                        .buttonStyle(.cwTinted)
                         .disabled(isRefreshing)
 
                         Spacer()
@@ -140,7 +140,7 @@ struct POTACacheSection: View {
                 Button("Retry") {
                     Task { await refreshParks() }
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.cwTinted)
                 .controlSize(.small)
                 .padding(.top, 4)
             }

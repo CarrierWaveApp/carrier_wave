@@ -37,11 +37,15 @@ struct BugReportView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(hasSubmitted ? "Done" : "Cancel") { dismiss() }
+                        .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
                 if !hasSubmitted {
                     ToolbarItem(placement: .confirmationAction) {
                         Button("Submit") { submitReport() }
+                            .buttonStyle(.cwToolbarProminent)
                     }
+                    .sharedBackgroundVisibility(.hidden)
                 }
             }
             .task {
@@ -193,7 +197,7 @@ struct BugReportView: View {
                         UIApplication.shared.open(url)
                     }
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.cwProminent)
                 .padding(.top, 8)
 
                 Divider()
@@ -212,7 +216,7 @@ struct BugReportView: View {
                         systemImage: "doc.zipper"
                     )
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.cwTinted)
             }
             .padding(.vertical, 8)
         }

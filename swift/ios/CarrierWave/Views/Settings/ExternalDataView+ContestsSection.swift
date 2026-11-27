@@ -32,7 +32,7 @@ struct ContestsCacheSection: View {
                                 Label("Refresh Now", systemImage: "arrow.clockwise")
                             }
                         }
-                        .buttonStyle(.bordered)
+                        .buttonStyle(.cwTinted)
                         .disabled(refresher.isRefreshing)
                         Spacer()
                     }
@@ -101,7 +101,7 @@ struct ContestsCacheSection: View {
                 Button("Download Now") {
                     Task { await refresher.refresh() }
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.cwTinted)
                 .controlSize(.small)
                 .padding(.top, 4)
             }
@@ -143,7 +143,7 @@ struct ContestsCacheSection: View {
             Button("Retry") {
                 Task { await refresher.refresh() }
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.cwTinted)
             .controlSize(.small)
             .padding(.top, 4)
         }

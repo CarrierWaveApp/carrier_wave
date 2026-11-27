@@ -25,7 +25,9 @@ struct SessionADIFImportSheet: View {
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
                         Button("Cancel") { dismiss() }
+                            .buttonStyle(.cwToolbarTinted)
                     }
+                    .sharedBackgroundVisibility(.hidden)
                 }
                 .fileImporter(
                     isPresented: $showFilePicker,
@@ -117,7 +119,7 @@ struct SessionADIFImportSheet: View {
                 Button("Choose File") {
                     showFilePicker = true
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.cwTinted)
             }
             .padding()
         }

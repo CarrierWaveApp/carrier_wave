@@ -53,13 +53,17 @@ struct ScanReviewView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { onCancel() }
+                        .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Import \(selectedCount)") {
                         onImport(selectedRows)
                     }
+                    .buttonStyle(.cwToolbarProminent)
                     .disabled(selectedCount == 0)
                 }
+                .sharedBackgroundVisibility(.hidden)
                 ToolbarItem(placement: .bottomBar) {
                     HStack {
                         Button("Select All") {
@@ -67,12 +71,14 @@ struct ScanReviewView: View {
                                 rows[index].isSelected = true
                             }
                         }
+                        .buttonStyle(.cwToolbarTinted)
                         Spacer()
                         Button("Deselect All") {
                             for index in rows.indices {
                                 rows[index].isSelected = false
                             }
                         }
+                        .buttonStyle(.cwToolbarTinted)
                     }
                 }
             }

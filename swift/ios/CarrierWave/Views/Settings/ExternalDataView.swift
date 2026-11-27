@@ -149,7 +149,7 @@ struct ExternalDataView: View {
                 } label: {
                     Label("Recover with Passphrase", systemImage: "key.horizontal")
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.cwProminent)
 
                 Text("Uses your sync passphrase — recovers the original database, offline.")
                     .font(.caption)
@@ -165,7 +165,7 @@ struct ExternalDataView: View {
             } label: {
                 Label("Rebuild from Logbook", systemImage: "arrow.triangle.2.circlepath")
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.cwTinted)
         }
     }
 

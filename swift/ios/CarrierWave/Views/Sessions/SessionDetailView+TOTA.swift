@@ -241,7 +241,7 @@ struct TOTASectionContent: View {
                         .font(.caption)
                 }
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.cwTinted)
             .controlSize(.small)
             .disabled(refreshingSpots)
         }

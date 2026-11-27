@@ -47,16 +47,20 @@ struct QRQCrewSpotSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { onCancel() }
+                        .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Post Spot") {
                         if let wpm = Int(wpmText), wpm >= QRQCrewService.minimumWPM {
                             onPost(wpm)
                         }
                     }
+                    .buttonStyle(.cwToolbarProminent)
                     .disabled(!isValidSpeed)
                     .fontWeight(.semibold)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
         }
         .landscapeAdaptiveDetents(portrait: [.medium])

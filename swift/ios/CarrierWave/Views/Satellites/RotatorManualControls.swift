@@ -38,7 +38,7 @@ struct RotatorManualControls: View {
                 Button("Go") {
                     goTo()
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.cwProminent)
                 .disabled(!canGo)
             }
 
@@ -66,7 +66,7 @@ struct RotatorManualControls: View {
                     Label("Park", systemImage: "house")
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.cwTinted)
                 .controlSize(.large)
                 Button(role: .destructive) {
                     Task { await rotator.stop() }
@@ -74,7 +74,7 @@ struct RotatorManualControls: View {
                     Label("Stop", systemImage: "stop.fill")
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.cwProminent)
                 .controlSize(.large)
                 .tint(.red)
             }
@@ -151,7 +151,7 @@ struct RotatorManualControls: View {
                         Task { await rotator.moveTo(target) }
                     }
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.cwTinted)
                 .disabled(target == nil)
             }
         }

@@ -94,7 +94,7 @@ struct SOTAZonesCacheSection: View {
                         Label("Download Now", systemImage: "arrow.down.circle")
                     }
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.cwTinted)
                 .disabled(isRefreshing)
             }
 
@@ -132,7 +132,7 @@ struct SOTAZonesCacheSection: View {
                     Label("Refresh Now", systemImage: "arrow.clockwise")
                 }
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.cwTinted)
             .disabled(isRefreshing)
 
             Spacer()
@@ -178,7 +178,7 @@ struct SOTAZonesCacheSection: View {
             Button("Retry") {
                 Task { await refreshZones() }
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.cwTinted)
             .controlSize(.small)
             .padding(.top, 4)
         }

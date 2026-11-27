@@ -38,14 +38,14 @@ struct FT8ControlBar: View {
                         Label("Stop", systemImage: "stop.fill")
                             .font(.caption.bold())
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.cwTinted)
                     .tint(.red)
                 } else {
                     Button(action: onStart) {
                         Label("Start", systemImage: "play.fill")
                             .font(.caption.bold())
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.cwTinted)
                     .tint(.green)
                 }
             }
@@ -94,7 +94,7 @@ struct FT8ControlBar: View {
             Label(cqLabel, systemImage: "antenna.radiowaves.left.and.right")
                 .font(.caption.bold())
         }
-        .buttonStyle(.bordered)
+        .buttonStyle(.cwTinted)
         .tint(isCQSelected ? .accentColor : .secondary)
     }
 
@@ -157,7 +157,7 @@ struct FT8ControlBar: View {
             Label(title, systemImage: systemImage)
                 .font(.caption.bold())
         }
-        .buttonStyle(.bordered)
+        .buttonStyle(.cwTinted)
         .tint(isSelected(mode) ? .accentColor : .secondary)
     }
 

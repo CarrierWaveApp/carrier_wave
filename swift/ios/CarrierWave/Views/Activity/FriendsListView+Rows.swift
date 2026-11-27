@@ -24,11 +24,11 @@ struct IncomingRequestRow: View {
             }
 
             Button("Accept") { onAccept() }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.cwProminent)
                 .disabled(isProcessing)
 
             Button("Decline") { onDecline() }
-                .buttonStyle(.bordered)
+                .buttonStyle(.cwTinted)
                 .tint(.red)
                 .disabled(isProcessing)
         }
@@ -116,7 +116,9 @@ struct InviteLinkSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Done") { onDismiss() }
+                        .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
         }
         .landscapeAdaptiveDetents(portrait: [.medium])
@@ -160,7 +162,7 @@ struct InviteLinkSheet: View {
                 Label("Share Link", systemImage: "square.and.arrow.up")
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.cwProminent)
             .controlSize(.large)
 
             Button {
@@ -169,7 +171,7 @@ struct InviteLinkSheet: View {
                 Label("Copy to Clipboard", systemImage: "doc.on.doc")
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.cwTinted)
             .controlSize(.large)
         }
     }

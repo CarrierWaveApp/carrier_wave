@@ -312,7 +312,7 @@ struct TOTAPathMap: View {
             Label("Share GPX", systemImage: "square.and.arrow.up")
                 .font(.caption)
         }
-        .buttonStyle(.bordered)
+        .buttonStyle(.cwTinted)
         .controlSize(.small)
         .disabled(session.trackPoints.isEmpty)
     }

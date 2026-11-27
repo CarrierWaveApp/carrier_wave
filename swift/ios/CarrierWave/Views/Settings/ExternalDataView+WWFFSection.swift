@@ -41,7 +41,7 @@ struct WWFFCacheSection: View {
                                 )
                             }
                         }
-                        .buttonStyle(.bordered)
+                        .buttonStyle(.cwTinted)
                         .disabled(isRefreshing)
 
                         Spacer()
@@ -141,7 +141,7 @@ struct WWFFCacheSection: View {
                 Button("Retry") {
                     Task { await refreshReferences() }
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.cwTinted)
                 .controlSize(.small)
                 .padding(.top, 4)
             }

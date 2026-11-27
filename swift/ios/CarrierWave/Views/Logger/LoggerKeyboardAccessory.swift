@@ -36,7 +36,9 @@ struct LoggerKeyboardAccessory: View {
                     .toolbar {
                         ToolbarItem(placement: .topBarTrailing) {
                             Button("Done") { editingSlotID = nil; isEditingSlot = false }
+                                .buttonStyle(.cwToolbarTinted)
                         }
+                        .sharedBackgroundVisibility(.hidden)
                     }
                 }
             }
@@ -308,17 +310,29 @@ struct KeyboardAccessoryModifier: ViewModifier {
                 ToolbarItemGroup(placement: .keyboard) {
                     // Number row for frequency entry
                     Button("1") { text.append("1") }
+                        .buttonStyle(.cwToolbarTinted)
                     Button("2") { text.append("2") }
+                        .buttonStyle(.cwToolbarTinted)
                     Button("3") { text.append("3") }
+                        .buttonStyle(.cwToolbarTinted)
                     Button("4") { text.append("4") }
+                        .buttonStyle(.cwToolbarTinted)
                     Button("5") { text.append("5") }
+                        .buttonStyle(.cwToolbarTinted)
                     Button("6") { text.append("6") }
+                        .buttonStyle(.cwToolbarTinted)
                     Button("7") { text.append("7") }
+                        .buttonStyle(.cwToolbarTinted)
                     Button("8") { text.append("8") }
+                        .buttonStyle(.cwToolbarTinted)
                     Button("9") { text.append("9") }
+                        .buttonStyle(.cwToolbarTinted)
                     Button("0") { text.append("0") }
+                        .buttonStyle(.cwToolbarTinted)
                     Button(".") { text.append(".") }
+                        .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
     }
 }

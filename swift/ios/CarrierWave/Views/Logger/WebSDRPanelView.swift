@@ -169,7 +169,7 @@ struct WebSDRPanelView: View {
             } label: {
                 Label("Choose WebSDR", systemImage: "magnifyingglass")
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.cwTinted)
         }
         .padding()
         .frame(maxWidth: .infinity, minHeight: 120)
@@ -244,7 +244,7 @@ struct WebSDRPanelView: View {
                             ? "speaker.slash.fill" : "speaker.wave.2.fill"
                     )
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.cwTinted)
                 .tint(webSDRSession.isMuted ? .secondary : .blue)
 
                 if webSDRSession.state == .paused {
@@ -253,7 +253,7 @@ struct WebSDRPanelView: View {
                     } label: {
                         Label("Resume", systemImage: "play.fill")
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.cwTinted)
                     .tint(.green)
                 } else {
                     Button {
@@ -261,7 +261,7 @@ struct WebSDRPanelView: View {
                     } label: {
                         Label("Pause", systemImage: "pause.fill")
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.cwTinted)
                 }
 
                 Button(role: .destructive) {
@@ -269,7 +269,7 @@ struct WebSDRPanelView: View {
                 } label: {
                     Label("Disconnect", systemImage: "stop.fill")
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.cwTinted)
             }
 
             // File location, share, and browser link
@@ -283,7 +283,7 @@ struct WebSDRPanelView: View {
                         Label("Share", systemImage: "square.and.arrow.up")
                             .font(.caption)
                     }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.cwTinted)
                     .controlSize(.small)
                 } else {
                     Spacer()
@@ -316,7 +316,7 @@ struct WebSDRPanelView: View {
                 } label: {
                     Label("Reconnect", systemImage: "antenna.radiowaves.left.and.right")
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.cwTinted)
                 .tint(.green)
 
                 Button(role: .destructive) {
@@ -324,7 +324,7 @@ struct WebSDRPanelView: View {
                 } label: {
                     Label("End Recording", systemImage: "stop.fill")
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.cwTinted)
             }
         }
         .padding()

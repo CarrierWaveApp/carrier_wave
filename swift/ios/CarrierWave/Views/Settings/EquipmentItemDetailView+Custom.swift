@@ -39,7 +39,7 @@ extension EquipmentItemDetailView {
                             Label("Yes, link it", systemImage: "checkmark")
                                 .font(.caption)
                         }
-                        .buttonStyle(.borderedProminent)
+                        .buttonStyle(.cwProminent)
                         .controlSize(.small)
 
                         Button {
@@ -51,7 +51,7 @@ extension EquipmentItemDetailView {
                             )
                             .font(.caption)
                         }
-                        .buttonStyle(.bordered)
+                        .buttonStyle(.cwTinted)
                         .controlSize(.small)
                     }
                 }

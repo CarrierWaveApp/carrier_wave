@@ -107,7 +107,7 @@ struct ActivityLogHeader: View {
                 onSwitchProfile()
             }
             .font(.caption.weight(.medium))
-            .buttonStyle(.bordered)
+            .buttonStyle(.cwTinted)
             .accessibilityLabel("Switch station profile")
         }
     }

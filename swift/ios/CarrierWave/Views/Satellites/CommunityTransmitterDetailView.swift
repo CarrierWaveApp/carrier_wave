@@ -123,7 +123,7 @@ struct CommunityDetailSummary: View {
                 } label: {
                     Label("Show on Map", systemImage: "map")
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.cwTinted)
             } else {
                 Text("Not in your satellite catalog — no TLE or no active amateur transmitter on SatNOGS.")
                     .font(.caption)

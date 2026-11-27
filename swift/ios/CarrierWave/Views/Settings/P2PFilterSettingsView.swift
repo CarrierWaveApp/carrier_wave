@@ -23,13 +23,17 @@ struct P2PFilterSheet: View {
                     Button("Done") {
                         isPresented = false
                     }
+                    .buttonStyle(.cwToolbarProminent)
                 }
+                .sharedBackgroundVisibility(.hidden)
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Reset") {
                         selectedBands = []
                         selectedModes = []
                     }
+                    .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
         }
         .landscapeAdaptiveDetents(portrait: [.medium])

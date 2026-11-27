@@ -31,11 +31,15 @@ struct ReportInaccuracyView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
+                        .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Generate") { generateReport() }
+                        .buttonStyle(.cwToolbarProminent)
                         .disabled(expectedValueText.isEmpty)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
             .overlay {
                 if isGenerating {

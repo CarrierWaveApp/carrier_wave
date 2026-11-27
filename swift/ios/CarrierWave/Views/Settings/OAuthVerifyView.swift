@@ -125,7 +125,7 @@ struct OAuthVerifyView: View {
             Text("Callsign Verified")
                 .font(.headline)
             Button("Done") { dismiss() }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.cwProminent)
         }
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -143,7 +143,7 @@ struct OAuthVerifyView: View {
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
             Button("Try Again") { phase = .entry }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.cwProminent)
         }
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity)

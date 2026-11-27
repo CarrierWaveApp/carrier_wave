@@ -156,7 +156,7 @@ struct SyncCard: View {
                 Label("Sync", systemImage: "arrow.triangle.2.circlepath")
                     .font(.subheadline.weight(.medium))
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.cwProminent)
             .controlSize(.small)
             .accessibilityLabel("Sync all services")
         }

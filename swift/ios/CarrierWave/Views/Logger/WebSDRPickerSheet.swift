@@ -30,7 +30,9 @@ struct WebSDRPickerSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
+                        .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
             .task { await loadReceivers() }
         }
@@ -70,7 +72,7 @@ struct WebSDRPickerSheet: View {
             Button("Retry") {
                 Task { await loadReceivers() }
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.cwTinted)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

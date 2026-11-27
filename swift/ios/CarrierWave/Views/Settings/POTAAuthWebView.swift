@@ -44,7 +44,9 @@ struct POTALoginSheet: View {
                         authService.cancelAuthentication()
                         dismiss()
                     }
+                    .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
         }
         .task {

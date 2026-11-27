@@ -219,7 +219,7 @@ struct RemoteSweepScopeView: View {
                 Image(systemName: "arrow.up.left.and.arrow.down.right.magnifyingglass")
                     .font(.caption)
             }
-            .buttonStyle(.bordered)
+            .buttonStyle(.cwTinted)
             .controlSize(.small)
             .disabled(zoomScale <= 1.001)
 

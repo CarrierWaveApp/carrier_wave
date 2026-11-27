@@ -147,7 +147,7 @@ struct ContestScoreSummaryView: View {
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)
         }
-        .buttonStyle(.borderedProminent)
+        .buttonStyle(.cwProminent)
         .tint(.blue)
         .disabled(isLoadingCabrillo)
         .padding(.horizontal)
@@ -224,7 +224,7 @@ struct CabrilloShareSheet: View {
                             Label("Share", systemImage: "square.and.arrow.up")
                                 .frame(maxWidth: .infinity)
                         }
-                        .buttonStyle(.borderedProminent)
+                        .buttonStyle(.cwProminent)
 
                         Button {
                             UIPasteboard.general.string = cabrilloText
@@ -237,7 +237,7 @@ struct CabrilloShareSheet: View {
                             )
                             .frame(maxWidth: .infinity)
                         }
-                        .buttonStyle(.bordered)
+                        .buttonStyle(.cwTinted)
                     }
                 }
                 .padding()

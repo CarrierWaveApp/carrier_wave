@@ -34,7 +34,7 @@ struct RoveProgressBar: View {
                     Label("Next Stop", systemImage: "arrow.right")
                         .font(.caption.weight(.medium))
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.cwTinted)
                 .tint(.green)
                 .controlSize(.small)
                 .accessibilityLabel("Advance to next park stop")

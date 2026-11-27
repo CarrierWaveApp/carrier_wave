@@ -141,7 +141,7 @@ private extension EquipmentBrowserView {
                     Label("Add Equipment", systemImage: "plus")
                         .font(.subheadline.weight(.medium))
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.cwProminent)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 24)

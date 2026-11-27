@@ -55,7 +55,7 @@ struct TourGuideBubble: View {
                     Text(message.buttonLabel)
                         .font(.subheadline.weight(.semibold))
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.cwProminent)
             }
         }
         .padding(16)

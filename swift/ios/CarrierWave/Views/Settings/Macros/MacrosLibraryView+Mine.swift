@@ -113,7 +113,7 @@ struct MacrosLibraryMineTab: View {
                 Label("Create Macro", systemImage: "plus")
                     .font(.body.weight(.semibold))
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.cwProminent)
             .padding(.top, 4)
             Spacer()
         }

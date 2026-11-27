@@ -66,7 +66,9 @@ struct MutualPassPlannerSheet: View {
                     Button("Done") {
                         dismiss()
                     }
+                    .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
             .navigationDestination(for: MutualPass.self) { pass in
                 if let station = resolvedB {

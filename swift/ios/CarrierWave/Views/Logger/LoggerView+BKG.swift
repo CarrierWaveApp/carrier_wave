@@ -85,7 +85,7 @@ extension LoggerView {
                     Label("Check & Export", systemImage: "square.and.arrow.up")
                         .font(.caption)
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.cwTinted)
             }
 
             if let myGrid = myGridCheck.grid {
@@ -193,7 +193,7 @@ extension LoggerView {
                     .frame(maxWidth: 120)
                     .onSubmit { commitBKGMyGrid() }
                 Button("Set") { commitBKGMyGrid() }
-                    .buttonStyle(.bordered)
+                    .buttonStyle(.cwTinted)
                     .disabled(bkgCheckGrid(grid: bkgForm.myGridDraft).grid == nil)
             }
             Label(

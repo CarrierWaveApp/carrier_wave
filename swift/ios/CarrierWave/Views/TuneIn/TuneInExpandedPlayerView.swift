@@ -45,7 +45,9 @@ struct TuneInExpandedPlayerView: View {
                     Button("Done") {
                         manager.showExpandedPlayer = false
                     }
+                    .buttonStyle(.cwToolbarTinted)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
         }
         .sheet(isPresented: $showReceiverPicker) {
@@ -202,7 +204,8 @@ extension TuneInExpandedPlayerView {
                 )
                 .font(.title3)
                 Text(manager.session.isMuted ? "Unmute" : "Mute")
-                    .font(.caption)
+                    .font(.caption.weight(.semibold))
+                    .textCase(.uppercase)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 12)
@@ -231,7 +234,8 @@ extension TuneInExpandedPlayerView {
                     }
                 }
                 Text("Clip")
-                    .font(.caption)
+                    .font(.caption.weight(.semibold))
+                    .textCase(.uppercase)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 12)
@@ -251,7 +255,8 @@ extension TuneInExpandedPlayerView {
                 Image(systemName: "safari")
                     .font(.title3)
                 Text("Open")
-                    .font(.caption)
+                    .font(.caption.weight(.semibold))
+                    .textCase(.uppercase)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 12)

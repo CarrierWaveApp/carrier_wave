@@ -28,7 +28,9 @@ struct EquipmentPickerSheet: View {
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
+                        .buttonStyle(.cwToolbarProminent)
                 }
+                .sharedBackgroundVisibility(.hidden)
             }
             .onAppear {
                 items = EquipmentStorage.load(for: equipmentType)

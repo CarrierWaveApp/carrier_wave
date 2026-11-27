@@ -74,7 +74,7 @@ struct RecordingTranscriptView: View {
                 } label: {
                     Label("Transcribe", systemImage: "text.magnifyingglass")
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.cwTinted)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
